@@ -369,7 +369,7 @@ class MainWindow(QMainWindow):
                     self.config['security_settings']['real_time_protection'] = False
                     save_config(self.config)
             else:
-                self.protection_status_label.setText("⚫ Inactive")
+                self.protection_status_label.setText("🔴 Inactive")
                 self.protection_status_label.setStyleSheet("color: red; font-weight: bold; font-size: 12px; padding: 5px;")
                 self.protection_toggle_btn.setText("▶️ Start")
                 print("✅ Protection tab UI updated to Inactive state")
@@ -730,7 +730,7 @@ class MainWindow(QMainWindow):
                         save_config(self.config)
                 else:
                     # Protection is disabled, set inactive status
-                    self.protection_status_label.setText("⚫ Inactive")
+                    self.protection_status_label.setText("🔴 Inactive")
                     self.protection_status_label.setStyleSheet("color: red; font-weight: bold; font-size: 12px; padding: 5px;")
                     if hasattr(self, 'protection_toggle_btn'):
                         self.protection_toggle_btn.setText("▶️ Start")
@@ -779,7 +779,7 @@ class MainWindow(QMainWindow):
             # else:
             # Set initial status to Inactive when monitoring is disabled by default
             if hasattr(self, 'protection_status_label'):
-                self.protection_status_label.setText("⚫ Inactive")
+                self.protection_status_label.setText("🔴 Inactive")
                 self.protection_status_label.setStyleSheet("color: red; font-weight: bold; font-size: 12px; padding: 5px;")
                 
         except Exception as e:
@@ -847,7 +847,7 @@ class MainWindow(QMainWindow):
         try:
             if self.real_time_monitor:
                 self.real_time_monitor.stop()
-                self.protection_status_label.setText("⚫ Inactive")
+                self.protection_status_label.setText("🔴 Inactive")
                 self.protection_status_label.setStyleSheet("color: red; font-weight: bold; font-size: 12px; padding: 5px;")
                 self.protection_toggle_btn.setText("▶️ Start")
                 self.add_activity_message("⏹️ Real-time protection stopped")
@@ -1526,7 +1526,7 @@ class MainWindow(QMainWindow):
             #actionButton:hover {
                 background-color: #E6336B;
                 border: 4px solid #EE8980;
-                color: #ffffff;
+                color: #EE8980;
                 padding: 6px 12px;
                 min-height: 32px;
                 line-height: 1.3;
