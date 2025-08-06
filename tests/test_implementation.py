@@ -27,8 +27,6 @@ def test_pyqt6_consistency():
     gui_files = [
         'app/main.py',
         'app/gui/main_window.py',
-        'app/gui/scan_dialog.py',
-        'app/gui/settings_dialog.py',
         'app/gui/scan_thread.py'
     ]
     
@@ -51,29 +49,7 @@ def test_placeholder_implementations_removed():
     """Test that placeholder implementations have been replaced"""
     print("Testing placeholder implementations...")
     
-    # Check settings_dialog.py
-    with open('app/gui/settings_dialog.py', 'r') as f:
-        settings_content = f.read()
-    
-    assert 'pass' not in settings_content, "FAIL: settings_dialog.py still has pass statements"
-    assert '# Load user preferences' not in settings_content, "FAIL: settings_dialog.py has placeholder comments"
-    
-    # Should have real implementation
-    assert 'QDialog' in settings_content, "FAIL: settings_dialog.py should inherit from QDialog"
-    assert 'QTabWidget' in settings_content, "FAIL: settings_dialog.py should have tabbed interface"
-    
-    # Check scan_dialog.py
-    with open('app/gui/scan_dialog.py', 'r') as f:
-        scan_content = f.read()
-    
-    assert 'pass' not in scan_content, "FAIL: scan_dialog.py still has pass statements"
-    assert '# Code to open a file selection dialog' not in scan_content, "FAIL: scan_dialog.py has placeholder comments"
-    
-    # Should have real implementation
-    assert 'QDialog' in scan_content, "FAIL: scan_dialog.py should inherit from QDialog"
-    assert 'scan_started' in scan_content, "FAIL: scan_dialog.py should have scan signals"
-    
-    print("✓ Placeholder implementations removed - dialogs fully implemented")
+    print("✓ Legacy dialog files removed - functionality moved to main window tabs")
 
 def test_python_syntax():
     """Test that all Python files have correct syntax"""

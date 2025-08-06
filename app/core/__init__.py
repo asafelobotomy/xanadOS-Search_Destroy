@@ -6,7 +6,8 @@ Includes scanning engine, security, quarantine management, and performance optim
 
 # Scanner and ClamAV integration
 from .file_scanner import FileScanner
-from .clamav_wrapper import ClamAVWrapper
+from .clamav_wrapper import ClamAVWrapper, ScanResult, ScanFileResult
+from .rkhunter_wrapper import RKHunterWrapper, RKHunterResult, RKHunterScanResult
 
 # Performance optimization components
 from .async_scanner import (
@@ -60,6 +61,7 @@ __all__ = [
     # Core scanning
     'FileScanner',
     'ClamAVWrapper',
+    'RKHunterWrapper',
     # Performance optimization
     'AsyncFileScanner',
     'ScanProgress', 

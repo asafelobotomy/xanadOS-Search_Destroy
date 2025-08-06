@@ -9,12 +9,14 @@ from PyQt6.QtWidgets import (QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
                              QTabWidget, QGroupBox, QListWidget, QListWidgetItem,
                              QSplitter, QFrame, QStatusBar, QMenuBar, QMenu,
                              QFileDialog, QMessageBox, QSystemTrayIcon, QProgressDialog,
-                             QCheckBox, QSpinBox, QFormLayout, QScrollArea)
+                             QCheckBox, QSpinBox, QFormLayout, QScrollArea, QDialog)
 from PyQt6.QtCore import Qt, QTimer, pyqtSignal
 from PyQt6.QtGui import QIcon, QFont, QPixmap, QAction, QShortcut, QKeySequence, QMouseEvent
 
 from gui.scan_thread import ScanThread
+from gui.rkhunter_components import RKHunterScanDialog, RKHunterScanThread
 from core.file_scanner import FileScanner
+from core.rkhunter_wrapper import RKHunterWrapper, RKHunterScanResult
 from utils.config import load_config, save_config
 from utils.scan_reports import ScanReportManager, ScanResult, ScanType, ThreatInfo, ThreatLevel
 from monitoring import RealTimeMonitor, MonitorConfig, MonitorState
@@ -35,8 +37,10 @@ class MainWindow(QMainWindow):
         super().__init__()
         self.config = load_config()
         self.scanner = FileScanner()
+        self.rkhunter = RKHunterWrapper()
         self.report_manager = ScanReportManager()
         self.current_scan_thread = None
+        self.current_rkhunter_thread = None
         
         # Quick scan state tracking
         self.is_quick_scan_running = False
@@ -62,6 +66,44 @@ class MainWindow(QMainWindow):
         # Add a safety net timer to ensure status is never left as "Initializing..."
         QTimer.singleShot(1000, self.ensure_protection_status_final)
         
+    def get_theme_color(self, color_type):
+        """Get theme-appropriate color for any UI element."""
+        if self.current_theme == "dark":
+            colors = {
+                'background': '#1a1a1a',
+                'secondary_bg': '#2a2a2a',
+                'tertiary_bg': '#3a3a3a',
+                'primary_text': '#FFCDAA',
+                'secondary_text': '#666',
+                'success': '#9CB898',
+                'error': '#F14666', 
+                'warning': '#EE8980',
+                'accent': '#F14666',
+                'border': '#EE8980',
+                'hover_bg': '#4a4a4a',
+                'pressed_bg': '#2a2a2a',
+                'selection_bg': '#F14666',
+                'disabled_text': '#666'
+            }
+        else:  # light theme
+            colors = {
+                'background': '#fefefe',
+                'secondary_bg': '#ffffff',
+                'tertiary_bg': '#f5f5f5',
+                'primary_text': '#2c2c2c',
+                'secondary_text': '#666',
+                'success': '#75BDE0',
+                'error': '#F89B9B',
+                'warning': '#F8BC9B',
+                'accent': '#75BDE0',
+                'border': '#F8D49B',
+                'hover_bg': '#F8BC9B',
+                'pressed_bg': '#F89B9B',
+                'selection_bg': '#75BDE0',
+                'disabled_text': '#999'
+            }
+        return colors.get(color_type, colors['primary_text'])
+    
     def get_status_color(self, status_type):
         """Get theme-appropriate color for status indicators."""
         if self.current_theme == "dark":
@@ -489,8 +531,24 @@ class MainWindow(QMainWindow):
         self.stop_scan_btn.clicked.connect(self.stop_scan)
         self.stop_scan_btn.setEnabled(False)
         
+        # RKHunter button
+        self.rkhunter_scan_btn = QPushButton("🔍 RKHunter Scan")
+        self.rkhunter_scan_btn.setObjectName("specialButton")
+        self.rkhunter_scan_btn.setToolTip("Run RKHunter rootkit detection scan\n(Configure scan categories in Settings → Scanning)")
+        
+        # Check if RKHunter is available (non-intrusive check)
+        rkhunter_available = self.rkhunter.is_available()
+        
+        if rkhunter_available:
+            self.rkhunter_scan_btn.clicked.connect(self.start_rkhunter_scan)
+        else:
+            self.rkhunter_scan_btn.setText("📦 Setup RKHunter")
+            self.rkhunter_scan_btn.setToolTip("RKHunter not available - click to install or configure")
+            self.rkhunter_scan_btn.clicked.connect(self.install_rkhunter)
+        
         scan_buttons_layout.addWidget(self.start_scan_btn)
         scan_buttons_layout.addWidget(self.stop_scan_btn)
+        scan_buttons_layout.addWidget(self.rkhunter_scan_btn)
         scan_buttons_layout.addStretch()
         controls_layout.addLayout(scan_buttons_layout)
         
@@ -699,6 +757,222 @@ class MainWindow(QMainWindow):
         
         scroll_layout.addWidget(protection_group)
         
+        # RKHUNTER SETTINGS SECTION
+        rkhunter_group = QGroupBox("RKHunter Integration")
+        rkhunter_layout = QVBoxLayout(rkhunter_group)
+        rkhunter_layout.setSpacing(15)
+        
+        # Create two-column layout
+        two_column_layout = QHBoxLayout()
+        two_column_layout.setSpacing(20)
+        
+        # LEFT COLUMN - Basic Settings
+        left_column = QGroupBox("Settings")
+        left_layout = QVBoxLayout(left_column)
+        left_layout.setSpacing(15)
+        
+        self.settings_enable_rkhunter_cb = QCheckBox("Enable RKHunter Integration")
+        self.settings_enable_rkhunter_cb.setChecked(False)
+        self.settings_enable_rkhunter_cb.setToolTip("Enable integration with RKHunter rootkit detection")
+        self.settings_enable_rkhunter_cb.setMinimumHeight(35)
+        left_layout.addWidget(self.settings_enable_rkhunter_cb)
+        
+        self.settings_run_rkhunter_with_full_scan_cb = QCheckBox("Run RKHunter with Full System Scans")
+        self.settings_run_rkhunter_with_full_scan_cb.setChecked(False)
+        self.settings_run_rkhunter_with_full_scan_cb.setToolTip("Automatically run RKHunter when performing full system scans")
+        self.settings_run_rkhunter_with_full_scan_cb.setMinimumHeight(35)
+        left_layout.addWidget(self.settings_run_rkhunter_with_full_scan_cb)
+        
+        self.settings_rkhunter_auto_update_cb = QCheckBox("Auto-update RKHunter Database")
+        self.settings_rkhunter_auto_update_cb.setChecked(True)
+        self.settings_rkhunter_auto_update_cb.setToolTip("Automatically update RKHunter database before scans")
+        self.settings_rkhunter_auto_update_cb.setMinimumHeight(35)
+        left_layout.addWidget(self.settings_rkhunter_auto_update_cb)
+        
+        # Add stretch to push checkboxes to top
+        left_layout.addStretch()
+        
+        # RIGHT COLUMN - Scan Categories
+        right_column = QGroupBox("Default Scan Categories")
+        right_layout = QVBoxLayout(right_column)
+        
+        # Create scrollable area for checkboxes
+        scroll_area_rk = QScrollArea()
+        scroll_widget_rk = QWidget()
+        scroll_layout_rk = QVBoxLayout(scroll_widget_rk)
+        scroll_layout_rk.setSpacing(8)
+        scroll_layout_rk.setContentsMargins(5, 5, 5, 5)
+        
+        # Define test categories with descriptions - organized by priority
+        self.settings_rkhunter_test_categories = {
+            'system_commands': {
+                'name': 'System Commands',
+                'description': 'Check system command integrity and known rootkit modifications',
+                'default': True,
+                'priority': 1
+            },
+            'rootkits': {
+                'name': 'Rootkits & Trojans',
+                'description': 'Scan for known rootkits, trojans, and malware signatures',
+                'default': True,
+                'priority': 1
+            },
+            'system_integrity': {
+                'name': 'System Integrity',
+                'description': 'Verify filesystem integrity, system configs, and startup files',
+                'default': True,
+                'priority': 2
+            },
+            'network': {
+                'name': 'Network Security',
+                'description': 'Check network interfaces, ports, and packet capture tools',
+                'default': True,
+                'priority': 2
+            },
+            'applications': {
+                'name': 'Applications',
+                'description': 'Check for hidden processes, files, and suspicious applications',
+                'default': False,
+                'priority': 3
+            }
+        }
+        
+        # Create checkboxes in a single row layout
+        self.settings_rkhunter_category_checkboxes = {}
+        
+        # Sort categories by priority and name for better organization
+        sorted_categories = sorted(
+            self.settings_rkhunter_test_categories.items(),
+            key=lambda x: (x[1]['priority'], x[1]['name'])
+        )
+        
+        # Create a single row with all 5 categories - centered
+        row_layout = QHBoxLayout()
+        row_layout.setSpacing(12)
+        row_layout.setContentsMargins(10, 5, 10, 5)
+        
+        # Add left stretch to center the items
+        row_layout.addStretch(1)
+        
+        # Add all items to a single row
+        for category_id, category_info in sorted_categories:
+            # Create compact item container
+            item_layout = QVBoxLayout()
+            item_layout.setSpacing(3)
+            item_layout.setContentsMargins(5, 4, 5, 4)
+            
+            # Checkbox with appropriate height
+            checkbox = QCheckBox(category_info['name'])
+            checkbox.setChecked(category_info['default'])
+            checkbox.setToolTip(category_info['description'])
+            checkbox.setMinimumHeight(20)
+            checkbox.setStyleSheet("font-weight: bold; font-size: 11px;")
+            
+            # Description with better sizing for visibility
+            desc_label = QLabel(category_info['description'])
+            desc_color = self.get_theme_color('secondary_text')
+            desc_label.setStyleSheet(
+                f"color: {desc_color}; font-size: 9px; margin: 0px; padding: 2px; line-height: 1.2;"
+            )
+            desc_label.setWordWrap(True)
+            desc_label.setMaximumHeight(45)  # Increased height for better text visibility
+            desc_label.setMinimumHeight(45)  # Fixed height for consistency
+            desc_label.setAlignment(Qt.AlignmentFlag.AlignTop)
+            
+            item_layout.addWidget(checkbox)
+            item_layout.addWidget(desc_label)
+            
+            # Create item widget with increased dimensions for better text visibility
+            item_widget = QWidget()
+            item_widget.setLayout(item_layout)
+            item_widget.setFixedWidth(135)  # Increased width from 110px to 135px
+            item_widget.setFixedHeight(75)  # Increased height from 52px to 75px
+            
+            bg_color = self.get_theme_color('secondary_bg')
+            hover_color = self.get_theme_color('hover_bg')
+            item_widget.setStyleSheet(f"""
+                QWidget {{
+                    border: none;
+                    border-radius: 6px;
+                    background-color: {bg_color};
+                    margin: 3px;
+                }}
+                QWidget:hover {{
+                    background-color: {hover_color};
+                }}
+            """)
+            
+            row_layout.addWidget(item_widget)
+            self.settings_rkhunter_category_checkboxes[category_id] = checkbox
+        
+        # Add right stretch to center the items
+        row_layout.addStretch(1)
+        
+        # Add the single row to the main layout
+        row_widget = QWidget()
+        row_widget.setLayout(row_layout)
+        scroll_layout_rk.addWidget(row_widget)
+        
+        # Add minimal stretch
+        scroll_layout_rk.addStretch(1)
+        
+        scroll_area_rk.setWidget(scroll_widget_rk)
+        scroll_area_rk.setMaximumHeight(95)  # Increased height for larger cards
+        scroll_area_rk.setMinimumHeight(95)  # Fixed height for larger cards
+        scroll_area_rk.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        scroll_area_rk.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)  # No vertical scroll needed
+        
+        border_color = self.get_theme_color('border')
+        scroll_bg = self.get_theme_color('tertiary_bg')
+        scroll_area_rk.setStyleSheet(f"""
+            QScrollArea {{
+                border: 1px solid {border_color};
+                border-radius: 4px;
+                background-color: {scroll_bg};
+            }}
+        """)
+        
+        right_layout.addWidget(scroll_area_rk)
+        
+        # Quick select buttons for RKHunter categories
+        quick_select_layout = QHBoxLayout()
+        
+        select_all_btn = QPushButton("Select All")
+        select_all_btn.clicked.connect(self.select_all_rkhunter_categories)
+        select_all_btn.setMaximumWidth(100)
+        select_all_btn.setMinimumHeight(35)
+        
+        select_recommended_btn = QPushButton("Recommended")
+        select_recommended_btn.clicked.connect(self.select_recommended_rkhunter_categories)
+        select_recommended_btn.setToolTip("Select recommended test categories for most users")
+        select_recommended_btn.setMaximumWidth(100)
+        select_recommended_btn.setMinimumHeight(35)
+        
+        select_none_btn = QPushButton("Select None")
+        select_none_btn.clicked.connect(self.select_no_rkhunter_categories)
+        select_none_btn.setMaximumWidth(100)
+        select_none_btn.setMinimumHeight(35)
+        
+        quick_select_layout.addWidget(select_all_btn)
+        quick_select_layout.addWidget(select_recommended_btn)
+        quick_select_layout.addWidget(select_none_btn)
+        quick_select_layout.addStretch()
+        
+        right_layout.addLayout(quick_select_layout)
+        
+        # Add columns to two-column layout
+        two_column_layout.addWidget(left_column)
+        two_column_layout.addWidget(right_column)
+        
+        # Set column widths (40% left, 60% right)
+        left_column.setMaximumWidth(300)
+        right_column.setMinimumWidth(400)
+        
+        # Add two-column layout to main RKHunter layout
+        rkhunter_layout.addLayout(two_column_layout)
+        
+        scroll_layout.addWidget(rkhunter_group)
+        
         # Add stretch to push everything to the top
         scroll_layout.addStretch()
         
@@ -803,7 +1077,7 @@ class MainWindow(QMainWindow):
         events_layout = QHBoxLayout()
         events_layout.addWidget(QLabel("Events Processed:"))
         self.events_processed_label = QLabel("0")
-        self.events_processed_label.setStyleSheet("font-weight: bold; color: #75BDE0;")
+        self.events_processed_label.setStyleSheet(f"font-weight: bold; color: {self.get_theme_color('accent')};")
         events_layout.addStretch()
         events_layout.addWidget(self.events_processed_label)
         stats_container.addLayout(events_layout)
@@ -812,7 +1086,7 @@ class MainWindow(QMainWindow):
         threats_layout = QHBoxLayout()
         threats_layout.addWidget(QLabel("Threats Detected:"))
         self.threats_detected_label = QLabel("0")
-        self.threats_detected_label.setStyleSheet("font-weight: bold; color: #F89B9B;")
+        self.threats_detected_label.setStyleSheet(f"font-weight: bold; color: {self.get_theme_color('error')};")
         threats_layout.addStretch()
         threats_layout.addWidget(self.threats_detected_label)
         stats_container.addLayout(threats_layout)
@@ -821,7 +1095,7 @@ class MainWindow(QMainWindow):
         scans_layout = QHBoxLayout()
         scans_layout.addWidget(QLabel("Scans Performed:"))
         self.scans_performed_label = QLabel("0")
-        self.scans_performed_label.setStyleSheet("font-weight: bold; color: #9CB898;")
+        self.scans_performed_label.setStyleSheet(f"font-weight: bold; color: {self.get_theme_color('success')};")
         scans_layout.addStretch()
         scans_layout.addWidget(self.scans_performed_label)
         stats_container.addLayout(scans_layout)
@@ -830,7 +1104,7 @@ class MainWindow(QMainWindow):
         uptime_layout = QHBoxLayout()
         uptime_layout.addWidget(QLabel("Uptime:"))
         self.uptime_label = QLabel("00:00:00")
-        self.uptime_label.setStyleSheet("font-weight: bold; color: #F8BC9B;")
+        self.uptime_label.setStyleSheet(f"font-weight: bold; color: {self.get_theme_color('warning')};")
         uptime_layout.addStretch()
         uptime_layout.addWidget(self.uptime_label)
         stats_container.addLayout(uptime_layout)
@@ -1026,7 +1300,7 @@ class MainWindow(QMainWindow):
             # Set initial status to Inactive when monitoring is disabled by default
             if hasattr(self, 'protection_status_label'):
                 self.protection_status_label.setText("🔴 Inactive")
-                self.protection_status_label.setStyleSheet("color: #F14666; font-weight: bold; font-size: 12px; padding: 5px;")
+                self.protection_status_label.setStyleSheet(f"color: {self.get_theme_color('error')}; font-weight: bold; font-size: 12px; padding: 5px;")
                 
         except (ImportError, AttributeError, RuntimeError) as e:
             self.add_activity_message(f"❌ Failed to initialize monitoring: {e}")
@@ -1052,7 +1326,7 @@ class MainWindow(QMainWindow):
             
             if self.real_time_monitor and self.real_time_monitor.start():
                 self.protection_status_label.setText("🛡️ Active")
-                self.protection_status_label.setStyleSheet("color: #9CB898; font-weight: bold; font-size: 12px; padding: 5px;")
+                self.protection_status_label.setStyleSheet(f"color: {self.get_theme_color('success')}; font-weight: bold; font-size: 12px; padding: 5px;")
                 self.protection_toggle_btn.setText("Stop")
                 self.add_activity_message("✅ Real-time protection started")
                 self.status_bar.showMessage("Real-time protection active")
@@ -1082,7 +1356,7 @@ class MainWindow(QMainWindow):
                 self.update_monitoring_statistics()
             else:
                 self.protection_status_label.setText("❌ Failed")
-                self.protection_status_label.setStyleSheet("color: #F14666; font-weight: bold; font-size: 12px; padding: 5px;")
+                self.protection_status_label.setStyleSheet(f"color: {self.get_theme_color('error')}; font-weight: bold; font-size: 12px; padding: 5px;")
                 # Keep button as "Start" since protection failed to start
                 self.protection_toggle_btn.setText("Start")
                 self.add_activity_message("❌ Failed to start real-time protection")
@@ -1105,7 +1379,7 @@ class MainWindow(QMainWindow):
             if self.real_time_monitor:
                 self.real_time_monitor.stop()
                 self.protection_status_label.setText("🔴 Inactive")
-                self.protection_status_label.setStyleSheet("color: #F14666; font-weight: bold; font-size: 12px; padding: 5px;")
+                self.protection_status_label.setStyleSheet(f"color: {self.get_theme_color('error')}; font-weight: bold; font-size: 12px; padding: 5px;")
                 self.protection_toggle_btn.setText("Start")
                 self.add_activity_message("Real-time protection stopped")
                 self.status_bar.showMessage("Real-time protection stopped")
@@ -1138,7 +1412,7 @@ class MainWindow(QMainWindow):
             self.add_activity_message(f"❌ Error stopping protection: {e}")
             # If stopping failed, we can't be sure of the state, so show error and allow retry
             self.protection_status_label.setText("❌ Error")
-            self.protection_status_label.setStyleSheet("color: #F14666; font-weight: bold; font-size: 12px; padding: 5px;")
+            self.protection_status_label.setStyleSheet(f"color: {self.get_theme_color('error')}; font-weight: bold; font-size: 12px; padding: 5px;")
     
     def on_threat_detected(self, file_path: str, threat_name: str):
         """Handle threat detection callback."""
@@ -1285,12 +1559,6 @@ class MainWindow(QMainWindow):
         # File menu
         file_menu = QMenu("File", self)
         menu_bar.addMenu(file_menu)
-        
-        scan_action = QAction("New Scan...", self)
-        scan_action.triggered.connect(self.open_scan_dialog)
-        file_menu.addAction(scan_action)
-        
-        file_menu.addSeparator()
         
         exit_action = QAction("Exit", self)
         exit_action.triggered.connect(self.quit_application)
@@ -1502,189 +1770,103 @@ class MainWindow(QMainWindow):
         else:
             msg_box.setStandardButtons(QMessageBox.StandardButton.Ok)
         
-        # Apply theme-specific styling with strawberry palette
-        if self.current_theme == 'dark':
-            msg_box.setStyleSheet("""
-                QMessageBox {
-                    background-color: #1a1a1a;
-                    color: #FFCDAA;
-                    font-size: 12px;
-                    font-weight: 500;
-                    border: 2px solid #EE8980;
-                    border-radius: 6px;
-                }
-                QMessageBox QLabel {
-                    color: #FFCDAA;
-                    font-weight: 600;
-                    padding: 10px;
-                    line-height: 1.4;
-                }
-                QMessageBox QPushButton {
-                    background-color: #3a3a3a;
-                    border: 2px solid #EE8980;
-                    border-radius: 5px;
-                    padding: 8px 16px;
-                    color: #FFCDAA;
-                    font-weight: 600;
-                    min-width: 80px;
-                }
-                QMessageBox QPushButton:hover {
-                    background-color: #4a4a4a;
-                    border-color: #F14666;
-                    color: #ffffff;
-                }
-                QMessageBox QPushButton:pressed {
-                    background-color: #2a2a2a;
-                }
-                QMessageBox QPushButton:default {
-                    background-color: #9CB898;
-                    border-color: #9CB898;
-                    color: #1a1a1a;
-                    font-weight: 700;
-                }
-                QMessageBox QPushButton:default:hover {
-                    background-color: #ACC8A8;
-                    border-color: #ACC8A8;
-                }
-            """)
-        else:
-            msg_box.setStyleSheet("""
-                QMessageBox {
-                    background-color: #fefefe;
-                    color: #2c2c2c;
-                    font-size: 12px;
-                    font-weight: 500;
-                }
-                QMessageBox QLabel {
-                    color: #2c2c2c;
-                    font-weight: 600;
-                    padding: 10px;
-                }
-                QMessageBox QPushButton {
-                    background-color: #F8D49B;
-                    border: 1px solid #F8BC9B;
-                    border-radius: 6px;
-                    padding: 8px 16px;
-                    color: #2c2c2c;
-                    font-weight: 600;
-                    min-width: 80px;
-                }
-                QMessageBox QPushButton:hover {
-                    background-color: #F8BC9B;
-                    border-color: #F89B9B;
-                    color: #1a1a1a;
-                }
-                QMessageBox QPushButton:pressed {
-                    background-color: #F89B9B;
-                    border-color: #75BDE0;
-                }
-                QMessageBox QPushButton:default {
-                    background-color: #75BDE0;
-                    border: 2px solid #75BDE0;
-                    color: #ffffff;
-                    font-weight: 700;
-                }
-                QMessageBox QPushButton:default:hover {
-                    background-color: #5AADD4;
-                    border-color: #5AADD4;
-                }
-            """)
+        # Apply theme-specific styling  
+        bg = self.get_theme_color('background')
+        text = self.get_theme_color('primary_text')
+        tertiary_bg = self.get_theme_color('tertiary_bg')
+        border = self.get_theme_color('border')
+        hover_bg = self.get_theme_color('hover_bg')
+        pressed_bg = self.get_theme_color('pressed_bg')
+        accent = self.get_theme_color('accent')
+        success = self.get_theme_color('success')
+        
+        style = f"""
+            QMessageBox {{
+                background-color: {bg};
+                color: {text};
+                font-size: 12px;
+                font-weight: 500;
+                border: 2px solid {border};
+                border-radius: 6px;
+            }}
+            QMessageBox QLabel {{
+                color: {text};
+                font-weight: 600;
+                padding: 10px;
+                line-height: 1.4;
+            }}
+            QMessageBox QPushButton {{
+                background-color: {tertiary_bg};
+                border: 2px solid {border};
+                border-radius: 5px;
+                padding: 8px 16px;
+                color: {text};
+                font-weight: 600;
+                min-width: 80px;
+            }}
+            QMessageBox QPushButton:hover {{
+                background-color: {hover_bg};
+                border-color: {accent};
+                color: {text};
+            }}
+            QMessageBox QPushButton:pressed {{
+                background-color: {pressed_bg};
+            }}
+            QMessageBox QPushButton:default {{
+                background-color: {success};
+                border-color: {success};
+                color: {bg};
+                font-weight: 700;
+            }}
+            QMessageBox QPushButton:default:hover {{
+                background-color: {hover_bg};
+                border-color: {hover_bg};
+            }}
+        """
+        msg_box.setStyleSheet(style)
         
         return msg_box.exec()
     
     def setup_activity_list_styling(self):
         """Set up proper styling for the activity list with theme-aware colors."""
+        bg = self.get_theme_color('background')
+        secondary_bg = self.get_theme_color('secondary_bg')
+        text = self.get_theme_color('primary_text')
+        accent = self.get_theme_color('accent')
+        border = self.get_theme_color('border')
+        hover_bg = self.get_theme_color('hover_bg')
+        selection_bg = self.get_theme_color('selection_bg')
+        
+        activity_style = f"""
+            QListWidget {{
+                background-color: {secondary_bg};
+                color: {text};
+                alternate-background-color: rgba(117, 189, 224, 0.1);
+                selection-background-color: {accent};
+                selection-color: {bg};
+                border: 1px solid {border};
+                border-radius: 6px;
+            }}
+            QListWidget::item {{
+                padding: 6px;
+                border-bottom: 1px solid rgba(238, 137, 128, 0.2);
+            }}
+            QListWidget::item:hover {{
+                background-color: {hover_bg};
+            }}
+            QListWidget::item:selected {{
+                background-color: {accent};
+                color: {bg};
+                font-weight: 600;
+            }}
+        """
+        
         if hasattr(self, 'dashboard_activity'):
-            if self.current_theme == 'dark':
-                # Using strawberry palette colors for dark theme
-                self.dashboard_activity.setStyleSheet("""
-                    QListWidget {
-                        background-color: #2a2a2a;
-                        color: #FFCDAA;
-                        alternate-background-color: rgba(238, 137, 128, 0.1);
-                        selection-background-color: #F14666;
-                        selection-color: #ffffff;
-                        border: 1px solid #EE8980;
-                        border-radius: 6px;
-                    }
-                    QListWidget::item {
-                        padding: 6px;
-                        border-bottom: 1px solid rgba(238, 137, 128, 0.2);
-                    }
-                    QListWidget::item:hover {
-                        background-color: rgba(241, 70, 102, 0.1);
-                    }
-                    QListWidget::item:selected {
-                        background-color: #F14666;
-                        color: #ffffff;
-                        font-weight: 600;
-                    }
-                """)
-            else:  # light theme
-                # Using Sunrise palette colors for light theme
-                self.dashboard_activity.setStyleSheet("""
-                    QListWidget {
-                        background-color: #ffffff;
-                        color: #2c2c2c;
-                        alternate-background-color: rgba(117, 189, 224, 0.1);
-                        selection-background-color: #75BDE0;
-                        selection-color: #ffffff;
-                        border: 1px solid #75BDE0;
-                        border-radius: 6px;
-                    }
-                    QListWidget::item {
-                        padding: 6px;
-                        border-bottom: 1px solid rgba(117, 189, 224, 0.2);
-                    }
-                    QListWidget::item:hover {
-                        background-color: rgba(117, 189, 224, 0.15);
-                        color: #1a1a1a;
-                    }
-                    QListWidget::item:selected {
-                        background-color: #75BDE0;
-                        color: #ffffff;
-                        font-weight: 600;
-                    }
-                    QListWidget::item:selected:hover {
-                        background-color: #5AADD4;
-                        color: #ffffff;
-                    }
-                """)
+            self.dashboard_activity.setStyleSheet(activity_style)
         
         # Also apply styling to other activity lists
         if hasattr(self, 'activity_list'):
-            if self.current_theme == 'dark':
-                self.activity_list.setStyleSheet("""
-                    QListWidget {
-                        background-color: #2a2a2a;
-                        color: #FFCDAA;
-                        selection-background-color: #F14666;
-                        selection-color: #ffffff;
-                        border: 1px solid #EE8980;
-                        border-radius: 6px;
-                    }
-                    QListWidget::item:selected {
-                        background-color: #F14666;
-                        color: #ffffff;
-                        font-weight: 600;
-                    }
-                """)
-            else:  # light theme
-                self.activity_list.setStyleSheet("""
-                    QListWidget {
-                        background-color: #ffffff;
-                        color: #2c2c2c;
-                        selection-background-color: #75BDE0;
-                        selection-color: #ffffff;
-                        border: 1px solid #75BDE0;
-                        border-radius: 6px;
-                    }
-                    QListWidget::item:selected {
-                        background-color: #75BDE0;
-                        color: #ffffff;
-                        font-weight: 600;
-                    }
-                """)
+            self.activity_list.setStyleSheet(activity_style)
         
         # Apply styling to reports list
         if hasattr(self, 'reports_list'):
@@ -2815,12 +2997,482 @@ class MainWindow(QMainWindow):
         self.progress_bar.setValue(0)
         self.results_text.clear()
         
-        # Start scan in separate thread with quick scan option
+        # Check if this is a full system scan and RKHunter integration is enabled
+        is_full_system_scan = (hasattr(self, 'scan_path') and 
+                               (self.scan_path == '/' or self.scan_path == str(Path.home())))
+        
+        rkhunter_settings = self.config.get('rkhunter_settings', {})
+        should_run_rkhunter = (is_full_system_scan and 
+                               rkhunter_settings.get('enabled', False) and
+                               rkhunter_settings.get('run_with_full_scan', False) and
+                               self.rkhunter.is_available())
+        
+        if should_run_rkhunter:
+            # Show confirmation for combined scan
+            reply = QMessageBox.question(
+                self,
+                "Combined Security Scan",
+                "This appears to be a full system scan with RKHunter integration enabled.\n\n"
+                "Would you like to run both ClamAV and RKHunter scans together?\n\n"
+                "• ClamAV will scan for viruses, malware, and trojans\n"
+                "• RKHunter will scan for rootkits and system integrity issues\n\n"
+                "This will provide the most comprehensive security analysis.",
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                QMessageBox.StandardButton.Yes
+            )
+            
+            if reply == QMessageBox.StandardButton.Yes:
+                self.results_text.append("🔒 Starting comprehensive security scan...")
+                self.results_text.append("📊 Running ClamAV scan first, followed by RKHunter...")
+                # Start combined scan
+                self.start_combined_security_scan(quick_scan)
+                return
+        
+        # Start regular scan in separate thread with quick scan option
         self.current_scan_thread = ScanThread(self.scanner, self.scan_path, quick_scan=quick_scan)
         self.current_scan_thread.progress_updated.connect(self.progress_bar.setValue)
         self.current_scan_thread.status_updated.connect(self.status_label.setText)
         self.current_scan_thread.scan_completed.connect(self.scan_completed)
         self.current_scan_thread.start()
+    
+    def start_combined_security_scan(self, quick_scan=False):
+        """Start a combined ClamAV + RKHunter security scan."""
+        # Start ClamAV scan first
+        self.current_scan_thread = ScanThread(self.scanner, self.scan_path, quick_scan=quick_scan)
+        self.current_scan_thread.progress_updated.connect(self.progress_bar.setValue)
+        self.current_scan_thread.status_updated.connect(self.status_label.setText)
+        self.current_scan_thread.scan_completed.connect(self.clamav_scan_completed_start_rkhunter)
+        self.current_scan_thread.start()
+    
+    def clamav_scan_completed_start_rkhunter(self, clamav_result):
+        """Handle ClamAV scan completion and start RKHunter scan."""
+        # Display ClamAV results first
+        self.display_scan_results(clamav_result)
+        
+        # Add separator
+        self.results_text.append("\n" + "="*60 + "\n")
+        
+        # Check if RKHunter should still run
+        if not self.rkhunter.is_available():
+            self.results_text.append("❌ RKHunter not available, skipping rootkit scan")
+            self.scan_completed(clamav_result)
+            return
+        
+        # Start RKHunter scan automatically
+        self.results_text.append("🔍 Starting RKHunter rootkit scan...\n")
+        self.status_label.setText("Running RKHunter rootkit scan...")
+        
+        # Get test categories from settings
+        test_categories = self.get_selected_rkhunter_categories()
+        
+        self.current_rkhunter_thread = RKHunterScanThread(self.rkhunter, test_categories)
+        self.current_rkhunter_thread.progress_updated.connect(self.update_rkhunter_progress)
+        self.current_rkhunter_thread.scan_completed.connect(
+            lambda rk_result: self.combined_scan_completed(clamav_result, rk_result)
+        )
+        self.current_rkhunter_thread.start()
+    
+    def combined_scan_completed(self, clamav_result, rkhunter_result: RKHunterScanResult):
+        """Handle completion of combined ClamAV + RKHunter scan."""
+        # Display RKHunter results
+        self.display_rkhunter_results(rkhunter_result)
+        
+        # Save both reports
+        self.save_rkhunter_report(rkhunter_result)
+        
+        # Create combined summary
+        self.results_text.append("\n" + "="*60)
+        self.results_text.append("\n🔒 COMPREHENSIVE SECURITY SCAN SUMMARY")
+        self.results_text.append("="*60)
+        
+        # ClamAV summary
+        clamav_threats = 0
+        if isinstance(clamav_result, dict):
+            clamav_threats = clamav_result.get('threats_found', len(clamav_result.get('threats', [])))
+        else:
+            clamav_threats = getattr(clamav_result, 'threats_found', 0)
+        
+        self.results_text.append(f"\n📊 ClamAV Results:")
+        self.results_text.append(f"   • Threats Found: {clamav_threats}")
+        
+        # RKHunter summary
+        self.results_text.append(f"\n🔍 RKHunter Results:")
+        self.results_text.append(f"   • Warnings: {rkhunter_result.warnings_found}")
+        self.results_text.append(f"   • Infections: {rkhunter_result.infections_found}")
+        
+        # Overall assessment
+        total_issues = clamav_threats + rkhunter_result.warnings_found + rkhunter_result.infections_found
+        
+        if total_issues == 0:
+            self.results_text.append(f"\n✅ **SYSTEM CLEAN**")
+            self.results_text.append("   No threats or suspicious activity detected.")
+        elif rkhunter_result.infections_found > 0:
+            self.results_text.append(f"\n🚨 **CRITICAL SECURITY ISSUES DETECTED**")
+            self.results_text.append("   Potential rootkits found - immediate action required!")
+        elif clamav_threats > 0 or rkhunter_result.warnings_found > 0:
+            self.results_text.append(f"\n⚠️  **SECURITY ISSUES DETECTED**")
+            self.results_text.append("   Review findings and take appropriate action.")
+        
+        self.results_text.append("\n" + "="*60)
+        
+        # Complete the scan
+        self.scan_completed(clamav_result)
+    
+    def install_rkhunter(self):
+        """Install or configure RKHunter."""
+        self.rkhunter_scan_btn.setEnabled(False)
+        self.rkhunter_scan_btn.setText("Checking...")
+        
+        # First check if RKHunter is actually installed but has permission issues
+        if self.rkhunter.rkhunter_path and Path(self.rkhunter.rkhunter_path).exists():
+            # RKHunter is installed but may need configuration
+            reply = QMessageBox.question(
+                self, 
+                "RKHunter Configuration",
+                "RKHunter is installed but requires elevated privileges to run.\n\n"
+                "This is normal for rootkit scanners as they need system-level access.\n"
+                "You will be prompted for your password when running scans.\n\n"
+                "Continue to enable RKHunter scanning?",
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                QMessageBox.StandardButton.Yes
+            )
+            
+            if reply == QMessageBox.StandardButton.Yes:
+                # Test if it works with sudo
+                try:
+                    result = subprocess.run(
+                        ['sudo', '-v'],  # Validate sudo access
+                        capture_output=True,
+                        timeout=30
+                    )
+                    
+                    if result.returncode == 0:
+                        self.show_themed_message_box("information", "RKHunter Ready", 
+                                                   "RKHunter is now configured and ready to use!\n\n"
+                                                   "You can run rootkit scans from the scan tab.")
+                        
+                        # Update button to scan mode
+                        self.rkhunter_scan_btn.setText("🔍 RKHunter Scan")
+                        self.rkhunter_scan_btn.setToolTip("Run RKHunter rootkit detection scan\n(Configure scan categories in Settings → Scanning)")
+                        self.rkhunter_scan_btn.clicked.disconnect()
+                        self.rkhunter_scan_btn.clicked.connect(self.start_rkhunter_scan)
+                        self.rkhunter_scan_btn.setEnabled(True)
+                        return
+                    
+                except subprocess.SubprocessError:
+                    pass
+            
+            self.rkhunter_scan_btn.setText("📦 Install RKHunter")
+            self.rkhunter_scan_btn.setEnabled(True)
+            return
+        
+        # Show installation confirmation dialog
+        reply = QMessageBox.question(
+            self, 
+            "Install RKHunter",
+            "RKHunter will be installed to provide rootkit detection capabilities.\n\n"
+            "This requires administrator privileges. Continue?",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.Yes
+        )
+        
+        if reply != QMessageBox.StandardButton.Yes:
+            self.rkhunter_scan_btn.setEnabled(True)
+            self.rkhunter_scan_btn.setText("📦 Install RKHunter")
+            return
+        
+        self.rkhunter_scan_btn.setText("Installing...")
+        
+        try:
+            success, message = self.rkhunter.install_rkhunter()
+            
+            if success:
+                self.show_themed_message_box("information", "Success", 
+                                           f"RKHunter installed successfully!\n{message}")
+                
+                # Update button to scan mode
+                self.rkhunter_scan_btn.setText("🔍 RKHunter Scan")
+                self.rkhunter_scan_btn.setToolTip("Run RKHunter rootkit detection scan")
+                self.rkhunter_scan_btn.clicked.disconnect()
+                self.rkhunter_scan_btn.clicked.connect(self.start_rkhunter_scan)
+                self.rkhunter_scan_btn.setEnabled(True)
+                
+            else:
+                self.show_themed_message_box("critical", "Installation Failed", 
+                                           f"Failed to install RKHunter:\n{message}")
+                self.rkhunter_scan_btn.setText("📦 Install RKHunter")
+                self.rkhunter_scan_btn.setEnabled(True)
+                
+        except Exception as e:
+            self.show_themed_message_box("critical", "Installation Error", 
+                                       f"Error during installation:\n{str(e)}")
+            self.rkhunter_scan_btn.setText("📦 Install RKHunter")
+            self.rkhunter_scan_btn.setEnabled(True)
+    
+    def start_rkhunter_scan(self):
+        """Start an RKHunter rootkit scan."""
+        # Check if already running
+        if self.current_rkhunter_thread and self.current_rkhunter_thread.isRunning():
+            self.show_themed_message_box("warning", "Scan in Progress", 
+                                       "RKHunter scan is already running.")
+            return
+        
+        # Check if RKHunter is functional (this may prompt for permissions)
+        if not self.rkhunter.is_functional():
+            # Check authentication method available
+            pkexec_available = self.rkhunter._find_executable('pkexec')
+            
+            if pkexec_available:
+                auth_method_text = (
+                    "RKHunter requires elevated privileges to perform rootkit scans.\n\n"
+                    "This is normal security behavior for rootkit detection tools.\n"
+                    "A secure GUI password dialog will appear during the scan (same as Update Definitions).\n\n"
+                    "Would you like to:\n\n"
+                    "• Continue and start the scan (GUI password dialog will appear)\n"
+                    "• Configure RKHunter setup first"
+                )
+            else:
+                auth_method_text = (
+                    "RKHunter requires elevated privileges to perform rootkit scans.\n\n"
+                    "This is normal security behavior for rootkit detection tools.\n"
+                    "You will be prompted for your administrator password in the terminal.\n\n"
+                    "Would you like to:\n\n"
+                    "• Continue and start the scan (terminal password prompt will appear)\n"
+                    "• Configure RKHunter setup first"
+                )
+            
+            reply = QMessageBox.question(
+                self,
+                "RKHunter Setup Required",
+                auth_method_text,
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                QMessageBox.StandardButton.Yes
+            )
+            
+            if reply != QMessageBox.StandardButton.Yes:
+                self.install_rkhunter()  # Show configuration dialog
+                return
+        
+        # Check if regular scan is running
+        if self.current_scan_thread and self.current_scan_thread.isRunning():
+            reply = QMessageBox.question(
+                self,
+                "Scan in Progress",
+                "A regular antivirus scan is currently running.\n\n"
+                "Do you want to continue with RKHunter scan in parallel?",
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                QMessageBox.StandardButton.No
+            )
+            if reply != QMessageBox.StandardButton.Yes:
+                return
+        
+        # Get test categories from settings
+        test_categories = self.get_selected_rkhunter_categories()
+        
+        # Show final confirmation with password warning
+        auth_dialog = QMessageBox(self)
+        auth_dialog.setIcon(QMessageBox.Icon.Information)
+        auth_dialog.setWindowTitle("Authentication Required")
+        auth_dialog.setText("Ready to Start RKHunter Scan")
+        
+        # Check if GUI authentication is available
+        pkexec_available = self.rkhunter._find_executable('pkexec')
+        
+        # Build scan categories description for user
+        category_names = {
+            'system_commands': 'System Commands',
+            'rootkits': 'Rootkits & Trojans',
+            'network': 'Network Security',
+            'system_integrity': 'System Integrity',
+            'applications': 'Applications'
+        }
+        
+        selected_category_names = [category_names.get(cat, cat) for cat in test_categories if cat in category_names and category_names.get(cat)]
+        categories_text = ", ".join(selected_category_names) if selected_category_names else "Default categories"
+        
+        if pkexec_available:
+            auth_dialog.setInformativeText(
+                f"RKHunter will now scan your system for rootkits and malware.\n\n"
+                f"Scan categories: {categories_text}\n\n"
+                "🔐 A secure password dialog will appear to authorize the scan. "
+                "This uses the same authentication method as 'Update Definitions'.\n\n"
+                "The scan may take several minutes to complete."
+            )
+        else:
+            auth_dialog.setInformativeText(
+                f"RKHunter will now scan your system for rootkits and malware.\n\n"
+                f"Scan categories: {categories_text}\n\n"
+                "🔐 You may be prompted for your administrator password in the terminal "
+                "to authorize the scan.\n\n"
+                "The scan may take several minutes to complete."
+            )
+        
+        auth_dialog.setStandardButtons(
+            QMessageBox.StandardButton.Ok | QMessageBox.StandardButton.Cancel
+        )
+        auth_dialog.setDefaultButton(QMessageBox.StandardButton.Ok)
+        
+        if auth_dialog.exec() != QMessageBox.StandardButton.Ok:
+            return
+        
+        # Start RKHunter scan in thread
+        self.rkhunter_scan_btn.setEnabled(False)
+        self.rkhunter_scan_btn.setText("🔄 Scanning...")
+        
+        self.current_rkhunter_thread = RKHunterScanThread(self.rkhunter, test_categories)
+        self.current_rkhunter_thread.progress_updated.connect(self.update_rkhunter_progress)
+        self.current_rkhunter_thread.scan_completed.connect(self.rkhunter_scan_completed)
+        self.current_rkhunter_thread.start()
+        
+        # Update status
+        self.status_label.setText("Running RKHunter rootkit scan...")
+        self.results_text.append("\n🔍 RKHunter rootkit scan started...\n")
+    
+    def update_rkhunter_progress(self, message):
+        """Update progress display for RKHunter scan."""
+        self.status_label.setText(f"RKHunter: {message}")
+    
+    def rkhunter_scan_completed(self, result: RKHunterScanResult):
+        """Handle completion of RKHunter scan."""
+        self.rkhunter_scan_btn.setEnabled(True)
+        self.rkhunter_scan_btn.setText("🔍 RKHunter Scan")
+        
+        if not result.success:
+            self.results_text.append(f"❌ RKHunter scan failed: {result.error_message}")
+            self.status_label.setText("RKHunter scan failed")
+            return
+        
+        # Display results
+        self.display_rkhunter_results(result)
+        
+        # Save results to report
+        self.save_rkhunter_report(result)
+        
+        self.status_label.setText("RKHunter scan completed")
+    
+    def display_rkhunter_results(self, result: RKHunterScanResult):
+        """Display RKHunter scan results in the results text area."""
+        output = "\n🔍 RKHunter Rootkit Scan Results\n"
+        output += "=" * 50 + "\n"
+        
+        # Scan summary
+        duration = (result.end_time - result.start_time).total_seconds() if result.end_time else 0
+        output += f"Scan Duration: {duration:.1f} seconds\n"
+        output += f"Tests Run: {result.tests_run}\n"
+        output += f"Warnings: {result.warnings_found}\n"
+        output += f"Infections: {result.infections_found}\n"
+        output += f"Skipped: {result.skipped_tests}\n\n"
+        
+        # Overall status
+        if result.infections_found > 0:
+            output += "🚨 **CRITICAL**: Potential rootkits detected!\n\n"
+        elif result.warnings_found > 0:
+            output += "⚠️  Warnings found - review carefully\n\n"
+        else:
+            output += "✅ No rootkits detected\n\n"
+        
+        # Detailed findings
+        if result.findings:
+            output += "Detailed Findings:\n"
+            for finding in result.findings:
+                status_icon = "🚨" if finding.result.value == "infected" else "⚠️"
+                output += f"\n{status_icon} {finding.test_name}\n"
+                output += f"   Result: {finding.result.value.upper()}\n"
+                output += f"   Severity: {finding.severity.value.upper()}\n"
+                output += f"   Description: {finding.description}\n"
+                if finding.details:
+                    output += f"   Details: {finding.details}\n"
+        
+        # Recommendations
+        recommendations = self.rkhunter.get_scan_recommendations(result)
+        if recommendations:
+            output += "\n\nRecommendations:\n"
+            for rec in recommendations:
+                output += f"{rec}\n"
+        
+        self.results_text.append(output)
+    
+    def save_rkhunter_report(self, result: RKHunterScanResult):
+        """Save RKHunter scan results to a report file."""
+        try:
+            reports_dir = Path.home() / ".local/share/search-and-destroy/rkhunter_reports"
+            reports_dir.mkdir(parents=True, exist_ok=True)
+            
+            report_file = reports_dir / f"rkhunter_scan_{result.scan_id}.json"
+            
+            # Convert result to dictionary for JSON serialization
+            report_data = {
+                "scan_id": result.scan_id,
+                "scan_type": "rkhunter_rootkit_scan",
+                "start_time": result.start_time.isoformat(),
+                "end_time": result.end_time.isoformat() if result.end_time else None,
+                "duration": (result.end_time - result.start_time).total_seconds() if result.end_time else 0,
+                "success": result.success,
+                "summary": result.scan_summary,
+                "statistics": {
+                    "total_tests": result.total_tests,
+                    "tests_run": result.tests_run,
+                    "warnings_found": result.warnings_found,
+                    "infections_found": result.infections_found,
+                    "skipped_tests": result.skipped_tests
+                },
+                "findings": [
+                    {
+                        "test_name": finding.test_name,
+                        "result": finding.result.value,
+                        "severity": finding.severity.value,
+                        "description": finding.description,
+                        "details": finding.details,
+                        "file_path": finding.file_path,
+                        "recommendation": finding.recommendation,
+                        "timestamp": finding.timestamp.isoformat() if finding.timestamp else None
+                    }
+                    for finding in (result.findings or [])
+                ],
+                "recommendations": self.rkhunter.get_scan_recommendations(result),
+                "error_message": result.error_message
+            }
+            
+            with open(report_file, 'w', encoding='utf-8') as f:
+                json.dump(report_data, f, indent=2, ensure_ascii=False)
+            
+            print(f"RKHunter report saved to {report_file}")
+            
+        except Exception as e:
+            print(f"Error saving RKHunter report: {e}")
+    
+    def get_selected_rkhunter_categories(self):
+        """Get list of selected RKHunter test categories from settings."""
+        if not hasattr(self, 'settings_rkhunter_category_checkboxes'):
+            # Return default categories if settings aren't loaded yet
+            return ['system_commands', 'rootkits', 'network', 'system_integrity']
+        
+        selected = []
+        for category_id, checkbox in self.settings_rkhunter_category_checkboxes.items():
+            if checkbox.isChecked():
+                selected.append(category_id)
+        
+        # Return default categories if nothing selected
+        return selected if selected else ['system_commands', 'rootkits', 'network', 'system_integrity']
+    
+    def select_all_rkhunter_categories(self):
+        """Select all RKHunter test categories."""
+        if hasattr(self, 'settings_rkhunter_category_checkboxes'):
+            for checkbox in self.settings_rkhunter_category_checkboxes.values():
+                checkbox.setChecked(True)
+    
+    def select_recommended_rkhunter_categories(self):
+        """Select recommended RKHunter test categories."""
+        if hasattr(self, 'settings_rkhunter_category_checkboxes'):
+            recommended = {'system_commands', 'rootkits', 'network', 'system_integrity'}
+            for category_id, checkbox in self.settings_rkhunter_category_checkboxes.items():
+                checkbox.setChecked(category_id in recommended)
+    
+    def select_no_rkhunter_categories(self):
+        """Deselect all RKHunter test categories."""
+        if hasattr(self, 'settings_rkhunter_category_checkboxes'):
+            for checkbox in self.settings_rkhunter_category_checkboxes.values():
+                checkbox.setChecked(False)
     
     def stop_scan(self):
         if self.current_scan_thread and self.current_scan_thread.isRunning():
@@ -3394,11 +4046,6 @@ class MainWindow(QMainWindow):
         # Force application to quit
         from PyQt6.QtWidgets import QApplication
         QApplication.quit()
-
-    def open_scan_dialog(self):
-        from .scan_dialog import ScanDialog
-        dialog = ScanDialog(self)
-        dialog.exec()
 
     def refresh_reports(self):
         """Load and display scan reports in the reports list."""

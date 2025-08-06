@@ -82,72 +82,6 @@ class TestMainWindow(unittest.TestCase):
             self.fail(f"Syntax error in scan_thread.py: {e}")
 
 
-class TestSettingsDialog(unittest.TestCase):
-    """Test cases for SettingsDialog class"""
-    
-    def setUp(self):
-        """Set up test fixtures"""
-        # Mock PyQt6 modules
-        self.mock_pyqt6 = Mock()
-        sys.modules['PyQt6'] = self.mock_pyqt6
-        sys.modules['PyQt6.QtWidgets'] = Mock()
-        sys.modules['PyQt6.QtCore'] = Mock()
-        sys.modules['PyQt6.QtGui'] = Mock()
-        
-        # Mock utils
-        sys.modules['utils'] = Mock()
-        sys.modules['utils.config'] = Mock()
-        
-    def test_import_settings_dialog(self):
-        """Test that SettingsDialog file exists and has valid syntax"""
-        # Note: Direct import testing skipped due to relative import structure
-        # The module structure is designed to work when run as a package
-        settings_path = os.path.join(os.path.dirname(__file__), '..', 'app', 'gui', 'settings_dialog.py')
-        self.assertTrue(os.path.exists(settings_path), "settings_dialog.py should exist")
-        
-        # Verify syntax is valid
-        try:
-            with open(settings_path, 'r', encoding='utf-8') as f:
-                ast.parse(f.read())
-            # If we get here, the syntax is valid
-        except SyntaxError as e:
-            self.fail(f"Syntax error in settings_dialog.py: {e}")
-
-
-class TestScanDialog(unittest.TestCase):
-    """Test cases for ScanDialog class"""
-    
-    def setUp(self):
-        """Set up test fixtures"""
-        # Mock PyQt6 modules
-        self.mock_pyqt6 = Mock()
-        sys.modules['PyQt6'] = self.mock_pyqt6
-        sys.modules['PyQt6.QtWidgets'] = Mock()
-        sys.modules['PyQt6.QtCore'] = Mock()
-        sys.modules['PyQt6.QtGui'] = Mock()
-        
-        # Mock dependencies
-        sys.modules['scanner'] = Mock()
-        sys.modules['scanner.file_scanner'] = Mock()
-        sys.modules['utils'] = Mock()
-        sys.modules['utils.config'] = Mock()
-        
-    def test_scan_dialog_import(self):
-        """Test that ScanDialog file exists and has valid syntax"""
-        # Note: Direct import testing skipped due to relative import structure
-        # The module structure is designed to work when run as a package
-        scan_dialog_path = os.path.join(os.path.dirname(__file__), '..', 'app', 'gui', 'scan_dialog.py')
-        self.assertTrue(os.path.exists(scan_dialog_path), "scan_dialog.py should exist")
-        
-        # Verify syntax is valid
-        try:
-            with open(scan_dialog_path, 'r', encoding='utf-8') as f:
-                ast.parse(f.read())
-            # If we get here, the syntax is valid
-        except SyntaxError as e:
-            self.fail(f"Syntax error in scan_dialog.py: {e}")
-
-
 class TestApplicationStructure(unittest.TestCase):
     """Test cases for overall application structure"""
     
@@ -178,8 +112,6 @@ class TestApplicationStructure(unittest.TestCase):
         base_path = os.path.join(os.path.dirname(__file__), '..')
         gui_files = [
             os.path.join(base_path, 'app', 'gui', 'main_window.py'),
-            os.path.join(base_path, 'app', 'gui', 'scan_dialog.py'),
-            os.path.join(base_path, 'app', 'gui', 'settings_dialog.py'),
             os.path.join(base_path, 'app', 'gui', 'scan_thread.py')
         ]
         
@@ -263,26 +195,6 @@ class TestCodeQuality(unittest.TestCase):
                     ast.parse(code)
                 except SyntaxError as e:
                     self.fail(f"Syntax error in {file_path}: {e}")
-                    
-    def test_placeholder_implementations_removed(self):
-        """Test that placeholder implementations have been replaced"""
-        # Check that settings_dialog.py is not a placeholder
-        settings_path = os.path.join(os.path.dirname(__file__), '..', 'app', 'gui', 'settings_dialog.py')
-        with open(settings_path, 'r', encoding='utf-8') as f:
-            content = f.read()
-        
-        # Should not contain placeholder comments
-        self.assertNotIn('# Load user preferences from a configuration file', content,
-                        "settings_dialog.py should not contain placeholder comments")
-        
-        # Check that scan_dialog.py is not a placeholder
-        scan_path = os.path.join(os.path.dirname(__file__), '..', 'app', 'gui', 'scan_dialog.py')
-        with open(scan_path, 'r', encoding='utf-8') as f:
-            content = f.read()
-        
-        # Should not contain placeholder comments
-        self.assertNotIn('# Code to open a file selection dialog', content,
-                        "scan_dialog.py should not contain placeholder comments")
 
 
 if __name__ == '__main__':
