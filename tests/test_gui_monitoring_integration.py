@@ -6,7 +6,7 @@ import sys
 import os
 from pathlib import Path
 
-# Add src to path for imports
+# Add app to path for imports
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'app'))
 
 def test_gui_integration():

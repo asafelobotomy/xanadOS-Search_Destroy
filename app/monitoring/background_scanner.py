@@ -15,7 +15,7 @@ from queue import Queue, Empty
 import schedule
 
 try:
-    from scanner.clamav_wrapper import ClamAVWrapper
+    from core.clamav_wrapper import ClamAVWrapper
 except ImportError:
     # Fallback for development/testing
     class ClamAVWrapper:

@@ -93,10 +93,9 @@ To test the restructured repository:
    ./run.sh
    ```
 
-2. **Run tests with new structure**:
+2. **Run tests with consolidated structure**:
    ```bash
-   python -m pytest tests/unit/ -v
-   python -m pytest tests/integration/ -v
+   python -m pytest tests/ -v
    ```
 
 3. **Verify imports work correctly**:

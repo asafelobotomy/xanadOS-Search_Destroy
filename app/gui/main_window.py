@@ -61,6 +61,11 @@ class MainWindow(QMainWindow):
         self.setMinimumSize(1000, 750)
         self.resize(1200, 850)
         
+        # Set window icon
+        icon_path = Path(__file__).parent.parent.parent / 'packaging' / 'icons' / 'org.xanados.SearchAndDestroy.svg'
+        if icon_path.exists():
+            self.setWindowIcon(QIcon(str(icon_path)))
+        
         # Central widget
         central_widget = QWidget()
         self.setCentralWidget(central_widget)
@@ -1043,7 +1048,7 @@ class MainWindow(QMainWindow):
         
         # Create a system tray icon
         app_icon = QIcon()
-        icon_path = Path(__file__).parent.parent.parent / 'icons' / 'org.xanados.SearchAndDestroy.svg'
+        icon_path = Path(__file__).parent.parent.parent / 'packaging' / 'icons' / 'org.xanados.SearchAndDestroy.svg'
         if icon_path.exists():
             app_icon = QIcon(str(icon_path))
         else:
@@ -1139,7 +1144,7 @@ class MainWindow(QMainWindow):
     
     def update_icon_for_theme(self):
         """Update the application icon based on the current theme."""
-        icon_path = Path(__file__).parent.parent.parent / 'icons' / 'org.xanados.SearchAndDestroy-128.png'
+        icon_path = Path(__file__).parent.parent.parent / 'packaging' / 'icons' / 'org.xanados.SearchAndDestroy-128.png'
         if icon_path.exists():
             pixmap = QPixmap(str(icon_path))
             

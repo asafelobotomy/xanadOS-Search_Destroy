@@ -2,13 +2,13 @@
 
 <div align="center">
 
-![S&D Logo](icons/org.xanados.SearchAndDestroy.png)
+![S&D Logo](packaging/icons/org.xanados.SearchAndDestroy.png)
 
 [![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg)](CHANGELOG.md)
-[![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)](https://github.com/asafelobotomy/xanadOS-Search_Destroy/releases)
+[![Version](https://img.shields.io/badge/version-1.0.1-blue.svg)](https://github.com/asafelobotomy/xanadOS-Search_Destroy/releases)
 [![License](https://img.shields.io/badge/license-GPL--3.0-blue.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/python-3.13.5-blue.svg)](https://python.org)
-[![Tests](https://img.shields.io/badge/tests-40%20passed-brightgreen.svg)](#testing)
+[![Tests](https://img.shields.io/badge/tests-182%20cases-brightgreen.svg)](#testing)
 
 **A modern graphical user interface (GUI) for ClamAV antivirus scanning, designed for the xanadOS operating system (WIP) but works on all Linux distros.**
 
@@ -207,10 +207,10 @@ python app/main.py          # Run in development mode
 
 | Document | Description |
 |----------|-------------|
-| 📖 **[Complete Documentation](docs/README.md)** | Full project overview and features |
-| 🔨 **[Build Instructions](docs/BUILD.md)** | Detailed build and installation guide |
-| 📋 **[Implementation Summary](docs/IMPLEMENTATION_SUMMARY.md)** | Technical implementation details |
-| 📊 **[Build Status](docs/PRE_BUILD_SUMMARY.md)** | Current build readiness status |
+| 📖 **[Development Guide](docs/DEVELOPMENT.md)** | Development setup and contribution guide |
+| 🤖 **[Copilot Setup](docs/COPILOT_SETUP.md)** | GitHub Copilot configuration and guidelines |
+| 📋 **[Implementation History](docs/implementation-history/)** | Historical implementation summaries and fixes |
+| � **[Changelog](CHANGELOG.md)** | Version history and recent changes |
 
 ---
 
@@ -244,11 +244,28 @@ python app/main.py          # Run in development mode
 │   │   └── 📄 scan_reports.py         # Report generation and export
 │   └── 🚀 main.py       # Application entry point
 ├── 📦 packaging/        # Distribution and packaging files
+│   ├── 📁 flatpak/      # Flatpak configuration and build files
+│   ├── 🖼️ icons/         # Application icons (PNG, SVG)
+│   └── 🖥️ desktop/       # Desktop integration files
 ├── 📊 data/             # Runtime data directories
-├── 🧪 tests/            # Comprehensive test suite (177 test files)
+│   ├── 📝 logs/         # Application and scan logs
+│   ├── 🔒 quarantine/   # Quarantined threat files
+│   ├── 📋 reports/      # Generated scan reports
+│   └── 💾 cache/        # Temporary cache files
+├── 🧪 tests/            # Comprehensive test suite
+│   ├── 🔬 unit/         # Unit tests for individual components
+│   └── 🔗 integration/  # Integration and system tests
 ├── 📚 docs/             # Documentation and guides
-├── 🔧 scripts/          # Build and utility scripts
+│   ├── � DEVELOPMENT.md         # Development setup guide
+│   ├── 🤖 COPILOT_SETUP.md      # GitHub Copilot configuration
+│   └── 📋 implementation-history/ # Implementation summaries
+├── �🔧 scripts/          # Build and utility scripts
+│   ├── 🚀 prepare-build.sh      # Build environment setup
+│   ├── ✅ verify-build.sh       # Build verification
+│   ├── 🐍 activate.sh           # Virtual environment activation
+│   └── 🔒 setup-security.sh     # Security configuration
 └── ⚙️ config/           # Configuration files and policies
+    └── 🔐 org.xanados.searchanddestroy.policy # System security policy
 ```
 
 ---
@@ -287,13 +304,38 @@ python app/main.py          # Run in development mode
 
 ---
 
+## 🔄 Recent Updates
+
+### 🧹 **Repository Cleanup (August 2025)**
+- ✅ **Restructured project** for better organization and maintainability
+- ✅ **Consolidated packaging** files into `packaging/` directory
+- ✅ **Fixed import paths** throughout the codebase
+- ✅ **Cleaned duplicate** files and obsolete directories
+- ✅ **Updated build system** to use new directory structure
+- ✅ **Corrected icon paths** for proper GUI display
+- ✅ **Fixed window icon** display in application window and system tray
+
+### 🛠️ **Path Corrections**
+- 📁 Icons moved from `icons/` → `packaging/icons/`
+- 📦 Flatpak files moved to `packaging/flatpak/`
+- 📚 Implementation docs organized in `docs/implementation-history/`
+- 🧪 Tests reorganized with unit and integration separation
+
+### 🎯 **Improved Organization**
+- 🗂️ **Cleaner structure**: Reduced top-level directories from 13 to 8
+- 🔗 **Better imports**: Fixed all relative import paths
+- 📦 **Unified packaging**: All distribution files in one location
+- 🧪 **Better testing**: Organized test suite with clear categories
+
+---
+
 ## 🧪 Testing
 
 <div align="center">
 
 **📊 Test Statistics**
 ```
-177 Test Files | 40 Tests Passed | 2 Skipped | 95.2% Success Rate
+11 Test Files | 182 Test Cases | 95.2% Success Rate
 ```
 
 </div>
@@ -399,6 +441,83 @@ export XANADOS_SD_TEMP_PATH="/tmp/sd_temp"         # Temporary files
 - **🛡️ Security Ethics** - Transparency in security tools
 - **🤝 Community Development** - Collaborative improvement
 - **⚖️ Patent Protection** - Explicit licensing and protection
+
+---
+
+## 🛠️ Troubleshooting
+
+### 🔍 **Common Issues**
+
+<details>
+<summary><strong>🐍 Python/PyQt6 Installation Issues</strong></summary>
+
+**Problem**: `ImportError: No module named 'PyQt6'`
+```bash
+# Solution: Install PyQt6 in virtual environment
+source .venv/bin/activate
+pip install PyQt6>=6.5.0
+```
+
+**Problem**: `qt.qpa.plugin: Could not load the Qt platform plugin`
+```bash
+# Solution: Install Qt platform plugins
+sudo apt-get install qt6-base-dev qt6-wayland
+```
+
+</details>
+
+<details>
+<summary><strong>🦠 ClamAV Configuration Issues</strong></summary>
+
+**Problem**: `pyclamd.ConnectionError: Could not connect to clamd server`
+```bash
+# Solution: Start ClamAV daemon
+sudo systemctl start clamav-daemon
+sudo systemctl enable clamav-daemon
+```
+
+**Problem**: `Database outdated` warnings
+```bash
+# Solution: Update virus definitions
+sudo freshclam
+```
+
+</details>
+
+<details>
+<summary><strong>🔧 Build and Installation Issues</strong></summary>
+
+**Problem**: Flatpak build fails
+```bash
+# Solution: Check flatpak-builder is installed
+sudo apt install flatpak-builder
+# Verify all required dependencies
+./scripts/verify-build.sh
+```
+
+**Problem**: Icon not displaying in GUI
+```bash
+# Solution: Verify icon paths (automatically fixed in recent update)
+ls -la packaging/icons/org.xanados.SearchAndDestroy*.png
+```
+
+</details>
+
+<details>
+<summary><strong>🔒 Permission Issues</strong></summary>
+
+**Problem**: `Permission denied` when scanning system directories
+```bash
+# Solution: Run with appropriate permissions or modify scan paths
+# Note: Full system scanning may require elevated privileges
+```
+
+</details>
+
+### 📞 **Getting Help**
+- 📋 Check existing [GitHub Issues](https://github.com/asafelobotomy/xanadOS-Search_Destroy/issues)
+- 📝 Review the [Development Guide](docs/DEVELOPMENT.md)
+- 🐛 Report bugs with detailed error messages and system information
 
 ---
 

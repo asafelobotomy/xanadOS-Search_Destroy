@@ -31,7 +31,7 @@ install:
 
 # Build Flatpak
 build-flatpak:
-	flatpak-builder --force-clean build-dir flatpak/org.xanados.SearchAndDestroy.yml
+	flatpak-builder --force-clean build-dir packaging/flatpak/org.xanados.SearchAndDestroy.yml
 
 # Install Flatpak locally
 install-flatpak: build-flatpak

@@ -42,7 +42,7 @@ fi
 echo "🔗 Checking critical imports..."
 if ./.venv/bin/python -c "
 import sys
-sys.path.insert(0, 'src')
+sys.path.insert(0, 'app')
 try:
     from PyQt6.QtWidgets import QApplication
     import pyclamd

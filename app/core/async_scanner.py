@@ -16,9 +16,9 @@ import psutil
 import threading
 from queue import Queue, Empty
 
-from core.file_scanner import FileScanner
-from core.clamav_wrapper import ScanResult, ScanFileResult
-from core.input_validation import PathValidator, FileSizeMonitor
+from .file_scanner import FileScanner
+from .clamav_wrapper import ScanResult, ScanFileResult
+from .input_validation import PathValidator, FileSizeMonitor
 from utils.config import load_config
 
 @dataclass

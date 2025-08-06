@@ -58,19 +58,19 @@ modules:
   - name: search-and-destroy
     buildsystem: simple
     build-commands:
-      - install -Dm755 flatpak/search-and-destroy.sh /app/bin/search-and-destroy
+      - install -Dm755 packaging/flatpak/search-and-destroy.sh /app/bin/search-and-destroy
       - cp -r app/ /app/lib/search-and-destroy/
-      - install -Dm644 flatpak/org.xanados.SearchAndDestroy.desktop /app/share/applications/org.xanados.SearchAndDestroy.desktop
-      - install -Dm644 flatpak/org.xanados.SearchAndDestroy.metainfo.xml /app/share/metainfo/org.xanados.SearchAndDestroy.metainfo.xml
+      - install -Dm644 packaging/flatpak/org.xanados.SearchAndDestroy.desktop /app/share/applications/org.xanados.SearchAndDestroy.desktop
+      - install -Dm644 packaging/flatpak/org.xanados.SearchAndDestroy.metainfo.xml /app/share/metainfo/org.xanados.SearchAndDestroy.metainfo.xml
       # Install icons if they exist
       - |
-        if [ -f icons/org.xanados.SearchAndDestroy.svg ]; then
-          install -Dm644 icons/org.xanados.SearchAndDestroy.svg /app/share/icons/hicolor/scalable/apps/org.xanados.SearchAndDestroy.svg
+        if [ -f packaging/icons/org.xanados.SearchAndDestroy.svg ]; then
+          install -Dm644 packaging/icons/org.xanados.SearchAndDestroy.svg /app/share/icons/hicolor/scalable/apps/org.xanados.SearchAndDestroy.svg
         fi
       - |
         for size in 16 32 48 64 128; do
-          if [ -f "icons/org.xanados.SearchAndDestroy-${size}.png" ]; then
-            install -Dm644 "icons/org.xanados.SearchAndDestroy-${size}.png" "/app/share/icons/hicolor/${size}x${size}/apps/org.xanados.SearchAndDestroy.png"
+          if [ -f "packaging/icons/org.xanados.SearchAndDestroy-${size}.png" ]; then
+            install -Dm644 "packaging/icons/org.xanados.SearchAndDestroy-${size}.png" "/app/share/icons/hicolor/${size}x${size}/apps/org.xanados.SearchAndDestroy.png"
           fi
         done
     sources:
