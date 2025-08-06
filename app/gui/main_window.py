@@ -370,7 +370,7 @@ class MainWindow(QMainWindow):
                     save_config(self.config)
             else:
                 self.protection_status_label.setText("⚫ Inactive")
-                self.protection_status_label.setStyleSheet("color: white; font-weight: bold; font-size: 12px; padding: 5px;")
+                self.protection_status_label.setStyleSheet("color: red; font-weight: bold; font-size: 12px; padding: 5px;")
                 self.protection_toggle_btn.setText("▶️ Start")
                 print("✅ Protection tab UI updated to Inactive state")
             
@@ -731,7 +731,7 @@ class MainWindow(QMainWindow):
                 else:
                     # Protection is disabled, set inactive status
                     self.protection_status_label.setText("⚫ Inactive")
-                    self.protection_status_label.setStyleSheet("color: white; font-weight: bold; font-size: 12px; padding: 5px;")
+                    self.protection_status_label.setStyleSheet("color: red; font-weight: bold; font-size: 12px; padding: 5px;")
                     if hasattr(self, 'protection_toggle_btn'):
                         self.protection_toggle_btn.setText("▶️ Start")
             
@@ -780,7 +780,7 @@ class MainWindow(QMainWindow):
             # Set initial status to Inactive when monitoring is disabled by default
             if hasattr(self, 'protection_status_label'):
                 self.protection_status_label.setText("⚫ Inactive")
-                self.protection_status_label.setStyleSheet("color: white; font-weight: bold; font-size: 12px; padding: 5px;")
+                self.protection_status_label.setStyleSheet("color: red; font-weight: bold; font-size: 12px; padding: 5px;")
                 
         except Exception as e:
             self.add_activity_message(f"❌ Failed to initialize monitoring: {e}")
@@ -848,7 +848,7 @@ class MainWindow(QMainWindow):
             if self.real_time_monitor:
                 self.real_time_monitor.stop()
                 self.protection_status_label.setText("⚫ Inactive")
-                self.protection_status_label.setStyleSheet("color: white; font-weight: bold; font-size: 12px; padding: 5px;")
+                self.protection_status_label.setStyleSheet("color: red; font-weight: bold; font-size: 12px; padding: 5px;")
                 self.protection_toggle_btn.setText("▶️ Start")
                 self.add_activity_message("⏹️ Real-time protection stopped")
                 self.status_bar.showMessage("Real-time protection stopped")
