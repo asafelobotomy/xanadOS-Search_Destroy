@@ -112,7 +112,8 @@ def get_default_config() -> Dict[str, Any]:
             "auto_update_definitions": True,
             "notifications_enabled": True,
             "minimize_to_tray": True,
-            "show_scan_progress": True
+            "show_scan_progress": True,
+            "activity_log_retention": 100  # Number of recent activity messages to retain
         },
         "security_settings": {
             "quarantine_enabled": True,

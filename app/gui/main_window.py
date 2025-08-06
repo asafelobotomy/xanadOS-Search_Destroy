@@ -9,9 +9,9 @@ from PyQt6.QtWidgets import (QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
                              QTabWidget, QGroupBox, QListWidget, QListWidgetItem,
                              QSplitter, QFrame, QStatusBar, QMenuBar, QMenu,
                              QFileDialog, QMessageBox, QSystemTrayIcon, QProgressDialog,
-                             QCheckBox, QSpinBox, QFormLayout, QScrollArea, QDialog)
+                             QCheckBox, QSpinBox, QFormLayout, QScrollArea, QDialog, QComboBox)
 from PyQt6.QtCore import Qt, QTimer, pyqtSignal
-from PyQt6.QtGui import QIcon, QFont, QPixmap, QAction, QShortcut, QKeySequence, QMouseEvent
+from PyQt6.QtGui import QIcon, QFont, QPixmap, QAction, QShortcut, QKeySequence, QMouseEvent, QWheelEvent
 
 from gui.scan_thread import ScanThread
 from gui.rkhunter_components import RKHunterScanDialog, RKHunterScanThread
@@ -30,6 +30,17 @@ class ClickableFrame(QFrame):
         if event.button() == Qt.MouseButton.LeftButton:
             self.clicked.emit()
         super().mousePressEvent(event)
+
+
+class NoWheelComboBox(QComboBox):
+    """A QComboBox that ignores wheel events to prevent accidental changes."""
+    
+    def wheelEvent(self, event: QWheelEvent):
+        """Ignore wheel events when the combo box doesn't have focus."""
+        if not self.hasFocus():
+            event.ignore()
+        else:
+            super().wheelEvent(event)
 
 
 class MainWindow(QMainWindow):
@@ -65,6 +76,14 @@ class MainWindow(QMainWindow):
         QTimer.singleShot(200, self.update_protection_ui_after_init)
         # Add a safety net timer to ensure status is never left as "Initializing..."
         QTimer.singleShot(1000, self.ensure_protection_status_final)
+        
+        # Load persisted activity logs after UI is created
+        QTimer.singleShot(500, self.load_activity_logs)
+        
+        # Set up periodic activity log saving (every 30 seconds)
+        self.activity_save_timer = QTimer()
+        self.activity_save_timer.timeout.connect(self.save_activity_logs)
+        self.activity_save_timer.start(30000)  # 30 seconds
         
     def get_theme_color(self, color_type):
         """Get theme-appropriate color for any UI element."""
@@ -717,6 +736,15 @@ class MainWindow(QMainWindow):
         self.settings_show_notifications_cb.setMinimumHeight(35)
         ui_layout.addRow(self.settings_show_notifications_cb)
         
+        # Activity log retention setting
+        self.settings_activity_retention_combo = NoWheelComboBox()
+        self.settings_activity_retention_combo.addItems(["10", "25", "50", "100", "200"])
+        self.settings_activity_retention_combo.setCurrentText("100")  # Default to 100
+        self.settings_activity_retention_combo.setMinimumHeight(35)
+        self.settings_activity_retention_combo.setToolTip("Number of recent activity messages to retain between sessions")
+        self.settings_activity_retention_combo.currentTextChanged.connect(self.on_retention_setting_changed)
+        ui_layout.addRow(QLabel("Activity Log Retention:"), self.settings_activity_retention_combo)
+        
         scroll_layout.addWidget(ui_group)
         
         # SECURITY SETTINGS SECTION
@@ -939,18 +967,18 @@ class MainWindow(QMainWindow):
         
         select_all_btn = QPushButton("Select All")
         select_all_btn.clicked.connect(self.select_all_rkhunter_categories)
-        select_all_btn.setMaximumWidth(100)
+        select_all_btn.setMaximumWidth(150)
         select_all_btn.setMinimumHeight(35)
         
         select_recommended_btn = QPushButton("Recommended")
         select_recommended_btn.clicked.connect(self.select_recommended_rkhunter_categories)
         select_recommended_btn.setToolTip("Select recommended test categories for most users")
-        select_recommended_btn.setMaximumWidth(100)
+        select_recommended_btn.setMaximumWidth(150)
         select_recommended_btn.setMinimumHeight(35)
         
         select_none_btn = QPushButton("Select None")
         select_none_btn.clicked.connect(self.select_no_rkhunter_categories)
-        select_none_btn.setMaximumWidth(100)
+        select_none_btn.setMaximumWidth(150)
         select_none_btn.setMinimumHeight(35)
         
         quick_select_layout.addWidget(select_all_btn)
@@ -1025,10 +1053,28 @@ class MainWindow(QMainWindow):
         left_panel = QVBoxLayout()
         activity_group = QGroupBox("Recent Activity")
         activity_layout = QVBoxLayout(activity_group)
+        activity_layout.setSpacing(10)  # Add spacing between elements
+        activity_layout.setContentsMargins(10, 10, 10, 15)  # Add bottom margin for button
         
         self.activity_list = QListWidget()
-        self.activity_list.setMinimumHeight(400)  # Give it substantial height
+        self.activity_list.setMinimumHeight(350)  # Reduce height to make room for button
         activity_layout.addWidget(self.activity_list)
+        
+        # Add Clear Logs button with proper spacing
+        clear_logs_btn = QPushButton("Clear Logs")
+        clear_logs_btn.clicked.connect(self.clear_activity_logs)
+        clear_logs_btn.setMinimumHeight(35)
+        clear_logs_btn.setMaximumWidth(120)
+        clear_logs_btn.setObjectName("dangerButton")
+        clear_logs_btn.setToolTip("Clear all activity logs from both Protection tab and Dashboard")
+        
+        # Center the button with proper spacing
+        button_layout = QHBoxLayout()
+        button_layout.setContentsMargins(0, 10, 0, 0)  # Add top margin
+        button_layout.addStretch()
+        button_layout.addWidget(clear_logs_btn)
+        button_layout.addStretch()
+        activity_layout.addLayout(button_layout)
         
         left_panel.addWidget(activity_group)
         left_panel.addStretch()
@@ -1331,6 +1377,9 @@ class MainWindow(QMainWindow):
                 self.add_activity_message("✅ Real-time protection started")
                 self.status_bar.showMessage("Real-time protection active")
                 
+                # Save activity logs immediately for important events
+                self.save_activity_logs()
+                
                 # Save user preference
                 self.monitoring_enabled = True
                 if 'security_settings' not in self.config:
@@ -1381,8 +1430,11 @@ class MainWindow(QMainWindow):
                 self.protection_status_label.setText("🔴 Inactive")
                 self.protection_status_label.setStyleSheet(f"color: {self.get_theme_color('error')}; font-weight: bold; font-size: 12px; padding: 5px;")
                 self.protection_toggle_btn.setText("Start")
-                self.add_activity_message("Real-time protection stopped")
-                self.status_bar.showMessage("Real-time protection stopped")
+                self.add_activity_message("🛑 Real-time protection stopped")
+                self.status_bar.showMessage("🛑 Real-time protection stopped")
+                
+                # Save activity logs immediately for important events
+                self.save_activity_logs()
                 
                 # Save user preference
                 self.monitoring_enabled = False
@@ -1446,14 +1498,17 @@ class MainWindow(QMainWindow):
         timestamp = datetime.now().strftime("%H:%M:%S")
         full_message = f"[{timestamp}] {message}"
         
+        # Get current retention setting
+        retention = self.get_activity_retention_setting()
+        
         # Add to main activity list if it exists
         if hasattr(self, 'activity_list'):
             # Add to top of list
             item = QListWidgetItem(full_message)
             self.activity_list.insertItem(0, item)
             
-            # Keep only last 100 items
-            while self.activity_list.count() > 100:
+            # Keep only last N items based on retention setting
+            while self.activity_list.count() > retention:
                 self.activity_list.takeItem(self.activity_list.count() - 1)
         
         # Also add to dashboard activity list if it exists
@@ -1465,6 +1520,162 @@ class MainWindow(QMainWindow):
             # Keep only last 20 items on dashboard for brevity
             while self.dashboard_activity.count() > 20:
                 self.dashboard_activity.takeItem(self.dashboard_activity.count() - 1)
+        
+        # Save activity logs periodically (but not on every single message to avoid excessive I/O)
+        # We'll save on app close, settings changes, and periodically
+    
+    def save_activity_logs(self):
+        """Save current activity logs to persistent storage."""
+        try:
+            from utils.config import DATA_DIR
+            activity_log_file = DATA_DIR / 'activity_logs.json'
+            
+            # Get current retention setting
+            retention = self.get_activity_retention_setting()
+            
+            # Collect activity messages from the primary activity list
+            activity_messages = []
+            
+            # Primary activity list (Protection tab) has the full history
+            if hasattr(self, 'activity_list') and self.activity_list.count() > 0:
+                for i in range(min(self.activity_list.count(), retention)):
+                    item = self.activity_list.item(i)
+                    if item:
+                        activity_messages.append(item.text())
+            
+            # Only save if we have messages
+            if activity_messages:
+                # Save to file
+                with open(activity_log_file, 'w', encoding='utf-8') as f:
+                    json.dump({
+                        'timestamp': datetime.now().isoformat(),
+                        'retention_setting': retention,
+                        'messages': activity_messages
+                    }, f, indent=2)
+                print(f"Saved {len(activity_messages)} activity log entries")
+            else:
+                # If no messages, remove the file to start fresh
+                if activity_log_file.exists():
+                    activity_log_file.unlink()
+                
+        except Exception as e:
+            print(f"Failed to save activity logs: {e}")
+    
+    def load_activity_logs(self):
+        """Load persisted activity logs on startup."""
+        try:
+            from utils.config import DATA_DIR
+            activity_log_file = DATA_DIR / 'activity_logs.json'
+            
+            if not activity_log_file.exists():
+                return
+            
+            with open(activity_log_file, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+            
+            messages = data.get('messages', [])
+            if not messages:
+                return
+            
+            # Get current retention setting from config (not UI which may not be ready yet)
+            retention = self.config.get('ui_settings', {}).get('activity_log_retention', 100)
+            
+            # Limit messages to current retention setting
+            messages = messages[:retention]
+            
+            # Clear existing lists first
+            if hasattr(self, 'activity_list'):
+                self.activity_list.clear()
+            if hasattr(self, 'dashboard_activity'):
+                self.dashboard_activity.clear()
+            
+            # Add messages in correct chronological order (newest first, as they were saved)
+            for message in messages:
+                if hasattr(self, 'activity_list'):
+                    item = QListWidgetItem(message)
+                    self.activity_list.addItem(item)
+                
+                # Add to dashboard activity (limited to 20 items)
+                if hasattr(self, 'dashboard_activity') and self.dashboard_activity.count() < 20:
+                    item = QListWidgetItem(message)
+                    self.dashboard_activity.addItem(item)
+            
+            print(f"Loaded {len(messages)} activity log entries")
+            
+        except Exception as e:
+            print(f"Failed to load activity logs: {e}")
+    
+    def get_activity_retention_setting(self):
+        """Get the current activity retention setting."""
+        if hasattr(self, 'settings_activity_retention_combo'):
+            return int(self.settings_activity_retention_combo.currentText())
+        return self.config.get('ui_settings', {}).get('activity_log_retention', 100)
+    
+    def clear_activity_logs(self):
+        """Clear all activity logs from both Protection tab and Dashboard."""
+        try:
+            # Show confirmation dialog
+            reply = self.show_themed_message_box(
+                "question", 
+                "Clear Activity Logs", 
+                "Are you sure you want to clear all activity logs?\n\n"
+                "This will remove all activity entries from both the Protection tab and Dashboard.\n"
+                "This action cannot be undone.",
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+            )
+            
+            if reply == QMessageBox.StandardButton.Yes:
+                # Clear both activity lists
+                if hasattr(self, 'activity_list'):
+                    self.activity_list.clear()
+                    
+                if hasattr(self, 'dashboard_activity'):
+                    self.dashboard_activity.clear()
+                
+                # Remove the saved activity log file
+                try:
+                    from utils.config import DATA_DIR
+                    activity_log_file = DATA_DIR / 'activity_logs.json'
+                    if activity_log_file.exists():
+                        activity_log_file.unlink()
+                except Exception as e:
+                    print(f"Warning: Could not remove activity log file: {e}")
+                
+                # Add a confirmation message to the logs
+                self.add_activity_message("🗑️ Activity logs cleared by user")
+                
+                # Show success message
+                self.show_themed_message_box(
+                    "information",
+                    "Logs Cleared",
+                    "All activity logs have been cleared successfully."
+                )
+                
+        except Exception as e:
+            print(f"Error clearing activity logs: {e}")
+            self.show_themed_message_box(
+                "warning",
+                "Error",
+                f"Failed to clear activity logs: {str(e)}"
+            )
+    
+    def on_retention_setting_changed(self, new_value):
+        """Handle changes to the activity log retention setting."""
+        try:
+            new_retention = int(new_value)
+            
+            # Trim current activity lists to new size
+            if hasattr(self, 'activity_list'):
+                while self.activity_list.count() > new_retention:
+                    self.activity_list.takeItem(self.activity_list.count() - 1)
+            
+            # Save settings immediately when changed
+            self.config['ui_settings']['activity_log_retention'] = new_retention
+            from utils.config import save_config
+            save_config(self.config)
+            
+        except ValueError:
+            print(f"Invalid retention value: {new_value}")
     
     def update_monitoring_statistics(self):
         """Update the monitoring statistics display."""
@@ -2407,6 +2618,71 @@ class MainWindow(QMainWindow):
                 background-color: #2a2a2a;
             }
             
+            QComboBox {
+                background-color: #3a3a3a;
+                border: 2px solid #EE8980;
+                border-radius: 6px;
+                padding: 8px 12px;
+                color: #FFCDAA;
+                font-weight: 500;
+                font-size: 12px;
+                min-width: 120px;
+            }
+            
+            QComboBox:focus {
+                border-color: #F14666;
+                background-color: #2a2a2a;
+            }
+            
+            QComboBox:hover {
+                border-color: #F14666;
+            }
+            
+            QComboBox::drop-down {
+                subcontrol-origin: padding;
+                subcontrol-position: top right;
+                width: 25px;
+                border-left-width: 1px;
+                border-left-color: #EE8980;
+                border-left-style: solid;
+                border-top-right-radius: 4px;
+                border-bottom-right-radius: 4px;
+                background-color: #4a4a4a;
+            }
+            
+            QComboBox::drop-down:hover {
+                background-color: #F14666;
+            }
+            
+            QComboBox::down-arrow {
+                image: none;
+                border-left: 4px solid transparent;
+                border-right: 4px solid transparent;
+                border-top: 6px solid #FFCDAA;
+                width: 0px;
+                height: 0px;
+            }
+            
+            QComboBox QAbstractItemView {
+                background-color: #2a2a2a;
+                border: 2px solid #EE8980;
+                border-radius: 6px;
+                color: #FFCDAA;
+                selection-background-color: #F14666;
+                selection-color: #ffffff;
+                outline: none;
+            }
+            
+            QComboBox QAbstractItemView::item {
+                padding: 8px 12px;
+                min-height: 20px;
+            }
+            
+            QComboBox QAbstractItemView::item:hover {
+                background-color: #EE8980;
+                color: #ffffff;
+            }
+            
             QSpinBox::up-button, QSpinBox::down-button {
                 background-color: #EE8980;
                 border: none;
@@ -2916,6 +3192,71 @@ class MainWindow(QMainWindow):
             QSpinBox:focus {
                 border-color: #F8BC9B;
                 background-color: #f8f8f8;
+            }
+            
+            QComboBox {
+                background-color: #ffffff;
+                border: 2px solid #75BDE0;
+                border-radius: 6px;
+                padding: 8px 12px;
+                color: #333333;
+                font-weight: 500;
+                font-size: 12px;
+                min-width: 120px;
+            }
+            
+            QComboBox:focus {
+                border-color: #F8BC9B;
+                background-color: #f8f8f8;
+            }
+            
+            QComboBox:hover {
+                border-color: #F8BC9B;
+            }
+            
+            QComboBox::drop-down {
+                subcontrol-origin: padding;
+                subcontrol-position: top right;
+                width: 25px;
+                border-left-width: 1px;
+                border-left-color: #75BDE0;
+                border-left-style: solid;
+                border-top-right-radius: 4px;
+                border-bottom-right-radius: 4px;
+                background-color: #f0f0f0;
+            }
+            
+            QComboBox::drop-down:hover {
+                background-color: #F8BC9B;
+            }
+            
+            QComboBox::down-arrow {
+                image: none;
+                border-left: 4px solid transparent;
+                border-right: 4px solid transparent;
+                border-top: 6px solid #333333;
+                width: 0px;
+                height: 0px;
+            }
+            
+            QComboBox QAbstractItemView {
+                background-color: #ffffff;
+                border: 2px solid #75BDE0;
+                border-radius: 6px;
+                color: #333333;
+                selection-background-color: #F8BC9B;
+                selection-color: #2c2c2c;
+                outline: none;
+            }
+            
+            QComboBox QAbstractItemView::item {
+                padding: 8px 12px;
+                min-height: 20px;
+            }
+            
+            QComboBox QAbstractItemView::item:hover {
+                background-color: #75BDE0;
+                color: #ffffff;
             }
             
             QSpinBox::up-button, QSpinBox::down-button {
@@ -4040,6 +4381,12 @@ class MainWindow(QMainWindow):
             except Exception:
                 pass  # Ignore errors during shutdown
         
+        # Save activity logs before closing
+        try:
+            self.save_activity_logs()
+        except Exception as e:
+            print(f"Warning: Failed to save activity logs on close: {e}")
+        
         # Accept the close event (actually close the application)
         event.accept()
         
@@ -4816,6 +5163,10 @@ class MainWindow(QMainWindow):
             self.settings_minimize_to_tray_cb.setChecked(ui_settings.get('minimize_to_tray', True))
             self.settings_show_notifications_cb.setChecked(ui_settings.get('show_notifications', True))
             
+            # Activity log retention setting
+            retention = str(ui_settings.get('activity_log_retention', 100))
+            self.settings_activity_retention_combo.setCurrentText(retention)
+            
             # Security settings
             security_settings = self.config.get('security_settings', {})
             self.settings_auto_update_cb.setChecked(security_settings.get('auto_update_definitions', True))
@@ -4883,6 +5234,7 @@ class MainWindow(QMainWindow):
             
             self.config['ui_settings']['minimize_to_tray'] = self.settings_minimize_to_tray_cb.isChecked()
             self.config['ui_settings']['show_notifications'] = self.settings_show_notifications_cb.isChecked()
+            self.config['ui_settings']['activity_log_retention'] = int(self.settings_activity_retention_combo.currentText())
             
             self.config['security_settings']['auto_update_definitions'] = self.settings_auto_update_cb.isChecked()
             
