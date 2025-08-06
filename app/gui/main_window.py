@@ -29,7 +29,7 @@ class MainWindow(QMainWindow):
         
         # Initialize real-time monitoring
         self.real_time_monitor = None
-        self.monitoring_enabled = self.config.get('real_time_protection', True)
+        self.monitoring_enabled = self.config.get('security_settings', {}).get('real_time_protection', False)
         
         # Theme management - default to dark mode
         self.current_theme = self.config.get('theme', 'dark')
@@ -417,6 +417,10 @@ class MainWindow(QMainWindow):
             # Auto-start if enabled
             if self.monitoring_enabled:
                 QTimer.singleShot(2000, self.start_real_time_protection)
+            else:
+                # Set initial status to Inactive when monitoring is disabled by default
+                self.protection_status_label.setText("⚫ Inactive")
+                self.protection_status_label.setStyleSheet("color: white; font-weight: bold; font-size: 12px; padding: 5px;")
                 
         except Exception as e:
             self.add_activity_message(f"❌ Failed to initialize monitoring: {e}")
@@ -439,6 +443,13 @@ class MainWindow(QMainWindow):
                 self.add_activity_message("✅ Real-time protection started")
                 self.status_bar.showMessage("Real-time protection active")
                 
+                # Save user preference
+                self.monitoring_enabled = True
+                if 'security_settings' not in self.config:
+                    self.config['security_settings'] = {}
+                self.config['security_settings']['real_time_protection'] = True
+                save_config(self.config)
+                
                 # Update paths list
                 self.update_paths_list()
             else:
@@ -458,11 +469,18 @@ class MainWindow(QMainWindow):
         try:
             if self.real_time_monitor:
                 self.real_time_monitor.stop()
-                self.protection_status_label.setText("⏹️ Stopped")
-                self.protection_status_label.setStyleSheet("color: orange; font-weight: bold; font-size: 12px; padding: 5px;")
+                self.protection_status_label.setText("⚫ Inactive")
+                self.protection_status_label.setStyleSheet("color: white; font-weight: bold; font-size: 12px; padding: 5px;")
                 self.protection_toggle_btn.setText("▶️ Start")
                 self.add_activity_message("⏹️ Real-time protection stopped")
                 self.status_bar.showMessage("Real-time protection stopped")
+                
+                # Save user preference
+                self.monitoring_enabled = False
+                if 'security_settings' not in self.config:
+                    self.config['security_settings'] = {}
+                self.config['security_settings']['real_time_protection'] = False
+                save_config(self.config)
                 
         except Exception as e:
             self.add_activity_message(f"❌ Error stopping protection: {e}")

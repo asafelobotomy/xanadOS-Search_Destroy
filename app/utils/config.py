@@ -118,7 +118,7 @@ def get_default_config() -> Dict[str, Any]:
             "quarantine_enabled": True,
             "auto_quarantine_threats": False,
             "scan_removable_media": True,
-            "real_time_protection": False
+            "real_time_protection": False  # Default: OFF - User can enable for continuous monitoring
         },
         "advanced_settings": {
             "signature_sources": [
