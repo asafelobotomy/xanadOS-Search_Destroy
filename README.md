@@ -10,7 +10,7 @@
 [![Python](https://img.shields.io/badge/python-3.13.5-blue.svg)](https://python.org)
 [![Tests](https://img.shields.io/badge/tests-40%20passed-brightgreen.svg)](#testing)
 
-**A modern graphical user interface (GUI) for ClamAV antivirus scanning, designed for the xanadOS operating system (WIP).**
+**A modern graphical user interface (GUI) for ClamAV antivirus scanning, designed for the xanadOS operating system (WIP) but works on all Linux distros.**
 
 S&D (Search & Destroy) provides a user-friendly interface to the powerful ClamAV antivirus engine, enabling easy virus scanning, quarantine management, and threat reporting for Linux systems.
 
