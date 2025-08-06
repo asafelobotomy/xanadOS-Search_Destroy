@@ -41,6 +41,21 @@ except ImportError:
     # Security modules may not be available in all environments
     pass
 
+# Advanced feature modules (optional dependencies)
+try:
+    from .automatic_updates import AutoUpdateSystem, UpdateType, UpdateStatus
+    from .advanced_reporting import AdvancedReportingSystem, ReportType, ReportFormat
+    from .web_protection import WebProtectionSystem, ThreatCategory, URLReputation
+    from .system_service import SystemServiceManager, ServiceState, ServiceConfig
+    from .real_time_protection import RealTimeProtectionEngine, ProtectionState, ThreatLevel
+    from .multi_language_support import MultiLanguageSupport, SupportedLanguage
+    from .heuristic_analysis import HeuristicAnalysisEngine, HeuristicType, RiskLevel
+    from .cloud_integration import CloudIntegrationSystem, CloudProvider, ThreatIntelSource
+except ImportError as e:
+    # Advanced modules may not be available due to missing dependencies
+    import logging
+    logging.getLogger(__name__).warning(f"Some advanced features unavailable: {e}")
+
 __all__ = [
     # Core scanning
     'FileScanner',
@@ -61,5 +76,29 @@ __all__ = [
     'initialize_responsive_ui',
     'get_responsive_ui',
     'get_scan_progress',
-    'get_loading_indicator'
+    'get_loading_indicator',
+    # Advanced features (if available)
+    'AutoUpdateSystem',
+    'UpdateType',
+    'UpdateStatus',
+    'AdvancedReportingSystem',
+    'ReportType',
+    'ReportFormat',
+    'WebProtectionSystem',
+    'ThreatCategory',
+    'URLReputation',
+    'SystemServiceManager',
+    'ServiceState',
+    'ServiceConfig',
+    'RealTimeProtectionEngine',
+    'ProtectionState',
+    'ThreatLevel',
+    'MultiLanguageSupport',
+    'SupportedLanguage',
+    'HeuristicAnalysisEngine',
+    'HeuristicType',
+    'RiskLevel',
+    'CloudIntegrationSystem',
+    'CloudProvider',
+    'ThreatIntelSource'
 ]

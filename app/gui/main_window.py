@@ -1069,6 +1069,17 @@ class MainWindow(QMainWindow):
                 
                 # Update paths list
                 self.update_paths_list()
+                
+                # Start or restart the statistics timer
+                if hasattr(self, 'stats_timer'):
+                    self.stats_timer.start(5000)  # Update every 5 seconds
+                else:
+                    self.stats_timer = QTimer()
+                    self.stats_timer.timeout.connect(self.update_monitoring_statistics)
+                    self.stats_timer.start(5000)
+                
+                # Update statistics immediately to show current state
+                self.update_monitoring_statistics()
             else:
                 self.protection_status_label.setText("❌ Failed")
                 self.protection_status_label.setStyleSheet("color: #F14666; font-weight: bold; font-size: 12px; padding: 5px;")
@@ -1108,6 +1119,20 @@ class MainWindow(QMainWindow):
                 
                 # Update dashboard card to reflect the change
                 self.update_protection_status_card()
+                
+                # Stop the statistics timer when protection is stopped
+                if hasattr(self, 'stats_timer'):
+                    self.stats_timer.stop()
+                
+                # Reset statistics display to show monitoring is stopped
+                if hasattr(self, 'events_processed_label'):
+                    self.events_processed_label.setText("0")
+                if hasattr(self, 'threats_detected_label'):
+                    self.threats_detected_label.setText("0")
+                if hasattr(self, 'scans_performed_label'):
+                    self.scans_performed_label.setText("0")
+                if hasattr(self, 'uptime_label'):
+                    self.uptime_label.setText("00:00:00")
                 
         except (AttributeError, RuntimeError) as e:
             self.add_activity_message(f"❌ Error stopping protection: {e}")
@@ -1174,21 +1199,50 @@ class MainWindow(QMainWindow):
                 stats = self.real_time_monitor.get_statistics()
                 monitor_stats = stats.get('monitor', {})
                 
-                self.events_processed_label.setText(str(monitor_stats.get('events_processed', 0)))
-                self.threats_detected_label.setText(str(monitor_stats.get('threats_detected', 0)))
-                self.scans_performed_label.setText(str(monitor_stats.get('scans_performed', 0)))
+                # Update each statistic with null checking
+                if hasattr(self, 'events_processed_label'):
+                    events = monitor_stats.get('events_processed', 0)
+                    self.events_processed_label.setText(str(events))
                 
-                uptime = monitor_stats.get('uptime_seconds', 0)
-                if uptime > 0:
-                    hours = int(uptime // 3600)
-                    minutes = int((uptime % 3600) // 60)
-                    seconds = int(uptime % 60)
-                    self.uptime_label.setText(f"{hours:02d}:{minutes:02d}:{seconds:02d}")
-                else:
-                    self.uptime_label.setText("00:00:00")
+                if hasattr(self, 'threats_detected_label'):
+                    threats = monitor_stats.get('threats_detected', 0)
+                    self.threats_detected_label.setText(str(threats))
+                
+                if hasattr(self, 'scans_performed_label'):
+                    scans = monitor_stats.get('scans_performed', 0)
+                    self.scans_performed_label.setText(str(scans))
+                
+                if hasattr(self, 'uptime_label'):
+                    uptime = monitor_stats.get('uptime_seconds', 0)
+                    if uptime > 0:
+                        hours = int(uptime // 3600)
+                        minutes = int((uptime % 3600) // 60)
+                        seconds = int(uptime % 60)
+                        self.uptime_label.setText(f"{hours:02d}:{minutes:02d}:{seconds:02d}")
+                    else:
+                        self.uptime_label.setText("00:00:00")
+                        
+                # Also update the dashboard cards with current statistics
+                if hasattr(self, 'threats_card'):
+                    threats = monitor_stats.get('threats_detected', 0)
+                    for child in self.threats_card.findChildren(QLabel):
+                        if child.objectName() == "cardValue":
+                            child.setText(str(threats))
+                            break
                     
-            except (AttributeError, ValueError):
-                pass  # Silently handle statistics update errors
+            except (AttributeError, ValueError, KeyError) as e:
+                # Log the error for debugging but don't crash the UI
+                print(f"⚠️ Error updating monitoring statistics: {e}")
+        else:
+            # If monitor is not available, ensure all statistics show 0
+            if hasattr(self, 'events_processed_label'):
+                self.events_processed_label.setText("0")
+            if hasattr(self, 'threats_detected_label'):
+                self.threats_detected_label.setText("0")
+            if hasattr(self, 'scans_performed_label'):
+                self.scans_performed_label.setText("0")
+            if hasattr(self, 'uptime_label'):
+                self.uptime_label.setText("00:00:00")
     
     def update_paths_list(self):
         """Update the monitored paths list."""
@@ -2779,25 +2833,22 @@ class MainWindow(QMainWindow):
         if hasattr(self, 'last_scan_card'):
             try:
                 # Get the most recent scan report from the reports directory
-                from pathlib import Path as ReportPath
-                reports_dir = ReportPath.home() / ".local/share/search-and-destroy/scan_reports/daily"
+                reports_dir = Path.home() / ".local/share/search-and-destroy/scan_reports/daily"
                 if reports_dir.exists():
                     report_files = list(reports_dir.glob("scan_*.json"))
                     if report_files:
                         # Get the most recent file
                         latest_file = max(report_files, key=lambda p: p.stat().st_mtime)
                         try:
-                            import json as json_module
-                            with open(latest_file, 'r') as f:
-                                report_data = json_module.load(f)
+                            with open(latest_file, 'r', encoding='utf-8') as f:
+                                report_data = json.load(f)
                             
                             scan_time = report_data.get('scan_metadata', {}).get('timestamp', '')
                             if scan_time:
-                                from datetime import datetime as dt_module
                                 try:
-                                    scan_date = dt_module.fromisoformat(scan_time.replace('Z', '+00:00'))
+                                    scan_date = datetime.fromisoformat(scan_time.replace('Z', '+00:00'))
                                     formatted_date = scan_date.strftime("%m/%d %H:%M")
-                                except:
+                                except (ValueError, AttributeError):
                                     formatted_date = "Recently"
                             else:
                                 formatted_date = "Recently"
@@ -2917,8 +2968,6 @@ class MainWindow(QMainWindow):
                 
         except (OSError, IOError, json.JSONDecodeError) as e:
             print(f"Error saving scan report: {e}")
-        except Exception as e:
-            print(f"Unexpected error saving scan report: {e}")
         
         # Display the results in the UI
         self.display_scan_results(result)
@@ -3026,7 +3075,7 @@ class MainWindow(QMainWindow):
                     print("Warning: Scan thread did not terminate gracefully")
                 
                 self.scan_completed({'status': 'cancelled', 'message': 'Quick scan cancelled by user'})
-        except Exception as e:
+        except (RuntimeError, AttributeError) as e:
             print(f"Error stopping quick scan: {e}")
         finally:
             # Always reset button state
@@ -3100,12 +3149,8 @@ class MainWindow(QMainWindow):
                         self.update_progress = 100
                         self.update_result = False
                         
-                except (subprocess.CalledProcessError, OSError, FileNotFoundError) as e:
+                except (subprocess.CalledProcessError, OSError, FileNotFoundError, subprocess.TimeoutExpired) as e:
                     self.update_status = f"Error updating definitions: {e}"
-                    self.update_progress = 100
-                    self.update_result = False
-                except Exception as e:
-                    self.update_status = f"Unexpected error updating definitions: {e}"
                     self.update_progress = 100
                     self.update_result = False
             
@@ -3164,7 +3209,7 @@ class MainWindow(QMainWindow):
             timer.timeout.connect(update_progress)
             timer.start(250)  # Update every 250ms
             
-        except Exception as e:
+        except (OSError, IOError, RuntimeError) as e:
             self.show_themed_message_box("critical", "Update Error", f"Could not start update: {e}")
     
     def refresh_quarantine(self):
@@ -3194,7 +3239,7 @@ class MainWindow(QMainWindow):
                 item.setData(Qt.ItemDataRole.UserRole, str(qfile))
                 self.quarantine_list.addItem(item)
                 
-        except Exception as e:
+        except (OSError, IOError, PermissionError) as e:
             self.status_bar.showMessage(f"Error loading quarantine: {e}", 5000)
     
     def show_about(self):
@@ -3254,9 +3299,8 @@ class MainWindow(QMainWindow):
             
             # Try a fallback method using clamscan --version (doesn't require sudo)
             try:
-                import subprocess
                 result = subprocess.run(['clamscan', '--version'], 
-                                      capture_output=True, text=True, timeout=10)
+                                      capture_output=True, text=True, timeout=10, check=False)
                 if result.returncode == 0:
                     # If clamscan works, definitions are probably there, just couldn't access them
                     self.last_update_label.setText("Status: Permissions issue")
@@ -3450,7 +3494,7 @@ class MainWindow(QMainWindow):
                     item.setData(Qt.ItemDataRole.UserRole, scan_id)
                     self.reports_list.addItem(item)
                     
-                except Exception as e:
+                except (OSError, IOError, PermissionError) as e:
                     print(f"Error loading report {report_file}: {e}")
                     
             if self.current_theme == 'dark':
@@ -4140,8 +4184,8 @@ class MainWindow(QMainWindow):
             self.settings_monitor_new_files_cb.setChecked(protection_settings.get('monitor_new_files', True))
             self.settings_scan_modified_cb.setChecked(protection_settings.get('scan_modified_files', False))
             
-        except Exception as e:
-            self.show_themed_message_box("warning", "Warning", f"Could not load settings: {str(e)}")
+        except (OSError, IOError, PermissionError) as e:
+            print(f"Error loading settings: {e}")
             
     def load_default_settings(self):
         """Reset all settings to their default values."""
@@ -4216,5 +4260,5 @@ class MainWindow(QMainWindow):
                 except Exception as monitor_error:
                     print(f"⚠️ Could not update real-time monitor settings: {monitor_error}")
             
-        except Exception as e:
-            self.show_themed_message_box("warning", "Error", f"Could not save settings: {str(e)}")
+        except (OSError, IOError, PermissionError) as e:
+            print(f"Error saving settings: {e}")

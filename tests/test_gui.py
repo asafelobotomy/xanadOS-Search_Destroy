@@ -8,7 +8,7 @@ import os
 import ast
 from unittest.mock import Mock
 
-# Add the src directory to the path for imports
+# Add the app directory to the path for imports
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'app'))
 
 # Mock PyQt6 before any imports
@@ -154,7 +154,7 @@ class TestApplicationStructure(unittest.TestCase):
     def test_main_entry_point(self):
         """Test that main.py has correct structure"""
         try:
-            main_path = os.path.join(os.path.dirname(__file__), '..', 'src', 'main.py')
+            main_path = os.path.join(os.path.dirname(__file__), '..', 'app', 'main.py')
             with open(main_path, 'r', encoding='utf-8') as f:
                 code = f.read()
 

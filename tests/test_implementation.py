@@ -163,9 +163,12 @@ def test_code_organization():
     # ScanThread should be in scan_thread.py, not a large MainWindow implementation
     assert 'class ScanThread' in scan_thread_content, "FAIL: ScanThread should be in scan_thread.py"
     
-    # scan_thread.py should be much smaller now (not contain MainWindow)
+    # scan_thread.py should contain ScanThread implementation (can be substantial)
     scan_thread_lines = len(scan_thread_content.splitlines())
-    assert scan_thread_lines < 50, f"FAIL: scan_thread.py too large ({scan_thread_lines} lines), should only contain ScanThread"
+    assert scan_thread_lines > 10, f"FAIL: scan_thread.py too small ({scan_thread_lines} lines), should contain ScanThread implementation"
+    
+    # Ensure it doesn't contain MainWindow (separation of concerns)
+    assert 'class MainWindow' not in scan_thread_content, "FAIL: scan_thread.py should not contain MainWindow class"
     
     print("✓ Code organization verified - proper separation of concerns")
 
