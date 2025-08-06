@@ -24,6 +24,11 @@ share/python-wheels/
 MANIFEST
 *.manifest
 *.spec
+*.whl
+
+# PyInstaller
+*.pyo
+*.pyd
 
 # Virtual environments
 venv/
@@ -35,6 +40,13 @@ venv.bak/
 .virtualenv/
 .conda/
 conda-meta/
+pyvenv.cfg
+
+# Package managers
+poetry.lock
+Pipfile.lock
+pdm.lock
+pipenv/
 
 # IDE and Editor files
 .vscode/
@@ -45,10 +57,33 @@ conda-meta/
 .spyderproject
 .spyproject
 .ropeproject
+*.sublime-*
+.theia/
+
+# PyQt/Qt specific
+*.ui~
+*.qm
+*.ts
+*.pro.user
+*.pro.user.*
+ui_*.py
+*_rc.py
+qrc_*.py
 
 # OS files
 .DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
 Thumbs.db
+Desktop.ini
+
+# Linux
+*~
+.directory
+.Trash-*
 
 # Logs
 *.log
@@ -70,6 +105,16 @@ coverage.xml
 .dmypy.json
 dmypy.json
 
+# Code formatting and linting
+.black
+.ruff_cache/
+.pylint.d/
+.isort.cfg
+
+# Temporary test files in root (should be in tests/)
+test_*.py
+demo_*.py
+
 # Backup and temporary files
 *.backup
 *.broken
@@ -77,6 +122,17 @@ dmypy.json
 *.tmp
 *.temp
 *~
+*.orig
+*.rej
+*.bak
+
+# Archives (usually shouldn't be committed)
+*.zip
+*.tar.gz
+*.tar.bz2
+*.tar.xz
+*.7z
+*.rar
 
 # Flatpak build artifacts
 build-dir/
@@ -95,6 +151,12 @@ config/local.json
 config/local.yml
 config/local.yaml
 config/*.local.*
+
+# Runtime files
+*.pid
+*.sock
+*.lock
+
 # Runtime data directories
 data/logs/
 data/reports/
@@ -122,3 +184,20 @@ secrets.json
 *.pfx
 *.crt
 *.cer
+
+# Documentation builds
+docs/_build/
+docs/build/
+site/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# macOS
+.AppleDouble
+.LSOverride
+
+# Windows
+[Tt]humbs.db
+[Dd]esktop.ini
+$RECYCLE.BIN/

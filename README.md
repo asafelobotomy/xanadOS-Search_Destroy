@@ -5,14 +5,14 @@
 ![S&D Logo](packaging/icons/org.xanados.SearchAndDestroy.png)
 
 [![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg)](CHANGELOG.md)
-[![Version](https://img.shields.io/badge/version-1.0.1-blue.svg)](https://github.com/asafelobotomy/xanadOS-Search_Destroy/releases)
+[![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)](https://github.com/asafelobotomy/xanadOS-Search_Destroy/releases)
 [![License](https://img.shields.io/badge/license-GPL--3.0-blue.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/python-3.13.5-blue.svg)](https://python.org)
 [![Tests](https://img.shields.io/badge/tests-182%20cases-brightgreen.svg)](#testing)
 
 **A modern graphical user interface (GUI) for ClamAV antivirus scanning, designed for the xanadOS operating system (WIP) but works on all Linux distros.**
 
-S&D (Search & Destroy) provides a user-friendly interface to the powerful ClamAV antivirus engine, enabling easy virus scanning, quarantine management, and threat reporting for Linux systems.
+*S&D (Search & Destroy) provides a user-friendly interface to the powerful ClamAV antivirus engine, enabling easy virus scanning, quarantine management, and threat reporting for Linux systems.*
 
 </div>
 
@@ -22,7 +22,7 @@ S&D (Search & Destroy) provides a user-friendly interface to the powerful ClamAV
 
 <table>
 <tr>
-<td width="50%">
+<td width="50%" valign="top">
 
 ### 🔍 **Scanning & Detection**
 - 🔍 **Full System Scanning** - Comprehensive file system scanning with ClamAV integration
@@ -31,7 +31,7 @@ S&D (Search & Destroy) provides a user-friendly interface to the powerful ClamAV
 - ⏱️ **Scheduled Scanning** - Automated daily, weekly, and monthly scan scheduling
 
 </td>
-<td width="50%">
+<td width="50%" valign="top">
 
 ### 🛡️ **Security & Management**
 - 🔒 **Quarantine Management** - Safe isolation and restoration of infected files
@@ -42,7 +42,7 @@ S&D (Search & Destroy) provides a user-friendly interface to the powerful ClamAV
 </td>
 </tr>
 <tr>
-<td width="50%">
+<td width="50%" valign="top">
 
 ### 📊 **Reporting & Analysis**
 - 📊 **Advanced Reporting** - Detailed scan reports with threat analysis and export options
@@ -50,7 +50,7 @@ S&D (Search & Destroy) provides a user-friendly interface to the powerful ClamAV
 - 📈 **Performance Monitoring** - Memory optimization and UI responsiveness tracking
 
 </td>
-<td width="50%">
+<td width="50%" valign="top">
 
 ### 🎨 **User Experience**
 - 🌙 **Dark/Light Themes** - Modern UI with theme switching support
@@ -65,6 +65,7 @@ S&D (Search & Destroy) provides a user-friendly interface to the powerful ClamAV
 
 ## 🚀 Quick Start
 
+### ⚡ One-Command Setup
 ```bash
 # Clone and setup
 git clone https://github.com/asafelobotomy/xanadOS-Search_Destroy.git
@@ -77,7 +78,7 @@ make install-flatpak
 make run-flatpak
 ```
 
-**Or run directly:**
+### 🎯 Quick Run
 ```bash
 ./run.sh
 ```
@@ -90,23 +91,23 @@ make run-flatpak
 
 <table>
 <tr>
-<td width="30%"><strong>System Requirements</strong></td>
-<td width="70%">Linux-based system (designed for xanadOS, tested on Ubuntu/Debian)</td>
+<td width="25%"><strong>🖥️ System Requirements</strong></td>
+<td width="75%">Linux-based system (designed for xanadOS, tested on Ubuntu/Debian)</td>
 </tr>
 <tr>
-<td><strong>ClamAV Engine</strong></td>
+<td><strong>🦠 ClamAV Engine</strong></td>
 <td><code>sudo apt install clamav clamav-daemon</code></td>
 </tr>
 <tr>
-<td><strong>Python Version</strong></td>
+<td><strong>🐍 Python Version</strong></td>
 <td>Python 3.10+ (tested with Python 3.13.5)</td>
 </tr>
 <tr>
-<td><strong>GUI Framework</strong></td>
+<td><strong>🖼️ GUI Framework</strong></td>
 <td>PyQt6 for GUI framework (<code>pip install PyQt6>=6.5.0</code>)</td>
 </tr>
 <tr>
-<td><strong>File Monitoring</strong></td>
+<td><strong>👁️ File Monitoring</strong></td>
 <td>inotify for real-time file monitoring (<code>pip install inotify>=0.2.0</code>)</td>
 </tr>
 </table>
@@ -116,6 +117,8 @@ make run-flatpak
 <details>
 <summary><strong>📦 Method 1: Flatpak Installation (Recommended)</strong></summary>
 
+<br>
+
 ```bash
 # Build and install via Flatpak
 ./scripts/prepare-build.sh
@@ -124,16 +127,18 @@ make install-flatpak
 make run-flatpak
 ```
 
-**Advantages:**
-- ✅ Sandboxed security
-- ✅ Automatic dependency management
-- ✅ System integration
-- ✅ Easy updates
+**✅ Advantages:**
+- Sandboxed security
+- Automatic dependency management
+- System integration
+- Easy updates
 
 </details>
 
 <details>
 <summary><strong>🐍 Method 2: Virtual Environment (Development)</strong></summary>
+
+<br>
 
 ```bash
 # Setup virtual environment
@@ -145,15 +150,17 @@ pip install -r requirements.txt
 python app/main.py
 ```
 
-**Advantages:**
-- ✅ Isolated environment
-- ✅ Development-friendly
-- ✅ Easy dependency management
+**✅ Advantages:**
+- Isolated environment
+- Development-friendly
+- Easy dependency management
 
 </details>
 
 <details>
 <summary><strong>⚡ Method 3: Quick Setup Script</strong></summary>
+
+<br>
 
 ```bash
 # Clone repository
@@ -175,6 +182,8 @@ cd xanadOS-Search_Destroy
 <details>
 <summary><strong>🌐 Method 4: System-wide Installation</strong></summary>
 
+<br>
+
 ```bash
 # System-wide installation (not recommended for production)
 sudo pip install -r requirements.txt
@@ -188,16 +197,18 @@ python app/main.py
 <details>
 <summary><strong>🔧 Method 5: Development Mode</strong></summary>
 
+<br>
+
 ```bash
 ./scripts/prepare-build.sh  # Sets up development environment
 ./scripts/activate.sh       # Activates virtual environment
 python app/main.py          # Run in development mode
 ```
 
-**Advantages:**
-- ✅ Development tools enabled
-- ✅ Debug logging
-- ✅ Hot reloading
+**✅ Advantages:**
+- Development tools enabled
+- Debug logging
+- Hot reloading
 
 </details>
 
@@ -205,12 +216,16 @@ python app/main.py          # Run in development mode
 
 ## 📚 Documentation
 
-| Document | Description |
-|----------|-------------|
-| 📖 **[Development Guide](docs/DEVELOPMENT.md)** | Development setup and contribution guide |
-| 🤖 **[Copilot Setup](docs/COPILOT_SETUP.md)** | GitHub Copilot configuration and guidelines |
-| 📋 **[Implementation History](docs/implementation-history/)** | Historical implementation summaries and fixes |
-| � **[Changelog](CHANGELOG.md)** | Version history and recent changes |
+<div align="center">
+
+| 📖 Document | 📝 Description |
+|-------------|----------------|
+| **[Development Guide](docs/DEVELOPMENT.md)** | Development setup and contribution guide |
+| **[Copilot Setup](docs/COPILOT_SETUP.md)** | GitHub Copilot configuration and guidelines |
+| **[Implementation History](docs/implementation-history/)** | Historical implementation summaries and fixes |
+| **[Changelog](CHANGELOG.md)** | Version history and recent changes |
+
+</div>
 
 ---
 
@@ -256,10 +271,16 @@ python app/main.py          # Run in development mode
 │   ├── 🔬 unit/         # Unit tests for individual components
 │   └── 🔗 integration/  # Integration and system tests
 ├── 📚 docs/             # Documentation and guides
-│   ├── � DEVELOPMENT.md         # Development setup guide
+│   ├── 📖 DEVELOPMENT.md         # Development setup guide
 │   ├── 🤖 COPILOT_SETUP.md      # GitHub Copilot configuration
+│   ├── 🎨 STRAWBERRY_PALETTE.md # Theme design documentation
+│   ├── 📋 IMPLEMENTATION_SUMMARY.md # Feature implementation summary
+│   ├── 🧹 CLEANUP_SUMMARY.md     # Code cleanup documentation
 │   └── 📋 implementation-history/ # Implementation summaries
-├── �🔧 scripts/          # Build and utility scripts
+├── 🛠️ dev/              # Development resources (demos, test scripts)
+│   ├── 🎨 demos/        # Theme demonstration scripts
+│   └── 🧪 test-scripts/ # Development test utilities
+├── 🔧 scripts/          # Build and utility scripts
 │   ├── 🚀 prepare-build.sh      # Build environment setup
 │   ├── ✅ verify-build.sh       # Build verification
 │   ├── 🐍 activate.sh           # Virtual environment activation
@@ -272,35 +293,53 @@ python app/main.py          # Run in development mode
 
 ## 🛠️ Development Scripts
 
-| Script | Purpose | Usage |
-|--------|---------|-------|
-| 🚀 `run.sh` | Main application launcher | `./run.sh` |
-| 🔧 `scripts/prepare-build.sh` | Build environment setup | `./scripts/prepare-build.sh` |
-| ✅ `scripts/verify-build.sh` | Build verification | `./scripts/verify-build.sh` |
-| 🐍 `scripts/activate.sh` | Virtual environment activation | `./scripts/activate.sh` |
-| 🔒 `scripts/setup-security.sh` | Security configuration | `./scripts/setup-security.sh` |
+<div align="center">
+
+| 🚀 Script | 🎯 Purpose | 💻 Usage |
+|-----------|------------|----------|
+| `run.sh` | Main application launcher | `./run.sh` |
+| `scripts/prepare-build.sh` | Build environment setup | `./scripts/prepare-build.sh` |
+| `scripts/verify-build.sh` | Build verification | `./scripts/verify-build.sh` |
+| `scripts/activate.sh` | Virtual environment activation | `./scripts/activate.sh` |
+| `scripts/setup-security.sh` | Security configuration | `./scripts/setup-security.sh` |
+
+</div>
 
 ---
 
 ## 🏗️ Core Architecture
 
-### 🔄 Real-time Monitoring System
+<table>
+<tr>
+<td width="33%" valign="top">
+
+### 🔄 **Real-time Monitoring**
 - **File System Watcher**: Uses inotify for efficient file system event detection
 - **Event Processing**: Intelligent filtering and prioritization of file system events
 - **Background Scanner**: Multi-threaded background scanning with priority queues
 - **Performance Monitoring**: Real-time tracking of system resources and scan performance
 
-### 🛡️ Security Architecture
+</td>
+<td width="33%" valign="top">
+
+### 🛡️ **Security Architecture**
 - **Input Validation**: Comprehensive path and parameter validation
 - **Privilege Management**: Secure privilege escalation with proper containment
 - **Network Security**: SSL/TLS configuration and secure communication protocols
 - **Sandbox Compatibility**: Full Flatpak sandboxing support for enhanced security
 
-### ⚡ Performance Optimization
+</td>
+<td width="33%" valign="top">
+
+### ⚡ **Performance Optimization**
 - **Async Operations**: Non-blocking file operations and UI updates
 - **Memory Management**: Intelligent garbage collection and memory optimization
 - **Database Optimization**: Efficient SQLite operations with proper indexing
 - **UI Responsiveness**: Throttled updates and background processing for smooth UX
+
+</td>
+</tr>
+</table>
 
 ---
 
@@ -333,21 +372,27 @@ python app/main.py          # Run in development mode
 
 <div align="center">
 
-**📊 Test Statistics**
+### 📊 Test Statistics
 ```
 11 Test Files | 182 Test Cases | 95.2% Success Rate
 ```
 
 </div>
 
-### Test Categories
+<table>
+<tr>
+<td width="50%" valign="top">
+
+### 🧪 **Test Categories**
 - 🖥️ **GUI Components** - Interface and user interaction testing
 - 👁️ **Monitoring Systems** - Real-time file system monitoring
 - ⚡ **Performance** - Memory usage, scan speed, UI responsiveness
 - 🔒 **Security** - Input validation, privilege management
 
-### Running Tests
+</td>
+<td width="50%" valign="top">
 
+### ▶️ **Running Tests**
 ```bash
 # Run all tests
 .venv/bin/python -m pytest tests/ -v
@@ -358,13 +403,17 @@ python app/main.py          # Run in development mode
 .venv/bin/python -m pytest tests/test_performance.py -v
 ```
 
+</td>
+</tr>
+</table>
+
 ---
 
 ## 📊 Performance Metrics
 
 <table>
 <tr>
-<td width="50%">
+<td width="50%" valign="top">
 
 ### 🚀 **Speed & Efficiency**
 - **Scan Rate**: 1,000-5,000 files/minute
@@ -373,7 +422,7 @@ python app/main.py          # Run in development mode
 - **UI Updates**: <100ms intervals
 
 </td>
-<td width="50%">
+<td width="50%" valign="top">
 
 ### 🔧 **Optimization Features**
 - **Multi-threading**: Configurable worker pools
@@ -409,14 +458,24 @@ export XANADOS_SD_TEMP_PATH="/tmp/sd_temp"         # Temporary files
 
 ## 🚀 Usage Guide
 
-### 🔍 Quick Scanning
+<div align="center">
+
+### 🔍 **Quick Scanning**
+
+</div>
+
 1. **🚀 Launch**: `./run.sh` or desktop launcher
 2. **📁 Select**: Quick scan or custom path
 3. **⚙️ Configure**: Scan depth, file types, threat actions
 4. **👁️ Monitor**: Real-time progress and alerts
 5. **📊 Review**: Detailed reports and quarantine management
 
-### 🛡️ Real-time Protection
+<div align="center">
+
+### 🛡️ **Real-time Protection**
+
+</div>
+
 1. **🔄 Enable**: Activate file system monitoring
 2. **📁 Configure**: Set monitored directories
 3. **🛠️ Policies**: Define automatic threat responses
@@ -428,7 +487,7 @@ export XANADOS_SD_TEMP_PATH="/tmp/sd_temp"         # Temporary files
 
 <div align="center">
 
-**GNU General Public License v3.0 (GPL-3.0)**
+### **GNU General Public License v3.0 (GPL-3.0)**
 
 [![License](https://img.shields.io/badge/license-GPL--3.0-blue.svg)](LICENSE)
 
@@ -436,11 +495,24 @@ export XANADOS_SD_TEMP_PATH="/tmp/sd_temp"         # Temporary files
 
 </div>
 
-### 🔍 Why GPL v3?
-- **🔒 Copyleft Protection** - All derivatives remain open source
-- **🛡️ Security Ethics** - Transparency in security tools
-- **🤝 Community Development** - Collaborative improvement
-- **⚖️ Patent Protection** - Explicit licensing and protection
+<table>
+<tr>
+<td width="25%"><strong>🔒 Copyleft Protection</strong></td>
+<td width="75%">All derivatives remain open source</td>
+</tr>
+<tr>
+<td><strong>🛡️ Security Ethics</strong></td>
+<td>Transparency in security tools</td>
+</tr>
+<tr>
+<td><strong>🤝 Community Development</strong></td>
+<td>Collaborative improvement</td>
+</tr>
+<tr>
+<td><strong>⚖️ Patent Protection</strong></td>
+<td>Explicit licensing and protection</td>
+</tr>
+</table>
 
 ---
 
@@ -450,6 +522,8 @@ export XANADOS_SD_TEMP_PATH="/tmp/sd_temp"         # Temporary files
 
 <details>
 <summary><strong>🐍 Python/PyQt6 Installation Issues</strong></summary>
+
+<br>
 
 **Problem**: `ImportError: No module named 'PyQt6'`
 ```bash
@@ -469,6 +543,8 @@ sudo apt-get install qt6-base-dev qt6-wayland
 <details>
 <summary><strong>🦠 ClamAV Configuration Issues</strong></summary>
 
+<br>
+
 **Problem**: `pyclamd.ConnectionError: Could not connect to clamd server`
 ```bash
 # Solution: Start ClamAV daemon
@@ -486,6 +562,8 @@ sudo freshclam
 
 <details>
 <summary><strong>🔧 Build and Installation Issues</strong></summary>
+
+<br>
 
 **Problem**: Flatpak build fails
 ```bash
@@ -505,6 +583,8 @@ ls -la packaging/icons/org.xanados.SearchAndDestroy*.png
 
 <details>
 <summary><strong>🔒 Permission Issues</strong></summary>
+
+<br>
 
 **Problem**: `Permission denied` when scanning system directories
 ```bash
@@ -529,14 +609,14 @@ ls -la packaging/icons/org.xanados.SearchAndDestroy*.png
 
 </div>
 
-### 🚀 Getting Started
+### 🚀 **Getting Started**
 1. **🍴 Fork** the repository
 2. **🌟 Create** your feature branch (`git checkout -b feature/amazing-feature`)
 3. **💾 Commit** your changes (`git commit -m 'Add amazing feature'`)
 4. **📤 Push** to branch (`git push origin feature/amazing-feature`)
 5. **📋 Open** a Pull Request
 
-### 📝 Development Guidelines
+### 📝 **Development Guidelines**
 This project uses **GitHub Copilot** with custom instructions for consistent development practices.
 
 **📚 Quick Access**: `Ctrl+Shift+P` → "Tasks: Run Task" → "Show Copilot Instructions"
@@ -549,7 +629,7 @@ See [`docs/COPILOT_SETUP.md`](docs/COPILOT_SETUP.md) for detailed guidelines.
 
 <div align="center">
 
-**Special thanks to:**
+### **Special thanks to:**
 
 🦠 **ClamAV Team** - Excellent antivirus engine  
 🖥️ **PyQt6** - Powerful UI framework  

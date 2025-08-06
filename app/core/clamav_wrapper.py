@@ -596,33 +596,45 @@ class ClamAVWrapper:
         """Get information about current virus definitions."""
         definitions = []
         
-        # Check main ClamAV databases
-        for db_file in self.db_path.glob('*.c[vl]d'):
-            try:
-                stat = db_file.stat()
-                definitions.append(VirusDefinitionInfo(
-                    name=db_file.name,
-                    version="Unknown",  # Would need to parse database file for actual version
-                    last_updated=datetime.fromtimestamp(stat.st_mtime),
-                    size=stat.st_size,
-                    url="official"
-                ))
-            except (OSError, IOError):
-                continue
+        # Check main ClamAV databases - handle permission errors gracefully
+        try:
+            if self.db_path.exists():
+                for db_file in self.db_path.glob('*.c[vl]d'):
+                    try:
+                        stat = db_file.stat()
+                        definitions.append(VirusDefinitionInfo(
+                            name=db_file.name,
+                            version="Unknown",  # Would need to parse database file for actual version
+                            last_updated=datetime.fromtimestamp(stat.st_mtime),
+                            size=stat.st_size,
+                            url="official"
+                        ))
+                    except (OSError, IOError, PermissionError) as e:
+                        # Log the error but continue processing other files
+                        print(f"Warning: Could not access {db_file}: {e}")
+                        continue
+        except (OSError, IOError, PermissionError) as e:
+            print(f"Warning: Could not access database directory {self.db_path}: {e}")
         
-        # Check custom databases
-        for db_file in self.custom_db_path.glob('*.cvd'):
-            try:
-                stat = db_file.stat()
-                definitions.append(VirusDefinitionInfo(
-                    name=db_file.name,
-                    version="Custom",
-                    last_updated=datetime.fromtimestamp(stat.st_mtime),
-                    size=stat.st_size,
-                    url="custom"
-                ))
-            except (OSError, IOError):
-                continue
+        # Check custom databases - handle permission errors gracefully
+        try:
+            if self.custom_db_path.exists():
+                for db_file in self.custom_db_path.glob('*.cvd'):
+                    try:
+                        stat = db_file.stat()
+                        definitions.append(VirusDefinitionInfo(
+                            name=db_file.name,
+                            version="Custom",
+                            last_updated=datetime.fromtimestamp(stat.st_mtime),
+                            size=stat.st_size,
+                            url="custom"
+                        ))
+                    except (OSError, IOError, PermissionError) as e:
+                        # Log the error but continue processing other files
+                        print(f"Warning: Could not access custom db {db_file}: {e}")
+                        continue
+        except (OSError, IOError, PermissionError) as e:
+            print(f"Warning: Could not access custom database directory {self.custom_db_path}: {e}")
         
         return definitions
     
@@ -632,23 +644,34 @@ class ClamAVWrapper:
             'needs_update': False,
             'oldest_definition': None,
             'total_definitions': 0,
-            'last_update': None
+            'last_update': None,
+            'definitions_exist': False,
+            'error': None
         }
         
-        definitions = self.get_definition_info()
-        info['total_definitions'] = len(definitions)
-        
-        if not definitions:
+        try:
+            definitions = self.get_definition_info()
+            info['total_definitions'] = len(definitions)
+            info['definitions_exist'] = len(definitions) > 0
+            
+            if not definitions:
+                info['needs_update'] = True
+                info['last_update'] = "No definitions found"
+                return info
+            
+            # Find oldest definition
+            oldest = min(definitions, key=lambda x: x.last_updated)
+            info['oldest_definition'] = oldest.last_updated.isoformat()
+            info['last_update'] = oldest.last_updated.isoformat()
+            
+            # Check if update needed (older than 1 day)
+            if datetime.now() - oldest.last_updated > timedelta(days=1):
+                info['needs_update'] = True
+                
+        except Exception as e:
+            print(f"Error checking definition freshness: {e}")
+            info['error'] = str(e)
             info['needs_update'] = True
-            return info
-        
-        # Find oldest definition
-        oldest = min(definitions, key=lambda x: x.last_updated)
-        info['oldest_definition'] = oldest.last_updated.isoformat()
-        info['last_update'] = oldest.last_updated.isoformat()
-        
-        # Check if update needed (older than 1 day)
-        if datetime.now() - oldest.last_updated > timedelta(days=1):
-            info['needs_update'] = True
+            info['last_update'] = f"Error: {e}"
         
         return info

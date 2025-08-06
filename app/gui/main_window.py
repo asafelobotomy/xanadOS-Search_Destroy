@@ -8,7 +8,8 @@ from PyQt6.QtWidgets import (QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
                              QLabel, QPushButton, QProgressBar, QTextEdit, 
                              QTabWidget, QGroupBox, QListWidget, QListWidgetItem,
                              QSplitter, QFrame, QStatusBar, QMenuBar, QMenu,
-                             QFileDialog, QMessageBox, QSystemTrayIcon, QProgressDialog)
+                             QFileDialog, QMessageBox, QSystemTrayIcon, QProgressDialog,
+                             QCheckBox, QSpinBox, QFormLayout, QScrollArea)
 from PyQt6.QtCore import Qt, QTimer, pyqtSignal
 from PyQt6.QtGui import QIcon, QFont, QPixmap, QAction, QShortcut, QKeySequence, QMouseEvent
 
@@ -37,6 +38,9 @@ class MainWindow(QMainWindow):
         self.report_manager = ScanReportManager()
         self.current_scan_thread = None
         
+        # Quick scan state tracking
+        self.is_quick_scan_running = False
+        
         # Initialize real-time monitoring
         self.real_time_monitor = None
         self.monitoring_enabled = self.config.get('security_settings', {}).get('real_time_protection', False)
@@ -55,6 +59,24 @@ class MainWindow(QMainWindow):
         # Use QTimer to update status after UI is fully initialized
         QTimer.singleShot(100, self.update_definition_status)
         QTimer.singleShot(200, self.update_protection_ui_after_init)
+        # Add a safety net timer to ensure status is never left as "Initializing..."
+        QTimer.singleShot(1000, self.ensure_protection_status_final)
+        
+    def get_status_color(self, status_type):
+        """Get theme-appropriate color for status indicators."""
+        if self.current_theme == "dark":
+            colors = {
+                'success': '#9CB898',    # Sage Green for dark theme
+                'error': '#F14666',      # Deep Strawberry for dark theme
+                'warning': '#EE8980'     # Coral for dark theme
+            }
+        else:  # light theme
+            colors = {
+                'success': '#75BDE0',    # Sky Blue for light theme
+                'error': '#F89B9B',      # Coral Pink for light theme
+                'warning': '#F8BC9B'     # Peach Orange for light theme
+            }
+        return colors.get(status_type, colors['error'])
         
     def init_ui(self):
         self.setWindowTitle("S&D - Search & Destroy")
@@ -124,10 +146,10 @@ class MainWindow(QMainWindow):
         # Quick actions
         actions_layout = QHBoxLayout()
         
-        quick_scan_btn = QPushButton("Quick Scan")
-        quick_scan_btn.setObjectName("actionButton")
-        quick_scan_btn.setMinimumSize(120, 40)  # Increased size to prevent text cutoff
-        quick_scan_btn.clicked.connect(self.quick_scan)
+        self.quick_scan_btn = QPushButton("Quick Scan")
+        self.quick_scan_btn.setObjectName("actionButton")
+        self.quick_scan_btn.setMinimumSize(120, 40)  # Increased size to prevent text cutoff
+        self.quick_scan_btn.clicked.connect(self.quick_scan)
         
         # Update definitions button with status
         update_container = QVBoxLayout()
@@ -157,7 +179,7 @@ class MainWindow(QMainWindow):
         about_btn.setMinimumSize(80, 40)  # Increased size to prevent text cutoff
         about_btn.clicked.connect(self.show_about)
         
-        actions_layout.addWidget(quick_scan_btn)
+        actions_layout.addWidget(self.quick_scan_btn)
         actions_layout.addWidget(update_container_widget)
         actions_layout.addWidget(about_btn)
         
@@ -175,11 +197,11 @@ class MainWindow(QMainWindow):
         status_row = QHBoxLayout()
         status_row.setSpacing(15)
         
-        # Protection Status Card
+        # Protection Status Card - using strawberry palette
         self.protection_card = self.create_clickable_status_card(
             "Real-Time Protection",
             "Active" if self.monitoring_enabled else "Inactive",
-            "#28a745" if self.monitoring_enabled else "#dc3545",
+            "#9CB898" if self.monitoring_enabled else "#F14666",
             "Your system is being monitored" if self.monitoring_enabled else "Click to enable protection"
         )
         # Connect the click signal
@@ -193,11 +215,11 @@ class MainWindow(QMainWindow):
             "Full system scan status"
         )
         
-        # Threats Card
+        # Threats Card - using strawberry palette
         self.threats_card = self.create_status_card(
             "Threats Found",
             "0",  # Will be updated dynamically
-            "#28a745",
+            "#9CB898",
             "No threats detected in recent scans"
         )
         
@@ -214,6 +236,8 @@ class MainWindow(QMainWindow):
         self.dashboard_activity = QListWidget()
         # Remove height restriction to allow it to expand
         self.dashboard_activity.setAlternatingRowColors(True)
+        # Set custom styling for activity list
+        self.setup_activity_list_styling()
         activity_layout.addWidget(self.dashboard_activity)
         
         # Show more link
@@ -335,7 +359,7 @@ class MainWindow(QMainWindow):
             if self.monitoring_enabled:
                 self.add_activity_message("🛡️ Real-time protection enabled from dashboard")
             else:
-                self.add_activity_message("⏹️ Real-time protection disabled from dashboard")
+                self.add_activity_message("Real-time protection disabled from dashboard")
     
     def update_protection_status_card(self):
         """Update the protection status card with current state."""
@@ -344,7 +368,7 @@ class MainWindow(QMainWindow):
             for child in self.protection_card.findChildren(QLabel):
                 if child.objectName() == "cardValue":
                     child.setText("Active" if self.monitoring_enabled else "Inactive")
-                    child.setStyleSheet(f"color: {'#28a745' if self.monitoring_enabled else '#dc3545'}; font-size: 20px; font-weight: bold;")
+                    child.setStyleSheet(f"color: {'#9CB898' if self.monitoring_enabled else '#F14666'}; font-size: 20px; font-weight: bold;")
                 elif child.objectName() == "cardDescription":
                     child.setText("Your system is being monitored" if self.monitoring_enabled else "Click to enable protection")
 
@@ -357,16 +381,18 @@ class MainWindow(QMainWindow):
                 # Check if the monitor is actually running
                 if self.real_time_monitor and hasattr(self.real_time_monitor, 'state') and self.real_time_monitor.state.name == 'RUNNING':
                     self.protection_status_label.setText("🛡️ Active")
-                    self.protection_status_label.setStyleSheet("color: #00FF7F; font-weight: bold; font-size: 12px; padding: 5px;")
-                    self.protection_toggle_btn.setText("⏹️ Stop")
+                    color = self.get_status_color('success')
+                    self.protection_status_label.setStyleSheet(f"color: {color}; font-weight: bold; font-size: 12px; padding: 5px;")
+                    self.protection_toggle_btn.setText("Stop")
                     print("✅ Protection tab UI updated to Active state")
                 else:
                     # Monitoring was supposed to be enabled but isn't running - reset
                     print("⚠️ Monitoring was enabled but not running - resetting to inactive")
                     self.monitoring_enabled = False
                     self.protection_status_label.setText("❌ Failed to restore")
-                    self.protection_status_label.setStyleSheet("color: red; font-weight: bold; font-size: 12px; padding: 5px;")
-                    self.protection_toggle_btn.setText("▶️ Start")
+                    color = self.get_status_color('error')
+                    self.protection_status_label.setStyleSheet(f"color: {color}; font-weight: bold; font-size: 12px; padding: 5px;")
+                    self.protection_toggle_btn.setText("Start")
                     
                     # Update config to reflect actual state
                     if 'security_settings' not in self.config:
@@ -375,14 +401,35 @@ class MainWindow(QMainWindow):
                     save_config(self.config)
             else:
                 self.protection_status_label.setText("🔴 Inactive")
-                self.protection_status_label.setStyleSheet("color: red; font-weight: bold; font-size: 12px; padding: 5px;")
-                self.protection_toggle_btn.setText("▶️ Start")
+                color = self.get_status_color('error')
+                self.protection_status_label.setStyleSheet(f"color: {color}; font-weight: bold; font-size: 12px; padding: 5px;")
+                self.protection_toggle_btn.setText("Start")
                 print("✅ Protection tab UI updated to Inactive state")
             
             # Also update the dashboard card
             self.update_protection_status_card()
         else:
             print("⚠️ Protection tab UI elements not found - skipping update")
+    
+    def ensure_protection_status_final(self):
+        """Final safety net to ensure protection status is never left as 'Initializing...'"""
+        print("🔍 Running final protection status check...")
+        
+        if hasattr(self, 'protection_status_label'):
+            current_text = self.protection_status_label.text()
+            if "Initializing" in current_text:
+                print("⚠️ Found status still showing 'Initializing...', forcing to Inactive")
+                # Force status to Inactive if still showing Initializing
+                self.protection_status_label.setText("🔴 Inactive")
+                color = self.get_status_color('error')
+                self.protection_status_label.setStyleSheet(f"color: {color}; font-weight: bold; font-size: 12px; padding: 5px;")
+                if hasattr(self, 'protection_toggle_btn'):
+                    self.protection_toggle_btn.setText("Start")
+                print("✅ Protection status forced to Inactive state")
+            else:
+                print(f"✅ Protection status is properly set to: {current_text}")
+        else:
+            print("⚠️ Protection status label not found")
 
     def create_scan_tab(self):
         scan_widget = QWidget()
@@ -488,7 +535,8 @@ class MainWindow(QMainWindow):
         
         delete_all_btn = QPushButton("Delete All Reports")
         delete_all_btn.clicked.connect(self.delete_all_reports)
-        delete_all_btn.setStyleSheet("color: #ff6b6b;")  # Red text to indicate destructive action
+        color = self.get_status_color('error')
+        delete_all_btn.setStyleSheet(f"color: {color};")  # Theme-appropriate red to indicate destructive action
         
         controls_layout.addWidget(refresh_btn)
         controls_layout.addWidget(export_btn)
@@ -543,114 +591,285 @@ class MainWindow(QMainWindow):
         self.tab_widget.addTab(quarantine_widget, "Quarantine")
         
     def create_settings_tab(self):
+        """Create the settings tab with full settings interface."""
         settings_widget = QWidget()
-        layout = QVBoxLayout(settings_widget)
+        settings_widget.setObjectName("settingsTabWidget")
         
-        # Open settings dialog button
-        settings_btn = QPushButton("Open Settings")
-        settings_btn.clicked.connect(self.open_settings_dialog)
+        # Main layout with proper spacing
+        main_layout = QVBoxLayout(settings_widget)
+        main_layout.setSpacing(20)
+        main_layout.setContentsMargins(20, 20, 20, 20)
         
-        layout.addWidget(settings_btn)
-        layout.addStretch()
+        # Create scrollable area for settings
+        scroll_area = QScrollArea()
+        scroll_area.setObjectName("settingsScrollArea")
+        scroll_content = QWidget()
+        scroll_content.setObjectName("settingsScrollContent")
+        scroll_layout = QVBoxLayout(scroll_content)
+        scroll_layout.setSpacing(20)
+        
+        # SCAN SETTINGS SECTION
+        scan_group = QGroupBox("Scan Settings")
+        scan_layout = QFormLayout(scan_group)
+        scan_layout.setSpacing(15)
+        
+        # Max threads setting
+        self.settings_max_threads_spin = QSpinBox()
+        self.settings_max_threads_spin.setRange(1, 16)
+        self.settings_max_threads_spin.setValue(4)
+        self.settings_max_threads_spin.setMinimumHeight(35)
+        scan_layout.addRow(QLabel("Max Threads:"), self.settings_max_threads_spin)
+        
+        # Scan timeout setting
+        self.settings_timeout_spin = QSpinBox()
+        self.settings_timeout_spin.setRange(30, 3600)
+        self.settings_timeout_spin.setValue(300)
+        self.settings_timeout_spin.setSuffix(" seconds")
+        self.settings_timeout_spin.setMinimumHeight(35)
+        scan_layout.addRow(QLabel("Scan Timeout:"), self.settings_timeout_spin)
+        
+        # Scan archives checkbox
+        self.settings_scan_archives_cb = QCheckBox("Scan Archive Files")
+        self.settings_scan_archives_cb.setChecked(True)
+        self.settings_scan_archives_cb.setMinimumHeight(35)
+        scan_layout.addRow(self.settings_scan_archives_cb)
+        
+        # Follow symlinks checkbox
+        self.settings_follow_symlinks_cb = QCheckBox("Follow Symbolic Links")
+        self.settings_follow_symlinks_cb.setChecked(False)
+        self.settings_follow_symlinks_cb.setMinimumHeight(35)
+        scan_layout.addRow(self.settings_follow_symlinks_cb)
+        
+        scroll_layout.addWidget(scan_group)
+        
+        # USER INTERFACE SETTINGS SECTION
+        ui_group = QGroupBox("User Interface Settings")
+        ui_layout = QFormLayout(ui_group)
+        ui_layout.setSpacing(15)
+        
+        # Minimize to tray checkbox
+        self.settings_minimize_to_tray_cb = QCheckBox("Minimize to System Tray")
+        self.settings_minimize_to_tray_cb.setChecked(True)
+        self.settings_minimize_to_tray_cb.setMinimumHeight(35)
+        ui_layout.addRow(self.settings_minimize_to_tray_cb)
+        
+        # Show notifications checkbox
+        self.settings_show_notifications_cb = QCheckBox("Show Notifications")
+        self.settings_show_notifications_cb.setChecked(True)
+        self.settings_show_notifications_cb.setMinimumHeight(35)
+        ui_layout.addRow(self.settings_show_notifications_cb)
+        
+        scroll_layout.addWidget(ui_group)
+        
+        # SECURITY SETTINGS SECTION
+        security_group = QGroupBox("Security Settings")
+        security_layout = QFormLayout(security_group)
+        security_layout.setSpacing(15)
+        
+        # Auto-update definitions checkbox
+        self.settings_auto_update_cb = QCheckBox("Auto-update Virus Definitions")
+        self.settings_auto_update_cb.setChecked(True)
+        self.settings_auto_update_cb.setMinimumHeight(35)
+        security_layout.addRow(self.settings_auto_update_cb)
+        
+        scroll_layout.addWidget(security_group)
+        
+        # REAL-TIME PROTECTION SETTINGS SECTION
+        protection_group = QGroupBox("Real-Time Protection Settings")
+        protection_layout = QFormLayout(protection_group)
+        protection_layout.setSpacing(15)
+        
+        # Monitor file modifications
+        self.settings_monitor_modifications_cb = QCheckBox("Monitor File Modifications")
+        self.settings_monitor_modifications_cb.setChecked(True)
+        self.settings_monitor_modifications_cb.setMinimumHeight(35)
+        protection_layout.addRow(self.settings_monitor_modifications_cb)
+        
+        # Monitor new files
+        self.settings_monitor_new_files_cb = QCheckBox("Monitor New Files")
+        self.settings_monitor_new_files_cb.setChecked(True)
+        self.settings_monitor_new_files_cb.setMinimumHeight(35)
+        protection_layout.addRow(self.settings_monitor_new_files_cb)
+        
+        # Scan modified files immediately
+        self.settings_scan_modified_cb = QCheckBox("Scan Modified Files Immediately")
+        self.settings_scan_modified_cb.setChecked(False)
+        self.settings_scan_modified_cb.setMinimumHeight(35)
+        protection_layout.addRow(self.settings_scan_modified_cb)
+        
+        scroll_layout.addWidget(protection_group)
+        
+        # Add stretch to push everything to the top
+        scroll_layout.addStretch()
+        
+        # Set up scroll area
+        scroll_area.setWidget(scroll_content)
+        scroll_area.setWidgetResizable(True)
+        scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
+        scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        
+        main_layout.addWidget(scroll_area)
+        
+        # SETTINGS CONTROL BUTTONS
+        buttons_layout = QHBoxLayout()
+        buttons_layout.setSpacing(15)
+        
+        # Load defaults button
+        load_defaults_btn = QPushButton("Reset to Defaults")
+        load_defaults_btn.clicked.connect(self.load_default_settings)
+        load_defaults_btn.setMinimumHeight(40)
+        load_defaults_btn.setMinimumWidth(140)
+        
+        # Save settings button
+        save_settings_btn = QPushButton("Save Settings")
+        save_settings_btn.clicked.connect(self.save_settings)
+        save_settings_btn.setMinimumHeight(40)
+        save_settings_btn.setMinimumWidth(120)
+        save_settings_btn.setObjectName("primaryButton")
+        
+        buttons_layout.addStretch()
+        buttons_layout.addWidget(load_defaults_btn)
+        buttons_layout.addWidget(save_settings_btn)
+        
+        main_layout.addLayout(buttons_layout)
+        
+        # Load current settings
+        self.load_current_settings()
         
         self.tab_widget.addTab(settings_widget, "Settings")
         
     def create_real_time_tab(self):
-        """Create the real-time protection tab."""
+        """Create the real-time protection tab with improved three-column layout."""
         real_time_widget = QWidget()
-        layout = QVBoxLayout(real_time_widget)
-        layout.setAlignment(Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignHCenter)  # Center horizontally, align to top
-        layout.setSpacing(15)  # Add more spacing between sections
         
-        # Real-time protection status group
-        status_group = QGroupBox("Protection Status")
-        status_group.setMaximumWidth(600)  # Limit width for better centering
-        status_layout = QVBoxLayout(status_group)
+        # Main horizontal layout with proper spacing
+        main_layout = QHBoxLayout(real_time_widget)
+        main_layout.setSpacing(20)
+        main_layout.setContentsMargins(20, 20, 20, 20)
         
-        # Protection status display
-        self.protection_status_label = QLabel("🔄 Initializing...")
-        self.protection_status_label.setObjectName("protectionStatus")
-        self.protection_status_label.setWordWrap(True)  # Enable word wrapping
-        self.protection_status_label.setAlignment(Qt.AlignmentFlag.AlignCenter)  # Center align
-        self.protection_status_label.setMinimumHeight(30)  # Ensure minimum height
-        self.protection_status_label.setStyleSheet("font-size: 12px; padding: 5px;")  # Add padding
-        status_layout.addWidget(self.protection_status_label)
-        
-        # Control buttons
-        controls_layout = QHBoxLayout()
-        
-        self.protection_toggle_btn = QPushButton("▶️ Start")
-        self.protection_toggle_btn.clicked.connect(self.toggle_real_time_protection)
-        self.protection_toggle_btn.setMinimumHeight(35)  # Make button taller for better visibility
-        
-        controls_layout.addStretch()  # Add stretch before button
-        controls_layout.addWidget(self.protection_toggle_btn)
-        controls_layout.addStretch()  # Add stretch after button
-        
-        status_layout.addLayout(controls_layout)
-        layout.addWidget(status_group)
-        
-        # Statistics group
-        stats_group = QGroupBox("Protection Statistics")
-        stats_group.setMaximumWidth(600)  # Limit width for better centering
-        stats_layout = QVBoxLayout(stats_group)
-        stats_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)  # Center the entire layout
-        
-        # Statistics display
-        self.events_processed_label = QLabel("Events Processed: 0")
-        self.events_processed_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.threats_detected_label = QLabel("Threats Detected: 0")
-        self.threats_detected_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.scans_performed_label = QLabel("Scans Performed: 0")
-        self.scans_performed_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.uptime_label = QLabel("Uptime: 0 seconds")
-        self.uptime_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        
-        stats_layout.addWidget(self.events_processed_label)
-        stats_layout.addWidget(self.threats_detected_label)
-        stats_layout.addWidget(self.scans_performed_label)
-        stats_layout.addWidget(self.uptime_label)
-        
-        layout.addWidget(stats_group)
-        
-        # Recent activity group
+        # LEFT PANEL: Recent Activity (largest panel)
+        left_panel = QVBoxLayout()
         activity_group = QGroupBox("Recent Activity")
-        activity_group.setMaximumWidth(600)  # Limit width for better centering
         activity_layout = QVBoxLayout(activity_group)
-        activity_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)  # Center the layout
         
         self.activity_list = QListWidget()
-        self.activity_list.setMaximumHeight(200)
+        self.activity_list.setMinimumHeight(400)  # Give it substantial height
         activity_layout.addWidget(self.activity_list)
         
-        layout.addWidget(activity_group)
+        left_panel.addWidget(activity_group)
+        left_panel.addStretch()
         
-        # Watch paths configuration group
+        # CENTER PANEL: Protection Status and Statistics (compact but well-spaced)
+        center_panel = QVBoxLayout()
+        center_panel.setSpacing(20)
+        
+        # Protection Status section
+        status_group = QGroupBox("Protection Status")
+        status_layout = QVBoxLayout(status_group)
+        status_layout.setSpacing(15)
+        
+        # Protection status display with better styling
+        self.protection_status_label = QLabel("🔄 Initializing...")
+        self.protection_status_label.setObjectName("protectionStatus")
+        self.protection_status_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.protection_status_label.setMinimumHeight(40)
+        self.protection_status_label.setStyleSheet("font-size: 14px; padding: 10px; font-weight: bold;")
+        status_layout.addWidget(self.protection_status_label)
+        
+        # Control button - centered and prominent
+        self.protection_toggle_btn = QPushButton("Start")
+        self.protection_toggle_btn.clicked.connect(self.toggle_real_time_protection)
+        self.protection_toggle_btn.setMinimumHeight(40)
+        self.protection_toggle_btn.setMinimumWidth(120)
+        self.protection_toggle_btn.setObjectName("primaryButton")
+        
+        button_layout = QHBoxLayout()
+        button_layout.addStretch()
+        button_layout.addWidget(self.protection_toggle_btn)
+        button_layout.addStretch()
+        status_layout.addLayout(button_layout)
+        
+        center_panel.addWidget(status_group)
+        
+        # Protection Statistics section
+        stats_group = QGroupBox("Protection Statistics")
+        stats_layout = QVBoxLayout(stats_group)
+        stats_layout.setSpacing(10)
+        
+        # Create a more organized stats display
+        stats_container = QVBoxLayout()
+        
+        # Events row
+        events_layout = QHBoxLayout()
+        events_layout.addWidget(QLabel("Events Processed:"))
+        self.events_processed_label = QLabel("0")
+        self.events_processed_label.setStyleSheet("font-weight: bold; color: #75BDE0;")
+        events_layout.addStretch()
+        events_layout.addWidget(self.events_processed_label)
+        stats_container.addLayout(events_layout)
+        
+        # Threats row
+        threats_layout = QHBoxLayout()
+        threats_layout.addWidget(QLabel("Threats Detected:"))
+        self.threats_detected_label = QLabel("0")
+        self.threats_detected_label.setStyleSheet("font-weight: bold; color: #F89B9B;")
+        threats_layout.addStretch()
+        threats_layout.addWidget(self.threats_detected_label)
+        stats_container.addLayout(threats_layout)
+        
+        # Scans row
+        scans_layout = QHBoxLayout()
+        scans_layout.addWidget(QLabel("Scans Performed:"))
+        self.scans_performed_label = QLabel("0")
+        self.scans_performed_label.setStyleSheet("font-weight: bold; color: #9CB898;")
+        scans_layout.addStretch()
+        scans_layout.addWidget(self.scans_performed_label)
+        stats_container.addLayout(scans_layout)
+        
+        # Uptime row
+        uptime_layout = QHBoxLayout()
+        uptime_layout.addWidget(QLabel("Uptime:"))
+        self.uptime_label = QLabel("00:00:00")
+        self.uptime_label.setStyleSheet("font-weight: bold; color: #F8BC9B;")
+        uptime_layout.addStretch()
+        uptime_layout.addWidget(self.uptime_label)
+        stats_container.addLayout(uptime_layout)
+        
+        stats_layout.addLayout(stats_container)
+        center_panel.addWidget(stats_group)
+        center_panel.addStretch()
+        
+        # RIGHT PANEL: Monitored Paths
+        right_panel = QVBoxLayout()
         paths_group = QGroupBox("Monitored Paths")
-        paths_group.setMaximumWidth(600)  # Limit width for better centering
         paths_layout = QVBoxLayout(paths_group)
-        paths_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)  # Center the layout
         
         self.paths_list = QListWidget()
-        self.paths_list.setMaximumHeight(150)
+        self.paths_list.setMinimumHeight(300)  # Give it good height
+        paths_layout.addWidget(self.paths_list)
         
+        # Path control buttons
         paths_controls = QHBoxLayout()
         add_path_btn = QPushButton("Add Path")
         add_path_btn.clicked.connect(self.add_watch_path)
+        add_path_btn.setMinimumHeight(35)
+        
         remove_path_btn = QPushButton("Remove Path")
         remove_path_btn.clicked.connect(self.remove_watch_path)
+        remove_path_btn.setMinimumHeight(35)
+        remove_path_btn.setObjectName("dangerButton")
         
-        paths_controls.addStretch()  # Add stretch before buttons
         paths_controls.addWidget(add_path_btn)
         paths_controls.addWidget(remove_path_btn)
-        paths_controls.addStretch()  # Add stretch after buttons
-        
-        paths_layout.addWidget(self.paths_list)
         paths_layout.addLayout(paths_controls)
         
-        layout.addWidget(paths_group)
+        right_panel.addWidget(paths_group)
+        right_panel.addStretch()
         
-        layout.addStretch()
+        # Add panels to main layout with proper proportions
+        main_layout.addLayout(left_panel, 2)    # 40% - Recent Activity (largest)
+        main_layout.addLayout(center_panel, 1)  # 30% - Status & Stats (compact)
+        main_layout.addLayout(right_panel, 1)   # 30% - Monitored Paths
         
         self.tab_widget.addTab(real_time_widget, "Protection")
         
@@ -662,19 +881,28 @@ class MainWindow(QMainWindow):
             watch_paths = self.config.get('watch_paths', [str(Path.home())])  # Just monitor home directory initially
             excluded_paths = self.config.get('excluded_paths', ['/proc', '/sys', '/dev', '/tmp'])
             
-            print(f"📁 Watch paths: {watch_paths}")
-            print(f"🚫 Excluded paths: {excluded_paths}")
-            
-            # Ensure paths are properly formatted
+            # Ensure paths are properly formatted and validated
             if isinstance(watch_paths, list):
-                watch_paths = [str(path) for path in watch_paths]
+                watch_paths = [str(path) for path in watch_paths if path and os.path.exists(str(path))]
             else:
-                watch_paths = [str(watch_paths)]
+                watch_paths = [str(watch_paths)] if watch_paths and os.path.exists(str(watch_paths)) else []
+            
+            # Fallback to home directory if no valid paths
+            if not watch_paths:
+                home_path = str(Path.home())
+                if os.path.exists(home_path):
+                    watch_paths = [home_path]
+                else:
+                    print("❌ No valid watch paths found, monitoring disabled")
+                    return False
                 
             if isinstance(excluded_paths, list):
                 excluded_paths = [str(path) for path in excluded_paths]
             else:
                 excluded_paths = [str(excluded_paths)]
+            
+            print(f"📁 Valid watch paths: {watch_paths}")
+            print(f"🚫 Excluded paths: {excluded_paths}")
             
             monitor_config = MonitorConfig(
                 watch_paths=watch_paths,
@@ -714,9 +942,10 @@ class MainWindow(QMainWindow):
                     print("🔄 Restoring real-time protection from saved state...")
                     if self.real_time_monitor and self.real_time_monitor.start():
                         self.protection_status_label.setText("🛡️ Active")
-                        self.protection_status_label.setStyleSheet("color: #00FF7F; font-weight: bold; font-size: 12px; padding: 5px;")
+                        color = self.get_status_color('success')
+                        self.protection_status_label.setStyleSheet(f"color: {color}; font-weight: bold; font-size: 12px; padding: 5px;")
                         if hasattr(self, 'protection_toggle_btn'):
-                            self.protection_toggle_btn.setText("⏹️ Stop")
+                            self.protection_toggle_btn.setText("Stop")
                         print("✅ Real-time protection restored successfully!")
                         self.add_activity_message("✅ Real-time protection restored from previous session")
                     else:
@@ -724,9 +953,10 @@ class MainWindow(QMainWindow):
                         print("❌ Failed to restore real-time protection")
                         self.monitoring_enabled = False
                         self.protection_status_label.setText("❌ Failed to restore")
-                        self.protection_status_label.setStyleSheet("color: red; font-weight: bold; font-size: 12px; padding: 5px;")
+                        color = self.get_status_color('error')
+                        self.protection_status_label.setStyleSheet(f"color: {color}; font-weight: bold; font-size: 12px; padding: 5px;")
                         if hasattr(self, 'protection_toggle_btn'):
-                            self.protection_toggle_btn.setText("▶️ Start")
+                            self.protection_toggle_btn.setText("Start")
                         self.add_activity_message("❌ Failed to restore real-time protection from previous session")
                         # Update config to reflect failure
                         if 'security_settings' not in self.config:
@@ -736,18 +966,29 @@ class MainWindow(QMainWindow):
                 else:
                     # Protection is disabled, set inactive status
                     self.protection_status_label.setText("🔴 Inactive")
-                    self.protection_status_label.setStyleSheet("color: red; font-weight: bold; font-size: 12px; padding: 5px;")
+                    color = self.get_status_color('error')
+                    self.protection_status_label.setStyleSheet(f"color: {color}; font-weight: bold; font-size: 12px; padding: 5px;")
                     if hasattr(self, 'protection_toggle_btn'):
-                        self.protection_toggle_btn.setText("▶️ Start")
+                        self.protection_toggle_btn.setText("Start")
             
             print("✅ Real-time monitoring initialized successfully!")
             return True
                 
-        except Exception as e:
+        except (ImportError, AttributeError, OSError) as e:
             print(f"❌ Failed to initialize monitoring: {e}")
             # Create a dummy monitor for UI purposes
             self.real_time_monitor = None
             self.add_activity_message(f"⚠️ Monitoring system offline: {str(e)}")
+            
+            # Ensure status is never left as "Initializing..." - set to inactive
+            if hasattr(self, 'protection_status_label'):
+                self.protection_status_label.setText("🔴 Inactive")
+                color = self.get_status_color('error')
+                self.protection_status_label.setStyleSheet(f"color: {color}; font-weight: bold; font-size: 12px; padding: 5px;")
+                if hasattr(self, 'protection_toggle_btn'):
+                    self.protection_toggle_btn.setText("Start")
+                print("✅ Status reset to Inactive after initialization failure")
+            
             return False
 
     def init_real_time_monitoring(self):
@@ -785,9 +1026,9 @@ class MainWindow(QMainWindow):
             # Set initial status to Inactive when monitoring is disabled by default
             if hasattr(self, 'protection_status_label'):
                 self.protection_status_label.setText("🔴 Inactive")
-                self.protection_status_label.setStyleSheet("color: red; font-weight: bold; font-size: 12px; padding: 5px;")
+                self.protection_status_label.setStyleSheet("color: #F14666; font-weight: bold; font-size: 12px; padding: 5px;")
                 
-        except Exception as e:
+        except (ImportError, AttributeError, RuntimeError) as e:
             self.add_activity_message(f"❌ Failed to initialize monitoring: {e}")
             
     def toggle_real_time_protection(self):
@@ -811,8 +1052,8 @@ class MainWindow(QMainWindow):
             
             if self.real_time_monitor and self.real_time_monitor.start():
                 self.protection_status_label.setText("🛡️ Active")
-                self.protection_status_label.setStyleSheet("color: #00FF7F; font-weight: bold; font-size: 12px; padding: 5px;")
-                self.protection_toggle_btn.setText("⏹️ Stop")
+                self.protection_status_label.setStyleSheet("color: #9CB898; font-weight: bold; font-size: 12px; padding: 5px;")
+                self.protection_toggle_btn.setText("Stop")
                 self.add_activity_message("✅ Real-time protection started")
                 self.status_bar.showMessage("Real-time protection active")
                 
@@ -830,19 +1071,19 @@ class MainWindow(QMainWindow):
                 self.update_paths_list()
             else:
                 self.protection_status_label.setText("❌ Failed")
-                self.protection_status_label.setStyleSheet("color: red; font-weight: bold; font-size: 12px; padding: 5px;")
+                self.protection_status_label.setStyleSheet("color: #F14666; font-weight: bold; font-size: 12px; padding: 5px;")
                 # Keep button as "Start" since protection failed to start
-                self.protection_toggle_btn.setText("▶️ Start")
+                self.protection_toggle_btn.setText("Start")
                 self.add_activity_message("❌ Failed to start real-time protection")
                 
                 # Make sure dashboard shows failure state
                 self.monitoring_enabled = False
                 self.update_protection_status_card()
                 
-        except Exception as e:
+        except (AttributeError, RuntimeError, OSError) as e:
             self.add_activity_message(f"❌ Error starting protection: {e}")
             # Ensure button stays as "Start" if there was an error
-            self.protection_toggle_btn.setText("▶️ Start")
+            self.protection_toggle_btn.setText("Start")
             # Make sure dashboard shows error state
             self.monitoring_enabled = False
             self.update_protection_status_card()
@@ -853,9 +1094,9 @@ class MainWindow(QMainWindow):
             if self.real_time_monitor:
                 self.real_time_monitor.stop()
                 self.protection_status_label.setText("🔴 Inactive")
-                self.protection_status_label.setStyleSheet("color: red; font-weight: bold; font-size: 12px; padding: 5px;")
-                self.protection_toggle_btn.setText("▶️ Start")
-                self.add_activity_message("⏹️ Real-time protection stopped")
+                self.protection_status_label.setStyleSheet("color: #F14666; font-weight: bold; font-size: 12px; padding: 5px;")
+                self.protection_toggle_btn.setText("Start")
+                self.add_activity_message("Real-time protection stopped")
                 self.status_bar.showMessage("Real-time protection stopped")
                 
                 # Save user preference
@@ -868,11 +1109,11 @@ class MainWindow(QMainWindow):
                 # Update dashboard card to reflect the change
                 self.update_protection_status_card()
                 
-        except Exception as e:
+        except (AttributeError, RuntimeError) as e:
             self.add_activity_message(f"❌ Error stopping protection: {e}")
             # If stopping failed, we can't be sure of the state, so show error and allow retry
             self.protection_status_label.setText("❌ Error")
-            self.protection_status_label.setStyleSheet("color: red; font-weight: bold; font-size: 12px; padding: 5px;")
+            self.protection_status_label.setStyleSheet("color: #F14666; font-weight: bold; font-size: 12px; padding: 5px;")
     
     def on_threat_detected(self, file_path: str, threat_name: str):
         """Handle threat detection callback."""
@@ -933,20 +1174,20 @@ class MainWindow(QMainWindow):
                 stats = self.real_time_monitor.get_statistics()
                 monitor_stats = stats.get('monitor', {})
                 
-                self.events_processed_label.setText(f"Events Processed: {monitor_stats.get('events_processed', 0)}")
-                self.threats_detected_label.setText(f"Threats Detected: {monitor_stats.get('threats_detected', 0)}")
-                self.scans_performed_label.setText(f"Scans Performed: {monitor_stats.get('scans_performed', 0)}")
+                self.events_processed_label.setText(str(monitor_stats.get('events_processed', 0)))
+                self.threats_detected_label.setText(str(monitor_stats.get('threats_detected', 0)))
+                self.scans_performed_label.setText(str(monitor_stats.get('scans_performed', 0)))
                 
                 uptime = monitor_stats.get('uptime_seconds', 0)
                 if uptime > 0:
                     hours = int(uptime // 3600)
                     minutes = int((uptime % 3600) // 60)
                     seconds = int(uptime % 60)
-                    self.uptime_label.setText(f"Uptime: {hours:02d}:{minutes:02d}:{seconds:02d}")
+                    self.uptime_label.setText(f"{hours:02d}:{minutes:02d}:{seconds:02d}")
                 else:
-                    self.uptime_label.setText("Uptime: 00:00:00")
+                    self.uptime_label.setText("00:00:00")
                     
-            except Exception as e:
+            except (AttributeError, ValueError):
                 pass  # Silently handle statistics update errors
     
     def update_paths_list(self):
@@ -994,10 +1235,6 @@ class MainWindow(QMainWindow):
         scan_action = QAction("New Scan...", self)
         scan_action.triggered.connect(self.open_scan_dialog)
         file_menu.addAction(scan_action)
-        
-        settings_action = QAction("Settings...", self)
-        settings_action.triggered.connect(self.open_settings_dialog)
-        file_menu.addAction(settings_action)
         
         file_menu.addSeparator()
         
@@ -1061,7 +1298,7 @@ class MainWindow(QMainWindow):
         self.tray_icon.setToolTip("S&D - Search & Destroy")
         
         # Create system tray menu
-        tray_menu = QMenu()
+        tray_menu = QMenu(self)
         
         open_action = QAction("Open", self)
         open_action.triggered.connect(self.show)
@@ -1082,9 +1319,6 @@ class MainWindow(QMainWindow):
         # Keyboard shortcuts
         self.quick_scan_shortcut = QShortcut(QKeySequence("Ctrl+Q"), self)
         self.quick_scan_shortcut.activated.connect(self.quick_scan)
-        
-        self.settings_shortcut = QShortcut(QKeySequence("Ctrl+P"), self)
-        self.settings_shortcut.activated.connect(self.open_settings_dialog)
         
         self.update_definitions_shortcut = QShortcut(QKeySequence("Ctrl+U"), self)
         self.update_definitions_shortcut.activated.connect(self.update_definitions)
@@ -1214,22 +1448,25 @@ class MainWindow(QMainWindow):
         else:
             msg_box.setStandardButtons(QMessageBox.StandardButton.Ok)
         
-        # Apply theme-specific styling
+        # Apply theme-specific styling with strawberry palette
         if self.current_theme == 'dark':
             msg_box.setStyleSheet("""
                 QMessageBox {
-                    background-color: #2b2b2b;
+                    background-color: #1a1a1a;
                     color: #FFCDAA;
                     font-size: 12px;
                     font-weight: 500;
+                    border: 2px solid #EE8980;
+                    border-radius: 6px;
                 }
                 QMessageBox QLabel {
                     color: #FFCDAA;
                     font-weight: 600;
                     padding: 10px;
+                    line-height: 1.4;
                 }
                 QMessageBox QPushButton {
-                    background-color: #404040;
+                    background-color: #3a3a3a;
                     border: 2px solid #EE8980;
                     border-radius: 5px;
                     padding: 8px 16px;
@@ -1238,22 +1475,22 @@ class MainWindow(QMainWindow):
                     min-width: 80px;
                 }
                 QMessageBox QPushButton:hover {
-                    background-color: #505050;
+                    background-color: #4a4a4a;
                     border-color: #F14666;
                     color: #ffffff;
                 }
                 QMessageBox QPushButton:pressed {
-                    background-color: #606060;
+                    background-color: #2a2a2a;
                 }
                 QMessageBox QPushButton:default {
                     background-color: #9CB898;
                     border-color: #9CB898;
-                    color: #2b2b2b;
+                    color: #1a1a1a;
                     font-weight: 700;
                 }
                 QMessageBox QPushButton:default:hover {
-                    background-color: #B2CEB0;
-                    border-color: #B2CEB0;
+                    background-color: #ACC8A8;
+                    border-color: #ACC8A8;
                 }
             """)
         else:
@@ -1301,11 +1538,181 @@ class MainWindow(QMainWindow):
         
         return msg_box.exec()
     
+    def setup_activity_list_styling(self):
+        """Set up proper styling for the activity list with theme-aware colors."""
+        if hasattr(self, 'dashboard_activity'):
+            if self.current_theme == 'dark':
+                # Using strawberry palette colors for dark theme
+                self.dashboard_activity.setStyleSheet("""
+                    QListWidget {
+                        background-color: #2a2a2a;
+                        color: #FFCDAA;
+                        alternate-background-color: rgba(238, 137, 128, 0.1);
+                        selection-background-color: #F14666;
+                        selection-color: #ffffff;
+                        border: 1px solid #EE8980;
+                        border-radius: 6px;
+                    }
+                    QListWidget::item {
+                        padding: 6px;
+                        border-bottom: 1px solid rgba(238, 137, 128, 0.2);
+                    }
+                    QListWidget::item:hover {
+                        background-color: rgba(241, 70, 102, 0.1);
+                    }
+                    QListWidget::item:selected {
+                        background-color: #F14666;
+                        color: #ffffff;
+                        font-weight: 600;
+                    }
+                """)
+            else:  # light theme
+                # Using Sunrise palette colors for light theme
+                self.dashboard_activity.setStyleSheet("""
+                    QListWidget {
+                        background-color: #ffffff;
+                        color: #2c2c2c;
+                        alternate-background-color: rgba(117, 189, 224, 0.1);
+                        selection-background-color: #75BDE0;
+                        selection-color: #ffffff;
+                        border: 1px solid #75BDE0;
+                        border-radius: 6px;
+                    }
+                    QListWidget::item {
+                        padding: 6px;
+                        border-bottom: 1px solid rgba(117, 189, 224, 0.2);
+                    }
+                    QListWidget::item:hover {
+                        background-color: rgba(117, 189, 224, 0.15);
+                        color: #1a1a1a;
+                    }
+                    QListWidget::item:selected {
+                        background-color: #75BDE0;
+                        color: #ffffff;
+                        font-weight: 600;
+                    }
+                    QListWidget::item:selected:hover {
+                        background-color: #5AADD4;
+                        color: #ffffff;
+                    }
+                """)
+        
+        # Also apply styling to other activity lists
+        if hasattr(self, 'activity_list'):
+            if self.current_theme == 'dark':
+                self.activity_list.setStyleSheet("""
+                    QListWidget {
+                        background-color: #2a2a2a;
+                        color: #FFCDAA;
+                        selection-background-color: #F14666;
+                        selection-color: #ffffff;
+                        border: 1px solid #EE8980;
+                        border-radius: 6px;
+                    }
+                    QListWidget::item:selected {
+                        background-color: #F14666;
+                        color: #ffffff;
+                        font-weight: 600;
+                    }
+                """)
+            else:  # light theme
+                self.activity_list.setStyleSheet("""
+                    QListWidget {
+                        background-color: #ffffff;
+                        color: #2c2c2c;
+                        selection-background-color: #75BDE0;
+                        selection-color: #ffffff;
+                        border: 1px solid #75BDE0;
+                        border-radius: 6px;
+                    }
+                    QListWidget::item:selected {
+                        background-color: #75BDE0;
+                        color: #ffffff;
+                        font-weight: 600;
+                    }
+                """)
+        
+        # Apply styling to reports list
+        if hasattr(self, 'reports_list'):
+            style = self._get_list_widget_style()
+            self.reports_list.setStyleSheet(style)
+        
+        # Apply styling to quarantine list  
+        if hasattr(self, 'quarantine_list'):
+            style = self._get_list_widget_style()
+            self.quarantine_list.setStyleSheet(style)
+            
+        # Apply styling to paths list
+        if hasattr(self, 'paths_list'):
+            style = self._get_list_widget_style()
+            self.paths_list.setStyleSheet(style)
+    
+    def _get_list_widget_style(self):
+        """Get consistent list widget styling based on current theme."""
+        if self.current_theme == 'dark':
+            return """
+                QListWidget {
+                    background-color: #2a2a2a;
+                    color: #FFCDAA;
+                    selection-background-color: #F14666;
+                    selection-color: #ffffff;
+                    border: 1px solid #EE8980;
+                    border-radius: 6px;
+                }
+                QListWidget::item {
+                    padding: 4px;
+                    border-bottom: 1px solid rgba(238, 137, 128, 0.1);
+                }
+                QListWidget::item:hover {
+                    background-color: rgba(241, 70, 102, 0.1);
+                }
+                QListWidget::item:selected {
+                    background-color: #F14666;
+                    color: #ffffff;
+                    font-weight: 600;
+                }
+            """
+        else:  # light theme
+            return """
+                QListWidget {
+                    background-color: #ffffff;
+                    color: #2c2c2c;
+                    selection-background-color: #75BDE0;
+                    selection-color: #ffffff;
+                    border: 1px solid #75BDE0;
+                    border-radius: 6px;
+                }
+                QListWidget::item {
+                    padding: 4px;
+                    border-bottom: 1px solid rgba(117, 189, 224, 0.1);
+                }
+                QListWidget::item:hover {
+                    background-color: rgba(117, 189, 224, 0.15);
+                    color: #1a1a1a;
+                }
+                QListWidget::item:selected {
+                    background-color: #75BDE0;
+                    color: #ffffff;
+                    font-weight: 600;
+                }
+                QListWidget::item:selected:hover {
+                    background-color: #5AADD4;
+                    color: #ffffff;
+                }
+            """
+    
     def apply_dark_theme(self):
         """Apply dark theme styling using Strawberry color palette for optimal readability."""
+        # Based on Color Theory principles:
+        # - F14666 (Deep Strawberry): Primary accent, high energy/attention
+        # - EE8980 (Coral): Secondary accent, warm complement  
+        # - FFCDAA (Peach Cream): Main text, high contrast on dark
+        # - 9CB898 (Sage Green): Success states, natural balance
+        # Dark neutrals (https://www.uxdesigninstitute.com/blog/what-is-a-gui/#1a1a1a, #2a2a2a, #3a3a3a) for depth hierarchy
+        
         self.setStyleSheet("""
             QMainWindow {
-                background-color: #2b2b2b;
+                background-color: #1a1a1a;
                 color: #FFCDAA;
                 font-size: 12px;
                 font-weight: 500;
@@ -1314,53 +1721,54 @@ class MainWindow(QMainWindow):
             QGroupBox {
                 font-weight: 600;
                 border: 2px solid #EE8980;
-                border-radius: 6px;
+                border-radius: 8px;
                 margin-top: 1em;
-                padding-top: 0.6em;
-                background-color: #353535;
+                padding-top: 0.8em;
+                background-color: #2a2a2a;
                 color: #FFCDAA;
             }
             
             QGroupBox::title {
                 subcontrol-origin: margin;
-                left: 12px;
-                padding: 0 8px 0 8px;
+                left: 14px;
+                padding: 0 10px 0 10px;
                 color: #F14666;
                 font-weight: 700;
-                font-size: 13px;
+                font-size: 14px;
             }
             
             QPushButton {
-                background-color: #404040;
-                border: 1px solid #EE8980;
-                border-radius: 5px;
-                padding: 8px 14px;
+                background-color: #3a3a3a;
+                border: 2px solid #EE8980;
+                border-radius: 6px;
+                padding: 8px 16px;
                 min-width: 80px;
                 color: #FFCDAA;
                 font-weight: 600;
             }
             
             QPushButton:hover {
-                background-color: #505050;
+                background-color: #4a4a4a;
                 border-color: #F14666;
                 color: #ffffff;
             }
             
             QPushButton:pressed {
-                background-color: #606060;
+                background-color: #2a2a2a;
                 border-color: #F14666;
             }
             
             QPushButton#primaryButton {
                 background-color: #9CB898;
                 border: 2px solid #9CB898;
-                color: #2b2b2b;
+                color: #1a1a1a;
                 font-weight: 700;
             }
             
             QPushButton#primaryButton:hover {
-                background-color: #B2CEB0;
-                border-color: #B2CEB0;
+                background-color: #ACC8A8;
+                border-color: #9CB898;
+                color: #000000;
             }
             
             QPushButton#dangerButton {
@@ -1371,48 +1779,49 @@ class MainWindow(QMainWindow):
             }
             
             QPushButton#dangerButton:hover {
-                background-color: #E6336B;
-                border-color: #E6336B;
+                background-color: #FF5676;
+                border-color: #F14666;
+                color: #ffffff;
             }
             
             QProgressBar {
                 border: 2px solid #EE8980;
-                border-radius: 5px;
+                border-radius: 6px;
                 text-align: center;
-                height: 22px;
-                background-color: #404040;
+                height: 24px;
+                background-color: #3a3a3a;
                 color: #FFCDAA;
                 font-weight: 600;
             }
             
             QProgressBar::chunk {
                 background-color: #9CB898;
-                width: 2px;
-                border-radius: 3px;
+                border-radius: 4px;
+                margin: 2px;
             }
             
             QTabWidget::pane {
                 border: 2px solid #EE8980;
-                border-radius: 6px;
+                border-radius: 8px;
                 top: -1px;
-                background-color: #353535;
+                background-color: #2a2a2a;
             }
             
             QTabBar::tab {
-                background-color: #404040;
-                border: 1px solid #EE8980;
+                background-color: #3a3a3a;
+                border: 2px solid #EE8980;
                 border-bottom: none;
-                border-top-left-radius: 5px;
-                border-top-right-radius: 5px;
-                padding: 8px 14px;
+                border-top-left-radius: 6px;
+                border-top-right-radius: 6px;
+                padding: 8px 16px;
                 margin-right: 3px;
                 color: #FFCDAA;
                 font-weight: 600;
             }
             
             QTabBar::tab:selected {
-                background-color: #353535;
-                border-bottom: 2px solid #353535;
+                background-color: #2a2a2a;
+                border-bottom: 2px solid #2a2a2a;
                 border-left: 2px solid #F14666;
                 border-right: 2px solid #F14666;
                 border-top: 2px solid #F14666;
@@ -1421,13 +1830,13 @@ class MainWindow(QMainWindow):
             }
             
             QTabBar::tab:hover:!selected {
-                background-color: #505050;
+                background-color: #4a4a4a;
                 border-color: #F14666;
                 color: #ffffff;
             }
             
             QHeaderView::section {
-                background-color: #404040;
+                background-color: #3a3a3a;
                 padding: 6px;
                 border: 1px solid #EE8980;
                 border-left: none;
@@ -1438,17 +1847,18 @@ class MainWindow(QMainWindow):
             
             QTextEdit, QListWidget {
                 border: 2px solid #EE8980;
-                border-radius: 5px;
-                background-color: #404040;
+                border-radius: 6px;
+                background-color: #3a3a3a;
                 color: #FFCDAA;
                 font-weight: 500;
                 selection-background-color: #F14666;
                 selection-color: #ffffff;
+                padding: 5px;
             }
             
             QTextEdit:focus, QListWidget:focus {
                 border-color: #F14666;
-                background-color: #454545;
+                background-color: #4a4a4a;
             }
             
             QLabel {
@@ -1457,14 +1867,15 @@ class MainWindow(QMainWindow):
             }
             
             QStatusBar {
-                background-color: #404040;
+                background-color: #3a3a3a;
                 color: #FFCDAA;
                 border-top: 2px solid #EE8980;
                 font-weight: 600;
+                padding: 4px;
             }
             
             QMenuBar {
-                background-color: #404040;
+                background-color: #3a3a3a;
                 color: #FFCDAA;
                 border-bottom: 2px solid #EE8980;
                 font-weight: 600;
@@ -1472,19 +1883,29 @@ class MainWindow(QMainWindow):
             
             QMenuBar::item {
                 background-color: transparent;
-                padding: 6px 10px;
+                padding: 6px 12px;
+                border-radius: 4px;
             }
             
             QMenuBar::item:selected {
-                background-color: #505050;
+                background-color: #4a4a4a;
                 color: #ffffff;
             }
             
             QMenu {
-                background-color: #404040;
+                background-color: #3a3a3a;
                 color: #FFCDAA;
                 border: 2px solid #F14666;
+                border: 2px solid #F14666;
+                border-radius: 6px;
                 font-weight: 600;
+                padding: 4px;
+            }
+            
+            QMenu::item {
+                padding: 6px 12px;
+                border-radius: 4px;
+                margin: 2px;
             }
             
             QMenu::item:selected {
@@ -1495,23 +1916,25 @@ class MainWindow(QMainWindow):
             #headerFrame {
                 background-color: #F14666;
                 color: white;
-                border-radius: 6px;
-                padding: 12px;
-                margin-bottom: 12px;
+                border-radius: 8px;
+                padding: 15px;
+                margin-bottom: 10px;
+                border: 2px solid #F14666;
             }
             
             #appTitle {
                 color: white;
-                font-size: 20px;
+                font-size: 22px;
                 font-weight: 700;
             }
             
             #pathLabel {
                 font-weight: 600;
-                padding: 6px;
-                background-color: #505050;
-                border-radius: 4px;
+                padding: 8px 12px;
+                background-color: #4a4a4a;
+                border-radius: 6px;
                 color: #FFCDAA;
+                border: 1px solid #EE8980;
             }
             
             #actionButton {
@@ -1529,7 +1952,7 @@ class MainWindow(QMainWindow):
             }
             
             #actionButton:hover {
-                background-color: #E6336B;
+                background-color: #FF5676;
                 border: 4px solid #EE8980;
                 color: #ffffff;
                 padding: 6px 12px;
@@ -1539,42 +1962,48 @@ class MainWindow(QMainWindow):
             }
             
             #actionButton:pressed {
-                background-color: #D12B5B;
+                background-color: #E03256;
                 border: 4px solid #FFCDAA;
                 padding: 6px 12px;
                 min-height: 32px;
                 line-height: 1.3;
                 font-size: 13px;
             }
-                line-height: 1.2;
-                font-size: 13px;
-                /* Removed margins that were causing text cutoff */
-            }
             
             #lastUpdateLabel {
                 color: white;
                 font-size: 12px;
-                margin: 2px;
+                margin: 3px;
                 font-weight: 600;
+                background-color: rgba(255, 205, 170, 0.1);
+                padding: 4px 8px;
+                border-radius: 4px;
+                border: 1px solid rgba(255, 205, 170, 0.3);
             }
             
             #lastCheckedLabel {
                 color: white;
                 font-size: 11px;
-                margin: 1px;
+                margin: 2px;
                 font-style: italic;
                 font-weight: 500;
+                background-color: rgba(255, 205, 170, 0.1);
+                padding: 2px 6px;
+                border-radius: 3px;
+                border: 1px solid rgba(255, 205, 170, 0.2);
             }
             
-            /* Scan report sections - maintain readability */
+            /* Scan report sections - enhanced readability */
             #resultsText {
                 font-weight: 500;
                 color: #FFCDAA;
+                line-height: 1.4;
             }
             
             #reportViewer {
                 font-weight: 500;
                 color: #FFCDAA;
+                line-height: 1.4;
             }
             
             /* Real-time protection status styles */
@@ -1583,11 +2012,11 @@ class MainWindow(QMainWindow):
                 font-weight: 700;
                 padding: 10px;
                 border-radius: 6px;
-                background-color: #404040;
+                background-color: #3a3a3a;
                 border: 2px solid #EE8980;
             }
             
-            /* Dashboard Status Cards */
+            /* Dashboard Status Cards with improved visual hierarchy */
             QFrame#statusCard {
                 background-color: #3a3a3a;
                 border: 2px solid #EE8980;
@@ -1598,7 +2027,7 @@ class MainWindow(QMainWindow):
             
             QFrame#statusCard:hover {
                 border-color: #F14666;
-                background-color: #404040;
+                background-color: #4a4a4a;
             }
             
             QLabel#cardTitle {
@@ -1621,13 +2050,12 @@ class MainWindow(QMainWindow):
                 line-height: 1.4;
             }
             
-            /* Dashboard Action Buttons */
+            /* Dashboard Action Buttons with solid colors */
             QPushButton#dashboardPrimaryButton {
-                background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
-                                            stop: 0 #9CB898, stop: 1 #8BA885);
-                border: 3px solid #9CB898;
+                background-color: #9CB898;
+                border: 2px solid #9CB898;
                 border-radius: 8px;
-                color: #2b2b2b;
+                color: #1a1a1a;
                 font-weight: 700;
                 font-size: 14px;
                 min-height: 40px;
@@ -1635,13 +2063,12 @@ class MainWindow(QMainWindow):
             }
             
             QPushButton#dashboardPrimaryButton:hover {
-                background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
-                                            stop: 0 #B2CEB0, stop: 1 #9CB898);
-                border-color: #B2CEB0;
+                background-color: #ACC8A8;
+                border-color: #ACC8A8;
             }
             
             QPushButton#dashboardSecondaryButton {
-                background-color: #505050;
+                background-color: #4a4a4a;
                 border: 2px solid #EE8980;
                 border-radius: 8px;
                 color: #FFCDAA;
@@ -1652,14 +2079,14 @@ class MainWindow(QMainWindow):
             }
             
             QPushButton#dashboardSecondaryButton:hover {
-                background-color: #606060;
+                background-color: #5a5a5a;
                 border-color: #F14666;
                 color: #ffffff;
             }
             
-            /* Preset Scan Buttons */
+            /* Preset Scan Buttons with enhanced styling */
             QPushButton#presetButton {
-                background-color: #4a4a4a;
+                background: #4a4a4a;
                 border: 2px solid #EE8980;
                 border-radius: 6px;
                 color: #FFCDAA;
@@ -1670,7 +2097,7 @@ class MainWindow(QMainWindow):
             }
             
             QPushButton#presetButton:hover {
-                background-color: #5a5a5a;
+                background: #5a5a5a;
                 border-color: #F14666;
                 color: #ffffff;
             }
@@ -1681,10 +2108,121 @@ class MainWindow(QMainWindow):
                 font-size: 12px;
                 margin-bottom: 5px;
             }
+            
+            /* Scrollbar styling for consistency */
+            QScrollBar:vertical {
+                background-color: #3a3a3a;
+                width: 12px;
+                border-radius: 6px;
+                border: 1px solid #EE8980;
+            }
+            
+            QScrollBar::handle:vertical {
+                background-color: #F14666;
+                border-radius: 5px;
+                min-height: 20px;
+            }
+            
+            QScrollBar::handle:vertical:hover {
+                background-color: #FF5676;
+            }
+            
+            QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
+                height: 0px;
+            }
+            
+            /* Settings Tab Controls */
+            QCheckBox {
+                color: #FFCDAA;
+                font-weight: 500;
+                font-size: 12px;
+                spacing: 8px;
+            }
+            
+            QCheckBox::indicator {
+                width: 18px;
+                height: 18px;
+                border: 2px solid #EE8980;
+                border-radius: 4px;
+                background-color: #3a3a3a;
+            }
+            
+            QCheckBox::indicator:checked {
+                background-color: #9CB898;
+                border-color: #9CB898;
+            }
+            
+            QCheckBox::indicator:hover {
+                border-color: #F14666;
+            }
+            
+            QSpinBox {
+                background-color: #3a3a3a;
+                border: 2px solid #EE8980;
+                border-radius: 6px;
+                padding: 8px 12px;
+                color: #FFCDAA;
+                font-weight: 500;
+                font-size: 12px;
+            }
+            
+            QSpinBox:focus {
+                border-color: #F14666;
+                background-color: #2a2a2a;
+            }
+            
+            QSpinBox::up-button, QSpinBox::down-button {
+                background-color: #EE8980;
+                border: none;
+                border-radius: 3px;
+                width: 16px;
+                color: #1a1a1a;
+                font-weight: 600;
+            }
+            
+            QSpinBox::up-button:hover, QSpinBox::down-button:hover {
+                background-color: #F14666;
+            }
+            
+            QFormLayout QLabel {
+                color: #FFCDAA;
+                font-weight: 600;
+                font-size: 12px;
+                padding: 5px;
+            }
+            
+            QScrollArea {
+                background-color: #1a1a1a;
+                border: none;
+            }
+            
+            /* Settings Tab Specific Widgets */
+            QWidget#settingsTabWidget {
+                background-color: #1a1a1a;
+            }
+            
+            QScrollArea#settingsScrollArea {
+                background-color: #1a1a1a;
+                border: none;
+            }
+            
+            QWidget#settingsScrollContent {
+                background-color: #1a1a1a;
+            }
         """)
+        
+        # Apply activity list styling after theme
+        self.setup_activity_list_styling()
     
     def apply_light_theme(self):
         """Apply light theme styling using Sunrise color palette for optimal readability."""
+        # Based on Color Theory principles:
+        # - 75BDE0 (Sky Blue): Primary accent, trust and stability
+        # - F8D49B (Golden Yellow): Secondary accent, warm energy  
+        # - F8BC9B (Peach Orange): Interactive elements, friendly warmth
+        # - F89B9B (Coral Pink): Danger/attention states, warm warnings
+        # Light neutrals (#fefefe, #ffffff, #f5f5f5) for clean hierarchy
+        
         self.setStyleSheet("""
             QMainWindow {
                 background-color: #fefefe;
@@ -1720,7 +2258,6 @@ class MainWindow(QMainWindow):
                 min-width: 80px;
                 color: #2c2c2c;
                 font-weight: 600;
-                font-size: 11px;
             }
             
             QPushButton:hover {
@@ -1754,8 +2291,8 @@ class MainWindow(QMainWindow):
             }
             
             QPushButton#dangerButton:hover {
-                background-color: #F07B7B;
-                border-color: #F07B7B;
+                background-color: #F67B7B;
+                border-color: #F67B7B;
             }
             
             QProgressBar {
@@ -1766,13 +2303,12 @@ class MainWindow(QMainWindow):
                 background-color: #ffffff;
                 color: #2c2c2c;
                 font-weight: 600;
-                font-size: 11px;
             }
             
             QProgressBar::chunk {
                 background-color: #75BDE0;
-                width: 1px;
                 border-radius: 4px;
+                margin: 2px;
             }
             
             QTabWidget::pane {
@@ -1792,7 +2328,6 @@ class MainWindow(QMainWindow):
                 margin-right: 3px;
                 color: #2c2c2c;
                 font-weight: 600;
-                font-size: 11px;
             }
             
             QTabBar::tab:selected {
@@ -1812,13 +2347,12 @@ class MainWindow(QMainWindow):
             
             QHeaderView::section {
                 background-color: #F8D49B;
-                padding: 8px;
+                padding: 6px;
                 border: 1px solid #F8BC9B;
                 border-left: none;
                 border-top: none;
                 color: #2c2c2c;
                 font-weight: 600;
-                font-size: 11px;
             }
             
             QTextEdit, QListWidget {
@@ -1827,7 +2361,8 @@ class MainWindow(QMainWindow):
                 background-color: #ffffff;
                 color: #2c2c2c;
                 font-weight: 400;
-                font-size: 11px;
+                selection-background-color: #75BDE0;
+                selection-color: #ffffff;
                 padding: 5px;
             }
             
@@ -1838,7 +2373,6 @@ class MainWindow(QMainWindow):
             QLabel {
                 color: #2c2c2c;
                 font-weight: 600;
-                font-size: 11px;
             }
             
             QStatusBar {
@@ -1846,7 +2380,6 @@ class MainWindow(QMainWindow):
                 color: #2c2c2c;
                 border-top: 2px solid #F8BC9B;
                 font-weight: 600;
-                font-size: 11px;
             }
             
             QMenuBar {
@@ -1854,7 +2387,6 @@ class MainWindow(QMainWindow):
                 color: #2c2c2c;
                 border-bottom: 2px solid #F8BC9B;
                 font-weight: 600;
-                font-size: 11px;
             }
             
             QMenuBar::item {
@@ -1874,7 +2406,6 @@ class MainWindow(QMainWindow):
                 border: 2px solid #75BDE0;
                 border-radius: 6px;
                 font-weight: 600;
-                font-size: 11px;
             }
             
             QMenu::item {
@@ -1894,6 +2425,7 @@ class MainWindow(QMainWindow):
                 border-radius: 8px;
                 padding: 15px;
                 margin-bottom: 10px;
+                border: 2px solid #75BDE0;
             }
             
             #appTitle {
@@ -1909,12 +2441,11 @@ class MainWindow(QMainWindow):
                 border-radius: 6px;
                 color: #2c2c2c;
                 border: 1px solid #F8BC9B;
-                font-size: 11px;
             }
             
             #actionButton {
-                background-color: #ffffff;
-                color: #75BDE0;
+                background-color: #75BDE0;
+                color: white;
                 border: 4px solid #75BDE0;
                 border-radius: 6px;
                 font-weight: 700;
@@ -1927,9 +2458,9 @@ class MainWindow(QMainWindow):
             }
             
             #actionButton:hover {
-                background-color: #F8D49B;
-                color: #2c2c2c;
+                background-color: #5AADD4;
                 border: 4px solid #F8BC9B;
+                color: #ffffff;
                 padding: 6px 12px;
                 min-height: 32px;
                 line-height: 1.3;
@@ -1937,9 +2468,8 @@ class MainWindow(QMainWindow):
             }
             
             #actionButton:pressed {
-                background-color: #F8BC9B;
-                color: #1a1a1a;
-                border: 4px solid #75BDE0;
+                background-color: #4A9DC4;
+                border: 4px solid #F89B9B;
                 padding: 6px 12px;
                 min-height: 32px;
                 line-height: 1.3;
@@ -1951,7 +2481,7 @@ class MainWindow(QMainWindow):
                 font-size: 12px;
                 margin: 3px;
                 font-weight: 600;
-                background-color: #FEFEFE;
+                background-color: rgba(255, 255, 255, 0.9);
                 padding: 4px 8px;
                 border-radius: 4px;
                 border: 1px solid #F8D49B;
@@ -1964,14 +2494,14 @@ class MainWindow(QMainWindow):
                 margin: 2px;
                 font-style: italic;
                 font-weight: 500;
-                background-color: #FEFEFE;
+                background-color: rgba(255, 255, 255, 0.9);
                 padding: 2px 6px;
                 border-radius: 3px;
                 border: 1px solid #F8BC9B;
                 text-align: center;
             }
             
-            /* Scan report sections - maintain readability with Sunrise palette */
+            /* Scan report sections - enhanced readability with sunrise palette */
             #resultsText {
                 font-weight: 400;
                 line-height: 1.5;
@@ -1979,83 +2509,12 @@ class MainWindow(QMainWindow):
                 background-color: #ffffff;
                 border: 2px solid #F8D49B;
                 border-radius: 6px;
-                padding: 8px;
-                font-family: 'monospace', 'Consolas', 'Courier New';
-                font-size: 11px;
             }
             
             #reportViewer {
                 font-weight: 400;
                 line-height: 1.5;
                 color: #2c2c2c;
-                background-color: #ffffff;
-                border: 2px solid #F8D49B;
-                border-radius: 6px;
-                padding: 8px;
-                font-size: 11px;
-            }
-            
-            /* HTML content styling in report viewer */
-            #reportViewer h1, #reportViewer h2, #reportViewer h3 {
-                color: #75BDE0;
-                font-weight: 700;
-                margin-top: 12px;
-                margin-bottom: 8px;
-            }
-            
-            #reportViewer h1 {
-                font-size: 16px;
-                border-bottom: 2px solid #F8D49B;
-                padding-bottom: 4px;
-            }
-            
-            #reportViewer h2 {
-                font-size: 14px;
-                color: #75BDE0;
-            }
-            
-            #reportViewer h3 {
-                font-size: 12px;
-                color: #F8BC9B;
-            }
-            
-            #reportViewer p {
-                color: #2c2c2c;
-                margin: 4px 0;
-            }
-            
-            #reportViewer .threat-high {
-                color: #F89B9B;
-                font-weight: 600;
-                background-color: #FEF5F5;
-                padding: 2px 4px;
-                border-radius: 3px;
-            }
-            
-            #reportViewer .threat-medium {
-                color: #F8BC9B;
-                font-weight: 600;
-                background-color: #FEF9F5;
-                padding: 2px 4px;
-                border-radius: 3px;
-            }
-            
-            #reportViewer .threat-low {
-                color: #75BDE0;
-                font-weight: 600;
-                background-color: #F5FAFF;
-                padding: 2px 4px;
-                border-radius: 3px;
-            }
-            
-            #reportViewer .file-path {
-                color: #2c2c2c;
-                font-family: 'monospace', 'Consolas', 'Courier New';
-                font-size: 10px;
-                background-color: #F8F8F8;
-                padding: 2px 4px;
-                border-radius: 3px;
-                margin: 2px 0;
             }
             
             /* Real-time protection status styles */
@@ -2065,67 +2524,83 @@ class MainWindow(QMainWindow):
                 padding: 10px;
                 border-radius: 6px;
                 background-color: #ffffff;
-                border: 2px solid #75BDE0;
+                border: 2px solid #F8D49B;
             }
             
-            /* Dashboard Status Cards */
+            /* Dashboard Status Cards with solid colors */
             QFrame#statusCard {
-                background-color: #f8f9fa;
-                border: 2px solid #e9ecef;
+                background-color: #ffffff;
+                border: 2px solid #F8D49B;
                 border-radius: 12px;
+                padding: 10px;
                 margin: 5px;
             }
             
             QFrame#statusCard:hover {
                 border-color: #75BDE0;
-                background-color: #ffffff;
+                background-color: #f8f8f8;
             }
             
             QLabel#cardTitle {
-                color: #495057;
+                color: #2c2c2c;
+                font-size: 14px;
                 font-weight: 600;
+                margin-bottom: 5px;
+            }
+            
+            QLabel#cardValue {
+                font-size: 28px;
+                font-weight: 700;
+                margin: 8px 0px;
             }
             
             QLabel#cardDescription {
-                color: #6c757d;
+                color: #75BDE0;
+                font-size: 11px;
+                font-weight: 500;
                 line-height: 1.4;
             }
             
-            /* Dashboard Action Buttons */
+            /* Dashboard Action Buttons with solid colors */
             QPushButton#dashboardPrimaryButton {
-                background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
-                                            stop: 0 #28a745, stop: 1 #1e7e34);
-                border: none;
+                background-color: #75BDE0;
+                border: 2px solid #75BDE0;
                 border-radius: 8px;
-                color: white;
-                font-weight: bold;
+                color: #ffffff;
+                font-weight: 700;
                 font-size: 14px;
+                min-height: 40px;
+                padding: 0px 20px;
             }
             
             QPushButton#dashboardPrimaryButton:hover {
-                background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
-                                            stop: 0 #34ce57, stop: 1 #28a745);
+                background-color: #5AADD4;
+                border-color: #5AADD4;
             }
             
             QPushButton#dashboardSecondaryButton {
-                background-color: #6c757d;
-                border: none;
+                background-color: #F8D49B;
+                border: 2px solid #F8BC9B;
                 border-radius: 8px;
-                color: white;
+                color: #2c2c2c;
                 font-weight: 600;
                 font-size: 13px;
+                min-height: 40px;
+                padding: 0px 16px;
             }
             
             QPushButton#dashboardSecondaryButton:hover {
-                background-color: #5a6268;
+                background-color: #F8BC9B;
+                border-color: #F89B9B;
+                color: #1a1a1a;
             }
             
-            /* Preset Scan Buttons */
+            /* Preset Scan Buttons with sunrise styling */
             QPushButton#presetButton {
-                background-color: #f8f9fa;
-                border: 2px solid #dee2e6;
+                background: #F8D49B;
+                border: 2px solid #F8BC9B;
                 border-radius: 6px;
-                color: #495057;
+                color: #2c2c2c;
                 font-weight: 600;
                 font-size: 12px;
                 padding: 8px 12px;
@@ -2133,18 +2608,122 @@ class MainWindow(QMainWindow):
             }
             
             QPushButton#presetButton:hover {
-                background-color: #e9ecef;
+                background: #F8BC9B;
                 border-color: #75BDE0;
-                color: #495057;
+                color: #1a1a1a;
             }
             
             QLabel#presetLabel {
-                color: #495057;
+                color: #2c2c2c;
                 font-weight: 600;
                 font-size: 12px;
                 margin-bottom: 5px;
             }
+            
+            /* Scrollbar styling for consistency */
+            QScrollBar:vertical {
+                background-color: #f8f8f8;
+                width: 12px;
+                border-radius: 6px;
+                border: 1px solid #F8D49B;
+            }
+            
+            QScrollBar::handle:vertical {
+                background-color: #75BDE0;
+                border-radius: 5px;
+                min-height: 20px;
+            }
+            
+            QScrollBar::handle:vertical:hover {
+                background-color: #5AADD4;
+            }
+            
+            QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
+                height: 0px;
+            }
+            
+            /* Settings Tab Controls */
+            QCheckBox {
+                color: #333333;
+                font-weight: 500;
+                font-size: 12px;
+                spacing: 8px;
+            }
+            
+            QCheckBox::indicator {
+                width: 18px;
+                height: 18px;
+                border: 2px solid #75BDE0;
+                border-radius: 4px;
+                background-color: #ffffff;
+            }
+            
+            QCheckBox::indicator:checked {
+                background-color: #75BDE0;
+                border-color: #75BDE0;
+            }
+            
+            QCheckBox::indicator:hover {
+                border-color: #F8BC9B;
+            }
+            
+            QSpinBox {
+                background-color: #ffffff;
+                border: 2px solid #75BDE0;
+                border-radius: 6px;
+                padding: 8px 12px;
+                color: #333333;
+                font-weight: 500;
+                font-size: 12px;
+            }
+            
+            QSpinBox:focus {
+                border-color: #F8BC9B;
+                background-color: #f8f8f8;
+            }
+            
+            QSpinBox::up-button, QSpinBox::down-button {
+                background-color: #75BDE0;
+                border: none;
+                border-radius: 3px;
+                width: 16px;
+                color: #ffffff;
+                font-weight: 600;
+            }
+            
+            QSpinBox::up-button:hover, QSpinBox::down-button:hover {
+                background-color: #F8BC9B;
+            }
+            
+            QFormLayout QLabel {
+                color: #333333;
+                font-weight: 600;
+                font-size: 12px;
+                padding: 5px;
+            }
+            
+            QScrollArea {
+                background-color: #f8f8f8;
+                border: none;
+            }
+            
+            /* Settings Tab Specific Widgets */
+            QWidget#settingsTabWidget {
+                background-color: #f8f8f8;
+            }
+            
+            QScrollArea#settingsScrollArea {
+                background-color: #f8f8f8;
+                border: none;
+            }
+            
+            QWidget#settingsScrollContent {
+                background-color: #f8f8f8;
+            }
         """)
+        
+        # Apply activity list styling after theme
+        self.setup_activity_list_styling()
     
     def apply_system_theme(self):
         """Apply system theme (falls back to light theme for now)."""
@@ -2172,7 +2751,7 @@ class MainWindow(QMainWindow):
             self.scan_path = path
             self.path_label.setText(path)
             
-    def start_scan(self):
+    def start_scan(self, quick_scan=False):
         if not hasattr(self, 'scan_path'):
             self.show_themed_message_box("warning", "Warning", "Please select a path to scan first.")
             return
@@ -2182,8 +2761,8 @@ class MainWindow(QMainWindow):
         self.progress_bar.setValue(0)
         self.results_text.clear()
         
-        # Start scan in separate thread
-        self.current_scan_thread = ScanThread(self.scanner, self.scan_path)
+        # Start scan in separate thread with quick scan option
+        self.current_scan_thread = ScanThread(self.scanner, self.scan_path, quick_scan=quick_scan)
         self.current_scan_thread.progress_updated.connect(self.progress_bar.setValue)
         self.current_scan_thread.status_updated.connect(self.status_label.setText)
         self.current_scan_thread.scan_completed.connect(self.scan_completed)
@@ -2200,23 +2779,23 @@ class MainWindow(QMainWindow):
         if hasattr(self, 'last_scan_card'):
             try:
                 # Get the most recent scan report from the reports directory
-                from pathlib import Path
-                reports_dir = Path.home() / ".local/share/search-and-destroy/scan_reports/daily"
+                from pathlib import Path as ReportPath
+                reports_dir = ReportPath.home() / ".local/share/search-and-destroy/scan_reports/daily"
                 if reports_dir.exists():
                     report_files = list(reports_dir.glob("scan_*.json"))
                     if report_files:
                         # Get the most recent file
                         latest_file = max(report_files, key=lambda p: p.stat().st_mtime)
                         try:
-                            import json
+                            import json as json_module
                             with open(latest_file, 'r') as f:
-                                report_data = json.load(f)
+                                report_data = json_module.load(f)
                             
                             scan_time = report_data.get('scan_metadata', {}).get('timestamp', '')
                             if scan_time:
-                                from datetime import datetime
+                                from datetime import datetime as dt_module
                                 try:
-                                    scan_date = datetime.fromisoformat(scan_time.replace('Z', '+00:00'))
+                                    scan_date = dt_module.fromisoformat(scan_time.replace('Z', '+00:00'))
                                     formatted_date = scan_date.strftime("%m/%d %H:%M")
                                 except:
                                     formatted_date = "Recently"
@@ -2242,10 +2821,10 @@ class MainWindow(QMainWindow):
                                         child.setStyleSheet(f"color: {color}; font-size: 20px; font-weight: bold;")
                                     elif child.objectName() == "cardDescription":
                                         child.setText("Threats detected - review quarantine" if threats_count > 0 else "No threats detected in recent scans")
-                        except Exception as file_error:
+                        except (OSError, ValueError, KeyError) as file_error:
                             print(f"Error reading report file: {file_error}")
                             
-            except Exception as e:
+            except (OSError, ImportError) as e:
                 print(f"Error updating dashboard cards: {e}")
                 
     def scan_completed(self, result):
@@ -2253,8 +2832,21 @@ class MainWindow(QMainWindow):
         self.stop_scan_btn.setEnabled(False)
         self.progress_bar.setValue(100)
         
+        # Reset quick scan button if it was a quick scan
+        if hasattr(self, 'is_quick_scan_running') and self.is_quick_scan_running:
+            self.reset_quick_scan_button()
+        
         if 'error' in result:
-            self.results_text.setText(f"Scan error: {result['error']}")
+            error_msg = result['error']
+            self.results_text.setText(f"Scan error: {error_msg}")
+            self.status_bar.showMessage(f"Scan failed: {error_msg}")
+            return
+            
+        # Handle cancelled scans
+        if result.get('status') == 'cancelled':
+            cancel_msg = result.get('message', 'Scan was cancelled')
+            self.results_text.setText(cancel_msg)
+            self.status_bar.showMessage(cancel_msg)
             return
             
         # Save the scan result to a report file
@@ -2379,10 +2971,71 @@ class MainWindow(QMainWindow):
         self.results_text.setText(output)
     
     def quick_scan(self):
-        # Implement quick scan of common directories
-        self.scan_path = os.path.expanduser("~")
-        self.path_label.setText("Quick Scan (Home Directory)")
-        self.start_scan()
+        # Toggle quick scan based on current state
+        if self.is_quick_scan_running:
+            # Stop the quick scan
+            self.stop_quick_scan()
+        else:
+            # Start a quick scan
+            self.start_quick_scan()
+    
+    def start_quick_scan(self):
+        """Start a quick scan and update button state."""
+        # Quick scan targets common infection vectors, not entire home directory
+        # This prevents crashes from scanning millions of files
+        import tempfile
+        
+        quick_scan_paths = [
+            os.path.expanduser("~/Downloads"),      # Most common infection vector
+            os.path.expanduser("~/Desktop"),        # User accessible files
+            os.path.expanduser("~/Documents"),      # User documents
+            tempfile.gettempdir(),                  # Temporary files
+            "/tmp" if os.path.exists("/tmp") else None,  # System temp (Linux)
+        ]
+        
+        # Filter out non-existent paths
+        valid_paths = [path for path in quick_scan_paths if path and os.path.exists(path)]
+        
+        if not valid_paths:
+            self.show_themed_message_box("warning", "Warning", "No valid directories found for quick scan.")
+            self.reset_quick_scan_button()
+            return
+        
+        # Use the first valid path (Downloads is most important)
+        self.scan_path = valid_paths[0]
+        self.path_label.setText(f"Quick Scan ({os.path.basename(self.scan_path)})")
+        
+        # Update button state
+        self.is_quick_scan_running = True
+        self.quick_scan_btn.setText("Stop Quick Scan")
+        
+        # Start the scan with file limit for quick scans
+        self.start_scan(quick_scan=True)
+    
+    def stop_quick_scan(self):
+        """Stop the quick scan and reset button state."""
+        try:
+            if hasattr(self, 'current_scan_thread') and self.current_scan_thread and self.current_scan_thread.isRunning():
+                # Gracefully stop the thread
+                self.current_scan_thread.terminate()
+                # Give the thread time to clean up
+                self.current_scan_thread.wait(3000)  # Wait up to 3 seconds
+                
+                # Force completion if thread hasn't terminated
+                if self.current_scan_thread.isRunning():
+                    print("Warning: Scan thread did not terminate gracefully")
+                
+                self.scan_completed({'status': 'cancelled', 'message': 'Quick scan cancelled by user'})
+        except Exception as e:
+            print(f"Error stopping quick scan: {e}")
+        finally:
+            # Always reset button state
+            self.reset_quick_scan_button()
+    
+    def reset_quick_scan_button(self):
+        """Reset the quick scan button to its initial state."""
+        self.is_quick_scan_running = False
+        self.quick_scan_btn.setText("Quick Scan")
     
     def update_definitions(self):
         """Update virus definitions with progress dialog and user feedback."""
@@ -2561,29 +3214,56 @@ class MainWindow(QMainWindow):
         try:
             freshness = self.scanner.clamav_wrapper.check_definition_freshness()
             
+            # Handle error cases gracefully
+            if freshness.get('error'):
+                print(f"Warning: Error checking definitions: {freshness['error']}")
+                self.last_update_label.setText("Status: Check failed")
+                return
+            
             if freshness.get('last_update'):
-                # Parse the date string and format it nicely
-                try:
-                    last_update = datetime.fromisoformat(freshness['last_update'].replace('Z', '+00:00'))
-                    # Format as readable date
-                    formatted_date = last_update.strftime("%Y-%m-%d %H:%M")
-                    label_text = f"Last updated: {formatted_date}"
-                    self.last_update_label.setText(label_text)
-                except (ValueError, AttributeError):
-                    # If parsing fails, show the raw date
-                    label_text = f"Last updated: {freshness['last_update']}"
-                    self.last_update_label.setText(label_text)
+                # Handle different types of last_update values
+                last_update_value = freshness['last_update']
+                
+                if last_update_value == "No definitions found":
+                    self.last_update_label.setText("Status: No definitions")
+                elif last_update_value.startswith("Error:"):
+                    self.last_update_label.setText("Status: Check failed")
+                else:
+                    # Parse the date string and format it nicely
+                    try:
+                        last_update = datetime.fromisoformat(last_update_value.replace('Z', '+00:00'))
+                        # Format as readable date
+                        formatted_date = last_update.strftime("%Y-%m-%d %H:%M")
+                        label_text = f"Last updated: {formatted_date}"
+                        self.last_update_label.setText(label_text)
+                    except (ValueError, AttributeError):
+                        # If parsing fails, show the raw date
+                        label_text = f"Last updated: {last_update_value}"
+                        self.last_update_label.setText(label_text)
             else:
                 # Check if definitions exist at all
                 if freshness.get('definitions_exist', False):
                     self.last_update_label.setText("Last updated: Unknown")
                 else:
-                    self.last_update_label.setText("No definitions found")
+                    self.last_update_label.setText("Status: No definitions")
                     
         except Exception as e:
             print(f"Error checking definition status: {e}")
             self.last_update_label.setText("Status: Error checking")
             self.last_checked_label.setText(f"Last checked: {formatted_checked} (error)")
+            
+            # Try a fallback method using clamscan --version (doesn't require sudo)
+            try:
+                import subprocess
+                result = subprocess.run(['clamscan', '--version'], 
+                                      capture_output=True, text=True, timeout=10)
+                if result.returncode == 0:
+                    # If clamscan works, definitions are probably there, just couldn't access them
+                    self.last_update_label.setText("Status: Permissions issue")
+                else:
+                    self.last_update_label.setText("Status: ClamAV not found")
+            except (subprocess.CalledProcessError, subprocess.TimeoutExpired, FileNotFoundError):
+                self.last_update_label.setText("Status: ClamAV not available")
     
     def tray_icon_activated(self, reason):
         # ActivationReason.Trigger is a single click, DoubleClick is double click
@@ -2676,11 +3356,6 @@ class MainWindow(QMainWindow):
         dialog = ScanDialog(self)
         dialog.exec()
 
-    def open_settings_dialog(self):
-        from .settings_dialog import SettingsDialog
-        dialog = SettingsDialog(self)
-        dialog.exec()
-        
     def refresh_reports(self):
         """Load and display scan reports in the reports list."""
         try:
@@ -3436,3 +4111,110 @@ class MainWindow(QMainWindow):
                     
         except Exception as e:
             self.show_themed_message_box("warning", "Delete Error", f"Error deleting reports: {e}")
+
+    def load_current_settings(self):
+        """Load current settings from config into the settings UI controls."""
+        try:
+            # Scan settings
+            scan_settings = self.config.get('scan_settings', {})
+            self.settings_max_threads_spin.setValue(scan_settings.get('max_threads', 4))
+            self.settings_timeout_spin.setValue(scan_settings.get('timeout_seconds', 300))
+            
+            # UI settings
+            ui_settings = self.config.get('ui_settings', {})
+            self.settings_minimize_to_tray_cb.setChecked(ui_settings.get('minimize_to_tray', True))
+            self.settings_show_notifications_cb.setChecked(ui_settings.get('show_notifications', True))
+            
+            # Security settings
+            security_settings = self.config.get('security_settings', {})
+            self.settings_auto_update_cb.setChecked(security_settings.get('auto_update_definitions', True))
+            
+            # Advanced settings
+            advanced_settings = self.config.get('advanced_settings', {})
+            self.settings_scan_archives_cb.setChecked(advanced_settings.get('scan_archives', True))
+            self.settings_follow_symlinks_cb.setChecked(advanced_settings.get('follow_symlinks', False))
+            
+            # Real-time protection settings
+            protection_settings = self.config.get('realtime_protection', {})
+            self.settings_monitor_modifications_cb.setChecked(protection_settings.get('monitor_modifications', True))
+            self.settings_monitor_new_files_cb.setChecked(protection_settings.get('monitor_new_files', True))
+            self.settings_scan_modified_cb.setChecked(protection_settings.get('scan_modified_files', False))
+            
+        except Exception as e:
+            self.show_themed_message_box("warning", "Warning", f"Could not load settings: {str(e)}")
+            
+    def load_default_settings(self):
+        """Reset all settings to their default values."""
+        try:
+            # Reset scan settings to defaults
+            self.settings_max_threads_spin.setValue(4)
+            self.settings_timeout_spin.setValue(300)
+            
+            # Reset UI settings to defaults
+            self.settings_minimize_to_tray_cb.setChecked(True)
+            self.settings_show_notifications_cb.setChecked(True)
+            
+            # Reset security settings to defaults
+            self.settings_auto_update_cb.setChecked(True)
+            
+            # Reset advanced settings to defaults
+            self.settings_scan_archives_cb.setChecked(True)
+            self.settings_follow_symlinks_cb.setChecked(False)
+            
+            # Reset real-time protection settings to defaults
+            self.settings_monitor_modifications_cb.setChecked(True)
+            self.settings_monitor_new_files_cb.setChecked(True)
+            self.settings_scan_modified_cb.setChecked(False)
+            
+            self.show_themed_message_box("information", "Settings", "Settings have been reset to defaults.")
+            
+        except Exception as e:
+            self.show_themed_message_box("warning", "Error", f"Could not reset settings: {str(e)}")
+            
+    def save_settings(self):
+        """Save all settings from the UI controls to the config file."""
+        try:
+            # Ensure config sections exist
+            if 'scan_settings' not in self.config:
+                self.config['scan_settings'] = {}
+            if 'ui_settings' not in self.config:
+                self.config['ui_settings'] = {}
+            if 'security_settings' not in self.config:
+                self.config['security_settings'] = {}
+            if 'advanced_settings' not in self.config:
+                self.config['advanced_settings'] = {}
+            if 'realtime_protection' not in self.config:
+                self.config['realtime_protection'] = {}
+            
+            # Update config with new values from UI
+            self.config['scan_settings']['max_threads'] = self.settings_max_threads_spin.value()
+            self.config['scan_settings']['timeout_seconds'] = self.settings_timeout_spin.value()
+            
+            self.config['ui_settings']['minimize_to_tray'] = self.settings_minimize_to_tray_cb.isChecked()
+            self.config['ui_settings']['show_notifications'] = self.settings_show_notifications_cb.isChecked()
+            
+            self.config['security_settings']['auto_update_definitions'] = self.settings_auto_update_cb.isChecked()
+            
+            self.config['advanced_settings']['scan_archives'] = self.settings_scan_archives_cb.isChecked()
+            self.config['advanced_settings']['follow_symlinks'] = self.settings_follow_symlinks_cb.isChecked()
+            
+            self.config['realtime_protection']['monitor_modifications'] = self.settings_monitor_modifications_cb.isChecked()
+            self.config['realtime_protection']['monitor_new_files'] = self.settings_monitor_new_files_cb.isChecked()
+            self.config['realtime_protection']['scan_modified_files'] = self.settings_scan_modified_cb.isChecked()
+            
+            # Save config to file
+            from utils.config import save_config
+            save_config(self.config)
+            
+            self.show_themed_message_box("information", "Settings", "Settings saved successfully!")
+            
+            # If real-time protection is active, update its settings
+            if hasattr(self, 'real_time_monitor') and self.real_time_monitor:
+                try:
+                    # Update real-time monitor settings if it's running
+                    pass  # We could add real-time settings update here if needed
+                except Exception as monitor_error:
+                    print(f"⚠️ Could not update real-time monitor settings: {monitor_error}")
+            
+        except Exception as e:
+            self.show_themed_message_box("warning", "Error", f"Could not save settings: {str(e)}")

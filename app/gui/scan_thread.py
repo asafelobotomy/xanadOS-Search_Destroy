@@ -6,10 +6,11 @@ class ScanThread(QThread):
     scan_completed = pyqtSignal(dict)
     status_updated = pyqtSignal(str)
     
-    def __init__(self, scanner, path):
+    def __init__(self, scanner, path, quick_scan=False):
         super().__init__()
         self.scanner = scanner
         self.path = path
+        self.quick_scan = quick_scan
         
     def run(self):
         try:
@@ -17,10 +18,17 @@ class ScanThread(QThread):
             self.scanner.set_progress_callback(
                 lambda p, s: (self.progress_updated.emit(int(p)), self.status_updated.emit(s))
             )
-            # Start scan
+            # Start scan with appropriate limits
             self.progress_updated.emit(0)
             self.status_updated.emit("Starting scan...")
-            result = self.scanner.scan_directory(self.path)
+            
+            # For quick scans, limit the number of files to prevent crashes
+            if self.quick_scan:
+                result = self.scanner.scan_directory(self.path, max_files=1000)  # Limit to 1000 files for quick scan
+                self.status_updated.emit("Quick scan in progress...")
+            else:
+                result = self.scanner.scan_directory(self.path)
+                self.status_updated.emit("Full scan in progress...")
             # Complete scan
             self.progress_updated.emit(100)
             self.status_updated.emit("Scan completed")

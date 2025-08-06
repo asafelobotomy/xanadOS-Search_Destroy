@@ -59,10 +59,12 @@ class ScanDialog(QDialog):
         if current_theme == 'dark':
             msg_box.setStyleSheet("""
                 QMessageBox {
-                    background-color: #2b2b2b;
+                    background-color: #1a1a1a;
                     color: #FFCDAA;
                     font-size: 12px;
                     font-weight: 500;
+                    border: 2px solid #EE8980;
+                    border-radius: 6px;
                 }
                 QMessageBox QLabel {
                     color: #FFCDAA;
@@ -70,7 +72,7 @@ class ScanDialog(QDialog):
                     padding: 10px;
                 }
                 QMessageBox QPushButton {
-                    background-color: #404040;
+                    background-color: #3a3a3a;
                     border: 2px solid #EE8980;
                     border-radius: 5px;
                     padding: 8px 16px;
@@ -79,17 +81,17 @@ class ScanDialog(QDialog):
                     min-width: 80px;
                 }
                 QMessageBox QPushButton:hover {
-                    background-color: #505050;
+                    background-color: #4a4a4a;
                     border-color: #F14666;
                     color: #ffffff;
                 }
                 QMessageBox QPushButton:pressed {
-                    background-color: #606060;
+                    background-color: #2a2a2a;
                 }
                 QMessageBox QPushButton:default {
                     background-color: #9CB898;
                     border-color: #9CB898;
-                    color: #2b2b2b;
+                    color: #1a1a1a;
                     font-weight: 700;
                 }
                 QMessageBox QPushButton:default:hover {

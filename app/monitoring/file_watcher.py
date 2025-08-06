@@ -107,6 +107,19 @@ class FileSystemWatcher:
             self.logger.warning("Watcher is already running")
             return
         
+        # Validate watch paths before starting
+        valid_paths = []
+        for path in self.paths_to_watch:
+            if isinstance(path, str) and os.path.exists(path):
+                valid_paths.append(path)
+            else:
+                self.logger.warning("Invalid or non-existent watch path: %s", path)
+        
+        if not valid_paths:
+            self.logger.error("No valid watch paths found, cannot start watcher")
+            return
+        
+        self.paths_to_watch = valid_paths
         self.watching = True
         self.start_time = time.time()
         
@@ -124,7 +137,7 @@ class FileSystemWatcher:
             )
         
         self.watch_thread.start()
-        self.logger.info("File system watcher started")
+        self.logger.info("File system watcher started for %d paths", len(self.paths_to_watch))
     
     def stop_watching(self):
         """Stop monitoring file system events."""
@@ -145,17 +158,30 @@ class FileSystemWatcher:
     def _inotify_watch_loop(self):
         """Main loop for inotify-based watching."""
         try:
-            self.inotify_adapter = inotify.adapters.InotifyTree(
-                self.paths_to_watch,
-                mask=(
-                    inotify.constants.IN_CREATE |
-                    inotify.constants.IN_MODIFY |
-                    inotify.constants.IN_DELETE |
-                    inotify.constants.IN_MOVED_FROM |
-                    inotify.constants.IN_MOVED_TO |
-                    inotify.constants.IN_CLOSE_WRITE
-                )
-            )
+            # inotify.adapters.InotifyTree expects single path, not list
+            # We need to create multiple adapters or use Inotify with manual add_watch
+            self.inotify_adapter = inotify.adapters.Inotify()
+            
+            # Add watches for each path
+            for watch_path in self.paths_to_watch:
+                if os.path.exists(watch_path):
+                    try:
+                        self.inotify_adapter.add_watch(
+                            watch_path,
+                            mask=(
+                                inotify.constants.IN_CREATE |
+                                inotify.constants.IN_MODIFY |
+                                inotify.constants.IN_DELETE |
+                                inotify.constants.IN_MOVED_FROM |
+                                inotify.constants.IN_MOVED_TO |
+                                inotify.constants.IN_CLOSE_WRITE
+                            )
+                        )
+                        self.logger.info("Added inotify watch for: %s", watch_path)
+                    except Exception as e:
+                        self.logger.warning("Failed to add inotify watch for %s: %s", watch_path, e)
+                else:
+                    self.logger.warning("Watch path does not exist, skipping: %s", watch_path)
             
             for event in self.inotify_adapter.event_gen(yield_nones=False):
                 if not self.watching:

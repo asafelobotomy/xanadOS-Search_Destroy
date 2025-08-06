@@ -29,7 +29,7 @@ make check-style || echo "⚠️  Code style issues found (non-blocking)"
 
 # Verify Flatpak manifest
 echo "📋 Verifying Flatpak manifest..."
-if [ -f "flatpak/org.xanados.SearchAndDestroy.yml" ]; then
+if [ -f "packaging/flatpak/org.xanados.SearchAndDestroy.yml" ]; then
     echo "✅ Flatpak manifest found"
 else
     echo "❌ Flatpak manifest missing!"
@@ -38,7 +38,7 @@ fi
 
 # Check required icons
 echo "🎨 Checking application icons..."
-icon_count=$(find icons/ -name "*.svg" -o -name "*.png*" | wc -l)
+icon_count=$(find packaging/icons/ -name "*.svg" -o -name "*.png*" | wc -l)
 if [ "$icon_count" -gt 0 ]; then
     echo "✅ Application icons found ($icon_count files)"
 else

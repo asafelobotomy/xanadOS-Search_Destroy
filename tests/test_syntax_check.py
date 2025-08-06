@@ -14,9 +14,9 @@ def check_syntax(file_path):
         
         ast.parse(source)
         return True, None
-    except SyntaxError as e:
+    except (SyntaxError, UnicodeDecodeError) as e:
         return False, f"Syntax error: {e}"
-    except Exception as e:
+    except (IOError, OSError) as e:
         return False, f"Error reading file: {e}"
 
 def check_methods_exist(file_path, required_methods):
@@ -36,7 +36,7 @@ def check_methods_exist(file_path, required_methods):
         
         return found_methods, missing_methods
         
-    except Exception as e:
+    except (IOError, OSError):
         return [], required_methods
 
 def main():
@@ -44,7 +44,8 @@ def main():
     print("GUI Monitoring Integration - Syntax Check")
     print("=" * 50)
     
-    src_dir = Path(__file__).parent.parent / "src"
+    # Set up paths
+    src_dir = Path(__file__).parent.parent / "app"
     main_window_path = src_dir / "gui" / "main_window.py"
     
     if not main_window_path.exists():

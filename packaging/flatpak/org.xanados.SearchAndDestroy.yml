@@ -53,7 +53,7 @@ modules:
       - pip3 install --prefix=/app --no-deps PyQt6 PyQt6-Qt6
     sources:
       - type: file
-        path: ../requirements.txt
+        path: ../../requirements.txt
 
   - name: search-and-destroy
     buildsystem: simple

@@ -487,12 +487,22 @@ class FileScanner:
         
         # Collect all files
         file_paths = []
+        MAX_FILES_LIMIT = kwargs.get('max_files', 10000)  # Default limit to prevent crashes
+        
         for file_path in directory_obj.rglob('*'):
             if file_path.is_file():
                 # Skip hidden files unless requested
                 if not include_hidden and any(part.startswith('.') for part in file_path.parts):
                     continue
                 file_paths.append(str(file_path))
+                
+                # Safety check: prevent scanning too many files at once
+                if len(file_paths) >= MAX_FILES_LIMIT:
+                    self.logger.warning(
+                        "Reached file limit (%d) in directory: %s. Scanning first %d files only.", 
+                        MAX_FILES_LIMIT, directory_path, MAX_FILES_LIMIT
+                    )
+                    break
         
         self.logger.info("Found %d files in directory: %s", len(file_paths), directory_path)
         

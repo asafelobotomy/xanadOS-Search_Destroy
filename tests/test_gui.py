@@ -62,7 +62,7 @@ class TestMainWindow(unittest.TestCase):
         
     def test_main_window_syntax(self):
         """Test that main_window.py has valid Python syntax"""
-        main_window_path = os.path.join(os.path.dirname(__file__), '..', 'src', 'gui', 'main_window.py')
+        main_window_path = os.path.join(os.path.dirname(__file__), '..', 'app', 'gui', 'main_window.py')
         try:
             with open(main_window_path, 'r', encoding='utf-8') as f:
                 ast.parse(f.read())
@@ -72,7 +72,7 @@ class TestMainWindow(unittest.TestCase):
             
     def test_scan_thread_syntax(self):
         """Test that scan_thread.py has valid Python syntax"""
-        scan_thread_path = os.path.join(os.path.dirname(__file__), '..', 'src', 'gui', 'scan_thread.py')
+        scan_thread_path = os.path.join(os.path.dirname(__file__), '..', 'app', 'gui', 'scan_thread.py')
         try:
             with open(scan_thread_path, 'r', encoding='utf-8') as f:
                 code = f.read()
@@ -102,7 +102,7 @@ class TestSettingsDialog(unittest.TestCase):
         """Test that SettingsDialog file exists and has valid syntax"""
         # Note: Direct import testing skipped due to relative import structure
         # The module structure is designed to work when run as a package
-        settings_path = os.path.join(os.path.dirname(__file__), '..', 'src', 'gui', 'settings_dialog.py')
+        settings_path = os.path.join(os.path.dirname(__file__), '..', 'app', 'gui', 'settings_dialog.py')
         self.assertTrue(os.path.exists(settings_path), "settings_dialog.py should exist")
         
         # Verify syntax is valid
@@ -136,7 +136,7 @@ class TestScanDialog(unittest.TestCase):
         """Test that ScanDialog file exists and has valid syntax"""
         # Note: Direct import testing skipped due to relative import structure
         # The module structure is designed to work when run as a package
-        scan_dialog_path = os.path.join(os.path.dirname(__file__), '..', 'src', 'gui', 'scan_dialog.py')
+        scan_dialog_path = os.path.join(os.path.dirname(__file__), '..', 'app', 'gui', 'scan_dialog.py')
         self.assertTrue(os.path.exists(scan_dialog_path), "scan_dialog.py should exist")
         
         # Verify syntax is valid
@@ -177,11 +177,10 @@ class TestApplicationStructure(unittest.TestCase):
         """Test that all GUI files use PyQt6 consistently"""
         base_path = os.path.join(os.path.dirname(__file__), '..')
         gui_files = [
-            os.path.join(base_path, 'src', 'main.py'),
-            os.path.join(base_path, 'src', 'gui', 'main_window.py'),
-            os.path.join(base_path, 'src', 'gui', 'scan_dialog.py'),
-            os.path.join(base_path, 'src', 'gui', 'settings_dialog.py'),
-            os.path.join(base_path, 'src', 'gui', 'scan_thread.py')
+            os.path.join(base_path, 'app', 'gui', 'main_window.py'),
+            os.path.join(base_path, 'app', 'gui', 'scan_dialog.py'),
+            os.path.join(base_path, 'app', 'gui', 'settings_dialog.py'),
+            os.path.join(base_path, 'app', 'gui', 'scan_thread.py')
         ]
         
         for file_path in gui_files:
@@ -224,8 +223,8 @@ class TestRequirements(unittest.TestCase):
     def test_icons_exist(self):
         """Test that application icons exist"""
         base_path = os.path.join(os.path.dirname(__file__), '..')
-        icons_dir = os.path.join(base_path, 'icons')
-        self.assertTrue(os.path.exists(icons_dir), "icons directory should exist")
+        icons_dir = os.path.join(base_path, 'packaging', 'icons')
+        self.assertTrue(os.path.exists(icons_dir), "packaging/icons directory should exist")
         
         # Check for SVG icon
         svg_icon = os.path.join(icons_dir, 'org.xanados.SearchAndDestroy.svg')
@@ -249,8 +248,8 @@ class TestCodeQuality(unittest.TestCase):
         """Test that all Python files have correct syntax"""
         python_files = []
         
-        # Find all Python files in src directory
-        src_dir = os.path.join(os.path.dirname(__file__), '..', 'src')
+        # Find all Python files in app directory
+        src_dir = os.path.join(os.path.dirname(__file__), '..', 'app')
         for root, _, files in os.walk(src_dir):
             for file in files:
                 if file.endswith('.py'):
@@ -268,7 +267,7 @@ class TestCodeQuality(unittest.TestCase):
     def test_placeholder_implementations_removed(self):
         """Test that placeholder implementations have been replaced"""
         # Check that settings_dialog.py is not a placeholder
-        settings_path = os.path.join(os.path.dirname(__file__), '..', 'src', 'gui', 'settings_dialog.py')
+        settings_path = os.path.join(os.path.dirname(__file__), '..', 'app', 'gui', 'settings_dialog.py')
         with open(settings_path, 'r', encoding='utf-8') as f:
             content = f.read()
         
@@ -277,7 +276,7 @@ class TestCodeQuality(unittest.TestCase):
                         "settings_dialog.py should not contain placeholder comments")
         
         # Check that scan_dialog.py is not a placeholder
-        scan_path = os.path.join(os.path.dirname(__file__), '..', 'src', 'gui', 'scan_dialog.py')
+        scan_path = os.path.join(os.path.dirname(__file__), '..', 'app', 'gui', 'scan_dialog.py')
         with open(scan_path, 'r', encoding='utf-8') as f:
             content = f.read()
         

@@ -18,10 +18,29 @@ clean:
 
 # Clean Python cache files
 clean-cache:
-	find . -name "__pycache__" -type d -exec rm -rf {} + 2>/dev/null || true
+	find ./app -name "__pycache__" -type d -exec rm -rf {} + 2>/dev/null || true
+	find ./tests -name "__pycache__" -type d -exec rm -rf {} + 2>/dev/null || true
 	find . -name "*.pyc" -delete 2>/dev/null || true
+	find . -name "*.pyo" -delete 2>/dev/null || true
 
-# Clean everything (build + cache)
+# Clean development files
+clean-dev:
+	@echo "Development files are organized in dev/ directory"
+	@echo "Use 'make clean-dev-force' to remove dev/ directory entirely"
+
+# Force clean development files (WARNING: removes dev/ directory)
+clean-dev-force:
+	rm -rf dev/
+
+# Organize project structure
+organize:
+	@echo "Organizing project structure..."
+	@mkdir -p dev/demos dev/test-scripts
+	@find . -maxdepth 1 -name "demo_*.py" -exec mv {} dev/demos/ \; 2>/dev/null || true
+	@find . -maxdepth 1 -name "test_*.py" -exec mv {} dev/test-scripts/ \; 2>/dev/null || true
+	@echo "Project structure organized!"
+
+# Clean everything (build + cache + temp files)
 clean-all: clean clean-cache
 
 # Traditional installation (with virtual environment)
@@ -70,7 +89,10 @@ help:
 	@echo "  verify        - Run build verification script"
 	@echo "  clean         - Clean build artifacts"
 	@echo "  clean-cache   - Clean Python cache files"
+	@echo "  clean-dev     - Info about development file cleanup"
+	@echo "  clean-dev-force - Remove dev/ directory (WARNING: destructive)"
 	@echo "  clean-all     - Clean everything (build + cache)"
+	@echo "  organize      - Organize project structure"
 	@echo "  install       - Install Python dependencies"
 	@echo "  build-flatpak - Build Flatpak package"
 	@echo "  install-flatpak - Install Flatpak locally"

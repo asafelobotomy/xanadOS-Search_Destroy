@@ -123,10 +123,10 @@ def test_icons_created():
     print("Testing application icons...")
     
     # Check icons directory exists
-    assert os.path.exists('icons'), "FAIL: icons directory should exist"
+    assert os.path.exists('packaging/icons'), "FAIL: packaging/icons directory should exist"
     
     # Check for SVG icon
-    svg_icon = 'icons/org.xanados.SearchAndDestroy.svg'
+    svg_icon = 'packaging/icons/org.xanados.SearchAndDestroy.svg'
     assert os.path.exists(svg_icon), "FAIL: SVG icon should exist"
     
     # Check SVG content
@@ -138,8 +138,8 @@ def test_icons_created():
     # Check for icon placeholders or actual PNG files
     sizes = [16, 32, 48, 64, 128]
     for size in sizes:
-        png_icon = f'icons/org.xanados.SearchAndDestroy-{size}.png'
-        placeholder = f'icons/org.xanados.SearchAndDestroy-{size}.png.placeholder'
+        png_icon = f'packaging/icons/org.xanados.SearchAndDestroy-{size}.png'
+        placeholder = f'packaging/icons/org.xanados.SearchAndDestroy-{size}.png.placeholder'
         
         icon_exists = os.path.exists(png_icon) or os.path.exists(placeholder)
         assert icon_exists, f"FAIL: Icon for size {size}x{size} should exist"
