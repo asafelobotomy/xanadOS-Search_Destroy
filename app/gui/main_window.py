@@ -9,14 +9,24 @@ from PyQt6.QtWidgets import (QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
                              QTabWidget, QGroupBox, QListWidget, QListWidgetItem,
                              QSplitter, QFrame, QStatusBar, QMenuBar, QMenu,
                              QFileDialog, QMessageBox, QSystemTrayIcon, QProgressDialog)
-from PyQt6.QtCore import Qt, QTimer
-from PyQt6.QtGui import QIcon, QFont, QPixmap, QAction
+from PyQt6.QtCore import Qt, QTimer, pyqtSignal
+from PyQt6.QtGui import QIcon, QFont, QPixmap, QAction, QShortcut, QKeySequence, QMouseEvent
 
 from gui.scan_thread import ScanThread
 from core.file_scanner import FileScanner
 from utils.config import load_config, save_config
 from utils.scan_reports import ScanReportManager, ScanResult, ScanType, ThreatInfo, ThreatLevel
 from monitoring import RealTimeMonitor, MonitorConfig, MonitorState
+
+
+class ClickableFrame(QFrame):
+    """A clickable frame widget."""
+    clicked = pyqtSignal()
+    
+    def mousePressEvent(self, event: QMouseEvent):
+        if event.button() == Qt.MouseButton.LeftButton:
+            self.clicked.emit()
+        super().mousePressEvent(event)
 
 
 class MainWindow(QMainWindow):
@@ -36,13 +46,15 @@ class MainWindow(QMainWindow):
         
         self.init_ui()
         self.setup_system_tray()
+        self.setup_accessibility()  # Add accessibility features
         self.apply_theme()
         
-        # Initialize real-time monitoring
-        self.init_real_time_monitoring()
+        # Initialize real-time monitoring (with error handling)
+        self.init_real_time_monitoring_safe()
         
         # Use QTimer to update status after UI is fully initialized
         QTimer.singleShot(100, self.update_definition_status)
+        QTimer.singleShot(200, self.update_protection_ui_after_init)
         
     def init_ui(self):
         self.setWindowTitle("S&D - Search & Destroy")
@@ -63,6 +75,7 @@ class MainWindow(QMainWindow):
         
         # Tab widget for different views
         self.tab_widget = QTabWidget()
+        self.create_dashboard_tab()  # Add dashboard as first tab
         self.create_scan_tab()
         self.create_real_time_tab()
         self.create_reports_tab()
@@ -87,7 +100,7 @@ class MainWindow(QMainWindow):
         
         # Load and display the actual S&D icon
         self.icon_label = QLabel()
-        self.icon_label.setFixedSize(128, 128)
+        self.icon_label.setFixedSize(128, 128)  # Restored to 128x128 as requested
         self.update_icon_for_theme()
         title_layout.addWidget(self.icon_label)
         
@@ -108,12 +121,14 @@ class MainWindow(QMainWindow):
         
         quick_scan_btn = QPushButton("Quick Scan")
         quick_scan_btn.setObjectName("actionButton")
+        quick_scan_btn.setMinimumSize(120, 40)  # Increased size to prevent text cutoff
         quick_scan_btn.clicked.connect(self.quick_scan)
         
         # Update definitions button with status
         update_container = QVBoxLayout()
         update_btn = QPushButton("Update Definitions")
         update_btn.setObjectName("actionButton")
+        update_btn.setMinimumSize(140, 40)  # Increased size for longer text
         update_btn.clicked.connect(self.update_definitions)
         
         # Last update status label
@@ -134,6 +149,7 @@ class MainWindow(QMainWindow):
         
         about_btn = QPushButton("About")
         about_btn.setObjectName("actionButton")
+        about_btn.setMinimumSize(80, 40)  # Increased size to prevent text cutoff
         about_btn.clicked.connect(self.show_about)
         
         actions_layout.addWidget(quick_scan_btn)
@@ -143,24 +159,271 @@ class MainWindow(QMainWindow):
         header_layout.addLayout(actions_layout)
         layout.addWidget(header_frame)
         
+    def create_dashboard_tab(self):
+        """Create an overview dashboard tab."""
+        dashboard_widget = QWidget()
+        layout = QVBoxLayout(dashboard_widget)
+        layout.setSpacing(20)
+        layout.setContentsMargins(25, 25, 25, 25)
+        
+        # Security Status Overview
+        status_row = QHBoxLayout()
+        status_row.setSpacing(15)
+        
+        # Protection Status Card
+        self.protection_card = self.create_clickable_status_card(
+            "Real-Time Protection",
+            "Active" if self.monitoring_enabled else "Inactive",
+            "#28a745" if self.monitoring_enabled else "#dc3545",
+            "Your system is being monitored" if self.monitoring_enabled else "Click to enable protection"
+        )
+        # Connect the click signal
+        self.protection_card.clicked.connect(self.toggle_protection_from_dashboard)
+        
+        # Last Scan Card
+        self.last_scan_card = self.create_status_card(
+            "Last Scan",
+            "Not scanned yet",  # Will be updated dynamically
+            "#17a2b8",
+            "Full system scan status"
+        )
+        
+        # Threats Card
+        self.threats_card = self.create_status_card(
+            "Threats Found",
+            "0",  # Will be updated dynamically
+            "#28a745",
+            "No threats detected in recent scans"
+        )
+        
+        status_row.addWidget(self.protection_card)
+        status_row.addWidget(self.last_scan_card)
+        status_row.addWidget(self.threats_card)
+        
+        layout.addLayout(status_row)
+        
+        # Real-Time Protection Activity (expanded to fill the space)
+        activity_group = QGroupBox("Real-Time Protection Activity")
+        activity_layout = QVBoxLayout(activity_group)
+        
+        self.dashboard_activity = QListWidget()
+        # Remove height restriction to allow it to expand
+        self.dashboard_activity.setAlternatingRowColors(True)
+        activity_layout.addWidget(self.dashboard_activity)
+        
+        # Show more link
+        show_more_btn = QPushButton("View All Activity →")
+        show_more_btn.setFlat(True)
+        show_more_btn.clicked.connect(lambda: self.tab_widget.setCurrentIndex(2))  # Go to protection tab
+        activity_layout.addWidget(show_more_btn)
+        
+        layout.addWidget(activity_group)
+        
+        layout.addStretch()
+        
+        # Add as first tab
+        self.tab_widget.addTab(dashboard_widget, "Dashboard")
+        
+    def create_status_card(self, title, value, color, description):
+        """Create a modern status card widget."""
+        card = QFrame()
+        card.setObjectName("statusCard")
+        card.setFrameStyle(QFrame.Shape.Box)
+        card.setCursor(Qt.CursorShape.PointingHandCursor)
+        
+        layout = QVBoxLayout(card)
+        layout.setSpacing(8)
+        layout.setContentsMargins(20, 15, 20, 15)
+        
+        # Title
+        title_label = QLabel(title)
+        title_label.setObjectName("cardTitle")
+        title_font = QFont()
+        title_font.setPointSize(12)
+        title_font.setWeight(QFont.Weight.Medium)
+        title_label.setFont(title_font)
+        
+        # Value (main status)
+        value_label = QLabel(value)
+        value_label.setObjectName("cardValue")
+        value_label.setStyleSheet(f"color: {color}; font-size: 20px; font-weight: bold;")
+        
+        # Description
+        desc_label = QLabel(description)
+        desc_label.setObjectName("cardDescription")
+        desc_label.setWordWrap(True)
+        desc_font = QFont()
+        desc_font.setPointSize(10)
+        desc_label.setFont(desc_font)
+        
+        layout.addWidget(title_label)
+        layout.addWidget(value_label)
+        layout.addWidget(desc_label)
+        layout.addStretch()
+        
+        return card
+
+    def create_clickable_status_card(self, title, value, color, description):
+        """Create a clickable modern status card widget."""
+        card = ClickableFrame()
+        card.setObjectName("statusCard")
+        card.setFrameStyle(QFrame.Shape.Box)
+        card.setCursor(Qt.CursorShape.PointingHandCursor)
+        
+        layout = QVBoxLayout(card)
+        layout.setSpacing(8)
+        layout.setContentsMargins(20, 15, 20, 15)
+        
+        # Title
+        title_label = QLabel(title)
+        title_label.setObjectName("cardTitle")
+        title_font = QFont()
+        title_font.setPointSize(12)
+        title_font.setWeight(QFont.Weight.Medium)
+        title_label.setFont(title_font)
+        
+        # Value (main status)
+        value_label = QLabel(value)
+        value_label.setObjectName("cardValue")
+        value_label.setStyleSheet(f"color: {color}; font-size: 20px; font-weight: bold;")
+        
+        # Description
+        desc_label = QLabel(description)
+        desc_label.setObjectName("cardDescription")
+        desc_label.setWordWrap(True)
+        desc_font = QFont()
+        desc_font.setPointSize(10)
+        desc_label.setFont(desc_font)
+        
+        layout.addWidget(title_label)
+        layout.addWidget(value_label)
+        layout.addWidget(desc_label)
+        layout.addStretch()
+        
+        return card
+
+    def toggle_protection_from_dashboard(self):
+        """Toggle protection when the dashboard status card is clicked."""
+        # If monitor wasn't initialized, try to initialize it first
+        if self.real_time_monitor is None:
+            print("🔄 Initializing monitoring system from dashboard...")
+            success = self.init_real_time_monitoring_safe()
+            if not success:
+                self.add_activity_message("❌ Cannot toggle protection: Monitoring system unavailable")
+                return
+        
+        self.monitoring_enabled = not self.monitoring_enabled
+        self.update_protection_status_card()
+        
+        # Update the protection tab if it exists
+        if hasattr(self, 'protection_toggle_btn'):
+            if self.monitoring_enabled:
+                self.start_real_time_protection()
+            else:
+                self.stop_real_time_protection()
+        else:
+            # Just update the config if the protection tab doesn't exist yet
+            self.config['security_settings'] = self.config.get('security_settings', {})
+            self.config['security_settings']['real_time_protection'] = self.monitoring_enabled
+            save_config(self.config)
+            
+            if self.monitoring_enabled:
+                self.add_activity_message("🛡️ Real-time protection enabled from dashboard")
+            else:
+                self.add_activity_message("⏹️ Real-time protection disabled from dashboard")
+    
+    def update_protection_status_card(self):
+        """Update the protection status card with current state."""
+        if hasattr(self, 'protection_card'):
+            # Find the card's value label and update it
+            for child in self.protection_card.findChildren(QLabel):
+                if child.objectName() == "cardValue":
+                    child.setText("Active" if self.monitoring_enabled else "Inactive")
+                    child.setStyleSheet(f"color: {'#28a745' if self.monitoring_enabled else '#dc3545'}; font-size: 20px; font-weight: bold;")
+                elif child.objectName() == "cardDescription":
+                    child.setText("Your system is being monitored" if self.monitoring_enabled else "Click to enable protection")
+
+    def update_protection_ui_after_init(self):
+        """Update Protection tab UI after full initialization to ensure state consistency."""
+        print("🔄 Updating Protection tab UI after initialization...")
+        
+        if hasattr(self, 'protection_status_label') and hasattr(self, 'protection_toggle_btn'):
+            if self.monitoring_enabled:
+                # Check if the monitor is actually running
+                if self.real_time_monitor and hasattr(self.real_time_monitor, 'state') and self.real_time_monitor.state.name == 'RUNNING':
+                    self.protection_status_label.setText("🛡️ Active")
+                    self.protection_status_label.setStyleSheet("color: #00FF7F; font-weight: bold; font-size: 12px; padding: 5px;")
+                    self.protection_toggle_btn.setText("⏹️ Stop")
+                    print("✅ Protection tab UI updated to Active state")
+                else:
+                    # Monitoring was supposed to be enabled but isn't running - reset
+                    print("⚠️ Monitoring was enabled but not running - resetting to inactive")
+                    self.monitoring_enabled = False
+                    self.protection_status_label.setText("❌ Failed to restore")
+                    self.protection_status_label.setStyleSheet("color: red; font-weight: bold; font-size: 12px; padding: 5px;")
+                    self.protection_toggle_btn.setText("▶️ Start")
+                    
+                    # Update config to reflect actual state
+                    if 'security_settings' not in self.config:
+                        self.config['security_settings'] = {}
+                    self.config['security_settings']['real_time_protection'] = False
+                    save_config(self.config)
+            else:
+                self.protection_status_label.setText("⚫ Inactive")
+                self.protection_status_label.setStyleSheet("color: white; font-weight: bold; font-size: 12px; padding: 5px;")
+                self.protection_toggle_btn.setText("▶️ Start")
+                print("✅ Protection tab UI updated to Inactive state")
+            
+            # Also update the dashboard card
+            self.update_protection_status_card()
+        else:
+            print("⚠️ Protection tab UI elements not found - skipping update")
+
     def create_scan_tab(self):
         scan_widget = QWidget()
         layout = QVBoxLayout(scan_widget)
         
         # Path selection and controls
-        controls_group = QGroupBox("Scan Controls")
+        controls_group = QGroupBox("Scan Location")
         controls_layout = QVBoxLayout(controls_group)
         
+        # Quick scan presets
+        presets_label = QLabel("Quick Scan Options:")
+        presets_label.setObjectName("presetLabel")
+        controls_layout.addWidget(presets_label)
+        
+        presets_layout = QHBoxLayout()
+        
+        home_scan_btn = QPushButton("Scan Home Folder")
+        home_scan_btn.setObjectName("presetButton")
+        home_scan_btn.setToolTip("Scan your home directory for threats")
+        home_scan_btn.clicked.connect(lambda: self.set_scan_path(str(Path.home())))
+        
+        downloads_scan_btn = QPushButton("Scan Downloads")
+        downloads_scan_btn.setObjectName("presetButton")
+        downloads_scan_btn.setToolTip("Scan Downloads folder for threats")
+        downloads_scan_btn.clicked.connect(lambda: self.set_scan_path(str(Path.home() / "Downloads")))
+        
+        custom_scan_btn = QPushButton("Choose Custom Folder...")
+        custom_scan_btn.setObjectName("presetButton")
+        custom_scan_btn.setToolTip("Select a specific folder to scan")
+        custom_scan_btn.clicked.connect(self.select_scan_path)
+        
+        presets_layout.addWidget(home_scan_btn)
+        presets_layout.addWidget(downloads_scan_btn)
+        presets_layout.addWidget(custom_scan_btn)
+        presets_layout.addStretch()
+        
+        controls_layout.addLayout(presets_layout)
+        
+        # Selected path display
         path_layout = QHBoxLayout()
-        path_label_desc = QLabel("Path to scan:")
+        path_label_desc = QLabel("Selected path:")
         self.path_label = QLabel("Please select a path")
         self.path_label.setObjectName("pathLabel")
-        select_path_btn = QPushButton("Select Path")
-        select_path_btn.clicked.connect(self.select_scan_path)
         
         path_layout.addWidget(path_label_desc)
         path_layout.addWidget(self.path_label, 1)
-        path_layout.addWidget(select_path_btn)
         controls_layout.addLayout(path_layout)
         
         # Scan buttons
@@ -204,7 +467,7 @@ class MainWindow(QMainWindow):
         
         layout.addWidget(results_group)
         
-        self.tab_widget.addTab(scan_widget, "🔍 Scan")
+        self.tab_widget.addTab(scan_widget, "Scan")
         
     def create_reports_tab(self):
         reports_widget = QWidget()
@@ -244,7 +507,7 @@ class MainWindow(QMainWindow):
         
         layout.addWidget(splitter)
         
-        self.tab_widget.addTab(reports_widget, "📊 Reports")
+        self.tab_widget.addTab(reports_widget, "Reports")
         
         # Initialize reports list
         self.refresh_reports()
@@ -272,7 +535,7 @@ class MainWindow(QMainWindow):
         self.quarantine_list = QListWidget()
         layout.addWidget(self.quarantine_list)
         
-        self.tab_widget.addTab(quarantine_widget, "🔒 Quarantine")
+        self.tab_widget.addTab(quarantine_widget, "Quarantine")
         
     def create_settings_tab(self):
         settings_widget = QWidget()
@@ -285,7 +548,7 @@ class MainWindow(QMainWindow):
         layout.addWidget(settings_btn)
         layout.addStretch()
         
-        self.tab_widget.addTab(settings_widget, "⚙️ Settings")
+        self.tab_widget.addTab(settings_widget, "Settings")
         
     def create_real_time_tab(self):
         """Create the real-time protection tab."""
@@ -384,8 +647,104 @@ class MainWindow(QMainWindow):
         
         layout.addStretch()
         
-        self.tab_widget.addTab(real_time_widget, "🛡️ Real-Time Protection")
+        self.tab_widget.addTab(real_time_widget, "Protection")
         
+    def init_real_time_monitoring_safe(self):
+        """Safely initialize the real-time monitoring system with better error handling."""
+        print("🔧 Initializing real-time monitoring system...")
+        try:
+            # Create monitor configuration with safer defaults
+            watch_paths = self.config.get('watch_paths', [str(Path.home())])  # Just monitor home directory initially
+            excluded_paths = self.config.get('excluded_paths', ['/proc', '/sys', '/dev', '/tmp'])
+            
+            print(f"📁 Watch paths: {watch_paths}")
+            print(f"🚫 Excluded paths: {excluded_paths}")
+            
+            # Ensure paths are properly formatted
+            if isinstance(watch_paths, list):
+                watch_paths = [str(path) for path in watch_paths]
+            else:
+                watch_paths = [str(watch_paths)]
+                
+            if isinstance(excluded_paths, list):
+                excluded_paths = [str(path) for path in excluded_paths]
+            else:
+                excluded_paths = [str(excluded_paths)]
+            
+            monitor_config = MonitorConfig(
+                watch_paths=watch_paths,
+                excluded_paths=excluded_paths,
+                scan_new_files=True,
+                scan_modified_files=False,  # Start with less aggressive monitoring
+                quarantine_threats=False    # Don't auto-quarantine initially for testing
+            )
+            
+            # Create real-time monitor
+            self.real_time_monitor = RealTimeMonitor(monitor_config)
+            print("✅ RealTimeMonitor created successfully")
+            
+            # Set up callbacks only if the methods exist
+            if hasattr(self.real_time_monitor, 'set_threat_detected_callback'):
+                self.real_time_monitor.set_threat_detected_callback(self.on_threat_detected)
+                print("✅ Threat detection callback set")
+            
+            if hasattr(self.real_time_monitor, 'set_scan_completed_callback'):
+                self.real_time_monitor.set_scan_completed_callback(self.on_scan_completed)
+                print("✅ Scan completion callback set")
+                
+            if hasattr(self.real_time_monitor, 'set_error_callback'):
+                self.real_time_monitor.set_error_callback(self.on_monitoring_error)
+                print("✅ Error callback set")
+            
+            # Set up timer to update statistics
+            self.stats_timer = QTimer()
+            self.stats_timer.timeout.connect(self.update_monitoring_statistics)
+            self.stats_timer.start(10000)  # Update every 10 seconds (less frequent)
+            print("✅ Statistics timer started")
+            
+            # Set initial status based on saved configuration
+            if hasattr(self, 'protection_status_label'):
+                if self.monitoring_enabled:
+                    # If protection was enabled before, restore it
+                    print("🔄 Restoring real-time protection from saved state...")
+                    if self.real_time_monitor and self.real_time_monitor.start():
+                        self.protection_status_label.setText("🛡️ Active")
+                        self.protection_status_label.setStyleSheet("color: #00FF7F; font-weight: bold; font-size: 12px; padding: 5px;")
+                        if hasattr(self, 'protection_toggle_btn'):
+                            self.protection_toggle_btn.setText("⏹️ Stop")
+                        print("✅ Real-time protection restored successfully!")
+                        self.add_activity_message("✅ Real-time protection restored from previous session")
+                    else:
+                        # Failed to start, reset to inactive
+                        print("❌ Failed to restore real-time protection")
+                        self.monitoring_enabled = False
+                        self.protection_status_label.setText("❌ Failed to restore")
+                        self.protection_status_label.setStyleSheet("color: red; font-weight: bold; font-size: 12px; padding: 5px;")
+                        if hasattr(self, 'protection_toggle_btn'):
+                            self.protection_toggle_btn.setText("▶️ Start")
+                        self.add_activity_message("❌ Failed to restore real-time protection from previous session")
+                        # Update config to reflect failure
+                        if 'security_settings' not in self.config:
+                            self.config['security_settings'] = {}
+                        self.config['security_settings']['real_time_protection'] = False
+                        save_config(self.config)
+                else:
+                    # Protection is disabled, set inactive status
+                    self.protection_status_label.setText("⚫ Inactive")
+                    self.protection_status_label.setStyleSheet("color: white; font-weight: bold; font-size: 12px; padding: 5px;")
+                    if hasattr(self, 'protection_toggle_btn'):
+                        self.protection_toggle_btn.setText("▶️ Start")
+            
+            print("✅ Real-time monitoring initialized successfully!")
+            return True
+                
+        except Exception as e:
+            print(f"❌ Failed to initialize monitoring: {e}")
+            # Create a dummy monitor for UI purposes
+            self.real_time_monitor = None
+            self.add_activity_message(f"⚠️ Monitoring system offline: {str(e)}")
+            return False
+
     def init_real_time_monitoring(self):
         """Initialize the real-time monitoring system."""
         try:
@@ -414,11 +773,12 @@ class MainWindow(QMainWindow):
             self.stats_timer.timeout.connect(self.update_monitoring_statistics)
             self.stats_timer.start(5000)  # Update every 5 seconds
             
-            # Auto-start if enabled
-            if self.monitoring_enabled:
-                QTimer.singleShot(2000, self.start_real_time_protection)
-            else:
-                # Set initial status to Inactive when monitoring is disabled by default
+            # Auto-start if enabled (temporarily disabled)
+            # if self.monitoring_enabled:
+            #     QTimer.singleShot(2000, self.start_real_time_protection)
+            # else:
+            # Set initial status to Inactive when monitoring is disabled by default
+            if hasattr(self, 'protection_status_label'):
                 self.protection_status_label.setText("⚫ Inactive")
                 self.protection_status_label.setStyleSheet("color: white; font-weight: bold; font-size: 12px; padding: 5px;")
                 
@@ -436,6 +796,14 @@ class MainWindow(QMainWindow):
     def start_real_time_protection(self):
         """Start real-time protection."""
         try:
+            # If monitor wasn't initialized, try to initialize it now
+            if self.real_time_monitor is None:
+                print("🔄 Monitor not initialized, attempting to initialize...")
+                success = self.init_real_time_monitoring_safe()
+                if not success:
+                    self.add_activity_message("❌ Cannot start protection: Monitoring system unavailable")
+                    return
+            
             if self.real_time_monitor and self.real_time_monitor.start():
                 self.protection_status_label.setText("🛡️ Active")
                 self.protection_status_label.setStyleSheet("color: #00FF7F; font-weight: bold; font-size: 12px; padding: 5px;")
@@ -450,6 +818,9 @@ class MainWindow(QMainWindow):
                 self.config['security_settings']['real_time_protection'] = True
                 save_config(self.config)
                 
+                # Update dashboard card to reflect the change
+                self.update_protection_status_card()
+                
                 # Update paths list
                 self.update_paths_list()
             else:
@@ -459,10 +830,17 @@ class MainWindow(QMainWindow):
                 self.protection_toggle_btn.setText("▶️ Start")
                 self.add_activity_message("❌ Failed to start real-time protection")
                 
+                # Make sure dashboard shows failure state
+                self.monitoring_enabled = False
+                self.update_protection_status_card()
+                
         except Exception as e:
             self.add_activity_message(f"❌ Error starting protection: {e}")
             # Ensure button stays as "Start" if there was an error
             self.protection_toggle_btn.setText("▶️ Start")
+            # Make sure dashboard shows error state
+            self.monitoring_enabled = False
+            self.update_protection_status_card()
     
     def stop_real_time_protection(self):
         """Stop real-time protection."""
@@ -481,6 +859,9 @@ class MainWindow(QMainWindow):
                     self.config['security_settings'] = {}
                 self.config['security_settings']['real_time_protection'] = False
                 save_config(self.config)
+                
+                # Update dashboard card to reflect the change
+                self.update_protection_status_card()
                 
         except Exception as e:
             self.add_activity_message(f"❌ Error stopping protection: {e}")
@@ -517,10 +898,11 @@ class MainWindow(QMainWindow):
     
     def add_activity_message(self, message: str):
         """Add a message to the activity list."""
+        timestamp = datetime.now().strftime("%H:%M:%S")
+        full_message = f"[{timestamp}] {message}"
+        
+        # Add to main activity list if it exists
         if hasattr(self, 'activity_list'):
-            timestamp = datetime.now().strftime("%H:%M:%S")
-            full_message = f"[{timestamp}] {message}"
-            
             # Add to top of list
             item = QListWidgetItem(full_message)
             self.activity_list.insertItem(0, item)
@@ -528,6 +910,16 @@ class MainWindow(QMainWindow):
             # Keep only last 100 items
             while self.activity_list.count() > 100:
                 self.activity_list.takeItem(self.activity_list.count() - 1)
+        
+        # Also add to dashboard activity list if it exists
+        if hasattr(self, 'dashboard_activity'):
+            # Add to top of dashboard list
+            item = QListWidgetItem(full_message)
+            self.dashboard_activity.insertItem(0, item)
+            
+            # Keep only last 20 items on dashboard for brevity
+            while self.dashboard_activity.count() > 20:
+                self.dashboard_activity.takeItem(self.dashboard_activity.count() - 1)
     
     def update_monitoring_statistics(self):
         """Update the monitoring statistics display."""
@@ -679,6 +1071,44 @@ class MainWindow(QMainWindow):
         self.tray_icon.setContextMenu(tray_menu)
         self.tray_icon.activated.connect(self.tray_icon_activated)
         self.tray_icon.show()
+        
+    def setup_accessibility(self):
+        """Set up accessibility features including keyboard shortcuts and ARIA-like labels."""
+        # Keyboard shortcuts
+        self.quick_scan_shortcut = QShortcut(QKeySequence("Ctrl+Q"), self)
+        self.quick_scan_shortcut.activated.connect(self.quick_scan)
+        
+        self.settings_shortcut = QShortcut(QKeySequence("Ctrl+P"), self)
+        self.settings_shortcut.activated.connect(self.open_settings_dialog)
+        
+        self.update_definitions_shortcut = QShortcut(QKeySequence("Ctrl+U"), self)
+        self.update_definitions_shortcut.activated.connect(self.update_definitions)
+        
+        # Tab navigation shortcuts
+        self.dashboard_shortcut = QShortcut(QKeySequence("Ctrl+1"), self)
+        self.dashboard_shortcut.activated.connect(lambda: self.tab_widget.setCurrentIndex(0))
+        
+        self.scan_shortcut = QShortcut(QKeySequence("Ctrl+2"), self)
+        self.scan_shortcut.activated.connect(lambda: self.tab_widget.setCurrentIndex(1))
+        
+        self.protection_shortcut = QShortcut(QKeySequence("Ctrl+3"), self)
+        self.protection_shortcut.activated.connect(lambda: self.tab_widget.setCurrentIndex(2))
+        
+        # Help shortcut
+        self.help_shortcut = QShortcut(QKeySequence("F1"), self)
+        self.help_shortcut.activated.connect(self.show_about)
+        
+        # Refresh shortcut
+        self.refresh_shortcut = QShortcut(QKeySequence("F5"), self)
+        self.refresh_shortcut.activated.connect(self.refresh_reports)
+        
+        # Set accessible names and descriptions for better screen reader support
+        self.tab_widget.setAccessibleName("Main application tabs")
+        self.tab_widget.setAccessibleDescription("Navigate between different application functions")
+        
+        # Set status bar accessibility
+        if hasattr(self, 'status_bar'):
+            self.status_bar.setAccessibleName("Application status")
         
     def apply_theme(self):
         """Apply the current theme to the application."""
@@ -1085,34 +1515,46 @@ class MainWindow(QMainWindow):
                 border: 4px solid #F14666;
                 border-radius: 6px;
                 font-weight: 700;
-                padding: 10px 18px;
+                padding: 6px 12px;
                 min-width: 120px;
+                min-height: 32px;
+                text-align: center;
+                line-height: 1.3;
+                font-size: 13px;
             }
             
             #actionButton:hover {
                 background-color: #E6336B;
                 border: 4px solid #EE8980;
                 color: #ffffff;
-                margin-top: 3px;
-                margin-bottom: 5px;
+                padding: 6px 12px;
+                min-height: 32px;
+                line-height: 1.3;
+                font-size: 13px;
             }
             
             #actionButton:pressed {
                 background-color: #D12B5B;
                 border: 4px solid #FFCDAA;
-                margin-top: 5px;
-                margin-bottom: 3px;
+                padding: 6px 12px;
+                min-height: 32px;
+                line-height: 1.3;
+                font-size: 13px;
+            }
+                line-height: 1.2;
+                font-size: 13px;
+                /* Removed margins that were causing text cutoff */
             }
             
             #lastUpdateLabel {
-                color: #EE8980;
+                color: white;
                 font-size: 12px;
                 margin: 2px;
                 font-weight: 600;
             }
             
             #lastCheckedLabel {
-                color: #EE8980;
+                color: white;
                 font-size: 11px;
                 margin: 1px;
                 font-style: italic;
@@ -1138,6 +1580,101 @@ class MainWindow(QMainWindow):
                 border-radius: 6px;
                 background-color: #404040;
                 border: 2px solid #EE8980;
+            }
+            
+            /* Dashboard Status Cards */
+            QFrame#statusCard {
+                background-color: #3a3a3a;
+                border: 2px solid #EE8980;
+                border-radius: 12px;
+                padding: 10px;
+                margin: 5px;
+            }
+            
+            QFrame#statusCard:hover {
+                border-color: #F14666;
+                background-color: #404040;
+            }
+            
+            QLabel#cardTitle {
+                color: #FFCDAA;
+                font-size: 14px;
+                font-weight: 600;
+                margin-bottom: 5px;
+            }
+            
+            QLabel#cardValue {
+                font-size: 28px;
+                font-weight: 700;
+                margin: 8px 0px;
+            }
+            
+            QLabel#cardDescription {
+                color: #EE8980;
+                font-size: 11px;
+                font-weight: 500;
+                line-height: 1.4;
+            }
+            
+            /* Dashboard Action Buttons */
+            QPushButton#dashboardPrimaryButton {
+                background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
+                                            stop: 0 #9CB898, stop: 1 #8BA885);
+                border: 3px solid #9CB898;
+                border-radius: 8px;
+                color: #2b2b2b;
+                font-weight: 700;
+                font-size: 14px;
+                min-height: 40px;
+                padding: 0px 20px;
+            }
+            
+            QPushButton#dashboardPrimaryButton:hover {
+                background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
+                                            stop: 0 #B2CEB0, stop: 1 #9CB898);
+                border-color: #B2CEB0;
+            }
+            
+            QPushButton#dashboardSecondaryButton {
+                background-color: #505050;
+                border: 2px solid #EE8980;
+                border-radius: 8px;
+                color: #FFCDAA;
+                font-weight: 600;
+                font-size: 13px;
+                min-height: 40px;
+                padding: 0px 16px;
+            }
+            
+            QPushButton#dashboardSecondaryButton:hover {
+                background-color: #606060;
+                border-color: #F14666;
+                color: #ffffff;
+            }
+            
+            /* Preset Scan Buttons */
+            QPushButton#presetButton {
+                background-color: #4a4a4a;
+                border: 2px solid #EE8980;
+                border-radius: 6px;
+                color: #FFCDAA;
+                font-weight: 600;
+                font-size: 12px;
+                padding: 8px 12px;
+                min-height: 35px;
+            }
+            
+            QPushButton#presetButton:hover {
+                background-color: #5a5a5a;
+                border-color: #F14666;
+                color: #ffffff;
+            }
+            
+            QLabel#presetLabel {
+                color: #FFCDAA;
+                font-weight: 600;
+                font-size: 12px;
+                margin-bottom: 5px;
             }
         """)
     
@@ -1376,24 +1913,32 @@ class MainWindow(QMainWindow):
                 border: 4px solid #75BDE0;
                 border-radius: 6px;
                 font-weight: 700;
-                padding: 10px 18px;
+                padding: 6px 12px;
                 min-width: 120px;
+                min-height: 32px;
+                text-align: center;
+                line-height: 1.3;
+                font-size: 13px;
             }
             
             #actionButton:hover {
                 background-color: #F8D49B;
                 color: #2c2c2c;
                 border: 4px solid #F8BC9B;
-                margin-top: 3px;
-                margin-bottom: 5px;
+                padding: 6px 12px;
+                min-height: 32px;
+                line-height: 1.3;
+                font-size: 13px;
             }
             
             #actionButton:pressed {
                 background-color: #F8BC9B;
                 color: #1a1a1a;
                 border: 4px solid #75BDE0;
-                margin-top: 5px;
-                margin-bottom: 3px;
+                padding: 6px 12px;
+                min-height: 32px;
+                line-height: 1.3;
+                font-size: 13px;
             }
             
             #lastUpdateLabel {
@@ -1517,6 +2062,83 @@ class MainWindow(QMainWindow):
                 background-color: #ffffff;
                 border: 2px solid #75BDE0;
             }
+            
+            /* Dashboard Status Cards */
+            QFrame#statusCard {
+                background-color: #f8f9fa;
+                border: 2px solid #e9ecef;
+                border-radius: 12px;
+                margin: 5px;
+            }
+            
+            QFrame#statusCard:hover {
+                border-color: #75BDE0;
+                background-color: #ffffff;
+            }
+            
+            QLabel#cardTitle {
+                color: #495057;
+                font-weight: 600;
+            }
+            
+            QLabel#cardDescription {
+                color: #6c757d;
+                line-height: 1.4;
+            }
+            
+            /* Dashboard Action Buttons */
+            QPushButton#dashboardPrimaryButton {
+                background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
+                                            stop: 0 #28a745, stop: 1 #1e7e34);
+                border: none;
+                border-radius: 8px;
+                color: white;
+                font-weight: bold;
+                font-size: 14px;
+            }
+            
+            QPushButton#dashboardPrimaryButton:hover {
+                background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
+                                            stop: 0 #34ce57, stop: 1 #28a745);
+            }
+            
+            QPushButton#dashboardSecondaryButton {
+                background-color: #6c757d;
+                border: none;
+                border-radius: 8px;
+                color: white;
+                font-weight: 600;
+                font-size: 13px;
+            }
+            
+            QPushButton#dashboardSecondaryButton:hover {
+                background-color: #5a6268;
+            }
+            
+            /* Preset Scan Buttons */
+            QPushButton#presetButton {
+                background-color: #f8f9fa;
+                border: 2px solid #dee2e6;
+                border-radius: 6px;
+                color: #495057;
+                font-weight: 600;
+                font-size: 12px;
+                padding: 8px 12px;
+                min-height: 35px;
+            }
+            
+            QPushButton#presetButton:hover {
+                background-color: #e9ecef;
+                border-color: #75BDE0;
+                color: #495057;
+            }
+            
+            QLabel#presetLabel {
+                color: #495057;
+                font-weight: 600;
+                font-size: 12px;
+                margin-bottom: 5px;
+            }
         """)
     
     def apply_system_theme(self):
@@ -1524,6 +2146,20 @@ class MainWindow(QMainWindow):
         # For now, system theme defaults to light theme
         # In a full implementation, you could detect system theme preference
         self.apply_light_theme()
+        
+    def set_scan_path(self, path):
+        """Set the scan path and update the UI."""
+        if os.path.exists(path):
+            self.scan_path = path
+            # Show a shortened version of the path for better readability
+            if len(path) > 50:
+                display_path = "..." + path[-47:]
+            else:
+                display_path = path
+            self.path_label.setText(display_path)
+            self.path_label.setToolTip(path)  # Full path in tooltip
+        else:
+            self.show_themed_message_box("warning", "Warning", f"Path does not exist: {path}")
         
     def select_scan_path(self):
         path = QFileDialog.getExistingDirectory(self, "Select Directory to Scan")
@@ -1553,6 +2189,60 @@ class MainWindow(QMainWindow):
             self.current_scan_thread.terminate()
             self.scan_completed({'status': 'cancelled'})
     
+    def update_dashboard_cards(self):
+        """Update all dashboard status cards with current information."""
+        # Update Last Scan card
+        if hasattr(self, 'last_scan_card'):
+            try:
+                # Get the most recent scan report from the reports directory
+                from pathlib import Path
+                reports_dir = Path.home() / ".local/share/search-and-destroy/scan_reports/daily"
+                if reports_dir.exists():
+                    report_files = list(reports_dir.glob("scan_*.json"))
+                    if report_files:
+                        # Get the most recent file
+                        latest_file = max(report_files, key=lambda p: p.stat().st_mtime)
+                        try:
+                            import json
+                            with open(latest_file, 'r') as f:
+                                report_data = json.load(f)
+                            
+                            scan_time = report_data.get('scan_metadata', {}).get('timestamp', '')
+                            if scan_time:
+                                from datetime import datetime
+                                try:
+                                    scan_date = datetime.fromisoformat(scan_time.replace('Z', '+00:00'))
+                                    formatted_date = scan_date.strftime("%m/%d %H:%M")
+                                except:
+                                    formatted_date = "Recently"
+                            else:
+                                formatted_date = "Recently"
+                                
+                            threats_count = len(report_data.get('threats', []))
+                            
+                            # Update the card
+                            for child in self.last_scan_card.findChildren(QLabel):
+                                if child.objectName() == "cardValue":
+                                    child.setText(formatted_date)
+                                    child.setStyleSheet("color: #17a2b8; font-size: 20px; font-weight: bold;")
+                                elif child.objectName() == "cardDescription":
+                                    child.setText(f"Found {threats_count} threats" if threats_count > 0 else "No threats found")
+                                    
+                            # Update Threats Found card
+                            if hasattr(self, 'threats_card'):
+                                for child in self.threats_card.findChildren(QLabel):
+                                    if child.objectName() == "cardValue":
+                                        child.setText(str(threats_count))
+                                        color = "#dc3545" if threats_count > 0 else "#28a745"
+                                        child.setStyleSheet(f"color: {color}; font-size: 20px; font-weight: bold;")
+                                    elif child.objectName() == "cardDescription":
+                                        child.setText("Threats detected - review quarantine" if threats_count > 0 else "No threats detected in recent scans")
+                        except Exception as file_error:
+                            print(f"Error reading report file: {file_error}")
+                            
+            except Exception as e:
+                print(f"Error updating dashboard cards: {e}")
+                
     def scan_completed(self, result):
         self.start_scan_btn.setEnabled(True)
         self.stop_scan_btn.setEnabled(False)
@@ -1635,6 +2325,9 @@ class MainWindow(QMainWindow):
         
         # Display the results in the UI
         self.display_scan_results(result)
+        
+        # Update dashboard cards with new scan information
+        self.update_dashboard_cards()
     
     def display_scan_results(self, result):
         output = "Scan completed successfully!\n\n"
@@ -1898,6 +2591,24 @@ class MainWindow(QMainWindow):
                 self.activateWindow()
     
     def quit_application(self):
+        # Check if real-time protection is active
+        if self.monitoring_enabled and self.real_time_monitor and hasattr(self.real_time_monitor, 'state') and self.real_time_monitor.state.name == 'RUNNING':
+            reply = self.show_themed_message_box("question", "Exit Application", 
+                                       "Real-time protection is currently active and will be stopped if you exit the application.\n\n"
+                                       "Are you sure you want to exit and stop real-time protection?",
+                                       QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
+            if reply == QMessageBox.StandardButton.No:
+                return  # User chose not to exit
+            
+            # User confirmed exit - stop real-time protection
+            try:
+                print("🛑 Stopping real-time protection due to application exit...")
+                self.stop_real_time_protection()
+                print("✅ Real-time protection stopped successfully")
+            except Exception as e:
+                print(f"⚠️ Error stopping real-time protection: {e}")
+        
+        # Check for running scans
         if self.current_scan_thread and self.current_scan_thread.isRunning():
             reply = self.show_themed_message_box("question", "Quit", 
                                        "A scan is in progress. Do you want to quit anyway?",
@@ -1911,6 +2622,36 @@ class MainWindow(QMainWindow):
         QApplication.quit()
     
     def closeEvent(self, event):
+        # Check if real-time protection is active before closing
+        if self.monitoring_enabled and self.real_time_monitor and hasattr(self.real_time_monitor, 'state') and self.real_time_monitor.state.name == 'RUNNING':
+            reply = self.show_themed_message_box("question", "Close Application", 
+                                       "Real-time protection is currently active and will be stopped if you close the application.\n\n"
+                                       "Would you like to:\n"
+                                       "• Close and stop protection (Yes)\n"
+                                       "• Minimize to system tray and keep protection running (No)",
+                                       QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
+            
+            if reply == QMessageBox.StandardButton.No:
+                # User chose to minimize to tray instead of closing
+                if hasattr(self, 'tray_icon') and self.tray_icon and self.tray_icon.isVisible():
+                    self.hide()
+                    self.tray_icon.showMessage(
+                        "S&D - Search & Destroy",
+                        "Application minimized to system tray. Real-time protection is still active.",
+                        QSystemTrayIcon.MessageIcon.Information,
+                        3000
+                    )
+                event.ignore()
+                return
+            
+            # User chose to close - stop real-time protection
+            try:
+                print("🛑 Stopping real-time protection due to application close...")
+                self.stop_real_time_protection()
+                print("✅ Real-time protection stopped successfully")
+            except Exception as e:
+                print(f"⚠️ Error stopping real-time protection: {e}")
+        
         # Stop real-time monitoring before closing
         if hasattr(self, 'real_time_monitor') and self.real_time_monitor:
             try:
@@ -1918,12 +2659,12 @@ class MainWindow(QMainWindow):
             except Exception:
                 pass  # Ignore errors during shutdown
         
-        # If closing from the 'X' button, just hide to tray
-        if hasattr(self, 'tray_icon') and self.tray_icon and self.tray_icon.isVisible():
-            self.hide()
-            event.ignore()
-        else:
-            event.accept()
+        # Accept the close event (actually close the application)
+        event.accept()
+        
+        # Force application to quit
+        from PyQt6.QtWidgets import QApplication
+        QApplication.quit()
 
     def open_scan_dialog(self):
         from .scan_dialog import ScanDialog
