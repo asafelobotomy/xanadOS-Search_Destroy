@@ -1526,7 +1526,7 @@ class MainWindow(QMainWindow):
             #actionButton:hover {
                 background-color: #E6336B;
                 border: 4px solid #EE8980;
-                color: #EE8980;
+                color: #ffffff;
                 padding: 6px 12px;
                 min-height: 32px;
                 line-height: 1.3;
