@@ -1,0 +1,14 @@
+PyQt6>=6.5.0
+pyclamd>=0.4.0
+requests>=2.26.0
+python-dotenv>=0.19.1
+psutil>=5.8.0
+schedule>=1.1.0
+setuptools>=65.0.0
+inotify>=0.2.0
+
+# Development dependencies
+pylint>=3.0.0
+black>=24.0.0
+pytest>=8.0.0
+mypy>=1.0.0

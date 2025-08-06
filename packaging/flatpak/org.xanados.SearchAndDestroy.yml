@@ -1,0 +1,78 @@
+app-id: org.xanados.SearchAndDestroy
+runtime: org.freedesktop.Platform
+runtime-version: '23.08'
+sdk: org.freedesktop.Sdk
+command: search-and-destroy
+
+finish-args:
+  # GUI access
+  - --share=ipc
+  - --socket=fallback-x11
+  - --socket=wayland
+  
+  # File system access for scanning
+  - --filesystem=home:ro
+  - --filesystem=/tmp:ro
+  - --filesystem=/var/tmp:ro
+  - --filesystem=xdg-desktop:ro
+  - --filesystem=xdg-documents:ro
+  - --filesystem=xdg-download:ro
+  - --filesystem=xdg-music:ro
+  - --filesystem=xdg-pictures:ro
+  - --filesystem=xdg-videos:ro
+  
+  # Network access for virus definition updates
+  - --share=network
+  
+  # System integration
+  - --talk-name=org.freedesktop.Notifications
+
+modules:
+  - name: python3-pip
+    buildsystem: simple
+    build-commands:
+      - pip3 install --prefix=/app --no-deps .
+    sources:
+      - type: archive
+        url: https://files.pythonhosted.org/packages/source/p/pip/pip-23.3.1.tar.gz
+        sha256: 1fcaa041308d01f14575f6d0d2ea4b75a3e2871fe4f9c694976f908768e14174
+
+  - name: clamav
+    config-opts:
+      - --disable-static
+      - --enable-shared
+      - --with-systemdsystemunitdir=no
+    sources:
+      - type: archive
+        url: https://www.clamav.net/downloads/production/clamav-1.2.1.tar.gz
+        sha256: 9a14fe870cbb8f5f79f668b789dca0f25cc6be22abe32f4f7d3677e4ee3935b0
+
+  - name: python-dependencies
+    buildsystem: simple
+    build-commands:
+      - pip3 install --prefix=/app --no-deps PyQt6 PyQt6-Qt6
+    sources:
+      - type: file
+        path: ../requirements.txt
+
+  - name: search-and-destroy
+    buildsystem: simple
+    build-commands:
+      - install -Dm755 flatpak/search-and-destroy.sh /app/bin/search-and-destroy
+      - cp -r app/ /app/lib/search-and-destroy/
+      - install -Dm644 flatpak/org.xanados.SearchAndDestroy.desktop /app/share/applications/org.xanados.SearchAndDestroy.desktop
+      - install -Dm644 flatpak/org.xanados.SearchAndDestroy.metainfo.xml /app/share/metainfo/org.xanados.SearchAndDestroy.metainfo.xml
+      # Install icons if they exist
+      - |
+        if [ -f icons/org.xanados.SearchAndDestroy.svg ]; then
+          install -Dm644 icons/org.xanados.SearchAndDestroy.svg /app/share/icons/hicolor/scalable/apps/org.xanados.SearchAndDestroy.svg
+        fi
+      - |
+        for size in 16 32 48 64 128; do
+          if [ -f "icons/org.xanados.SearchAndDestroy-${size}.png" ]; then
+            install -Dm644 "icons/org.xanados.SearchAndDestroy-${size}.png" "/app/share/icons/hicolor/${size}x${size}/apps/org.xanados.SearchAndDestroy.png"
+          fi
+        done
+    sources:
+      - type: dir
+        path: ..

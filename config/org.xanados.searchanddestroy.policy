@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE policyconfig PUBLIC
+"-//freedesktop//DTD PolicyKit Policy Configuration 1.0//EN"
+"http://www.freedesktop.org/standards/PolicyKit/1/policyconfig.dtd">
+
+<policyconfig>
+  <!-- Policy for xanadOS Search & Destroy privilege escalation -->
+  <vendor>xanadOS</vendor>
+  <vendor_url>https://github.com/xanados/Search_Destroy</vendor_url>
+  
+  <!-- System scan operation -->
+  <action id="org.xanados.searchanddestroy.scan-system">
+    <description>Run system-wide antivirus scan</description>
+    <message>Authentication required to perform system-wide antivirus scan</message>
+    <icon_name>org.xanados.SearchAndDestroy</icon_name>
+    <defaults>
+      <allow_any>no</allow_any>
+      <allow_inactive>no</allow_inactive>
+      <allow_active>auth_admin</allow_active>
+    </defaults>
+    <annotate key="org.freedesktop.policykit.exec.path">/usr/bin/python3</annotate>
+  </action>
+
+  <!-- Quarantine management operations -->
+  <action id="org.xanados.searchanddestroy.quarantine-manage">
+    <description>Manage quarantined files</description>
+    <message>Authentication required to manage quarantined files</message>
+    <icon_name>org.xanados.SearchAndDestroy</icon_name>
+    <defaults>
+      <allow_any>no</allow_any>
+      <allow_inactive>no</allow_inactive>
+      <allow_active>auth_admin</allow_active>
+    </defaults>
+    <annotate key="org.freedesktop.policykit.exec.path">/usr/bin/python3</annotate>
+  </action>
+
+  <!-- ClamAV database update operation -->
+  <action id="org.xanados.searchanddestroy.update-database">
+    <description>Update antivirus database</description>
+    <message>Authentication required to update antivirus database</message>
+    <icon_name>org.xanados.SearchAndDestroy</icon_name>
+    <defaults>
+      <allow_any>no</allow_any>
+      <allow_inactive>no</allow_inactive>
+      <allow_active>auth_admin</allow_active>
+    </defaults>
+    <annotate key="org.freedesktop.policykit.exec.path">/usr/bin/freshclam</annotate>
+  </action>
+
+  <!-- Log file access operation -->
+  <action id="org.xanados.searchanddestroy.access-logs">
+    <description>Access system log files</description>
+    <message>Authentication required to access system log files</message>
+    <icon_name>org.xanados.SearchAndDestroy</icon_name>
+    <defaults>
+      <allow_any>no</allow_any>
+      <allow_inactive>no</allow_inactive>
+      <allow_active>auth_admin</allow_active>
+    </defaults>
+  </action>
+</policyconfig>
