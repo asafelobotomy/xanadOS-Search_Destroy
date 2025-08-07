@@ -23,7 +23,8 @@ safe_remove() {
 count_and_remove() {
     local pattern="$1"
     local description="$2"
-    local count=$(find . -name "$pattern" -not -path "./.venv/*" | wc -l)
+    local count
+    count=$(find . -name "$pattern" -not -path "./.venv/*" | wc -l)
     
     if [ "$count" -gt 0 ]; then
         echo -e "${YELLOW}  Removing $count $description files...${NC}"
@@ -83,7 +84,7 @@ echo -e "${BLUE}📏 Checking for large files...${NC}"
 large_files=$(find . -type f -size +10M -not -path "./.venv/*" -not -path "./.git/*" 2>/dev/null | head -5)
 if [ -n "$large_files" ]; then
     echo -e "${YELLOW}  ⚠️  Large files found (>10MB):${NC}"
-    echo "$large_files" | while read file; do
+    echo "$large_files" | while read -r file; do
         size=$(du -h "$file" | cut -f1)
         echo -e "${YELLOW}    $file ($size)${NC}"
     done
@@ -95,8 +96,8 @@ fi
 # 8. Update Git status
 echo -e "${BLUE}📊 Git repository status:${NC}"
 echo -e "${GREEN}  Current branch: $(git branch --show-current)${NC}"
-echo -e "${GREEN}  Untracked files: $(git status --porcelain | grep '^??' | wc -l)${NC}"
-echo -e "${GREEN}  Modified files: $(git status --porcelain | grep '^ M' | wc -l)${NC}"
+echo -e "${GREEN}  Untracked files: $(git status --porcelain | grep -c '^??')${NC}"
+echo -e "${GREEN}  Modified files: $(git status --porcelain | grep -c '^ M')${NC}"
 
 # 9. Optimization suggestions
 echo -e "${BLUE}💡 Optimization suggestions:${NC}"

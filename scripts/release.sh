@@ -79,7 +79,7 @@ fi
 
 # Update changelog
 log_info "Please update CHANGELOG.md with release notes for version $VERSION"
-read -p "Press Enter when you've updated the CHANGELOG.md file..."
+read -r -p "Press Enter when you've updated the CHANGELOG.md file..."
 
 if [ -z "$DRY_RUN" ]; then
     git add CHANGELOG.md

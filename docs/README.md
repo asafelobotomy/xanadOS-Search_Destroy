@@ -5,9 +5,11 @@ This directory contains all project documentation for xanadOS Search & Destroy.
 ## Documentation Structure
 
 ### 📖 **Setup & Development**
+
 - **[DEVELOPMENT.md](DEVELOPMENT.md)** - Development environment setup and contribution guidelines
 
 ### 📋 **Implementation History**
+
 - **[implementation-history/](implementation-history/)** - Historical implementation summaries, debug reports, and status updates
 
 ## Quick Links
@@ -19,6 +21,7 @@ This directory contains all project documentation for xanadOS Search & Destroy.
 ## Getting Started
 
 For new developers:
+
 1. Start with [DEVELOPMENT.md](DEVELOPMENT.md) for setup instructions
 2. Review the main [README](../README.md) for project overview
 3. Check [implementation-history/](implementation-history/) for recent development context

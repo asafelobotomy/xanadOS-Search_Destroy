@@ -7,7 +7,7 @@ We follow a **Git Flow** branching model for organized development:
 ### Branch Types
 
 - **`master`** - Production-ready code, stable releases
-- **`develop`** - Integration branch for features  
+- **`develop`** - Integration branch for features
 - **`feature/*`** - New features (e.g., `feature/dashboard-improvements`)
 - **`hotfix/*`** - Critical bug fixes (e.g., `hotfix/scan-crash-fix`)
 - **`release/*`** - Release preparation (e.g., `release/2.1.0`)
@@ -15,6 +15,7 @@ We follow a **Git Flow** branching model for organized development:
 ### Workflow Steps
 
 1. **Feature Development**
+
    ```bash
    git checkout develop
    git pull origin develop
@@ -27,6 +28,7 @@ We follow a **Git Flow** branching model for organized development:
    ```
 
 2. **Bug Fixes**
+
    ```bash
    git checkout develop
    git checkout -b bugfix/issue-description
@@ -48,6 +50,7 @@ We follow a **Git Flow** branching model for organized development:
 We use **Conventional Commits** for clear, semantic commit messages:
 
 ### Format
+
 ```
 <type>[optional scope]: <description>
 
@@ -57,6 +60,7 @@ We use **Conventional Commits** for clear, semantic commit messages:
 ```
 
 ### Types
+
 - **feat**: New feature
 - **fix**: Bug fix
 - **docs**: Documentation changes
@@ -68,6 +72,7 @@ We use **Conventional Commits** for clear, semantic commit messages:
 - **ci**: CI/CD pipeline changes
 
 ### Examples
+
 ```bash
 feat(dashboard): add clickable Last Scan card functionality
 fix(reports): resolve duplicate scan reports issue
@@ -79,6 +84,7 @@ test(gui): add unit tests for dashboard components
 ## Version Control Commands
 
 ### Daily Development
+
 ```bash
 # Check status
 git status
@@ -104,12 +110,14 @@ git pull origin branch-name
 ### Release Process
 
 1. **Create Release Branch**
+
    ```bash
    git checkout develop
    git checkout -b release/2.1.0
    ```
 
 2. **Update Version Files**
+
    ```bash
    echo "2.1.0" > VERSION
    # Update CHANGELOG.md with release notes
@@ -118,6 +126,7 @@ git pull origin branch-name
    ```
 
 3. **Merge to Master and Tag**
+
    ```bash
    git checkout master
    git merge release/2.1.0
@@ -154,11 +163,13 @@ git pull origin branch-name
 ## Tag Strategy
 
 ### Version Tags
+
 - Use semantic versioning: `v2.1.0`
 - Tag stable releases on master branch
 - Include release notes in tag description
 
 ### Pre-release Tags
+
 - Alpha: `v2.1.0-alpha.1`
 - Beta: `v2.1.0-beta.1`
 - Release Candidate: `v2.1.0-rc.1`
@@ -166,12 +177,14 @@ git pull origin branch-name
 ## Git Configuration
 
 ### Set up user info
+
 ```bash
 git config --global user.name "Your Name"
 git config --global user.email "your.email@example.com"
 ```
 
 ### Useful aliases
+
 ```bash
 git config --global alias.co checkout
 git config --global alias.br branch
@@ -193,6 +206,7 @@ git config --global alias.lg "log --oneline --graph --decorate"
 ## Repository Maintenance
 
 ### Cleanup Commands
+
 ```bash
 # Remove merged branches
 git branch --merged | grep -v master | xargs git branch -d
@@ -205,6 +219,7 @@ git clean -fd
 ```
 
 ### Repository Statistics
+
 ```bash
 # View commit history
 git log --oneline --graph --decorate --all

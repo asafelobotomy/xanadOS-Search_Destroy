@@ -12,7 +12,7 @@
 
 **A modern graphical user interface (GUI) for ClamAV antivirus scanning, designed for the xanadOS operating system (WIP) but works on all Linux distros.**
 
-*S&D (Search & Destroy) provides a user-friendly interface to the powerful ClamAV antivirus engine, enabling easy virus scanning, quarantine management, and threat reporting for Linux systems.*
+_S&D (Search & Destroy) provides a user-friendly interface to the powerful ClamAV antivirus engine, enabling easy virus scanning, quarantine management, and threat reporting for Linux systems._
 
 </div>
 
@@ -234,12 +234,12 @@ python app/main.py          # Run in development mode
 
 <div align="center">
 
-| 📖 Document | 📝 Description |
-|-------------|----------------|
-| **[Development Guide](docs/DEVELOPMENT.md)** | Development setup and contribution guide |
-| **[Copilot Setup](docs/COPILOT_SETUP.md)** | GitHub Copilot configuration and guidelines |
+| 📖 Document                                                | 📝 Description                                |
+| ---------------------------------------------------------- | --------------------------------------------- |
+| **[Development Guide](docs/DEVELOPMENT.md)**               | Development setup and contribution guide      |
+| **[Copilot Setup](docs/COPILOT_SETUP.md)**                 | GitHub Copilot configuration and guidelines   |
 | **[Implementation History](docs/implementation-history/)** | Historical implementation summaries and fixes |
-| **[Changelog](CHANGELOG.md)** | Version history and recent changes |
+| **[Changelog](CHANGELOG.md)**                              | Version history and recent changes            |
 
 </div>
 
@@ -311,13 +311,13 @@ python app/main.py          # Run in development mode
 
 <div align="center">
 
-| 🚀 Script | 🎯 Purpose | 💻 Usage |
-|-----------|------------|----------|
-| `run.sh` | Main application launcher | `./run.sh` |
-| `scripts/prepare-build.sh` | Build environment setup | `./scripts/prepare-build.sh` |
-| `scripts/verify-build.sh` | Build verification | `./scripts/verify-build.sh` |
-| `scripts/activate.sh` | Virtual environment activation | `./scripts/activate.sh` |
-| `scripts/setup-security.sh` | Security configuration | `./scripts/setup-security.sh` |
+| 🚀 Script                   | 🎯 Purpose                     | 💻 Usage                      |
+| --------------------------- | ------------------------------ | ----------------------------- |
+| `run.sh`                    | Main application launcher      | `./run.sh`                    |
+| `scripts/prepare-build.sh`  | Build environment setup        | `./scripts/prepare-build.sh`  |
+| `scripts/verify-build.sh`   | Build verification             | `./scripts/verify-build.sh`   |
+| `scripts/activate.sh`       | Virtual environment activation | `./scripts/activate.sh`       |
+| `scripts/setup-security.sh` | Security configuration         | `./scripts/setup-security.sh` |
 
 </div>
 
@@ -520,7 +520,7 @@ export XANADOS_SD_TEMP_PATH="/tmp/sd_temp"         # Temporary files
 
 [![License](https://img.shields.io/badge/license-GPL--3.0-blue.svg)](LICENSE)
 
-*Ensuring security software remains free and transparent*
+_Ensuring security software remains free and transparent_
 
 </div>
 
@@ -672,7 +672,7 @@ See [`docs/COPILOT_SETUP.md`](docs/COPILOT_SETUP.md) for detailed guidelines.
 
 🦠 **ClamAV Team** - Excellent antivirus engine  
 🖥️ **PyQt6** - Powerful UI framework  
-🏢 **xanadOS Team** - Support and integration  
+🏢 **xanadOS Team** - Support and integration
 
 </div>
 

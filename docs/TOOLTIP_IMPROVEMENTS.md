@@ -16,14 +16,16 @@ Based on user feedback, the tooltip has been simplified to a single, compact dis
 ### 🔧 **Technical Implementation**
 
 **Final Solution:** Clean, single plain text tooltip using:
+
 - Unicode characters for visual separation (▔▔▔)
-- Status indicators (● for active/enabled, ○ for inactive/disabled) 
+- Status indicators (● for active/enabled, ○ for inactive/disabled)
 - Proper spacing and alignment
 - No timer-based switching or progressive disclosure
 
 ### 🔄 **Final Tooltip Format**
 
 **Single Tooltip (displays immediately and consistently):**
+
 ```
 S&D Security Status
 ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔
@@ -67,7 +69,7 @@ System        Excellent
 #### **Status Values:**
 
 - **Protection:** ● Enabled / ○ Disabled
-- **Firewall:** ● Active / ○ Inactive  
+- **Firewall:** ● Active / ○ Inactive
 - **System:** Excellent / Good / Fair / Poor / Error / Unknown
 
 ### 🚀 **Technical Implementation**
@@ -94,7 +96,7 @@ System        Excellent
 Users can immediately see all essential security information:
 
 - **Protection** - Real-time monitoring status
-- **Firewall** - Network security status  
+- **Firewall** - Network security status
 - **System** - Overall health assessment
 
 #### **Consistent Interaction:**
