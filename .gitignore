@@ -149,7 +149,10 @@ demo_*.py
 build-dir/
 .flatpak-builder/
 *.flatpak
-archive/
+
+# But allow our project archive directory for code preservation
+# archive/
+!archive/
 
 # ClamAV specific
 *.clamav-db
