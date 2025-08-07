@@ -3,11 +3,13 @@
 Advanced Reporting System for S&D
 Provides comprehensive reporting, analytics, and threat intelligence visualization.
 """
+import asyncio
 import base64
 import csv
 import io
 import json
 import logging
+import sqlite3
 import time
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
@@ -15,6 +17,10 @@ from enum import Enum
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
+import matplotlib.dates as mdates
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
 from jinja2 import Template
 from matplotlib.backends.backend_pdf import PdfPages
 
@@ -36,7 +42,7 @@ class ReportFormat(Enum):
     """Report output formats."""
 
     HTML = "html"
-    PDF = "pd"
+    PDF = "pdf"
     JSON = "json"
     CSV = "csv"
     EXCEL = "xlsx"
@@ -1018,7 +1024,7 @@ class AdvancedReportingSystem:
         """Export report as PDF."""
         try:
             # First generate HTML
-            html_path = output_path.replace(".pd", ".html")
+            html_path = output_path.replace(".pdf", ".html")
             await self._export_html(report_data, config, html_path)
 
             # Convert HTML to PDF using a library like weasyprint or pdfkit
@@ -1029,7 +1035,7 @@ class AdvancedReportingSystem:
                 ax.text(
                     0.5,
                     0.8,
-                    "S&D Security Report",
+                    f"S&D Security Report",
                     ha="center",
                     va="center",
                     fontsize=24,
@@ -1052,7 +1058,7 @@ class AdvancedReportingSystem:
                     va="center",
                     fontsize=12,
                 )
-                ax.axis("of")
+                ax.axis("off")
                 pdf.savefig(fig, bbox_inches="tight")
                 plt.close(fig)
 
@@ -1066,7 +1072,7 @@ class AdvancedReportingSystem:
                         img = plt.imread(io.BytesIO(img_data))
 
                         ax.imshow(img)
-                        ax.axis("of")
+                        ax.axis("off")
                         ax.set_title(
                             chart_data["title"], fontsize=16, fontweight="bold"
                         )
@@ -1612,6 +1618,8 @@ class AdvancedReportingSystem:
 
 # Add missing imports with fallbacks
 try:
+    import matplotlib.dates as mdates
+    import matplotlib.pyplot as plt
     from matplotlib.backends.backend_pdf import PdfPages
 except ImportError:
     # Mock matplotlib if not available
@@ -1653,9 +1661,8 @@ except ImportError:
     )()
 
 try:
-    # Try to import actual pandas and numpy
-    import pandas as pd
     import numpy as np
+    import pandas as pd
 except ImportError:
     # Mock pandas and numpy
     pd = type("pd",

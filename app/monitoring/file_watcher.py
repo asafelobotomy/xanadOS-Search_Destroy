@@ -4,12 +4,15 @@ File system watcher for real-time monitoring
 Uses inotify on Linux for efficient file system event detection
 """
 import logging
+import os
+import select
+import struct
 import threading
 import time
 from dataclasses import dataclass
 from enum import Enum
+from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Set
-import os
 
 # Try to import inotify, fallback to polling if not available
 try:

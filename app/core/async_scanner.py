@@ -5,15 +5,15 @@ Provides high-performance scanning with non-blocking operations and worker threa
 """
 import asyncio
 import logging
+import os
+import threading
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import asdict, dataclass
 from datetime import datetime
 from pathlib import Path
 from queue import Empty, Queue
-from typing import AsyncIterator, Callable, Dict, List, Optional
-import os
-from concurrent.futures import as_completed
+from typing import AsyncIterator, Callable, Dict, List, Optional, Tuple
 
 import psutil
 from utils.config import load_config
@@ -91,8 +91,8 @@ class AsyncFileScanner:
 
         # Threading and async components
         self.executor = ThreadPoolExecutor(max_workers=max_workers)
-        self.semaphore = None  # Will be created in event loop  # noqa: F841
-        self.batch_queue = Queue()  # noqa: F841
+        self.semaphore = None  # Will be created in event loop
+        self.batch_queue = Queue()
 
         # Scanning state
         self.is_scanning = False
@@ -108,7 +108,7 @@ class AsyncFileScanner:
         self.result_callback: Optional[Callable[[ScanFileResult], None]] = None
 
         # Performance monitoring
-        self.scan_start_time = None  # noqa: F841
+        self.scan_start_time = None
         self.files_processed = 0
         self.total_bytes_processed = 0
 
@@ -119,7 +119,7 @@ class AsyncFileScanner:
     async def _setup_async_components(self):
         """Setup async components that require an event loop."""
         if self.semaphore is None:
-            self.semaphore = asyncio.Semaphore(self.max_workers)  # noqa: F841
+            self.semaphore = asyncio.Semaphore(self.max_workers)
 
     def _check_memory_usage(self) -> bool:
         """
@@ -170,11 +170,11 @@ class AsyncFileScanner:
                         yield str(Path(root) / file_name)
 
             # Process in chunks to avoid blocking
-            loop = asyncio.get_event_loop()  # noqa: F841
+            loop = asyncio.get_event_loop()
 
             async def _chunked_walk():
                 file_iterator = _walk_sync()
-                chunk_size = 100  # noqa: F841
+                chunk_size = 100
 
                 while not self.scan_cancelled:
                     chunk = []
@@ -226,7 +226,7 @@ class AsyncFileScanner:
 
             # File type filtering (async file stat)
             try:
-                loop = asyncio.get_event_loop()  # noqa: F841
+                loop = asyncio.get_event_loop()
                 stat_result = await loop.run_in_executor(None, os.stat, file_path)
                 # Skip very small files (likely not malicious)
                 if stat_result.st_size < 10:
@@ -269,7 +269,7 @@ class AsyncFileScanner:
             if not self._check_memory_usage():
                 await asyncio.sleep(0.1)  # Brief pause for memory recovery
 
-            loop = asyncio.get_event_loop()  # noqa: F841
+            loop = asyncio.get_event_loop()
 
             # Run the actual scan in thread pool
             scanner = FileScanner()
@@ -288,13 +288,13 @@ class AsyncFileScanner:
                     self.progress.throughput_fps = self.files_processed / elapsed
 
             # Update current file
-            self.progress.current_file = file_path  # noqa: F841
+            self.progress.current_file = file_path
 
             # Record file size for monitoring
             try:
-                loop = asyncio.get_event_loop()  # noqa: F841
+                loop = asyncio.get_event_loop()
                 stat_result = await loop.run_in_executor(None, os.stat, file_path)
-                file_size = stat_result.st_size  # noqa: F841
+                file_size = stat_result.st_size
                 self.total_bytes_processed += file_size
                 self.size_monitor.record_processed_file(file_path)
             except OSError:
@@ -338,7 +338,7 @@ class AsyncFileScanner:
         self.logger.info("Starting async scan of %d files", len(file_paths))
         self.is_scanning = True
         self.scan_cancelled = False
-        self.scan_start_time = time.time()  # noqa: F841
+        self.scan_start_time = time.time()
         self.files_processed = 0
         self.total_bytes_processed = 0
 
@@ -398,7 +398,7 @@ class AsyncFileScanner:
                     )
                     results.append(error_result)
 
-            elapsed_time = time.time() - self.scan_start_time  # noqa: F841
+            elapsed_time = time.time() - self.scan_start_time
             self.logger.info(
                 "Async scan completed: %d files in %.2f seconds (%.2f fps)",
                 len(results),
@@ -473,7 +473,7 @@ class AsyncFileScanner:
         Returns:
             Dictionary with performance metrics
         """
-        elapsed_time = time.time() - self.scan_start_time if self.scan_start_time else 0  # noqa: F841
+        elapsed_time = time.time() - self.scan_start_time if self.scan_start_time else 0
 
         return {
             "files_processed": self.files_processed,

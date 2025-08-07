@@ -8,6 +8,7 @@ import hashlib
 import json
 import logging
 import math
+import os
 import re
 import sqlite3
 import struct
@@ -260,7 +261,7 @@ class HeuristicAnalysisEngine:
             FileSignature(
                 signature_id="pe_overlay_suspicious",
                 name="Suspicious PE Overlay",
-                pattern=br"\x4d\x5a",  # MZ header in overlay
+                pattern=b"\x4d\x5a",  # MZ header in overlay
                 offset=-1,  # Variable offset
                 threat_type="suspicious_overlay",
                 confidence=0.6,
@@ -268,9 +269,9 @@ class HeuristicAnalysisEngine:
             FileSignature(
                 signature_id="elf_suspicious",
                 name="Suspicious ELF Binary",
-                pattern=br"\x7fELF",
+                pattern=b"\x7fELF",
                 offset=0,
-                threat_type="suspicious_el",
+                threat_type="suspicious_elf",
                 confidence=0.5,
             ),
         ]
@@ -579,7 +580,7 @@ class HeuristicAnalysisEngine:
                         confidence = 0.6
 
                 # Check for ELF file structure
-                elif header.startswith(br"\x7fELF"):
+                elif header.startswith(b"\x7fELF"):
                     details["file_type"] = "ELF"
 
                     # Check for ELF anomalies
@@ -941,7 +942,7 @@ class HeuristicAnalysisEngine:
                         patterns.append(f"repeated_pattern_{pattern_len}")
 
         # Check for null bytes (potential padding/obfuscation)
-        null_count = data.count(br"\x00")
+        null_count = data.count(b"\x00")
         if null_count > len(data) * 0.3:  # More than 30% null bytes
             patterns.append("excessive_null_bytes")
 
@@ -1049,11 +1050,11 @@ class HeuristicAnalysisEngine:
         type_mappings = {
             ".exe": [b"MZ"],
             ".dll": [b"MZ"],
-            ".pd": [b"%PDF"],
+            ".pdf": [b"%PDF"],
             ".zip": [b"PK\x03\x04", b"PK\x05\x06"],
             ".jpg": [b"\xff\xd8\xff"],
             ".png": [b"\x89PNG"],
-            ".gi": [b"GIF87a", b"GIF89a"],
+            ".gif": [b"GIF87a", b"GIF89a"],
             ".mp3": [b"ID3", b"\xff\xfb"],
             ".mp4": [b"ftyp"],
             ".doc": [b"\xd0\xcf\x11\xe0"],

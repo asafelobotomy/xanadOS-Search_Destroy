@@ -6,10 +6,12 @@ Provides non-blocking UI operations and smooth user experience
 import logging
 import time
 from dataclasses import dataclass
+from threading import Event, Timer
 from typing import Any, Callable, Dict, Optional
-from PyQt6.QtCore import Q_ARG, QMetaObject, QObject, Qt, QThread, QTimer, pyqtSignal
-from PyQt6.QtWidgets import QApplication, QLabel, QProgressBar
 
+from PyQt6.QtCore import Q_ARG, QMetaObject, QObject, Qt, QThread, QTimer, pyqtSignal
+from PyQt6.QtGui import QMovie, QPixmap
+from PyQt6.QtWidgets import QApplication, QLabel, QProgressBar
 
 
 @dataclass

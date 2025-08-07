@@ -7,12 +7,14 @@ import gettext
 import json
 import locale
 import logging
+import os
+import re
 from dataclasses import dataclass, field
 from enum import Enum
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
-from PyQt6.QtCore import QCoreApplication, QLocale, QTranslator
 
+from PyQt6.QtCore import QCoreApplication, QLocale, QTranslator
 from PyQt6.QtWidgets import QApplication
 
 
@@ -41,9 +43,9 @@ class SupportedLanguage(Enum):
     TURKISH = ("tr", "Türkçe", "Turkish")
 
     def __init__(self, code: str, native_name: str, english_name: str):
-        self.code = code  # noqa: F841
-        self.native_name = native_name  # noqa: F841
-        self.english_name = english_name  # noqa: F841
+        self.code = code
+        self.native_name = native_name
+        self.english_name = english_name
 
 
 @dataclass
@@ -80,8 +82,8 @@ class TranslationCategory(Enum):
 class LanguagePreferences:
     """User language preferences."""
 
-    primary_language: SupportedLanguage = SupportedLanguage.ENGLISH  # noqa: F841
-    fallback_language: SupportedLanguage = SupportedLanguage.ENGLISH  # noqa: F841
+    primary_language: SupportedLanguage = SupportedLanguage.ENGLISH
+    fallback_language: SupportedLanguage = SupportedLanguage.ENGLISH
     date_format: str = "%Y-%m-%d"
     time_format: str = "%H:%M:%S"
     number_format: str = "1,234.56"
@@ -101,10 +103,10 @@ class MultiLanguageSupport:
 
         # Directory structure
         self.languages_dir = Path(languages_dir)
-        self.translations_cache = {}  # noqa: F841
+        self.translations_cache = {}
 
         # Current language settings
-        self.current_language = SupportedLanguage.ENGLISH  # noqa: F841
+        self.current_language = SupportedLanguage.ENGLISH
         self.preferences = LanguagePreferences()
 
         # Qt translation objects
@@ -132,8 +134,8 @@ class MultiLanguageSupport:
                 lang_dir.mkdir(parents=True, exist_ok=True)
 
                 # Create translation files if they don't exist
-                po_file = lang_dir / "s_and_d.po"  # noqa: F841
-                mo_file = lang_dir / "s_and_d.mo"  # noqa: F841
+                po_file = lang_dir / "s_and_d.po"
+                mo_file = lang_dir / "s_and_d.mo"
 
                 if not po_file.exists():
                     self._create_initial_po_file(po_file, language)
@@ -147,13 +149,13 @@ class MultiLanguageSupport:
         """Detect and load system locale."""
         try:
             # Get system locale
-            system_locale = locale.getdefaultlocale()[0]  # noqa: F841
+            system_locale = locale.getdefaultlocale()[0]
 
             if system_locale:
                 # Map system locale to supported language
                 for language in SupportedLanguage:
                     if system_locale.startswith(language.code.split("_")[0]):
-                        self.current_language = language  # noqa: F841
+                        self.current_language = language
                         break
 
             # Set preferences based on detected language
@@ -164,7 +166,7 @@ class MultiLanguageSupport:
         except Exception as e:
             self.logger.warning("Error detecting system locale: %s", e)
             # Fall back to English
-            self.current_language = SupportedLanguage.ENGLISH  # noqa: F841
+            self.current_language = SupportedLanguage.ENGLISH
 
     def _update_preferences_for_language(self, language: SupportedLanguage):
         """Update preferences based on selected language."""
@@ -219,7 +221,7 @@ class MultiLanguageSupport:
                 language, format_preferences[SupportedLanguage.ENGLISH]
             )
 
-            self.preferences.primary_language = language  # noqa: F841
+            self.preferences.primary_language = language
             self.preferences.date_format = prefs["date_format"]
             self.preferences.time_format = prefs["time_format"]
             self.preferences.number_format = prefs["number_format"]
@@ -243,8 +245,8 @@ class MultiLanguageSupport:
             self.logger.info("Setting language to %s", language.english_name)
 
             # Update current language
-            old_language = self.current_language  # noqa: F841
-            self.current_language = language  # noqa: F841
+            old_language = self.current_language
+            self.current_language = language
 
             # Update preferences
             self._update_preferences_for_language(language)
@@ -265,7 +267,7 @@ class MultiLanguageSupport:
                 return True
             else:
                 # Revert on failure
-                self.current_language = old_language  # noqa: F841
+                self.current_language = old_language
                 self.logger.error(
                     "Failed to set language to %s",
                     language.english_name)
@@ -402,7 +404,7 @@ class MultiLanguageSupport:
         try:
             format_str = self.preferences.time_format
             if not include_seconds:
-                format_str = format_str.replace(":%S", "").replace(".%", "")
+                format_str = format_str.replace(":%S", "").replace(".%f", "")
 
             return time_obj.strftime(format_str)
 
@@ -478,15 +480,15 @@ class MultiLanguageSupport:
 
             import math
 
-            size = abs(size_bytes)  # noqa: F841
+            size = abs(size_bytes)
             unit_index = min(
                 int(math.floor(math.log(size, 1024))), len(unit_list) - 1)
 
             if unit_index == 0:
                 return f"{size_bytes} {unit_list[0]}"
 
-            converted_size = size / (1024**unit_index)  # noqa: F841
-            formatted_size = self.format_number(  # noqa: F841
+            converted_size = size / (1024**unit_index)
+            formatted_size = self.format_number(
                 converted_size, 1 if converted_size < 100 else 0
             )
 
@@ -674,7 +676,7 @@ class MultiLanguageSupport:
             language: SupportedLanguage):
         """Create initial PO file with headers."""
         try:
-            po_content = """# S&D Antivirus Translation File
+            po_content = f"""# S&D Antivirus Translation File
 # Language: {language.english_name} ({language.code})
 #
 msgid ""
@@ -709,7 +711,7 @@ msgstr ""
                 del self.translations_cache[cache_key]
 
             # Load from MO files using gettext
-            mo_file = self.languages_dir / language.code / "LC_MESSAGES" / "s_and_d.mo"  # noqa: F841
+            mo_file = self.languages_dir / language.code / "LC_MESSAGES" / "s_and_d.mo"
 
             if mo_file.exists():
                 translation = gettext.translation(
@@ -755,14 +757,14 @@ msgstr ""
             self.app_translator = QTranslator()
 
             # Load Qt translations
-            qt_translation_file = f"qt_{language.code}"  # noqa: F841
+            qt_translation_file = f"qt_{language.code}"
             if self.qt_translator.load(
                 qt_translation_file, str(
                     self.languages_dir)):
                 app.installTranslator(self.qt_translator)
 
             # Load application translations
-            app_translation_file = f"s_and_d_{language.code}"  # noqa: F841
+            app_translation_file = f"s_and_d_{language.code}"
             if self.app_translator.load(
                 app_translation_file, str(
                     self.languages_dir)):

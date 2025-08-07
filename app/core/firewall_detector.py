@@ -5,10 +5,10 @@ Firewall Detection and Status Module
 Detects and monitors various Linux firewall systems and their status.
 """
 
+import os
 import shutil
 import subprocess
 from typing import Any, Dict, Optional, Tuple
-import os
 
 
 class FirewallDetector:
@@ -96,7 +96,7 @@ class FirewallDetector:
             - status_text: str
             - error: str (if any)
         """
-        fw_type, fw_name = self.detect_firewall()  # noqa: F841
+        fw_type, fw_name = self.detect_firewall()
 
         status_info = {
             "is_active": False,
@@ -152,7 +152,7 @@ class FirewallDetector:
 
             if result.returncode == 0:
                 output = result.stdout.lower()
-                is_active = "status: active" in output  # noqa: F841
+                is_active = "status: active" in output
                 return {
                     "is_active": is_active,
                     "status_text": "Active" if is_active else "Inactive",
@@ -172,7 +172,7 @@ class FirewallDetector:
         """Get UFW status via alternative methods as fallback."""
         try:
             # Method 1: Check UFW configuration file for enabled status
-            ufw_config_paths = ["/etc/ufw/ufw.con", "/etc/default/ufw"]
+            ufw_config_paths = ["/etc/ufw/ufw.conf", "/etc/default/ufw"]
 
             for config_path in ufw_config_paths:
                 try:
@@ -209,7 +209,7 @@ class FirewallDetector:
                 check=False,
             )
 
-            is_active = result.stdout.strip() == "active"  # noqa: F841
+            is_active = result.stdout.strip() == "active"
 
             return {
                 "is_active": is_active,
@@ -230,7 +230,7 @@ class FirewallDetector:
             )
 
             if result.returncode == 0:
-                is_active = "running" in result.stdout.lower()  # noqa: F841
+                is_active = "running" in result.stdout.lower()
                 return {
                     "is_active": is_active,
                     "status_text": "Active" if is_active else "Inactive",
@@ -269,7 +269,7 @@ class FirewallDetector:
                 # Check for non-ACCEPT policies or actual rules
                 has_policies = (
                     "policy DROP" in result.stdout or "policy REJECT" in result.stdout)
-                is_active = rule_count > 0 or has_policies  # noqa: F841
+                is_active = rule_count > 0 or has_policies
                 return {
                     "is_active": is_active,
                     "status_text": "Active" if is_active else "Inactive",
@@ -294,7 +294,7 @@ class FirewallDetector:
 
             if result.returncode == 0:
                 # If there are any tables, nftables is considered active
-                is_active = bool(result.stdout.strip())  # noqa: F841
+                is_active = bool(result.stdout.strip())
                 return {
                     "is_active": is_active,
                     "status_text": "Active" if is_active else "Inactive",
@@ -323,7 +323,7 @@ class FirewallDetector:
             - message: str
             - error: str (if any)
         """
-        fw_type, fw_name = self.detect_firewall()  # noqa: F841
+        fw_type, fw_name = self.detect_firewall()
 
         if not fw_type:
             return {
@@ -623,7 +623,7 @@ class FirewallDetector:
                 }
                 """
                 result = subprocess.run(
-                    admin_cmd + ["nft", "-", "-"],
+                    admin_cmd + ["nft", "-f", "-"],
                     input=nft_rules,
                     capture_output=True,
                     text=True,
@@ -695,7 +695,7 @@ def toggle_firewall(enable: bool) -> Dict[str, str | bool]:
 
 if __name__ == "__main__":
     # Test the firewall detection
-    status = get_firewall_status()  # noqa: F841
+    status = get_firewall_status()
     print("Firewall Status:")
     print(f"  Name: {status['firewall_name']}")
     print(f"  Type: {status['firewall_type']}")

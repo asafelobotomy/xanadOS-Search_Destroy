@@ -104,7 +104,7 @@ def get_default_config() -> Dict[str, Any]:
             "scan_archives": True,
             "scan_email": True,
             "scan_ole2": True,
-            "scan_pd": True,
+            "scan_pdf": True,
             "scan_html": True,
             "scan_executable": True,
             "max_filesize": "100M",

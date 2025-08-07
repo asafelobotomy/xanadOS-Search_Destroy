@@ -330,7 +330,7 @@ class EventProcessor:
                     "is_archive": file_path.suffix.lower()
                     in {".zip", ".rar", ".tar", ".gz", ".7z"},
                     "is_document": file_path.suffix.lower()
-                    in {".pd", ".doc", ".docx", ".xls", ".xlsx"},
+                    in {".pdf", ".doc", ".docx", ".xls", ".xlsx"},
                 }
             )
 

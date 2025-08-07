@@ -3,9 +3,15 @@
 System Service Integration for S&D
 Provides system service management, startup integration, and daemon capabilities.
 """
+import grp
+import json
 import logging
+import os
+import pwd
 import signal
+import socket
 import subprocess
+import sys
 import threading
 import time
 from dataclasses import dataclass
@@ -13,7 +19,6 @@ from datetime import datetime
 from enum import Enum
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional
-import os
 
 
 class ServiceState(Enum):
@@ -78,8 +83,7 @@ class ServiceStatus:
 class SystemServiceManager:
     """
     Comprehensive system service integration for S&D.
-    Handles service installation, management, \
-    and monitoring across different init systems.
+    Handles service installation, management, and monitoring across different init systems.
     """
 
     def __init__(self, config: ServiceConfig = None):
@@ -87,17 +91,17 @@ class SystemServiceManager:
         self.config = config or ServiceConfig()
 
         # Detect init system
-        self.service_type = self._detect_init_system()  # noqa: F841
+        self.service_type = self._detect_init_system()
         self.logger.info("Detected init system: %s", self.service_type.value)
 
         # Service state
-        self.current_state = ServiceState.UNKNOWN  # noqa: F841
+        self.current_state = ServiceState.UNKNOWN
         self.service_pid: Optional[int] = None
         self.start_time: Optional[datetime] = None
         self.restart_count = 0
 
         # Daemon mode support
-        self.daemon_mode = False  # noqa: F841
+        self.daemon_mode = False
         self.daemon_thread: Optional[threading.Thread] = None
         self.shutdown_event = threading.Event()
 
@@ -192,7 +196,7 @@ class SystemServiceManager:
 
             if result:
                 self._set_state(ServiceState.RUNNING)
-                self.start_time = datetime.now()  # noqa: F841
+                self.start_time = datetime.now()
                 self.logger.info("Service started successfully")
 
             return result
@@ -242,7 +246,7 @@ class SystemServiceManager:
 
             if result:
                 self.restart_count += 1
-                self.start_time = datetime.now()  # noqa: F841
+                self.start_time = datetime.now()
                 self._set_state(ServiceState.RUNNING)
                 self.logger.info("Service restarted successfully")
 
@@ -260,12 +264,12 @@ class SystemServiceManager:
 
             # Get process info if running
             pid = self._get_service_pid()
-            uptime = 0.0  # noqa: F841
-            memory_usage = 0.0  # noqa: F841
+            uptime = 0.0
+            memory_usage = 0.0
             cpu_percent = 0.0
 
             if pid and self.start_time:
-                uptime = (datetime.now() - self.start_time).total_seconds()  # noqa: F841
+                uptime = (datetime.now() - self.start_time).total_seconds()
                 memory_usage, cpu_percent = self._get_process_stats(pid)
 
             return ServiceStatus(
@@ -340,7 +344,7 @@ class SystemServiceManager:
             self.start_service_monitoring()
 
             # Set daemon mode
-            self.daemon_mode = True  # noqa: F841
+            self.daemon_mode = True
             self._set_state(ServiceState.RUNNING)
 
             # Run main function in daemon thread
@@ -369,7 +373,7 @@ class SystemServiceManager:
 
             # Signal shutdown
             self.shutdown_event.set()
-            self.daemon_mode = False  # noqa: F841
+            self.daemon_mode = False
 
             # Stop monitoring
             self.stop_service_monitoring()
@@ -411,7 +415,7 @@ class SystemServiceManager:
         """Install systemd service unit."""
         try:
             service_content = self._generate_systemd_unit()
-            service_file = Path(  # noqa: F841
+            service_file = Path(
                 f"/etc/systemd/system/{self.config.service_name}.service"
             )
 
@@ -438,16 +442,16 @@ class SystemServiceManager:
 
     def _generate_systemd_unit(self) -> str:
         """Generate systemd unit file content."""
-        env_vars = ""  # noqa: F841
+        env_vars = ""
         if self.config.environment_vars:
-            env_vars = "\n".join(  # noqa: F841
+            env_vars = "\n".join(
                 [
                     f"Environment={key}={value}"
                     for key, value in self.config.environment_vars.items()
                 ]
             )
 
-        return """[Unit]
+        return f"""[Unit]
 Description={self.config.description}
 After=network.target
 Wants=network.target
@@ -475,7 +479,7 @@ WantedBy=multi-user.target
         """Install SysV init script."""
         try:
             script_content = self._generate_sysv_script()
-            script_file = Path(f"/etc/init.d/{self.config.service_name}")  # noqa: F841
+            script_file = Path(f"/etc/init.d/{self.config.service_name}")
 
             # Write script file
             with script_file.open("w") as f:
@@ -497,7 +501,7 @@ WantedBy=multi-user.target
 
     def _generate_sysv_script(self) -> str:
         """Generate SysV init script content."""
-        return """#!/bin/bash
+        return f"""#!/bin/bash
 #
 # {self.config.service_name}        {self.config.description}
 #
@@ -577,7 +581,7 @@ exit $?
         """Install Upstart service configuration."""
         try:
             config_content = self._generate_upstart_config()
-            config_file = Path(f"/etc/init/{self.config.service_name}.con")  # noqa: F841
+            config_file = Path(f"/etc/init/{self.config.service_name}.conf")
 
             # Write config file
             with config_file.open("w") as f:
@@ -595,7 +599,7 @@ exit $?
 
     def _generate_upstart_config(self) -> str:
         """Generate Upstart configuration content."""
-        return """description "{self.config.description}"
+        return f"""description "{self.config.description}"
 
 start on runlevel [2345]
 stop on runlevel [016]
@@ -614,7 +618,7 @@ exec /usr/bin/python3 {self.config.executable_path} --daemon
     def _uninstall_systemd_service(self) -> bool:
         """Uninstall systemd service."""
         try:
-            service_file = Path(  # noqa: F841
+            service_file = Path(
                 f"/etc/systemd/system/{self.config.service_name}.service"
             )
 
@@ -638,7 +642,7 @@ exec /usr/bin/python3 {self.config.executable_path} --daemon
     def _uninstall_sysv_service(self) -> bool:
         """Uninstall SysV service."""
         try:
-            script_file = Path(f"/etc/init.d/{self.config.service_name}")  # noqa: F841
+            script_file = Path(f"/etc/init.d/{self.config.service_name}")
 
             # Disable service
             self.disable_auto_start()
@@ -657,7 +661,7 @@ exec /usr/bin/python3 {self.config.executable_path} --daemon
     def _uninstall_upstart_service(self) -> bool:
         """Uninstall Upstart service."""
         try:
-            config_file = Path(f"/etc/init/{self.config.service_name}.con")  # noqa: F841
+            config_file = Path(f"/etc/init/{self.config.service_name}.conf")
 
             # Remove config file
             if config_file.exists():
@@ -753,7 +757,7 @@ exec /usr/bin/python3 {self.config.executable_path} --daemon
         """Disable service with chkconfig."""
         try:
             result = subprocess.run(
-                ["chkconfig", self.config.service_name, "of"],
+                ["chkconfig", self.config.service_name, "off"],
                 capture_output=True,
                 text=True,
             )
@@ -771,33 +775,33 @@ exec /usr/bin/python3 {self.config.executable_path} --daemon
                     text=True,
                 )
                 if result.returncode == 0:
-                    status = result.stdout.strip()  # noqa: F841
+                    status = result.stdout.strip()
                     if status == "active":
-                        self.current_state = ServiceState.RUNNING  # noqa: F841
+                        self.current_state = ServiceState.RUNNING
                     elif status == "inactive":
-                        self.current_state = ServiceState.STOPPED  # noqa: F841
+                        self.current_state = ServiceState.STOPPED
                     elif status == "failed":
-                        self.current_state = ServiceState.FAILED  # noqa: F841
+                        self.current_state = ServiceState.FAILED
                     else:
-                        self.current_state = ServiceState.UNKNOWN  # noqa: F841
+                        self.current_state = ServiceState.UNKNOWN
                 else:
-                    self.current_state = ServiceState.STOPPED  # noqa: F841
+                    self.current_state = ServiceState.STOPPED
             else:
                 # For other systems, check if PID exists
                 pid = self._get_service_pid()
                 if pid and self._is_process_running(pid):
-                    self.current_state = ServiceState.RUNNING  # noqa: F841
+                    self.current_state = ServiceState.RUNNING
                 else:
-                    self.current_state = ServiceState.STOPPED  # noqa: F841
+                    self.current_state = ServiceState.STOPPED
 
         except Exception as e:
             self.logger.error("Error updating service state: %s", e)
-            self.current_state = ServiceState.UNKNOWN  # noqa: F841
+            self.current_state = ServiceState.UNKNOWN
 
     def _get_service_pid(self) -> Optional[int]:
         """Get service process ID."""
         try:
-            pid_file = Path(self.config.pid_file)  # noqa: F841
+            pid_file = Path(self.config.pid_file)
             if pid_file.exists():
                 with pid_file.open("r") as f:
                     pid = int(f.read().strip())
@@ -819,8 +823,8 @@ exec /usr/bin/python3 {self.config.executable_path} --daemon
         """Get process memory and CPU statistics."""
         try:
             # Read from /proc/pid/stat and /proc/pid/status
-            stat_file = Path(f"/proc/{pid}/stat")  # noqa: F841
-            status_file = Path(f"/proc/{pid}/status")  # noqa: F841
+            stat_file = Path(f"/proc/{pid}/stat")
+            status_file = Path(f"/proc/{pid}/status")
 
             memory_mb = 0.0
             cpu_percent = 0.0
@@ -846,7 +850,7 @@ exec /usr/bin/python3 {self.config.executable_path} --daemon
     def _create_pid_file(self):
         """Create PID file."""
         try:
-            pid_file = Path(self.config.pid_file)  # noqa: F841
+            pid_file = Path(self.config.pid_file)
             pid_file.parent.mkdir(parents=True, exist_ok=True)
 
             with pid_file.open("w") as f:
@@ -860,7 +864,7 @@ exec /usr/bin/python3 {self.config.executable_path} --daemon
     def _remove_pid_file(self):
         """Remove PID file."""
         try:
-            pid_file = Path(self.config.pid_file)  # noqa: F841
+            pid_file = Path(self.config.pid_file)
             if pid_file.exists():
                 pid_file.unlink()
                 self.logger.debug("PID file removed: %s", pid_file)
@@ -931,8 +935,8 @@ exec /usr/bin/python3 {self.config.executable_path} --daemon
     def _set_state(self, new_state: ServiceState, message: str = ""):
         """Set service state and notify callbacks."""
         if self.current_state != new_state:
-            old_state = self.current_state  # noqa: F841
-            self.current_state = new_state  # noqa: F841
+            old_state = self.current_state
+            self.current_state = new_state
 
             self.logger.info(
                 "Service state changed: %s -> %s",
@@ -965,7 +969,7 @@ exec /usr/bin/python3 {self.config.executable_path} --daemon
                     return result.stdout.split("\n")
 
             # Fallback to log file
-            log_file = Path(self.config.log_file)  # noqa: F841
+            log_file = Path(self.config.log_file)
             if log_file.exists():
                 with log_file.open("r") as f:
                     return f.readlines()[-lines:]
@@ -980,16 +984,16 @@ exec /usr/bin/python3 {self.config.executable_path} --daemon
         """Check if service is installed."""
         try:
             if self.service_type == ServiceType.SYSTEMD:
-                service_file = Path(  # noqa: F841
+                service_file = Path(
                     f"/etc/systemd/system/{self.config.service_name}.service"
                 )
                 return service_file.exists()
             elif self.service_type == ServiceType.SYSV_INIT:
-                script_file = Path(f"/etc/init.d/{self.config.service_name}")  # noqa: F841
+                script_file = Path(f"/etc/init.d/{self.config.service_name}")
                 return script_file.exists()
             elif self.service_type == ServiceType.UPSTART:
-                config_file = Path(  # noqa: F841
-                    f"/etc/init/{self.config.service_name}.con")
+                config_file = Path(
+                    f"/etc/init/{self.config.service_name}.conf")
                 return config_file.exists()
             else:
                 return False
