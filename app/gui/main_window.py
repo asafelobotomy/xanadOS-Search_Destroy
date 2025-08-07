@@ -619,19 +619,19 @@ class MainWindow(QMainWindow):
                 # Error state
                 self.firewall_on_off_label.setText("ERROR")
                 self.firewall_on_off_label.setStyleSheet("font-weight: bold; font-size: 16px; color: #F14666;")
-                self.firewall_status_circle.setStyleSheet("font-size: 30px; color: #F14666;")
+                self.firewall_status_circle.setStyleSheet("font-size: 20px; color: #F14666;")
                 if hasattr(self, 'firewall_name_label'):
                     self.firewall_name_label.setText(f"Error: {error}")
             elif is_active:
                 # Active state - green
                 self.firewall_on_off_label.setText("ON")
                 self.firewall_on_off_label.setStyleSheet("font-weight: bold; font-size: 16px; color: #9CB898;")
-                self.firewall_status_circle.setStyleSheet("font-size: 30px; color: #9CB898;")
+                self.firewall_status_circle.setStyleSheet("font-size: 20px; color: #9CB898;")
             else:
                 # Inactive state - red
                 self.firewall_on_off_label.setText("OFF")
                 self.firewall_on_off_label.setStyleSheet("font-weight: bold; font-size: 16px; color: #F14666;")
-                self.firewall_status_circle.setStyleSheet("font-size: 30px; color: #F14666;")
+                self.firewall_status_circle.setStyleSheet("font-size: 20px; color: #F14666;")
             
             # Update button text based on current status
             if hasattr(self, 'firewall_toggle_btn'):
@@ -650,7 +650,7 @@ class MainWindow(QMainWindow):
             # Fallback to unknown state
             self.firewall_on_off_label.setText("UNKNOWN")
             self.firewall_on_off_label.setStyleSheet("font-weight: bold; font-size: 16px; color: #999;")
-            self.firewall_status_circle.setStyleSheet("font-size: 30px; color: #999;")
+            self.firewall_status_circle.setStyleSheet("font-size: 20px; color: #999;")
             if hasattr(self, 'firewall_name_label'):
                 self.firewall_name_label.setText("Unable to detect")
 
@@ -1458,7 +1458,7 @@ class MainWindow(QMainWindow):
         
         # Status circle
         self.firewall_status_circle = QLabel("●")
-        self.firewall_status_circle.setStyleSheet("font-size: 30px; color: #F14666;")
+        self.firewall_status_circle.setStyleSheet("font-size: 20px; color: #F14666;")
         self.firewall_status_circle.setAlignment(Qt.AlignmentFlag.AlignCenter)
         firewall_status_right.addWidget(self.firewall_status_circle)
         
