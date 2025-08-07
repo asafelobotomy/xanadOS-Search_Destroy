@@ -20,6 +20,7 @@ from core.rkhunter_wrapper import RKHunterWrapper, RKHunterScanResult
 from utils.config import load_config, save_config
 from utils.scan_reports import ScanReportManager, ScanResult, ScanType, ThreatInfo, ThreatLevel
 from monitoring import RealTimeMonitor, MonitorConfig, MonitorState
+from core.firewall_detector import get_firewall_status, toggle_firewall
 
 
 class ClickableFrame(QFrame):
@@ -268,6 +269,18 @@ class MainWindow(QMainWindow):
         # Connect the click signal
         self.protection_card.clicked.connect(self.toggle_protection_from_dashboard)
         
+        # Firewall Status Card - using firewall palette
+        firewall_status = get_firewall_status()
+        firewall_active = firewall_status.get('is_active', False)
+        self.firewall_card = self.create_clickable_status_card(
+            "Firewall Protection",
+            "Active" if firewall_active else "Inactive",
+            "#9CB898" if firewall_active else "#F14666",
+            "Firewall is protecting your system" if firewall_active else "Click to enable firewall"
+        )
+        # Connect the click signal
+        self.firewall_card.clicked.connect(self.toggle_firewall_from_dashboard)
+        
         # Last Scan Card
         self.last_scan_card = self.create_status_card(
             "Last Scan",
@@ -285,12 +298,11 @@ class MainWindow(QMainWindow):
         )
         
         status_row.addWidget(self.protection_card)
+        status_row.addWidget(self.firewall_card)
         status_row.addWidget(self.last_scan_card)
         status_row.addWidget(self.threats_card)
-        
-        layout.addLayout(status_row)
-        
-        # Real-Time Protection Activity (expanded to fill the space)
+
+        layout.addLayout(status_row)        # Real-Time Protection Activity (expanded to fill the space)
         activity_group = QGroupBox("Real-Time Protection Activity")
         activity_layout = QVBoxLayout(activity_group)
         
@@ -422,6 +434,73 @@ class MainWindow(QMainWindow):
             else:
                 self.add_activity_message("Real-time protection disabled from dashboard")
     
+    def toggle_firewall_from_dashboard(self):
+        """Toggle firewall when the dashboard status card is clicked."""
+        # Get current firewall status
+        current_status = get_firewall_status()
+        is_currently_active = current_status.get('is_active', False)
+        
+        # Toggle the firewall (enable if currently disabled, disable if currently enabled)
+        enable_firewall = not is_currently_active
+        
+        # Show confirmation dialog for critical operations
+        from PyQt6.QtWidgets import QMessageBox
+        if enable_firewall:
+            action = "enable"
+            message = "This will enable your firewall with basic security rules. Continue?"
+        else:
+            action = "disable"
+            message = "This will disable your firewall, reducing system security. Continue?"
+        
+        reply = QMessageBox.question(
+            self, 
+            f"Confirm Firewall {action.title()}", 
+            message,
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.Yes
+        )
+        
+        if reply != QMessageBox.StandardButton.Yes:
+            return
+        
+        # Show info about authentication
+        self.add_activity_message(f"🔒 Requesting admin privileges to {action} firewall...")
+        
+        # Perform the firewall toggle operation
+        result = toggle_firewall(enable_firewall)
+        
+        if result.get('success', False):
+            # Success - show message and update UI
+            self.add_activity_message(f"🔥 Firewall {action}d successfully from dashboard")
+            QMessageBox.information(
+                self,
+                "Firewall Control",
+                str(result.get('message', f'Firewall {action}d successfully'))
+            )
+            # Force immediate status update
+            self.update_firewall_status()
+            self.update_firewall_status_card()
+        else:
+            # Error - show error message
+            error_msg = str(result.get('error', 'Unknown error'))
+            
+            # Check if it's a permission/authentication error
+            if 'permission denied' in error_msg.lower() or 'authentication' in error_msg.lower() or 'cancelled' in error_msg.lower():
+                self.add_activity_message(f"🔒 Firewall {action} cancelled - authentication required")
+                QMessageBox.warning(
+                    self,
+                    "Authentication Required",
+                    f"Firewall control requires administrator privileges.\n"
+                    f"Authentication was cancelled or failed."
+                )
+            else:
+                self.add_activity_message(f"❌ Failed to {action} firewall: {error_msg}")
+                QMessageBox.critical(
+                    self,
+                    "Firewall Error",
+                    f"Failed to {action} firewall:\n{error_msg}"
+                )
+    
     def update_protection_status_card(self):
         """Update the protection status card with current state."""
         if hasattr(self, 'protection_card'):
@@ -432,6 +511,21 @@ class MainWindow(QMainWindow):
                     child.setStyleSheet(f"color: {'#9CB898' if self.monitoring_enabled else '#F14666'}; font-size: 20px; font-weight: bold;")
                 elif child.objectName() == "cardDescription":
                     child.setText("Your system is being monitored" if self.monitoring_enabled else "Click to enable protection")
+
+    def update_firewall_status_card(self):
+        """Update the firewall status card with current state."""
+        if hasattr(self, 'firewall_card'):
+            # Get current firewall status
+            firewall_status = get_firewall_status()
+            is_active = firewall_status.get('is_active', False)
+            
+            # Find the card's value label and update it
+            for child in self.firewall_card.findChildren(QLabel):
+                if child.objectName() == "cardValue":
+                    child.setText("Active" if is_active else "Inactive")
+                    child.setStyleSheet(f"color: {'#9CB898' if is_active else '#F14666'}; font-size: 20px; font-weight: bold;")
+                elif child.objectName() == "cardDescription":
+                    child.setText("Firewall is protecting your system" if is_active else "Click to enable firewall")
 
     def update_protection_ui_after_init(self):
         """Update Protection tab UI after full initialization to ensure state consistency."""
@@ -491,6 +585,178 @@ class MainWindow(QMainWindow):
                 print(f"✅ Protection status is properly set to: {current_text}")
         else:
             print("⚠️ Protection status label not found")
+
+    def update_firewall_status(self):
+        """Update the firewall status display."""
+        if not hasattr(self, 'firewall_status_label'):
+            return
+            
+        try:
+            status = get_firewall_status()
+            
+            # Check if status has changed from previous check
+            current_active_state = status.get('is_active', False)
+            if not hasattr(self, '_last_firewall_state'):
+                self._last_firewall_state = None
+            
+            # Only log if this is the first check or if status changed
+            if self._last_firewall_state != current_active_state:
+                if self._last_firewall_state is not None:  # Not the first check
+                    state_msg = "enabled" if current_active_state else "disabled"
+                    self.add_activity_message(f"🔥 Firewall {state_msg} externally")
+                self._last_firewall_state = current_active_state
+            
+            # Update firewall name
+            if hasattr(self, 'firewall_name_label'):
+                firewall_name = status.get('firewall_name', 'Unknown')
+                self.firewall_name_label.setText(str(firewall_name) if firewall_name else 'Unknown')
+            
+            # Update status based on firewall state
+            is_active = status.get('is_active', False)
+            error = status.get('error')
+            
+            if error:
+                # Error state
+                self.firewall_on_off_label.setText("ERROR")
+                self.firewall_on_off_label.setStyleSheet("font-weight: bold; font-size: 16px; color: #F14666;")
+                self.firewall_status_circle.setStyleSheet("font-size: 30px; color: #F14666;")
+                if hasattr(self, 'firewall_name_label'):
+                    self.firewall_name_label.setText(f"Error: {error}")
+            elif is_active:
+                # Active state - green
+                self.firewall_on_off_label.setText("ON")
+                self.firewall_on_off_label.setStyleSheet("font-weight: bold; font-size: 16px; color: #9CB898;")
+                self.firewall_status_circle.setStyleSheet("font-size: 30px; color: #9CB898;")
+            else:
+                # Inactive state - red
+                self.firewall_on_off_label.setText("OFF")
+                self.firewall_on_off_label.setStyleSheet("font-weight: bold; font-size: 16px; color: #F14666;")
+                self.firewall_status_circle.setStyleSheet("font-size: 30px; color: #F14666;")
+            
+            # Update button text based on current status
+            if hasattr(self, 'firewall_toggle_btn'):
+                if error:
+                    self.firewall_toggle_btn.setText("Check Firewall")
+                    self.firewall_toggle_btn.setEnabled(True)
+                else:
+                    self.firewall_toggle_btn.setText("Disable Firewall" if is_active else "Enable Firewall")
+                    self.firewall_toggle_btn.setEnabled(True)
+            
+            # Also update the dashboard firewall card
+            self.update_firewall_status_card()
+                
+        except Exception as e:
+            print(f"⚠️ Error updating firewall status: {e}")
+            # Fallback to unknown state
+            self.firewall_on_off_label.setText("UNKNOWN")
+            self.firewall_on_off_label.setStyleSheet("font-weight: bold; font-size: 16px; color: #999;")
+            self.firewall_status_circle.setStyleSheet("font-size: 30px; color: #999;")
+            if hasattr(self, 'firewall_name_label'):
+                self.firewall_name_label.setText("Unable to detect")
+
+    def toggle_firewall_status(self):
+        """Toggle the firewall on/off based on current status."""
+        if not hasattr(self, 'firewall_toggle_btn'):
+            return
+            
+        # Disable button during operation
+        self.firewall_toggle_btn.setEnabled(False)
+        self.firewall_toggle_btn.setText("Working...")
+        
+        try:
+            # Get current status to determine what action to take
+            current_status = get_firewall_status()
+            is_currently_active = current_status.get('is_active', False)
+            
+            # Toggle the firewall (enable if currently disabled, disable if currently enabled)
+            enable_firewall = not is_currently_active
+            
+            # Show confirmation dialog for critical operations
+            if enable_firewall:
+                action = "enable"
+                message = "This will enable your firewall with basic security rules. Continue?"
+            else:
+                action = "disable"
+                message = "This will disable your firewall, reducing system security. Continue?"
+            
+            from PyQt6.QtWidgets import QMessageBox
+            reply = QMessageBox.question(
+                self, 
+                f"Confirm Firewall {action.title()}", 
+                message,
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                QMessageBox.StandardButton.Yes
+            )
+            
+            if reply != QMessageBox.StandardButton.Yes:
+                # User cancelled - restore button
+                self._restore_firewall_button()
+                return
+            
+            # Show info about authentication
+            self.add_activity_message(f"🔒 Requesting admin privileges to {action} firewall...")
+            
+            # Update button to show authentication in progress
+            self.firewall_toggle_btn.setText("Authenticating...")
+            
+            # Perform the firewall toggle operation
+            result = toggle_firewall(enable_firewall)
+            
+            if result.get('success', False):
+                # Success - show message and update UI
+                self.add_activity_message(f"🔥 Firewall {action}d successfully")
+                QMessageBox.information(
+                    self,
+                    "Firewall Control",
+                    str(result.get('message', f'Firewall {action}d successfully'))
+                )
+                # Force immediate status update
+                self.update_firewall_status()
+            else:
+                # Error - show error message
+                error_msg = str(result.get('error', 'Unknown error'))
+                
+                # Check if it's a permission/authentication error
+                if 'permission denied' in error_msg.lower() or 'authentication' in error_msg.lower() or 'cancelled' in error_msg.lower():
+                    self.add_activity_message(f"🔒 Firewall {action} cancelled - authentication required")
+                    QMessageBox.warning(
+                        self,
+                        "Authentication Required",
+                        f"Firewall control requires administrator privileges.\n"
+                        f"Authentication was cancelled or failed."
+                    )
+                else:
+                    self.add_activity_message(f"❌ Failed to {action} firewall: {error_msg}")
+                    QMessageBox.critical(
+                        self,
+                        "Firewall Control Error",
+                        f"Failed to {action} firewall:\n{str(result.get('message', error_msg))}"
+                    )
+            
+        except Exception as e:
+            # Handle unexpected errors
+            error_msg = f"Unexpected error: {str(e)}"
+            self.add_activity_message(f"❌ Firewall control error: {error_msg}")
+            QMessageBox.critical(
+                self,
+                "Firewall Control Error",
+                f"An unexpected error occurred:\n{error_msg}"
+            )
+        finally:
+            # Always restore button state
+            self._restore_firewall_button()
+    
+    def _restore_firewall_button(self):
+        """Restore firewall button to normal state."""
+        if hasattr(self, 'firewall_toggle_btn'):
+            self.firewall_toggle_btn.setEnabled(True)
+            # Update button text based on current firewall status
+            try:
+                status = get_firewall_status()
+                is_active = status.get('is_active', False)
+                self.firewall_toggle_btn.setText("Disable Firewall" if is_active else "Enable Firewall")
+            except (OSError, subprocess.SubprocessError):
+                self.firewall_toggle_btn.setText("Toggle Firewall")
 
     def create_scan_tab(self):
         scan_widget = QWidget()
@@ -1157,6 +1423,64 @@ class MainWindow(QMainWindow):
         
         stats_layout.addLayout(stats_container)
         center_panel.addWidget(stats_group)
+        
+        # Firewall Status section
+        firewall_group = QGroupBox("Firewall Status")
+        firewall_layout = QVBoxLayout(firewall_group)
+        firewall_layout.setSpacing(10)
+        
+        # Create the firewall status display similar to your mockup
+        firewall_status_container = QHBoxLayout()
+        
+        # Status text on the left
+        firewall_status_left = QVBoxLayout()
+        firewall_status_left.setSpacing(5)
+        
+        self.firewall_status_label = QLabel("Status:")
+        self.firewall_status_label.setStyleSheet("font-weight: bold; font-size: 12px;")
+        firewall_status_left.addWidget(self.firewall_status_label)
+        
+        self.firewall_name_label = QLabel("Checking...")
+        self.firewall_name_label.setStyleSheet("font-size: 11px; color: #999;")
+        firewall_status_left.addWidget(self.firewall_name_label)
+        
+        firewall_status_container.addLayout(firewall_status_left)
+        firewall_status_container.addStretch()
+        
+        # Status indicator on the right (ON/OFF with circle)
+        firewall_status_right = QVBoxLayout()
+        firewall_status_right.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        
+        self.firewall_on_off_label = QLabel("OFF")
+        self.firewall_on_off_label.setStyleSheet("font-weight: bold; font-size: 16px; color: #F14666;")
+        self.firewall_on_off_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        firewall_status_right.addWidget(self.firewall_on_off_label)
+        
+        # Status circle
+        self.firewall_status_circle = QLabel("●")
+        self.firewall_status_circle.setStyleSheet("font-size: 30px; color: #F14666;")
+        self.firewall_status_circle.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        firewall_status_right.addWidget(self.firewall_status_circle)
+        
+        firewall_status_container.addLayout(firewall_status_right)
+        firewall_layout.addLayout(firewall_status_container)
+        
+        # Add firewall toggle button
+        firewall_button_layout = QHBoxLayout()
+        firewall_button_layout.setContentsMargins(0, 10, 0, 0)  # Add top margin
+        
+        self.firewall_toggle_btn = QPushButton("Enable Firewall")
+        self.firewall_toggle_btn.clicked.connect(self.toggle_firewall_status)
+        self.firewall_toggle_btn.setMinimumHeight(35)
+        self.firewall_toggle_btn.setObjectName("primaryButton")
+        self.firewall_toggle_btn.setToolTip("Click to enable or disable the firewall")
+        
+        firewall_button_layout.addStretch()
+        firewall_button_layout.addWidget(self.firewall_toggle_btn)
+        firewall_button_layout.addStretch()
+        firewall_layout.addLayout(firewall_button_layout)
+        
+        center_panel.addWidget(firewall_group)
         center_panel.addStretch()
         
         # RIGHT PANEL: Monitored Paths
@@ -1192,6 +1516,14 @@ class MainWindow(QMainWindow):
         main_layout.addLayout(right_panel, 1)   # 30% - Monitored Paths
         
         self.tab_widget.addTab(real_time_widget, "Protection")
+        
+        # Initialize firewall status display
+        QTimer.singleShot(1000, self.update_firewall_status)  # Delay initial update slightly
+        
+        # Set up periodic firewall status monitoring for external changes
+        self.firewall_monitor_timer = QTimer()
+        self.firewall_monitor_timer.timeout.connect(self.update_firewall_status)
+        self.firewall_monitor_timer.start(5000)  # Check every 5 seconds for external changes
         
     def init_real_time_monitoring_safe(self):
         """Safely initialize the real-time monitoring system with better error handling."""
@@ -1679,6 +2011,14 @@ class MainWindow(QMainWindow):
     
     def update_monitoring_statistics(self):
         """Update the monitoring statistics display."""
+        # Update firewall status less frequently (every 6th call = 30-60 seconds)
+        if not hasattr(self, '_firewall_update_counter'):
+            self._firewall_update_counter = 0
+        self._firewall_update_counter += 1
+        if self._firewall_update_counter >= 6:
+            self._firewall_update_counter = 0
+            self.update_firewall_status()
+        
         if self.real_time_monitor:
             try:
                 stats = self.real_time_monitor.get_statistics()
