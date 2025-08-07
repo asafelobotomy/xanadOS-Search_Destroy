@@ -665,91 +665,89 @@ class MainWindow(QMainWindow):
 
     def toggle_firewall_from_dashboard(self):
         """Toggle firewall when the dashboard status card is clicked."""
+        print("🔍 DEBUG: toggle_firewall_from_dashboard() called")
+        
         # Get current firewall status
-        current_status = get_firewall_status()
-        is_currently_active = current_status.get("is_active", False)
-
-        # Toggle the firewall (enable if currently disabled, disable if
-        # currently enabled)
+        print("🔍 DEBUG: Getting current firewall status...")
+        try:
+            current_status = get_firewall_status()
+            print(f"🔍 DEBUG: Current status: {current_status}")
+        except Exception as e:
+            print(f"❌ DEBUG: Error getting firewall status: {e}")
+            import traceback
+            traceback.print_exc()
+            return
+            
+        is_currently_active = current_status.get('is_active', False)
+        
+        # Toggle the firewall (enable if currently disabled, disable if currently enabled)
         enable_firewall = not is_currently_active
-
+        print(f"🔍 DEBUG: Current active: {is_currently_active}, will enable: {enable_firewall}")
+        
         # Show confirmation dialog for critical operations
-        from PyQt6.QtWidgets import QMessageBox
-
         if enable_firewall:
             action = "enable"
-            message = (
-                "This will enable your firewall with basic security rules. Continue?"
-            )
+            message = "This will enable your firewall with basic security rules. Continue?"
         else:
             action = "disable"
-            message = (
-                "This will disable your firewall, reducing system security. Continue?"
-            )
-
+            message = "This will disable your firewall, reducing system security. Continue?"
+        
+        print(f"🔍 DEBUG: Showing confirmation dialog for {action}")
         reply = self.show_themed_message_box(
-            "question", f"Confirm Firewall {action.title()}", message
+            "question",
+            f"Confirm Firewall {action.title()}", 
+            message,
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
         )
-
+        
+        print(f"🔍 DEBUG: User reply: {reply}")
         if reply != QMessageBox.StandardButton.Yes:
+            print("🔍 DEBUG: User cancelled, exiting")
             return
-
+        
         # Show info about authentication
-        self.add_activity_message(
-            f"🔒 Requesting admin privileges to {action} firewall..."
-        )
-
-        # Mark that this firewall change is from the GUI
-        self._firewall_change_from_gui = True
-
-        # Perform the firewall toggle operation in background thread (like update_definitions)
-        from threading import Thread
+        print(f"🔍 DEBUG: Adding activity message and calling toggle_firewall({enable_firewall})")
+        self.add_activity_message(f"🔒 Requesting admin privileges to {action} firewall...")
         
-        self.firewall_result = None
+        # Perform the firewall toggle operation
+        try:
+            print("🔍 DEBUG: About to call toggle_firewall...")
+            result = toggle_firewall(enable_firewall)
+            print(f"🔍 DEBUG: toggle_firewall returned: {result}")
+        except Exception as e:
+            print(f"❌ DEBUG: Exception in toggle_firewall: {e}")
+            import traceback
+            traceback.print_exc()
+            self.add_activity_message(f"❌ Error during firewall {action}: {str(e)}")
+            return
         
-        def run_firewall_toggle():
-            try:
-                self.firewall_result = toggle_firewall(enable_firewall)
-            except Exception as e:
-                self.firewall_result = {"success": False, "error": str(e), "message": f"Exception during firewall {action}"}
-        
-        # Start firewall toggle in background thread
-        firewall_thread = Thread(target=run_firewall_toggle)
-        firewall_thread.daemon = True
-        firewall_thread.start()
-        
-        # Wait for completion and handle result (similar to update_definitions)
-        firewall_thread.join(timeout=300)  # Wait up to 5 minutes
-        
-        if self.firewall_result and self.firewall_result.get("success", False):
+        if result.get('success', False):
             # Success - show message and update UI
-            self.add_activity_message(
-                f"🔥 Firewall {action}d successfully from dashboard"
-            )
+            print("🔍 DEBUG: Firewall toggle successful")
+            self.add_activity_message(f"🔥 Firewall {action}d successfully from dashboard")
             self.show_themed_message_box(
                 "information",
                 "Firewall Control",
-                str(self.firewall_result.get("message", f"Firewall {action}d successfully")),
+                str(result.get('message', f'Firewall {action}d successfully'))
             )
             # Force immediate status update
+            print("🔍 DEBUG: Updating firewall status...")
             self.update_firewall_status()
             self.update_firewall_status_card()
         else:
             # Error - show error message
-            # Reset the flag since the operation failed
-            self._firewall_change_from_gui = False
-
-            error_msg = str(self.firewall_result.get("error", "Unknown error")) if self.firewall_result else "Operation timed out"
-
+            print(f"🔍 DEBUG: Firewall toggle failed: {result}")
+            error_msg = str(result.get('error', 'Unknown error'))
+            
             # Check if it's a permission/authentication error
             if (
                 "permission denied" in error_msg.lower()
                 or "authentication" in error_msg.lower()
                 or "cancelled" in error_msg.lower()
             ):
+                print("🔍 DEBUG: Authentication error detected")
                 self.add_activity_message(
-                    f"🔒 Firewall {action} cancelled - authentication required"
-                )
+                    f"🔒 Firewall {action} cancelled - authentication required")
                 self.show_themed_message_box(
                     "warning",
                     "Authentication Required",
@@ -757,14 +755,14 @@ class MainWindow(QMainWindow):
                     f"Authentication was cancelled or failed.",
                 )
             else:
-                self.add_activity_message(
-                    f"❌ Failed to {action} firewall: {error_msg}"
-                )
+                print("🔍 DEBUG: Other error detected")
+                self.add_activity_message(f"❌ Failed to {action} firewall: {error_msg}")
                 self.show_themed_message_box(
                     "critical",
                     "Firewall Error",
                     f"Failed to {action} firewall:\n{error_msg}",
                 )
+        print("🔍 DEBUG: toggle_firewall_from_dashboard() complete")
 
     def open_scan_tab(self):
         """Open the Scan tab when Last Scan card is clicked."""
@@ -992,22 +990,21 @@ class MainWindow(QMainWindow):
 
     def toggle_firewall_status(self):
         """Toggle the firewall on/off based on current status."""
-        if not hasattr(self, "firewall_toggle_btn"):
+        if not hasattr(self, 'firewall_toggle_btn'):
             return
-
+            
         # Disable button during operation
         self.firewall_toggle_btn.setEnabled(False)
         self.firewall_toggle_btn.setText("Working...")
-
+        
         try:
             # Get current status to determine what action to take
             current_status = get_firewall_status()
-            is_currently_active = current_status.get("is_active", False)
-
-            # Toggle the firewall (enable if currently disabled, disable if
-            # currently enabled)
+            is_currently_active = current_status.get('is_active', False)
+            
+            # Toggle the firewall (enable if currently disabled, disable if currently enabled)
             enable_firewall = not is_currently_active
-
+            
             # Show confirmation dialog for critical operations
             if enable_firewall:
                 action = "enable"
@@ -1015,95 +1012,85 @@ class MainWindow(QMainWindow):
             else:
                 action = "disable"
                 message = "This will disable your firewall, reducing system security. Continue?"
-
-            from PyQt6.QtWidgets import QMessageBox
-
+            
             reply = self.show_themed_message_box(
-                "question", f"Confirm Firewall {action.title()}", message
+                "question",
+                f"Confirm Firewall {action.title()}", 
+                message,
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
             )
-
+            
             if reply != QMessageBox.StandardButton.Yes:
                 # User cancelled - restore button
                 self._restore_firewall_button()
                 return
-
+            
             # Show info about authentication
-            self.add_activity_message(
-                f"🔒 Requesting admin privileges to {action} firewall..."
-            )
-
+            self.add_activity_message(f"🔒 Requesting admin privileges to {action} firewall...")
+            
             # Update button to show authentication in progress
             self.firewall_toggle_btn.setText("Authenticating...")
-
-            # Mark that this firewall change is from the GUI
-            self._firewall_change_from_gui = True
-
-            # Perform the firewall toggle operation in background thread (like update_definitions)
-            from threading import Thread
             
-            self.firewall_result = None
+            # Perform the firewall toggle operation
+            print(f"🔍 DEBUG (Protection): About to call toggle_firewall({enable_firewall})")
+            try:
+                result = toggle_firewall(enable_firewall)
+                print(f"🔍 DEBUG (Protection): toggle_firewall returned: {result}")
+            except Exception as e:
+                print(f"❌ DEBUG (Protection): Exception in toggle_firewall: {e}")
+                import traceback
+                traceback.print_exc()
+                self.add_activity_message(f"❌ Error during firewall {action}: {str(e)}")
+                self._restore_firewall_button()
+                return
             
-            def run_firewall_toggle_protection():
-                try:
-                    self.firewall_result = toggle_firewall(enable_firewall)
-                except Exception as e:
-                    self.firewall_result = {"success": False, "error": str(e), "message": f"Exception during firewall {action}"}
-            
-            # Start firewall toggle in background thread
-            firewall_thread = Thread(target=run_firewall_toggle_protection)
-            firewall_thread.daemon = True
-            firewall_thread.start()
-            
-            # Wait for completion and handle result (similar to update_definitions)
-            firewall_thread.join(timeout=300)  # Wait up to 5 minutes
-            
-            if self.firewall_result and self.firewall_result.get("success", False):
+            if result.get('success', False):
                 # Success - show message and update UI
                 self.add_activity_message(f"🔥 Firewall {action}d successfully")
                 self.show_themed_message_box(
                     "information",
                     "Firewall Control",
-                    str(self.firewall_result.get("message", f"Firewall {action}d successfully")),
+                    str(result.get('message', f'Firewall {action}d successfully'))
                 )
                 # Force immediate status update
                 self.update_firewall_status()
             else:
                 # Error - show error message
-                # Reset the flag since the operation failed
-                self._firewall_change_from_gui = False
-
-                error_msg = str(self.firewall_result.get("error", "Unknown error")) if self.firewall_result else "Operation timed out"
-
+                error_msg = str(result.get('error', 'Unknown error'))
+                
                 # Check if it's a permission/authentication error
                 if (
                     "permission denied" in error_msg.lower()
                     or "authentication" in error_msg.lower()
                     or "cancelled" in error_msg.lower()
                 ):
-                    self.add_activity_message(
-                        f"🔒 Firewall {action} cancelled - authentication required")
+                    self.add_activity_message(f"🔒 Firewall {action} cancelled - authentication required")
                     self.show_themed_message_box(
                         "warning",
                         "Authentication Required",
                         f"Firewall control requires administrator privileges.\n"
-                        f"Authentication was cancelled or failed.",
+                        f"Authentication was cancelled or failed."
                     )
                 else:
                     self.add_activity_message(f"❌ Failed to {action} firewall: {error_msg}")
                     self.show_themed_message_box(
                         "critical",
-                        "Firewall Error",
-                        f"Failed to {action} firewall:\n{error_msg}",
+                        "Firewall Control Error",
+                        f"Failed to {action} firewall:\n{str(result.get('message', error_msg))}"
                     )
             
+        except Exception as e:
+            # Handle unexpected errors
+            error_msg = f"Unexpected error: {str(e)}"
+            self.add_activity_message(f"❌ Firewall control error: {error_msg}")
+            self.show_themed_message_box(
+                "critical",
+                "Firewall Control Error",
+                f"An unexpected error occurred:\n{error_msg}"
+            )
+        finally:
             # Always restore button state
             self._restore_firewall_button()
-
-        except Exception as e:
-            # Restore button if there's an exception before threading starts
-            self._firewall_change_from_gui = False
-            self._restore_firewall_button()
-            self.add_activity_message(f"❌ Error setting up firewall operation: {str(e)}")
 
     def _restore_firewall_button(self):
         """Restore firewall button to normal state."""
@@ -4446,6 +4433,7 @@ System        {perf_status}"""
                 "• ClamAV will scan for viruses, malware, and trojans\n"
                 "• RKHunter will scan for rootkits and system integrity issues\n\n"
                 "This will provide the most comprehensive security analysis.",
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
             )
 
             if reply == QMessageBox.StandardButton.Yes:
@@ -4511,6 +4499,12 @@ System        {perf_status}"""
         )
         self.current_rkhunter_thread.progress_updated.connect(
             self.update_rkhunter_progress
+        )
+        self.current_rkhunter_thread.progress_value_updated.connect(
+            self.progress_bar.setValue
+        )
+        self.current_rkhunter_thread.output_updated.connect(
+            self.update_rkhunter_output
         )
         self.current_rkhunter_thread.scan_completed.connect(
             lambda rk_result: self.combined_scan_completed(
@@ -4597,6 +4591,7 @@ System        {perf_status}"""
                 "This is normal for rootkit scanners as they need system-level access.\n"
                 "You will be prompted for your password when running scans.\n\n"
                 "Continue to enable RKHunter scanning?",
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
             )
 
             if reply == QMessageBox.StandardButton.Yes:
@@ -4640,6 +4635,7 @@ System        {perf_status}"""
             "Install RKHunter",
             "RKHunter will be installed to provide rootkit detection capabilities.\n\n"
             "This requires administrator privileges. Continue?",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
         )
 
         if reply != QMessageBox.StandardButton.Yes:
@@ -4719,7 +4715,8 @@ System        {perf_status}"""
                     "• Configure RKHunter setup first")
 
             reply = self.show_themed_message_box(
-                "question", "RKHunter Setup Required", auth_method_text
+                "question", "RKHunter Setup Required", auth_method_text,
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
             )
 
             if reply != QMessageBox.StandardButton.Yes:
@@ -4733,6 +4730,7 @@ System        {perf_status}"""
                 "Scan in Progress",
                 "A regular antivirus scan is currently running.\n\n"
                 "Do you want to continue with RKHunter scan in parallel?",
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
             )
             if reply != QMessageBox.StandardButton.Yes:
                 return
@@ -4785,6 +4783,7 @@ System        {perf_status}"""
             "question",
             "Authentication Required - Ready to Start RKHunter Scan",
             auth_message,
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
         )
 
         if reply != QMessageBox.StandardButton.Yes:
@@ -4793,12 +4792,21 @@ System        {perf_status}"""
         # Start RKHunter scan in thread
         self.rkhunter_scan_btn.setEnabled(False)
         self.rkhunter_scan_btn.setText("🔄 Scanning...")
+        
+        # Reset progress bar for RKHunter scan
+        self.progress_bar.setValue(0)
 
         self.current_rkhunter_thread = RKHunterScanThread(
             self.rkhunter, test_categories
         )
         self.current_rkhunter_thread.progress_updated.connect(
             self.update_rkhunter_progress
+        )
+        self.current_rkhunter_thread.progress_value_updated.connect(
+            self.progress_bar.setValue
+        )
+        self.current_rkhunter_thread.output_updated.connect(
+            self.update_rkhunter_output
         )
         self.current_rkhunter_thread.scan_completed.connect(
             self.rkhunter_scan_completed
@@ -4813,10 +4821,55 @@ System        {perf_status}"""
         """Update progress display for RKHunter scan."""
         self.status_label.setText(f"RKHunter: {message}")
 
+    def update_rkhunter_output(self, output_line):
+        """Update the results text with real-time RKHunter output."""
+        if output_line.strip():  # Only add non-empty lines
+            # Filter out common noise/warnings that don't add value
+            line_lower = output_line.lower()
+            
+            # Skip common grep warnings and noise
+            if any(skip_phrase in line_lower for skip_phrase in [
+                "grep: warning: stray",
+                "egrep: warning: egrep is obsolescent",
+                "invalid scriptdir configuration",
+                "sudo: a terminal is required",
+                "sudo: a password is required"
+            ]):
+                return  # Don't display these lines
+            
+            # Format the output line for better readability
+            formatted_line = output_line.strip()
+            
+            # Add some basic formatting for important messages
+            if "WARNING" in formatted_line.upper():
+                formatted_line = f"⚠️  {formatted_line}"
+            elif "OK" in formatted_line.upper():
+                formatted_line = f"✅ {formatted_line}"
+            elif "INFECTED" in formatted_line.upper() or "ROOTKIT" in formatted_line.upper():
+                formatted_line = f"🚨 {formatted_line}"
+            elif "INFO" in formatted_line.upper():
+                formatted_line = f"ℹ️  {formatted_line}"
+            elif formatted_line.startswith("Checking"):
+                formatted_line = f"🔍 {formatted_line}"
+            elif "found" in formatted_line.lower() and "clean" in formatted_line.lower():
+                formatted_line = f"✅ {formatted_line}"
+            elif "error" in formatted_line.lower():
+                formatted_line = f"❌ {formatted_line}"
+            
+            self.results_text.append(formatted_line)
+            
+            # Auto-scroll to bottom to show latest output
+            scrollbar = self.results_text.verticalScrollBar()
+            if scrollbar:
+                scrollbar.setValue(scrollbar.maximum())
+
     def rkhunter_scan_completed(self, result: RKHunterScanResult):
         """Handle completion of RKHunter scan."""
         self.rkhunter_scan_btn.setEnabled(True)
         self.rkhunter_scan_btn.setText("🔍 RKHunter Scan")
+        
+        # Reset progress bar
+        self.progress_bar.setValue(100 if result.success else 0)
 
         if not result.success:
             self.results_text.append(
@@ -4858,9 +4911,10 @@ System        {perf_status}"""
         else:
             output += "✅ No rootkits detected\n\n"
 
-        # Detailed findings
+        # Detailed findings with explanation buttons
         if result.findings:
             output += "Detailed Findings:\n"
+            warning_count = 0
             for finding in result.findings:
                 status_icon = "🚨" if finding.result.value == "infected" else "⚠️"
                 output += f"\n{status_icon} {finding.test_name}\n"
@@ -4869,6 +4923,25 @@ System        {perf_status}"""
                 output += f"   Description: {finding.description}\n"
                 if finding.details:
                     output += f"   Details: {finding.details}\n"
+                
+                # Add explanation info for warnings
+                if finding.result.value == "warning" and finding.explanation:
+                    warning_count += 1
+                    severity_color = finding.explanation.category.value.replace('_', ' ').title()
+                    common_text = " (Common)" if finding.explanation.is_common else " (Uncommon)"
+                    output += f"   Category: {severity_color}{common_text}\n"
+                    output += f"   📖 Click 'Explain Warning #{warning_count}' button below for detailed guidance\n"
+
+        # Add explanation buttons for warnings
+        if result.findings and any(f.result.value == "warning" for f in result.findings):
+            output += "\n" + "=" * 30 + "\n"
+            output += "📖 Warning Explanations Available\n"
+            output += "=" * 30 + "\n"
+            output += "Use the buttons below to get detailed explanations\n"
+            output += "and remediation guidance for each warning.\n\n"
+            
+            # Store findings for button access
+            self._current_rkhunter_findings = result.findings
 
         # Recommendations
         recommendations = self.rkhunter.get_scan_recommendations(result)
@@ -4878,6 +4951,9 @@ System        {perf_status}"""
                 output += f"{rec}\n"
 
         self.results_text.append(output)
+        
+        # Add explanation buttons for warnings if any exist
+        self._add_warning_explanation_buttons(result)
 
     def save_rkhunter_report(self, result: RKHunterScanResult):
         """Save RKHunter scan results to a report file."""
@@ -4935,6 +5011,137 @@ System        {perf_status}"""
 
         except Exception as e:
             print(f"Error saving RKHunter report: {e}")
+
+    def _add_warning_explanation_buttons(self, result: RKHunterScanResult):
+        """Add explanation buttons for RKHunter warnings."""
+        # Clear any existing warning buttons
+        if hasattr(self, '_warning_buttons_layout'):
+            # Remove existing buttons
+            while self._warning_buttons_layout.count():
+                child = self._warning_buttons_layout.takeAt(0)
+                if child.widget():
+                    child.widget().setParent(None)
+            
+        # Only add buttons if there are warnings
+        warnings = [f for f in (result.findings or []) if f.result.value == "warning"]
+        if not warnings:
+            return
+            
+        # Find the results text widget's parent layout
+        results_text_parent = self.results_text.parent()
+        if not hasattr(results_text_parent, 'layout') or not results_text_parent.layout():
+            return
+            
+        results_layout = results_text_parent.layout()
+        
+        # Create buttons layout if it doesn't exist
+        if not hasattr(self, '_warning_buttons_layout'):
+            from PyQt6.QtWidgets import QHBoxLayout, QPushButton
+            
+            self._warning_buttons_layout = QHBoxLayout()
+            self._warning_buttons_layout.setObjectName("warningButtonsLayout")
+            
+            # Add a label
+            from PyQt6.QtWidgets import QLabel
+            explain_label = QLabel("📖 Warning Explanations:")
+            explain_label.setStyleSheet("font-weight: bold; margin: 5px;")
+            self._warning_buttons_layout.addWidget(explain_label)
+            
+            # Add buttons for each warning
+            for i, warning in enumerate(warnings[:5]):  # Limit to 5 buttons
+                btn = QPushButton(f"Explain Warning #{i+1}")
+                btn.setObjectName(f"explainWarning_{i}")
+                btn.clicked.connect(lambda checked, idx=i: self._show_warning_explanation(idx))
+                self._warning_buttons_layout.addWidget(btn)
+            
+            # Add stretch to left-align buttons
+            self._warning_buttons_layout.addStretch()
+            
+            # Add the button layout to the results layout
+            results_layout.addLayout(self._warning_buttons_layout)
+        
+        # Store current warnings for button access
+        self._current_warnings = warnings
+
+    def _show_warning_explanation(self, warning_index: int):
+        """Show explanation dialog for a specific warning."""
+        if not hasattr(self, '_current_warnings') or warning_index >= len(self._current_warnings):
+            return
+            
+        warning = self._current_warnings[warning_index]
+        if not warning.explanation:
+            # Create a simple message for warnings without detailed explanation
+            from PyQt6.QtWidgets import QMessageBox
+            QMessageBox.information(
+                self,
+                "Warning Information", 
+                f"Warning: {warning.description}\n\n"
+                f"This warning indicates a potential security concern that should be investigated. "
+                f"Consider checking recent system changes and consulting security documentation."
+            )
+            return
+            
+        # Import and show the explanation dialog
+        try:
+            import sys
+            from pathlib import Path
+            
+            # Add project root to path
+            project_root = Path(__file__).parent.parent.parent
+            sys.path.insert(0, str(project_root))
+            
+            from app.gui.warning_explanation_dialog import WarningExplanationDialog
+            
+            dialog = WarningExplanationDialog(
+                warning.description, 
+                warning.explanation, 
+                parent=self
+            )
+            
+            # Connect signals
+            dialog.mark_as_safe.connect(self._mark_warning_as_safe)
+            dialog.investigate_requested.connect(self._investigate_warning)
+            
+            dialog.exec()
+            
+        except ImportError as e:
+            # Fallback to simple message box
+            from PyQt6.QtWidgets import QMessageBox
+            QMessageBox.information(
+                self,
+                "Warning Explanation",
+                f"Warning: {warning.description}\n\n"
+                f"Category: {warning.explanation.category.value.replace('_', ' ').title()}\n"
+                f"Severity: {warning.explanation.severity.value.upper()}\n\n"
+                f"Description: {warning.explanation.description}\n\n"
+                f"Likely Cause: {warning.explanation.likely_cause}\n\n"
+                f"Recommended Action: {warning.explanation.recommended_action}"
+            )
+    
+    def _mark_warning_as_safe(self, warning_text: str):
+        """Mark a warning as safe (placeholder for future implementation)."""
+        from PyQt6.QtWidgets import QMessageBox
+        QMessageBox.information(
+            self,
+            "Warning Marked as Safe",
+            f"Warning marked as safe:\n{warning_text[:100]}...\n\n"
+            f"This warning will be hidden in future scans.\n"
+            f"(Feature implementation pending)"
+        )
+    
+    def _investigate_warning(self, warning_text: str):
+        """Handle investigation request (placeholder for future implementation)."""
+        from PyQt6.QtWidgets import QMessageBox
+        QMessageBox.information(
+            self,
+            "Investigation Resources",
+            f"To investigate this warning:\n\n"
+            f"1. Search online for the warning text\n"
+            f"2. Check RKHunter documentation\n"
+            f"3. Review recent system changes\n"
+            f"4. Consult security forums if concerned\n\n"
+            f"Warning: {warning_text[:100]}..."
+        )
 
     def get_selected_rkhunter_categories(self):
         """Get list of selected RKHunter test categories from settings."""

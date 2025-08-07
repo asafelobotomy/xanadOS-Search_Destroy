@@ -360,7 +360,17 @@ class FirewallDetector:
         """Get the appropriate command prefix for admin privileges."""
         # Try pkexec first (better for GUI apps), then fall back to sudo
         if shutil.which("pkexec"):
-            return ["pkexec"]
+            # Check if we're in a GUI environment
+            display = os.environ.get("DISPLAY")
+            if display:
+                # We're in a GUI environment - pkexec should work
+                return ["pkexec"]
+            else:
+                # No GUI environment, use sudo if available
+                if shutil.which("sudo"):
+                    return ["sudo"]
+                else:
+                    return ["pkexec"]  # Try anyway
         elif shutil.which("sudo"):
             return ["sudo"]
         else:
@@ -368,8 +378,10 @@ class FirewallDetector:
 
     def _toggle_ufw(self, enable: bool) -> Dict[str, str | bool]:
         """Toggle UFW firewall."""
+        print(f"🔍 DEBUG: _toggle_ufw called with enable={enable}")
         try:
             admin_cmd = self._get_admin_cmd_prefix()
+            print(f"🔍 DEBUG: Admin command: {admin_cmd}")
             if not admin_cmd:
                 return {
                     "success": False,
@@ -384,6 +396,26 @@ class FirewallDetector:
             # Debug: Print the command being executed
             print(f"DEBUG: Executing firewall command: {' '.join(cmd)}")
             
+            # Prepare environment for GUI authentication
+            env = os.environ.copy()  # Keep all current environment variables
+            print(f"🔍 DEBUG: Original environment DISPLAY: {env.get('DISPLAY', 'Not set')}")
+            print(f"🔍 DEBUG: Original environment XAUTHORITY: {env.get('XAUTHORITY', 'Not set')}")
+            
+            # Ensure GUI environment variables are set for pkexec authentication
+            if admin_cmd[0] == "pkexec":
+                print("🔍 DEBUG: Using pkexec, setting up GUI environment...")
+                # Make sure DISPLAY and XAUTHORITY are available for pkexec GUI
+                if "DISPLAY" not in env and "DISPLAY" in os.environ:
+                    env["DISPLAY"] = os.environ["DISPLAY"]
+                if "XAUTHORITY" not in env and "XAUTHORITY" in os.environ:
+                    env["XAUTHORITY"] = os.environ["XAUTHORITY"]
+                # Also ensure other common GUI environment variables
+                for var in ["WAYLAND_DISPLAY", "XDG_SESSION_TYPE", "XDG_RUNTIME_DIR"]:
+                    if var not in env and var in os.environ:
+                        env[var] = os.environ[var]
+                        print(f"🔍 DEBUG: Set {var} = {env[var]}")
+            
+            print("🔍 DEBUG: About to run subprocess...")
             # Use the same approach as update_virus_definitions for better GUI compatibility
             result = subprocess.run(
                 cmd,
@@ -391,13 +423,14 @@ class FirewallDetector:
                 text=True,
                 timeout=300,  # Longer timeout like update_definitions (was 60)
                 check=False,
-                # Don't override environment - use default like update_definitions
+                env=env,  # Use the prepared environment
             )
             
             # Debug: Print result details
             print(f"DEBUG: Command exit code: {result.returncode}")
             print(f"DEBUG: Command stdout: {result.stdout}")
             print(f"DEBUG: Command stderr: {result.stderr}")
+            print(f"🔍 DEBUG: Subprocess completed")
 
             if result.returncode == 0:
                 action = "enabled" if enable else "disabled"
@@ -449,6 +482,13 @@ class FirewallDetector:
                     "error": "Neither pkexec nor sudo found on system",
                 }
 
+            # Prepare environment for GUI authentication
+            env = os.environ.copy()
+            if admin_cmd[0] == "pkexec":
+                for var in ["DISPLAY", "XAUTHORITY", "WAYLAND_DISPLAY", "XDG_SESSION_TYPE", "XDG_RUNTIME_DIR"]:
+                    if var not in env and var in os.environ:
+                        env[var] = os.environ[var]
+
             if enable:
                 # Start firewalld service
                 result = subprocess.run(
@@ -457,6 +497,7 @@ class FirewallDetector:
                     text=True,
                     timeout=60,
                     check=False,
+                    env=env,
                 )
             else:
                 # Stop firewalld service
@@ -466,6 +507,7 @@ class FirewallDetector:
                     text=True,
                     timeout=60,
                     check=False,
+                    env=env,
                 )
 
             if result.returncode == 0:
@@ -515,6 +557,13 @@ class FirewallDetector:
                     "message": "Administrative privileges not available",
                     "error": "Neither pkexec nor sudo found on system",
                 }
+
+            # Prepare environment for GUI authentication
+            env = os.environ.copy()
+            if admin_cmd[0] == "pkexec":
+                for var in ["DISPLAY", "XAUTHORITY", "WAYLAND_DISPLAY", "XDG_SESSION_TYPE", "XDG_RUNTIME_DIR"]:
+                    if var not in env and var in os.environ:
+                        env[var] = os.environ[var]
 
             if enable:
                 # Enable basic iptables rules - drop all incoming except
@@ -567,7 +616,9 @@ class FirewallDetector:
                     capture_output=True,
                     text=True,
                     timeout=30,
-                    check=False)
+                    check=False,
+                    env=env,
+                )
                 if result.returncode != 0:
                     error_output = result.stderr.strip() or result.stdout.strip()
                     if (
@@ -616,6 +667,13 @@ class FirewallDetector:
                     "error": "Neither pkexec nor sudo found on system",
                 }
 
+            # Prepare environment for GUI authentication
+            env = os.environ.copy()
+            if admin_cmd[0] == "pkexec":
+                for var in ["DISPLAY", "XAUTHORITY", "WAYLAND_DISPLAY", "XDG_SESSION_TYPE", "XDG_RUNTIME_DIR"]:
+                    if var not in env and var in os.environ:
+                        env[var] = os.environ[var]
+
             if enable:
                 # Enable basic nftables rules
                 nft_rules = """
@@ -640,6 +698,7 @@ class FirewallDetector:
                     text=True,
                     timeout=60,
                     check=False,
+                    env=env,
                 )
             else:
                 # Disable nftables - flush all rules
@@ -649,6 +708,7 @@ class FirewallDetector:
                     text=True,
                     timeout=60,
                     check=False,
+                    env=env,
                 )
 
             if result.returncode == 0:

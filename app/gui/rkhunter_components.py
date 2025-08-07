@@ -331,6 +331,8 @@ class RKHunterScanThread(QThread):
     """Thread for running RKHunter scans without blocking the UI."""
 
     progress_updated = pyqtSignal(str)
+    progress_value_updated = pyqtSignal(int)  # Numeric progress for progress bar
+    output_updated = pyqtSignal(str)  # Real-time command output
     scan_completed = pyqtSignal(object)  # RKHunterScanResult
 
     def __init__(self, rkhunter: RKHunterWrapper,
@@ -344,6 +346,7 @@ class RKHunterScanThread(QThread):
         """Run the RKHunter scan in a separate thread."""
         try:
             self.progress_updated.emit("Preparing RKHunter scan...")
+            self.progress_value_updated.emit(0)
 
             # Check authentication methods available
             pkexec_available = self.rkhunter._find_executable("pkexec")
@@ -363,6 +366,7 @@ class RKHunterScanThread(QThread):
                 time.sleep(1)
 
             self.progress_updated.emit("Initializing RKHunter scan...")
+            self.progress_value_updated.emit(10)
 
             # Update database first
             if pkexec_available:
@@ -373,6 +377,8 @@ class RKHunterScanThread(QThread):
                 self.progress_updated.emit(
                     "Updating RKHunter database (may require password)..."
                 )
+            
+            self.progress_value_updated.emit(20)
 
             update_success = self.rkhunter.update_database()
 
@@ -385,17 +391,80 @@ class RKHunterScanThread(QThread):
                 )
             else:
                 self.progress_updated.emit("Database updated successfully")
+            
+            self.progress_value_updated.emit(30)
 
-            # Start the scan
-            self.progress_updated.emit("Running rootkit detection scan...")
-            result = self.rkhunter.scan_system(
-                test_categories=self.test_categories)
+            # Start the scan with progress simulation
+            self.progress_updated.emit("Starting rootkit detection scan...")
+            self.progress_value_updated.emit(40)
+            
+            # Import here to avoid import delays
+            import time
+            from PyQt6.QtCore import QTimer
+            
+            # Simulate progress during scan since RKHunter doesn't provide real-time progress
+            progress_steps = [
+                (50, "Checking system commands..."),
+                (60, "Scanning for rootkits..."),
+                (70, "Checking network connections..."),
+                (80, "Verifying system integrity..."),
+                (90, "Finalizing scan results..."),
+            ]
+            
+            # Start scan in a way that allows progress updates
+            import threading
+            from typing import Any
+            
+            scan_completed = threading.Event()
+            scan_result: list[Any] = [None]  # Use list to allow modification from inner function
+            scan_error: list[Any] = [None]
+            
+            # Define output callback to emit real-time output
+            def output_callback(line: str):
+                """Handle real-time output from RKHunter."""
+                if line.strip():  # Only emit non-empty lines
+                    self.output_updated.emit(line)
+            
+            def run_scan():
+                try:
+                    result = self.rkhunter.scan_system_with_output_callback(
+                        test_categories=self.test_categories,
+                        output_callback=output_callback)
+                    scan_result[0] = result
+                except Exception as e:
+                    scan_error[0] = e
+                finally:
+                    scan_completed.set()
+            
+            # Start scan in background thread
+            scan_thread = threading.Thread(target=run_scan)
+            scan_thread.start()
+            
+            # Update progress while scan runs
+            step_index = 0
+            while not scan_completed.is_set() and step_index < len(progress_steps):
+                time.sleep(3)  # Wait 3 seconds between updates
+                if not scan_completed.is_set():
+                    progress, message = progress_steps[step_index]
+                    self.progress_updated.emit(message)
+                    self.progress_value_updated.emit(progress)
+                    step_index += 1
+            
+            # Wait for scan to complete
+            scan_thread.join()
+            
+            if scan_error[0]:
+                raise scan_error[0]
+            
+            result = scan_result[0]
 
             self.progress_updated.emit("Scan completed")
+            self.progress_value_updated.emit(100)
             self.scan_completed.emit(result)
 
         except Exception as e:
             self.logger.error("Error in RKHunter scan thread: %s", e)
+            self.progress_value_updated.emit(0)  # Reset progress on error
 
             # Create error result
             from datetime import datetime
