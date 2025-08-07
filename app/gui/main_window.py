@@ -498,13 +498,15 @@ class MainWindow(QMainWindow):
         # Connect the click signal
         self.last_scan_card.clicked.connect(self.open_scan_tab)
 
-        # Threats Card - using strawberry palette
-        self.threats_card = self.create_status_card(
+        # Threats Card - now clickable - using strawberry palette
+        self.threats_card = self.create_clickable_status_card(
             "Threats Found",
             "0",  # Will be updated dynamically
             "#9CB898",
-            "No threats detected in recent scans",
+            "Click to view quarantine",  # Updated description
         )
+        # Connect the click signal
+        self.threats_card.clicked.connect(self.open_quarantine_tab)
 
         status_row.addWidget(self.protection_card)
         status_row.addWidget(self.firewall_card)
@@ -751,6 +753,14 @@ class MainWindow(QMainWindow):
         """Open the Scan tab when Last Scan card is clicked."""
         # Switch to the Scan tab (index 1)
         self.tab_widget.setCurrentIndex(1)
+
+    def open_quarantine_tab(self):
+        """Open the Quarantine tab when Threats Found card is clicked."""
+        # Switch to the Quarantine tab (index 4)
+        self.tab_widget.setCurrentIndex(4)
+        # Refresh quarantine list to show current state
+        if hasattr(self, 'refresh_quarantine'):
+            self.refresh_quarantine()
 
     def update_protection_status_card(self):
         """Update the protection status card with current state."""
@@ -5105,9 +5115,9 @@ System        {perf_status}"""
                                             f"color: {color}; font-size: 20px; font-weight: bold;")
                                     elif child.objectName() == "cardDescription":
                                         child.setText(
-                                            "Threats detected - review quarantine"
+                                            "Click to view quarantine"
                                             if threats_count > 0
-                                            else "No threats detected in recent scans"
+                                            else "Click to view quarantine"
                                         )
                         except (OSError, ValueError, KeyError) as file_error:
                             print(f"Error reading report file: {file_error}")
