@@ -28,6 +28,7 @@ from PyQt6.QtWidgets import (
     QFileDialog,
     QFormLayout,
     QFrame,
+    QGridLayout,
     QGroupBox,
     QHBoxLayout,
     QLabel,
@@ -1530,7 +1531,7 @@ class MainWindow(QMainWindow):
             },
         }
 
-        # Create checkboxes in a single row layout
+        # Create checkboxes in a grid layout for better space utilization
         self.settings_rkhunter_category_checkboxes = {}
 
         # Sort categories by priority and name for better organization
@@ -1539,86 +1540,82 @@ class MainWindow(QMainWindow):
             key=lambda x: (x[1]["priority"], x[1]["name"]),
         )
 
-        # Create a single row with all 5 categories - centered
-        row_layout = QHBoxLayout()
-        row_layout.setSpacing(12)
-        row_layout.setContentsMargins(10, 5, 10, 5)
+        # Create a grid layout (2 columns x 3 rows) for better space usage
+        grid_layout = QGridLayout()
+        grid_layout.setSpacing(15)  # Increased spacing between cards
+        grid_layout.setContentsMargins(20, 15, 20, 15)  # Better margins
 
-        # Add left stretch to center the items
-        row_layout.addStretch(1)
-
-        # Add all items to a single row
-        for category_id, category_info in sorted_categories:
-            # Create compact item container
+        # Add all items in a grid layout (2 columns)
+        for i, (category_id, category_info) in enumerate(sorted_categories):
+            # Create larger item container
             item_layout = QVBoxLayout()
-            item_layout.setSpacing(3)
-            item_layout.setContentsMargins(5, 4, 5, 4)
+            item_layout.setSpacing(8)  # More space between checkbox and description
+            item_layout.setContentsMargins(12, 10, 12, 10)  # Better padding
 
-            # Checkbox with appropriate height
+            # Checkbox with better sizing
             checkbox = QCheckBox(category_info["name"])
             checkbox.setChecked(category_info["default"])
             checkbox.setToolTip(category_info["description"])
-            checkbox.setMinimumHeight(20)
-            checkbox.setStyleSheet("font-weight: bold; font-size: 11px;")
+            checkbox.setMinimumHeight(25)  # Larger checkbox
+            checkbox.setStyleSheet("font-weight: bold; font-size: 12px;")  # Larger font
 
-            # Description with better sizing for visibility
+            # Description with much better sizing for readability
             desc_label = QLabel(category_info["description"])
             desc_color = self.get_theme_color("secondary_text")
             desc_label.setStyleSheet(
-                f"color: {desc_color}; font-size: 9px; margin: 0px; padding: 2px; line-height: 1.2;")
+                f"color: {desc_color}; font-size: 11px; margin: 0px; padding: 4px; line-height: 1.3;")  # Larger text
             desc_label.setWordWrap(True)
-            desc_label.setMaximumHeight(
-                45
-            )  # Increased height for better text visibility
-            desc_label.setMinimumHeight(45)  # Fixed height for consistency
+            desc_label.setMaximumHeight(80)  # Much more height for description
+            desc_label.setMinimumHeight(60)  # Consistent minimum height
             desc_label.setAlignment(Qt.AlignmentFlag.AlignTop)
 
             item_layout.addWidget(checkbox)
             item_layout.addWidget(desc_label)
+            item_layout.addStretch()  # Push content to top
 
-            # Create item widget with increased dimensions for better text
-            # visibility
+            # Create larger item widget for better readability
             item_widget = QWidget()
             item_widget.setLayout(item_layout)
-            # Increased width from 110px to 135px
-            item_widget.setFixedWidth(135)
-            # Increased height from 52px to 75px
-            item_widget.setFixedHeight(75)
+            # Much larger dimensions for better space utilization
+            item_widget.setFixedWidth(240)  # Increased from 135px
+            item_widget.setFixedHeight(120)  # Increased from 75px
 
             bg_color = self.get_theme_color("secondary_bg")
             hover_color = self.get_theme_color("hover_bg")
+            border_color = self.get_theme_color("border")
             item_widget.setStyleSheet(
                 f"""
                 QWidget {{
-                    border: none;
-                    border-radius: 6px;
+                    border: 1px solid {border_color};
+                    border-radius: 8px;
                     background-color: {bg_color};
-                    margin: 3px;
+                    margin: 2px;
                 }}
                 QWidget:hover {{
                     background-color: {hover_color};
+                    border-color: {self.get_theme_color("accent")};
                 }}
             """
             )
 
-            row_layout.addWidget(item_widget)
+            # Calculate grid position (2 columns)
+            row = i // 2
+            col = i % 2
+            grid_layout.addWidget(item_widget, row, col)
             self.settings_rkhunter_category_checkboxes[category_id] = checkbox
 
-        # Add right stretch to center the items
-        row_layout.addStretch(1)
-
-        # Add the single row to the main layout
-        row_widget = QWidget()
-        row_widget.setLayout(row_layout)
-        scroll_layout_rk.addWidget(row_widget)
+        # Create grid widget and add to scroll area
+        grid_widget = QWidget()
+        grid_widget.setLayout(grid_layout)
+        scroll_layout_rk.addWidget(grid_widget)
 
         # Add minimal stretch
         scroll_layout_rk.addStretch(1)
 
         scroll_area_rk.setWidget(scroll_widget_rk)
-        # Increased height for larger cards
-        scroll_area_rk.setMaximumHeight(95)
-        scroll_area_rk.setMinimumHeight(95)  # Fixed height for larger cards
+        # Increased height significantly for larger cards in grid layout
+        scroll_area_rk.setMaximumHeight(280)  # Much larger to accommodate grid
+        scroll_area_rk.setMinimumHeight(280)  # Fixed height for consistency
         scroll_area_rk.setHorizontalScrollBarPolicy(
             Qt.ScrollBarPolicy.ScrollBarAlwaysOff
         )
