@@ -7,6 +7,9 @@ from pathlib import Path
 app_dir = Path(__file__).parent
 sys.path.insert(0, str(app_dir))
 
+# Import version info
+from app import APP_VERSION
+
 # Suppress Wayland popup warnings if on Wayland
 if os.environ.get('XDG_SESSION_TYPE') == 'wayland':
     os.environ.setdefault('QT_WAYLAND_DISABLE_WINDOWDECORATION', '1')
@@ -17,7 +20,7 @@ from gui.main_window import MainWindow
 def main():
     app = QApplication(sys.argv)
     app.setApplicationName("S&D - Search & Destroy")
-    app.setApplicationVersion("1.0.0")
+    app.setApplicationVersion(APP_VERSION)
     app.setOrganizationName("xanadOS")
     app.setOrganizationDomain("xanados.org")
     

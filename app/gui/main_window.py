@@ -18,6 +18,7 @@ from gui.rkhunter_components import RKHunterScanDialog, RKHunterScanThread
 from core.file_scanner import FileScanner
 from core.rkhunter_wrapper import RKHunterWrapper, RKHunterScanResult
 from utils.config import load_config, save_config
+from app import APP_VERSION
 from utils.scan_reports import ScanReportManager, ScanResult, ScanType, ThreatInfo, ThreatLevel
 from monitoring import RealTimeMonitor, MonitorConfig, MonitorState
 from core.firewall_detector import get_firewall_status, toggle_firewall
@@ -34,14 +35,19 @@ class ClickableFrame(QFrame):
 
 
 class NoWheelComboBox(QComboBox):
-    """A QComboBox that ignores wheel events to prevent accidental changes."""
+    """A QComboBox that completely ignores wheel events to prevent accidental changes."""
     
     def wheelEvent(self, event: QWheelEvent):
-        """Ignore wheel events when the combo box doesn't have focus."""
-        if not self.hasFocus():
-            event.ignore()
-        else:
-            super().wheelEvent(event)
+        """Completely ignore all wheel events."""
+        event.ignore()
+
+
+class NoWheelSpinBox(QSpinBox):
+    """A QSpinBox that completely ignores wheel events to prevent accidental changes."""
+    
+    def wheelEvent(self, event: QWheelEvent):
+        """Completely ignore all wheel events."""
+        event.ignore()
 
 
 class MainWindow(QMainWindow):
@@ -418,7 +424,7 @@ class MainWindow(QMainWindow):
             "Last Scan",
             "Not scanned yet",  # Will be updated dynamically
             "#17a2b8",
-            "Click to start a new scan"
+            "Click to go to Scan tab"  # Updated description
         )
         # Connect the click signal
         self.last_scan_card.clicked.connect(self.open_scan_tab)
@@ -1111,20 +1117,36 @@ class MainWindow(QMainWindow):
         scroll_layout = QVBoxLayout(scroll_content)
         scroll_layout.setSpacing(20)
         
-        # SCAN SETTINGS SECTION
+        # Create two-column layout for the main settings groups
+        two_column_layout = QHBoxLayout()
+        two_column_layout.setSpacing(20)
+        
+        # LEFT COLUMN
+        left_column_widget = QWidget()
+        left_column_layout = QVBoxLayout(left_column_widget)
+        left_column_layout.setSpacing(20)
+        left_column_layout.setContentsMargins(0, 0, 0, 0)
+        
+        # RIGHT COLUMN  
+        right_column_widget = QWidget()
+        right_column_layout = QVBoxLayout(right_column_widget)
+        right_column_layout.setSpacing(20)
+        right_column_layout.setContentsMargins(0, 0, 0, 0)
+        
+        # SCAN SETTINGS SECTION (LEFT COLUMN)
         scan_group = QGroupBox("Scan Settings")
         scan_layout = QFormLayout(scan_group)
         scan_layout.setSpacing(15)
         
         # Max threads setting
-        self.settings_max_threads_spin = QSpinBox()
+        self.settings_max_threads_spin = NoWheelSpinBox()
         self.settings_max_threads_spin.setRange(1, 16)
         self.settings_max_threads_spin.setValue(4)
         self.settings_max_threads_spin.setMinimumHeight(35)
         scan_layout.addRow(QLabel("Max Threads:"), self.settings_max_threads_spin)
         
         # Scan timeout setting
-        self.settings_timeout_spin = QSpinBox()
+        self.settings_timeout_spin = NoWheelSpinBox()
         self.settings_timeout_spin.setRange(30, 3600)
         self.settings_timeout_spin.setValue(300)
         self.settings_timeout_spin.setSuffix(" seconds")
@@ -1143,9 +1165,9 @@ class MainWindow(QMainWindow):
         self.settings_follow_symlinks_cb.setMinimumHeight(35)
         scan_layout.addRow(self.settings_follow_symlinks_cb)
         
-        scroll_layout.addWidget(scan_group)
+        left_column_layout.addWidget(scan_group)
         
-        # USER INTERFACE SETTINGS SECTION
+        # USER INTERFACE SETTINGS SECTION (RIGHT COLUMN)
         ui_group = QGroupBox("User Interface Settings")
         ui_layout = QFormLayout(ui_group)
         ui_layout.setSpacing(15)
@@ -1171,9 +1193,9 @@ class MainWindow(QMainWindow):
         self.settings_activity_retention_combo.currentTextChanged.connect(self.on_retention_setting_changed)
         ui_layout.addRow(QLabel("Activity Log Retention:"), self.settings_activity_retention_combo)
         
-        scroll_layout.addWidget(ui_group)
+        right_column_layout.addWidget(ui_group)
         
-        # SECURITY SETTINGS SECTION
+        # SECURITY SETTINGS SECTION (LEFT COLUMN)
         security_group = QGroupBox("Security Settings")
         security_layout = QFormLayout(security_group)
         security_layout.setSpacing(15)
@@ -1184,9 +1206,9 @@ class MainWindow(QMainWindow):
         self.settings_auto_update_cb.setMinimumHeight(35)
         security_layout.addRow(self.settings_auto_update_cb)
         
-        scroll_layout.addWidget(security_group)
+        left_column_layout.addWidget(security_group)
         
-        # REAL-TIME PROTECTION SETTINGS SECTION
+        # REAL-TIME PROTECTION SETTINGS SECTION (RIGHT COLUMN)
         protection_group = QGroupBox("Real-Time Protection Settings")
         protection_layout = QFormLayout(protection_group)
         protection_layout.setSpacing(15)
@@ -1209,7 +1231,18 @@ class MainWindow(QMainWindow):
         self.settings_scan_modified_cb.setMinimumHeight(35)
         protection_layout.addRow(self.settings_scan_modified_cb)
         
-        scroll_layout.addWidget(protection_group)
+        right_column_layout.addWidget(protection_group)
+        
+        # Add stretch to balance columns
+        left_column_layout.addStretch()
+        right_column_layout.addStretch()
+        
+        # Add columns to two-column layout
+        two_column_layout.addWidget(left_column_widget)
+        two_column_layout.addWidget(right_column_widget)
+        
+        # Add two-column layout to main scroll layout
+        scroll_layout.addLayout(two_column_layout)
         
         # RKHUNTER SETTINGS SECTION
         rkhunter_group = QGroupBox("RKHunter Integration")
@@ -4842,9 +4875,9 @@ System        {perf_status}"""
     
     def show_about(self):
         self.show_themed_message_box("information", "About S&D", 
-                         """<h1>S&D - Search & Destroy</h1>
+                         f"""<h1>S&D - Search & Destroy</h1>
                          <p>A modern GUI for ClamAV virus scanning.</p>
-                         <p>Version 1.0.0</p>
+                         <p>Version {APP_VERSION}</p>
                          <p>© 2025 xanadOS</p>""")
     
     def update_definition_status(self):
@@ -5787,6 +5820,21 @@ System        {perf_status}"""
             self.settings_monitor_new_files_cb.setChecked(protection_settings.get('monitor_new_files', True))
             self.settings_scan_modified_cb.setChecked(protection_settings.get('scan_modified_files', False))
             
+            # RKHunter settings
+            rkhunter_settings = self.config.get('rkhunter_settings', {})
+            self.settings_enable_rkhunter_cb.setChecked(rkhunter_settings.get('enabled', False))
+            self.settings_run_rkhunter_with_full_scan_cb.setChecked(rkhunter_settings.get('run_with_full_scan', False))
+            self.settings_rkhunter_auto_update_cb.setChecked(rkhunter_settings.get('auto_update', True))
+            
+            # Load RKHunter category selections
+            if hasattr(self, 'settings_rkhunter_category_checkboxes'):
+                saved_categories = rkhunter_settings.get('categories', {})
+                for category_id, checkbox in self.settings_rkhunter_category_checkboxes.items():
+                    # Use saved value if available, otherwise use the default from settings creation
+                    if category_id in saved_categories:
+                        checkbox.setChecked(saved_categories[category_id])
+                    # Note: If not in saved_categories, keep the default set during checkbox creation
+            
         except (OSError, IOError, PermissionError) as e:
             print(f"Error loading settings: {e}")
             
@@ -5813,6 +5861,22 @@ System        {perf_status}"""
             self.settings_monitor_new_files_cb.setChecked(True)
             self.settings_scan_modified_cb.setChecked(False)
             
+            # Reset RKHunter settings to defaults
+            self.settings_enable_rkhunter_cb.setChecked(False)
+            self.settings_run_rkhunter_with_full_scan_cb.setChecked(False)
+            self.settings_rkhunter_auto_update_cb.setChecked(True)
+            
+            # Reset RKHunter category selections to defaults
+            if hasattr(self, 'settings_rkhunter_category_checkboxes'):
+                # Reset to the original defaults from the settings creation
+                if hasattr(self, 'settings_rkhunter_test_categories'):
+                    for category_id, checkbox in self.settings_rkhunter_category_checkboxes.items():
+                        default_value = self.settings_rkhunter_test_categories.get(category_id, {}).get('default', False)
+                        checkbox.setChecked(default_value)
+            
+            # Reset Activity Log Retention to default
+            self.settings_activity_retention_combo.setCurrentText("100")
+            
             self.show_themed_message_box("information", "Settings", "Settings have been reset to defaults.")
             
         except Exception as e:
@@ -5832,6 +5896,8 @@ System        {perf_status}"""
                 self.config['advanced_settings'] = {}
             if 'realtime_protection' not in self.config:
                 self.config['realtime_protection'] = {}
+            if 'rkhunter_settings' not in self.config:
+                self.config['rkhunter_settings'] = {}
             
             # Update config with new values from UI
             self.config['scan_settings']['max_threads'] = self.settings_max_threads_spin.value()
@@ -5849,6 +5915,18 @@ System        {perf_status}"""
             self.config['realtime_protection']['monitor_modifications'] = self.settings_monitor_modifications_cb.isChecked()
             self.config['realtime_protection']['monitor_new_files'] = self.settings_monitor_new_files_cb.isChecked()
             self.config['realtime_protection']['scan_modified_files'] = self.settings_scan_modified_cb.isChecked()
+            
+            # RKHunter settings
+            self.config['rkhunter_settings']['enabled'] = self.settings_enable_rkhunter_cb.isChecked()
+            self.config['rkhunter_settings']['run_with_full_scan'] = self.settings_run_rkhunter_with_full_scan_cb.isChecked()
+            self.config['rkhunter_settings']['auto_update'] = self.settings_rkhunter_auto_update_cb.isChecked()
+            
+            # Save RKHunter category selections
+            if hasattr(self, 'settings_rkhunter_category_checkboxes'):
+                rkhunter_categories = {}
+                for category_id, checkbox in self.settings_rkhunter_category_checkboxes.items():
+                    rkhunter_categories[category_id] = checkbox.isChecked()
+                self.config['rkhunter_settings']['categories'] = rkhunter_categories
             
             # Save config to file
             from utils.config import save_config
