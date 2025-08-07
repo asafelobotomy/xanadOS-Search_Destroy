@@ -45,6 +45,17 @@ class NoWheelComboBox(QComboBox):
             super().wheelEvent(event)
 
 
+class NoWheelSpinBox(QSpinBox):
+    """A QSpinBox that ignores wheel events to prevent accidental changes."""
+    
+    def wheelEvent(self, event: QWheelEvent):
+        """Ignore wheel events when the spin box doesn't have focus."""
+        if not self.hasFocus():
+            event.ignore()
+        else:
+            super().wheelEvent(event)
+
+
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
@@ -1118,14 +1129,14 @@ class MainWindow(QMainWindow):
         scan_layout.setSpacing(15)
         
         # Max threads setting
-        self.settings_max_threads_spin = QSpinBox()
+        self.settings_max_threads_spin = NoWheelSpinBox()
         self.settings_max_threads_spin.setRange(1, 16)
         self.settings_max_threads_spin.setValue(4)
         self.settings_max_threads_spin.setMinimumHeight(35)
         scan_layout.addRow(QLabel("Max Threads:"), self.settings_max_threads_spin)
         
         # Scan timeout setting
-        self.settings_timeout_spin = QSpinBox()
+        self.settings_timeout_spin = NoWheelSpinBox()
         self.settings_timeout_spin.setRange(30, 3600)
         self.settings_timeout_spin.setValue(300)
         self.settings_timeout_spin.setSuffix(" seconds")
