@@ -592,12 +592,10 @@ class MainWindow(QMainWindow):
             action = "disable"
             message = "This will disable your firewall, reducing system security. Continue?"
         
-        reply = QMessageBox.question(
-            self, 
+        reply = self.show_themed_message_box(
+            "question",
             f"Confirm Firewall {action.title()}", 
-            message,
-            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-            QMessageBox.StandardButton.Yes
+            message
         )
         
         if reply != QMessageBox.StandardButton.Yes:
@@ -615,8 +613,8 @@ class MainWindow(QMainWindow):
         if result.get('success', False):
             # Success - show message and update UI
             self.add_activity_message(f"🔥 Firewall {action}d successfully from dashboard")
-            QMessageBox.information(
-                self,
+            self.show_themed_message_box(
+                "information",
                 "Firewall Control",
                 str(result.get('message', f'Firewall {action}d successfully'))
             )
@@ -633,16 +631,16 @@ class MainWindow(QMainWindow):
             # Check if it's a permission/authentication error
             if 'permission denied' in error_msg.lower() or 'authentication' in error_msg.lower() or 'cancelled' in error_msg.lower():
                 self.add_activity_message(f"🔒 Firewall {action} cancelled - authentication required")
-                QMessageBox.warning(
-                    self,
+                self.show_themed_message_box(
+                    "warning",
                     "Authentication Required",
                     f"Firewall control requires administrator privileges.\n"
                     f"Authentication was cancelled or failed."
                 )
             else:
                 self.add_activity_message(f"❌ Failed to {action} firewall: {error_msg}")
-                QMessageBox.critical(
-                    self,
+                self.show_themed_message_box(
+                    "critical",
                     "Firewall Error",
                     f"Failed to {action} firewall:\n{error_msg}"
                 )
@@ -837,12 +835,10 @@ class MainWindow(QMainWindow):
                 message = "This will disable your firewall, reducing system security. Continue?"
             
             from PyQt6.QtWidgets import QMessageBox
-            reply = QMessageBox.question(
-                self, 
+            reply = self.show_themed_message_box(
+                "question",
                 f"Confirm Firewall {action.title()}", 
-                message,
-                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-                QMessageBox.StandardButton.Yes
+                message
             )
             
             if reply != QMessageBox.StandardButton.Yes:
@@ -865,8 +861,8 @@ class MainWindow(QMainWindow):
             if result.get('success', False):
                 # Success - show message and update UI
                 self.add_activity_message(f"🔥 Firewall {action}d successfully")
-                QMessageBox.information(
-                    self,
+                self.show_themed_message_box(
+                    "information",
                     "Firewall Control",
                     str(result.get('message', f'Firewall {action}d successfully'))
                 )
@@ -882,16 +878,16 @@ class MainWindow(QMainWindow):
                 # Check if it's a permission/authentication error
                 if 'permission denied' in error_msg.lower() or 'authentication' in error_msg.lower() or 'cancelled' in error_msg.lower():
                     self.add_activity_message(f"🔒 Firewall {action} cancelled - authentication required")
-                    QMessageBox.warning(
-                        self,
+                    self.show_themed_message_box(
+                        "warning",
                         "Authentication Required",
                         f"Firewall control requires administrator privileges.\n"
                         f"Authentication was cancelled or failed."
                     )
                 else:
                     self.add_activity_message(f"❌ Failed to {action} firewall: {error_msg}")
-                    QMessageBox.critical(
-                        self,
+                    self.show_themed_message_box(
+                        "critical",
                         "Firewall Control Error",
                         f"Failed to {action} firewall:\n{str(result.get('message', error_msg))}"
                     )
@@ -903,8 +899,8 @@ class MainWindow(QMainWindow):
             
             error_msg = f"Unexpected error: {str(e)}"
             self.add_activity_message(f"❌ Firewall control error: {error_msg}")
-            QMessageBox.critical(
-                self,
+            self.show_themed_message_box(
+                "critical",
                 "Firewall Control Error",
                 f"An unexpected error occurred:\n{error_msg}"
             )
@@ -2268,13 +2264,13 @@ class MainWindow(QMainWindow):
     
     def add_watch_path(self):
         """Add a new path to monitor."""
-        path = QFileDialog.getExistingDirectory(self, "Select Directory to Monitor")
+        path = self.show_themed_file_dialog("directory", "Select Directory to Monitor")
         if path and self.real_time_monitor:
             if self.real_time_monitor.add_watch_path(path):
                 self.update_paths_list()
                 self.add_activity_message(f"📁 Added watch path: {path}")
             else:
-                QMessageBox.warning(self, "Error", f"Failed to add watch path: {path}")
+                self.show_themed_message_box("warning", "Error", f"Failed to add watch path: {path}")
     
     def remove_watch_path(self):
         """Remove a path from monitoring."""
@@ -2285,7 +2281,7 @@ class MainWindow(QMainWindow):
                 self.update_paths_list()
                 self.add_activity_message(f"📁 Removed watch path: {path}")
             else:
-                QMessageBox.warning(self, "Error", f"Failed to remove watch path: {path}")
+                self.show_themed_message_box("warning", "Error", f"Failed to remove watch path: {path}")
         
     def create_status_bar(self):
         self.status_bar = QStatusBar()
@@ -2622,6 +2618,150 @@ System        {perf_status}"""
         msg_box.setStyleSheet(style)
         
         return msg_box.exec()
+    
+    def show_themed_file_dialog(self, dialog_type="directory", title="Select", default_path="", file_filter=""):
+        """Show a file dialog with proper theming."""
+        bg = self.get_theme_color('background')
+        text = self.get_theme_color('primary_text')
+        tertiary_bg = self.get_theme_color('tertiary_bg')
+        border = self.get_theme_color('border')
+        hover_bg = self.get_theme_color('hover_bg')
+        accent = self.get_theme_color('accent')
+        
+        # Create file dialog
+        if dialog_type == "directory":
+            dialog = QFileDialog(self, title, default_path)
+            dialog.setFileMode(QFileDialog.FileMode.Directory)
+            dialog.setOption(QFileDialog.Option.ShowDirsOnly, True)
+        elif dialog_type == "save":
+            dialog = QFileDialog(self, title, default_path, file_filter)
+            dialog.setAcceptMode(QFileDialog.AcceptMode.AcceptSave)
+        else:  # open file
+            dialog = QFileDialog(self, title, default_path, file_filter)
+            dialog.setAcceptMode(QFileDialog.AcceptMode.AcceptOpen)
+        
+        # Apply theming
+        style = f"""
+            QFileDialog {{
+                background-color: {bg};
+                color: {text};
+                border: 2px solid {border};
+                border-radius: 6px;
+            }}
+            QFileDialog QListView {{
+                background-color: {tertiary_bg};
+                color: {text};
+                border: 1px solid {border};
+                border-radius: 4px;
+                selection-background-color: {accent};
+                selection-color: {bg};
+            }}
+            QFileDialog QTreeView {{
+                background-color: {tertiary_bg};
+                color: {text};
+                border: 1px solid {border};
+                border-radius: 4px;
+                selection-background-color: {accent};
+                selection-color: {bg};
+            }}
+            QFileDialog QPushButton {{
+                background-color: {tertiary_bg};
+                border: 2px solid {border};
+                border-radius: 5px;
+                padding: 8px 16px;
+                color: {text};
+                font-weight: 600;
+                min-width: 80px;
+            }}
+            QFileDialog QPushButton:hover {{
+                background-color: {hover_bg};
+                border-color: {accent};
+            }}
+            QFileDialog QLabel {{
+                color: {text};
+            }}
+            QFileDialog QLineEdit {{
+                background-color: {tertiary_bg};
+                border: 2px solid {border};
+                border-radius: 4px;
+                padding: 6px;
+                color: {text};
+            }}
+            QFileDialog QComboBox {{
+                background-color: {tertiary_bg};
+                border: 2px solid {border};
+                border-radius: 4px;
+                padding: 6px;
+                color: {text};
+            }}
+        """
+        dialog.setStyleSheet(style)
+        
+        if dialog.exec() == QFileDialog.DialogCode.Accepted:
+            selected = dialog.selectedFiles()
+            if selected:
+                return selected[0]
+        return ""
+    
+    def show_themed_progress_dialog(self, title, label_text, minimum=0, maximum=100, parent=None):
+        """Create a progress dialog with proper theming."""
+        if parent is None:
+            parent = self
+            
+        progress = QProgressDialog(label_text, "Cancel", minimum, maximum, parent)
+        progress.setWindowTitle(title)
+        progress.setWindowModality(Qt.WindowModality.WindowModal)
+        
+        # Apply theming
+        bg = self.get_theme_color('background')
+        text = self.get_theme_color('primary_text')
+        tertiary_bg = self.get_theme_color('tertiary_bg')
+        border = self.get_theme_color('border')
+        hover_bg = self.get_theme_color('hover_bg')
+        accent = self.get_theme_color('accent')
+        
+        style = f"""
+            QProgressDialog {{
+                background-color: {bg};
+                color: {text};
+                border: 2px solid {border};
+                border-radius: 6px;
+                font-size: 12px;
+                font-weight: 500;
+            }}
+            QProgressDialog QLabel {{
+                color: {text};
+                font-weight: 600;
+                padding: 10px;
+            }}
+            QProgressDialog QPushButton {{
+                background-color: {tertiary_bg};
+                border: 2px solid {border};
+                border-radius: 5px;
+                padding: 8px 16px;
+                color: {text};
+                font-weight: 600;
+                min-width: 80px;
+            }}
+            QProgressDialog QPushButton:hover {{
+                background-color: {hover_bg};
+                border-color: {accent};
+            }}
+            QProgressDialog QProgressBar {{
+                border: 2px solid {border};
+                border-radius: 5px;
+                text-align: center;
+                background-color: {tertiary_bg};
+                color: {text};
+            }}
+            QProgressDialog QProgressBar::chunk {{
+                background-color: {accent};
+                border-radius: 3px;
+            }}
+        """
+        progress.setStyleSheet(style)
+        
+        return progress
     
     def setup_activity_list_styling(self):
         """Set up proper styling for the activity list with theme-aware colors."""
@@ -3908,7 +4048,7 @@ System        {perf_status}"""
             self.show_themed_message_box("warning", "Warning", f"Path does not exist: {path}")
         
     def select_scan_path(self):
-        path = QFileDialog.getExistingDirectory(self, "Select Directory to Scan")
+        path = self.show_themed_file_dialog("directory", "Select Directory to Scan")
         if path:
             self.scan_path = path
             self.path_label.setText(path)
@@ -3935,16 +4075,14 @@ System        {perf_status}"""
         
         if should_run_rkhunter:
             # Show confirmation for combined scan
-            reply = QMessageBox.question(
-                self,
+            reply = self.show_themed_message_box(
+                "question",
                 "Combined Security Scan",
                 "This appears to be a full system scan with RKHunter integration enabled.\n\n"
                 "Would you like to run both ClamAV and RKHunter scans together?\n\n"
                 "• ClamAV will scan for viruses, malware, and trojans\n"
                 "• RKHunter will scan for rootkits and system integrity issues\n\n"
-                "This will provide the most comprehensive security analysis.",
-                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-                QMessageBox.StandardButton.Yes
+                "This will provide the most comprehensive security analysis."
             )
             
             if reply == QMessageBox.StandardButton.Yes:
@@ -4052,15 +4190,13 @@ System        {perf_status}"""
         # First check if RKHunter is actually installed but has permission issues
         if self.rkhunter.rkhunter_path and Path(self.rkhunter.rkhunter_path).exists():
             # RKHunter is installed but may need configuration
-            reply = QMessageBox.question(
-                self, 
+            reply = self.show_themed_message_box(
+                "question",
                 "RKHunter Configuration",
                 "RKHunter is installed but requires elevated privileges to run.\n\n"
                 "This is normal for rootkit scanners as they need system-level access.\n"
                 "You will be prompted for your password when running scans.\n\n"
-                "Continue to enable RKHunter scanning?",
-                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-                QMessageBox.StandardButton.Yes
+                "Continue to enable RKHunter scanning?"
             )
             
             if reply == QMessageBox.StandardButton.Yes:
@@ -4093,13 +4229,11 @@ System        {perf_status}"""
             return
         
         # Show installation confirmation dialog
-        reply = QMessageBox.question(
-            self, 
+        reply = self.show_themed_message_box(
+            "question",
             "Install RKHunter",
             "RKHunter will be installed to provide rootkit detection capabilities.\n\n"
-            "This requires administrator privileges. Continue?",
-            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-            QMessageBox.StandardButton.Yes
+            "This requires administrator privileges. Continue?"
         )
         
         if reply != QMessageBox.StandardButton.Yes:
@@ -4167,12 +4301,10 @@ System        {perf_status}"""
                     "• Configure RKHunter setup first"
                 )
             
-            reply = QMessageBox.question(
-                self,
+            reply = self.show_themed_message_box(
+                "question",
                 "RKHunter Setup Required",
-                auth_method_text,
-                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-                QMessageBox.StandardButton.Yes
+                auth_method_text
             )
             
             if reply != QMessageBox.StandardButton.Yes:
@@ -4181,25 +4313,17 @@ System        {perf_status}"""
         
         # Check if regular scan is running
         if self.current_scan_thread and self.current_scan_thread.isRunning():
-            reply = QMessageBox.question(
-                self,
+            reply = self.show_themed_message_box(
+                "question",
                 "Scan in Progress",
                 "A regular antivirus scan is currently running.\n\n"
-                "Do you want to continue with RKHunter scan in parallel?",
-                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-                QMessageBox.StandardButton.No
+                "Do you want to continue with RKHunter scan in parallel?"
             )
             if reply != QMessageBox.StandardButton.Yes:
                 return
         
         # Get test categories from settings
         test_categories = self.get_selected_rkhunter_categories()
-        
-        # Show final confirmation with password warning
-        auth_dialog = QMessageBox(self)
-        auth_dialog.setIcon(QMessageBox.Icon.Information)
-        auth_dialog.setWindowTitle("Authentication Required")
-        auth_dialog.setText("Ready to Start RKHunter Scan")
         
         # Check if GUI authentication is available
         pkexec_available = self.rkhunter._find_executable('pkexec')
@@ -4217,7 +4341,7 @@ System        {perf_status}"""
         categories_text = ", ".join(selected_category_names) if selected_category_names else "Default categories"
         
         if pkexec_available:
-            auth_dialog.setInformativeText(
+            auth_message = (
                 f"RKHunter will now scan your system for rootkits and malware.\n\n"
                 f"Scan categories: {categories_text}\n\n"
                 "🔐 A secure password dialog will appear to authorize the scan. "
@@ -4225,7 +4349,7 @@ System        {perf_status}"""
                 "The scan may take several minutes to complete."
             )
         else:
-            auth_dialog.setInformativeText(
+            auth_message = (
                 f"RKHunter will now scan your system for rootkits and malware.\n\n"
                 f"Scan categories: {categories_text}\n\n"
                 "🔐 You may be prompted for your administrator password in the terminal "
@@ -4233,12 +4357,14 @@ System        {perf_status}"""
                 "The scan may take several minutes to complete."
             )
         
-        auth_dialog.setStandardButtons(
-            QMessageBox.StandardButton.Ok | QMessageBox.StandardButton.Cancel
+        # Show final confirmation with password warning
+        reply = self.show_themed_message_box(
+            "question",
+            "Authentication Required - Ready to Start RKHunter Scan",
+            auth_message
         )
-        auth_dialog.setDefaultButton(QMessageBox.StandardButton.Ok)
         
-        if auth_dialog.exec() != QMessageBox.StandardButton.Ok:
+        if reply != QMessageBox.StandardButton.Yes:
             return
         
         # Start RKHunter scan in thread
@@ -4724,9 +4850,7 @@ System        {perf_status}"""
             freshness = self.scanner.clamav_wrapper.check_definition_freshness()
             
             # Create and show progress dialog
-            progress_dialog = QProgressDialog("Checking virus definitions...", "Cancel", 0, 100, self)
-            progress_dialog.setWindowTitle("Updating Virus Definitions")
-            progress_dialog.setModal(True)
+            progress_dialog = self.show_themed_progress_dialog("Updating Virus Definitions", "Checking virus definitions...", 0, 100)
             progress_dialog.setValue(0)
             progress_dialog.show()
             
@@ -5628,6 +5752,65 @@ System        {perf_status}"""
             dialog.setWindowTitle("Export Reports")
             dialog.setMinimumWidth(400)
             
+            # Apply theming
+            bg = self.get_theme_color('background')
+            text = self.get_theme_color('primary_text')
+            tertiary_bg = self.get_theme_color('tertiary_bg')
+            border = self.get_theme_color('border')
+            hover_bg = self.get_theme_color('hover_bg')
+            accent = self.get_theme_color('accent')
+            
+            dialog_style = f"""
+                QDialog {{
+                    background-color: {bg};
+                    color: {text};
+                    border: 2px solid {border};
+                    border-radius: 6px;
+                }}
+                QLabel {{
+                    color: {text};
+                    font-weight: 600;
+                }}
+                QComboBox {{
+                    background-color: {tertiary_bg};
+                    border: 2px solid {border};
+                    border-radius: 4px;
+                    padding: 6px;
+                    color: {text};
+                }}
+                QComboBox:hover {{
+                    border-color: {accent};
+                }}
+                QDateEdit {{
+                    background-color: {tertiary_bg};
+                    border: 2px solid {border};
+                    border-radius: 4px;
+                    padding: 6px;
+                    color: {text};
+                }}
+                QDateEdit:hover {{
+                    border-color: {accent};
+                }}
+                QPushButton {{
+                    background-color: {tertiary_bg};
+                    border: 2px solid {border};
+                    border-radius: 5px;
+                    padding: 8px 16px;
+                    color: {text};
+                    font-weight: 600;
+                    min-width: 80px;
+                }}
+                QPushButton:hover {{
+                    background-color: {hover_bg};
+                    border-color: {accent};
+                }}
+                QPushButton:default {{
+                    background-color: {accent};
+                    color: {bg};
+                }}
+            """
+            dialog.setStyleSheet(dialog_style)
+            
             layout = QVBoxLayout(dialog)
             
             # Format selection
@@ -5693,8 +5876,8 @@ System        {perf_status}"""
                 "html": "HTML Files (*.html)"
             }
             
-            file_path, _ = QFileDialog.getSaveFileName(
-                self, "Save Export File", "", 
+            file_path = self.show_themed_file_dialog(
+                "save", "Save Export File", "", 
                 file_extensions.get(format_type, "All Files (*)")
             )
             
