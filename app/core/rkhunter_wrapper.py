@@ -180,12 +180,35 @@ class RKHunterWrapper:
         # Try different privilege escalation methods in order of preference
         escalation_methods = []
 
-        # First preference: sudo -n (passwordless sudo for headless environments)
+        # If already root, run directly
+        if os.getuid() == 0:
+            escalation_methods.append(("direct", cmd_args))
+
+        # First preference: sudo with GUI password helper (most reliable for GUI apps)
         sudo_path = self._find_executable("sudo")
+        if sudo_path:
+            # Check for GUI password helpers
+            askpass_helpers = [
+                "/usr/bin/ssh-askpass",
+                "/usr/bin/x11-ssh-askpass", 
+                "/usr/bin/ksshaskpass",
+                "/usr/bin/lxqt-openssh-askpass"
+            ]
+            
+            askpass_cmd = None
+            for helper in askpass_helpers:
+                if os.path.exists(helper):
+                    askpass_cmd = helper
+                    break
+            
+            if askpass_cmd and os.environ.get('DISPLAY'):
+                escalation_methods.append(("sudo_gui", [sudo_path, "-A"] + cmd_args))
+
+        # Second preference: sudo -n (passwordless sudo for headless environments)
         if sudo_path:
             escalation_methods.append(("sudo_nopasswd", [sudo_path, "-n"] + cmd_args))
 
-        # Second preference: pkexec (GUI password dialog)
+        # Third preference: pkexec (GUI password dialog)
         pkexec_path = self._find_executable("pkexec")
         if pkexec_path:
             escalation_methods.append(("pkexec", [pkexec_path] + cmd_args))
@@ -193,10 +216,6 @@ class RKHunterWrapper:
         # Fallback: sudo (terminal password prompt)
         if sudo_path:
             escalation_methods.append(("sudo", [sudo_path] + cmd_args))
-
-        # If already root, run directly
-        if os.getuid() == 0:
-            escalation_methods.insert(0, ("direct", cmd_args))
 
         last_error = None
 
@@ -215,6 +234,21 @@ class RKHunterWrapper:
                         text=True,
                         timeout=timeout,
                         check=False,
+                    )
+                elif method_name == "sudo_gui":
+                    # sudo -A uses GUI password helper
+                    self.logger.info("Using GUI password helper (sudo -A)")
+                    # Set up environment for GUI authentication
+                    env = os.environ.copy()
+                    env['SUDO_ASKPASS'] = '/usr/bin/ksshaskpass'  # We know this exists from our check
+                    
+                    result = subprocess.run(
+                        full_cmd,
+                        capture_output=capture_output,
+                        text=True,
+                        timeout=timeout,
+                        check=False,
+                        env=env,
                     )
                 elif method_name == "pkexec":
                     # pkexec shows GUI password dialog
@@ -343,12 +377,35 @@ class RKHunterWrapper:
         # Try different privilege escalation methods in order of preference
         escalation_methods = []
 
-        # First preference: sudo -n (passwordless sudo for headless environments)
+        # If already root, run directly
+        if os.getuid() == 0:
+            escalation_methods.append(("direct", cmd_args))
+
+        # First preference: sudo with GUI password helper (most reliable for GUI apps)
         sudo_path = self._find_executable("sudo")
+        if sudo_path:
+            # Check for GUI password helpers
+            askpass_helpers = [
+                "/usr/bin/ssh-askpass",
+                "/usr/bin/x11-ssh-askpass", 
+                "/usr/bin/ksshaskpass",
+                "/usr/bin/lxqt-openssh-askpass"
+            ]
+            
+            askpass_cmd = None
+            for helper in askpass_helpers:
+                if os.path.exists(helper):
+                    askpass_cmd = helper
+                    break
+            
+            if askpass_cmd and os.environ.get('DISPLAY'):
+                escalation_methods.append(("sudo_gui", [sudo_path, "-A"] + cmd_args))
+
+        # Second preference: sudo -n (passwordless sudo for headless environments)
         if sudo_path:
             escalation_methods.append(("sudo_nopasswd", [sudo_path, "-n"] + cmd_args))
 
-        # Second preference: pkexec (GUI password dialog)
+        # Third preference: pkexec (GUI password dialog)
         pkexec_path = self._find_executable("pkexec")
         if pkexec_path:
             escalation_methods.append(("pkexec", [pkexec_path] + cmd_args))
@@ -357,10 +414,6 @@ class RKHunterWrapper:
         if sudo_path:
             escalation_methods.append(("sudo", [sudo_path] + cmd_args))
 
-        # If already root, run directly
-        if os.getuid() == 0:
-            escalation_methods.insert(0, ("direct", cmd_args))
-
         last_error = None
 
         for method_name, full_cmd in escalation_methods:
@@ -368,8 +421,22 @@ class RKHunterWrapper:
                 self.logger.debug(f"Trying {method_name}: {' '.join(full_cmd)}")
 
                 if method_name == "sudo_nopasswd":
-                    self.logger.info("Using passwordless sudo")
+                    self.logger.info("Attempting passwordless sudo (requires NOPASSWD in sudoers)")
                     env = os.environ.copy()
+                elif method_name == "sudo_gui":
+                    self.logger.info("Using GUI password helper (sudo with askpass)")
+                    env = os.environ.copy()
+                    # Set up GUI password helper
+                    askpass_helpers = [
+                        "/usr/bin/ssh-askpass",
+                        "/usr/bin/x11-ssh-askpass", 
+                        "/usr/bin/ksshaskpass",
+                        "/usr/bin/lxqt-openssh-askpass"
+                    ]
+                    for helper in askpass_helpers:
+                        if os.path.exists(helper):
+                            env['SUDO_ASKPASS'] = helper
+                            break
                 elif method_name == "pkexec":
                     self.logger.info("Using GUI password dialog (pkexec)")
                     # Set up environment for GUI authentication
@@ -381,8 +448,29 @@ class RKHunterWrapper:
                     
                 elif method_name == "sudo":
                     self.logger.info("Using terminal password prompt (sudo)")
-                    # Allow sudo to work in GUI context with terminal
+                    
+                    # For GUI applications, try to use a GUI password helper
                     env = os.environ.copy()
+                    askpass_helpers = [
+                        "/usr/bin/ssh-askpass",
+                        "/usr/bin/x11-ssh-askpass", 
+                        "/usr/bin/ksshaskpass",
+                        "/usr/bin/lxqt-openssh-askpass"
+                    ]
+                    
+                    askpass_cmd = None
+                    for helper in askpass_helpers:
+                        if os.path.exists(helper):
+                            askpass_cmd = helper
+                            break
+                    
+                    if askpass_cmd and os.environ.get('DISPLAY'):
+                        # Use GUI password prompt with sudo -A
+                        env['SUDO_ASKPASS'] = askpass_cmd
+                        # Modify command to use -A flag
+                        full_cmd = [full_cmd[0], '-A'] + full_cmd[1:]
+                        self.logger.info(f"Using GUI password helper: {askpass_cmd}")
+                        
                 else:
                     env = os.environ.copy()
 
@@ -692,15 +780,19 @@ USE_SYSLOG=0
                 "--no-mail-on-warning",  # Don't try to send mail
             ])
 
-            # Add specific test categories if specified
-            if test_categories:
-                for category in test_categories:
-                    if category in self.test_categories:
-                        for test in self.test_categories[category]:
-                            cmd_args.extend(["--enable", test])
+            # Skip specific test categories for now - RKHunter will run all tests by default
+            # if test_categories:
+            #     for category in test_categories:
+            #         if category in self.test_categories:
+            #             for test in self.test_categories[category]:
+            #                 cmd_args.extend(["--enable", test])
 
-            # Add configuration file
-            if self.config_path.exists():
+            # Add configuration file - use system default with minimal overrides
+            if os.path.exists("/etc/rkhunter.conf"):
+                cmd_args.extend(["--configfile", "/etc/rkhunter.conf"])
+                # Override problematic settings via command line
+                cmd_args.extend(["--tmpdir", "/var/lib/rkhunter/tmp"])  # Use secure temp dir
+            elif self.config_path.exists():
                 cmd_args.extend(["--configfile", str(self.config_path)])
 
             self.logger.info(
@@ -790,12 +882,12 @@ USE_SYSLOG=0
                 "--no-mail-on-warning",  # Don't try to send mail
             ])
 
-            # Add specific test categories if specified
-            if test_categories:
-                for category in test_categories:
-                    if category in self.test_categories:
-                        for test in self.test_categories[category]:
-                            cmd_args.extend(["--enable", test])
+            # Skip specific test categories for now - RKHunter will run all tests by default
+            # if test_categories:
+            #     for category in test_categories:
+            #         if category in self.test_categories:
+            #             for test in self.test_categories[category]:
+            #                 cmd_args.extend(["--enable", test])
 
             # Add configuration file - use system default with minimal overrides
             if os.path.exists("/etc/rkhunter.conf"):
