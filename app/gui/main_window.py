@@ -1443,16 +1443,15 @@ class MainWindow(QMainWindow):
         # RKHUNTER SETTINGS SECTION
         rkhunter_group = QGroupBox("RKHunter Integration")
         rkhunter_layout = QVBoxLayout(rkhunter_group)
-        rkhunter_layout.setSpacing(15)
+        rkhunter_layout.setSpacing(20)
 
-        # Create two-column layout
-        two_column_layout = QHBoxLayout()
-        two_column_layout.setSpacing(20)
+        # BASIC SETTINGS SECTION - Now at the top
+        settings_group = QGroupBox("Settings")
+        settings_layout = QHBoxLayout(settings_group)
+        settings_layout.setSpacing(30)
 
-        # LEFT COLUMN - Basic Settings
-        left_column = QGroupBox("Settings")
-        left_layout = QVBoxLayout(left_column)
-        left_layout.setSpacing(15)
+        # Add left stretch to center the settings
+        settings_layout.addStretch()
 
         self.settings_enable_rkhunter_cb = QCheckBox(
             "Enable RKHunter Integration")
@@ -1461,7 +1460,6 @@ class MainWindow(QMainWindow):
             "Enable integration with RKHunter rootkit detection"
         )
         self.settings_enable_rkhunter_cb.setMinimumHeight(35)
-        left_layout.addWidget(self.settings_enable_rkhunter_cb)
 
         self.settings_run_rkhunter_with_full_scan_cb = QCheckBox(
             "Run RKHunter with Full System Scans"
@@ -1471,7 +1469,6 @@ class MainWindow(QMainWindow):
             "Automatically run RKHunter when performing full system scans"
         )
         self.settings_run_rkhunter_with_full_scan_cb.setMinimumHeight(35)
-        left_layout.addWidget(self.settings_run_rkhunter_with_full_scan_cb)
 
         self.settings_rkhunter_auto_update_cb = QCheckBox(
             "Auto-update RKHunter Database"
@@ -1481,21 +1478,19 @@ class MainWindow(QMainWindow):
             "Automatically update RKHunter database before scans"
         )
         self.settings_rkhunter_auto_update_cb.setMinimumHeight(35)
-        left_layout.addWidget(self.settings_rkhunter_auto_update_cb)
 
-        # Add stretch to push checkboxes to top
-        left_layout.addStretch()
+        settings_layout.addWidget(self.settings_enable_rkhunter_cb)
+        settings_layout.addWidget(self.settings_run_rkhunter_with_full_scan_cb)
+        settings_layout.addWidget(self.settings_rkhunter_auto_update_cb)
+        
+        # Add right stretch to center the settings
+        settings_layout.addStretch()
 
-        # RIGHT COLUMN - Scan Categories
-        right_column = QGroupBox("Default Scan Categories")
-        right_layout = QVBoxLayout(right_column)
+        rkhunter_layout.addWidget(settings_group)
 
-        # Create scrollable area for checkboxes
-        scroll_area_rk = QScrollArea()
-        scroll_widget_rk = QWidget()
-        scroll_layout_rk = QVBoxLayout(scroll_widget_rk)
-        scroll_layout_rk.setSpacing(8)
-        scroll_layout_rk.setContentsMargins(5, 5, 5, 5)
+        # SCAN CATEGORIES SECTION - Now below settings, single row layout
+        categories_group = QGroupBox("Default Scan Categories")
+        categories_layout = QVBoxLayout(categories_group)
 
         # Define test categories with descriptions - organized by priority
         self.settings_rkhunter_test_categories = {
@@ -1531,8 +1526,9 @@ class MainWindow(QMainWindow):
             },
         }
 
-        # Create checkboxes in a grid layout for better space utilization
+        # Create checkboxes in a single row layout for all 5 categories
         self.settings_rkhunter_category_checkboxes = {}
+        self.settings_rkhunter_category_widgets = {}  # Store widget references for theme updates
 
         # Sort categories by priority and name for better organization
         sorted_categories = sorted(
@@ -1540,13 +1536,16 @@ class MainWindow(QMainWindow):
             key=lambda x: (x[1]["priority"], x[1]["name"]),
         )
 
-        # Create a grid layout (2 columns x 3 rows) for better space usage
-        grid_layout = QGridLayout()
-        grid_layout.setSpacing(15)  # Increased spacing between cards
-        grid_layout.setContentsMargins(20, 15, 20, 15)  # Better margins
+        # Create single horizontal row layout for all categories
+        row_layout = QHBoxLayout()
+        row_layout.setSpacing(15)  # Good spacing between cards
+        row_layout.setContentsMargins(10, 15, 10, 15)  # Better margins
 
-        # Add all items in a grid layout (2 columns)
-        for i, (category_id, category_info) in enumerate(sorted_categories):
+        # Add left stretch to center the items
+        row_layout.addStretch(1)
+
+        # Add all items in a single row
+        for category_id, category_info in sorted_categories:
             # Create larger item container
             item_layout = QVBoxLayout()
             item_layout.setSpacing(8)  # More space between checkbox and description
@@ -1573,72 +1572,31 @@ class MainWindow(QMainWindow):
             item_layout.addWidget(desc_label)
             item_layout.addStretch()  # Push content to top
 
-            # Create larger item widget for better readability
+            # Create larger item widget for better readability - slightly smaller for single row
             item_widget = QWidget()
             item_widget.setLayout(item_layout)
-            # Much larger dimensions for better space utilization
-            item_widget.setFixedWidth(240)  # Increased from 135px
-            item_widget.setFixedHeight(120)  # Increased from 75px
+            # Adjusted dimensions to fit 5 cards in a single row
+            item_widget.setFixedWidth(180)  # Reduced width for better fit
+            item_widget.setFixedHeight(150)  # Increased height for better text display
 
-            bg_color = self.get_theme_color("secondary_bg")
-            hover_color = self.get_theme_color("hover_bg")
-            border_color = self.get_theme_color("border")
-            item_widget.setStyleSheet(
-                f"""
-                QWidget {{
-                    border: 1px solid {border_color};
-                    border-radius: 8px;
-                    background-color: {bg_color};
-                    margin: 2px;
-                }}
-                QWidget:hover {{
-                    background-color: {hover_color};
-                    border-color: {self.get_theme_color("accent")};
-                }}
-            """
-            )
+            # Apply initial styling
+            self.apply_rkhunter_category_styling(item_widget)
 
-            # Calculate grid position (2 columns)
-            row = i // 2
-            col = i % 2
-            grid_layout.addWidget(item_widget, row, col)
+            row_layout.addWidget(item_widget)
             self.settings_rkhunter_category_checkboxes[category_id] = checkbox
+            self.settings_rkhunter_category_widgets[category_id] = item_widget  # Store for theme updates
 
-        # Create grid widget and add to scroll area
-        grid_widget = QWidget()
-        grid_widget.setLayout(grid_layout)
-        scroll_layout_rk.addWidget(grid_widget)
+        # Add right stretch to center the items
+        row_layout.addStretch(1)
 
-        # Add minimal stretch
-        scroll_layout_rk.addStretch(1)
-
-        scroll_area_rk.setWidget(scroll_widget_rk)
-        # Increased height significantly for larger cards in grid layout
-        scroll_area_rk.setMaximumHeight(280)  # Much larger to accommodate grid
-        scroll_area_rk.setMinimumHeight(280)  # Fixed height for consistency
-        scroll_area_rk.setHorizontalScrollBarPolicy(
-            Qt.ScrollBarPolicy.ScrollBarAlwaysOff
-        )
-        scroll_area_rk.setVerticalScrollBarPolicy(
-            Qt.ScrollBarPolicy.ScrollBarAlwaysOff
-        )  # No vertical scroll needed
-
-        border_color = self.get_theme_color("border")
-        scroll_bg = self.get_theme_color("tertiary_bg")
-        scroll_area_rk.setStyleSheet(
-            f"""
-            QScrollArea {{
-                border: 1px solid {border_color};
-                border-radius: 4px;
-                background-color: {scroll_bg};
-            }}
-        """
-        )
-
-        right_layout.addWidget(scroll_area_rk)
+        # Add the row layout to categories section
+        categories_layout.addLayout(row_layout)
 
         # Quick select buttons for RKHunter categories
         quick_select_layout = QHBoxLayout()
+
+        # Add left stretch to center the buttons
+        quick_select_layout.addStretch()
 
         select_all_btn = QPushButton("Select All")
         select_all_btn.clicked.connect(self.select_all_rkhunter_categories)
@@ -1663,20 +1621,13 @@ class MainWindow(QMainWindow):
         quick_select_layout.addWidget(select_all_btn)
         quick_select_layout.addWidget(select_recommended_btn)
         quick_select_layout.addWidget(select_none_btn)
+        
+        # Add right stretch to center the buttons
         quick_select_layout.addStretch()
 
-        right_layout.addLayout(quick_select_layout)
+        categories_layout.addLayout(quick_select_layout)
 
-        # Add columns to two-column layout
-        two_column_layout.addWidget(left_column)
-        two_column_layout.addWidget(right_column)
-
-        # Set column widths (40% left, 60% right)
-        left_column.setMaximumWidth(300)
-        right_column.setMinimumWidth(400)
-
-        # Add two-column layout to main RKHunter layout
-        rkhunter_layout.addLayout(two_column_layout)
+        rkhunter_layout.addWidget(categories_group)
 
         scroll_layout.addWidget(rkhunter_group)
 
@@ -2823,6 +2774,9 @@ System        {perf_status}"""
         # Update the icon for the new theme
         if hasattr(self, "icon_label"):
             self.update_icon_for_theme()
+            
+        # Update RKHunter category styling for the new theme
+        self.update_rkhunter_category_styling()
 
     def set_theme(self, theme):
         """Set the application theme and save to config."""
@@ -5006,6 +4960,45 @@ System        {perf_status}"""
         if hasattr(self, "settings_rkhunter_category_checkboxes"):
             for checkbox in self.settings_rkhunter_category_checkboxes.values():
                 checkbox.setChecked(False)
+
+    def apply_rkhunter_category_styling(self, widget):
+        """Apply theme-appropriate styling to an RKHunter category widget."""
+        bg_color = self.get_theme_color("secondary_bg")
+        hover_color = self.get_theme_color("hover_bg")
+        border_color = self.get_theme_color("border")
+        text_color = self.get_theme_color("text")
+        secondary_text_color = self.get_theme_color("secondary_text")
+        accent_color = self.get_theme_color("accent")
+        
+        widget.setStyleSheet(
+            f"""
+            QWidget {{
+                border: 1px solid {border_color};
+                border-radius: 8px;
+                background-color: {bg_color};
+                color: {text_color};
+                margin: 2px;
+            }}
+            QWidget:hover {{
+                background-color: {hover_color};
+                border-color: {accent_color};
+            }}
+            QCheckBox {{
+                color: {text_color};
+                font-weight: bold;
+                font-size: 12px;
+            }}
+            QLabel {{
+                color: {secondary_text_color};
+            }}
+        """
+        )
+
+    def update_rkhunter_category_styling(self):
+        """Update styling for all RKHunter category widgets when theme changes."""
+        if hasattr(self, "settings_rkhunter_category_widgets"):
+            for widget in self.settings_rkhunter_category_widgets.values():
+                self.apply_rkhunter_category_styling(widget)
 
     def stop_scan(self):
         if self.current_scan_thread and self.current_scan_thread.isRunning():
