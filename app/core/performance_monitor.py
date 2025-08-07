@@ -59,14 +59,18 @@ class PerformanceMonitor:
         self.thresholds = {
             "cpu_warning": 50.0,
             "cpu_critical": 80.0,
-            "memory_warning": 200.0,  # MB
-            "memory_critical": 500.0,  # MB
+            "memory_warning": 400.0,  # MB - Increased for PyQt6 GUI application
+            "memory_critical": 800.0,  # MB - More reasonable for modern systems
             "file_handles_warning": 100,
             "file_handles_critical": 200,
         }
 
         # Optimization callbacks
         self.optimization_callbacks: List[Callable] = []
+        
+        # Warning suppression to reduce spam
+        self.last_warning_time = {}
+        self.warning_cooldown = 30.0  # seconds between same warning types
 
     def start_monitoring(self):
         """Start continuous performance monitoring."""
@@ -166,31 +170,45 @@ class PerformanceMonitor:
     def _analyze_performance(self, metrics: PerformanceMetrics):
         """Analyze performance and trigger optimizations if needed."""
         issues = []
+        current_time = time.time()
 
         # Check CPU usage
         if metrics.cpu_percent > self.thresholds["cpu_critical"]:
-            issues.append(f"Critical CPU usage: {metrics.cpu_percent:.1f}%")
+            if self._should_warn("cpu_critical", current_time):
+                issues.append(f"Critical CPU usage: {metrics.cpu_percent:.1f}%")
             self._trigger_cpu_optimization()
         elif metrics.cpu_percent > self.thresholds["cpu_warning"]:
-            issues.append(f"High CPU usage: {metrics.cpu_percent:.1f}%")
+            if self._should_warn("cpu_warning", current_time):
+                issues.append(f"High CPU usage: {metrics.cpu_percent:.1f}%")
 
         # Check memory usage
         if metrics.memory_mb > self.thresholds["memory_critical"]:
-            issues.append(f"Critical memory usage: {metrics.memory_mb:.1f}MB")
+            if self._should_warn("memory_critical", current_time):
+                issues.append(f"Critical memory usage: {metrics.memory_mb:.1f}MB")
             self._trigger_memory_optimization()
         elif metrics.memory_mb > self.thresholds["memory_warning"]:
-            issues.append(f"High memory usage: {metrics.memory_mb:.1f}MB")
+            if self._should_warn("memory_warning", current_time):
+                issues.append(f"High memory usage: {metrics.memory_mb:.1f}MB")
 
         # Check file handles
         if metrics.file_handles > self.thresholds["file_handles_critical"]:
-            issues.append(
-                f"Critical file handle usage: {
-                    metrics.file_handles}")
+            if self._should_warn("file_handles_critical", current_time):
+                issues.append(
+                    f"Critical file handle usage: {metrics.file_handles}")
         elif metrics.file_handles > self.thresholds["file_handles_warning"]:
-            issues.append(f"High file handle usage: {metrics.file_handles}")
+            if self._should_warn("file_handles_warning", current_time):
+                issues.append(f"High file handle usage: {metrics.file_handles}")
 
         if issues:
             print(f"Performance issues detected: {', '.join(issues)}")
+
+    def _should_warn(self, warning_type: str, current_time: float) -> bool:
+        """Check if we should show a warning based on cooldown period."""
+        last_time = self.last_warning_time.get(warning_type, 0)
+        if current_time - last_time >= self.warning_cooldown:
+            self.last_warning_time[warning_type] = current_time
+            return True
+        return False
 
     def _trigger_cpu_optimization(self):
         """Trigger CPU optimization measures."""

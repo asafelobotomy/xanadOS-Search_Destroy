@@ -702,10 +702,26 @@ class MainWindow(QMainWindow):
         # Mark that this firewall change is from the GUI
         self._firewall_change_from_gui = True
 
-        # Perform the firewall toggle operation
-        result = toggle_firewall(enable_firewall)
-
-        if result.get("success", False):
+        # Perform the firewall toggle operation in background thread (like update_definitions)
+        from threading import Thread
+        
+        self.firewall_result = None
+        
+        def run_firewall_toggle():
+            try:
+                self.firewall_result = toggle_firewall(enable_firewall)
+            except Exception as e:
+                self.firewall_result = {"success": False, "error": str(e), "message": f"Exception during firewall {action}"}
+        
+        # Start firewall toggle in background thread
+        firewall_thread = Thread(target=run_firewall_toggle)
+        firewall_thread.daemon = True
+        firewall_thread.start()
+        
+        # Wait for completion and handle result (similar to update_definitions)
+        firewall_thread.join(timeout=300)  # Wait up to 5 minutes
+        
+        if self.firewall_result and self.firewall_result.get("success", False):
             # Success - show message and update UI
             self.add_activity_message(
                 f"🔥 Firewall {action}d successfully from dashboard"
@@ -713,7 +729,7 @@ class MainWindow(QMainWindow):
             self.show_themed_message_box(
                 "information",
                 "Firewall Control",
-                str(result.get("message", f"Firewall {action}d successfully")),
+                str(self.firewall_result.get("message", f"Firewall {action}d successfully")),
             )
             # Force immediate status update
             self.update_firewall_status()
@@ -723,7 +739,7 @@ class MainWindow(QMainWindow):
             # Reset the flag since the operation failed
             self._firewall_change_from_gui = False
 
-            error_msg = str(result.get("error", "Unknown error"))
+            error_msg = str(self.firewall_result.get("error", "Unknown error")) if self.firewall_result else "Operation timed out"
 
             # Check if it's a permission/authentication error
             if (
@@ -1022,16 +1038,32 @@ class MainWindow(QMainWindow):
             # Mark that this firewall change is from the GUI
             self._firewall_change_from_gui = True
 
-            # Perform the firewall toggle operation
-            result = toggle_firewall(enable_firewall)
-
-            if result.get("success", False):
+            # Perform the firewall toggle operation in background thread (like update_definitions)
+            from threading import Thread
+            
+            self.firewall_result = None
+            
+            def run_firewall_toggle_protection():
+                try:
+                    self.firewall_result = toggle_firewall(enable_firewall)
+                except Exception as e:
+                    self.firewall_result = {"success": False, "error": str(e), "message": f"Exception during firewall {action}"}
+            
+            # Start firewall toggle in background thread
+            firewall_thread = Thread(target=run_firewall_toggle_protection)
+            firewall_thread.daemon = True
+            firewall_thread.start()
+            
+            # Wait for completion and handle result (similar to update_definitions)
+            firewall_thread.join(timeout=300)  # Wait up to 5 minutes
+            
+            if self.firewall_result and self.firewall_result.get("success", False):
                 # Success - show message and update UI
                 self.add_activity_message(f"🔥 Firewall {action}d successfully")
                 self.show_themed_message_box(
                     "information",
                     "Firewall Control",
-                    str(result.get("message", f"Firewall {action}d successfully")),
+                    str(self.firewall_result.get("message", f"Firewall {action}d successfully")),
                 )
                 # Force immediate status update
                 self.update_firewall_status()
@@ -1040,7 +1072,7 @@ class MainWindow(QMainWindow):
                 # Reset the flag since the operation failed
                 self._firewall_change_from_gui = False
 
-                error_msg = str(result.get("error", "Unknown error"))
+                error_msg = str(self.firewall_result.get("error", "Unknown error")) if self.firewall_result else "Operation timed out"
 
                 # Check if it's a permission/authentication error
                 if (
@@ -1057,30 +1089,21 @@ class MainWindow(QMainWindow):
                         f"Authentication was cancelled or failed.",
                     )
                 else:
-                    self.add_activity_message(
-                        f"❌ Failed to {action} firewall: {error_msg}"
-                    )
+                    self.add_activity_message(f"❌ Failed to {action} firewall: {error_msg}")
                     self.show_themed_message_box(
                         "critical",
-                        "Firewall Control Error",
-                        f"Failed to {action} firewall:\n{str(result.get('message', error_msg))}",
+                        "Firewall Error",
+                        f"Failed to {action} firewall:\n{error_msg}",
                     )
-
-        except Exception as e:
-            # Handle unexpected errors
-            # Reset the flag since the operation failed
-            self._firewall_change_from_gui = False
-
-            error_msg = f"Unexpected error: {str(e)}"
-            self.add_activity_message(f"❌ Firewall control error: {error_msg}")
-            self.show_themed_message_box(
-                "critical",
-                "Firewall Control Error",
-                f"An unexpected error occurred:\n{error_msg}",
-            )
-        finally:
+            
             # Always restore button state
             self._restore_firewall_button()
+
+        except Exception as e:
+            # Restore button if there's an exception before threading starts
+            self._firewall_change_from_gui = False
+            self._restore_firewall_button()
+            self.add_activity_message(f"❌ Error setting up firewall operation: {str(e)}")
 
     def _restore_firewall_button(self):
         """Restore firewall button to normal state."""

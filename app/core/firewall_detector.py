@@ -380,13 +380,24 @@ class FirewallDetector:
             # UFW requires admin privileges
             cmd = admin_cmd + ["ufw", "--force",
                                "enable" if enable else "disable"]
+            
+            # Debug: Print the command being executed
+            print(f"DEBUG: Executing firewall command: {' '.join(cmd)}")
+            
+            # Use the same approach as update_virus_definitions for better GUI compatibility
             result = subprocess.run(
                 cmd,
                 capture_output=True,
                 text=True,
-                timeout=60,  # Longer timeout for user authentication
+                timeout=300,  # Longer timeout like update_definitions (was 60)
                 check=False,
+                # Don't override environment - use default like update_definitions
             )
+            
+            # Debug: Print result details
+            print(f"DEBUG: Command exit code: {result.returncode}")
+            print(f"DEBUG: Command stdout: {result.stdout}")
+            print(f"DEBUG: Command stderr: {result.stderr}")
 
             if result.returncode == 0:
                 action = "enabled" if enable else "disabled"
