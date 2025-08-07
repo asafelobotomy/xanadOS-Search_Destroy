@@ -333,8 +333,14 @@ class AutoUpdateSystem:
         """Check for software updates."""
         try:
             # Check GitHub releases for newer versions
-            # This is a simplified implementation
-            current_version = "1.0.0"  # Would read from version file
+            # Read current version from VERSION file
+            try:
+                from pathlib import Path
+                project_root = Path(__file__).parent.parent.parent
+                version_file = project_root / "VERSION"
+                current_version = version_file.read_text().strip() if version_file.exists() else "2.1.0"
+            except (OSError, IOError, FileNotFoundError):
+                current_version = "2.1.0"  # Fallback version
             
             response = await self._async_http_request(
                 "GET",

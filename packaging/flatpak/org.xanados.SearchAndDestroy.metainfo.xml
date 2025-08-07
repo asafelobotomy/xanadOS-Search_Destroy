@@ -43,6 +43,19 @@
   </provides>
   
   <releases>
+    <release version="2.1.0" date="2025-08-07">
+      <description>
+        <p>Major update with dashboard improvements, version control, and repository cleanup</p>
+        <ul>
+          <li>Enhanced dashboard with clickable Last Scan card</li>
+          <li>Fixed scan type detection and report generation</li>
+          <li>Implemented comprehensive Git workflow with automation</li>
+          <li>Added repository cleanup and maintenance tools</li>
+          <li>Improved scan thread performance and reliability</li>
+          <li>Updated UI responsiveness and user experience</li>
+        </ul>
+      </description>
+    </release>
     <release version="1.0.0" date="2025-08-02">
       <description>
         <p>Initial release of S&amp;D - Search &amp; Destroy</p>

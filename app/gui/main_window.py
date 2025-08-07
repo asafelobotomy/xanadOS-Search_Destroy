@@ -18,6 +18,7 @@ from gui.rkhunter_components import RKHunterScanDialog, RKHunterScanThread
 from core.file_scanner import FileScanner
 from core.rkhunter_wrapper import RKHunterWrapper, RKHunterScanResult
 from utils.config import load_config, save_config
+from app import APP_VERSION
 from utils.scan_reports import ScanReportManager, ScanResult, ScanType, ThreatInfo, ThreatLevel
 from monitoring import RealTimeMonitor, MonitorConfig, MonitorState
 from core.firewall_detector import get_firewall_status, toggle_firewall
@@ -4842,9 +4843,9 @@ System        {perf_status}"""
     
     def show_about(self):
         self.show_themed_message_box("information", "About S&D", 
-                         """<h1>S&D - Search & Destroy</h1>
+                         f"""<h1>S&D - Search & Destroy</h1>
                          <p>A modern GUI for ClamAV virus scanning.</p>
-                         <p>Version 1.0.0</p>
+                         <p>Version {APP_VERSION}</p>
                          <p>© 2025 xanadOS</p>""")
     
     def update_definition_status(self):
