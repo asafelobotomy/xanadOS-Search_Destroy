@@ -4,31 +4,36 @@ Automatic Updates System for S&D
 Handles virus definition updates, software updates, and threat intelligence feeds.
 """
 import asyncio
-import logging
-import time
-import threading
-import requests
 import hashlib
-import tempfile
+import json
+import logging
+import shutil
 import subprocess
-from typing import Dict, List, Optional, Callable, Any, Tuple
+import tempfile
+import threading
+import time
 from dataclasses import dataclass, field
+from datetime import datetime, timedelta
 from enum import Enum
 from pathlib import Path
-from datetime import datetime, timedelta
-import json
+from typing import Any, Callable, Dict, List, Optional, Tuple
+
+import requests
 import schedule
-import shutil
+
 
 class UpdateType(Enum):
     """Types of updates available."""
+
     VIRUS_DEFINITIONS = "virus_definitions"
     SOFTWARE = "software"
     THREAT_INTELLIGENCE = "threat_intelligence"
     SIGNATURES = "signatures"
 
+
 class UpdateStatus(Enum):
     """Update operation status."""
+
     IDLE = "idle"
     CHECKING = "checking"
     DOWNLOADING = "downloading"
@@ -36,16 +41,20 @@ class UpdateStatus(Enum):
     SUCCESS = "success"
     FAILED = "failed"
 
+
 class UpdatePriority(Enum):
     """Update priority levels."""
+
     CRITICAL = 1
     HIGH = 2
     NORMAL = 3
     LOW = 4
 
+
 @dataclass
 class UpdateInfo:
     """Information about available update."""
+
     update_type: UpdateType
     version: str
     description: str
@@ -58,9 +67,11 @@ class UpdateInfo:
     required_restart: bool = False
     changelog: List[str] = field(default_factory=list)
 
+
 @dataclass
 class UpdateResult:
     """Result of update operation."""
+
     update_type: UpdateType
     success: bool
     version: str = ""
@@ -69,69 +80,81 @@ class UpdateResult:
     install_time: float = 0.0
     bytes_downloaded: int = 0
 
+
 @dataclass
 class UpdateConfig:
     """Update system configuration."""
+
     auto_update_enabled: bool = True
     check_interval_hours: int = 4
     download_timeout: int = 300  # 5 minutes
-    virus_definitions_sources: List[str] = field(default_factory=lambda: [
-        "https://database.clamav.net/main.cvd",
-        "https://database.clamav.net/daily.cvd",
-        "https://database.clamav.net/bytecode.cvd"
-    ])
+    virus_definitions_sources: List[str] = field(
+        default_factory=lambda: [
+            "https://database.clamav.net/main.cvd",
+            "https://database.clamav.net/daily.cvd",
+            "https://database.clamav.net/bytecode.cvd",
+        ]
+    )
     threat_intel_sources: List[str] = field(default_factory=list)
     update_window_start: str = "02:00"  # 2 AM
-    update_window_end: str = "04:00"    # 4 AM
+    update_window_end: str = "04:00"  # 4 AM
     max_concurrent_downloads: int = 3
     retry_attempts: int = 3
     retry_delay_seconds: int = 300  # 5 minutes
+
 
 class AutoUpdateSystem:
     """
     Comprehensive automatic update system for virus definitions,
     threat intelligence, and software components.
     """
-    
+
     def __init__(self, clamav_wrapper=None, config: UpdateConfig = None):
         self.logger = logging.getLogger(__name__)
         self.clamav = clamav_wrapper
         self.config = config or UpdateConfig()
-        
+
         # State management
         self.status = UpdateStatus.IDLE
         self.status_lock = threading.RLock()
         self.is_running = False
-        
+
         # Update tracking
         self.last_check_time: Optional[datetime] = None
         self.last_update_times: Dict[UpdateType, datetime] = {}
         self.available_updates: Dict[UpdateType, UpdateInfo] = {}
         self.update_history: List[UpdateResult] = []
         self.pending_updates: List[UpdateInfo] = []
-        
+
         # Download management
         self.active_downloads: Dict[str, asyncio.Task] = {}
         self.download_progress: Dict[str, Dict[str, Any]] = {}
-        
+
         # Callbacks
-        self.update_available_callback: Optional[Callable[[UpdateInfo], None]] = None
-        self.update_completed_callback: Optional[Callable[[UpdateResult], None]] = None
-        self.update_progress_callback: Optional[Callable[[UpdateType, int], None]] = None
+        self.update_available_callback: Optional[Callable[[
+            UpdateInfo], None]] = None
+        self.update_completed_callback: Optional[Callable[[
+            UpdateResult], None]] = None
+        self.update_progress_callback: Optional[Callable[[
+            UpdateType, int], None]] = (None)
         self.update_error_callback: Optional[Callable[[str], None]] = None
-        
+
         # Database paths
-        self.db_dir = Path("/var/lib/clamav") if Path("/var/lib/clamav").exists() else Path("./clamav_db")
+        self.db_dir = (
+            Path("/var/lib/clamav")
+            if Path("/var/lib/clamav").exists()
+            else Path("./clamav_db")
+        )
         self.db_dir.mkdir(parents=True, exist_ok=True)
-        
+
         # Scheduler
         self.scheduler = schedule.Scheduler()
         self.scheduler_thread: Optional[threading.Thread] = None
-        
+
         # Async components
         self.update_loop_task: Optional[asyncio.Task] = None
         self.check_updates_task: Optional[asyncio.Task] = None
-        
+
         self.logger.info("Auto-update system initialized")
 
     async def start_update_system(self) -> bool:
@@ -140,29 +163,29 @@ class AutoUpdateSystem:
             if self.is_running:
                 self.logger.warning("Update system already running")
                 return True
-            
+
             self.is_running = True
-            
+
             # Setup scheduled tasks
             self._setup_scheduled_updates()
-            
+
             # Start scheduler thread
             self.scheduler_thread = threading.Thread(
-                target=self._run_scheduler,
-                daemon=True,
-                name="UpdateScheduler"
+                target=self._run_scheduler, daemon=True, name="UpdateScheduler"
             )
             self.scheduler_thread.start()
-            
+
             # Start update monitoring loop
-            self.update_loop_task = asyncio.create_task(self._update_monitoring_loop())
-            
+            self.update_loop_task = asyncio.create_task(
+                self._update_monitoring_loop())
+
             # Perform initial update check
-            self.check_updates_task = asyncio.create_task(self.check_for_updates())
-            
+            self.check_updates_task = asyncio.create_task(
+                self.check_for_updates())
+
             self.logger.info("Auto-update system started")
             return True
-            
+
         except Exception as e:
             self.logger.error("Failed to start update system: %s", e)
             self.is_running = False
@@ -171,24 +194,24 @@ class AutoUpdateSystem:
     async def stop_update_system(self):
         """Stop the automatic update system."""
         self.is_running = False
-        
+
         # Cancel active downloads
         for download_task in self.active_downloads.values():
             download_task.cancel()
-        
+
         # Cancel monitoring tasks
         if self.update_loop_task:
             self.update_loop_task.cancel()
         if self.check_updates_task:
             self.check_updates_task.cancel()
-        
+
         # Wait for tasks to complete
         await self._wait_for_tasks()
-        
+
         # Stop scheduler
         if self.scheduler_thread and self.scheduler_thread.is_alive():
             self.scheduler_thread.join(timeout=5.0)
-        
+
         self.logger.info("Auto-update system stopped")
 
     def _setup_scheduled_updates(self):
@@ -197,16 +220,14 @@ class AutoUpdateSystem:
         self.scheduler.every(self.config.check_interval_hours).hours.do(
             self._schedule_update_check
         )
-        
+
         # Schedule daily update installation during maintenance window
         self.scheduler.every().day.at(self.config.update_window_start).do(
             self._schedule_update_installation
         )
-        
+
         # Schedule weekly threat intelligence updates
-        self.scheduler.every().sunday.at("01:00").do(
-            self._schedule_threat_intel_update
-        )
+        self.scheduler.every().sunday.at("01:00").do(self._schedule_threat_intel_update)
 
     def _run_scheduler(self):
         """Run the update scheduler."""
@@ -240,47 +261,49 @@ class AutoUpdateSystem:
                 self.logger.warning("Update check already in progress")
                 return {}
             self.status = UpdateStatus.CHECKING
-        
+
         try:
             self.logger.info("Checking for updates...")
             available_updates = {}
-            
+
             # Check virus definition updates
             virus_def_update = await self._check_virus_definitions()
             if virus_def_update:
                 available_updates[UpdateType.VIRUS_DEFINITIONS] = virus_def_update
-            
+
             # Check software updates
             software_update = await self._check_software_updates()
             if software_update:
                 available_updates[UpdateType.SOFTWARE] = software_update
-            
+
             # Check threat intelligence updates
             threat_intel_update = await self._check_threat_intelligence()
             if threat_intel_update:
                 available_updates[UpdateType.THREAT_INTELLIGENCE] = threat_intel_update
-            
+
             # Update state
             self.available_updates = available_updates
             self.last_check_time = datetime.now()
-            
+
             # Notify about available updates
             for update_info in available_updates.values():
                 if self.update_available_callback:
                     self.update_available_callback(update_info)
-            
+
             # Auto-schedule critical updates
             for update_info in available_updates.values():
-                if (self.config.auto_update_enabled and 
-                    update_info.priority in [UpdatePriority.CRITICAL, UpdatePriority.HIGH]):
+                if self.config.auto_update_enabled and update_info.priority in [
+                        UpdatePriority.CRITICAL, UpdatePriority.HIGH, ]:
                     self.pending_updates.append(update_info)
-            
+
             with self.status_lock:
                 self.status = UpdateStatus.IDLE
-            
-            self.logger.info("Update check completed. Found %d updates", len(available_updates))
+
+            self.logger.info(
+                "Update check completed. Found %d updates",
+                len(available_updates))
             return available_updates
-            
+
         except Exception as e:
             self.logger.error("Error checking for updates: %s", e)
             with self.status_lock:
@@ -299,10 +322,10 @@ class AutoUpdateSystem:
                 if db_path.exists():
                     # Extract version from file (simplified)
                     current_versions[db_file] = db_path.stat().st_mtime
-            
+
             # Check online versions
             latest_version_info = await self._get_latest_db_versions()
-            
+
             # Compare versions
             needs_update = False
             for db_file, online_info in latest_version_info.items():
@@ -310,9 +333,10 @@ class AutoUpdateSystem:
                 if online_info["last_modified"] > local_time:
                     needs_update = True
                     break
-            
+
             if needs_update:
-                total_size = sum(info["size"] for info in latest_version_info.values())
+                total_size = sum(info["size"]
+                                 for info in latest_version_info.values())
                 return UpdateInfo(
                     update_type=UpdateType.VIRUS_DEFINITIONS,
                     version=datetime.now().strftime("%Y%m%d"),
@@ -320,11 +344,11 @@ class AutoUpdateSystem:
                     size_bytes=total_size,
                     download_url="multiple",  # Multiple files
                     checksum="",  # Will verify individual files
-                    priority=UpdatePriority.HIGH
+                    priority=UpdatePriority.HIGH,
                 )
-            
+
             return None
-            
+
         except Exception as e:
             self.logger.error("Error checking virus definitions: %s", e)
             return None
@@ -336,17 +360,22 @@ class AutoUpdateSystem:
             # Read current version from VERSION file
             try:
                 from pathlib import Path
+
                 project_root = Path(__file__).parent.parent.parent
                 version_file = project_root / "VERSION"
-                current_version = version_file.read_text().strip() if version_file.exists() else "2.1.0"
+                current_version = (
+                    version_file.read_text().strip()
+                    if version_file.exists()
+                    else "2.1.0"
+                )
             except (OSError, IOError, FileNotFoundError):
                 current_version = "2.1.0"  # Fallback version
-            
+
             response = await self._async_http_request(
                 "GET",
-                "https://api.github.com/repos/asafelobotomy/xanadOS-Search_Destroy/releases/latest"
+                "https://api.github.com/repos/asafelobotomy/xanadOS-Search_Destroy/releases/latest",
             )
-            
+
             if response and "tag_name" in response:
                 latest_version = response["tag_name"].lstrip("v")
                 if self._version_compare(latest_version, current_version) > 0:
@@ -354,16 +383,18 @@ class AutoUpdateSystem:
                         update_type=UpdateType.SOFTWARE,
                         version=latest_version,
                         description=f"S&D version {latest_version}",
-                        size_bytes=response.get("size", 50 * 1024 * 1024),  # Estimate 50MB
+                        size_bytes=response.get(
+                            "size", 50 * 1024 * 1024
+                        ),  # Estimate 50MB
                         download_url=response.get("tarball_url", ""),
                         checksum="",
                         priority=UpdatePriority.NORMAL,
                         required_restart=True,
-                        changelog=response.get("body", "").split("\n")[:10]
+                        changelog=response.get("body", "").split("\n")[:10],
                     )
-            
+
             return None
-            
+
         except Exception as e:
             self.logger.error("Error checking software updates: %s", e)
             return None
@@ -376,11 +407,13 @@ class AutoUpdateSystem:
                 # This would integrate with actual threat intel feeds
                 # For now, return a placeholder
                 pass
-            
+
             # Simplified implementation
-            last_intel_update = self.last_update_times.get(UpdateType.THREAT_INTELLIGENCE)
-            if (not last_intel_update or 
-                datetime.now() - last_intel_update > timedelta(days=1)):
+            last_intel_update = self.last_update_times.get(
+                UpdateType.THREAT_INTELLIGENCE
+            )
+            if not last_intel_update or datetime.now(
+            ) - last_intel_update > timedelta(days=1):
                 return UpdateInfo(
                     update_type=UpdateType.THREAT_INTELLIGENCE,
                     version=datetime.now().strftime("%Y%m%d"),
@@ -388,11 +421,11 @@ class AutoUpdateSystem:
                     size_bytes=1024 * 1024,  # 1MB
                     download_url="https://example.com/threat_intel.json",
                     checksum="",
-                    priority=UpdatePriority.NORMAL
+                    priority=UpdatePriority.NORMAL,
                 )
-            
+
             return None
-            
+
         except Exception as e:
             self.logger.error("Error checking threat intelligence: %s", e)
             return None
@@ -400,41 +433,44 @@ class AutoUpdateSystem:
     async def install_pending_updates(self) -> List[UpdateResult]:
         """Install all pending updates."""
         results = []
-        
+
         with self.status_lock:
             if self.status != UpdateStatus.IDLE:
                 self.logger.warning("Update installation already in progress")
                 return results
             self.status = UpdateStatus.INSTALLING
-        
+
         try:
-            self.logger.info("Installing %d pending updates", len(self.pending_updates))
-            
+            self.logger.info(
+                "Installing %d pending updates", len(
+                    self.pending_updates))
+
             # Sort by priority
             sorted_updates = sorted(
-                self.pending_updates,
-                key=lambda u: u.priority.value
+                self.pending_updates, key=lambda u: u.priority.value
             )
-            
+
             for update_info in sorted_updates:
                 result = await self.install_update(update_info)
                 results.append(result)
-                
+
                 if self.update_completed_callback:
                     self.update_completed_callback(result)
-            
+
             # Clear pending updates
             self.pending_updates.clear()
-            
+
             with self.status_lock:
                 self.status = UpdateStatus.SUCCESS
-            
-            self.logger.info("Update installation completed. %d successful, %d failed",
-                           sum(1 for r in results if r.success),
-                           sum(1 for r in results if not r.success))
-            
+
+            self.logger.info(
+                "Update installation completed. %d successful, %d failed",
+                sum(1 for r in results if r.success),
+                sum(1 for r in results if not r.success),
+            )
+
             return results
-            
+
         except Exception as e:
             self.logger.error("Error installing updates: %s", e)
             with self.status_lock:
@@ -446,11 +482,14 @@ class AutoUpdateSystem:
     async def install_update(self, update_info: UpdateInfo) -> UpdateResult:
         """Install a specific update."""
         start_time = time.time()
-        
+
         try:
-            self.logger.info("Installing update: %s v%s", 
-                           update_info.update_type.value, update_info.version)
-            
+            self.logger.info(
+                "Installing update: %s v%s",
+                update_info.update_type.value,
+                update_info.version,
+            )
+
             if update_info.update_type == UpdateType.VIRUS_DEFINITIONS:
                 result = await self._install_virus_definitions(update_info)
             elif update_info.update_type == UpdateType.SOFTWARE:
@@ -461,47 +500,52 @@ class AutoUpdateSystem:
                 result = UpdateResult(
                     update_type=update_info.update_type,
                     success=False,
-                    error_message="Unknown update type"
+                    error_message="Unknown update type",
                 )
-            
+
             # Record installation time
             result.install_time = time.time() - start_time
-            
+
             # Update history
             self.update_history.append(result)
             if len(self.update_history) > 100:  # Keep last 100 updates
                 self.update_history = self.update_history[-100:]
-            
+
             # Update last update time
             if result.success:
-                self.last_update_times[update_info.update_type] = datetime.now()
-            
+                self.last_update_times[update_info.update_type] = datetime.now(
+                )
+
             return result
-            
+
         except Exception as e:
-            self.logger.error("Error installing update %s: %s", update_info.update_type.value, e)
+            self.logger.error(
+                "Error installing update %s: %s",
+                update_info.update_type.value,
+                e)
             return UpdateResult(
                 update_type=update_info.update_type,
                 success=False,
                 error_message=str(e),
-                install_time=time.time() - start_time
+                install_time=time.time() - start_time,
             )
 
-    async def _install_virus_definitions(self, update_info: UpdateInfo) -> UpdateResult:
+    async def _install_virus_definitions(
+            self, update_info: UpdateInfo) -> UpdateResult:
         """Install virus definition updates."""
         try:
             total_downloaded = 0
             download_start = time.time()
-            
+
             # Download each database file
             for source_url in self.config.virus_definitions_sources:
                 db_filename = Path(source_url).name
                 temp_path = Path(tempfile.gettempdir()) / f"tmp_{db_filename}"
-                
+
                 # Download file
                 bytes_downloaded = await self._download_file(source_url, temp_path)
                 total_downloaded += bytes_downloaded
-                
+
                 # Verify download
                 if await self._verify_db_file(temp_path):
                     # Move to database directory
@@ -509,133 +553,153 @@ class AutoUpdateSystem:
                     shutil.move(str(temp_path), str(final_path))
                     self.logger.info("Updated database file: %s", db_filename)
                 else:
-                    self.logger.error("Database file verification failed: %s", db_filename)
+                    self.logger.error(
+                        "Database file verification failed: %s", db_filename
+                    )
                     if temp_path.exists():
                         temp_path.unlink()
-                    raise ValueError(f"Database verification failed: {db_filename}")
-            
+                    raise ValueError(
+                        f"Database verification failed: {db_filename}")
+
             download_time = time.time() - download_start
-            
+
             # Reload ClamAV if available
             if self.clamav:
                 await self._reload_clamav_database()
-            
+
             return UpdateResult(
                 update_type=UpdateType.VIRUS_DEFINITIONS,
                 success=True,
                 version=update_info.version,
                 download_time=download_time,
-                bytes_downloaded=total_downloaded
+                bytes_downloaded=total_downloaded,
             )
-            
+
         except Exception as e:
             return UpdateResult(
                 update_type=UpdateType.VIRUS_DEFINITIONS,
                 success=False,
-                error_message=str(e)
+                error_message=str(e),
             )
 
-    async def _install_software_update(self, update_info: UpdateInfo) -> UpdateResult:
+    async def _install_software_update(
+            self, update_info: UpdateInfo) -> UpdateResult:
         """Install software updates."""
         try:
             # Download update package
             temp_dir = Path(tempfile.mkdtemp(prefix="s&d_update_"))
             update_file = temp_dir / "update.tar.gz"
-            
+
             download_start = time.time()
-            bytes_downloaded = await self._download_file(update_info.download_url, update_file)
+            bytes_downloaded = await self._download_file(
+                update_info.download_url, update_file
+            )
             download_time = time.time() - download_start
-            
+
             # Verify checksum if provided
             if update_info.checksum:
-                if not await self._verify_checksum(update_file, update_info.checksum, update_info.checksum_type):
-                    raise ValueError("Update file checksum verification failed")
-            
+                if not await self._verify_checksum(
+                    update_file, update_info.checksum, update_info.checksum_type
+                ):
+                    raise ValueError(
+                        "Update file checksum verification failed")
+
             # For safety, just log the update availability for now
             # In production, this would extract and apply the update
-            self.logger.info("Software update downloaded and verified: %s", update_info.version)
+            self.logger.info(
+                "Software update downloaded and verified: %s",
+                update_info.version)
             self.logger.info("Manual installation required for safety")
-            
+
             # Cleanup
             shutil.rmtree(temp_dir)
-            
+
             return UpdateResult(
                 update_type=UpdateType.SOFTWARE,
                 success=True,
                 version=update_info.version,
                 download_time=download_time,
-                bytes_downloaded=bytes_downloaded
+                bytes_downloaded=bytes_downloaded,
             )
-            
+
         except Exception as e:
             return UpdateResult(
                 update_type=UpdateType.SOFTWARE,
                 success=False,
-                error_message=str(e)
-            )
+                error_message=str(e))
 
-    async def _install_threat_intelligence(self, update_info: UpdateInfo) -> UpdateResult:
+    async def _install_threat_intelligence(
+        self, update_info: UpdateInfo
+    ) -> UpdateResult:
         """Install threat intelligence updates."""
         try:
             # Download threat intelligence data
             intel_file = Path(tempfile.gettempdir()) / "threat_intel.json"
-            
+
             download_start = time.time()
-            bytes_downloaded = await self._download_file(update_info.download_url, intel_file)
+            bytes_downloaded = await self._download_file(
+                update_info.download_url, intel_file
+            )
             download_time = time.time() - download_start
-            
+
             # Process threat intelligence data
             # This would integrate with the real-time protection engine
             intel_data = await self._process_threat_intel(intel_file)
-            
+
             # Store in threat intelligence database
             await self._store_threat_intel(intel_data)
-            
+
             # Cleanup
             if intel_file.exists():
                 intel_file.unlink()
-            
+
             return UpdateResult(
                 update_type=UpdateType.THREAT_INTELLIGENCE,
                 success=True,
                 version=update_info.version,
                 download_time=download_time,
-                bytes_downloaded=bytes_downloaded
+                bytes_downloaded=bytes_downloaded,
             )
-            
+
         except Exception as e:
             return UpdateResult(
                 update_type=UpdateType.THREAT_INTELLIGENCE,
                 success=False,
-                error_message=str(e)
+                error_message=str(e),
             )
 
-    async def _download_file(self, url: str, dest_path: Path, progress_callback=None) -> int:
+    async def _download_file(
+        self, url: str, dest_path: Path, progress_callback=None
+    ) -> int:
         """Download file with progress tracking."""
         try:
-            async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=self.config.download_timeout)) as session:
+            async with aiohttp.ClientSession(
+                timeout=aiohttp.ClientTimeout(total=self.config.download_timeout)
+            ) as session:
                 async with session.get(url) as response:
                     response.raise_for_status()
-                    
-                    total_size = int(response.headers.get('content-length', 0))
+
+                    total_size = int(response.headers.get("content-length", 0))
                     downloaded = 0
-                    
-                    with dest_path.open('wb') as f:
+
+                    with dest_path.open("wb") as f:
                         async for chunk in response.content.iter_chunked(8192):
                             f.write(chunk)
                             downloaded += len(chunk)
-                            
+
                             # Report progress
                             if progress_callback and total_size > 0:
                                 progress_callback(downloaded, total_size)
-                    
+
                     return downloaded
-                    
+
         except Exception as e:
             self.logger.error("Download failed for %s: %s", url, e)
             raise
 
-    async def _verify_checksum(self, file_path: Path, expected_checksum: str, checksum_type: str) -> bool:
+    async def _verify_checksum(
+        self, file_path: Path, expected_checksum: str, checksum_type: str
+    ) -> bool:
         """Verify file checksum."""
         try:
             if checksum_type.lower() == "sha256":
@@ -644,13 +708,13 @@ class AutoUpdateSystem:
                 hasher = hashlib.md5()
             else:
                 return False
-            
-            with file_path.open('rb') as f:
+
+            with file_path.open("rb") as f:
                 for chunk in iter(lambda: f.read(4096), b""):
                     hasher.update(chunk)
-            
+
             return hasher.hexdigest().lower() == expected_checksum.lower()
-            
+
         except Exception:
             return False
 
@@ -664,20 +728,20 @@ class AutoUpdateSystem:
                     [sigtool_path, "--info", str(db_path)],
                     capture_output=True,
                     text=True,
-                    timeout=30
+                    timeout=30,
                 )
                 return result.returncode == 0
-            
+
             # Basic size check as fallback
             return db_path.stat().st_size > 1024  # At least 1KB
-            
+
         except Exception:
             return False
 
     async def _reload_clamav_database(self):
         """Reload ClamAV database after updates."""
         try:
-            if hasattr(self.clamav, 'reload_database'):
+            if hasattr(self.clamav, "reload_database"):
                 await asyncio.get_event_loop().run_in_executor(
                     None, self.clamav.reload_database
                 )
@@ -688,7 +752,7 @@ class AutoUpdateSystem:
     async def _get_latest_db_versions(self) -> Dict[str, Dict[str, Any]]:
         """Get latest virus definition versions from online sources."""
         versions = {}
-        
+
         for url in self.config.virus_definitions_sources:
             try:
                 filename = Path(url).name
@@ -697,30 +761,32 @@ class AutoUpdateSystem:
                 if response:
                     versions[filename] = {
                         "size": int(response.get("content-length", 0)),
-                        "last_modified": time.time()  # Simplified
+                        "last_modified": time.time(),  # Simplified
                     }
             except Exception as e:
                 self.logger.error("Error checking %s: %s", url, e)
-        
+
         return versions
 
-    async def _async_http_request(self, method: str, url: str) -> Optional[Dict[str, Any]]:
+    async def _async_http_request(
+        self, method: str, url: str
+    ) -> Optional[Dict[str, Any]]:
         """Make async HTTP request."""
         try:
             # Simplified implementation - would use aiohttp in production
             loop = asyncio.get_event_loop()
-            
+
             def sync_request():
                 response = requests.request(method, url, timeout=30)
                 response.raise_for_status()
-                
+
                 if method == "HEAD":
                     return dict(response.headers)
                 else:
                     return response.json()
-            
+
             return await loop.run_in_executor(None, sync_request)
-            
+
         except Exception as e:
             self.logger.error("HTTP request failed %s %s: %s", method, url, e)
             return None
@@ -728,41 +794,41 @@ class AutoUpdateSystem:
     def _version_compare(self, version1: str, version2: str) -> int:
         """Compare version strings. Returns 1 if v1 > v2, -1 if v1 < v2, 0 if equal."""
         try:
-            v1_parts = [int(x) for x in version1.split('.')]
-            v2_parts = [int(x) for x in version2.split('.')]
-            
+            v1_parts = [int(x) for x in version1.split(".")]
+            v2_parts = [int(x) for x in version2.split(".")]
+
             # Pad shorter version with zeros
             max_len = max(len(v1_parts), len(v2_parts))
             v1_parts.extend([0] * (max_len - len(v1_parts)))
             v2_parts.extend([0] * (max_len - len(v2_parts)))
-            
+
             for v1, v2 in zip(v1_parts, v2_parts):
                 if v1 > v2:
                     return 1
                 elif v1 < v2:
                     return -1
-            
+
             return 0
-            
+
         except Exception:
             return 0
 
     async def _process_threat_intel(self, intel_file: Path) -> Dict[str, Any]:
         """Process downloaded threat intelligence data."""
         try:
-            with intel_file.open('r') as f:
+            with intel_file.open("r") as f:
                 data = json.load(f)
-            
+
             # Process and validate threat intelligence data
             processed_data = {
                 "timestamp": datetime.now().isoformat(),
                 "threats": data.get("threats", []),
                 "indicators": data.get("indicators", []),
-                "signatures": data.get("signatures", [])
+                "signatures": data.get("signatures", []),
             }
-            
+
             return processed_data
-            
+
         except Exception as e:
             self.logger.error("Error processing threat intelligence: %s", e)
             return {}
@@ -771,13 +837,15 @@ class AutoUpdateSystem:
         """Store threat intelligence data for use by protection engine."""
         try:
             intel_db_path = self.db_dir / "threat_intel.json"
-            with intel_db_path.open('w') as f:
+            with intel_db_path.open("w") as f:
                 json.dump(intel_data, f, indent=2)
-            
-            self.logger.info("Threat intelligence data stored: %d threats, %d indicators",
-                           len(intel_data.get("threats", [])),
-                           len(intel_data.get("indicators", [])))
-            
+
+            self.logger.info(
+                "Threat intelligence data stored: %d threats, %d indicators",
+                len(intel_data.get("threats", [])),
+                len(intel_data.get("indicators", [])),
+            )
+
         except Exception as e:
             self.logger.error("Error storing threat intelligence: %s", e)
 
@@ -789,21 +857,24 @@ class AutoUpdateSystem:
                 for download_id, progress_info in self.download_progress.items():
                     if self.update_progress_callback:
                         update_type = progress_info.get("update_type")
-                        progress_percent = progress_info.get("progress_percent", 0)
+                        progress_percent = progress_info.get(
+                            "progress_percent", 0)
                         if update_type:
-                            self.update_progress_callback(update_type, progress_percent)
-                
+                            self.update_progress_callback(
+                                update_type, progress_percent)
+
                 # Clean completed downloads
                 completed_downloads = [
-                    download_id for download_id, task in self.active_downloads.items()
+                    download_id
+                    for download_id, task in self.active_downloads.items()
                     if task.done()
                 ]
                 for download_id in completed_downloads:
                     del self.active_downloads[download_id]
                     self.download_progress.pop(download_id, None)
-                
+
                 await asyncio.sleep(5.0)
-                
+
             except asyncio.CancelledError:
                 break
             except Exception as e:
@@ -817,7 +888,7 @@ class AutoUpdateSystem:
             tasks.append(self.update_loop_task)
         if self.check_updates_task:
             tasks.append(self.check_updates_task)
-        
+
         if tasks:
             try:
                 await asyncio.gather(*tasks, return_exceptions=True)
@@ -829,7 +900,9 @@ class AutoUpdateSystem:
         return {
             "status": self.status.value,
             "is_running": self.is_running,
-            "last_check_time": self.last_check_time.isoformat() if self.last_check_time else None,
+            "last_check_time": (
+                self.last_check_time.isoformat() if self.last_check_time else None
+            ),
             "available_updates_count": len(self.available_updates),
             "pending_updates_count": len(self.pending_updates),
             "active_downloads": len(self.active_downloads),
@@ -838,17 +911,17 @@ class AutoUpdateSystem:
                 for update_type, timestamp in self.last_update_times.items()
             },
             "auto_update_enabled": self.config.auto_update_enabled,
-            "check_interval_hours": self.config.check_interval_hours
+            "check_interval_hours": self.config.check_interval_hours,
         }
 
     def get_update_history(self, limit: int = 50) -> List[Dict[str, Any]]:
         """Get update history."""
         recent_updates = sorted(
             self.update_history,
-            key=lambda u: getattr(u, 'timestamp', datetime.min),
-            reverse=True
+            key=lambda u: getattr(u, "timestamp", datetime.min),
+            reverse=True,
         )[:limit]
-        
+
         return [
             {
                 "update_type": update.update_type.value,
@@ -857,21 +930,24 @@ class AutoUpdateSystem:
                 "error_message": update.error_message,
                 "download_time": update.download_time,
                 "install_time": update.install_time,
-                "bytes_downloaded": update.bytes_downloaded
+                "bytes_downloaded": update.bytes_downloaded,
             }
             for update in recent_updates
         ]
 
     # Callback setters
-    def set_update_available_callback(self, callback: Callable[[UpdateInfo], None]):
+    def set_update_available_callback(
+            self, callback: Callable[[UpdateInfo], None]):
         """Set callback for when updates are available."""
         self.update_available_callback = callback
 
-    def set_update_completed_callback(self, callback: Callable[[UpdateResult], None]):
+    def set_update_completed_callback(
+            self, callback: Callable[[UpdateResult], None]):
         """Set callback for when updates complete."""
         self.update_completed_callback = callback
 
-    def set_update_progress_callback(self, callback: Callable[[UpdateType, int], None]):
+    def set_update_progress_callback(
+            self, callback: Callable[[UpdateType, int], None]):
         """Set callback for update progress."""
         self.update_progress_callback = callback
 
@@ -892,10 +968,13 @@ class AutoUpdateSystem:
             if self.update_completed_callback:
                 self.update_completed_callback(result)
 
+
 # Add missing import for aiohttp
 try:
     import aiohttp
 except ImportError:
     # Fallback without aiohttp
     aiohttp = None
-    logging.getLogger(__name__).warning("aiohttp not available, some features may not work")
+    logging.getLogger(__name__).warning(
+        "aiohttp not available, some features may not work"
+    )

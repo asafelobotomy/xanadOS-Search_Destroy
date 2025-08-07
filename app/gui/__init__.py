@@ -12,6 +12,4 @@ except ImportError:
     # Some GUI components may not be available
     pass
 
-__all__ = [
-    'MainWindow'
-]
+__all__ = ["MainWindow"]

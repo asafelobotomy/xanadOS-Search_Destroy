@@ -25,17 +25,24 @@
 <td width="50%" valign="top">
 
 ### 🔍 **Scanning & Detection**
-- 🔍 **Full System Scanning** - Comprehensive file system scanning with ClamAV integration
-- 🔄 **Real-time Monitoring** - Automatic file system watching and background scanning
-- 🎯 **Smart Priority Scanning** - Event-driven scanning with configurable priorities
-- ⏱️ **Scheduled Scanning** - Automated daily, weekly, and monthly scan scheduling
+
+- 🔍 **Full System Scanning**
+  - Comprehensive file system scanning with ClamAV integration
+- 🔄 **Real-time Monitoring**
+  - Automatic file system watching and background scanning
+- 🎯 **Smart Priority Scanning**
+  - Event-driven scanning with configurable priorities
+- ⏱️ **Scheduled Scanning**
+  - Automated daily, weekly, and monthly scan scheduling
 
 </td>
 <td width="50%" valign="top">
 
 ### 🛡️ **Security & Management**
+
 - 🔒 **Quarantine Management** - Safe isolation and restoration of infected files
-- 🛡️ **Security Validation** - Input validation and privilege escalation protection
+- 🛡️ **Security Validation**
+  - Input validation and privilege escalation protection
 - 🔔 **System Tray Integration** - Background operation with notification support
 - 📦 **Flatpak Distribution** - Secure sandboxed application packaging
 
@@ -45,14 +52,18 @@
 <td width="50%" valign="top">
 
 ### 📊 **Reporting & Analysis**
-- 📊 **Advanced Reporting** - Detailed scan reports with threat analysis and export options
+
+- 📊 **Advanced Reporting**
+  - Detailed scan reports with threat analysis and export options
 - 📋 **Multi-format Export** - Reports in JSON, CSV, and HTML formats
-- 📈 **Performance Monitoring** - Memory optimization and UI responsiveness tracking
+- 📈 **Performance Monitoring**
+  - Memory optimization and UI responsiveness tracking
 
 </td>
 <td width="50%" valign="top">
 
 ### 🎨 **User Experience**
+
 - 🌙 **Dark/Light Themes** - Modern UI with theme switching support
 - 🚀 **Optimized Performance** - Smart memory management and responsive UI
 - 📱 **Intuitive Interface** - User-friendly design with advanced features
@@ -66,6 +77,7 @@
 ## 🚀 Quick Start
 
 ### ⚡ One-Command Setup
+
 ```bash
 # Clone and setup
 git clone https://github.com/asafelobotomy/xanadOS-Search_Destroy.git
@@ -79,6 +91,7 @@ make run-flatpak
 ```
 
 ### 🎯 Quick Run
+
 ```bash
 ./run.sh
 ```
@@ -128,6 +141,7 @@ make run-flatpak
 ```
 
 **✅ Advantages:**
+
 - Sandboxed security
 - Automatic dependency management
 - System integration
@@ -151,6 +165,7 @@ python app/main.py
 ```
 
 **✅ Advantages:**
+
 - Isolated environment
 - Development-friendly
 - Easy dependency management
@@ -206,6 +221,7 @@ python app/main.py          # Run in development mode
 ```
 
 **✅ Advantages:**
+
 - Development tools enabled
 - Debug logging
 - Hot reloading
@@ -314,6 +330,7 @@ python app/main.py          # Run in development mode
 <td width="33%" valign="top">
 
 ### 🔄 **Real-time Monitoring**
+
 - **File System Watcher**: Uses inotify for efficient file system event detection
 - **Event Processing**: Intelligent filtering and prioritization of file system events
 - **Background Scanner**: Multi-threaded background scanning with priority queues
@@ -323,6 +340,7 @@ python app/main.py          # Run in development mode
 <td width="33%" valign="top">
 
 ### 🛡️ **Security Architecture**
+
 - **Input Validation**: Comprehensive path and parameter validation
 - **Privilege Management**: Secure privilege escalation with proper containment
 - **Network Security**: SSL/TLS configuration and secure communication protocols
@@ -332,6 +350,7 @@ python app/main.py          # Run in development mode
 <td width="33%" valign="top">
 
 ### ⚡ **Performance Optimization**
+
 - **Async Operations**: Non-blocking file operations and UI updates
 - **Memory Management**: Intelligent garbage collection and memory optimization
 - **Database Optimization**: Efficient SQLite operations with proper indexing
@@ -346,6 +365,7 @@ python app/main.py          # Run in development mode
 ## 🔄 Recent Updates
 
 ### 🧹 **Repository Cleanup (August 2025)**
+
 - ✅ **Restructured project** for better organization and maintainability
 - ✅ **Consolidated packaging** files into `packaging/` directory
 - ✅ **Fixed import paths** throughout the codebase
@@ -355,12 +375,14 @@ python app/main.py          # Run in development mode
 - ✅ **Fixed window icon** display in application window and system tray
 
 ### 🛠️ **Path Corrections**
+
 - 📁 Icons moved from `icons/` → `packaging/icons/`
 - 📦 Flatpak files moved to `packaging/flatpak/`
 - 📚 Implementation docs organized in `docs/implementation-history/`
 - 🧪 Tests reorganized with unit and integration separation
 
 ### 🎯 **Improved Organization**
+
 - 🗂️ **Cleaner structure**: Reduced top-level directories from 13 to 8
 - 🔗 **Better imports**: Fixed all relative import paths
 - 📦 **Unified packaging**: All distribution files in one location
@@ -373,6 +395,7 @@ python app/main.py          # Run in development mode
 <div align="center">
 
 ### 📊 Test Statistics
+
 ```
 11 Test Files | 182 Test Cases | 95.2% Success Rate
 ```
@@ -384,6 +407,7 @@ python app/main.py          # Run in development mode
 <td width="50%" valign="top">
 
 ### 🧪 **Test Categories**
+
 - 🖥️ **GUI Components** - Interface and user interaction testing
 - 👁️ **Monitoring Systems** - Real-time file system monitoring
 - ⚡ **Performance** - Memory usage, scan speed, UI responsiveness
@@ -393,6 +417,7 @@ python app/main.py          # Run in development mode
 <td width="50%" valign="top">
 
 ### ▶️ **Running Tests**
+
 ```bash
 # Run all tests
 .venv/bin/python -m pytest tests/ -v
@@ -416,6 +441,7 @@ python app/main.py          # Run in development mode
 <td width="50%" valign="top">
 
 ### 🚀 **Speed & Efficiency**
+
 - **Scan Rate**: 1,000-5,000 files/minute
 - **Memory Usage**: <100MB typical
 - **Event Processing**: <1ms latency
@@ -425,6 +451,7 @@ python app/main.py          # Run in development mode
 <td width="50%" valign="top">
 
 ### 🔧 **Optimization Features**
+
 - **Multi-threading**: Configurable worker pools
 - **Memory Management**: Optimized garbage collection
 - **Database**: Indexed SQLite operations
@@ -439,6 +466,7 @@ python app/main.py          # Run in development mode
 ## ⚙️ Configuration
 
 ### 📁 Configuration Files
+
 ```bash
 config/
 ├── 🔧 default_config.json     # Default application settings
@@ -447,6 +475,7 @@ config/
 ```
 
 ### 🌐 Environment Variables
+
 ```bash
 export XANADOS_SD_CONFIG_PATH="/path/to/config"     # Custom config directory
 export XANADOS_SD_LOG_LEVEL="DEBUG"                # Logging verbosity
@@ -526,6 +555,7 @@ export XANADOS_SD_TEMP_PATH="/tmp/sd_temp"         # Temporary files
 <br>
 
 **Problem**: `ImportError: No module named 'PyQt6'`
+
 ```bash
 # Solution: Install PyQt6 in virtual environment
 source .venv/bin/activate
@@ -533,6 +563,7 @@ pip install PyQt6>=6.5.0
 ```
 
 **Problem**: `qt.qpa.plugin: Could not load the Qt platform plugin`
+
 ```bash
 # Solution: Install Qt platform plugins
 sudo apt-get install qt6-base-dev qt6-wayland
@@ -546,6 +577,7 @@ sudo apt-get install qt6-base-dev qt6-wayland
 <br>
 
 **Problem**: `pyclamd.ConnectionError: Could not connect to clamd server`
+
 ```bash
 # Solution: Start ClamAV daemon
 sudo systemctl start clamav-daemon
@@ -553,6 +585,7 @@ sudo systemctl enable clamav-daemon
 ```
 
 **Problem**: `Database outdated` warnings
+
 ```bash
 # Solution: Update virus definitions
 sudo freshclam
@@ -566,6 +599,7 @@ sudo freshclam
 <br>
 
 **Problem**: Flatpak build fails
+
 ```bash
 # Solution: Check flatpak-builder is installed
 sudo apt install flatpak-builder
@@ -574,6 +608,7 @@ sudo apt install flatpak-builder
 ```
 
 **Problem**: Icon not displaying in GUI
+
 ```bash
 # Solution: Verify icon paths (automatically fixed in recent update)
 ls -la packaging/icons/org.xanados.SearchAndDestroy*.png
@@ -587,6 +622,7 @@ ls -la packaging/icons/org.xanados.SearchAndDestroy*.png
 <br>
 
 **Problem**: `Permission denied` when scanning system directories
+
 ```bash
 # Solution: Run with appropriate permissions or modify scan paths
 # Note: Full system scanning may require elevated privileges
@@ -595,6 +631,7 @@ ls -la packaging/icons/org.xanados.SearchAndDestroy*.png
 </details>
 
 ### 📞 **Getting Help**
+
 - 📋 Check existing [GitHub Issues](https://github.com/asafelobotomy/xanadOS-Search_Destroy/issues)
 - 📝 Review the [Development Guide](docs/DEVELOPMENT.md)
 - 🐛 Report bugs with detailed error messages and system information
@@ -610,6 +647,7 @@ ls -la packaging/icons/org.xanados.SearchAndDestroy*.png
 </div>
 
 ### 🚀 **Getting Started**
+
 1. **🍴 Fork** the repository
 2. **🌟 Create** your feature branch (`git checkout -b feature/amazing-feature`)
 3. **💾 Commit** your changes (`git commit -m 'Add amazing feature'`)
@@ -617,6 +655,7 @@ ls -la packaging/icons/org.xanados.SearchAndDestroy*.png
 5. **📋 Open** a Pull Request
 
 ### 📝 **Development Guidelines**
+
 This project uses **GitHub Copilot** with custom instructions for consistent development practices.
 
 **📚 Quick Access**: `Ctrl+Shift+P` → "Tasks: Run Task" → "Show Copilot Instructions"
