@@ -466,8 +466,9 @@ class FileScanner:
             max_workers: int = 4,
             **kwargs):
         """Scan multiple files with progress tracking and enhanced reporting."""
-ScanType,
-ThreatInfo,
+        from utils.scan_reports import (
+            ScanType,
+            ThreatInfo,
             ThreatLevel,
         )
 
@@ -784,6 +785,7 @@ ThreatInfo,
         self, file_paths: List[str], scan_type, max_workers: int = 4, **kwargs
     ):
         """Scan files in batches to optimize memory usage."""
+        from utils.scan_reports import (
             ScanType,
             ThreatInfo,
             ThreatLevel,

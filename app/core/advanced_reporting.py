@@ -1653,7 +1653,10 @@ except ImportError:
     )()
 
 try:
-        except ImportError:
+    # Try to import actual pandas and numpy
+    import pandas as pd
+    import numpy as np
+except ImportError:
     # Mock pandas and numpy
     pd = type("pd",
               (),

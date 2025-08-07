@@ -1050,14 +1050,14 @@ class HeuristicAnalysisEngine:
             ".exe": [b"MZ"],
             ".dll": [b"MZ"],
             ".pd": [b"%PDF"],
-            r".zip": [b"PK\x03\x04", br"PK\x05\x06"],
-            r".jpg": [b"\xff\xd8\xf"],
-            r".png": [b"\x89PNG"],
+            ".zip": [b"PK\x03\x04", b"PK\x05\x06"],
+            ".jpg": [b"\xff\xd8\xff"],
+            ".png": [b"\x89PNG"],
             ".gi": [b"GIF87a", b"GIF89a"],
-            r".mp3": [b"ID3", b"\xff\xfb"],
+            ".mp3": [b"ID3", b"\xff\xfb"],
             ".mp4": [b"ftyp"],
-            r".doc": [b"\xd0\xcf\x11\xe0"],
-            r".xls": [b"\xd0\xcf\x11\xe0"],
+            ".doc": [b"\xd0\xcf\x11\xe0"],
+            ".xls": [b"\xd0\xcf\x11\xe0"],
         }
 
         if extension in type_mappings:
