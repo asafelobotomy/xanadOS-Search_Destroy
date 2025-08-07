@@ -35,25 +35,19 @@ class ClickableFrame(QFrame):
 
 
 class NoWheelComboBox(QComboBox):
-    """A QComboBox that ignores wheel events to prevent accidental changes."""
+    """A QComboBox that completely ignores wheel events to prevent accidental changes."""
     
     def wheelEvent(self, event: QWheelEvent):
-        """Ignore wheel events when the combo box doesn't have focus."""
-        if not self.hasFocus():
-            event.ignore()
-        else:
-            super().wheelEvent(event)
+        """Completely ignore all wheel events."""
+        event.ignore()
 
 
 class NoWheelSpinBox(QSpinBox):
-    """A QSpinBox that ignores wheel events to prevent accidental changes."""
+    """A QSpinBox that completely ignores wheel events to prevent accidental changes."""
     
     def wheelEvent(self, event: QWheelEvent):
-        """Ignore wheel events when the spin box doesn't have focus."""
-        if not self.hasFocus():
-            event.ignore()
-        else:
-            super().wheelEvent(event)
+        """Completely ignore all wheel events."""
+        event.ignore()
 
 
 class MainWindow(QMainWindow):
