@@ -315,8 +315,8 @@ class ClamAVWrapper:
             options.append("--scan-ole2")
 
         # PDF scanning
-        if kwargs.get("scan_pdf", scan_settings.get("scan_pdf", True)):
-            options.append("--scan-pdf")
+        if kwargs.get("scan_pd", scan_settings.get("scan_pd", True)):
+            options.append("--scan-pd")
 
         # HTML scanning
         if kwargs.get("scan_html", scan_settings.get("scan_html", True)):
@@ -329,7 +329,7 @@ class ClamAVWrapper:
                 "scan_executable",
                 True)):
             options.append("--scan-pe")
-            options.append("--scan-elf")
+            options.append("--scan-el")
 
         # File size limits
         max_filesize = kwargs.get(

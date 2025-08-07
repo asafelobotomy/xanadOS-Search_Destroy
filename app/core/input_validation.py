@@ -3,12 +3,11 @@
 Security input validation module for S&D - Search & Destroy
 Provides comprehensive input validation and security checks
 """
-import hashlib
 import logging
-import os
 import stat
 from pathlib import Path
 from typing import List, Optional, Tuple
+import os
 
 # Maximum file sizes (in bytes)
 MAX_FILE_SIZE = 100 * 1024 * 1024  # 100MB
@@ -39,7 +38,7 @@ DANGEROUS_EXTENSIONS = {
     ".bat",
     ".cmd",
     ".com",
-    ".pif",
+    ".pi",
     ".vbs",
     ".js",
     ".jar",
@@ -160,7 +159,9 @@ class PathValidator:
                 if self._is_archive(file_obj):
                     if file_size > MAX_ARCHIVE_SIZE:
                         return (
-                            False, f"Archive too large: {file_size} bytes > {MAX_ARCHIVE_SIZE}", )
+                            False,
+                                f"Archive too large: {file_size} bytes > {MAX_ARCHIVE_SIZE}",
+                                )
 
             except OSError as e:
                 return False, f"Could not check file size: {e}"
@@ -206,7 +207,7 @@ class PathValidator:
 
         # Check for suspicious file names
         suspicious_names = {
-            "autorun.inf",
+            "autorun.in",
             "desktop.ini",
             "thumbs.db",
             ".htaccess",

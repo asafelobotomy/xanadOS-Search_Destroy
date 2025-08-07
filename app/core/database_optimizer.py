@@ -8,7 +8,6 @@ import queue
 import sqlite3
 import threading
 import time
-import weakref
 from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path

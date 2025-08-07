@@ -4,9 +4,7 @@ RKHunter (Rootkit Hunter) integration wrapper for S&D - Search & Destroy
 Provides rootkit detection capabilities complementing ClamAV
 """
 
-import json
 import logging
-import os
 import subprocess
 import time
 from dataclasses import dataclass
@@ -14,6 +12,7 @@ from datetime import datetime
 from enum import Enum
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
+import os
 
 
 class RKHunterResult(Enum):
@@ -637,7 +636,7 @@ WHITELISTED_IS_WHITE=1
                 (["pacman", "-S", "--noconfirm", "rkhunter"], "pacman"),
                 (["apt-get", "install", "-y", "rkhunter"], "apt"),
                 (["yum", "install", "-y", "rkhunter"], "yum"),
-                (["dnf", "install", "-y", "rkhunter"], "dnf"),
+                (["dn", "install", "-y", "rkhunter"], "dn"),
                 (["zypper", "install", "-y", "rkhunter"], "zypper"),
             ]
 
@@ -663,10 +662,14 @@ WHITELISTED_IS_WHITE=1
                         if self.available:
                             self._initialize_config()
                             return (
-                                True, f"RKHunter installed successfully using {pm_name}", )
+                                True,
+                                    f"RKHunter installed successfully using {pm_name}",
+                                    )
                         else:
                             return (
-                                False, f"Installation appeared successful but RKHunter not found", )
+                                False,
+                                    "Installation appeared successful but RKHunter not found",
+                                    )
                     else:
                         self.logger.warning(
                             f"Installation with {pm_name} failed: {

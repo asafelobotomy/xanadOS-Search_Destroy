@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """
-Real-time monitor that coordinates file watching, event processing, and background scanning
+Real-time monitor that coordinates file watching, event processing, \
+    and background scanning
 Main entry point for Phase 3 real-time monitoring system
 """
 import logging

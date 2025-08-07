@@ -9,17 +9,15 @@ import gzip
 import hashlib
 import json
 import logging
-import os
 import sqlite3
 import ssl
 import time
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from enum import Enum
-from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple, Union
+import os
 
-import aiofiles
 import aiohttp
 import boto3
 from botocore.exceptions import ClientError
@@ -939,11 +937,11 @@ class CloudIntegrationSystem:
                 return []
 
             if hash_value:
-                url = f"https://www.virustotal.com/vtapi/v2/file/report"
+                url = "https://www.virustotal.com/vtapi/v2/file/report"
                 params = {"apikey": api_key, "resource": hash_value}
             else:
                 # Get recent intelligence
-                url = f"https://www.virustotal.com/vtapi/v2/domain/report"
+                url = "https://www.virustotal.com/vtapi/v2/domain/report"
                 params = {"apikey": api_key,
                           "domain": "example.com"}  # Placeholder
 

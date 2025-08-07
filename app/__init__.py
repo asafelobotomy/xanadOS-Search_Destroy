@@ -4,7 +4,6 @@ xanadOS Search & Destroy - Main Application Package
 A modern GUI for ClamAV antivirus scanning with real-time monitoring.
 """
 
-import os
 from pathlib import Path
 
 

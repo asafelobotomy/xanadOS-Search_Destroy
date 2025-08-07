@@ -1,15 +1,20 @@
-#!/usr/bin/env python3
 """
-GUI components for S&D application.
-Includes main window, dialogs, and UI widgets.
+GUI module for xanadOS Search & Destroy application.
+Contains all graphical user interface components.
 """
-
-from gui.main_window import MainWindow
 
 try:
-    from gui.scan_thread import ScanThread
-except ImportError:
-    # Some GUI components may not be available
-    pass
+    from .main_window import MainWindow
+    from .scan_dialog import ScanDialog  
+    from .settings_dialog import SettingsDialog
+except ImportError as e:
+    print(f"Warning: Could not import GUI components: {e}")
+    MainWindow = None
+    ScanDialog = None
+    SettingsDialog = None
 
-__all__ = ["MainWindow"]
+__all__ = [
+    'MainWindow',
+    'ScanDialog',
+    'SettingsDialog'
+]

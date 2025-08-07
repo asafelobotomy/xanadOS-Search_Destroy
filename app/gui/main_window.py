@@ -11,8 +11,8 @@ from gui.rkhunter_components import RKHunterScanDialog, RKHunterScanThread
 from gui.scan_thread import ScanThread
 from monitoring import MonitorConfig, MonitorState, RealTimeMonitor
 from PyQt6.QtCore import Qt, QTimer, pyqtSignal
-from PyQt6.QtGui import (
-    QAction,
+
+QAction,
     QFont,
     QIcon,
     QKeySequence,
@@ -21,7 +21,6 @@ from PyQt6.QtGui import (
     QShortcut,
     QWheelEvent,
 )
-from PyQt6.QtWidgets import (
     QCheckBox,
     QComboBox,
     QDialog,
@@ -51,7 +50,7 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 from utils.config import load_config, save_config
-from utils.scan_reports import (
+
     ScanReportManager,
     ScanResult,
     ScanType,
@@ -67,7 +66,7 @@ class ClickableFrame(QFrame):
 
     clicked = pyqtSignal()
 
-    def mousePressEvent(self, event: QMouseEvent):
+def mousePressEvent(self, event: QMouseEvent):
         if event.button() == Qt.MouseButton.LeftButton:
             self.clicked.emit()
         super().mousePressEvent(event)
@@ -76,7 +75,7 @@ class ClickableFrame(QFrame):
 class NoWheelComboBox(QComboBox):
     """A QComboBox that completely ignores wheel events to prevent accidental changes."""
 
-    def wheelEvent(self, event: QWheelEvent):
+def wheelEvent(self, event: QWheelEvent):
         """Completely ignore all wheel events."""
         event.ignore()
 
@@ -84,13 +83,13 @@ class NoWheelComboBox(QComboBox):
 class NoWheelSpinBox(QSpinBox):
     """A QSpinBox that completely ignores wheel events to prevent accidental changes."""
 
-    def wheelEvent(self, event: QWheelEvent):
+def wheelEvent(self, event: QWheelEvent):
         """Completely ignore all wheel events."""
         event.ignore()
 
 
 class MainWindow(QMainWindow):
-    def __init__(self):
+def __init__(self):
         super().__init__()
         self.config = load_config()
         self.scanner = FileScanner()
@@ -99,34 +98,34 @@ class MainWindow(QMainWindow):
         self.current_scan_thread = None
         self.current_rkhunter_thread = None
 
-        # Quick scan state tracking
+# Quick scan state tracking
         self.is_quick_scan_running = False
 
-        # Initialize real-time monitoring
+# Initialize real-time monitoring
         self.real_time_monitor = None
         self.monitoring_enabled = self.config.get("security_settings", {}).get(
             "real_time_protection", False
         )
 
-        # Firewall change tracking - to avoid reporting GUI changes as
-        # "external"
+# Firewall change tracking - to avoid reporting GUI changes as
+# "external"
         self._firewall_change_from_gui = False
 
-        # Performance monitoring
-        from core.performance_monitor import get_performance_monitor
+# Performance monitoring
+from core.performance_monitor import get_performance_monitor
 
         self.performance_monitor = get_performance_monitor()
         self.performance_monitor.add_optimization_callback(
             self.handle_performance_optimization
         )
 
-        # Tooltip state management
+# Tooltip state management
         self.tooltip_detailed = False
         self.tooltip_timer = QTimer()
         self.tooltip_timer.setSingleShot(True)
         self.tooltip_timer.timeout.connect(self.show_detailed_tooltip)
 
-        # Theme management - default to dark mode
+# Theme management - default to dark mode
         self.current_theme = self.config.get("theme", "dark")
 
         self.init_ui()
@@ -134,29 +133,29 @@ class MainWindow(QMainWindow):
         self.setup_accessibility()  # Add accessibility features
         self.apply_theme()
 
-        # Initialize real-time monitoring (with error handling)
+# Initialize real-time monitoring (with error handling)
         self.init_real_time_monitoring_safe()
 
-        # Use QTimer to update status after UI is fully initialized
+# Use QTimer to update status after UI is fully initialized
         QTimer.singleShot(100, self.update_definition_status)
         QTimer.singleShot(200, self.update_protection_ui_after_init)
-        # Add a safety net timer to ensure status is never left as
-        # "Initializing..."
+# Add a safety net timer to ensure status is never left as
+# "Initializing..."
         QTimer.singleShot(1000, self.ensure_protection_status_final)
 
-        # Load persisted activity logs after UI is created
+# Load persisted activity logs after UI is created
         QTimer.singleShot(500, self.load_activity_logs)
 
-        # Activity log saving is now handled by unified timer system for better performance
-        # (Consolidated with other periodic tasks to reduce timer overhead)
+# Activity log saving is now handled by unified timer system for better performance
+# (Consolidated with other periodic tasks to reduce timer overhead)
 
-        # Initialize unified timer system for performance optimization
+# Initialize unified timer system for performance optimization
         self.init_unified_timer_system()
 
-        # Start performance monitoring
+# Start performance monitoring
         self.performance_monitor.start_monitoring()
 
-    def get_theme_color(self, color_type):
+def get_theme_color(self, color_type):
         """Get theme-appropriate color for any UI element."""
         if self.current_theme == "dark":
             colors = {
@@ -178,7 +177,7 @@ class MainWindow(QMainWindow):
         else:  # light theme
             colors = {
                 "background": "#fefefe",
-                "secondary_bg": "#ffffff",
+                "secondary_bg": "#fffff",
                 "tertiary_bg": "#f5f5f5",
                 "primary_text": "#2c2c2c",
                 "secondary_text": "#666",
@@ -194,7 +193,7 @@ class MainWindow(QMainWindow):
             }
         return colors.get(color_type, colors["primary_text"])
 
-    def get_status_color(self, status_type):
+def get_status_color(self, status_type):
         """Get theme-appropriate color for status indicators."""
         if self.current_theme == "dark":
             colors = {
@@ -210,27 +209,27 @@ class MainWindow(QMainWindow):
             }
         return colors.get(status_type, colors["error"])
 
-    def init_unified_timer_system(self):
+def init_unified_timer_system(self):
         """Initialize a unified timer system for better performance."""
-        # Create a master timer for coordinated updates
+# Create a master timer for coordinated updates
         self.master_timer = QTimer()
         self.master_timer.timeout.connect(self.unified_timer_update)
 
-        # Track update cycles to reduce frequency of expensive operations
+# Track update cycles to reduce frequency of expensive operations
         self.timer_cycle_count = 0
 
-        # Start with a moderate interval (use 0ms for idle processing)
+# Start with a moderate interval (use 0ms for idle processing)
         self.master_timer.start(1000)  # 1 second base interval
 
-        # Performance monitoring
+# Performance monitoring
         self.performance_stats = {
             "timer_calls": 0,
             "update_times": [],
             "skip_count": 0}
 
-    def unified_timer_update(self):
+def unified_timer_update(self):
         """Central timer update method for performance optimization."""
-        import time
+import time
 
         start_time = time.time()
 
@@ -238,54 +237,54 @@ class MainWindow(QMainWindow):
             self.timer_cycle_count += 1
             self.performance_stats["timer_calls"] += 1
 
-            # Only update firewall status every 5 cycles (5 seconds)
+# Only update firewall status every 5 cycles (5 seconds)
             if self.timer_cycle_count % 5 == 0:
                 self.update_firewall_status()
 
-            # Only update monitoring stats every 10 cycles (10 seconds)
+# Only update monitoring stats every 10 cycles (10 seconds)
             if self.timer_cycle_count % 10 == 0:
                 if hasattr(
                         self, "stats_timer") and hasattr(
                         self, "real_time_monitor"):
                     self.update_monitoring_statistics()
 
-                # Update system tray tooltip with performance info
+# Update system tray tooltip with performance info
                 self.update_system_tray_tooltip()
 
-            # Save activity logs every 30 cycles (30 seconds)
+# Save activity logs every 30 cycles (30 seconds)
             if self.timer_cycle_count % 30 == 0:
                 self.save_activity_logs()
 
-            # Reset counter to prevent overflow
+# Reset counter to prevent overflow
             if self.timer_cycle_count >= 300:  # Reset every 5 minutes
                 self.timer_cycle_count = 0
 
         except Exception as e:
             print(f"Error in unified timer update: {e}")
 
-        # Track performance
+# Track performance
         execution_time = time.time() - start_time
         self.performance_stats["update_times"].append(execution_time)
 
-        # Keep only last 100 measurements
+# Keep only last 100 measurements
         if len(self.performance_stats["update_times"]) > 100:
             self.performance_stats["update_times"] = self.performance_stats[
                 "update_times"
             ][-100:]
 
-    def handle_performance_optimization(self, pressure_type: str):
+def handle_performance_optimization(self, pressure_type: str):
         """Handle performance optimization events."""
         try:
             if pressure_type == "cpu_pressure":
-                # Reduce update frequency during high CPU usage
+# Reduce update frequency during high CPU usage
                 if hasattr(self, "master_timer"):
                     self.master_timer.setInterval(2000)  # Slower updates
 
                 print("🔧 Applied CPU optimization: Reduced update frequency")
 
             elif pressure_type == "memory_pressure":
-                # Force garbage collection
-                import gc
+# Force garbage collection
+import gc
 
                 gc.collect()
 
@@ -294,7 +293,7 @@ class MainWindow(QMainWindow):
         except Exception as e:
             print(f"Error in performance optimization: {e}")
 
-    def get_performance_card_data(self) -> tuple:
+def get_performance_card_data(self) -> tuple:
         """Get concise performance data for system tray tooltip."""
         try:
             summary = self.performance_monitor.get_performance_summary()
@@ -317,7 +316,7 @@ class MainWindow(QMainWindow):
                 status = "Poor"
                 color = "#E74C3C"  # Red
 
-            # Create compact metrics for detailed tooltip if needed
+# Create compact metrics for detailed tooltip if needed
             details = ""
             if current:
                 cpu = current.get("cpu_percent", 0)
@@ -329,12 +328,12 @@ class MainWindow(QMainWindow):
         except Exception as e:
             return "Error", "#E74C3C", f"Monitor error: {e}"
 
-    def init_ui(self):
+def init_ui(self):
         self.setWindowTitle("S&D - Search & Destroy")
         self.setMinimumSize(1000, 750)
         self.resize(1200, 850)
 
-        # Set window icon
+# Set window icon
         icon_path = (
             Path(__file__).parent.parent.parent
             / "packaging"
@@ -344,19 +343,19 @@ class MainWindow(QMainWindow):
         if icon_path.exists():
             self.setWindowIcon(QIcon(str(icon_path)))
 
-        # Central widget
+# Central widget
         central_widget = QWidget()
         self.setCentralWidget(central_widget)
 
-        # Main layout
+# Main layout
         main_layout = QVBoxLayout(central_widget)
         main_layout.setSpacing(10)
         main_layout.setContentsMargins(15, 15, 15, 15)
 
-        # Header section
+# Header section
         self.create_header_section(main_layout)
 
-        # Tab widget for different views
+# Tab widget for different views
         self.tab_widget = QTabWidget()
         self.create_dashboard_tab()  # Add dashboard as first tab
         self.create_scan_tab()
@@ -367,28 +366,28 @@ class MainWindow(QMainWindow):
 
         main_layout.addWidget(self.tab_widget)
 
-        # Status bar
+# Status bar
         self.create_status_bar()
 
-        # Menu bar
+# Menu bar
         self.create_menu_bar()
 
-    def create_header_section(self, layout):
+def create_header_section(self, layout):
         header_frame = QFrame()
         header_frame.setObjectName("headerFrame")
         header_layout = QHBoxLayout(header_frame)
 
-        # App icon and title
+# App icon and title
         title_layout = QHBoxLayout()
 
-        # Load and display the actual S&D icon
+# Load and display the actual S&D icon
         self.icon_label = QLabel()
-        # Restored to 128x128 as requested
+# Restored to 128x128 as requested
         self.icon_label.setFixedSize(128, 128)
         self.update_icon_for_theme()
         title_layout.addWidget(self.icon_label)
 
-        # App title
+# App title
         title_label = QLabel("S&D - Search & Destroy")
         title_label.setObjectName("appTitle")
         title_font = QFont()
@@ -400,7 +399,7 @@ class MainWindow(QMainWindow):
 
         header_layout.addLayout(title_layout)
 
-        # Quick actions
+# Quick actions
         actions_layout = QHBoxLayout()
 
         self.quick_scan_btn = QPushButton("Quick Scan")
@@ -410,19 +409,19 @@ class MainWindow(QMainWindow):
         )  # Increased size to prevent text cutoff
         self.quick_scan_btn.clicked.connect(self.quick_scan)
 
-        # Update definitions button with status
+# Update definitions button with status
         update_container = QVBoxLayout()
         update_btn = QPushButton("Update Definitions")
         update_btn.setObjectName("actionButton")
         update_btn.setMinimumSize(140, 40)  # Increased size for longer text
         update_btn.clicked.connect(self.update_definitions)
 
-        # Last update status label
+# Last update status label
         self.last_update_label = QLabel("Checking...")
         self.last_update_label.setObjectName("lastUpdateLabel")
         self.last_update_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
-        # Last checked status label
+# Last checked status label
         self.last_checked_label = QLabel("Checking...")
         self.last_checked_label.setObjectName("lastCheckedLabel")
         self.last_checked_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -435,7 +434,7 @@ class MainWindow(QMainWindow):
 
         about_btn = QPushButton("About")
         about_btn.setObjectName("actionButton")
-        # Increased size to prevent text cutoff
+# Increased size to prevent text cutoff
         about_btn.setMinimumSize(80, 40)
         about_btn.clicked.connect(self.show_about)
 
@@ -446,18 +445,18 @@ class MainWindow(QMainWindow):
         header_layout.addLayout(actions_layout)
         layout.addWidget(header_frame)
 
-    def create_dashboard_tab(self):
+def create_dashboard_tab(self):
         """Create an overview dashboard tab."""
         dashboard_widget = QWidget()
         layout = QVBoxLayout(dashboard_widget)
         layout.setSpacing(20)
         layout.setContentsMargins(25, 25, 25, 25)
 
-        # Security Status Overview
+# Security Status Overview
         status_row = QHBoxLayout()
         status_row.setSpacing(15)
 
-        # Protection Status Card - using strawberry palette
+# Protection Status Card - using strawberry palette
         self.protection_card = self.create_clickable_status_card(
             "Real-Time Protection",
             "Active" if self.monitoring_enabled else "Inactive",
@@ -468,11 +467,11 @@ class MainWindow(QMainWindow):
                 else "Click to enable protection"
             ),
         )
-        # Connect the click signal
+# Connect the click signal
         self.protection_card.clicked.connect(
             self.toggle_protection_from_dashboard)
 
-        # Firewall Status Card - using firewall palette
+# Firewall Status Card - using firewall palette
         firewall_status = get_firewall_status()
         firewall_active = firewall_status.get("is_active", False)
         self.firewall_card = self.create_clickable_status_card(
@@ -485,20 +484,20 @@ class MainWindow(QMainWindow):
                 else "Click to enable firewall"
             ),
         )
-        # Connect the click signal
+# Connect the click signal
         self.firewall_card.clicked.connect(self.toggle_firewall_from_dashboard)
 
-        # Last Scan Card - now clickable
+# Last Scan Card - now clickable
         self.last_scan_card = self.create_clickable_status_card(
             "Last Scan",
             "Not scanned yet",  # Will be updated dynamically
             "#17a2b8",
             "Click to go to Scan tab",  # Updated description
         )
-        # Connect the click signal
+# Connect the click signal
         self.last_scan_card.clicked.connect(self.open_scan_tab)
 
-        # Threats Card - using strawberry palette
+# Threats Card - using strawberry palette
         self.threats_card = self.create_status_card(
             "Threats Found",
             "0",  # Will be updated dynamically
@@ -518,13 +517,13 @@ class MainWindow(QMainWindow):
         activity_layout = QVBoxLayout(activity_group)
 
         self.dashboard_activity = QListWidget()
-        # Remove height restriction to allow it to expand
+# Remove height restriction to allow it to expand
         self.dashboard_activity.setAlternatingRowColors(True)
-        # Set custom styling for activity list
+# Set custom styling for activity list
         self.setup_activity_list_styling()
         activity_layout.addWidget(self.dashboard_activity)
 
-        # Show more link
+# Show more link
         show_more_btn = QPushButton("View All Activity →")
         show_more_btn.setFlat(True)
         show_more_btn.clicked.connect(
@@ -536,10 +535,10 @@ class MainWindow(QMainWindow):
 
         layout.addStretch()
 
-        # Add as first tab
+# Add as first tab
         self.tab_widget.addTab(dashboard_widget, "Dashboard")
 
-    def create_status_card(self, title, value, color, description):
+def create_status_card(self, title, value, color, description):
         """Create a modern status card widget."""
         card = QFrame()
         card.setObjectName("statusCard")
@@ -550,7 +549,7 @@ class MainWindow(QMainWindow):
         layout.setSpacing(8)
         layout.setContentsMargins(20, 15, 20, 15)
 
-        # Title
+# Title
         title_label = QLabel(title)
         title_label.setObjectName("cardTitle")
         title_font = QFont()
@@ -558,14 +557,14 @@ class MainWindow(QMainWindow):
         title_font.setWeight(QFont.Weight.Medium)
         title_label.setFont(title_font)
 
-        # Value (main status)
+# Value (main status)
         value_label = QLabel(value)
         value_label.setObjectName("cardValue")
         value_label.setStyleSheet(
             f"color: {color}; font-size: 20px; font-weight: bold;"
         )
 
-        # Description
+# Description
         desc_label = QLabel(description)
         desc_label.setObjectName("cardDescription")
         desc_label.setWordWrap(True)
@@ -580,7 +579,7 @@ class MainWindow(QMainWindow):
 
         return card
 
-    def create_clickable_status_card(self, title, value, color, description):
+def create_clickable_status_card(self, title, value, color, description):
         """Create a clickable modern status card widget."""
         card = ClickableFrame()
         card.setObjectName("statusCard")
@@ -591,7 +590,7 @@ class MainWindow(QMainWindow):
         layout.setSpacing(8)
         layout.setContentsMargins(20, 15, 20, 15)
 
-        # Title
+# Title
         title_label = QLabel(title)
         title_label.setObjectName("cardTitle")
         title_font = QFont()
@@ -599,14 +598,14 @@ class MainWindow(QMainWindow):
         title_font.setWeight(QFont.Weight.Medium)
         title_label.setFont(title_font)
 
-        # Value (main status)
+# Value (main status)
         value_label = QLabel(value)
         value_label.setObjectName("cardValue")
         value_label.setStyleSheet(
             f"color: {color}; font-size: 20px; font-weight: bold;"
         )
 
-        # Description
+# Description
         desc_label = QLabel(description)
         desc_label.setObjectName("cardDescription")
         desc_label.setWordWrap(True)
@@ -621,9 +620,9 @@ class MainWindow(QMainWindow):
 
         return card
 
-    def toggle_protection_from_dashboard(self):
+def toggle_protection_from_dashboard(self):
         """Toggle protection when the dashboard status card is clicked."""
-        # If monitor wasn't initialized, try to initialize it first
+# If monitor wasn't initialized, try to initialize it first
         if self.real_time_monitor is None:
             print("🔄 Initializing monitoring system from dashboard...")
             success = self.init_real_time_monitoring_safe()
@@ -636,14 +635,14 @@ class MainWindow(QMainWindow):
         self.monitoring_enabled = not self.monitoring_enabled
         self.update_protection_status_card()
 
-        # Update the protection tab if it exists
+# Update the protection tab if it exists
         if hasattr(self, "protection_toggle_btn"):
             if self.monitoring_enabled:
                 self.start_real_time_protection()
             else:
                 self.stop_real_time_protection()
         else:
-            # Just update the config if the protection tab doesn't exist yet
+# Just update the config if the protection tab doesn't exist yet
             self.config["security_settings"] = self.config.get(
                 "security_settings", {})
             self.config["security_settings"][
@@ -660,18 +659,18 @@ class MainWindow(QMainWindow):
                     "Real-time protection disabled from dashboard"
                 )
 
-    def toggle_firewall_from_dashboard(self):
+def toggle_firewall_from_dashboard(self):
         """Toggle firewall when the dashboard status card is clicked."""
-        # Get current firewall status
+# Get current firewall status
         current_status = get_firewall_status()
         is_currently_active = current_status.get("is_active", False)
 
-        # Toggle the firewall (enable if currently disabled, disable if
-        # currently enabled)
+# Toggle the firewall (enable if currently disabled, disable if
+# currently enabled)
         enable_firewall = not is_currently_active
 
-        # Show confirmation dialog for critical operations
-        from PyQt6.QtWidgets import QMessageBox
+# Show confirmation dialog for critical operations
+from PyQt6.QtWidgets import QMessageBox
 
         if enable_firewall:
             action = "enable"
@@ -691,19 +690,19 @@ class MainWindow(QMainWindow):
         if reply != QMessageBox.StandardButton.Yes:
             return
 
-        # Show info about authentication
+# Show info about authentication
         self.add_activity_message(
             f"🔒 Requesting admin privileges to {action} firewall..."
         )
 
-        # Mark that this firewall change is from the GUI
+# Mark that this firewall change is from the GUI
         self._firewall_change_from_gui = True
 
-        # Perform the firewall toggle operation
+# Perform the firewall toggle operation
         result = toggle_firewall(enable_firewall)
 
         if result.get("success", False):
-            # Success - show message and update UI
+# Success - show message and update UI
             self.add_activity_message(
                 f"🔥 Firewall {action}d successfully from dashboard"
             )
@@ -712,17 +711,17 @@ class MainWindow(QMainWindow):
                 "Firewall Control",
                 str(result.get("message", f"Firewall {action}d successfully")),
             )
-            # Force immediate status update
+# Force immediate status update
             self.update_firewall_status()
             self.update_firewall_status_card()
         else:
-            # Error - show error message
-            # Reset the flag since the operation failed
+# Error - show error message
+# Reset the flag since the operation failed
             self._firewall_change_from_gui = False
 
             error_msg = str(result.get("error", "Unknown error"))
 
-            # Check if it's a permission/authentication error
+# Check if it's a permission/authentication error
             if (
                 "permission denied" in error_msg.lower()
                 or "authentication" in error_msg.lower()
@@ -734,8 +733,8 @@ class MainWindow(QMainWindow):
                 self.show_themed_message_box(
                     "warning",
                     "Authentication Required",
-                    f"Firewall control requires administrator privileges.\n"
-                    f"Authentication was cancelled or failed.",
+                    "Firewall control requires administrator privileges.\n"
+                    "Authentication was cancelled or failed.",
                 )
             else:
                 self.add_activity_message(
@@ -747,15 +746,15 @@ class MainWindow(QMainWindow):
                     f"Failed to {action} firewall:\n{error_msg}",
                 )
 
-    def open_scan_tab(self):
+def open_scan_tab(self):
         """Open the Scan tab when Last Scan card is clicked."""
-        # Switch to the Scan tab (index 1)
+# Switch to the Scan tab (index 1)
         self.tab_widget.setCurrentIndex(1)
 
-    def update_protection_status_card(self):
+def update_protection_status_card(self):
         """Update the protection status card with current state."""
         if hasattr(self, "protection_card"):
-            # Find the card's value label and update it
+# Find the card's value label and update it
             for child in self.protection_card.findChildren(QLabel):
                 if child.objectName() == "cardValue":
                     child.setText(
@@ -770,14 +769,14 @@ class MainWindow(QMainWindow):
                         else "Click to enable protection"
                     )
 
-    def update_firewall_status_card(self):
+def update_firewall_status_card(self):
         """Update the firewall status card with current state."""
         if hasattr(self, "firewall_card"):
-            # Get current firewall status
+# Get current firewall status
             firewall_status = get_firewall_status()
             is_active = firewall_status.get("is_active", False)
 
-            # Find the card's value label and update it
+# Find the card's value label and update it
             for child in self.firewall_card.findChildren(QLabel):
                 if child.objectName() == "cardValue":
                     child.setText("Active" if is_active else "Inactive")
@@ -791,7 +790,7 @@ class MainWindow(QMainWindow):
                         else "Click to enable firewall"
                     )
 
-    def update_protection_ui_after_init(self):
+def update_protection_ui_after_init(self):
         """Update Protection tab UI after full initialization to ensure state consistency."""
         print("🔄 Updating Protection tab UI after initialization...")
 
@@ -799,7 +798,7 @@ class MainWindow(QMainWindow):
             self, "protection_toggle_btn"
         ):
             if self.monitoring_enabled:
-                # Check if the monitor is actually running
+# Check if the monitor is actually running
                 if (
                     self.real_time_monitor
                     and hasattr(self.real_time_monitor, "state")
@@ -812,8 +811,8 @@ class MainWindow(QMainWindow):
                     self.protection_toggle_btn.setText("Stop")
                     print("✅ Protection tab UI updated to Active state")
                 else:
-                    # Monitoring was supposed to be enabled but isn't running -
-                    # reset
+# Monitoring was supposed to be enabled but isn't running -
+# reset
                     print(
                         "⚠️ Monitoring was enabled but not running - resetting to inactive"
                     )
@@ -824,7 +823,7 @@ class MainWindow(QMainWindow):
                         f"color: {color}; font-weight: bold; font-size: 12px; padding: 5px;")
                     self.protection_toggle_btn.setText("Start")
 
-                    # Update config to reflect actual state
+# Update config to reflect actual state
                     if "security_settings" not in self.config:
                         self.config["security_settings"] = {}
                     self.config["security_settings"]["real_time_protection"] = False
@@ -837,12 +836,12 @@ class MainWindow(QMainWindow):
                 self.protection_toggle_btn.setText("Start")
                 print("✅ Protection tab UI updated to Inactive state")
 
-            # Also update the dashboard card
+# Also update the dashboard card
             self.update_protection_status_card()
         else:
             print("⚠️ Protection tab UI elements not found - skipping update")
 
-    def ensure_protection_status_final(self):
+def ensure_protection_status_final(self):
         """Final safety net to ensure protection status is never left as 'Initializing...'"""
         print("🔍 Running final protection status check...")
 
@@ -852,7 +851,7 @@ class MainWindow(QMainWindow):
                 print(
                     "⚠️ Found status still showing 'Initializing...', forcing to Inactive"
                 )
-                # Force status to Inactive if still showing Initializing
+# Force status to Inactive if still showing Initializing
                 self.protection_status_label.setText("🔴 Inactive")
                 color = self.get_status_color("error")
                 self.protection_status_label.setStyleSheet(
@@ -866,7 +865,7 @@ class MainWindow(QMainWindow):
         else:
             print("⚠️ Protection status label not found")
 
-    def update_firewall_status(self):
+def update_firewall_status(self):
         """Update the firewall status display."""
         if not hasattr(self, "firewall_status_label"):
             return
@@ -874,41 +873,41 @@ class MainWindow(QMainWindow):
         try:
             status = get_firewall_status()
 
-            # Check if status has changed from previous check
+# Check if status has changed from previous check
             current_active_state = status.get("is_active", False)
             if not hasattr(self, "_last_firewall_state"):
                 self._last_firewall_state = None
 
-            # Only log if this is the first check or if status changed
+# Only log if this is the first check or if status changed
             if self._last_firewall_state != current_active_state:
                 if self._last_firewall_state is not None:  # Not the first check
-                    # Check if this change was made from within the GUI
+# Check if this change was made from within the GUI
                     if (
                         hasattr(self, "_firewall_change_from_gui")
                         and self._firewall_change_from_gui
                     ):
-                        # Reset the flag and don't report as external change
+# Reset the flag and don't report as external change
                         self._firewall_change_from_gui = False
                     else:
-                        # This is a genuine external change
+# This is a genuine external change
                         state_msg = "enabled" if current_active_state else "disabled"
                         self.add_activity_message(
                             f"🔥 Firewall {state_msg} externally")
                 self._last_firewall_state = current_active_state
 
-            # Update firewall name
+# Update firewall name
             if hasattr(self, "firewall_name_label"):
                 firewall_name = status.get("firewall_name", "Unknown")
                 self.firewall_name_label.setText(
                     str(firewall_name) if firewall_name else "Unknown"
                 )
 
-            # Update status based on firewall state
+# Update status based on firewall state
             is_active = status.get("is_active", False)
             error = status.get("error")
 
             if error:
-                # Error state
+# Error state
                 self.firewall_on_off_label.setText("ERROR")
                 self.firewall_on_off_label.setStyleSheet(
                     "font-weight: bold; font-size: 16px; color: #F14666;"
@@ -919,7 +918,7 @@ class MainWindow(QMainWindow):
                 if hasattr(self, "firewall_name_label"):
                     self.firewall_name_label.setText(f"Error: {error}")
             elif is_active:
-                # Active state - green
+# Active state - green
                 self.firewall_on_off_label.setText("ON")
                 self.firewall_on_off_label.setStyleSheet(
                     "font-weight: bold; font-size: 16px; color: #9CB898;"
@@ -928,7 +927,7 @@ class MainWindow(QMainWindow):
                     "font-size: 20px; color: #9CB898;"
                 )
             else:
-                # Inactive state - red
+# Inactive state - red
                 self.firewall_on_off_label.setText("OFF")
                 self.firewall_on_off_label.setStyleSheet(
                     "font-weight: bold; font-size: 16px; color: #F14666;"
@@ -937,7 +936,7 @@ class MainWindow(QMainWindow):
                     "font-size: 20px; color: #F14666;"
                 )
 
-            # Update button text based on current status
+# Update button text based on current status
             if hasattr(self, "firewall_toggle_btn"):
                 if error:
                     self.firewall_toggle_btn.setText("Check Firewall")
@@ -948,12 +947,12 @@ class MainWindow(QMainWindow):
                     )
                     self.firewall_toggle_btn.setEnabled(True)
 
-            # Also update the dashboard firewall card
+# Also update the dashboard firewall card
             self.update_firewall_status_card()
 
         except Exception as e:
             print(f"⚠️ Error updating firewall status: {e}")
-            # Fallback to unknown state
+# Fallback to unknown state
             self.firewall_on_off_label.setText("UNKNOWN")
             self.firewall_on_off_label.setStyleSheet(
                 "font-weight: bold; font-size: 16px; color: #999;"
@@ -963,25 +962,25 @@ class MainWindow(QMainWindow):
             if hasattr(self, "firewall_name_label"):
                 self.firewall_name_label.setText("Unable to detect")
 
-    def toggle_firewall_status(self):
+def toggle_firewall_status(self):
         """Toggle the firewall on/off based on current status."""
         if not hasattr(self, "firewall_toggle_btn"):
             return
 
-        # Disable button during operation
+# Disable button during operation
         self.firewall_toggle_btn.setEnabled(False)
         self.firewall_toggle_btn.setText("Working...")
 
         try:
-            # Get current status to determine what action to take
+# Get current status to determine what action to take
             current_status = get_firewall_status()
             is_currently_active = current_status.get("is_active", False)
 
-            # Toggle the firewall (enable if currently disabled, disable if
-            # currently enabled)
+# Toggle the firewall (enable if currently disabled, disable if
+# currently enabled)
             enable_firewall = not is_currently_active
 
-            # Show confirmation dialog for critical operations
+# Show confirmation dialog for critical operations
             if enable_firewall:
                 action = "enable"
                 message = "This will enable your firewall with basic security rules. Continue?"
@@ -989,49 +988,49 @@ class MainWindow(QMainWindow):
                 action = "disable"
                 message = "This will disable your firewall, reducing system security. Continue?"
 
-            from PyQt6.QtWidgets import QMessageBox
+from PyQt6.QtWidgets import QMessageBox
 
             reply = self.show_themed_message_box(
                 "question", f"Confirm Firewall {action.title()}", message
             )
 
             if reply != QMessageBox.StandardButton.Yes:
-                # User cancelled - restore button
+# User cancelled - restore button
                 self._restore_firewall_button()
                 return
 
-            # Show info about authentication
+# Show info about authentication
             self.add_activity_message(
                 f"🔒 Requesting admin privileges to {action} firewall..."
             )
 
-            # Update button to show authentication in progress
+# Update button to show authentication in progress
             self.firewall_toggle_btn.setText("Authenticating...")
 
-            # Mark that this firewall change is from the GUI
+# Mark that this firewall change is from the GUI
             self._firewall_change_from_gui = True
 
-            # Perform the firewall toggle operation
+# Perform the firewall toggle operation
             result = toggle_firewall(enable_firewall)
 
             if result.get("success", False):
-                # Success - show message and update UI
+# Success - show message and update UI
                 self.add_activity_message(f"🔥 Firewall {action}d successfully")
                 self.show_themed_message_box(
                     "information",
                     "Firewall Control",
                     str(result.get("message", f"Firewall {action}d successfully")),
                 )
-                # Force immediate status update
+# Force immediate status update
                 self.update_firewall_status()
             else:
-                # Error - show error message
-                # Reset the flag since the operation failed
+# Error - show error message
+# Reset the flag since the operation failed
                 self._firewall_change_from_gui = False
 
                 error_msg = str(result.get("error", "Unknown error"))
 
-                # Check if it's a permission/authentication error
+# Check if it's a permission/authentication error
                 if (
                     "permission denied" in error_msg.lower()
                     or "authentication" in error_msg.lower()
@@ -1042,8 +1041,8 @@ class MainWindow(QMainWindow):
                     self.show_themed_message_box(
                         "warning",
                         "Authentication Required",
-                        f"Firewall control requires administrator privileges.\n"
-                        f"Authentication was cancelled or failed.",
+                        "Firewall control requires administrator privileges.\n"
+                        "Authentication was cancelled or failed.",
                     )
                 else:
                     self.add_activity_message(
@@ -1056,8 +1055,8 @@ class MainWindow(QMainWindow):
                     )
 
         except Exception as e:
-            # Handle unexpected errors
-            # Reset the flag since the operation failed
+# Handle unexpected errors
+# Reset the flag since the operation failed
             self._firewall_change_from_gui = False
 
             error_msg = f"Unexpected error: {str(e)}"
@@ -1068,14 +1067,14 @@ class MainWindow(QMainWindow):
                 f"An unexpected error occurred:\n{error_msg}",
             )
         finally:
-            # Always restore button state
+# Always restore button state
             self._restore_firewall_button()
 
-    def _restore_firewall_button(self):
+def _restore_firewall_button(self):
         """Restore firewall button to normal state."""
         if hasattr(self, "firewall_toggle_btn"):
             self.firewall_toggle_btn.setEnabled(True)
-            # Update button text based on current firewall status
+# Update button text based on current firewall status
             try:
                 status = get_firewall_status()
                 is_active = status.get("is_active", False)
@@ -1085,15 +1084,15 @@ class MainWindow(QMainWindow):
             except (OSError, subprocess.SubprocessError):
                 self.firewall_toggle_btn.setText("Toggle Firewall")
 
-    def create_scan_tab(self):
+def create_scan_tab(self):
         scan_widget = QWidget()
         layout = QVBoxLayout(scan_widget)
 
-        # Path selection and controls
+# Path selection and controls
         controls_group = QGroupBox("Scan Location")
         controls_layout = QVBoxLayout(controls_group)
 
-        # Quick scan presets
+# Quick scan presets
         presets_label = QLabel("Quick Scan Options:")
         presets_label.setObjectName("presetLabel")
         controls_layout.addWidget(presets_label)
@@ -1125,7 +1124,7 @@ class MainWindow(QMainWindow):
 
         controls_layout.addLayout(presets_layout)
 
-        # Selected path display
+# Selected path display
         path_layout = QHBoxLayout()
         path_label_desc = QLabel("Selected path:")
         self.path_label = QLabel("Please select a path")
@@ -1135,7 +1134,7 @@ class MainWindow(QMainWindow):
         path_layout.addWidget(self.path_label, 1)
         controls_layout.addLayout(path_layout)
 
-        # Scan buttons
+# Scan buttons
         scan_buttons_layout = QHBoxLayout()
         self.start_scan_btn = QPushButton("Start Scan")
         self.start_scan_btn.setObjectName("primaryButton")
@@ -1146,14 +1145,14 @@ class MainWindow(QMainWindow):
         self.stop_scan_btn.clicked.connect(self.stop_scan)
         self.stop_scan_btn.setEnabled(False)
 
-        # RKHunter button
+# RKHunter button
         self.rkhunter_scan_btn = QPushButton("🔍 RKHunter Scan")
         self.rkhunter_scan_btn.setObjectName("specialButton")
         self.rkhunter_scan_btn.setToolTip(
             "Run RKHunter rootkit detection scan\n(Configure scan categories in Settings → Scanning)"
         )
 
-        # Check if RKHunter is available (non-intrusive check)
+# Check if RKHunter is available (non-intrusive check)
         rkhunter_available = self.rkhunter.is_available()
 
         if rkhunter_available:
@@ -1173,7 +1172,7 @@ class MainWindow(QMainWindow):
 
         layout.addWidget(controls_group)
 
-        # Progress section
+# Progress section
         progress_group = QGroupBox("Scan Progress")
         progress_layout = QVBoxLayout(progress_group)
 
@@ -1185,7 +1184,7 @@ class MainWindow(QMainWindow):
         progress_layout.addWidget(self.progress_bar)
         layout.addWidget(progress_group)
 
-        # Results section
+# Results section
         results_group = QGroupBox("Scan Results")
         results_layout = QVBoxLayout(results_group)
 
@@ -1198,11 +1197,11 @@ class MainWindow(QMainWindow):
 
         self.tab_widget.addTab(scan_widget, "Scan")
 
-    def create_reports_tab(self):
+def create_reports_tab(self):
         reports_widget = QWidget()
         layout = QVBoxLayout(reports_widget)
 
-        # Reports controls
+# Reports controls
         controls_layout = QHBoxLayout()
         refresh_btn = QPushButton("Refresh Reports")
         refresh_btn.clicked.connect(self.refresh_reports)
@@ -1223,11 +1222,11 @@ class MainWindow(QMainWindow):
         controls_layout.addStretch()
         layout.addLayout(controls_layout)
 
-        # Reports list
+# Reports list
         self.reports_list = QListWidget()
         self.reports_list.itemClicked.connect(self.load_report)
 
-        # Report viewer
+# Report viewer
         self.report_viewer = QTextEdit()
         self.report_viewer.setObjectName("reportViewer")
         self.report_viewer.setReadOnly(True)
@@ -1241,14 +1240,14 @@ class MainWindow(QMainWindow):
 
         self.tab_widget.addTab(reports_widget, "Reports")
 
-        # Initialize reports list
+# Initialize reports list
         self.refresh_reports()
 
-    def create_quarantine_tab(self):
+def create_quarantine_tab(self):
         quarantine_widget = QWidget()
         layout = QVBoxLayout(quarantine_widget)
 
-        # Quarantine controls
+# Quarantine controls
         controls_layout = QHBoxLayout()
         refresh_btn = QPushButton("Refresh")
         refresh_btn.clicked.connect(self.refresh_quarantine)
@@ -1263,23 +1262,23 @@ class MainWindow(QMainWindow):
 
         layout.addLayout(controls_layout)
 
-        # Quarantine list
+# Quarantine list
         self.quarantine_list = QListWidget()
         layout.addWidget(self.quarantine_list)
 
         self.tab_widget.addTab(quarantine_widget, "Quarantine")
 
-    def create_settings_tab(self):
+def create_settings_tab(self):
         """Create the settings tab with full settings interface."""
         settings_widget = QWidget()
         settings_widget.setObjectName("settingsTabWidget")
 
-        # Main layout with proper spacing
+# Main layout with proper spacing
         main_layout = QVBoxLayout(settings_widget)
         main_layout.setSpacing(20)
         main_layout.setContentsMargins(20, 20, 20, 20)
 
-        # Create scrollable area for settings
+# Create scrollable area for settings
         scroll_area = QScrollArea()
         scroll_area.setObjectName("settingsScrollArea")
         scroll_content = QWidget()
@@ -1287,28 +1286,28 @@ class MainWindow(QMainWindow):
         scroll_layout = QVBoxLayout(scroll_content)
         scroll_layout.setSpacing(20)
 
-        # Create two-column layout for the main settings groups
+# Create two-column layout for the main settings groups
         two_column_layout = QHBoxLayout()
         two_column_layout.setSpacing(20)
 
-        # LEFT COLUMN
+# LEFT COLUMN
         left_column_widget = QWidget()
         left_column_layout = QVBoxLayout(left_column_widget)
         left_column_layout.setSpacing(20)
         left_column_layout.setContentsMargins(0, 0, 0, 0)
 
-        # RIGHT COLUMN
+# RIGHT COLUMN
         right_column_widget = QWidget()
         right_column_layout = QVBoxLayout(right_column_widget)
         right_column_layout.setSpacing(20)
         right_column_layout.setContentsMargins(0, 0, 0, 0)
 
-        # SCAN SETTINGS SECTION (LEFT COLUMN)
+# SCAN SETTINGS SECTION (LEFT COLUMN)
         scan_group = QGroupBox("Scan Settings")
         scan_layout = QFormLayout(scan_group)
         scan_layout.setSpacing(15)
 
-        # Max threads setting
+# Max threads setting
         self.settings_max_threads_spin = NoWheelSpinBox()
         self.settings_max_threads_spin.setRange(1, 16)
         self.settings_max_threads_spin.setValue(4)
@@ -1317,7 +1316,7 @@ class MainWindow(QMainWindow):
             QLabel("Max Threads:"),
             self.settings_max_threads_spin)
 
-        # Scan timeout setting
+# Scan timeout setting
         self.settings_timeout_spin = NoWheelSpinBox()
         self.settings_timeout_spin.setRange(30, 3600)
         self.settings_timeout_spin.setValue(300)
@@ -1325,13 +1324,13 @@ class MainWindow(QMainWindow):
         self.settings_timeout_spin.setMinimumHeight(35)
         scan_layout.addRow(QLabel("Scan Timeout:"), self.settings_timeout_spin)
 
-        # Scan archives checkbox
+# Scan archives checkbox
         self.settings_scan_archives_cb = QCheckBox("Scan Archive Files")
         self.settings_scan_archives_cb.setChecked(True)
         self.settings_scan_archives_cb.setMinimumHeight(35)
         scan_layout.addRow(self.settings_scan_archives_cb)
 
-        # Follow symlinks checkbox
+# Follow symlinks checkbox
         self.settings_follow_symlinks_cb = QCheckBox("Follow Symbolic Links")
         self.settings_follow_symlinks_cb.setChecked(False)
         self.settings_follow_symlinks_cb.setMinimumHeight(35)
@@ -1339,25 +1338,25 @@ class MainWindow(QMainWindow):
 
         left_column_layout.addWidget(scan_group)
 
-        # USER INTERFACE SETTINGS SECTION (RIGHT COLUMN)
+# USER INTERFACE SETTINGS SECTION (RIGHT COLUMN)
         ui_group = QGroupBox("User Interface Settings")
         ui_layout = QFormLayout(ui_group)
         ui_layout.setSpacing(15)
 
-        # Minimize to tray checkbox
+# Minimize to tray checkbox
         self.settings_minimize_to_tray_cb = QCheckBox(
             "Minimize to System Tray")
         self.settings_minimize_to_tray_cb.setChecked(True)
         self.settings_minimize_to_tray_cb.setMinimumHeight(35)
         ui_layout.addRow(self.settings_minimize_to_tray_cb)
 
-        # Show notifications checkbox
+# Show notifications checkbox
         self.settings_show_notifications_cb = QCheckBox("Show Notifications")
         self.settings_show_notifications_cb.setChecked(True)
         self.settings_show_notifications_cb.setMinimumHeight(35)
         ui_layout.addRow(self.settings_show_notifications_cb)
 
-        # Activity log retention setting
+# Activity log retention setting
         self.settings_activity_retention_combo = NoWheelComboBox()
         self.settings_activity_retention_combo.addItems(
             ["10", "25", "50", "100", "200"]
@@ -1377,12 +1376,12 @@ class MainWindow(QMainWindow):
 
         right_column_layout.addWidget(ui_group)
 
-        # SECURITY SETTINGS SECTION (LEFT COLUMN)
+# SECURITY SETTINGS SECTION (LEFT COLUMN)
         security_group = QGroupBox("Security Settings")
         security_layout = QFormLayout(security_group)
         security_layout.setSpacing(15)
 
-        # Auto-update definitions checkbox
+# Auto-update definitions checkbox
         self.settings_auto_update_cb = QCheckBox(
             "Auto-update Virus Definitions")
         self.settings_auto_update_cb.setChecked(True)
@@ -1391,25 +1390,25 @@ class MainWindow(QMainWindow):
 
         left_column_layout.addWidget(security_group)
 
-        # REAL-TIME PROTECTION SETTINGS SECTION (RIGHT COLUMN)
+# REAL-TIME PROTECTION SETTINGS SECTION (RIGHT COLUMN)
         protection_group = QGroupBox("Real-Time Protection Settings")
         protection_layout = QFormLayout(protection_group)
         protection_layout.setSpacing(15)
 
-        # Monitor file modifications
+# Monitor file modifications
         self.settings_monitor_modifications_cb = QCheckBox(
             "Monitor File Modifications")
         self.settings_monitor_modifications_cb.setChecked(True)
         self.settings_monitor_modifications_cb.setMinimumHeight(35)
         protection_layout.addRow(self.settings_monitor_modifications_cb)
 
-        # Monitor new files
+# Monitor new files
         self.settings_monitor_new_files_cb = QCheckBox("Monitor New Files")
         self.settings_monitor_new_files_cb.setChecked(True)
         self.settings_monitor_new_files_cb.setMinimumHeight(35)
         protection_layout.addRow(self.settings_monitor_new_files_cb)
 
-        # Scan modified files immediately
+# Scan modified files immediately
         self.settings_scan_modified_cb = QCheckBox(
             "Scan Modified Files Immediately")
         self.settings_scan_modified_cb.setChecked(False)
@@ -1418,27 +1417,27 @@ class MainWindow(QMainWindow):
 
         right_column_layout.addWidget(protection_group)
 
-        # Add stretch to balance columns
+# Add stretch to balance columns
         left_column_layout.addStretch()
         right_column_layout.addStretch()
 
-        # Add columns to two-column layout
+# Add columns to two-column layout
         two_column_layout.addWidget(left_column_widget)
         two_column_layout.addWidget(right_column_widget)
 
-        # Add two-column layout to main scroll layout
+# Add two-column layout to main scroll layout
         scroll_layout.addLayout(two_column_layout)
 
-        # RKHUNTER SETTINGS SECTION
+# RKHUNTER SETTINGS SECTION
         rkhunter_group = QGroupBox("RKHunter Integration")
         rkhunter_layout = QVBoxLayout(rkhunter_group)
         rkhunter_layout.setSpacing(15)
 
-        # Create two-column layout
+# Create two-column layout
         two_column_layout = QHBoxLayout()
         two_column_layout.setSpacing(20)
 
-        # LEFT COLUMN - Basic Settings
+# LEFT COLUMN - Basic Settings
         left_column = QGroupBox("Settings")
         left_layout = QVBoxLayout(left_column)
         left_layout.setSpacing(15)
@@ -1472,21 +1471,21 @@ class MainWindow(QMainWindow):
         self.settings_rkhunter_auto_update_cb.setMinimumHeight(35)
         left_layout.addWidget(self.settings_rkhunter_auto_update_cb)
 
-        # Add stretch to push checkboxes to top
+# Add stretch to push checkboxes to top
         left_layout.addStretch()
 
-        # RIGHT COLUMN - Scan Categories
+# RIGHT COLUMN - Scan Categories
         right_column = QGroupBox("Default Scan Categories")
         right_layout = QVBoxLayout(right_column)
 
-        # Create scrollable area for checkboxes
+# Create scrollable area for checkboxes
         scroll_area_rk = QScrollArea()
         scroll_widget_rk = QWidget()
         scroll_layout_rk = QVBoxLayout(scroll_widget_rk)
         scroll_layout_rk.setSpacing(8)
         scroll_layout_rk.setContentsMargins(5, 5, 5, 5)
 
-        # Define test categories with descriptions - organized by priority
+# Define test categories with descriptions - organized by priority
         self.settings_rkhunter_test_categories = {
             "system_commands": {
                 "name": "System Commands",
@@ -1520,38 +1519,38 @@ class MainWindow(QMainWindow):
             },
         }
 
-        # Create checkboxes in a single row layout
+# Create checkboxes in a single row layout
         self.settings_rkhunter_category_checkboxes = {}
 
-        # Sort categories by priority and name for better organization
+# Sort categories by priority and name for better organization
         sorted_categories = sorted(
             self.settings_rkhunter_test_categories.items(),
             key=lambda x: (x[1]["priority"], x[1]["name"]),
         )
 
-        # Create a single row with all 5 categories - centered
+# Create a single row with all 5 categories - centered
         row_layout = QHBoxLayout()
         row_layout.setSpacing(12)
         row_layout.setContentsMargins(10, 5, 10, 5)
 
-        # Add left stretch to center the items
+# Add left stretch to center the items
         row_layout.addStretch(1)
 
-        # Add all items to a single row
+# Add all items to a single row
         for category_id, category_info in sorted_categories:
-            # Create compact item container
+# Create compact item container
             item_layout = QVBoxLayout()
             item_layout.setSpacing(3)
             item_layout.setContentsMargins(5, 4, 5, 4)
 
-            # Checkbox with appropriate height
+# Checkbox with appropriate height
             checkbox = QCheckBox(category_info["name"])
             checkbox.setChecked(category_info["default"])
             checkbox.setToolTip(category_info["description"])
             checkbox.setMinimumHeight(20)
             checkbox.setStyleSheet("font-weight: bold; font-size: 11px;")
 
-            # Description with better sizing for visibility
+# Description with better sizing for visibility
             desc_label = QLabel(category_info["description"])
             desc_color = self.get_theme_color("secondary_text")
             desc_label.setStyleSheet(
@@ -1566,19 +1565,19 @@ class MainWindow(QMainWindow):
             item_layout.addWidget(checkbox)
             item_layout.addWidget(desc_label)
 
-            # Create item widget with increased dimensions for better text
-            # visibility
+# Create item widget with increased dimensions for better text
+# visibility
             item_widget = QWidget()
             item_widget.setLayout(item_layout)
-            # Increased width from 110px to 135px
+# Increased width from 110px to 135px
             item_widget.setFixedWidth(135)
-            # Increased height from 52px to 75px
+# Increased height from 52px to 75px
             item_widget.setFixedHeight(75)
 
             bg_color = self.get_theme_color("secondary_bg")
             hover_color = self.get_theme_color("hover_bg")
             item_widget.setStyleSheet(
-                f"""
+                """
                 QWidget {{
                     border: none;
                     border-radius: 6px;
@@ -1594,19 +1593,19 @@ class MainWindow(QMainWindow):
             row_layout.addWidget(item_widget)
             self.settings_rkhunter_category_checkboxes[category_id] = checkbox
 
-        # Add right stretch to center the items
+# Add right stretch to center the items
         row_layout.addStretch(1)
 
-        # Add the single row to the main layout
+# Add the single row to the main layout
         row_widget = QWidget()
         row_widget.setLayout(row_layout)
         scroll_layout_rk.addWidget(row_widget)
 
-        # Add minimal stretch
+# Add minimal stretch
         scroll_layout_rk.addStretch(1)
 
         scroll_area_rk.setWidget(scroll_widget_rk)
-        # Increased height for larger cards
+# Increased height for larger cards
         scroll_area_rk.setMaximumHeight(95)
         scroll_area_rk.setMinimumHeight(95)  # Fixed height for larger cards
         scroll_area_rk.setHorizontalScrollBarPolicy(
@@ -1619,7 +1618,7 @@ class MainWindow(QMainWindow):
         border_color = self.get_theme_color("border")
         scroll_bg = self.get_theme_color("tertiary_bg")
         scroll_area_rk.setStyleSheet(
-            f"""
+            """
             QScrollArea {{
                 border: 1px solid {border_color};
                 border-radius: 4px;
@@ -1630,7 +1629,7 @@ class MainWindow(QMainWindow):
 
         right_layout.addWidget(scroll_area_rk)
 
-        # Quick select buttons for RKHunter categories
+# Quick select buttons for RKHunter categories
         quick_select_layout = QHBoxLayout()
 
         select_all_btn = QPushButton("Select All")
@@ -1660,23 +1659,23 @@ class MainWindow(QMainWindow):
 
         right_layout.addLayout(quick_select_layout)
 
-        # Add columns to two-column layout
+# Add columns to two-column layout
         two_column_layout.addWidget(left_column)
         two_column_layout.addWidget(right_column)
 
-        # Set column widths (40% left, 60% right)
+# Set column widths (40% left, 60% right)
         left_column.setMaximumWidth(300)
         right_column.setMinimumWidth(400)
 
-        # Add two-column layout to main RKHunter layout
+# Add two-column layout to main RKHunter layout
         rkhunter_layout.addLayout(two_column_layout)
 
         scroll_layout.addWidget(rkhunter_group)
 
-        # Add stretch to push everything to the top
+# Add stretch to push everything to the top
         scroll_layout.addStretch()
 
-        # Set up scroll area
+# Set up scroll area
         scroll_area.setWidget(scroll_content)
         scroll_area.setWidgetResizable(True)
         scroll_area.setVerticalScrollBarPolicy(
@@ -1686,17 +1685,17 @@ class MainWindow(QMainWindow):
 
         main_layout.addWidget(scroll_area)
 
-        # SETTINGS CONTROL BUTTONS
+# SETTINGS CONTROL BUTTONS
         buttons_layout = QHBoxLayout()
         buttons_layout.setSpacing(15)
 
-        # Load defaults button
+# Load defaults button
         load_defaults_btn = QPushButton("Reset to Defaults")
         load_defaults_btn.clicked.connect(self.load_default_settings)
         load_defaults_btn.setMinimumHeight(40)
         load_defaults_btn.setMinimumWidth(140)
 
-        # Save settings button
+# Save settings button
         save_settings_btn = QPushButton("Save Settings")
         save_settings_btn.clicked.connect(self.save_settings)
         save_settings_btn.setMinimumHeight(40)
@@ -1709,21 +1708,21 @@ class MainWindow(QMainWindow):
 
         main_layout.addLayout(buttons_layout)
 
-        # Load current settings
+# Load current settings
         self.load_current_settings()
 
         self.tab_widget.addTab(settings_widget, "Settings")
 
-    def create_real_time_tab(self):
+def create_real_time_tab(self):
         """Create the real-time protection tab with improved three-column layout."""
         real_time_widget = QWidget()
 
-        # Main horizontal layout with proper spacing
+# Main horizontal layout with proper spacing
         main_layout = QHBoxLayout(real_time_widget)
         main_layout.setSpacing(20)
         main_layout.setContentsMargins(20, 20, 20, 20)
 
-        # LEFT PANEL: Recent Activity (largest panel)
+# LEFT PANEL: Recent Activity (largest panel)
         left_panel = QVBoxLayout()
         activity_group = QGroupBox("Recent Activity")
         activity_layout = QVBoxLayout(activity_group)
@@ -1738,7 +1737,7 @@ class MainWindow(QMainWindow):
         )  # Reduce height to make room for button
         activity_layout.addWidget(self.activity_list)
 
-        # Add Clear Logs button with proper spacing
+# Add Clear Logs button with proper spacing
         clear_logs_btn = QPushButton("Clear Logs")
         clear_logs_btn.clicked.connect(self.clear_activity_logs)
         clear_logs_btn.setMinimumHeight(35)
@@ -1748,7 +1747,7 @@ class MainWindow(QMainWindow):
             "Clear all activity logs from both Protection tab and Dashboard"
         )
 
-        # Center the button with proper spacing
+# Center the button with proper spacing
         button_layout = QHBoxLayout()
         button_layout.setContentsMargins(0, 10, 0, 0)  # Add top margin
         button_layout.addStretch()
@@ -1759,17 +1758,17 @@ class MainWindow(QMainWindow):
         left_panel.addWidget(activity_group)
         left_panel.addStretch()
 
-        # CENTER PANEL: Protection Status and Statistics (compact but
-        # well-spaced)
+# CENTER PANEL: Protection Status and Statistics (compact but
+# well-spaced)
         center_panel = QVBoxLayout()
         center_panel.setSpacing(20)
 
-        # Protection Status section
+# Protection Status section
         status_group = QGroupBox("Protection Status")
         status_layout = QVBoxLayout(status_group)
         status_layout.setSpacing(15)
 
-        # Protection status display with better styling
+# Protection status display with better styling
         self.protection_status_label = QLabel("🔄 Initializing...")
         self.protection_status_label.setObjectName("protectionStatus")
         self.protection_status_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -1779,7 +1778,7 @@ class MainWindow(QMainWindow):
         )
         status_layout.addWidget(self.protection_status_label)
 
-        # Control button - centered and prominent
+# Control button - centered and prominent
         self.protection_toggle_btn = QPushButton("Start")
         self.protection_toggle_btn.clicked.connect(
             self.toggle_real_time_protection)
@@ -1795,15 +1794,15 @@ class MainWindow(QMainWindow):
 
         center_panel.addWidget(status_group)
 
-        # Protection Statistics section
+# Protection Statistics section
         stats_group = QGroupBox("Protection Statistics")
         stats_layout = QVBoxLayout(stats_group)
         stats_layout.setSpacing(10)
 
-        # Create a more organized stats display
+# Create a more organized stats display
         stats_container = QVBoxLayout()
 
-        # Events row
+# Events row
         events_layout = QHBoxLayout()
         events_layout.addWidget(QLabel("Events Processed:"))
         self.events_processed_label = QLabel("0")
@@ -1814,7 +1813,7 @@ class MainWindow(QMainWindow):
         events_layout.addWidget(self.events_processed_label)
         stats_container.addLayout(events_layout)
 
-        # Threats row
+# Threats row
         threats_layout = QHBoxLayout()
         threats_layout.addWidget(QLabel("Threats Detected:"))
         self.threats_detected_label = QLabel("0")
@@ -1825,7 +1824,7 @@ class MainWindow(QMainWindow):
         threats_layout.addWidget(self.threats_detected_label)
         stats_container.addLayout(threats_layout)
 
-        # Scans row
+# Scans row
         scans_layout = QHBoxLayout()
         scans_layout.addWidget(QLabel("Scans Performed:"))
         self.scans_performed_label = QLabel("0")
@@ -1836,7 +1835,7 @@ class MainWindow(QMainWindow):
         scans_layout.addWidget(self.scans_performed_label)
         stats_container.addLayout(scans_layout)
 
-        # Uptime row
+# Uptime row
         uptime_layout = QHBoxLayout()
         uptime_layout.addWidget(QLabel("Uptime:"))
         self.uptime_label = QLabel("00:00:00")
@@ -1850,15 +1849,15 @@ class MainWindow(QMainWindow):
         stats_layout.addLayout(stats_container)
         center_panel.addWidget(stats_group)
 
-        # Firewall Status section
+# Firewall Status section
         firewall_group = QGroupBox("Firewall Status")
         firewall_layout = QVBoxLayout(firewall_group)
         firewall_layout.setSpacing(10)
 
-        # Create the firewall status display similar to your mockup
+# Create the firewall status display similar to your mockup
         firewall_status_container = QHBoxLayout()
 
-        # Status text on the left
+# Status text on the left
         firewall_status_left = QVBoxLayout()
         firewall_status_left.setSpacing(5)
 
@@ -1874,7 +1873,7 @@ class MainWindow(QMainWindow):
         firewall_status_container.addLayout(firewall_status_left)
         firewall_status_container.addStretch()
 
-        # Status indicator on the right (ON/OFF with circle)
+# Status indicator on the right (ON/OFF with circle)
         firewall_status_right = QVBoxLayout()
         firewall_status_right.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
@@ -1885,7 +1884,7 @@ class MainWindow(QMainWindow):
         self.firewall_on_off_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         firewall_status_right.addWidget(self.firewall_on_off_label)
 
-        # Status circle
+# Status circle
         self.firewall_status_circle = QLabel("●")
         self.firewall_status_circle.setStyleSheet(
             "font-size: 20px; color: #F14666;")
@@ -1895,7 +1894,7 @@ class MainWindow(QMainWindow):
         firewall_status_container.addLayout(firewall_status_right)
         firewall_layout.addLayout(firewall_status_container)
 
-        # Add firewall toggle button
+# Add firewall toggle button
         firewall_button_layout = QHBoxLayout()
         firewall_button_layout.setContentsMargins(
             0, 10, 0, 0)  # Add top margin
@@ -1915,7 +1914,7 @@ class MainWindow(QMainWindow):
         center_panel.addWidget(firewall_group)
         center_panel.addStretch()
 
-        # RIGHT PANEL: Monitored Paths
+# RIGHT PANEL: Monitored Paths
         right_panel = QVBoxLayout()
         paths_group = QGroupBox("Monitored Paths")
         paths_layout = QVBoxLayout(paths_group)
@@ -1924,7 +1923,7 @@ class MainWindow(QMainWindow):
         self.paths_list.setMinimumHeight(300)  # Give it good height
         paths_layout.addWidget(self.paths_list)
 
-        # Path control buttons
+# Path control buttons
         paths_controls = QHBoxLayout()
         add_path_btn = QPushButton("Add Path")
         add_path_btn.clicked.connect(self.add_watch_path)
@@ -1942,27 +1941,27 @@ class MainWindow(QMainWindow):
         right_panel.addWidget(paths_group)
         right_panel.addStretch()
 
-        # Add panels to main layout with proper proportions
+# Add panels to main layout with proper proportions
         main_layout.addLayout(left_panel, 2)  # 40% - Recent Activity (largest)
-        # 30% - Status & Stats (compact)
+# 30% - Status & Stats (compact)
         main_layout.addLayout(center_panel, 1)
         main_layout.addLayout(right_panel, 1)  # 30% - Monitored Paths
 
         self.tab_widget.addTab(real_time_widget, "Protection")
 
-        # Initialize firewall status display
+# Initialize firewall status display
         QTimer.singleShot(
             1000, self.update_firewall_status
         )  # Delay initial update slightly
 
-        # Firewall monitoring is now handled by unified timer system
-        # (Reduces timer overhead by consolidating updates)
+# Firewall monitoring is now handled by unified timer system
+# (Reduces timer overhead by consolidating updates)
 
-    def init_real_time_monitoring_safe(self):
+def init_real_time_monitoring_safe(self):
         """Safely initialize the real-time monitoring system with better error handling."""
         print("🔧 Initializing real-time monitoring system...")
         try:
-            # Create monitor configuration with safer defaults
+# Create monitor configuration with safer defaults
             watch_paths = self.config.get(
                 "watch_paths", [str(Path.home())]
             )  # Just monitor home directory initially
@@ -1970,7 +1969,7 @@ class MainWindow(QMainWindow):
                 "excluded_paths", ["/proc", "/sys", "/dev", "/tmp"]
             )
 
-            # Ensure paths are properly formatted and validated
+# Ensure paths are properly formatted and validated
             if isinstance(watch_paths, list):
                 watch_paths = [
                     str(path)
@@ -1984,7 +1983,7 @@ class MainWindow(QMainWindow):
                     else []
                 )
 
-            # Fallback to home directory if no valid paths
+# Fallback to home directory if no valid paths
             if not watch_paths:
                 home_path = str(Path.home())
                 if os.path.exists(home_path):
@@ -2009,11 +2008,11 @@ class MainWindow(QMainWindow):
                 quarantine_threats=False,  # Don't auto-quarantine initially for testing
             )
 
-            # Create real-time monitor
+# Create real-time monitor
             self.real_time_monitor = RealTimeMonitor(monitor_config)
             print("✅ RealTimeMonitor created successfully")
 
-            # Set up callbacks only if the methods exist
+# Set up callbacks only if the methods exist
             if hasattr(self.real_time_monitor, "set_threat_detected_callback"):
                 self.real_time_monitor.set_threat_detected_callback(
                     self.on_threat_detected
@@ -2031,14 +2030,14 @@ class MainWindow(QMainWindow):
                     self.on_monitoring_error)
                 print("✅ Error callback set")
 
-            # Statistics updates now handled by unified timer system
-            # (Reduces timer overhead and improves performance)
+# Statistics updates now handled by unified timer system
+# (Reduces timer overhead and improves performance)
             print("✅ Statistics updates integrated with unified timer system")
 
-            # Set initial status based on saved configuration
+# Set initial status based on saved configuration
             if hasattr(self, "protection_status_label"):
                 if self.monitoring_enabled:
-                    # If protection was enabled before, restore it
+# If protection was enabled before, restore it
                     print("🔄 Restoring real-time protection from saved state...")
                     if self.real_time_monitor and self.real_time_monitor.start():
                         self.protection_status_label.setText("🛡️ Active")
@@ -2052,7 +2051,7 @@ class MainWindow(QMainWindow):
                             "✅ Real-time protection restored from previous session"
                         )
                     else:
-                        # Failed to start, reset to inactive
+# Failed to start, reset to inactive
                         print("❌ Failed to restore real-time protection")
                         self.monitoring_enabled = False
                         self.protection_status_label.setText(
@@ -2065,13 +2064,13 @@ class MainWindow(QMainWindow):
                         self.add_activity_message(
                             "❌ Failed to restore real-time protection from previous session"
                         )
-                        # Update config to reflect failure
+# Update config to reflect failure
                         if "security_settings" not in self.config:
                             self.config["security_settings"] = {}
                         self.config["security_settings"]["real_time_protection"] = False
                         save_config(self.config)
                 else:
-                    # Protection is disabled, set inactive status
+# Protection is disabled, set inactive status
                     self.protection_status_label.setText("🔴 Inactive")
                     color = self.get_status_color("error")
                     self.protection_status_label.setStyleSheet(
@@ -2084,13 +2083,13 @@ class MainWindow(QMainWindow):
 
         except (ImportError, AttributeError, OSError) as e:
             print(f"❌ Failed to initialize monitoring: {e}")
-            # Create a dummy monitor for UI purposes
+# Create a dummy monitor for UI purposes
             self.real_time_monitor = None
             self.add_activity_message(
                 f"⚠️ Monitoring system offline: {str(e)}")
 
-            # Ensure status is never left as "Initializing..." - set to
-            # inactive
+# Ensure status is never left as "Initializing..." - set to
+# inactive
             if hasattr(self, "protection_status_label"):
                 self.protection_status_label.setText("🔴 Inactive")
                 color = self.get_status_color("error")
@@ -2102,10 +2101,10 @@ class MainWindow(QMainWindow):
 
             return False
 
-    def init_real_time_monitoring(self):
+def init_real_time_monitoring(self):
         """Initialize the real-time monitoring system."""
         try:
-            # Create monitor configuration
+# Create monitor configuration
             watch_paths = self.config.get(
                 "watch_paths", ["/home", "/opt", "/tmp"])
             excluded_paths = self.config.get(
@@ -2120,27 +2119,27 @@ class MainWindow(QMainWindow):
                 quarantine_threats=True,
             )
 
-            # Create real-time monitor
+# Create real-time monitor
             self.real_time_monitor = RealTimeMonitor(monitor_config)
 
-            # Set up callbacks
+# Set up callbacks
             self.real_time_monitor.set_threat_detected_callback(
                 self.on_threat_detected)
             self.real_time_monitor.set_scan_completed_callback(
                 self.on_scan_completed)
             self.real_time_monitor.set_error_callback(self.on_monitoring_error)
 
-            # Set up timer to update statistics
+# Set up timer to update statistics
             self.stats_timer = QTimer()
             self.stats_timer.timeout.connect(self.update_monitoring_statistics)
             self.stats_timer.start(5000)  # Update every 5 seconds
 
-            # Auto-start if enabled (temporarily disabled)
-            # if self.monitoring_enabled:
-            #     QTimer.singleShot(2000, self.start_real_time_protection)
-            # else:
-            # Set initial status to Inactive when monitoring is disabled by
-            # default
+# Auto-start if enabled (temporarily disabled)
+# if self.monitoring_enabled:
+#     QTimer.singleShot(2000, self.start_real_time_protection)
+# else:
+# Set initial status to Inactive when monitoring is disabled by
+# default
             if hasattr(self, "protection_status_label"):
                 self.protection_status_label.setText("🔴 Inactive")
                 self.protection_status_label.setStyleSheet(
@@ -2151,18 +2150,18 @@ class MainWindow(QMainWindow):
             self.add_activity_message(
                 f"❌ Failed to initialize monitoring: {e}")
 
-    def toggle_real_time_protection(self):
+def toggle_real_time_protection(self):
         """Toggle real-time protection on/off."""
-        # Check current state by looking at the button text
+# Check current state by looking at the button text
         if "Start" in self.protection_toggle_btn.text():
             self.start_real_time_protection()
         else:
             self.stop_real_time_protection()
 
-    def start_real_time_protection(self):
+def start_real_time_protection(self):
         """Start real-time protection."""
         try:
-            # If monitor wasn't initialized, try to initialize it now
+# If monitor wasn't initialized, try to initialize it now
             if self.real_time_monitor is None:
                 print("🔄 Monitor not initialized, attempting to initialize...")
                 success = self.init_real_time_monitoring_safe()
@@ -2181,23 +2180,23 @@ class MainWindow(QMainWindow):
                 self.add_activity_message("✅ Real-time protection started")
                 self.status_bar.showMessage("Real-time protection active")
 
-                # Save activity logs immediately for important events
+# Save activity logs immediately for important events
                 self.save_activity_logs()
 
-                # Save user preference
+# Save user preference
                 self.monitoring_enabled = True
                 if "security_settings" not in self.config:
                     self.config["security_settings"] = {}
                 self.config["security_settings"]["real_time_protection"] = True
                 save_config(self.config)
 
-                # Update dashboard card to reflect the change
+# Update dashboard card to reflect the change
                 self.update_protection_status_card()
 
-                # Update paths list
+# Update paths list
                 self.update_paths_list()
 
-                # Start or restart the statistics timer
+# Start or restart the statistics timer
                 if hasattr(self, "stats_timer"):
                     self.stats_timer.start(5000)  # Update every 5 seconds
                 else:
@@ -2206,31 +2205,31 @@ class MainWindow(QMainWindow):
                         self.update_monitoring_statistics)
                     self.stats_timer.start(5000)
 
-                # Update statistics immediately to show current state
+# Update statistics immediately to show current state
                 self.update_monitoring_statistics()
             else:
                 self.protection_status_label.setText("❌ Failed")
                 self.protection_status_label.setStyleSheet(
                     f"color: {
                         self.get_theme_color('error')}; font-weight: bold; font-size: 12px; padding: 5px;")
-                # Keep button as "Start" since protection failed to start
+# Keep button as "Start" since protection failed to start
                 self.protection_toggle_btn.setText("Start")
                 self.add_activity_message(
                     "❌ Failed to start real-time protection")
 
-                # Make sure dashboard shows failure state
+# Make sure dashboard shows failure state
                 self.monitoring_enabled = False
                 self.update_protection_status_card()
 
         except (AttributeError, RuntimeError, OSError) as e:
             self.add_activity_message(f"❌ Error starting protection: {e}")
-            # Ensure button stays as "Start" if there was an error
+# Ensure button stays as "Start" if there was an error
             self.protection_toggle_btn.setText("Start")
-            # Make sure dashboard shows error state
+# Make sure dashboard shows error state
             self.monitoring_enabled = False
             self.update_protection_status_card()
 
-    def stop_real_time_protection(self):
+def stop_real_time_protection(self):
         """Stop real-time protection."""
         try:
             if self.real_time_monitor:
@@ -2243,24 +2242,24 @@ class MainWindow(QMainWindow):
                 self.add_activity_message("🛑 Real-time protection stopped")
                 self.status_bar.showMessage("🛑 Real-time protection stopped")
 
-                # Save activity logs immediately for important events
+# Save activity logs immediately for important events
                 self.save_activity_logs()
 
-                # Save user preference
+# Save user preference
                 self.monitoring_enabled = False
                 if "security_settings" not in self.config:
                     self.config["security_settings"] = {}
                 self.config["security_settings"]["real_time_protection"] = False
                 save_config(self.config)
 
-                # Update dashboard card to reflect the change
+# Update dashboard card to reflect the change
                 self.update_protection_status_card()
 
-                # Stop the statistics timer when protection is stopped
+# Stop the statistics timer when protection is stopped
                 if hasattr(self, "stats_timer"):
                     self.stats_timer.stop()
 
-                # Reset statistics display to show monitoring is stopped
+# Reset statistics display to show monitoring is stopped
                 if hasattr(self, "events_processed_label"):
                     self.events_processed_label.setText("0")
                 if hasattr(self, "threats_detected_label"):
@@ -2272,19 +2271,19 @@ class MainWindow(QMainWindow):
 
         except (AttributeError, RuntimeError) as e:
             self.add_activity_message(f"❌ Error stopping protection: {e}")
-            # If stopping failed, we can't be sure of the state, so show error
-            # and allow retry
+# If stopping failed, we can't be sure of the state, so show error
+# and allow retry
             self.protection_status_label.setText("❌ Error")
             self.protection_status_label.setStyleSheet(
                 f"color: {
                     self.get_theme_color('error')}; font-weight: bold; font-size: 12px; padding: 5px;")
 
-    def on_threat_detected(self, file_path: str, threat_name: str):
+def on_threat_detected(self, file_path: str, threat_name: str):
         """Handle threat detection callback."""
         message = f"🚨 THREAT DETECTED: {threat_name} in {file_path}"
         self.add_activity_message(message)
 
-        # Show system notification
+# Show system notification
         if hasattr(self, "tray_icon") and self.tray_icon:
             self.tray_icon.showMessage(
                 "Threat Detected!",
@@ -2293,65 +2292,65 @@ class MainWindow(QMainWindow):
                 5000,
             )
 
-        # Update status bar
+# Update status bar
         self.status_bar.showMessage(f"Threat detected: {threat_name}", 10000)
 
-    def on_scan_completed(self, file_path: str, result: str):
+def on_scan_completed(self, file_path: str, result: str):
         """Handle scan completion callback."""
         if result != "clean":
             message = f"🔍 Scan completed: {file_path} - {result}"
             self.add_activity_message(message)
 
-    def on_monitoring_error(self, error_message: str):
+def on_monitoring_error(self, error_message: str):
         """Handle monitoring error callback."""
         self.add_activity_message(f"⚠️ Monitoring error: {error_message}")
 
-    def add_activity_message(self, message: str):
+def add_activity_message(self, message: str):
         """Add a message to the activity list."""
         timestamp = datetime.now().strftime("%H:%M:%S")
         full_message = f"[{timestamp}] {message}"
 
-        # Get current retention setting
+# Get current retention setting
         retention = self.get_activity_retention_setting()
 
-        # Add to main activity list if it exists
+# Add to main activity list if it exists
         if hasattr(self, "activity_list"):
-            # Add to top of list
+# Add to top of list
             item = QListWidgetItem(full_message)
             self.activity_list.insertItem(0, item)
 
-            # Keep only last N items based on retention setting
+# Keep only last N items based on retention setting
             while self.activity_list.count() > retention:
                 self.activity_list.takeItem(self.activity_list.count() - 1)
 
-        # Also add to dashboard activity list if it exists
+# Also add to dashboard activity list if it exists
         if hasattr(self, "dashboard_activity"):
-            # Add to top of dashboard list
+# Add to top of dashboard list
             item = QListWidgetItem(full_message)
             self.dashboard_activity.insertItem(0, item)
 
-            # Keep only last 20 items on dashboard for brevity
+# Keep only last 20 items on dashboard for brevity
             while self.dashboard_activity.count() > 20:
                 self.dashboard_activity.takeItem(
                     self.dashboard_activity.count() - 1)
 
-        # Save activity logs periodically (but not on every single message to avoid excessive I/O)
-        # We'll save on app close, settings changes, and periodically
+# Save activity logs periodically (but not on every single message to avoid excessive I/O)
+# We'll save on app close, settings changes, and periodically
 
-    def save_activity_logs(self):
+def save_activity_logs(self):
         """Save current activity logs to persistent storage."""
         try:
-            from utils.config import DATA_DIR
+from utils.config import DATA_DIR
 
             activity_log_file = DATA_DIR / "activity_logs.json"
 
-            # Get current retention setting
+# Get current retention setting
             retention = self.get_activity_retention_setting()
 
-            # Collect activity messages from the primary activity list
+# Collect activity messages from the primary activity list
             activity_messages = []
 
-            # Primary activity list (Protection tab) has the full history
+# Primary activity list (Protection tab) has the full history
             if hasattr(
                     self,
                     "activity_list") and self.activity_list.count() > 0:
@@ -2360,9 +2359,9 @@ class MainWindow(QMainWindow):
                     if item:
                         activity_messages.append(item.text())
 
-            # Only save if we have messages
+# Only save if we have messages
             if activity_messages:
-                # Save to file
+# Save to file
                 with open(activity_log_file, "w", encoding="utf-8") as f:
                     json.dump(
                         {
@@ -2375,17 +2374,17 @@ class MainWindow(QMainWindow):
                     )
                 print(f"Saved {len(activity_messages)} activity log entries")
             else:
-                # If no messages, remove the file to start fresh
+# If no messages, remove the file to start fresh
                 if activity_log_file.exists():
                     activity_log_file.unlink()
 
         except Exception as e:
             print(f"Failed to save activity logs: {e}")
 
-    def load_activity_logs(self):
+def load_activity_logs(self):
         """Load persisted activity logs on startup."""
         try:
-            from utils.config import DATA_DIR
+from utils.config import DATA_DIR
 
             activity_log_file = DATA_DIR / "activity_logs.json"
 
@@ -2399,29 +2398,29 @@ class MainWindow(QMainWindow):
             if not messages:
                 return
 
-            # Get current retention setting from config (not UI which may not
-            # be ready yet)
+# Get current retention setting from config (not UI which may not
+# be ready yet)
             retention = self.config.get("ui_settings", {}).get(
                 "activity_log_retention", 100
             )
 
-            # Limit messages to current retention setting
+# Limit messages to current retention setting
             messages = messages[:retention]
 
-            # Clear existing lists first
+# Clear existing lists first
             if hasattr(self, "activity_list"):
                 self.activity_list.clear()
             if hasattr(self, "dashboard_activity"):
                 self.dashboard_activity.clear()
 
-            # Add messages in correct chronological order (newest first, as
-            # they were saved)
+# Add messages in correct chronological order (newest first, as
+# they were saved)
             for message in messages:
                 if hasattr(self, "activity_list"):
                     item = QListWidgetItem(message)
                     self.activity_list.addItem(item)
 
-                # Add to dashboard activity (limited to 20 items)
+# Add to dashboard activity (limited to 20 items)
                 if (
                     hasattr(self, "dashboard_activity")
                     and self.dashboard_activity.count() < 20
@@ -2434,7 +2433,7 @@ class MainWindow(QMainWindow):
         except Exception as e:
             print(f"Failed to load activity logs: {e}")
 
-    def get_activity_retention_setting(self):
+def get_activity_retention_setting(self):
         """Get the current activity retention setting."""
         if hasattr(self, "settings_activity_retention_combo"):
             return int(self.settings_activity_retention_combo.currentText())
@@ -2442,10 +2441,10 @@ class MainWindow(QMainWindow):
             "ui_settings", {}).get(
             "activity_log_retention", 100)
 
-    def clear_activity_logs(self):
+def clear_activity_logs(self):
         """Clear all activity logs from both Protection tab and Dashboard."""
         try:
-            # Show confirmation dialog
+# Show confirmation dialog
             reply = self.show_themed_message_box(
                 "question",
                 "Clear Activity Logs",
@@ -2456,16 +2455,16 @@ class MainWindow(QMainWindow):
             )
 
             if reply == QMessageBox.StandardButton.Yes:
-                # Clear both activity lists
+# Clear both activity lists
                 if hasattr(self, "activity_list"):
                     self.activity_list.clear()
 
                 if hasattr(self, "dashboard_activity"):
                     self.dashboard_activity.clear()
 
-                # Remove the saved activity log file
+# Remove the saved activity log file
                 try:
-                    from utils.config import DATA_DIR
+from utils.config import DATA_DIR
 
                     activity_log_file = DATA_DIR / "activity_logs.json"
                     if activity_log_file.exists():
@@ -2473,10 +2472,10 @@ class MainWindow(QMainWindow):
                 except Exception as e:
                     print(f"Warning: Could not remove activity log file: {e}")
 
-                # Add a confirmation message to the logs
+# Add a confirmation message to the logs
                 self.add_activity_message("🗑️ Activity logs cleared by user")
 
-                # Show success message
+# Show success message
                 self.show_themed_message_box(
                     "information",
                     "Logs Cleared",
@@ -2489,29 +2488,29 @@ class MainWindow(QMainWindow):
                 "warning", "Error", f"Failed to clear activity logs: {str(e)}"
             )
 
-    def on_retention_setting_changed(self, new_value):
+def on_retention_setting_changed(self, new_value):
         """Handle changes to the activity log retention setting."""
         try:
             new_retention = int(new_value)
 
-            # Trim current activity lists to new size
+# Trim current activity lists to new size
             if hasattr(self, "activity_list"):
                 while self.activity_list.count() > new_retention:
                     self.activity_list.takeItem(self.activity_list.count() - 1)
 
-            # Save settings immediately when changed
+# Save settings immediately when changed
             self.config["ui_settings"]["activity_log_retention"] = new_retention
-            from utils.config import save_config
+from utils.config import save_config
 
             save_config(self.config)
 
         except ValueError:
             print(f"Invalid retention value: {new_value}")
 
-    def update_monitoring_statistics(self):
+def update_monitoring_statistics(self):
         """Update the monitoring statistics display."""
-        # Update firewall status less frequently (every 6th call = 30-60
-        # seconds)
+# Update firewall status less frequently (every 6th call = 30-60
+# seconds)
         if not hasattr(self, "_firewall_update_counter"):
             self._firewall_update_counter = 0
         self._firewall_update_counter += 1
@@ -2524,7 +2523,7 @@ class MainWindow(QMainWindow):
                 stats = self.real_time_monitor.get_statistics()
                 monitor_stats = stats.get("monitor", {})
 
-                # Update each statistic with null checking
+# Update each statistic with null checking
                 if hasattr(self, "events_processed_label"):
                     events = monitor_stats.get("events_processed", 0)
                     self.events_processed_label.setText(str(events))
@@ -2549,7 +2548,7 @@ class MainWindow(QMainWindow):
                     else:
                         self.uptime_label.setText("00:00:00")
 
-                # Also update the dashboard cards with current statistics
+# Also update the dashboard cards with current statistics
                 if hasattr(self, "threats_card"):
                     threats = monitor_stats.get("threats_detected", 0)
                     for child in self.threats_card.findChildren(QLabel):
@@ -2558,10 +2557,10 @@ class MainWindow(QMainWindow):
                             break
 
             except (AttributeError, ValueError, KeyError) as e:
-                # Log the error for debugging but don't crash the UI
+# Log the error for debugging but don't crash the UI
                 print(f"⚠️ Error updating monitoring statistics: {e}")
         else:
-            # If monitor is not available, ensure all statistics show 0
+# If monitor is not available, ensure all statistics show 0
             if hasattr(self, "events_processed_label"):
                 self.events_processed_label.setText("0")
             if hasattr(self, "threats_detected_label"):
@@ -2571,7 +2570,7 @@ class MainWindow(QMainWindow):
             if hasattr(self, "uptime_label"):
                 self.uptime_label.setText("00:00:00")
 
-    def update_paths_list(self):
+def update_paths_list(self):
         """Update the monitored paths list."""
         if hasattr(self, "paths_list") and self.real_time_monitor:
             self.paths_list.clear()
@@ -2579,7 +2578,7 @@ class MainWindow(QMainWindow):
             for path in config.watch_paths:
                 self.paths_list.addItem(f"📁 {path}")
 
-    def add_watch_path(self):
+def add_watch_path(self):
         """Add a new path to monitor."""
         path = self.show_themed_file_dialog(
             "directory", "Select Directory to Monitor")
@@ -2592,7 +2591,7 @@ class MainWindow(QMainWindow):
                     "warning", "Error", f"Failed to add watch path: {path}"
                 )
 
-    def remove_watch_path(self):
+def remove_watch_path(self):
         """Remove a path from monitoring."""
         current_item = self.paths_list.currentItem()
         if current_item and self.real_time_monitor:
@@ -2605,16 +2604,16 @@ class MainWindow(QMainWindow):
                     "warning", "Error", f"Failed to remove watch path: {path}"
                 )
 
-    def create_status_bar(self):
+def create_status_bar(self):
         self.status_bar = QStatusBar()
         self.status_bar.showMessage("Ready")
         self.setStatusBar(self.status_bar)
 
-    def create_menu_bar(self):
+def create_menu_bar(self):
         menu_bar = QMenuBar()
         self.setMenuBar(menu_bar)
 
-        # File menu
+# File menu
         file_menu = QMenu("File", self)
         menu_bar.addMenu(file_menu)
 
@@ -2622,15 +2621,15 @@ class MainWindow(QMainWindow):
         exit_action.triggered.connect(self.quit_application)
         file_menu.addAction(exit_action)
 
-        # View menu for theme selection
+# View menu for theme selection
         view_menu = QMenu("View", self)
         menu_bar.addMenu(view_menu)
 
-        # Theme submenu
+# Theme submenu
         theme_menu = QMenu("Theme", self)
         view_menu.addMenu(theme_menu)
 
-        # Theme actions
+# Theme actions
         self.dark_theme_action = QAction("Dark Mode", self)
         self.dark_theme_action.setCheckable(True)
         self.dark_theme_action.triggered.connect(
@@ -2649,10 +2648,10 @@ class MainWindow(QMainWindow):
             lambda: self.set_theme("system"))
         theme_menu.addAction(self.system_theme_action)
 
-        # Set initial theme state
+# Set initial theme state
         self.update_theme_menu()
 
-        # Help menu
+# Help menu
         help_menu = QMenu("Help", self)
         menu_bar.addMenu(help_menu)
 
@@ -2660,13 +2659,13 @@ class MainWindow(QMainWindow):
         about_action.triggered.connect(self.show_about)
         help_menu.addAction(about_action)
 
-    def setup_system_tray(self):
+def setup_system_tray(self):
         if not QSystemTrayIcon.isSystemTrayAvailable():
             return
 
         self.tray_icon = QSystemTrayIcon(self)
 
-        # Create a system tray icon
+# Create a system tray icon
         app_icon = QIcon()
         icon_path = (
             Path(__file__).parent.parent.parent
@@ -2677,7 +2676,7 @@ class MainWindow(QMainWindow):
         if icon_path.exists():
             app_icon = QIcon(str(icon_path))
         else:
-            # Create a default icon if the SVG is not found
+# Create a default icon if the SVG is not found
             pixmap = QPixmap(64, 64)
             pixmap.fill(Qt.GlobalColor.blue)
             app_icon = QIcon(pixmap)
@@ -2685,10 +2684,10 @@ class MainWindow(QMainWindow):
         self.tray_icon.setIcon(app_icon)
         self.tray_icon.setToolTip("S&D - Search & Destroy")
 
-        # Initialize performance tooltip update
+# Initialize performance tooltip update
         self.update_system_tray_tooltip()
 
-        # Create system tray menu
+# Create system tray menu
         tray_menu = QMenu(self)
 
         open_action = QAction("Open", self)
@@ -2705,30 +2704,30 @@ class MainWindow(QMainWindow):
         self.tray_icon.activated.connect(self.tray_icon_activated)
         self.tray_icon.show()
 
-    def update_system_tray_tooltip(self):
+def update_system_tray_tooltip(self):
         """Update system tray tooltip with concise security information."""
         try:
             if not hasattr(self, "tray_icon") or not self.tray_icon:
                 return
 
-            # Get performance data for system status
+# Get performance data for system status
             perf_status, perf_color, perf_details = self.get_performance_card_data()
 
-            # Get app status with visual indicators and descriptive text
+# Get app status with visual indicators and descriptive text
             firewall_icon = "○"
             protection_icon = "○"
             firewall_status = "Inactive"
             protection_status = "Disabled"
 
             try:
-                from core.firewall_detector import get_firewall_status
+from core.firewall_detector import get_firewall_status
 
                 firewall_status_dict = get_firewall_status()
                 firewall_active = firewall_status_dict.get("is_active", False)
                 firewall_icon = "●" if firewall_active else "○"
                 firewall_status = "Active" if firewall_active else "Inactive"
             except Exception as e:
-                # More detailed error handling
+# More detailed error handling
                 print(f"Error checking firewall status: {e}")
                 firewall_icon = "○"
                 firewall_status = "Unknown"
@@ -2741,8 +2740,8 @@ class MainWindow(QMainWindow):
                 protection_icon = "○"
                 protection_status = "Unknown"
 
-            # Create single, compact tooltip with minimal width
-            tooltip_text = f"""S&D Security Status
+# Create single, compact tooltip with minimal width
+            tooltip_text = """S&D Security Status
 ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔
 Protection    {protection_icon} {protection_status}
 Firewall      {firewall_icon} {firewall_status}
@@ -2751,17 +2750,17 @@ System        {perf_status}"""
             self.tray_icon.setToolTip(tooltip_text)
 
         except Exception as e:
-            # Fallback to simple tooltip
+# Fallback to simple tooltip
             self.tray_icon.setToolTip("S&D - Search & Destroy")
             print(f"Error updating tray tooltip: {e}")
 
-    def show_detailed_tooltip(self):
+def show_detailed_tooltip(self):
         """Deprecated - now using single tooltip display only."""
         pass
 
-    def setup_accessibility(self):
+def setup_accessibility(self):
         """Set up accessibility features including keyboard shortcuts and ARIA-like labels."""
-        # Keyboard shortcuts
+# Keyboard shortcuts
         self.quick_scan_shortcut = QShortcut(QKeySequence("Ctrl+Q"), self)
         self.quick_scan_shortcut.activated.connect(self.quick_scan)
 
@@ -2770,7 +2769,7 @@ System        {perf_status}"""
         self.update_definitions_shortcut.activated.connect(
             self.update_definitions)
 
-        # Tab navigation shortcuts
+# Tab navigation shortcuts
         self.dashboard_shortcut = QShortcut(QKeySequence("Ctrl+1"), self)
         self.dashboard_shortcut.activated.connect(
             lambda: self.tab_widget.setCurrentIndex(0)
@@ -2785,26 +2784,26 @@ System        {perf_status}"""
             lambda: self.tab_widget.setCurrentIndex(2)
         )
 
-        # Help shortcut
+# Help shortcut
         self.help_shortcut = QShortcut(QKeySequence("F1"), self)
         self.help_shortcut.activated.connect(self.show_about)
 
-        # Refresh shortcut
+# Refresh shortcut
         self.refresh_shortcut = QShortcut(QKeySequence("F5"), self)
         self.refresh_shortcut.activated.connect(self.refresh_reports)
 
-        # Set accessible names and descriptions for better screen reader
-        # support
+# Set accessible names and descriptions for better screen reader
+# support
         self.tab_widget.setAccessibleName("Main application tabs")
         self.tab_widget.setAccessibleDescription(
             "Navigate between different application functions"
         )
 
-        # Set status bar accessibility
+# Set status bar accessibility
         if hasattr(self, "status_bar"):
             self.status_bar.setAccessibleName("Application status")
 
-    def apply_theme(self):
+def apply_theme(self):
         """Apply the current theme to the application."""
         if self.current_theme == "dark":
             self.apply_dark_theme()
@@ -2813,11 +2812,11 @@ System        {perf_status}"""
         else:  # system
             self.apply_system_theme()
 
-        # Update the icon for the new theme
+# Update the icon for the new theme
         if hasattr(self, "icon_label"):
             self.update_icon_for_theme()
 
-    def set_theme(self, theme):
+def set_theme(self, theme):
         """Set the application theme and save to config."""
         self.current_theme = theme
         self.config["theme"] = theme
@@ -2825,13 +2824,13 @@ System        {perf_status}"""
         self.apply_theme()
         self.update_theme_menu()
 
-    def update_theme_menu(self):
+def update_theme_menu(self):
         """Update the theme menu to reflect the current selection."""
         self.dark_theme_action.setChecked(self.current_theme == "dark")
         self.light_theme_action.setChecked(self.current_theme == "light")
         self.system_theme_action.setChecked(self.current_theme == "system")
 
-    def update_icon_for_theme(self):
+def update_icon_for_theme(self):
         """Update the application icon based on the current theme."""
         icon_path = (
             Path(__file__).parent.parent.parent
@@ -2842,7 +2841,7 @@ System        {perf_status}"""
         if icon_path.exists():
             pixmap = QPixmap(str(icon_path))
 
-            # Convert to black and white in dark mode
+# Convert to black and white in dark mode
             if self.current_theme == "dark":
                 pixmap = self.convert_to_black_and_white(pixmap)
 
@@ -2854,40 +2853,40 @@ System        {perf_status}"""
             )
             self.icon_label.setPixmap(scaled_pixmap)
         else:
-            # Fallback to colored circle if icon not found
+# Fallback to colored circle if icon not found
             fallback_color = "#404040" if self.current_theme == "dark" else "#2196F3"
             self.icon_label.setStyleSheet(
                 f"background-color: {fallback_color}; border-radius: 64px;"
             )
 
-    def convert_to_black_and_white(self, pixmap):
+def convert_to_black_and_white(self, pixmap):
         """Convert a colored pixmap to black and white by desaturating colors."""
-        # Convert pixmap to image for processing
+# Convert pixmap to image for processing
         image = pixmap.toImage()
 
-        # Create a simple desaturated version using a more efficient approach
-        # Convert to Format_ARGB32 for easier pixel manipulation
+# Create a simple desaturated version using a more efficient approach
+# Convert to Format_ARGB32 for easier pixel manipulation
         if image.format() != image.Format.Format_ARGB32:
             image = image.convertToFormat(image.Format.Format_ARGB32)
 
         width = image.width()
         height = image.height()
 
-        # Process pixels in chunks for better performance
+# Process pixels in chunks for better performance
         for y in range(height):
             for x in range(width):
                 pixel = image.pixel(x, y)
 
-                # Extract ARGB components
+# Extract ARGB components
                 alpha = (pixel >> 24) & 0xFF
                 red = (pixel >> 16) & 0xFF
                 green = (pixel >> 8) & 0xFF
                 blue = pixel & 0xFF
 
-                # Calculate luminance using standard formula
+# Calculate luminance using standard formula
                 luminance = int(0.299 * red + 0.587 * green + 0.114 * blue)
 
-                # Create grayscale pixel maintaining alpha
+# Create grayscale pixel maintaining alpha
                 gray_pixel = (
                     (alpha << 24) | (
                         luminance << 16) | (
@@ -2896,13 +2895,13 @@ System        {perf_status}"""
 
         return QPixmap.fromImage(image)
 
-    def show_themed_message_box(self, msg_type, title, text, buttons=None):
+def show_themed_message_box(self, msg_type, title, text, buttons=None):
         """Show a message box with proper theming."""
         msg_box = QMessageBox(self)
         msg_box.setWindowTitle(title)
         msg_box.setText(text)
 
-        # Set message type
+# Set message type
         if msg_type == "warning":
             msg_box.setIcon(QMessageBox.Icon.Warning)
         elif msg_type == "information":
@@ -2912,13 +2911,13 @@ System        {perf_status}"""
         elif msg_type == "question":
             msg_box.setIcon(QMessageBox.Icon.Question)
 
-        # Set buttons
+# Set buttons
         if buttons:
             msg_box.setStandardButtons(buttons)
         else:
             msg_box.setStandardButtons(QMessageBox.StandardButton.Ok)
 
-        # Apply theme-specific styling
+# Apply theme-specific styling
         bg = self.get_theme_color("background")
         text = self.get_theme_color("primary_text")
         tertiary_bg = self.get_theme_color("tertiary_bg")
@@ -2928,7 +2927,7 @@ System        {perf_status}"""
         accent = self.get_theme_color("accent")
         success = self.get_theme_color("success")
 
-        style = f"""
+        style = """
             QMessageBox {{
                 background-color: {bg};
                 color: {text};
@@ -2975,7 +2974,7 @@ System        {perf_status}"""
 
         return msg_box.exec()
 
-    def show_themed_file_dialog(
+def show_themed_file_dialog(
             self,
             dialog_type="directory",
             title="Select",
@@ -2989,7 +2988,7 @@ System        {perf_status}"""
         hover_bg = self.get_theme_color("hover_bg")
         accent = self.get_theme_color("accent")
 
-        # Create file dialog
+# Create file dialog
         if dialog_type == "directory":
             dialog = QFileDialog(self, title, default_path)
             dialog.setFileMode(QFileDialog.FileMode.Directory)
@@ -3001,8 +3000,8 @@ System        {perf_status}"""
             dialog = QFileDialog(self, title, default_path, file_filter)
             dialog.setAcceptMode(QFileDialog.AcceptMode.AcceptOpen)
 
-        # Apply theming
-        style = f"""
+# Apply theming
+        style = """
             QFileDialog {{
                 background-color: {bg};
                 color: {text};
@@ -3064,7 +3063,7 @@ System        {perf_status}"""
                 return selected[0]
         return ""
 
-    def show_themed_progress_dialog(
+def show_themed_progress_dialog(
         self, title, label_text, minimum=0, maximum=100, parent=None
     ):
         """Create a progress dialog with proper theming."""
@@ -3076,7 +3075,7 @@ System        {perf_status}"""
         progress.setWindowTitle(title)
         progress.setWindowModality(Qt.WindowModality.WindowModal)
 
-        # Apply theming
+# Apply theming
         bg = self.get_theme_color("background")
         text = self.get_theme_color("primary_text")
         tertiary_bg = self.get_theme_color("tertiary_bg")
@@ -3084,7 +3083,7 @@ System        {perf_status}"""
         hover_bg = self.get_theme_color("hover_bg")
         accent = self.get_theme_color("accent")
 
-        style = f"""
+        style = """
             QProgressDialog {{
                 background-color: {bg};
                 color: {text};
@@ -3127,7 +3126,7 @@ System        {perf_status}"""
 
         return progress
 
-    def setup_activity_list_styling(self):
+def setup_activity_list_styling(self):
         """Set up proper styling for the activity list with theme-aware colors."""
         bg = self.get_theme_color("background")
         secondary_bg = self.get_theme_color("secondary_bg")
@@ -3137,7 +3136,7 @@ System        {perf_status}"""
         hover_bg = self.get_theme_color("hover_bg")
         selection_bg = self.get_theme_color("selection_bg")
 
-        activity_style = f"""
+        activity_style = """
             QListWidget {{
                 background-color: {secondary_bg};
                 color: {text};
@@ -3164,26 +3163,26 @@ System        {perf_status}"""
         if hasattr(self, "dashboard_activity"):
             self.dashboard_activity.setStyleSheet(activity_style)
 
-        # Also apply styling to other activity lists
+# Also apply styling to other activity lists
         if hasattr(self, "activity_list"):
             self.activity_list.setStyleSheet(activity_style)
 
-        # Apply styling to reports list
+# Apply styling to reports list
         if hasattr(self, "reports_list"):
             style = self._get_list_widget_style()
             self.reports_list.setStyleSheet(style)
 
-        # Apply styling to quarantine list
+# Apply styling to quarantine list
         if hasattr(self, "quarantine_list"):
             style = self._get_list_widget_style()
             self.quarantine_list.setStyleSheet(style)
 
-        # Apply styling to paths list
+# Apply styling to paths list
         if hasattr(self, "paths_list"):
             style = self._get_list_widget_style()
             self.paths_list.setStyleSheet(style)
 
-    def _get_list_widget_style(self):
+def _get_list_widget_style(self):
         """Get consistent list widget styling based on current theme."""
         if self.current_theme == "dark":
             return """
@@ -3237,16 +3236,16 @@ System        {perf_status}"""
                 }
             """
 
-    def apply_dark_theme(self):
+def apply_dark_theme(self):
         """Apply dark theme styling using Strawberry color palette for optimal readability."""
-        # Based on Color Theory principles:
-        # - F14666 (Deep Strawberry): Primary accent, high energy/attention
-        # - EE8980 (Coral): Secondary accent, warm complement
-        # - FFCDAA (Peach Cream): Main text, high contrast on dark
-        # - 9CB898 (Sage Green): Success states, natural balance
-        # Dark neutrals
-        # (https://www.uxdesigninstitute.com/blog/what-is-a-gui/#1a1a1a,
-        # #2a2a2a, #3a3a3a) for depth hierarchy
+# Based on Color Theory principles:
+# - F14666 (Deep Strawberry): Primary accent, high energy/attention
+# - EE8980 (Coral): Secondary accent, warm complement
+# - FFCDAA (Peach Cream): Main text, high contrast on dark
+# - 9CB898 (Sage Green): Success states, natural balance
+# Dark neutrals
+# (https://www.uxdesigninstitute.com/blog/what-is-a-gui/#1a1a1a,
+# #2a2a2a, #3a3a3a) for depth hierarchy
 
         self.setStyleSheet(
             """
@@ -3452,7 +3451,7 @@ System        {perf_status}"""
                 color: #ffffff;
             }
 
-            #headerFrame {
+#headerFrame {
                 background-color: #F14666;
                 color: white;
                 border-radius: 8px;
@@ -3461,13 +3460,13 @@ System        {perf_status}"""
                 border: 2px solid #F14666;
             }
 
-            #appTitle {
+#appTitle {
                 color: white;
                 font-size: 22px;
                 font-weight: 700;
             }
 
-            #pathLabel {
+#pathLabel {
                 font-weight: 600;
                 padding: 8px 12px;
                 background-color: #4a4a4a;
@@ -3476,7 +3475,7 @@ System        {perf_status}"""
                 border: 1px solid #EE8980;
             }
 
-            #actionButton {
+#actionButton {
                 background-color: #F14666;
                 color: white;
                 border: 4px solid #F14666;
@@ -3490,7 +3489,7 @@ System        {perf_status}"""
                 font-size: 13px;
             }
 
-            #actionButton:hover {
+#actionButton:hover {
                 background-color: #FF5676;
                 border: 4px solid #EE8980;
                 color: #ffffff;
@@ -3500,7 +3499,7 @@ System        {perf_status}"""
                 font-size: 13px;
             }
 
-            #actionButton:pressed {
+#actionButton:pressed {
                 background-color: #E03256;
                 border: 4px solid #FFCDAA;
                 padding: 6px 12px;
@@ -3509,7 +3508,7 @@ System        {perf_status}"""
                 font-size: 13px;
             }
 
-            #lastUpdateLabel {
+#lastUpdateLabel {
                 color: white;
                 font-size: 12px;
                 margin: 3px;
@@ -3520,7 +3519,7 @@ System        {perf_status}"""
                 border: 1px solid rgba(255, 205, 170, 0.3);
             }
 
-            #lastCheckedLabel {
+#lastCheckedLabel {
                 color: white;
                 font-size: 11px;
                 margin: 2px;
@@ -3533,20 +3532,20 @@ System        {perf_status}"""
             }
 
             /* Scan report sections - enhanced readability */
-            #resultsText {
+#resultsText {
                 font-weight: 500;
                 color: #FFCDAA;
                 line-height: 1.4;
             }
 
-            #reportViewer {
+#reportViewer {
                 font-weight: 500;
                 color: #FFCDAA;
                 line-height: 1.4;
             }
 
             /* Real-time protection status styles */
-            #protectionStatus {
+#protectionStatus {
                 font-size: 16px;
                 font-weight: 700;
                 padding: 10px;
@@ -3816,17 +3815,17 @@ System        {perf_status}"""
         """
         )
 
-        # Apply activity list styling after theme
+# Apply activity list styling after theme
         self.setup_activity_list_styling()
 
-    def apply_light_theme(self):
+def apply_light_theme(self):
         """Apply light theme styling using Sunrise color palette for optimal readability."""
-        # Based on Color Theory principles:
-        # - 75BDE0 (Sky Blue): Primary accent, trust and stability
-        # - F8D49B (Golden Yellow): Secondary accent, warm energy
-        # - F8BC9B (Peach Orange): Interactive elements, friendly warmth
-        # - F89B9B (Coral Pink): Danger/attention states, warm warnings
-        # Light neutrals (#fefefe, #ffffff, #f5f5f5) for clean hierarchy
+# Based on Color Theory principles:
+# - 75BDE0 (Sky Blue): Primary accent, trust and stability
+# - F8D49B (Golden Yellow): Secondary accent, warm energy
+# - F8BC9B (Peach Orange): Interactive elements, friendly warmth
+# - F89B9B (Coral Pink): Danger/attention states, warm warnings
+# Light neutrals (#fefefe, #ffffff, #f5f5f5) for clean hierarchy
 
         self.setStyleSheet(
             """
@@ -4025,7 +4024,7 @@ System        {perf_status}"""
                 color: #2c2c2c;
             }
 
-            #headerFrame {
+#headerFrame {
                 background-color: #75BDE0;
                 color: white;
                 border-radius: 8px;
@@ -4034,13 +4033,13 @@ System        {perf_status}"""
                 border: 2px solid #75BDE0;
             }
 
-            #appTitle {
+#appTitle {
                 color: white;
                 font-size: 22px;
                 font-weight: 700;
             }
 
-            #pathLabel {
+#pathLabel {
                 font-weight: 600;
                 padding: 8px;
                 background-color: #F8D49B;
@@ -4049,7 +4048,7 @@ System        {perf_status}"""
                 border: 1px solid #F8BC9B;
             }
 
-            #actionButton {
+#actionButton {
                 background-color: #75BDE0;
                 color: white;
                 border: 4px solid #75BDE0;
@@ -4063,7 +4062,7 @@ System        {perf_status}"""
                 font-size: 13px;
             }
 
-            #actionButton:hover {
+#actionButton:hover {
                 background-color: #5AADD4;
                 border: 4px solid #F8BC9B;
                 color: #ffffff;
@@ -4073,7 +4072,7 @@ System        {perf_status}"""
                 font-size: 13px;
             }
 
-            #actionButton:pressed {
+#actionButton:pressed {
                 background-color: #4A9DC4;
                 border: 4px solid #F89B9B;
                 padding: 6px 12px;
@@ -4082,7 +4081,7 @@ System        {perf_status}"""
                 font-size: 13px;
             }
 
-            #lastUpdateLabel {
+#lastUpdateLabel {
                 color: #2c2c2c;
                 font-size: 12px;
                 margin: 3px;
@@ -4094,7 +4093,7 @@ System        {perf_status}"""
                 text-align: center;
             }
 
-            #lastCheckedLabel {
+#lastCheckedLabel {
                 color: #2c2c2c;
                 font-size: 11px;
                 margin: 2px;
@@ -4108,7 +4107,7 @@ System        {perf_status}"""
             }
 
             /* Scan report sections - enhanced readability with sunrise palette */
-            #resultsText {
+#resultsText {
                 font-weight: 400;
                 line-height: 1.5;
                 color: #2c2c2c;
@@ -4117,14 +4116,14 @@ System        {perf_status}"""
                 border-radius: 6px;
             }
 
-            #reportViewer {
+#reportViewer {
                 font-weight: 400;
                 line-height: 1.5;
                 color: #2c2c2c;
             }
 
             /* Real-time protection status styles */
-            #protectionStatus {
+#protectionStatus {
                 font-size: 16px;
                 font-weight: 700;
                 padding: 10px;
@@ -4394,20 +4393,20 @@ System        {perf_status}"""
         """
         )
 
-        # Apply activity list styling after theme
+# Apply activity list styling after theme
         self.setup_activity_list_styling()
 
-    def apply_system_theme(self):
+def apply_system_theme(self):
         """Apply system theme (falls back to light theme for now)."""
-        # For now, system theme defaults to light theme
-        # In a full implementation, you could detect system theme preference
+# For now, system theme defaults to light theme
+# In a full implementation, you could detect system theme preference
         self.apply_light_theme()
 
-    def set_scan_path(self, path):
+def set_scan_path(self, path):
         """Set the scan path and update the UI."""
         if os.path.exists(path):
             self.scan_path = path
-            # Show a shortened version of the path for better readability
+# Show a shortened version of the path for better readability
             if len(path) > 50:
                 display_path = "..." + path[-47:]
             else:
@@ -4419,14 +4418,14 @@ System        {perf_status}"""
                 "warning", "Warning", f"Path does not exist: {path}"
             )
 
-    def select_scan_path(self):
+def select_scan_path(self):
         path = self.show_themed_file_dialog(
             "directory", "Select Directory to Scan")
         if path:
             self.scan_path = path
             self.path_label.setText(path)
 
-    def start_scan(self, quick_scan=False):
+def start_scan(self, quick_scan=False):
         if not hasattr(self, "scan_path"):
             self.show_themed_message_box(
                 "warning", "Warning", "Please select a path to scan first."
@@ -4438,8 +4437,8 @@ System        {perf_status}"""
         self.progress_bar.setValue(0)
         self.results_text.clear()
 
-        # Check if this is a full system scan and RKHunter integration is
-        # enabled
+# Check if this is a full system scan and RKHunter integration is
+# enabled
         is_full_system_scan = hasattr(self, "scan_path") and (
             self.scan_path == "/" or self.scan_path == str(Path.home())
         )
@@ -4453,7 +4452,7 @@ System        {perf_status}"""
         )
 
         if should_run_rkhunter:
-            # Show confirmation for combined scan
+# Show confirmation for combined scan
             reply = self.show_themed_message_box(
                 "question",
                 "Combined Security Scan",
@@ -4470,11 +4469,11 @@ System        {perf_status}"""
                 self.results_text.append(
                     "📊 Running ClamAV scan first, followed by RKHunter..."
                 )
-                # Start combined scan
+# Start combined scan
                 self.start_combined_security_scan(quick_scan)
                 return
 
-        # Start regular scan in separate thread with quick scan option
+# Start regular scan in separate thread with quick scan option
         self.current_scan_thread = ScanThread(
             self.scanner, self.scan_path, quick_scan=quick_scan
         )
@@ -4485,9 +4484,9 @@ System        {perf_status}"""
         self.current_scan_thread.scan_completed.connect(self.scan_completed)
         self.current_scan_thread.start()
 
-    def start_combined_security_scan(self, quick_scan=False):
+def start_combined_security_scan(self, quick_scan=False):
         """Start a combined ClamAV + RKHunter security scan."""
-        # Start ClamAV scan first
+# Start ClamAV scan first
         self.current_scan_thread = ScanThread(
             self.scanner, self.scan_path, quick_scan=quick_scan
         )
@@ -4500,26 +4499,26 @@ System        {perf_status}"""
         )
         self.current_scan_thread.start()
 
-    def clamav_scan_completed_start_rkhunter(self, clamav_result):
+def clamav_scan_completed_start_rkhunter(self, clamav_result):
         """Handle ClamAV scan completion and start RKHunter scan."""
-        # Display ClamAV results first
+# Display ClamAV results first
         self.display_scan_results(clamav_result)
 
-        # Add separator
+# Add separator
         self.results_text.append("\n" + "=" * 60 + "\n")
 
-        # Check if RKHunter should still run
+# Check if RKHunter should still run
         if not self.rkhunter.is_available():
             self.results_text.append(
                 "❌ RKHunter not available, skipping rootkit scan")
             self.scan_completed(clamav_result)
             return
 
-        # Start RKHunter scan automatically
+# Start RKHunter scan automatically
         self.results_text.append("🔍 Starting RKHunter rootkit scan...\n")
         self.status_label.setText("Running RKHunter rootkit scan...")
 
-        # Get test categories from settings
+# Get test categories from settings
         test_categories = self.get_selected_rkhunter_categories()
 
         self.current_rkhunter_thread = RKHunterScanThread(
@@ -4533,22 +4532,22 @@ System        {perf_status}"""
                 clamav_result, rk_result))
         self.current_rkhunter_thread.start()
 
-    def combined_scan_completed(
+def combined_scan_completed(
         self, clamav_result, rkhunter_result: RKHunterScanResult
     ):
         """Handle completion of combined ClamAV + RKHunter scan."""
-        # Display RKHunter results
+# Display RKHunter results
         self.display_rkhunter_results(rkhunter_result)
 
-        # Save both reports
+# Save both reports
         self.save_rkhunter_report(rkhunter_result)
 
-        # Create combined summary
+# Create combined summary
         self.results_text.append("\n" + "=" * 60)
         self.results_text.append("\n🔒 COMPREHENSIVE SECURITY SCAN SUMMARY")
         self.results_text.append("=" * 60)
 
-        # ClamAV summary
+# ClamAV summary
         clamav_threats = 0
         if isinstance(clamav_result, dict):
             clamav_threats = clamav_result.get(
@@ -4557,11 +4556,11 @@ System        {perf_status}"""
         else:
             clamav_threats = getattr(clamav_result, "threats_found", 0)
 
-        self.results_text.append(f"\n📊 ClamAV Results:")
+        self.results_text.append("\n📊 ClamAV Results:")
         self.results_text.append(f"   • Threats Found: {clamav_threats}")
 
-        # RKHunter summary
-        self.results_text.append(f"\n🔍 RKHunter Results:")
+# RKHunter summary
+        self.results_text.append("\n🔍 RKHunter Results:")
         self.results_text.append(
             f"   • Warnings: {
                 rkhunter_result.warnings_found}")
@@ -4569,7 +4568,7 @@ System        {perf_status}"""
             f"   • Infections: {
                 rkhunter_result.infections_found}")
 
-        # Overall assessment
+# Overall assessment
         total_issues = (
             clamav_threats
             + rkhunter_result.warnings_found
@@ -4577,35 +4576,35 @@ System        {perf_status}"""
         )
 
         if total_issues == 0:
-            self.results_text.append(f"\n✅ **SYSTEM CLEAN**")
+            self.results_text.append("\n✅ **SYSTEM CLEAN**")
             self.results_text.append(
                 "   No threats or suspicious activity detected.")
         elif rkhunter_result.infections_found > 0:
             self.results_text.append(
-                f"\n🚨 **CRITICAL SECURITY ISSUES DETECTED**")
+                "\n🚨 **CRITICAL SECURITY ISSUES DETECTED**")
             self.results_text.append(
                 "   Potential rootkits found - immediate action required!"
             )
         elif clamav_threats > 0 or rkhunter_result.warnings_found > 0:
-            self.results_text.append(f"\n⚠️  **SECURITY ISSUES DETECTED**")
+            self.results_text.append("\n⚠️  **SECURITY ISSUES DETECTED**")
             self.results_text.append(
                 "   Review findings and take appropriate action.")
 
         self.results_text.append("\n" + "=" * 60)
 
-        # Complete the scan
+# Complete the scan
         self.scan_completed(clamav_result)
 
-    def install_rkhunter(self):
+def install_rkhunter(self):
         """Install or configure RKHunter."""
         self.rkhunter_scan_btn.setEnabled(False)
         self.rkhunter_scan_btn.setText("Checking...")
 
-        # First check if RKHunter is actually installed but has permission
-        # issues
+# First check if RKHunter is actually installed but has permission
+# issues
         if self.rkhunter.rkhunter_path and Path(
                 self.rkhunter.rkhunter_path).exists():
-            # RKHunter is installed but may need configuration
+# RKHunter is installed but may need configuration
             reply = self.show_themed_message_box(
                 "question",
                 "RKHunter Configuration",
@@ -4616,7 +4615,7 @@ System        {perf_status}"""
             )
 
             if reply == QMessageBox.StandardButton.Yes:
-                # Test if it works with sudo
+# Test if it works with sudo
                 try:
                     result = subprocess.run(
                         ["sudo", "-v"],  # Validate sudo access
@@ -4632,7 +4631,7 @@ System        {perf_status}"""
                             "You can run rootkit scans from the scan tab.",
                         )
 
-                        # Update button to scan mode
+# Update button to scan mode
                         self.rkhunter_scan_btn.setText("🔍 RKHunter Scan")
                         self.rkhunter_scan_btn.setToolTip(
                             "Run RKHunter rootkit detection scan\n(Configure scan categories in Settings → Scanning)"
@@ -4650,7 +4649,7 @@ System        {perf_status}"""
             self.rkhunter_scan_btn.setEnabled(True)
             return
 
-        # Show installation confirmation dialog
+# Show installation confirmation dialog
         reply = self.show_themed_message_box(
             "question",
             "Install RKHunter",
@@ -4675,7 +4674,7 @@ System        {perf_status}"""
                     f"RKHunter installed successfully!\n{message}",
                 )
 
-                # Update button to scan mode
+# Update button to scan mode
                 self.rkhunter_scan_btn.setText("🔍 RKHunter Scan")
                 self.rkhunter_scan_btn.setToolTip(
                     "Run RKHunter rootkit detection scan")
@@ -4702,9 +4701,9 @@ System        {perf_status}"""
             self.rkhunter_scan_btn.setText("📦 Install RKHunter")
             self.rkhunter_scan_btn.setEnabled(True)
 
-    def start_rkhunter_scan(self):
+def start_rkhunter_scan(self):
         """Start an RKHunter rootkit scan."""
-        # Check if already running
+# Check if already running
         if self.current_rkhunter_thread and self.current_rkhunter_thread.isRunning():
             self.show_themed_message_box(
                 "warning",
@@ -4712,9 +4711,9 @@ System        {perf_status}"""
                 "RKHunter scan is already running.")
             return
 
-        # Check if RKHunter is functional (this may prompt for permissions)
+# Check if RKHunter is functional (this may prompt for permissions)
         if not self.rkhunter.is_functional():
-            # Check authentication method available
+# Check authentication method available
             pkexec_available = self.rkhunter._find_executable("pkexec")
 
             if pkexec_available:
@@ -4742,7 +4741,7 @@ System        {perf_status}"""
                 self.install_rkhunter()  # Show configuration dialog
                 return
 
-        # Check if regular scan is running
+# Check if regular scan is running
         if self.current_scan_thread and self.current_scan_thread.isRunning():
             reply = self.show_themed_message_box(
                 "question",
@@ -4753,13 +4752,13 @@ System        {perf_status}"""
             if reply != QMessageBox.StandardButton.Yes:
                 return
 
-        # Get test categories from settings
+# Get test categories from settings
         test_categories = self.get_selected_rkhunter_categories()
 
-        # Check if GUI authentication is available
+# Check if GUI authentication is available
         pkexec_available = self.rkhunter._find_executable("pkexec")
 
-        # Build scan categories description for user
+# Build scan categories description for user
         category_names = {
             "system_commands": "System Commands",
             "rootkits": "Rootkits & Trojans",
@@ -4781,7 +4780,7 @@ System        {perf_status}"""
 
         if pkexec_available:
             auth_message = (
-                f"RKHunter will now scan your system for rootkits and malware.\n\n"
+                "RKHunter will now scan your system for rootkits and malware.\n\n"
                 f"Scan categories: {categories_text}\n\n"
                 "🔐 A secure password dialog will appear to authorize the scan. "
                 "This uses the same authentication method as 'Update Definitions'.\n\n"
@@ -4789,14 +4788,14 @@ System        {perf_status}"""
             )
         else:
             auth_message = (
-                f"RKHunter will now scan your system for rootkits and malware.\n\n"
+                "RKHunter will now scan your system for rootkits and malware.\n\n"
                 f"Scan categories: {categories_text}\n\n"
                 "🔐 You may be prompted for your administrator password in the terminal "
                 "to authorize the scan.\n\n"
                 "The scan may take several minutes to complete."
             )
 
-        # Show final confirmation with password warning
+# Show final confirmation with password warning
         reply = self.show_themed_message_box(
             "question",
             "Authentication Required - Ready to Start RKHunter Scan",
@@ -4806,7 +4805,7 @@ System        {perf_status}"""
         if reply != QMessageBox.StandardButton.Yes:
             return
 
-        # Start RKHunter scan in thread
+# Start RKHunter scan in thread
         self.rkhunter_scan_btn.setEnabled(False)
         self.rkhunter_scan_btn.setText("🔄 Scanning...")
 
@@ -4821,15 +4820,15 @@ System        {perf_status}"""
         )
         self.current_rkhunter_thread.start()
 
-        # Update status
+# Update status
         self.status_label.setText("Running RKHunter rootkit scan...")
         self.results_text.append("\n🔍 RKHunter rootkit scan started...\n")
 
-    def update_rkhunter_progress(self, message):
+def update_rkhunter_progress(self, message):
         """Update progress display for RKHunter scan."""
         self.status_label.setText(f"RKHunter: {message}")
 
-    def rkhunter_scan_completed(self, result: RKHunterScanResult):
+def rkhunter_scan_completed(self, result: RKHunterScanResult):
         """Handle completion of RKHunter scan."""
         self.rkhunter_scan_btn.setEnabled(True)
         self.rkhunter_scan_btn.setText("🔍 RKHunter Scan")
@@ -4841,20 +4840,20 @@ System        {perf_status}"""
             self.status_label.setText("RKHunter scan failed")
             return
 
-        # Display results
+# Display results
         self.display_rkhunter_results(result)
 
-        # Save results to report
+# Save results to report
         self.save_rkhunter_report(result)
 
         self.status_label.setText("RKHunter scan completed")
 
-    def display_rkhunter_results(self, result: RKHunterScanResult):
+def display_rkhunter_results(self, result: RKHunterScanResult):
         """Display RKHunter scan results in the results text area."""
         output = "\n🔍 RKHunter Rootkit Scan Results\n"
         output += "=" * 50 + "\n"
 
-        # Scan summary
+# Scan summary
         duration = (
             (result.end_time - result.start_time).total_seconds()
             if result.end_time
@@ -4866,7 +4865,7 @@ System        {perf_status}"""
         output += f"Infections: {result.infections_found}\n"
         output += f"Skipped: {result.skipped_tests}\n\n"
 
-        # Overall status
+# Overall status
         if result.infections_found > 0:
             output += "🚨 **CRITICAL**: Potential rootkits detected!\n\n"
         elif result.warnings_found > 0:
@@ -4874,7 +4873,7 @@ System        {perf_status}"""
         else:
             output += "✅ No rootkits detected\n\n"
 
-        # Detailed findings
+# Detailed findings
         if result.findings:
             output += "Detailed Findings:\n"
             for finding in result.findings:
@@ -4886,7 +4885,7 @@ System        {perf_status}"""
                 if finding.details:
                     output += f"   Details: {finding.details}\n"
 
-        # Recommendations
+# Recommendations
         recommendations = self.rkhunter.get_scan_recommendations(result)
         if recommendations:
             output += "\n\nRecommendations:\n"
@@ -4895,7 +4894,7 @@ System        {perf_status}"""
 
         self.results_text.append(output)
 
-    def save_rkhunter_report(self, result: RKHunterScanResult):
+def save_rkhunter_report(self, result: RKHunterScanResult):
         """Save RKHunter scan results to a report file."""
         try:
             reports_dir = (
@@ -4905,7 +4904,7 @@ System        {perf_status}"""
 
             report_file = reports_dir / f"rkhunter_scan_{result.scan_id}.json"
 
-            # Convert result to dictionary for JSON serialization
+# Convert result to dictionary for JSON serialization
             report_data = {
                 "scan_id": result.scan_id,
                 "scan_type": "rkhunter_rootkit_scan",
@@ -4952,10 +4951,10 @@ System        {perf_status}"""
         except Exception as e:
             print(f"Error saving RKHunter report: {e}")
 
-    def get_selected_rkhunter_categories(self):
+def get_selected_rkhunter_categories(self):
         """Get list of selected RKHunter test categories from settings."""
         if not hasattr(self, "settings_rkhunter_category_checkboxes"):
-            # Return default categories if settings aren't loaded yet
+# Return default categories if settings aren't loaded yet
             return [
                 "system_commands",
                 "rootkits",
@@ -4967,20 +4966,20 @@ System        {perf_status}"""
             if checkbox.isChecked():
                 selected.append(category_id)
 
-        # Return default categories if nothing selected
+# Return default categories if nothing selected
         return (
             selected
             if selected
             else ["system_commands", "rootkits", "network", "system_integrity"]
         )
 
-    def select_all_rkhunter_categories(self):
+def select_all_rkhunter_categories(self):
         """Select all RKHunter test categories."""
         if hasattr(self, "settings_rkhunter_category_checkboxes"):
             for checkbox in self.settings_rkhunter_category_checkboxes.values():
                 checkbox.setChecked(True)
 
-    def select_recommended_rkhunter_categories(self):
+def select_recommended_rkhunter_categories(self):
         """Select recommended RKHunter test categories."""
         if hasattr(self, "settings_rkhunter_category_checkboxes"):
             recommended = {
@@ -4994,24 +4993,24 @@ System        {perf_status}"""
             ) in self.settings_rkhunter_category_checkboxes.items():
                 checkbox.setChecked(category_id in recommended)
 
-    def select_no_rkhunter_categories(self):
+def select_no_rkhunter_categories(self):
         """Deselect all RKHunter test categories."""
         if hasattr(self, "settings_rkhunter_category_checkboxes"):
             for checkbox in self.settings_rkhunter_category_checkboxes.values():
                 checkbox.setChecked(False)
 
-    def stop_scan(self):
+def stop_scan(self):
         if self.current_scan_thread and self.current_scan_thread.isRunning():
             self.current_scan_thread.terminate()
             self.scan_completed({"status": "cancelled"})
 
-    def update_dashboard_cards(self):
+def update_dashboard_cards(self):
         """Update all dashboard status cards with current information."""
         print("DEBUG: update_dashboard_cards() called")
-        # Update Last Scan card
+# Update Last Scan card
         if hasattr(self, "last_scan_card"):
             try:
-                # Get the most recent scan report from the reports directory
+# Get the most recent scan report from the reports directory
                 reports_dir = (
                     Path.home() /
                     ".local/share/search-and-destroy/scan_reports/daily")
@@ -5020,7 +5019,7 @@ System        {perf_status}"""
                     report_files = list(reports_dir.glob("scan_*.json"))
                     print(f"DEBUG: Found {len(report_files)} report files")
                     if report_files:
-                        # Get the most recent file
+# Get the most recent file
                         latest_file = max(
                             report_files, key=lambda p: p.stat().st_mtime)
                         print(f"DEBUG: Latest report file: {latest_file}")
@@ -5028,18 +5027,18 @@ System        {perf_status}"""
                             with open(latest_file, "r", encoding="utf-8") as f:
                                 report_data = json.load(f)
 
-                            # Get data from the correct structure
+# Get data from the correct structure
                             scan_time = report_data.get("start_time", "")
                             scan_type = report_data.get("scan_type", "unknown")
                             scan_success = report_data.get("success", True)
 
-                            # Clean up scan type (remove ScanType. prefix if
-                            # present)
+# Clean up scan type (remove ScanType. prefix if
+# present)
                             if scan_type.startswith("ScanType."):
                                 scan_type = scan_type.replace(
                                     "ScanType.", "").lower()
 
-                            # Format the scan type for display
+# Format the scan type for display
                             scan_type_display = {
                                 "quick": "Quick",
                                 "full": "Full",
@@ -5052,8 +5051,8 @@ System        {perf_status}"""
                                     scan_date = datetime.fromisoformat(
                                         scan_time.replace("Z", "+00:00")
                                     )
-                                    # Format time (12-hour) above date (full
-                                    # format with year)
+# Format time (12-hour) above date (full
+# format with year)
                                     formatted_time = scan_date.strftime(
                                         "%I:%M %p"
                                     )  # 12:17 PM
@@ -5070,7 +5069,7 @@ System        {perf_status}"""
 
                             threats_count = report_data.get("threats_found", 0)
 
-                            # Determine status text
+# Determine status text
                             if not scan_success:
                                 status_text = "Failed"
                             elif threats_count > 0:
@@ -5078,7 +5077,7 @@ System        {perf_status}"""
                             else:
                                 status_text = "No threats found"
 
-                            # Update the card
+# Update the card
                             for child in self.last_scan_card.findChildren(
                                     QLabel):
                                 if child.objectName() == "cardValue":
@@ -5090,7 +5089,7 @@ System        {perf_status}"""
                                     child.setText(
                                         f"{scan_type_display} scan - {status_text}")
 
-                            # Update Threats Found card
+# Update Threats Found card
                             if hasattr(self, "threats_card"):
                                 for child in self.threats_card.findChildren(
                                         QLabel):
@@ -5115,12 +5114,12 @@ System        {perf_status}"""
             except (OSError, ImportError) as e:
                 print(f"Error updating dashboard cards: {e}")
 
-    def scan_completed(self, result):
+def scan_completed(self, result):
         self.start_scan_btn.setEnabled(True)
         self.stop_scan_btn.setEnabled(False)
         self.progress_bar.setValue(100)
 
-        # Reset quick scan button if it was a quick scan
+# Reset quick scan button if it was a quick scan
         if hasattr(
                 self,
                 "is_quick_scan_running") and self.is_quick_scan_running:
@@ -5132,23 +5131,23 @@ System        {perf_status}"""
             self.status_bar.showMessage(f"Scan failed: {error_msg}")
             return
 
-        # Handle cancelled scans
+# Handle cancelled scans
         if result.get("status") == "cancelled":
             cancel_msg = result.get("message", "Scan was cancelled")
             self.results_text.setText(cancel_msg)
             self.status_bar.showMessage(cancel_msg)
             return
 
-        # Save the scan result to a report file
+# Save the scan result to a report file
         try:
-            # Note: Report saving is now handled by the FileScanner itself to prevent duplicates
-            # The scanner automatically saves reports with proper scan type detection
-            #
-            # Create a proper ScanResult object from the dictionary for display
-            # purposes only
+# Note: Report saving is now handled by the FileScanner itself to prevent duplicates
+# The scanner automatically saves reports with proper scan type detection
+#
+# Create a proper ScanResult object from the dictionary for display
+# purposes only
             scan_id = datetime.now().strftime("%Y%m%d_%H%M%S")
 
-            # Handle both dictionary and dataclass result formats
+# Handle both dictionary and dataclass result formats
             if isinstance(result, dict):
                 total_files = result.get("total_files", 0)
                 scanned_files = result.get(
@@ -5160,18 +5159,18 @@ System        {perf_status}"""
                 duration = result.get("duration", result.get("scan_time", 0))
                 threats_data = result.get("threats", [])
             else:
-                # Assume it's already a proper result object
+# Assume it's already a proper result object
                 total_files = getattr(result, "total_files", 0)
                 scanned_files = getattr(result, "scanned_files", 0)
                 threats_found = getattr(result, "threats_found", 0)
                 duration = getattr(result, "duration", 0)
                 threats_data = getattr(result, "threats", [])
 
-            # Convert threat dictionaries to ThreatInfo objects if any
+# Convert threat dictionaries to ThreatInfo objects if any
             threats = []
             for threat_data in threats_data:
                 if isinstance(threat_data, dict):
-                    # Create ThreatInfo object from the dictionary
+# Create ThreatInfo object from the dictionary
                     threat = ThreatInfo(
                         file_path=threat_data.get(
                             "file_path", threat_data.get("file", "")
@@ -5195,12 +5194,12 @@ System        {perf_status}"""
                         ),
                     )
                 else:
-                    # Already a ThreatInfo object
+# Already a ThreatInfo object
                     threat = threat_data
                 threats.append(threat)
 
-            # Create the ScanResult object with correct scan type
-            # Determine scan type based on context
+# Create the ScanResult object with correct scan type
+# Determine scan type based on context
             if hasattr(
                     self,
                     "is_quick_scan_running") and self.is_quick_scan_running:
@@ -5228,38 +5227,38 @@ System        {perf_status}"""
                 success=True,
             )
 
-            # Save the scan result
-            # Note: Commented out to prevent duplicate reports - FileScanner handles this
-            # self.report_manager.save_scan_result(scan_result)
+# Save the scan result
+# Note: Commented out to prevent duplicate reports - FileScanner handles this
+# self.report_manager.save_scan_result(scan_result)
 
-            # Always refresh the reports list after a scan completes
-            # This ensures reports show up regardless of which tab is currently active
-            # Use a more reliable approach than QTimer
-            def delayed_refresh():
+# Always refresh the reports list after a scan completes
+# This ensures reports show up regardless of which tab is currently active
+# Use a more reliable approach than QTimer
+def delayed_refresh():
                 try:
                     self.refresh_reports()
                     print("DEBUG: Reports refreshed after scan completion")
                 except Exception as e:
                     print(f"DEBUG: Error refreshing reports: {e}")
 
-            from PyQt6.QtCore import QTimer
+from PyQt6.QtCore import QTimer
 
             QTimer.singleShot(500, delayed_refresh)  # Increased delay to 500ms
 
         except (OSError, IOError, json.JSONDecodeError) as e:
             print(f"Error saving scan report: {e}")
 
-        # Display the results in the UI
+# Display the results in the UI
         self.display_scan_results(result)
 
-        # Update dashboard cards with new scan information
+# Update dashboard cards with new scan information
         print("DEBUG: About to call update_dashboard_cards() after scan completion")
         self.update_dashboard_cards()
 
-    def display_scan_results(self, result):
+def display_scan_results(self, result):
         output = "Scan completed successfully!\n\n"
 
-        # Handle both dictionary and dataclass result formats
+# Handle both dictionary and dataclass result formats
         if isinstance(result, dict):
             files_scanned = result.get(
                 "scanned_files", result.get(
@@ -5273,13 +5272,13 @@ System        {perf_status}"""
                     "scan_time", "Unknown"))
             threats = result.get("threats", [])
         else:
-            # Assume it's a dataclass-like object
+# Assume it's a dataclass-like object
             files_scanned = getattr(result, "scanned_files", 0)
             threats_found = getattr(result, "threats_found", 0)
             scan_time = getattr(result, "duration", "Unknown")
             threats = getattr(result, "threats", [])
 
-        # Format scan time nicely
+# Format scan time nicely
         if isinstance(scan_time, (int, float)) and scan_time != "Unknown":
             if scan_time < 60:
                 formatted_time = f"{scan_time:.1f} seconds"
@@ -5311,20 +5310,20 @@ System        {perf_status}"""
 
         self.results_text.setText(output)
 
-    def quick_scan(self):
-        # Toggle quick scan based on current state
+def quick_scan(self):
+# Toggle quick scan based on current state
         if self.is_quick_scan_running:
-            # Stop the quick scan
+# Stop the quick scan
             self.stop_quick_scan()
         else:
-            # Start a quick scan
+# Start a quick scan
             self.start_quick_scan()
 
-    def start_quick_scan(self):
+def start_quick_scan(self):
         """Start a quick scan and update button state."""
-        # Quick scan targets common infection vectors, not entire home directory
-        # This prevents crashes from scanning millions of files
-        import tempfile
+# Quick scan targets common infection vectors, not entire home directory
+# This prevents crashes from scanning millions of files
+import tempfile
 
         quick_scan_paths = [
             os.path.expanduser("~/Downloads"),  # Most common infection vector
@@ -5334,7 +5333,7 @@ System        {perf_status}"""
             "/tmp" if os.path.exists("/tmp") else None,  # System temp (Linux)
         ]
 
-        # Filter out non-existent paths
+# Filter out non-existent paths
         valid_paths = [
             path for path in quick_scan_paths if path and os.path.exists(path)
         ]
@@ -5345,19 +5344,19 @@ System        {perf_status}"""
             self.reset_quick_scan_button()
             return
 
-        # Use the first valid path (Downloads is most important)
+# Use the first valid path (Downloads is most important)
         self.scan_path = valid_paths[0]
         self.path_label.setText(
             f"Quick Scan ({os.path.basename(self.scan_path)})")
 
-        # Update button state
+# Update button state
         self.is_quick_scan_running = True
         self.quick_scan_btn.setText("Stop Quick Scan")
 
-        # Start the scan with file limit for quick scans
+# Start the scan with file limit for quick scans
         self.start_scan(quick_scan=True)
 
-    def stop_quick_scan(self):
+def stop_quick_scan(self):
         """Stop the quick scan and reset button state."""
         try:
             if (
@@ -5365,12 +5364,12 @@ System        {perf_status}"""
                 and self.current_scan_thread
                 and self.current_scan_thread.isRunning()
             ):
-                # Gracefully stop the thread
+# Gracefully stop the thread
                 self.current_scan_thread.terminate()
-                # Give the thread time to clean up
+# Give the thread time to clean up
                 self.current_scan_thread.wait(3000)  # Wait up to 3 seconds
 
-                # Force completion if thread hasn't terminated
+# Force completion if thread hasn't terminated
                 if self.current_scan_thread.isRunning():
                     print("Warning: Scan thread did not terminate gracefully")
 
@@ -5380,41 +5379,41 @@ System        {perf_status}"""
         except (RuntimeError, AttributeError) as e:
             print(f"Error stopping quick scan: {e}")
         finally:
-            # Always reset button state
+# Always reset button state
             self.reset_quick_scan_button()
 
-    def reset_quick_scan_button(self):
+def reset_quick_scan_button(self):
         """Reset the quick scan button to its initial state."""
         self.is_quick_scan_running = False
         self.quick_scan_btn.setText("Quick Scan")
 
-    def update_definitions(self):
+def update_definitions(self):
         """Update virus definitions with progress dialog and user feedback."""
         try:
-            # First check if definitions need updating
+# First check if definitions need updating
             freshness = self.scanner.clamav_wrapper.check_definition_freshness()
 
-            # Create and show progress dialog
+# Create and show progress dialog
             progress_dialog = self.show_themed_progress_dialog(
                 "Updating Virus Definitions", "Checking virus definitions...", 0, 100)
             progress_dialog.setValue(0)
             progress_dialog.show()
 
-            # Start update in background thread with progress callbacks
-            import time
-            from threading import Thread
+# Start update in background thread with progress callbacks
+import time
+from threading import Thread
 
             self.update_result = None
             self.update_progress = 0
             self.update_status = "Initializing..."
 
-            def run_update():
+def run_update():
                 try:
-                    # Update progress
+# Update progress
                     self.update_status = "Checking current definitions..."
                     self.update_progress = 10
 
-                    # Check if update is needed
+# Check if update is needed
                     if not freshness.get("needs_update", True):
                         self.update_status = "Definitions are already up to date"
                         self.update_progress = 100
@@ -5425,7 +5424,7 @@ System        {perf_status}"""
                     self.update_progress = 20
                     time.sleep(0.5)
 
-                    # Check if we need sudo by testing write permissions first
+# Check if we need sudo by testing write permissions first
                     clamav_db_dir = "/var/lib/clamav"
                     needs_sudo = (
                         not os.access(clamav_db_dir, os.W_OK)
@@ -5436,13 +5435,13 @@ System        {perf_status}"""
                     if needs_sudo:
                         self.update_status = "Administrator permissions required - please check your terminal"
                         self.update_progress = 30
-                        # Give user time to see the message
+# Give user time to see the message
                         time.sleep(2)
                     else:
                         self.update_status = "Attempting direct update..."
                         self.update_progress = 30
 
-                    # Call the actual update method
+# Call the actual update method
                     success = self.scanner.update_virus_definitions()
 
                     if success:
@@ -5464,22 +5463,22 @@ System        {perf_status}"""
                     self.update_progress = 100
                     self.update_result = False
 
-            # Start update thread
+# Start update thread
             update_thread = Thread(target=run_update)
             update_thread.daemon = True
             update_thread.start()
 
-            # Create timer to update progress dialog
+# Create timer to update progress dialog
             timer = QTimer()
             dialog_closed = False
 
-            def update_progress():
+def update_progress():
                 nonlocal dialog_closed
 
                 if dialog_closed:
                     return
 
-                # Handle cancel button first (before processing updates)
+# Handle cancel button first (before processing updates)
                 if progress_dialog.wasCanceled():
                     timer.stop()
                     dialog_closed = True
@@ -5493,13 +5492,13 @@ System        {perf_status}"""
                     progress_dialog.setValue(self.update_progress)
                     progress_dialog.setLabelText(self.update_status)
 
-                    # Check if completed
+# Check if completed
                     if self.update_progress >= 100:
                         timer.stop()
                         dialog_closed = True
                         progress_dialog.close()
 
-                        # Show result message
+# Show result message
                         if hasattr(self, "update_result"):
                             if self.update_result:
                                 self.show_themed_message_box(
@@ -5509,20 +5508,20 @@ System        {perf_status}"""
                                 )
                                 self.status_bar.showMessage(
                                     "Virus definitions updated successfully", 5000)
-                                # Refresh the definition status display with a
-                                # small delay
+# Refresh the definition status display with a
+# small delay
                                 QTimer.singleShot(
                                     500, self.update_definition_status)
                             else:
                                 self.show_themed_message_box(
                                     "warning",
                                     "Update Failed",
-                                    f"Failed to update virus definitions.\n\n"
+                                    "Failed to update virus definitions.\n\n"
                                     f"Status: {self.update_status}\n\n"
-                                    f"You may need to:\n"
-                                    f"• Run the application as administrator\n"
-                                    f"• Check your internet connection\n"
-                                    f"• Verify ClamAV is properly installed",
+                                    "You may need to:\n"
+                                    "• Run the application as administrator\n"
+                                    "• Check your internet connection\n"
+                                    "• Verify ClamAV is properly installed",
                                 )
                                 self.status_bar.showMessage(
                                     "Failed to update virus definitions", 5000
@@ -5537,28 +5536,28 @@ System        {perf_status}"""
                 "critical", "Update Error", f"Could not start update: {e}"
             )
 
-    def refresh_quarantine(self):
+def refresh_quarantine(self):
         """Load and display quarantined files."""
         try:
-            # Clear the current list
+# Clear the current list
             self.quarantine_list.clear()
 
-            # Get quarantine directory from config
-            from utils.config import QUARANTINE_DIR
+# Get quarantine directory from config
+from utils.config import QUARANTINE_DIR
 
-            # Verify the directory exists
+# Verify the directory exists
             if not QUARANTINE_DIR.exists():
                 return
 
-            # Find all quarantined files
+# Find all quarantined files
             quarantine_files = list(QUARANTINE_DIR.glob("*.quarantine"))
 
             if not quarantine_files:
                 return
 
-            # Add to list widget
+# Add to list widget
             for qfile in quarantine_files:
-                # Extract original filename from quarantine file
+# Extract original filename from quarantine file
                 original_name = qfile.stem
                 item = QListWidgetItem(original_name)
                 item.setData(Qt.ItemDataRole.UserRole, str(qfile))
@@ -5567,19 +5566,19 @@ System        {perf_status}"""
         except (OSError, IOError, PermissionError) as e:
             self.status_bar.showMessage(f"Error loading quarantine: {e}", 5000)
 
-    def show_about(self):
+def show_about(self):
         self.show_themed_message_box(
             "information",
             "About S&D",
-            f"""<h1>S&D - Search & Destroy</h1>
+            """<h1>S&D - Search & Destroy</h1>
                          <p>A modern GUI for ClamAV virus scanning.</p>
                          <p>Version {APP_VERSION}</p>
                          <p>© 2025 xanadOS</p>""",
         )
 
-    def update_definition_status(self):
+def update_definition_status(self):
         """Update the last virus definition update time display."""
-        # Set the "Last Checked" timestamp to now
+# Set the "Last Checked" timestamp to now
         current_time = datetime.now()
         formatted_checked = current_time.strftime("%Y-%m-%d %H:%M")
         self.last_checked_label.setText(f"Last checked: {formatted_checked}")
@@ -5587,7 +5586,7 @@ System        {perf_status}"""
         try:
             freshness = self.scanner.clamav_wrapper.check_definition_freshness()
 
-            # Handle error cases gracefully
+# Handle error cases gracefully
             if freshness.get("error"):
                 print(
                     f"Warning: Error checking definitions: {
@@ -5596,7 +5595,7 @@ System        {perf_status}"""
                 return
 
             if freshness.get("last_update"):
-                # Handle different types of last_update values
+# Handle different types of last_update values
                 last_update_value = freshness["last_update"]
 
                 if last_update_value == "No definitions found":
@@ -5604,21 +5603,21 @@ System        {perf_status}"""
                 elif last_update_value.startswith("Error:"):
                     self.last_update_label.setText("Status: Check failed")
                 else:
-                    # Parse the date string and format it nicely
+# Parse the date string and format it nicely
                     try:
                         last_update = datetime.fromisoformat(
                             last_update_value.replace("Z", "+00:00")
                         )
-                        # Format as readable date
+# Format as readable date
                         formatted_date = last_update.strftime("%Y-%m-%d %H:%M")
                         label_text = f"Last updated: {formatted_date}"
                         self.last_update_label.setText(label_text)
                     except (ValueError, AttributeError):
-                        # If parsing fails, show the raw date
+# If parsing fails, show the raw date
                         label_text = f"Last updated: {last_update_value}"
                         self.last_update_label.setText(label_text)
             else:
-                # Check if definitions exist at all
+# Check if definitions exist at all
                 if freshness.get("definitions_exist", False):
                     self.last_update_label.setText("Last updated: Unknown")
                 else:
@@ -5631,8 +5630,8 @@ System        {perf_status}"""
                 f"Last checked: {formatted_checked} (error)"
             )
 
-            # Try a fallback method using clamscan --version (doesn't require
-            # sudo)
+# Try a fallback method using clamscan --version (doesn't require
+# sudo)
             try:
                 result = subprocess.run(
                     ["clamscan", "--version"],
@@ -5642,8 +5641,8 @@ System        {perf_status}"""
                     check=False,
                 )
                 if result.returncode == 0:
-                    # If clamscan works, definitions are probably there, just
-                    # couldn't access them
+# If clamscan works, definitions are probably there, just
+# couldn't access them
                     self.last_update_label.setText("Status: Permissions issue")
                 else:
                     self.last_update_label.setText("Status: ClamAV not found")
@@ -5654,9 +5653,9 @@ System        {perf_status}"""
             ):
                 self.last_update_label.setText("Status: ClamAV not available")
 
-    def tray_icon_activated(self, reason):
-        # ActivationReason.Trigger is a single click, DoubleClick is double
-        # click
+def tray_icon_activated(self, reason):
+# ActivationReason.Trigger is a single click, DoubleClick is double
+# click
         if (
             reason == QSystemTrayIcon.ActivationReason.Trigger
             or reason == QSystemTrayIcon.ActivationReason.DoubleClick
@@ -5668,8 +5667,8 @@ System        {perf_status}"""
                 self.raise_()
                 self.activateWindow()
 
-    def quit_application(self):
-        # Check if real-time protection is active
+def quit_application(self):
+# Check if real-time protection is active
         if (
             self.monitoring_enabled
             and self.real_time_monitor
@@ -5686,7 +5685,7 @@ System        {perf_status}"""
             if reply == QMessageBox.StandardButton.No:
                 return  # User chose not to exit
 
-            # User confirmed exit - stop real-time protection
+# User confirmed exit - stop real-time protection
             try:
                 print("🛑 Stopping real-time protection due to application exit...")
                 self.stop_real_time_protection()
@@ -5694,7 +5693,7 @@ System        {perf_status}"""
             except Exception as e:
                 print(f"⚠️ Error stopping real-time protection: {e}")
 
-        # Check for running scans
+# Check for running scans
         if self.current_scan_thread and self.current_scan_thread.isRunning():
             reply = self.show_themed_message_box(
                 "question",
@@ -5706,13 +5705,13 @@ System        {perf_status}"""
                 return
             self.current_scan_thread.terminate()
 
-        # Force application to quit instead of just closing the window
-        from PyQt6.QtWidgets import QApplication
+# Force application to quit instead of just closing the window
+from PyQt6.QtWidgets import QApplication
 
         QApplication.quit()
 
-    def closeEvent(self, event):
-        # Check if real-time protection is active before closing
+def closeEvent(self, event):
+# Check if real-time protection is active before closing
         if (
             self.monitoring_enabled
             and self.real_time_monitor
@@ -5730,7 +5729,7 @@ System        {perf_status}"""
             )
 
             if reply == QMessageBox.StandardButton.No:
-                # User chose to minimize to tray instead of closing
+# User chose to minimize to tray instead of closing
                 if (
                     hasattr(self, "tray_icon")
                     and self.tray_icon
@@ -5746,7 +5745,7 @@ System        {perf_status}"""
                 event.ignore()
                 return
 
-            # User chose to close - stop real-time protection
+# User chose to close - stop real-time protection
             try:
                 print("🛑 Stopping real-time protection due to application close...")
                 self.stop_real_time_protection()
@@ -5754,42 +5753,42 @@ System        {perf_status}"""
             except Exception as e:
                 print(f"⚠️ Error stopping real-time protection: {e}")
 
-        # Stop real-time monitoring before closing
+# Stop real-time monitoring before closing
         if hasattr(self, "real_time_monitor") and self.real_time_monitor:
             try:
                 self.real_time_monitor.stop()
             except Exception:
                 pass  # Ignore errors during shutdown
 
-        # Save activity logs before closing
+# Save activity logs before closing
         try:
             self.save_activity_logs()
         except Exception as e:
             print(f"Warning: Failed to save activity logs on close: {e}")
 
-        # Accept the close event (actually close the application)
+# Accept the close event (actually close the application)
         event.accept()
 
-        # Force application to quit
-        from PyQt6.QtWidgets import QApplication
+# Force application to quit
+from PyQt6.QtWidgets import QApplication
 
         QApplication.quit()
 
-    def refresh_reports(self):
+def refresh_reports(self):
         """Load and display scan reports in the reports list."""
         try:
-            # Clear the current list
+# Clear the current list
             self.reports_list.clear()
 
-            # Get reports directory from the report manager
+# Get reports directory from the report manager
             reports_dir = self.report_manager.daily_reports
 
-            # Verify the directory exists
+# Verify the directory exists
             if not reports_dir.exists():
                 self.report_viewer.setText("No reports directory found.")
                 return
 
-            # Find all JSON report files
+# Find all JSON report files
             report_files = list(reports_dir.glob("scan_*.json"))
 
             if not report_files:
@@ -5844,30 +5843,30 @@ System        {perf_status}"""
                 self.report_viewer.setHtml(no_reports_html)
                 return
 
-            # Sort reports by date (newest first)
+# Sort reports by date (newest first)
             report_files.sort(reverse=True)
 
-            # Add to list widget
+# Add to list widget
             for report_file in report_files:
                 try:
-                    # Extract scan ID from filename
+# Extract scan ID from filename
                     scan_id = report_file.stem.replace("scan_", "")
 
-                    # Try to load basic report info
+# Try to load basic report info
                     with open(report_file, "r", encoding="utf-8") as f:
                         data = json.load(f)
 
-                    # Create item with timestamp and scan type
+# Create item with timestamp and scan type
                     item_text = f"{data.get('start_time',
                                             'Unknown')} - {data.get('scan_type',
                                                                     'Unknown')}"
 
-                    # Add threat count if available
+# Add threat count if available
                     threats = data.get("threats_found", 0)
                     item_text += (
                         f" - {threats} threats found" if threats else " - Clean")
 
-                    # Create and add the item
+# Create and add the item
                     item = QListWidgetItem(item_text)
                     item.setData(Qt.ItemDataRole.UserRole, scan_id)
                     self.reports_list.addItem(item)
@@ -5927,7 +5926,7 @@ System        {perf_status}"""
 
         except Exception as e:
             if self.current_theme == "dark":
-                error_html = f"""
+                error_html = """
                 <style>
                     body {{
                         font-family: 'Segoe UI', Arial, sans-serif;
@@ -5950,7 +5949,7 @@ System        {perf_status}"""
                 <p>{e}</p>
                 """
             else:
-                error_html = f"""
+                error_html = """
                 <style>
                     body {{
                         font-family: 'Segoe UI', Arial, sans-serif;
@@ -5974,10 +5973,10 @@ System        {perf_status}"""
                 """
             self.report_viewer.setHtml(error_html)
 
-    def load_report(self, item):
+def load_report(self, item):
         """Load and display the selected scan report."""
         try:
-            # Get scan ID from item data
+# Get scan ID from item data
             scan_id = item.data(Qt.ItemDataRole.UserRole)
             if not scan_id:
                 if self.current_theme == "dark":
@@ -6031,12 +6030,12 @@ System        {perf_status}"""
                 self.report_viewer.setHtml(no_id_html)
                 return
 
-            # Load the report using the report manager
+# Load the report using the report manager
             scan_result = self.report_manager.load_scan_result(scan_id)
 
             if not scan_result:
                 if self.current_theme == "dark":
-                    load_error_html = f"""
+                    load_error_html = """
                     <style>
                         body {{
                             font-family: 'Segoe UI', Arial, sans-serif;
@@ -6060,7 +6059,7 @@ System        {perf_status}"""
                     <p>Could not load report with ID: {scan_id}</p>
                     """
                 else:
-                    load_error_html = f"""
+                    load_error_html = """
                     <style>
                         body {{
                             font-family: 'Segoe UI', Arial, sans-serif;
@@ -6086,8 +6085,8 @@ System        {perf_status}"""
                 self.report_viewer.setHtml(load_error_html)
                 return
 
-            # Format the report for display
-            # Create a formatted text output
+# Format the report for display
+# Create a formatted text output
             output = f"<h2>Scan Report: {scan_id}</h2>"
             output += f"<p><b>Date:</b> {scan_result.start_time}</p>"
             output += f"<p><b>Scan Type:</b> {scan_result.scan_type.value}</p>"
@@ -6099,13 +6098,13 @@ System        {perf_status}"""
             output += f"<p><b>Threats Found:</b> {
                 scan_result.threats_found}</p>"
 
-            # Add paths that were scanned
+# Add paths that were scanned
             output += "<h3>Scanned Paths:</h3><ul>"
             for path in scan_result.scanned_paths:
                 output += f"<li>{path}</li>"
             output += "</ul>"
 
-            # Add threats if any were found
+# Add threats if any were found
             if scan_result.threats_found > 0:
                 output += "<h3>Detected Threats:</h3><table border='1' cellpadding='3'>"
                 output += (
@@ -6138,17 +6137,17 @@ System        {perf_status}"""
             else:
                 output += "<h3>No threats detected!</h3>"
 
-            # Add any errors
+# Add any errors
             if scan_result.errors:
                 output += "<h3>Errors:</h3><ul>"
                 for error in scan_result.errors:
                     output += f"<li>{error}</li>"
                 output += "</ul>"
 
-            # Add CSS styling based on current theme
+# Add CSS styling based on current theme
             if self.current_theme == "dark":
-                # Dark mode styling with Strawberry color palette
-                output = f"""
+# Dark mode styling with Strawberry color palette
+                output = """
                 <style>
                     body {{
                         font-family: 'Segoe UI', Arial, sans-serif;
@@ -6244,8 +6243,8 @@ System        {perf_status}"""
                 {output}
                 """
             else:
-                # Light mode styling with Sunrise color palette
-                output = f"""
+# Light mode styling with Sunrise color palette
+                output = """
                 <style>
                     body {{
                         font-family: 'Segoe UI', Arial, sans-serif;
@@ -6330,7 +6329,7 @@ System        {perf_status}"""
 
         except Exception as e:
             if self.current_theme == "dark":
-                final_error_html = f"""
+                final_error_html = """
                 <style>
                     body {{
                         font-family: 'Segoe UI', Arial, sans-serif;
@@ -6354,7 +6353,7 @@ System        {perf_status}"""
                 <p>Error loading report: {e}</p>
                 """
             else:
-                final_error_html = f"""
+                final_error_html = """
                 <style>
                     body {{
                         font-family: 'Segoe UI', Arial, sans-serif;
@@ -6379,11 +6378,10 @@ System        {perf_status}"""
                 """
             self.report_viewer.setHtml(final_error_html)
 
-    def export_reports(self):
+def export_reports(self):
         """Export scan reports to file."""
         try:
-            from PyQt6.QtCore import QDate
-            from PyQt6.QtWidgets import (
+from PyQt6.QtCore import QDate
                 QComboBox,
                 QDateEdit,
                 QDialog,
@@ -6395,12 +6393,12 @@ System        {perf_status}"""
                 QVBoxLayout,
             )
 
-            # Create a dialog for export options
+# Create a dialog for export options
             dialog = QDialog(self)
             dialog.setWindowTitle("Export Reports")
             dialog.setMinimumWidth(400)
 
-            # Apply theming
+# Apply theming
             bg = self.get_theme_color("background")
             text = self.get_theme_color("primary_text")
             tertiary_bg = self.get_theme_color("tertiary_bg")
@@ -6408,7 +6406,7 @@ System        {perf_status}"""
             hover_bg = self.get_theme_color("hover_bg")
             accent = self.get_theme_color("accent")
 
-            dialog_style = f"""
+            dialog_style = """
                 QDialog {{
                     background-color: {bg};
                     color: {text};
@@ -6461,7 +6459,7 @@ System        {perf_status}"""
 
             layout = QVBoxLayout(dialog)
 
-            # Format selection
+# Format selection
             format_layout = QHBoxLayout()
             format_label = QLabel("Export Format:")
             format_combo = QComboBox()
@@ -6470,7 +6468,7 @@ System        {perf_status}"""
             format_layout.addWidget(format_combo)
             layout.addLayout(format_layout)
 
-            # Date range
+# Date range
             date_layout = QVBoxLayout()
             date_label = QLabel("Date Range (Optional):")
             date_layout.addWidget(date_label)
@@ -6496,7 +6494,7 @@ System        {perf_status}"""
 
             layout.addLayout(date_layout)
 
-            # Buttons
+# Buttons
             button_layout = QHBoxLayout()
             cancel_button = QPushButton("Cancel")
             cancel_button.clicked.connect(dialog.reject)
@@ -6507,18 +6505,18 @@ System        {perf_status}"""
             button_layout.addWidget(export_button)
             layout.addLayout(button_layout)
 
-            # Show dialog
+# Show dialog
             if dialog.exec() != QDialog.DialogCode.Accepted:
                 return
 
-            # Get export format
+# Get export format
             format_type = format_combo.currentText().lower()
 
-            # Get date range
+# Get date range
             start_date_str = start_date.date().toString("yyyy-MM-dd")
             end_date_str = end_date.date().toString("yyyy-MM-dd")
 
-            # Get output file path
+# Get output file path
             file_extensions = {
                 "json": "JSON Files (*.json)",
                 "csv": "CSV Files (*.csv)",
@@ -6535,11 +6533,11 @@ System        {perf_status}"""
             if not file_path:
                 return
 
-            # Add extension if missing
+# Add extension if missing
             if not file_path.lower().endswith(f".{format_type}"):
                 file_path += f".{format_type}"
 
-            # Export the reports
+# Export the reports
             success = self.report_manager.export_reports(
                 file_path,
                 format_type=format_type,
@@ -6565,14 +6563,14 @@ System        {perf_status}"""
                 "warning", "Export Error", f"Error exporting reports: {e}"
             )
 
-    def delete_all_reports(self):
+def delete_all_reports(self):
         """Delete all scan reports after confirmation."""
         try:
-            from pathlib import Path
+from pathlib import Path
 
-            from PyQt6.QtWidgets import QMessageBox
+from PyQt6.QtWidgets import QMessageBox
 
-            # Show confirmation dialog
+# Show confirmation dialog
             reply = self.show_themed_message_box(
                 "question",
                 "Delete All Reports",
@@ -6581,27 +6579,27 @@ System        {perf_status}"""
             )
 
             if reply == QMessageBox.StandardButton.Yes:
-                # Delete all reports by cleaning up the reports directory
+# Delete all reports by cleaning up the reports directory
                 try:
-                    # Use the report manager's reports directory
+# Use the report manager's reports directory
                     reports_dir = self.report_manager.reports_dir
                     deleted_count = 0
 
                     if reports_dir.exists():
-                        # Delete all .json report files
+# Delete all .json report files
                         for report_file in reports_dir.glob("*.json"):
                             report_file.unlink()
                             deleted_count += 1
 
-                        # Also clean up any subdirectories like daily
-                        # summaries, threats, etc.
+# Also clean up any subdirectories like daily
+# summaries, threats, etc.
                         for subdir in reports_dir.iterdir():
                             if subdir.is_dir():
                                 for file in subdir.rglob("*"):
                                     if file.is_file():
                                         file.unlink()
                                         deleted_count += 1
-                                # Remove empty directories
+# Remove empty directories
                                 try:
                                     if not any(subdir.iterdir()):
                                         subdir.rmdir()
@@ -6613,7 +6611,7 @@ System        {perf_status}"""
                         "Reports Deleted",
                         f"Successfully deleted {deleted_count} report files.",
                     )
-                    # Refresh the reports list to show it's empty
+# Refresh the reports list to show it's empty
                     self.refresh_reports()
 
                 except Exception as delete_error:
@@ -6628,10 +6626,10 @@ System        {perf_status}"""
                 "warning", "Delete Error", f"Error deleting reports: {e}"
             )
 
-    def load_current_settings(self):
+def load_current_settings(self):
         """Load current settings from config into the settings UI controls."""
         try:
-            # Scan settings
+# Scan settings
             scan_settings = self.config.get("scan_settings", {})
             self.settings_max_threads_spin.setValue(
                 scan_settings.get("max_threads", 4))
@@ -6639,7 +6637,7 @@ System        {perf_status}"""
                 scan_settings.get("timeout_seconds", 300)
             )
 
-            # UI settings
+# UI settings
             ui_settings = self.config.get("ui_settings", {})
             self.settings_minimize_to_tray_cb.setChecked(
                 ui_settings.get("minimize_to_tray", True)
@@ -6648,17 +6646,17 @@ System        {perf_status}"""
                 ui_settings.get("show_notifications", True)
             )
 
-            # Activity log retention setting
+# Activity log retention setting
             retention = str(ui_settings.get("activity_log_retention", 100))
             self.settings_activity_retention_combo.setCurrentText(retention)
 
-            # Security settings
+# Security settings
             security_settings = self.config.get("security_settings", {})
             self.settings_auto_update_cb.setChecked(
                 security_settings.get("auto_update_definitions", True)
             )
 
-            # Advanced settings
+# Advanced settings
             advanced_settings = self.config.get("advanced_settings", {})
             self.settings_scan_archives_cb.setChecked(
                 advanced_settings.get("scan_archives", True)
@@ -6667,7 +6665,7 @@ System        {perf_status}"""
                 advanced_settings.get("follow_symlinks", False)
             )
 
-            # Real-time protection settings
+# Real-time protection settings
             protection_settings = self.config.get("realtime_protection", {})
             self.settings_monitor_modifications_cb.setChecked(
                 protection_settings.get("monitor_modifications", True)
@@ -6679,7 +6677,7 @@ System        {perf_status}"""
                 protection_settings.get("scan_modified_files", False)
             )
 
-            # RKHunter settings
+# RKHunter settings
             rkhunter_settings = self.config.get("rkhunter_settings", {})
             self.settings_enable_rkhunter_cb.setChecked(
                 rkhunter_settings.get("enabled", False)
@@ -6691,54 +6689,54 @@ System        {perf_status}"""
                 rkhunter_settings.get("auto_update", True)
             )
 
-            # Load RKHunter category selections
+# Load RKHunter category selections
             if hasattr(self, "settings_rkhunter_category_checkboxes"):
                 saved_categories = rkhunter_settings.get("categories", {})
                 for (
                     category_id,
                     checkbox,
                 ) in self.settings_rkhunter_category_checkboxes.items():
-                    # Use saved value if available, otherwise use the default
-                    # from settings creation
+# Use saved value if available, otherwise use the default
+# from settings creation
                     if category_id in saved_categories:
                         checkbox.setChecked(saved_categories[category_id])
-                    # Note: If not in saved_categories, keep the default set
-                    # during checkbox creation
+# Note: If not in saved_categories, keep the default set
+# during checkbox creation
 
         except (OSError, IOError, PermissionError) as e:
             print(f"Error loading settings: {e}")
 
-    def load_default_settings(self):
+def load_default_settings(self):
         """Reset all settings to their default values."""
         try:
-            # Reset scan settings to defaults
+# Reset scan settings to defaults
             self.settings_max_threads_spin.setValue(4)
             self.settings_timeout_spin.setValue(300)
 
-            # Reset UI settings to defaults
+# Reset UI settings to defaults
             self.settings_minimize_to_tray_cb.setChecked(True)
             self.settings_show_notifications_cb.setChecked(True)
 
-            # Reset security settings to defaults
+# Reset security settings to defaults
             self.settings_auto_update_cb.setChecked(True)
 
-            # Reset advanced settings to defaults
+# Reset advanced settings to defaults
             self.settings_scan_archives_cb.setChecked(True)
             self.settings_follow_symlinks_cb.setChecked(False)
 
-            # Reset real-time protection settings to defaults
+# Reset real-time protection settings to defaults
             self.settings_monitor_modifications_cb.setChecked(True)
             self.settings_monitor_new_files_cb.setChecked(True)
             self.settings_scan_modified_cb.setChecked(False)
 
-            # Reset RKHunter settings to defaults
+# Reset RKHunter settings to defaults
             self.settings_enable_rkhunter_cb.setChecked(False)
             self.settings_run_rkhunter_with_full_scan_cb.setChecked(False)
             self.settings_rkhunter_auto_update_cb.setChecked(True)
 
-            # Reset RKHunter category selections to defaults
+# Reset RKHunter category selections to defaults
             if hasattr(self, "settings_rkhunter_category_checkboxes"):
-                # Reset to the original defaults from the settings creation
+# Reset to the original defaults from the settings creation
                 if hasattr(self, "settings_rkhunter_test_categories"):
                     for (
                         category_id,
@@ -6748,7 +6746,7 @@ System        {perf_status}"""
                             category_id, {}).get("default", False)
                         checkbox.setChecked(default_value)
 
-            # Reset Activity Log Retention to default
+# Reset Activity Log Retention to default
             self.settings_activity_retention_combo.setCurrentText("100")
 
             self.show_themed_message_box(
@@ -6761,10 +6759,10 @@ System        {perf_status}"""
                 "warning", "Error", f"Could not reset settings: {str(e)}"
             )
 
-    def save_settings(self):
+def save_settings(self):
         """Save all settings from the UI controls to the config file."""
         try:
-            # Ensure config sections exist
+# Ensure config sections exist
             if "scan_settings" not in self.config:
                 self.config["scan_settings"] = {}
             if "ui_settings" not in self.config:
@@ -6778,7 +6776,7 @@ System        {perf_status}"""
             if "rkhunter_settings" not in self.config:
                 self.config["rkhunter_settings"] = {}
 
-            # Update config with new values from UI
+# Update config with new values from UI
             self.config["scan_settings"][
                 "max_threads"
             ] = self.settings_max_threads_spin.value()
@@ -6817,7 +6815,7 @@ System        {perf_status}"""
                 "scan_modified_files"
             ] = self.settings_scan_modified_cb.isChecked()
 
-            # RKHunter settings
+# RKHunter settings
             self.config["rkhunter_settings"][
                 "enabled"
             ] = self.settings_enable_rkhunter_cb.isChecked()
@@ -6828,7 +6826,7 @@ System        {perf_status}"""
                 "auto_update"
             ] = self.settings_rkhunter_auto_update_cb.isChecked()
 
-            # Save RKHunter category selections
+# Save RKHunter category selections
             if hasattr(self, "settings_rkhunter_category_checkboxes"):
                 rkhunter_categories = {}
                 for (
@@ -6838,8 +6836,8 @@ System        {perf_status}"""
                     rkhunter_categories[category_id] = checkbox.isChecked()
                 self.config["rkhunter_settings"]["categories"] = rkhunter_categories
 
-            # Save config to file
-            from utils.config import save_config
+# Save config to file
+from utils.config import save_config
 
             save_config(self.config)
 
@@ -6847,10 +6845,10 @@ System        {perf_status}"""
                 "information", "Settings", "Settings saved successfully!"
             )
 
-            # If real-time protection is active, update its settings
+# If real-time protection is active, update its settings
             if hasattr(self, "real_time_monitor") and self.real_time_monitor:
                 try:
-                    # Update real-time monitor settings if it's running
+# Update real-time monitor settings if it's running
                     pass  # We could add real-time settings update here if needed
                 except Exception as monitor_error:
                     print(

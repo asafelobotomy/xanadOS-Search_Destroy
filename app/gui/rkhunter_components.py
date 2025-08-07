@@ -8,8 +8,8 @@ from typing import List, Optional
 
 from core.rkhunter_wrapper import RKHunterScanResult, RKHunterWrapper
 from PyQt6.QtCore import QThread, pyqtSignal
-from PyQt6.QtWidgets import (
-    QCheckBox,
+
+QCheckBox,
     QDialog,
     QGroupBox,
     QHBoxLayout,
@@ -25,34 +25,34 @@ from PyQt6.QtWidgets import (
 class RKHunterScanDialog(QDialog):
     """Dialog for configuring RKHunter scan options."""
 
-    def __init__(self, parent=None):
+def __init__(self, parent=None):
         super().__init__(parent)
         self.setWindowTitle("RKHunter Scan Configuration")
         self.setModal(True)
         self.resize(500, 600)
         self.parent_window = parent
 
-        # Test category checkboxes
+# Test category checkboxes
         self.category_checkboxes = {}
 
         self.init_ui()
 
-        # Apply parent theme if available
+# Apply parent theme if available
         if parent and hasattr(parent, "current_theme"):
             self.apply_theme(parent.current_theme)
 
-    def init_ui(self):
+def init_ui(self):
         """Initialize the user interface."""
         layout = QVBoxLayout(self)
 
-        # Title
+# Title
         title_label = QLabel("Configure RKHunter Rootkit Scan")
         title_label.setStyleSheet(
             "font-size: 16px; font-weight: bold; margin-bottom: 10px;"
         )
         layout.addWidget(title_label)
 
-        # Description
+# Description
         desc_label = QLabel(
             "Select test categories to run. RKHunter will check your system for "
             "rootkits, trojans, and other malicious software.\n\n"
@@ -61,16 +61,16 @@ class RKHunterScanDialog(QDialog):
         desc_label.setStyleSheet("margin-bottom: 15px;")
         layout.addWidget(desc_label)
 
-        # Test categories group
+# Test categories group
         categories_group = QGroupBox("Test Categories")
         categories_layout = QVBoxLayout(categories_group)
 
-        # Create scrollable area for checkboxes
+# Create scrollable area for checkboxes
         scroll_area = QScrollArea()
         scroll_widget = QWidget()
         scroll_layout = QVBoxLayout(scroll_widget)
 
-        # Define test categories with descriptions
+# Define test categories with descriptions
         test_categories = {
             "system_commands": {
                 "name": "System Commands",
@@ -94,14 +94,14 @@ class RKHunterScanDialog(QDialog):
             },
         }
 
-        # Create checkboxes for each category
+# Create checkboxes for each category
         for category_id, category_info in test_categories.items():
             checkbox = QCheckBox(category_info["name"])
             checkbox.setChecked(True)  # Default to all selected
             checkbox.setToolTip(category_info["description"])
             checkbox.setStyleSheet("margin: 5px 0px;")
 
-            # Add description label
+# Add description label
             desc_label = QLabel(f"  {category_info['description']}")
             desc_label.setStyleSheet(
                 f"color: {
@@ -122,7 +122,7 @@ class RKHunterScanDialog(QDialog):
 
         layout.addWidget(categories_group)
 
-        # Quick select buttons
+# Quick select buttons
         quick_select_layout = QHBoxLayout()
 
         select_all_btn = QPushButton("Select All")
@@ -143,7 +143,7 @@ class RKHunterScanDialog(QDialog):
 
         layout.addLayout(quick_select_layout)
 
-        # Warning and authentication notice
+# Warning and authentication notice
         warning_label = QLabel(
             "⚠️ <b>Administrator Authentication Required:</b><br/><br/>"
             "RKHunter requires elevated privileges to scan system areas for rootkits. "
@@ -164,7 +164,7 @@ class RKHunterScanDialog(QDialog):
         )
         layout.addWidget(warning_label)
 
-        # Buttons
+# Buttons
         buttons_layout = QHBoxLayout()
         buttons_layout.addStretch()
 
@@ -192,24 +192,24 @@ class RKHunterScanDialog(QDialog):
 
         layout.addLayout(buttons_layout)
 
-    def select_all_categories(self):
+def select_all_categories(self):
         """Select all test categories."""
         for checkbox in self.category_checkboxes.values():
             checkbox.setChecked(True)
 
-    def select_no_categories(self):
+def select_no_categories(self):
         """Deselect all test categories."""
         for checkbox in self.category_checkboxes.values():
             checkbox.setChecked(False)
 
-    def select_recommended_categories(self):
+def select_recommended_categories(self):
         """Select recommended test categories."""
         recommended = ["rootkits", "system_commands", "system_integrity"]
 
         for category_id, checkbox in self.category_checkboxes.items():
             checkbox.setChecked(category_id in recommended)
 
-    def get_selected_categories(self) -> List[str]:
+def get_selected_categories(self) -> List[str]:
         """Get list of selected test categories."""
         selected = []
         for category_id, checkbox in self.category_checkboxes.items():
@@ -217,13 +217,13 @@ class RKHunterScanDialog(QDialog):
                 selected.append(category_id)
         return selected
 
-    def get_theme_color(self, color_type: str) -> str:
+def get_theme_color(self, color_type: str) -> str:
         """Get theme color from parent window if available."""
         if self.parent_window and hasattr(
                 self.parent_window, "get_theme_color"):
             return self.parent_window.get_theme_color(color_type)
 
-        # Fallback colors if parent doesn't have theme system
+# Fallback colors if parent doesn't have theme system
         fallback_colors = {
             "background": "#1a1a1a",
             "secondary_bg": "#2a2a2a",
@@ -239,7 +239,7 @@ class RKHunterScanDialog(QDialog):
         }
         return fallback_colors.get(color_type, "#FFCDAA")
 
-    def apply_theme(self, theme_name: str):
+def apply_theme(self, theme_name: str):
         """Apply theme styling to the dialog."""
         bg = self.get_theme_color("background")
         secondary_bg = self.get_theme_color("secondary_bg")
@@ -251,7 +251,7 @@ class RKHunterScanDialog(QDialog):
         pressed_bg = self.get_theme_color("pressed_bg")
         accent = self.get_theme_color("accent")
 
-        style = f"""
+        style = """
             QDialog {{
                 background-color: {bg};
                 color: {text};
@@ -333,19 +333,19 @@ class RKHunterScanThread(QThread):
     progress_updated = pyqtSignal(str)
     scan_completed = pyqtSignal(object)  # RKHunterScanResult
 
-    def __init__(self, rkhunter: RKHunterWrapper,
+def __init__(self, rkhunter: RKHunterWrapper,
                  test_categories: Optional[List[str]] = None):
         super().__init__()
         self.rkhunter = rkhunter
         self.test_categories = test_categories
         self.logger = logging.getLogger(__name__)
 
-    def run(self):
+def run(self):
         """Run the RKHunter scan in a separate thread."""
         try:
             self.progress_updated.emit("Preparing RKHunter scan...")
 
-            # Check authentication methods available
+# Check authentication methods available
             pkexec_available = self.rkhunter._find_executable("pkexec")
 
             if not self.rkhunter.is_functional():
@@ -357,14 +357,14 @@ class RKHunterScanThread(QThread):
                     self.progress_updated.emit(
                         "⚠️ Terminal password prompt may appear..."
                     )
-                # Small delay to ensure the message is visible
-                import time
+# Small delay to ensure the message is visible
+import time
 
                 time.sleep(1)
 
             self.progress_updated.emit("Initializing RKHunter scan...")
 
-            # Update database first
+# Update database first
             if pkexec_available:
                 self.progress_updated.emit(
                     "Updating RKHunter database (GUI authentication)..."
@@ -386,7 +386,7 @@ class RKHunterScanThread(QThread):
             else:
                 self.progress_updated.emit("Database updated successfully")
 
-            # Start the scan
+# Start the scan
             self.progress_updated.emit("Running rootkit detection scan...")
             result = self.rkhunter.scan_system(
                 test_categories=self.test_categories)
@@ -397,10 +397,10 @@ class RKHunterScanThread(QThread):
         except Exception as e:
             self.logger.error("Error in RKHunter scan thread: %s", e)
 
-            # Create error result
-            from datetime import datetime
+# Create error result
+from datetime import datetime
 
-            from core.rkhunter_wrapper import RKHunterScanResult
+from core.rkhunter_wrapper import RKHunterScanResult
 
             error_result = RKHunterScanResult(
                 scan_id=f"error_{int(datetime.now().timestamp())}",

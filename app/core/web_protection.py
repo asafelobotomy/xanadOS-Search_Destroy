@@ -3,9 +3,6 @@
 Web Protection System for S&D
 Provides real-time web threat protection, URL filtering, and browser integration.
 """
-import asyncio
-import hashlib
-import ipaddress
 import json
 import logging
 import re
@@ -14,13 +11,11 @@ import sqlite3
 import ssl
 import threading
 import time
-from collections import defaultdict
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from enum import Enum
-from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional, Set, Tuple
 from urllib.parse import urljoin, urlparse
+from typing import Any, Callable, Dict, List, Optional, Set, Tuple
 
 import aiohttp
 import dns.resolver
@@ -966,7 +961,7 @@ class WebProtectionSystem:
                                 risk_score += 0.2
 
                             # Check for excessive redirects in content
-                            if content_str.count("location.href") > 3:
+                            if content_str.count("location.hre") > 3:
                                 indicators.append("excessive_redirects")
                                 risk_score += 0.3
 

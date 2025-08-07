@@ -3,7 +3,6 @@
 Background scanner for continuous monitoring
 Performs scheduled scans and processes file system events
 """
-import asyncio
 import logging
 import threading
 import time
