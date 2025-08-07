@@ -18,6 +18,17 @@ var/
 wheels/
 pip-wheel-metadata/
 share/python-wheels/
+
+# Additional cleanup patterns
+*.tmp
+*.temp
+*.bak
+*.backup
+*.orig
+*.rej
+*~
+.#*
+#*#
 *.egg-info/
 .installed.cfg
 *.egg
