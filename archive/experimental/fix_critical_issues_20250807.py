@@ -1,3 +1,9 @@
+# ARCHIVED 2025-08-07: Critical issues fix script - moved to archive
+# Original location: fix_critical_issues.py
+# Archive category: experimental
+# ========================================
+
+
 #!/usr/bin/env python3
 """
 Fix critical syntax errors and remaining issues after cleanup.

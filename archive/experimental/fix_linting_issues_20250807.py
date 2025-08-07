@@ -1,3 +1,9 @@
+# ARCHIVED 2025-08-07: Linting fix script - moved to archive
+# Original location: fix_linting_issues.py
+# Archive category: experimental
+# ========================================
+
+
 #!/usr/bin/env python3
 """
 Comprehensive linting fixes for xanadOS Search & Destroy project.

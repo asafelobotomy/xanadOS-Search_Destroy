@@ -1,3 +1,9 @@
+# ARCHIVED 2025-08-07: Repository cleanup script - moved to archive
+# Original location: cleanup_repository.py
+# Archive category: experimental
+# ========================================
+
+
 #!/usr/bin/env python3
 """
 Comprehensive repository cleanup script for xanadOS Search & Destroy.

@@ -1,3 +1,9 @@
+# ARCHIVED 2025-08-07: Final cleanup script - moved to archive
+# Original location: final_cleanup.py
+# Archive category: experimental
+# ========================================
+
+
 #!/usr/bin/env python3
 """
 Final cleanup to fix typing imports and remaining critical issues.

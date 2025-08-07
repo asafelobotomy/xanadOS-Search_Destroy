@@ -1,3 +1,9 @@
+# ARCHIVED 2025-08-07: Cleanup summary document - moved to archive
+# Original location: CLEANUP_SUMMARY.md
+# Archive category: experimental
+# ========================================
+
+
 # Repository Cleanup Summary
 
 ## Overview
