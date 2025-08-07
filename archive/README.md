@@ -20,7 +20,8 @@ For components that are no longer actively used but may contain valuable code or
 Contains backup versions and previous implementations of files.
 
 **Contents:**
-- `main_window_corrupted_backup.py` - Corrupted backup of main_window.py from cleanup operation
+
+- `main_window_corrupted_backup.py.txt` - Corrupted backup of main_window.py from cleanup operation (renamed to .txt to avoid syntax checking)
 - `rkhunter_components_backup.py` - Backup of rkhunter_components.py
 
 ### `/experimental/`
