@@ -8,6 +8,8 @@ import hashlib
 import threading
 import time
 import schedule
+import psutil
+import gc
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import List, Optional, Callable
@@ -16,6 +18,39 @@ from enum import Enum
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from .clamav_wrapper import ClamAVWrapper, ScanFileResult, ScanResult
+
+
+class MemoryMonitor:
+    """Monitor and optimize memory usage during scanning operations."""
+    
+    def __init__(self):
+        self.process = psutil.Process()
+        self.start_memory = self.get_memory_usage()
+        self.peak_memory = self.start_memory
+    
+    def get_memory_usage(self) -> float:
+        """Get current memory usage in MB."""
+        return self.process.memory_info().rss / 1024 / 1024
+    
+    def check_memory_pressure(self, max_memory_mb: float = 256) -> bool:
+        """Check if memory usage is approaching limits."""
+        current_memory = self.get_memory_usage()
+        self.peak_memory = max(self.peak_memory, current_memory)
+        return current_memory > max_memory_mb
+    
+    def force_garbage_collection(self):
+        """Force garbage collection to free memory."""
+        gc.collect()
+    
+    def get_stats(self) -> dict:
+        """Get memory usage statistics."""
+        current = self.get_memory_usage()
+        return {
+            'current_mb': current,
+            'peak_mb': self.peak_memory,
+            'start_mb': self.start_memory,
+            'increase_mb': current - self.start_memory
+        }
 
 
 class QuarantineAction(Enum):
@@ -217,6 +252,11 @@ class FileScanner:
         self.path_validator = PathValidator()
         self.size_monitor = FileSizeMonitor()
         
+        # Memory optimization: Add file batching and monitoring
+        self.memory_monitor = MemoryMonitor()
+        self.batch_size = self.config.get('performance', {}).get('scan_batch_size', 50)
+        self.max_memory_usage = self.config.get('performance', {}).get('max_memory_mb', 256)
+        
         # Threading and progress tracking
         self._scan_progress = 0.0
         self._scan_running = False
@@ -352,6 +392,11 @@ class FileScanner:
         
         if scan_type is None:
             scan_type = ScanType.CUSTOM
+        
+        # Memory optimization: Use batched processing for large file sets
+        if len(file_paths) > self.batch_size:
+            return self._scan_files_batched(file_paths, scan_type, max_workers, **kwargs)
+        
         """Scan multiple files with threading support."""
         scan_id = self.scan_report_manager.generate_scan_id()
         self._current_scan_id = scan_id
@@ -617,3 +662,138 @@ class FileScanner:
                     self.scan_directory(path, ScanType.SCHEDULED)
             except Exception as e:
                 self.logger.error("Scheduled scan failed: %s", e)
+    
+    def _scan_files_batched(self, file_paths: List[str], scan_type, max_workers: int = 4, **kwargs):
+        """Scan files in batches to optimize memory usage."""
+        from utils.scan_reports import ScanResult as ReportScanResult, ThreatInfo, ThreatLevel, ScanType
+        
+        scan_id = self.scan_report_manager.generate_scan_id()
+        self._current_scan_id = scan_id
+        self._scan_running = True
+        self._scan_cancelled = False
+        
+        # Set total files for progress calculation
+        self._total_files_to_scan = len(file_paths)
+        self._files_completed = 0
+        
+        start_time = datetime.now()
+        
+        # Initialize combined scan result
+        combined_result = ReportScanResult(
+            scan_id=scan_id,
+            scan_type=scan_type,
+            start_time=start_time.isoformat(),
+            end_time="",
+            duration=0.0,
+            scanned_paths=[],
+            total_files=len(file_paths),
+            scanned_files=0,
+            threats_found=0,
+            threats=[],
+            errors=[],
+            scan_settings=kwargs,
+            engine_version="",
+            signature_version="",
+            success=False
+        )
+        
+        # Get engine version
+        engine_version, sig_version = self.clamav_wrapper.get_engine_version()
+        combined_result.engine_version = engine_version
+        combined_result.signature_version = sig_version
+        
+        try:
+            # Process files in batches
+            for batch_start in range(0, len(file_paths), self.batch_size):
+                if self._scan_cancelled:
+                    break
+                
+                batch_end = min(batch_start + self.batch_size, len(file_paths))
+                batch_files = file_paths[batch_start:batch_end]
+                
+                # Check memory pressure before each batch
+                if self.memory_monitor.check_memory_pressure(self.max_memory_usage):
+                    self.logger.warning("Memory pressure detected, forcing garbage collection")
+                    self.memory_monitor.force_garbage_collection()
+                
+                # Process batch with reduced worker count if needed
+                batch_workers = min(max_workers, len(batch_files))
+                
+                with ThreadPoolExecutor(max_workers=batch_workers) as executor:
+                    future_to_path = {
+                        executor.submit(self.scan_file, file_path, scan_id, **kwargs): file_path
+                        for file_path in batch_files
+                    }
+                    
+                    for future in as_completed(future_to_path):
+                        if self._scan_cancelled:
+                            break
+                        
+                        file_path = future_to_path[future]
+                        try:
+                            result = future.result()
+                            combined_result.scanned_files += 1
+                            combined_result.scanned_paths.append(file_path)
+                            
+                            if result.result == ScanResult.INFECTED:
+                                combined_result.threats_found += 1
+                                
+                                # Calculate file info for threat
+                                file_size = 0
+                                file_hash = "unknown"
+                                try:
+                                    file_stat = Path(file_path).stat()
+                                    file_size = file_stat.st_size
+                                    file_hash = hashlib.sha256(Path(file_path).read_bytes()).hexdigest()[:16]  # Short hash
+                                except (OSError, IOError):
+                                    pass
+                                
+                                threat_info = ThreatInfo(
+                                    file_path=file_path,
+                                    threat_name=result.threat_name or "Unknown",
+                                    threat_type="malware",
+                                    threat_level=ThreatLevel.INFECTED,
+                                    action_taken="detected",
+                                    timestamp=datetime.now().isoformat(),
+                                    file_size=file_size,
+                                    file_hash=file_hash
+                                )
+                                combined_result.threats.append(threat_info)
+                                
+                        except Exception as e:
+                            self.logger.error("Error scanning %s: %s", file_path, e)
+                            combined_result.errors.append(f"Error scanning {file_path}: {str(e)}")
+                        
+                        # Update progress
+                        self._files_completed += 1
+                        progress = (self._files_completed / self._total_files_to_scan) * 100
+                        if self.progress_callback:
+                            self.progress_callback(progress, f"Scanned {self._files_completed}/{self._total_files_to_scan} files")
+                
+                # Small delay between batches to prevent system overload
+                time.sleep(0.1)
+            
+            # Finalize results
+            end_time = datetime.now()
+            combined_result.end_time = end_time.isoformat()
+            combined_result.duration = (end_time - start_time).total_seconds()
+            combined_result.success = True
+            
+            # Log memory usage statistics
+            memory_stats = self.memory_monitor.get_stats()
+            self.logger.info("Batched scan completed. Memory usage - Current: %.1fMB, Peak: %.1fMB", 
+                           memory_stats['current_mb'], memory_stats['peak_mb'])
+            
+        except Exception as e:
+            self.logger.error("Batched scan failed: %s", e)
+            combined_result.errors.append(f"Scan failed: {str(e)}")
+        finally:
+            self._scan_running = False
+            
+            # Save scan report
+            try:
+                self.scan_report_manager.save_scan_result(combined_result)
+            except Exception as e:
+                self.logger.error("Failed to save scan report: %s", e)
+        
+        return combined_result

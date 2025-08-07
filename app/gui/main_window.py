@@ -61,6 +61,20 @@ class MainWindow(QMainWindow):
         self.real_time_monitor = None
         self.monitoring_enabled = self.config.get('security_settings', {}).get('real_time_protection', False)
         
+        # Firewall change tracking - to avoid reporting GUI changes as "external"
+        self._firewall_change_from_gui = False
+        
+        # Performance monitoring
+        from core.performance_monitor import get_performance_monitor
+        self.performance_monitor = get_performance_monitor()
+        self.performance_monitor.add_optimization_callback(self.handle_performance_optimization)
+        
+        # Tooltip state management
+        self.tooltip_detailed = False
+        self.tooltip_timer = QTimer()
+        self.tooltip_timer.setSingleShot(True)
+        self.tooltip_timer.timeout.connect(self.show_detailed_tooltip)
+        
         # Theme management - default to dark mode
         self.current_theme = self.config.get('theme', 'dark')
         
@@ -81,10 +95,14 @@ class MainWindow(QMainWindow):
         # Load persisted activity logs after UI is created
         QTimer.singleShot(500, self.load_activity_logs)
         
-        # Set up periodic activity log saving (every 30 seconds)
-        self.activity_save_timer = QTimer()
-        self.activity_save_timer.timeout.connect(self.save_activity_logs)
-        self.activity_save_timer.start(30000)  # 30 seconds
+        # Activity log saving is now handled by unified timer system for better performance
+        # (Consolidated with other periodic tasks to reduce timer overhead)
+        
+        # Initialize unified timer system for performance optimization
+        self.init_unified_timer_system()
+        
+        # Start performance monitoring
+        self.performance_monitor.start_monitoring()
         
     def get_theme_color(self, color_type):
         """Get theme-appropriate color for any UI element."""
@@ -139,6 +157,120 @@ class MainWindow(QMainWindow):
                 'warning': '#F8BC9B'     # Peach Orange for light theme
             }
         return colors.get(status_type, colors['error'])
+    
+    def init_unified_timer_system(self):
+        """Initialize a unified timer system for better performance."""
+        # Create a master timer for coordinated updates
+        self.master_timer = QTimer()
+        self.master_timer.timeout.connect(self.unified_timer_update)
+        
+        # Track update cycles to reduce frequency of expensive operations
+        self.timer_cycle_count = 0
+        
+        # Start with a moderate interval (use 0ms for idle processing)
+        self.master_timer.start(1000)  # 1 second base interval
+        
+        # Performance monitoring
+        self.performance_stats = {
+            'timer_calls': 0,
+            'update_times': [],
+            'skip_count': 0
+        }
+    
+    def unified_timer_update(self):
+        """Central timer update method for performance optimization."""
+        import time
+        start_time = time.time()
+        
+        try:
+            self.timer_cycle_count += 1
+            self.performance_stats['timer_calls'] += 1
+            
+            # Only update firewall status every 5 cycles (5 seconds)
+            if self.timer_cycle_count % 5 == 0:
+                self.update_firewall_status()
+            
+            # Only update monitoring stats every 10 cycles (10 seconds)
+            if self.timer_cycle_count % 10 == 0:
+                if hasattr(self, 'stats_timer') and hasattr(self, 'real_time_monitor'):
+                    self.update_monitoring_statistics()
+                
+                # Update system tray tooltip with performance info
+                self.update_system_tray_tooltip()
+            
+            # Save activity logs every 30 cycles (30 seconds)
+            if self.timer_cycle_count % 30 == 0:
+                self.save_activity_logs()
+            
+            # Reset counter to prevent overflow
+            if self.timer_cycle_count >= 300:  # Reset every 5 minutes
+                self.timer_cycle_count = 0
+                
+        except Exception as e:
+            print(f"Error in unified timer update: {e}")
+        
+        # Track performance
+        execution_time = time.time() - start_time
+        self.performance_stats['update_times'].append(execution_time)
+        
+        # Keep only last 100 measurements
+        if len(self.performance_stats['update_times']) > 100:
+            self.performance_stats['update_times'] = self.performance_stats['update_times'][-100:]
+    
+    def handle_performance_optimization(self, pressure_type: str):
+        """Handle performance optimization events."""
+        try:
+            if pressure_type == 'cpu_pressure':
+                # Reduce update frequency during high CPU usage
+                if hasattr(self, 'master_timer'):
+                    self.master_timer.setInterval(2000)  # Slower updates
+                
+                print("🔧 Applied CPU optimization: Reduced update frequency")
+                
+            elif pressure_type == 'memory_pressure':
+                # Force garbage collection
+                import gc
+                gc.collect()
+                
+                print("🔧 Applied memory optimization: Cleared caches and old data")
+                
+        except Exception as e:
+            print(f"Error in performance optimization: {e}")
+    
+    def get_performance_card_data(self) -> tuple:
+        """Get concise performance data for system tray tooltip."""
+        try:
+            summary = self.performance_monitor.get_performance_summary()
+            if summary.get('status') == 'no_data':
+                return "Initializing", "#666", ""
+            
+            score = summary.get('performance_score', 0)
+            current = summary.get('current', {})
+            
+            if score >= 80:
+                status = "Excellent"
+                color = "#27AE60"  # Green
+            elif score >= 60:
+                status = "Good" 
+                color = "#3498DB"  # Blue
+            elif score >= 40:
+                status = "Fair"
+                color = "#F39C12"  # Orange
+            else:
+                status = "Poor"
+                color = "#E74C3C"  # Red
+            
+            # Create compact metrics for detailed tooltip if needed
+            details = ""
+            if current:
+                cpu = current.get('cpu_percent', 0)
+                memory = current.get('memory_mb', 0)
+                details = f"CPU: {cpu:.1f}% | Memory: {memory:.0f}MB"
+            
+            return status, color, details
+            
+        except Exception as e:
+            return "Error", "#E74C3C", f"Monitor error: {e}"
         
     def init_ui(self):
         self.setWindowTitle("S&D - Search & Destroy")
@@ -281,13 +413,15 @@ class MainWindow(QMainWindow):
         # Connect the click signal
         self.firewall_card.clicked.connect(self.toggle_firewall_from_dashboard)
         
-        # Last Scan Card
-        self.last_scan_card = self.create_status_card(
+        # Last Scan Card - now clickable
+        self.last_scan_card = self.create_clickable_status_card(
             "Last Scan",
             "Not scanned yet",  # Will be updated dynamically
             "#17a2b8",
-            "Full system scan status"
+            "Click to start a new scan"
         )
+        # Connect the click signal
+        self.last_scan_card.clicked.connect(self.open_scan_tab)
         
         # Threats Card - using strawberry palette
         self.threats_card = self.create_status_card(
@@ -466,6 +600,9 @@ class MainWindow(QMainWindow):
         # Show info about authentication
         self.add_activity_message(f"🔒 Requesting admin privileges to {action} firewall...")
         
+        # Mark that this firewall change is from the GUI
+        self._firewall_change_from_gui = True
+        
         # Perform the firewall toggle operation
         result = toggle_firewall(enable_firewall)
         
@@ -482,6 +619,9 @@ class MainWindow(QMainWindow):
             self.update_firewall_status_card()
         else:
             # Error - show error message
+            # Reset the flag since the operation failed
+            self._firewall_change_from_gui = False
+            
             error_msg = str(result.get('error', 'Unknown error'))
             
             # Check if it's a permission/authentication error
@@ -500,6 +640,11 @@ class MainWindow(QMainWindow):
                     "Firewall Error",
                     f"Failed to {action} firewall:\n{error_msg}"
                 )
+    
+    def open_scan_tab(self):
+        """Open the Scan tab when Last Scan card is clicked."""
+        # Switch to the Scan tab (index 1)
+        self.tab_widget.setCurrentIndex(1)
     
     def update_protection_status_card(self):
         """Update the protection status card with current state."""
@@ -602,8 +747,14 @@ class MainWindow(QMainWindow):
             # Only log if this is the first check or if status changed
             if self._last_firewall_state != current_active_state:
                 if self._last_firewall_state is not None:  # Not the first check
-                    state_msg = "enabled" if current_active_state else "disabled"
-                    self.add_activity_message(f"🔥 Firewall {state_msg} externally")
+                    # Check if this change was made from within the GUI
+                    if hasattr(self, '_firewall_change_from_gui') and self._firewall_change_from_gui:
+                        # Reset the flag and don't report as external change
+                        self._firewall_change_from_gui = False
+                    else:
+                        # This is a genuine external change
+                        state_msg = "enabled" if current_active_state else "disabled"
+                        self.add_activity_message(f"🔥 Firewall {state_msg} externally")
                 self._last_firewall_state = current_active_state
             
             # Update firewall name
@@ -699,6 +850,9 @@ class MainWindow(QMainWindow):
             # Update button to show authentication in progress
             self.firewall_toggle_btn.setText("Authenticating...")
             
+            # Mark that this firewall change is from the GUI
+            self._firewall_change_from_gui = True
+            
             # Perform the firewall toggle operation
             result = toggle_firewall(enable_firewall)
             
@@ -714,6 +868,9 @@ class MainWindow(QMainWindow):
                 self.update_firewall_status()
             else:
                 # Error - show error message
+                # Reset the flag since the operation failed
+                self._firewall_change_from_gui = False
+                
                 error_msg = str(result.get('error', 'Unknown error'))
                 
                 # Check if it's a permission/authentication error
@@ -735,6 +892,9 @@ class MainWindow(QMainWindow):
             
         except Exception as e:
             # Handle unexpected errors
+            # Reset the flag since the operation failed
+            self._firewall_change_from_gui = False
+            
             error_msg = f"Unexpected error: {str(e)}"
             self.add_activity_message(f"❌ Firewall control error: {error_msg}")
             QMessageBox.critical(
@@ -1520,10 +1680,8 @@ class MainWindow(QMainWindow):
         # Initialize firewall status display
         QTimer.singleShot(1000, self.update_firewall_status)  # Delay initial update slightly
         
-        # Set up periodic firewall status monitoring for external changes
-        self.firewall_monitor_timer = QTimer()
-        self.firewall_monitor_timer.timeout.connect(self.update_firewall_status)
-        self.firewall_monitor_timer.start(5000)  # Check every 5 seconds for external changes
+        # Firewall monitoring is now handled by unified timer system
+        # (Reduces timer overhead by consolidating updates)
         
     def init_real_time_monitoring_safe(self):
         """Safely initialize the real-time monitoring system with better error handling."""
@@ -1581,11 +1739,9 @@ class MainWindow(QMainWindow):
                 self.real_time_monitor.set_error_callback(self.on_monitoring_error)
                 print("✅ Error callback set")
             
-            # Set up timer to update statistics
-            self.stats_timer = QTimer()
-            self.stats_timer.timeout.connect(self.update_monitoring_statistics)
-            self.stats_timer.start(10000)  # Update every 10 seconds (less frequent)
-            print("✅ Statistics timer started")
+            # Statistics updates now handled by unified timer system
+            # (Reduces timer overhead and improves performance)
+            print("✅ Statistics updates integrated with unified timer system")
             
             # Set initial status based on saved configuration
             if hasattr(self, 'protection_status_label'):
@@ -2170,6 +2326,9 @@ class MainWindow(QMainWindow):
         self.tray_icon.setIcon(app_icon)
         self.tray_icon.setToolTip("S&D - Search & Destroy")
         
+        # Initialize performance tooltip update
+        self.update_system_tray_tooltip()
+        
         # Create system tray menu
         tray_menu = QMenu(self)
         
@@ -2187,6 +2346,59 @@ class MainWindow(QMainWindow):
         self.tray_icon.activated.connect(self.tray_icon_activated)
         self.tray_icon.show()
         
+    def update_system_tray_tooltip(self):
+        """Update system tray tooltip with concise security information."""
+        try:
+            if not hasattr(self, 'tray_icon') or not self.tray_icon:
+                return
+            
+            # Get performance data for system status
+            perf_status, perf_color, perf_details = self.get_performance_card_data()
+            
+            # Get app status with visual indicators and descriptive text
+            firewall_icon = "○"
+            protection_icon = "○"
+            firewall_status = "Inactive"
+            protection_status = "Disabled"
+            
+            try:
+                from core.firewall_detector import get_firewall_status
+                firewall_status_dict = get_firewall_status()
+                firewall_active = firewall_status_dict.get('is_active', False)
+                firewall_icon = "●" if firewall_active else "○"
+                firewall_status = "Active" if firewall_active else "Inactive"
+            except Exception as e:
+                # More detailed error handling
+                print(f"Error checking firewall status: {e}")
+                firewall_icon = "○"
+                firewall_status = "Unknown"
+            
+            try:
+                protection_icon = "●" if self.monitoring_enabled else "○"
+                protection_status = "Enabled" if self.monitoring_enabled else "Disabled"
+            except Exception as e:
+                print(f"Error checking protection status: {e}")
+                protection_icon = "○"
+                protection_status = "Unknown"
+            
+            # Create single, compact tooltip with minimal width
+            tooltip_text = f"""S&D Security Status
+▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔
+Protection    {protection_icon} {protection_status}
+Firewall      {firewall_icon} {firewall_status}
+System        {perf_status}"""
+            
+            self.tray_icon.setToolTip(tooltip_text)
+            
+        except Exception as e:
+            # Fallback to simple tooltip
+            self.tray_icon.setToolTip("S&D - Search & Destroy")
+            print(f"Error updating tray tooltip: {e}")
+    
+    def show_detailed_tooltip(self):
+        """Deprecated - now using single tooltip display only."""
+        pass
+
     def setup_accessibility(self):
         """Set up accessibility features including keyboard shortcuts and ARIA-like labels."""
         # Keyboard shortcuts
@@ -4162,39 +4374,70 @@ class MainWindow(QMainWindow):
     
     def update_dashboard_cards(self):
         """Update all dashboard status cards with current information."""
+        print("DEBUG: update_dashboard_cards() called")
         # Update Last Scan card
         if hasattr(self, 'last_scan_card'):
             try:
                 # Get the most recent scan report from the reports directory
                 reports_dir = Path.home() / ".local/share/search-and-destroy/scan_reports/daily"
+                print(f"DEBUG: Looking for reports in: {reports_dir}")
                 if reports_dir.exists():
                     report_files = list(reports_dir.glob("scan_*.json"))
+                    print(f"DEBUG: Found {len(report_files)} report files")
                     if report_files:
                         # Get the most recent file
                         latest_file = max(report_files, key=lambda p: p.stat().st_mtime)
+                        print(f"DEBUG: Latest report file: {latest_file}")
                         try:
                             with open(latest_file, 'r', encoding='utf-8') as f:
                                 report_data = json.load(f)
                             
-                            scan_time = report_data.get('scan_metadata', {}).get('timestamp', '')
+                            # Get data from the correct structure
+                            scan_time = report_data.get('start_time', '')
+                            scan_type = report_data.get('scan_type', 'unknown')
+                            scan_success = report_data.get('success', True)
+                            
+                            # Clean up scan type (remove ScanType. prefix if present)
+                            if scan_type.startswith('ScanType.'):
+                                scan_type = scan_type.replace('ScanType.', '').lower()
+                            
+                            # Format the scan type for display
+                            scan_type_display = {
+                                'quick': 'Quick',
+                                'full': 'Full', 
+                                'custom': 'Custom',
+                                'scheduled': 'Scheduled'
+                            }.get(scan_type.lower(), 'Unknown')
+                            
                             if scan_time:
                                 try:
                                     scan_date = datetime.fromisoformat(scan_time.replace('Z', '+00:00'))
-                                    formatted_date = scan_date.strftime("%m/%d %H:%M")
+                                    # Format time (12-hour) above date (full format with year)
+                                    formatted_time = scan_date.strftime("%I:%M %p")  # 12:17 PM
+                                    formatted_date = scan_date.strftime("%A %b %d, %Y")   # Wednesday Aug 07, 2025
+                                    formatted_display = f"{formatted_time}\n{formatted_date}"
                                 except (ValueError, AttributeError):
-                                    formatted_date = "Recently"
+                                    formatted_display = "Recently"
                             else:
-                                formatted_date = "Recently"
+                                formatted_display = "Recently"
                                 
-                            threats_count = len(report_data.get('threats', []))
+                            threats_count = report_data.get('threats_found', 0)
+                            
+                            # Determine status text
+                            if not scan_success:
+                                status_text = "Failed"
+                            elif threats_count > 0:
+                                status_text = f"{threats_count} threats found"
+                            else:
+                                status_text = "No threats found"
                             
                             # Update the card
                             for child in self.last_scan_card.findChildren(QLabel):
                                 if child.objectName() == "cardValue":
-                                    child.setText(formatted_date)
-                                    child.setStyleSheet("color: #17a2b8; font-size: 20px; font-weight: bold;")
+                                    child.setText(formatted_display)
+                                    child.setStyleSheet("color: #17a2b8; font-size: 16px; font-weight: bold;")
                                 elif child.objectName() == "cardDescription":
-                                    child.setText(f"Found {threats_count} threats" if threats_count > 0 else "No threats found")
+                                    child.setText(f"{scan_type_display} scan - {status_text}")
                                     
                             # Update Threats Found card
                             if hasattr(self, 'threats_card'):
@@ -4235,7 +4478,10 @@ class MainWindow(QMainWindow):
             
         # Save the scan result to a report file
         try:
-            # Create a proper ScanResult object from the dictionary
+            # Note: Report saving is now handled by the FileScanner itself to prevent duplicates
+            # The scanner automatically saves reports with proper scan type detection
+            # 
+            # Create a proper ScanResult object from the dictionary for display purposes only
             scan_id = datetime.now().strftime("%Y%m%d_%H%M%S")
             
             # Handle both dictionary and dataclass result formats
@@ -4273,10 +4519,18 @@ class MainWindow(QMainWindow):
                     threat = threat_data
                 threats.append(threat)
             
-            # Create the ScanResult object
+            # Create the ScanResult object with correct scan type
+            # Determine scan type based on context
+            if hasattr(self, 'is_quick_scan_running') and self.is_quick_scan_running:
+                scan_type = ScanType.QUICK
+            elif self.scan_path == os.path.expanduser("~"):
+                scan_type = ScanType.FULL
+            else:
+                scan_type = ScanType.CUSTOM
+                
             scan_result = ScanResult(
                 scan_id=scan_id,
-                scan_type=ScanType.CUSTOM,
+                scan_type=scan_type,
                 start_time=datetime.now().isoformat(),
                 end_time=datetime.now().isoformat(),
                 duration=duration,
@@ -4293,11 +4547,21 @@ class MainWindow(QMainWindow):
             )
             
             # Save the scan result
-            self.report_manager.save_scan_result(scan_result)
+            # Note: Commented out to prevent duplicate reports - FileScanner handles this
+            # self.report_manager.save_scan_result(scan_result)
             
-            # Refresh the reports list if we're on the reports tab
-            if self.tab_widget.currentIndex() == 1:  # Reports tab
-                self.refresh_reports()
+            # Always refresh the reports list after a scan completes
+            # This ensures reports show up regardless of which tab is currently active
+            # Use a more reliable approach than QTimer
+            def delayed_refresh():
+                try:
+                    self.refresh_reports()
+                    print("DEBUG: Reports refreshed after scan completion")
+                except Exception as e:
+                    print(f"DEBUG: Error refreshing reports: {e}")
+            
+            from PyQt6.QtCore import QTimer
+            QTimer.singleShot(500, delayed_refresh)  # Increased delay to 500ms
                 
         except (OSError, IOError, json.JSONDecodeError) as e:
             print(f"Error saving scan report: {e}")
@@ -4306,6 +4570,7 @@ class MainWindow(QMainWindow):
         self.display_scan_results(result)
         
         # Update dashboard cards with new scan information
+        print("DEBUG: About to call update_dashboard_cards() after scan completion")
         self.update_dashboard_cards()
     
     def display_scan_results(self, result):

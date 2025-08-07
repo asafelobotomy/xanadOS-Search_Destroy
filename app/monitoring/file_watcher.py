@@ -81,10 +81,13 @@ class FileSystemWatcher:
         self.watch_thread = None
         self.inotify_adapter = None
         
-        # Event throttling
+        # Enhanced event throttling and debouncing
         self.event_queue = []
         self.last_event_time = {}
         self.throttle_duration = 1.0  # seconds
+        self.debounce_buffer = {}  # For batching similar events
+        self.debounce_timer = None
+        self.debounce_delay = 0.5  # seconds
         
         # Performance monitoring
         self.events_processed = 0
@@ -356,7 +359,7 @@ class FileSystemWatcher:
             return False
     
     def _handle_event(self, event: WatchEvent):
-        """Handle a file system event."""
+        """Handle a file system event with debouncing."""
         try:
             # Throttle events for the same file
             event_key = f"{event.file_path}:{event.event_type.value}"
@@ -368,6 +371,55 @@ class FileSystemWatcher:
             
             self.last_event_time[event_key] = current_time
             
+            # Debounce similar events
+            self._debounce_event(event)
+            
+        except Exception as e:
+            self.logger.error("Error handling event: %s", e)
+    
+    def _debounce_event(self, event: WatchEvent):
+        """Debounce events to reduce processing overhead."""
+        # Group events by directory to batch process similar changes
+        dir_path = os.path.dirname(event.file_path)
+        
+        if dir_path not in self.debounce_buffer:
+            self.debounce_buffer[dir_path] = []
+        
+        self.debounce_buffer[dir_path].append(event)
+        
+        # Reset debounce timer
+        if self.debounce_timer:
+            self.debounce_timer.cancel()
+        
+        self.debounce_timer = threading.Timer(
+            self.debounce_delay, 
+            self._process_debounced_events
+        )
+        self.debounce_timer.start()
+    
+    def _process_debounced_events(self):
+        """Process batched debounced events."""
+        try:
+            for dir_path, events in self.debounce_buffer.items():
+                # Process only the most recent events per file to avoid duplicates
+                unique_events = {}
+                for event in events:
+                    key = f"{event.file_path}:{event.event_type.value}"
+                    unique_events[key] = event
+                
+                # Process unique events
+                for event in unique_events.values():
+                    self._execute_event_callback(event)
+            
+            # Clear buffer
+            self.debounce_buffer.clear()
+            
+        except Exception as e:
+            self.logger.error("Error processing debounced events: %s", e)
+    
+    def _execute_event_callback(self, event: WatchEvent):
+        """Execute the event callback with error handling."""
+        try:
             # Update statistics
             self.events_processed += 1
             
@@ -377,13 +429,10 @@ class FileSystemWatcher:
             
             # Call event callback
             if self.event_callback:
-                try:
-                    self.event_callback(event)
-                except Exception as e:
-                    self.logger.error("Error in event callback: %s", e)
-                    
+                self.event_callback(event)
+                
         except Exception as e:
-            self.logger.error("Error handling event: %s", e)
+            self.logger.error("Error in event callback: %s", e)
     
     def get_statistics(self) -> Dict[str, Any]:
         """Get watcher performance statistics."""

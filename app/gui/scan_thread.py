@@ -1,5 +1,10 @@
 from PyQt6.QtCore import QThread, pyqtSignal
 from dataclasses import asdict
+import sys
+import os
+
+# Add the app directory to the path for imports
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 class ScanThread(QThread):
     progress_updated = pyqtSignal(int)
@@ -24,10 +29,25 @@ class ScanThread(QThread):
             
             # For quick scans, limit the number of files to prevent crashes
             if self.quick_scan:
-                result = self.scanner.scan_directory(self.path, max_files=1000)  # Limit to 1000 files for quick scan
+                try:
+                    from utils.scan_reports import ScanType
+                    result = self.scanner.scan_directory(self.path, scan_type=ScanType.QUICK, max_files=50)
+                except ImportError:
+                    # Fallback if import fails
+                    result = self.scanner.scan_directory(self.path, max_files=50)
                 self.status_updated.emit("Quick scan in progress...")
             else:
-                result = self.scanner.scan_directory(self.path)
+                # Determine scan type based on path
+                try:
+                    from utils.scan_reports import ScanType
+                    if self.path == os.path.expanduser("~"):
+                        scan_type = ScanType.FULL
+                    else:
+                        scan_type = ScanType.CUSTOM
+                    result = self.scanner.scan_directory(self.path, scan_type=scan_type)
+                except ImportError:
+                    # Fallback if import fails
+                    result = self.scanner.scan_directory(self.path)
                 self.status_updated.emit("Full scan in progress...")
             # Complete scan
             self.progress_updated.emit(100)
