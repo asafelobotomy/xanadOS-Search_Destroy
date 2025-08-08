@@ -195,6 +195,37 @@ class MainWindow(QMainWindow):
         except Exception as e:
             print(f"⚠️ Error starting scheduler after initialization: {e}")
 
+    def bring_to_front(self):
+        """Bring the application window to the front (called by single instance manager)."""
+        try:
+            # If window is hidden (minimized to tray), show it
+            if not self.isVisible():
+                self.show()
+                print("📱 Restored window from hidden state")
+            
+            # If window is minimized, restore it
+            if self.isMinimized():
+                self.showNormal()
+                print("📱 Restored window from minimized state")
+            
+            # Bring to front and activate
+            self.raise_()
+            self.activateWindow()
+            
+            # Show a notification if system tray is available
+            if hasattr(self, 'tray_icon') and self.tray_icon and self.tray_icon.isVisible():
+                self.tray_icon.showMessage(
+                    "S&D - Search & Destroy",
+                    "Application window restored - another launch attempt was detected.",
+                    QSystemTrayIcon.MessageIcon.Information,
+                    2000,
+                )
+            
+            print("✅ Successfully brought application to front")
+                    
+        except Exception as e:
+            print(f"❌ Error bringing window to front: {e}")
+
     def get_theme_color(self, color_type):
         """Get theme-appropriate color for any UI element."""
         if self.current_theme == "dark":
