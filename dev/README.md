@@ -1,12 +1,53 @@
-# Development Resources
+# Development Guide
 
-This directory contains development resources that are not part of the main application but are useful for development and testing.
+This directory contains development tools, scripts, and resources for the xanadOS-Search_Destroy project.
 
-## Structure
+## Directory Structure
 
-### `/demos/`
+```
+dev/
+├── README.md                 # This file
+├── cleanup_repository.py     # Repository cleanup script
+├── debug-scripts/           # Debug and test scripts
+│   ├── README.md
+│   └── *.py                 # Various debug/test files
+├── demos/                   # Demo applications
+│   ├── demo_strawberry_theme.py
+│   └── demo_sunrise_theme.py
+└── test-scripts/            # Test validation scripts
+    ├── test_*.py            # Various test scripts
+    └── README.md
+```
 
-Contains demonstration scripts and theme examples:
+## Usage
+
+### Repository Cleanup
+```bash
+python dev/cleanup_repository.py
+```
+
+### Running Tests
+```bash
+# Run specific test scripts
+python dev/test-scripts/test_[specific_feature].py
+
+# Run all tests
+find dev/test-scripts -name "test_*.py" -exec python {} \;
+```
+
+### Debug Scripts
+Debug scripts are located in `dev/debug-scripts/` and can be used for:
+- Authentication testing
+- GUI component debugging  
+- Firewall functionality testing
+- RKHunter integration testing
+
+### Development Workflow
+
+1. **Before making changes**: Run cleanup script to ensure clean environment
+2. **During development**: Use debug scripts to test specific components
+3. **After changes**: Run relevant test scripts to validate functionality
+4. **Before commit**: Ensure all tests pass and run cleanup script
 
 - `demo_strawberry_theme.py` - Demonstrates the dark theme (Strawberry palette)
 - `demo_sunrise_theme.py` - Demonstrates the light theme (Sunrise palette)
