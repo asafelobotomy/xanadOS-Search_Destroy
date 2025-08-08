@@ -5138,11 +5138,18 @@ System        {perf_status}"""
         self.progress_bar.setValue(0)
         self.results_text.clear()
 
-        # Display scan information
-        self.results_text.append(f"🔍 Starting {effective_scan_type.lower()} scan...")
-        self.results_text.append(f"📁 Target: {self.scan_path}")
+        # Display scan information with better formatting and spacing
+        self.results_text.append(f"🔍 <b>Starting {effective_scan_type.lower()} scan...</b>")
+        self.results_text.append("")  # Add spacing
+        self.results_text.append(f"📁 <b>Target:</b> {self.scan_path}")
+        self.results_text.append("")  # Add spacing
         if scan_options:
-            self.results_text.append(f"⚙️ Options: {scan_options}")
+            friendly_options = self.format_scan_options_user_friendly(scan_options)
+            self.results_text.append("⚙️ <b>Options:</b>")
+            self.results_text.append(friendly_options)
+        else:
+            self.results_text.append("⚙️ <b>Options:</b> Default settings")
+        self.results_text.append("")  # Add spacing after options
 
         # Check if this is a full system scan and RKHunter integration is enabled
         is_full_system_scan = hasattr(self, "scan_path") and (
@@ -6667,6 +6674,67 @@ System        {perf_status}"""
             print(f"DEBUG: Error updating dashboard cards: {e}")
             import traceback
             traceback.print_exc()
+
+    def format_scan_options_user_friendly(self, scan_options):
+        """Convert technical scan options into user-friendly descriptions."""
+        if not scan_options:
+            return "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b>Default settings</b>"
+        
+        friendly_options = []
+        
+        # Format scan depth
+        if 'depth' in scan_options:
+            depth = scan_options['depth']
+            if depth == 1:
+                friendly_options.append("&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;📏 <b>Depth:</b> Shallow (top-level files only)")
+            elif depth == 2:
+                friendly_options.append("&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;📏 <b>Depth:</b> Medium (2 folder levels)")
+            elif depth == 3:
+                friendly_options.append("&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;📏 <b>Depth:</b> Deep (3 folder levels)")
+            elif depth >= 4:
+                friendly_options.append("&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;📏 <b>Depth:</b> Very Deep (all subfolders)")
+            else:
+                friendly_options.append(f"&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;📏 <b>Depth:</b> {depth} levels")
+        
+        # Format file filter
+        if 'file_filter' in scan_options:
+            file_filter = scan_options['file_filter']
+            if file_filter == 'all':
+                friendly_options.append("&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;📄 <b>Files:</b> All file types")
+            elif file_filter == 'executables':
+                friendly_options.append("&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;📄 <b>Files:</b> Executable files only")
+            elif file_filter == 'documents':
+                friendly_options.append("&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;📄 <b>Files:</b> Document files only")
+            elif file_filter == 'archives':
+                friendly_options.append("&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;📄 <b>Files:</b> Archive files only")
+            else:
+                friendly_options.append(f"&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;📄 <b>Files:</b> {file_filter}")
+        
+        # Format memory limit
+        if 'memory_limit' in scan_options:
+            memory_mb = scan_options['memory_limit']
+            if memory_mb < 512:
+                friendly_options.append(f"&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;💾 <b>Memory:</b> Low usage ({memory_mb}MB)")
+            elif memory_mb < 1024:
+                friendly_options.append(f"&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;💾 <b>Memory:</b> Medium usage ({memory_mb}MB)")
+            elif memory_mb < 2048:
+                friendly_options.append(f"&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;💾 <b>Memory:</b> High usage ({memory_mb}MB)")
+            else:
+                friendly_options.append(f"&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;💾 <b>Memory:</b> Very high usage ({memory_mb}MB)")
+        
+        # Format exclusions
+        if 'exclusions' in scan_options:
+            exclusions = scan_options['exclusions']
+            if exclusions:
+                count = len(exclusions)
+                friendly_options.append(f"&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;🚫 <b>Exclusions:</b> {count} pattern{'s' if count != 1 else ''}")
+        
+        # Handle any other custom options
+        for key, value in scan_options.items():
+            if key not in ['depth', 'file_filter', 'memory_limit', 'exclusions']:
+                friendly_options.append(f"&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;⚙️ <b>{key.replace('_', ' ').title()}:</b> {value}")
+        
+        return "<br>".join(friendly_options) if friendly_options else "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b>Default settings</b>"
 
     def display_scan_results(self, result):
         output = "Scan completed successfully!\n\n"
