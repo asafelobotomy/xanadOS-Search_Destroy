@@ -10,7 +10,7 @@ from core.rkhunter_wrapper import RKHunterScanResult, RKHunterWrapper
 from gui.rkhunter_components import RKHunterScanDialog, RKHunterScanThread
 from gui.scan_thread import ScanThread
 from monitoring import MonitorConfig, MonitorState, RealTimeMonitor
-from PyQt6.QtCore import Qt, QTimer, pyqtSignal
+from PyQt6.QtCore import Qt, QTimer, QTime, pyqtSignal
 from PyQt6.QtGui import (
     QAction,
     QFont,
@@ -42,12 +42,14 @@ from PyQt6.QtWidgets import (
     QProgressDialog,
     QPushButton,
     QScrollArea,
+    QSizePolicy,
     QSpinBox,
     QSplitter,
     QStatusBar,
     QSystemTrayIcon,
     QTabWidget,
     QTextEdit,
+    QTimeEdit,
     QVBoxLayout,
     QWidget,
 )
@@ -1108,103 +1110,157 @@ class MainWindow(QMainWindow):
 
     def create_scan_tab(self):
         scan_widget = QWidget()
-        layout = QVBoxLayout(scan_widget)
+        main_layout = QHBoxLayout(scan_widget)
+        main_layout.setSpacing(12)  # Reduced spacing for more compact layout
+        main_layout.setContentsMargins(10, 10, 10, 10)  # Reduced margins
 
-        # Path selection and controls
-        controls_group = QGroupBox("Scan Location")
-        controls_layout = QVBoxLayout(controls_group)
+        # ========== LEFT COLUMN: Scan Configuration ==========
+        left_column = QWidget()
+        left_layout = QVBoxLayout(left_column)
+        left_layout.setSpacing(10)  # Reduced vertical spacing
+        left_column.setMinimumWidth(300)  # Reduced for more compact layout
+        left_column.setMaximumWidth(450)  # Add maximum width to prevent over-expansion
 
-        # Quick scan presets
-        presets_label = QLabel("Quick Scan Options:")
-        presets_label.setObjectName("presetLabel")
-        controls_layout.addWidget(presets_label)
+        # === Scan Type Selection Section ===
+        scan_type_group = QGroupBox("Scan Type")
+        scan_type_layout = QVBoxLayout(scan_type_group)
+        scan_type_layout.setSpacing(6)
+        
+        self.scan_type_combo = QComboBox()
+        self.scan_type_combo.addItem("🚀 Quick Scan", "QUICK")
+        self.scan_type_combo.addItem("🔍 Full Scan", "FULL") 
+        self.scan_type_combo.addItem("⚙️ Custom Scan", "CUSTOM")
+        self.scan_type_combo.setObjectName("scanTypeCombo")
+        self.scan_type_combo.setToolTip("Choose scan thoroughness level")
+        self.scan_type_combo.currentTextChanged.connect(self.on_scan_type_changed)
+        # Set proper size policy and minimum size for the combo
+        self.scan_type_combo.setMinimumHeight(40)  # Increased for better readability
+        self.scan_type_combo.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+        
+        scan_type_layout.addWidget(self.scan_type_combo)
+        left_layout.addWidget(scan_type_group)
 
-        presets_layout = QHBoxLayout()
+        # === Target Selection Section ===
+        target_group = QGroupBox("Scan Target")
+        target_layout = QVBoxLayout(target_group)
+        target_layout.setSpacing(6)
 
-        home_scan_btn = QPushButton("Scan Home Folder")
-        home_scan_btn.setObjectName("presetButton")
-        home_scan_btn.setToolTip("Scan your home directory for threats")
-        home_scan_btn.clicked.connect(
-            lambda: self.set_scan_path(str(Path.home())))
+        # Preset buttons with improved layout
+        presets_container = QWidget()
+        presets_grid = QGridLayout(presets_container)
+        presets_grid.setSpacing(5)
+        
+        # Create preset buttons with proper sizing
+        self.home_scan_btn = QPushButton("🏠 Home Folder")
+        self.home_scan_btn.setObjectName("presetButton")
+        self.home_scan_btn.setToolTip("Scan your home directory for threats")
+        self.home_scan_btn.setMinimumHeight(28)  # Reduced button height
+        self.home_scan_btn.clicked.connect(lambda: self.set_scan_path(str(Path.home())))
 
-        downloads_scan_btn = QPushButton("Scan Downloads")
-        downloads_scan_btn.setObjectName("presetButton")
-        downloads_scan_btn.setToolTip("Scan Downloads folder for threats")
-        downloads_scan_btn.clicked.connect(
+        self.downloads_scan_btn = QPushButton("📥 Downloads")
+        self.downloads_scan_btn.setObjectName("presetButton")
+        self.downloads_scan_btn.setToolTip("Scan Downloads folder for threats")
+        self.downloads_scan_btn.setMinimumHeight(28)
+        self.downloads_scan_btn.clicked.connect(
             lambda: self.set_scan_path(str(Path.home() / "Downloads"))
         )
 
-        custom_scan_btn = QPushButton("Choose Custom Folder...")
-        custom_scan_btn.setObjectName("presetButton")
-        custom_scan_btn.setToolTip("Select a specific folder to scan")
-        custom_scan_btn.clicked.connect(self.select_scan_path)
+        self.custom_scan_btn = QPushButton("📁 Choose Folder...")
+        self.custom_scan_btn.setObjectName("presetButton")
+        self.custom_scan_btn.setToolTip("Select a specific folder to scan")
+        self.custom_scan_btn.setMinimumHeight(28)
+        self.custom_scan_btn.clicked.connect(self.select_scan_path)
 
-        presets_layout.addWidget(home_scan_btn)
-        presets_layout.addWidget(downloads_scan_btn)
-        presets_layout.addWidget(custom_scan_btn)
-        presets_layout.addStretch()
+        # Arrange buttons in a 2x2 grid for better space usage
+        presets_grid.addWidget(self.home_scan_btn, 0, 0)
+        presets_grid.addWidget(self.downloads_scan_btn, 0, 1)
+        presets_grid.addWidget(self.custom_scan_btn, 1, 0, 1, 2)  # Span 2 columns
 
-        controls_layout.addLayout(presets_layout)
+        target_layout.addWidget(presets_container)
 
-        # Selected path display
-        path_layout = QHBoxLayout()
-        path_label_desc = QLabel("Selected path:")
+        # Selected path display with better formatting
+        path_container = QWidget()
+        path_layout = QVBoxLayout(path_container)
+        path_layout.setSpacing(5)
+        
+        path_label_desc = QLabel("Selected Path:")
+        path_label_desc.setObjectName("sectionLabel")
         self.path_label = QLabel("Please select a path")
         self.path_label.setObjectName("pathLabel")
+        self.path_label.setWordWrap(True)  # Allow text wrapping for long paths
 
         path_layout.addWidget(path_label_desc)
-        path_layout.addWidget(self.path_label, 1)
-        controls_layout.addLayout(path_layout)
+        path_layout.addWidget(self.path_label)
+        target_layout.addWidget(path_container)
+        
+        left_layout.addWidget(target_group)
 
-        # Scan buttons
-        scan_buttons_layout = QHBoxLayout()
-        self.start_scan_btn = QPushButton("Start Scan")
+        # === Action Buttons Section ===
+        buttons_group = QGroupBox("Actions")
+        buttons_layout = QVBoxLayout(buttons_group)
+        buttons_layout.setSpacing(8)  # Reduced spacing between buttons
+        
+        # Primary scan button with proper size
+        self.start_scan_btn = QPushButton("🚀 Start Scan")
         self.start_scan_btn.setObjectName("primaryButton")
+        self.start_scan_btn.setMinimumHeight(32)  # Reduced primary button height
+        self.start_scan_btn.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
         self.start_scan_btn.clicked.connect(self.start_scan)
 
-        self.stop_scan_btn = QPushButton("Stop Scan")
+        # Secondary buttons with consistent sizing
+        self.stop_scan_btn = QPushButton("⏹️ Stop Scan")
         self.stop_scan_btn.setObjectName("dangerButton")
+        self.stop_scan_btn.setMinimumHeight(28)
+        self.stop_scan_btn.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
         self.stop_scan_btn.clicked.connect(self.stop_scan)
         self.stop_scan_btn.setEnabled(False)
 
         # RKHunter button
         self.rkhunter_scan_btn = QPushButton("🔍 RKHunter Scan")
         self.rkhunter_scan_btn.setObjectName("specialButton")
+        self.rkhunter_scan_btn.setMinimumHeight(28)
+        self.rkhunter_scan_btn.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
         self.rkhunter_scan_btn.setToolTip(
             "Run RKHunter rootkit detection scan\n(Configure scan categories in Settings → Scanning)"
         )
 
-        # Check if RKHunter is available (non-intrusive check)
+        # Check if RKHunter is available
         rkhunter_available = self.rkhunter.is_available()
-
         if rkhunter_available:
             self.rkhunter_scan_btn.clicked.connect(self.start_rkhunter_scan)
         else:
             self.rkhunter_scan_btn.setText("📦 Setup RKHunter")
-            self.rkhunter_scan_btn.setToolTip(
-                "RKHunter not available - click to install or configure"
-            )
+            self.rkhunter_scan_btn.setToolTip("RKHunter not available - click to install or configure")
             self.rkhunter_scan_btn.clicked.connect(self.install_rkhunter)
 
-        scan_buttons_layout.addWidget(self.start_scan_btn)
-        scan_buttons_layout.addWidget(self.stop_scan_btn)
-        scan_buttons_layout.addWidget(self.rkhunter_scan_btn)
-        scan_buttons_layout.addStretch()
-        controls_layout.addLayout(scan_buttons_layout)
+        buttons_layout.addWidget(self.start_scan_btn)
+        buttons_layout.addWidget(self.stop_scan_btn)
+        buttons_layout.addWidget(self.rkhunter_scan_btn)
+        
+        left_layout.addWidget(buttons_group)
+        left_layout.addStretch()  # Push everything to top
 
-        layout.addWidget(controls_group)
+        # ========== RIGHT COLUMN: Progress and Results ==========
+        right_column = QWidget()
+        right_layout = QVBoxLayout(right_column)
+        right_layout.setSpacing(10)
+        right_column.setMinimumWidth(500)  # Maintain good minimum width
 
-        # Progress section
+        # Progress section with better design
         progress_group = QGroupBox("Scan Progress")
         progress_layout = QVBoxLayout(progress_group)
+        progress_layout.setSpacing(6)
 
+        self.status_label = QLabel("Ready to scan")
+        self.status_label.setObjectName("statusLabel")
+        
         self.progress_bar = QProgressBar()
         self.progress_bar.setObjectName("modernProgressBar")
-        self.status_label = QLabel("Ready to scan")
+        self.progress_bar.setMinimumHeight(20)  # Reduced height
 
         progress_layout.addWidget(self.status_label)
         progress_layout.addWidget(self.progress_bar)
-        layout.addWidget(progress_group)
+        right_layout.addWidget(progress_group)
 
         # Results section
         results_group = QGroupBox("Scan Results")
@@ -1215,7 +1271,11 @@ class MainWindow(QMainWindow):
         self.results_text.setReadOnly(True)
         results_layout.addWidget(self.results_text)
 
-        layout.addWidget(results_group)
+        right_layout.addWidget(results_group)
+
+        # Add columns to main layout with appropriate proportions
+        main_layout.addWidget(left_column, 2)   # 40% width for scan location
+        main_layout.addWidget(right_column, 3)  # 60% width for progress and results
 
         self.tab_widget.addTab(scan_widget, "Scan")
 
@@ -1360,6 +1420,47 @@ class MainWindow(QMainWindow):
 
         left_column_layout.addWidget(scan_group)
 
+        # ADVANCED SCAN SETTINGS SECTION (LEFT COLUMN) - Moved from Scan tab
+        advanced_scan_group = QGroupBox("Advanced Scan Settings")
+        advanced_scan_layout = QFormLayout(advanced_scan_group)
+        advanced_scan_layout.setSpacing(15)
+
+        # Scan depth
+        self.scan_depth_combo = QComboBox()
+        self.scan_depth_combo.addItem("Surface (Faster)", 1)
+        self.scan_depth_combo.addItem("Normal", 2)
+        self.scan_depth_combo.addItem("Deep (Thorough)", 3)
+        self.scan_depth_combo.setCurrentIndex(1)
+        self.scan_depth_combo.setMinimumHeight(35)
+        advanced_scan_layout.addRow("Scan Depth:", self.scan_depth_combo)
+        
+        # File type filtering
+        self.file_filter_combo = QComboBox()
+        self.file_filter_combo.addItem("All Files", "all")
+        self.file_filter_combo.addItem("Executables Only", "exe")
+        self.file_filter_combo.addItem("Documents & Media", "docs")
+        self.file_filter_combo.addItem("System Files", "system")
+        self.file_filter_combo.setMinimumHeight(35)
+        advanced_scan_layout.addRow("File Types:", self.file_filter_combo)
+        
+        # Memory usage limit
+        self.memory_limit_combo = QComboBox()
+        self.memory_limit_combo.addItem("Low (512MB)", 512)
+        self.memory_limit_combo.addItem("Normal (1GB)", 1024)
+        self.memory_limit_combo.addItem("High (2GB)", 2048)
+        self.memory_limit_combo.setCurrentIndex(1)
+        self.memory_limit_combo.setMinimumHeight(35)
+        advanced_scan_layout.addRow("Memory Limit:", self.memory_limit_combo)
+        
+        # Exclusion patterns
+        exclusion_patterns_label = QLabel("Exclusion Patterns:")
+        self.exclusion_text = QTextEdit()
+        self.exclusion_text.setMaximumHeight(60)  # Slightly larger in settings
+        self.exclusion_text.setPlaceholderText("*.tmp, *.log, /proc/*, /sys/* (separate with commas)")
+        advanced_scan_layout.addRow(exclusion_patterns_label, self.exclusion_text)
+
+        left_column_layout.addWidget(advanced_scan_group)
+
         # USER INTERFACE SETTINGS SECTION (RIGHT COLUMN)
         ui_group = QGroupBox("User Interface Settings")
         ui_layout = QFormLayout(ui_group)
@@ -1411,6 +1512,42 @@ class MainWindow(QMainWindow):
         security_layout.addRow(self.settings_auto_update_cb)
 
         left_column_layout.addWidget(security_group)
+
+        # SCHEDULED SCAN SETTINGS SECTION (LEFT COLUMN)
+        scheduled_group = QGroupBox("Scheduled Scan Settings")
+        scheduled_layout = QFormLayout(scheduled_group)
+        scheduled_layout.setSpacing(15)
+        
+        # Enable scheduled scans
+        self.settings_enable_scheduled_cb = QCheckBox("Enable Scheduled Scans")
+        self.settings_enable_scheduled_cb.setChecked(False)
+        self.settings_enable_scheduled_cb.setMinimumHeight(35)
+        self.settings_enable_scheduled_cb.toggled.connect(self.on_scheduled_scan_toggled)
+        scheduled_layout.addRow(self.settings_enable_scheduled_cb)
+        
+        # Scan frequency
+        self.settings_scan_frequency_combo = QComboBox()
+        self.settings_scan_frequency_combo.addItem("Daily", "daily")
+        self.settings_scan_frequency_combo.addItem("Weekly", "weekly")
+        self.settings_scan_frequency_combo.addItem("Monthly", "monthly")
+        self.settings_scan_frequency_combo.setCurrentIndex(0)
+        self.settings_scan_frequency_combo.setMinimumHeight(35)
+        self.settings_scan_frequency_combo.setEnabled(False)
+        scheduled_layout.addRow(QLabel("Scan Frequency:"), self.settings_scan_frequency_combo)
+        
+        # Scan time
+        self.settings_scan_time_edit = QTimeEdit()
+        self.settings_scan_time_edit.setTime(QTime(2, 0))  # Default to 2:00 AM
+        self.settings_scan_time_edit.setMinimumHeight(35)
+        self.settings_scan_time_edit.setEnabled(False)
+        scheduled_layout.addRow(QLabel("Scan Time:"), self.settings_scan_time_edit)
+        
+        # Next scheduled scan display
+        self.settings_next_scan_label = QLabel("None scheduled")
+        self.settings_next_scan_label.setObjectName("nextScanLabel")
+        scheduled_layout.addRow(QLabel("Next Scan:"), self.settings_next_scan_label)
+        
+        left_column_layout.addWidget(scheduled_group)
 
         # REAL-TIME PROTECTION SETTINGS SECTION (RIGHT COLUMN)
         protection_group = QGroupBox("Real-Time Protection Settings")
@@ -2476,6 +2613,63 @@ class MainWindow(QMainWindow):
         except ValueError:
             print(f"Invalid retention value: {new_value}")
 
+    def on_scheduled_scan_toggled(self, enabled):
+        """Handle scheduled scan enable/disable toggle."""
+        # Enable/disable related controls
+        self.settings_scan_frequency_combo.setEnabled(enabled)
+        self.settings_scan_time_edit.setEnabled(enabled)
+        
+        if enabled:
+            # Calculate and display next scheduled scan
+            self.update_next_scheduled_scan_display()
+            # Start scheduler if not already running
+            if hasattr(self.scanner, 'start_scheduler'):
+                self.scanner.start_scheduler()
+        else:
+            self.settings_next_scan_label.setText("None scheduled")
+            # Stop scheduler
+            if hasattr(self.scanner, 'stop_scheduler'):
+                self.scanner.stop_scheduler()
+    
+    def update_next_scheduled_scan_display(self):
+        """Update the display of next scheduled scan time."""
+        if not self.settings_enable_scheduled_cb.isChecked():
+            self.settings_next_scan_label.setText("None scheduled")
+            return
+            
+        frequency = self.settings_scan_frequency_combo.currentData()
+        scan_time = self.settings_scan_time_edit.time()
+        
+        # Calculate next scan time based on frequency
+        from datetime import datetime, timedelta
+        now = datetime.now()
+        next_scan = None
+        
+        if frequency == "daily":
+            next_scan = now.replace(hour=scan_time.hour(), minute=scan_time.minute(), second=0, microsecond=0)
+            if next_scan <= now:
+                next_scan += timedelta(days=1)
+        elif frequency == "weekly":
+            # Schedule for next Sunday
+            days_until_sunday = (6 - now.weekday()) % 7
+            if days_until_sunday == 0:  # It's Sunday
+                next_scan = now.replace(hour=scan_time.hour(), minute=scan_time.minute(), second=0, microsecond=0)
+                if next_scan <= now:
+                    days_until_sunday = 7
+            next_scan = now + timedelta(days=days_until_sunday)
+            next_scan = next_scan.replace(hour=scan_time.hour(), minute=scan_time.minute(), second=0, microsecond=0)
+        elif frequency == "monthly":
+            # Schedule for first of next month
+            if now.month == 12:
+                next_scan = now.replace(year=now.year + 1, month=1, day=1, hour=scan_time.hour(), minute=scan_time.minute(), second=0, microsecond=0)
+            else:
+                next_scan = now.replace(month=now.month + 1, day=1, hour=scan_time.hour(), minute=scan_time.minute(), second=0, microsecond=0)
+        
+        if next_scan:
+            self.settings_next_scan_label.setText(next_scan.strftime("%Y-%m-%d %H:%M"))
+        else:
+            self.settings_next_scan_label.setText("Unable to calculate")
+
     def update_monitoring_statistics(self):
         """Update the monitoring statistics display."""
         # Update firewall status less frequently (every 6th call = 30-60
@@ -3250,9 +3444,9 @@ System        {perf_status}"""
             QPushButton {
                 background-color: #3a3a3a;
                 border: 2px solid #EE8980;
-                border-radius: 6px;
-                padding: 8px 16px;
-                min-width: 80px;
+                border-radius: 4px;
+                padding: 4px 8px;
+                min-width: 60px;
                 color: #FFCDAA;
                 font-weight: 600;
             }
@@ -3296,9 +3490,9 @@ System        {perf_status}"""
 
             QProgressBar {
                 border: 2px solid #EE8980;
-                border-radius: 6px;
+                border-radius: 4px;
                 text-align: center;
-                height: 24px;
+                height: 20px;
                 background-color: #3a3a3a;
                 color: #FFCDAA;
                 font-weight: 600;
@@ -3321,10 +3515,10 @@ System        {perf_status}"""
                 background-color: #3a3a3a;
                 border: 2px solid #EE8980;
                 border-bottom: none;
-                border-top-left-radius: 6px;
-                border-top-right-radius: 6px;
-                padding: 8px 16px;
-                margin-right: 3px;
+                border-top-left-radius: 4px;
+                border-top-right-radius: 4px;
+                padding: 6px 12px;
+                margin-right: 2px;
                 color: #FFCDAA;
                 font-weight: 600;
             }
@@ -3685,7 +3879,7 @@ System        {perf_status}"""
                 background-color: #3a3a3a;
                 border: 2px solid #EE8980;
                 border-radius: 6px;
-                padding: 8px 12px;
+                padding: 10px 16px;
                 color: #FFCDAA;
                 font-weight: 500;
                 font-size: 12px;
@@ -4323,6 +4517,134 @@ System        {perf_status}"""
                 background-color: #75BDE0;
                 color: #ffffff;
             }
+            
+            /* Scan Type Combo Specific Styling */
+            QComboBox#scanTypeCombo {
+                background-color: #ffffff;
+                border: 2px solid #2E8B57;
+                border-radius: 8px;
+                padding: 12px 18px;
+                font-weight: 600;
+                font-size: 13px;
+                min-width: 150px;
+            }
+            
+            QComboBox#scanTypeCombo:focus {
+                border-color: #32CD32;
+                background-color: #f0fff0;
+            }
+            
+            /* Next Scan Label Styling */
+            QLabel#nextScanLabel {
+                background-color: #f0f8ff;
+                border: 1px solid #87CEEB;
+                border-radius: 4px;
+                padding: 6px 10px;
+                color: #2E8B57;
+                font-weight: 500;
+                font-size: 11px;
+            }
+
+            /* Enhanced Button Styling for Better Spacing */
+            QPushButton#presetButton {
+                background-color: #ffffff;
+                border: 2px solid #75BDE0;
+                border-radius: 8px;
+                padding: 8px 16px;
+                color: #2c2c2c;
+                font-weight: 600;
+                font-size: 12px;
+                min-height: 36px;
+                min-width: 88px;
+            }
+            
+            QPushButton#presetButton:hover {
+                background-color: #f0f8ff;
+                border-color: #32CD32;
+            }
+            
+            QPushButton#presetButton:pressed {
+                background-color: #e6f3ff;
+            }
+
+            /* Section Labels */
+            QLabel#sectionLabel {
+                color: #2c2c2c;
+                font-weight: 600;
+                font-size: 12px;
+                margin-bottom: 5px;
+            }
+
+            /* Path Label */
+            QLabel#pathLabel {
+                background-color: #f8f8f8;
+                border: 1px solid #d0d0d0;
+                border-radius: 4px;
+                padding: 8px 12px;
+                color: #333333;
+                font-family: monospace;
+                font-size: 11px;
+            }
+
+            /* Status Label */
+            QLabel#statusLabel {
+                color: #2c2c2c;
+                font-weight: 500;
+                font-size: 13px;
+                padding: 4px 8px;
+            }
+
+            /* Progress Bar Enhanced */
+            QProgressBar#modernProgressBar {
+                background-color: #f0f0f0;
+                border: 2px solid #d0d0d0;
+                border-radius: 12px;
+                text-align: center;
+                font-weight: 600;
+                font-size: 12px;
+                min-height: 24px;
+            }
+
+            QProgressBar#modernProgressBar::chunk {
+                background: qlineargradient(x1: 0, y1: 0, x2: 1, y2: 0,
+                    stop: 0 #32CD32, stop: 1 #228B22);
+                border-radius: 10px;
+                margin: 2px;
+            }
+
+            /* Form Layout Improvements */
+            QFormLayout QLabel {
+                color: #2c2c2c;
+                font-weight: 600;
+                font-size: 11px;
+                min-width: 80px;
+            }
+
+            /* Scroll Area */
+            QScrollArea {
+                background-color: transparent;
+                border: none;
+            }
+
+            QScrollArea > QWidget > QWidget {
+                background-color: transparent;
+            }
+
+            QScrollBar:vertical {
+                background-color: #f0f0f0;
+                width: 12px;
+                border-radius: 6px;
+            }
+
+            QScrollBar::handle:vertical {
+                background-color: #c0c0c0;
+                border-radius: 6px;
+                min-height: 20px;
+            }
+
+            QScrollBar::handle:vertical:hover {
+                background-color: #a0a0a0;
+            }
 
             QSpinBox::up-button, QSpinBox::down-button {
                 background-color: #75BDE0;
@@ -4396,21 +4718,85 @@ System        {perf_status}"""
         if path:
             self.scan_path = path
             self.path_label.setText(path)
+    
+    def on_scan_type_changed(self):
+        """Handle scan type selection changes."""
+        current_type = self.scan_type_combo.currentData()
+        if current_type == "QUICK":
+            self.path_label.setText("Will scan common infection vectors")
+        elif current_type == "CUSTOM":
+            if not hasattr(self, 'scan_path') or not self.scan_path:
+                self.path_label.setText("Please select a custom path")
+        # Update any relevant UI elements based on scan type
 
     def start_scan(self, quick_scan=False):
-        if not hasattr(self, "scan_path"):
+        # Get scan type from UI if available, otherwise use parameter
+        scan_type_data = None
+        if hasattr(self, 'scan_type_combo'):
+            scan_type_data = self.scan_type_combo.currentData()
+            
+        # Determine effective scan type
+        if quick_scan:
+            effective_scan_type = "QUICK"
+        elif scan_type_data:
+            effective_scan_type = scan_type_data
+        else:
+            effective_scan_type = "FULL"
+            
+        # Handle Quick scan type - set appropriate path
+        if effective_scan_type == "QUICK":
+            # Quick scan targets common infection vectors
+            import tempfile
+            quick_scan_paths = [
+                os.path.expanduser("~/Downloads"),  
+                os.path.expanduser("~/Desktop"),   
+                os.path.expanduser("~/Documents"), 
+                tempfile.gettempdir(),  
+                "/tmp" if os.path.exists("/tmp") else None,  
+            ]
+            
+            # Filter out non-existent paths
+            valid_paths = [path for path in quick_scan_paths if path and os.path.exists(path)]
+            
+            if not valid_paths:
+                self.show_themed_message_box(
+                    "warning", "Warning", "No valid directories found for quick scan."
+                )
+                return
+                
+            self.scan_path = valid_paths[0]  # Use Downloads as primary target
+            
+        elif not hasattr(self, "scan_path") or not self.scan_path:
             self.show_themed_message_box(
                 "warning", "Warning", "Please select a path to scan first."
             )
             return
+
+        # Get advanced options if available
+        scan_options = {}
+        if hasattr(self, 'scan_depth_combo'):
+            scan_options['depth'] = self.scan_depth_combo.currentData()
+        if hasattr(self, 'file_filter_combo'):
+            scan_options['file_filter'] = self.file_filter_combo.currentData()
+        if hasattr(self, 'memory_limit_combo'):
+            scan_options['memory_limit'] = self.memory_limit_combo.currentData()
+        if hasattr(self, 'exclusion_text'):
+            exclusions = self.exclusion_text.toPlainText().strip()
+            if exclusions:
+                scan_options['exclusions'] = [pattern.strip() for pattern in exclusions.split('\n') if pattern.strip()]
 
         self.start_scan_btn.setEnabled(False)
         self.stop_scan_btn.setEnabled(True)
         self.progress_bar.setValue(0)
         self.results_text.clear()
 
-        # Check if this is a full system scan and RKHunter integration is
-        # enabled
+        # Display scan information
+        self.results_text.append(f"🔍 Starting {effective_scan_type.lower()} scan...")
+        self.results_text.append(f"📁 Target: {self.scan_path}")
+        if scan_options:
+            self.results_text.append(f"⚙️ Options: {scan_options}")
+
+        # Check if this is a full system scan and RKHunter integration is enabled
         is_full_system_scan = hasattr(self, "scan_path") and (
             self.scan_path == "/" or self.scan_path == str(Path.home())
         )
@@ -4423,7 +4809,7 @@ System        {perf_status}"""
             and self.rkhunter.is_available()
         )
 
-        if should_run_rkhunter:
+        if should_run_rkhunter and effective_scan_type in ["FULL", "CUSTOM"]:
             # Show confirmation for combined scan
             reply = self.show_themed_message_box(
                 "question",
@@ -4437,18 +4823,17 @@ System        {perf_status}"""
             )
 
             if reply == QMessageBox.StandardButton.Yes:
-                self.results_text.append(
-                    "🔒 Starting comprehensive security scan...")
-                self.results_text.append(
-                    "📊 Running ClamAV scan first, followed by RKHunter..."
-                )
+                self.results_text.append("🔒 Starting comprehensive security scan...")
+                self.results_text.append("📊 Running ClamAV scan first, followed by RKHunter...")
                 # Start combined scan
-                self.start_combined_security_scan(quick_scan)
+                self.start_combined_security_scan(quick_scan, scan_options)
                 return
 
-        # Start regular scan in separate thread with quick scan option
+        # Start regular scan in separate thread with enhanced options
         self.current_scan_thread = ScanThread(
-            self.scanner, self.scan_path, quick_scan=quick_scan
+            self.scanner, self.scan_path, 
+            quick_scan=(effective_scan_type == "QUICK"),
+            scan_options=scan_options
         )
         self.current_scan_thread.progress_updated.connect(
             self.progress_bar.setValue)
@@ -4457,7 +4842,7 @@ System        {perf_status}"""
         self.current_scan_thread.scan_completed.connect(self.scan_completed)
         self.current_scan_thread.start()
 
-    def start_combined_security_scan(self, quick_scan=False):
+    def start_combined_security_scan(self, quick_scan=False, scan_options=None):
         """Start a combined ClamAV + RKHunter security scan."""
         # Start ClamAV scan first
         self.current_scan_thread = ScanThread(
@@ -6897,6 +7282,28 @@ System        {perf_status}"""
                 advanced_settings.get("follow_symlinks", False)
             )
 
+            # Advanced scan settings (moved from Scan tab)
+            scan_depth = advanced_settings.get("scan_depth", 2)
+            for i in range(self.scan_depth_combo.count()):
+                if self.scan_depth_combo.itemData(i) == scan_depth:
+                    self.scan_depth_combo.setCurrentIndex(i)
+                    break
+            
+            file_filter = advanced_settings.get("file_filter", "all")
+            for i in range(self.file_filter_combo.count()):
+                if self.file_filter_combo.itemData(i) == file_filter:
+                    self.file_filter_combo.setCurrentIndex(i)
+                    break
+            
+            memory_limit = advanced_settings.get("memory_limit", 1024)
+            for i in range(self.memory_limit_combo.count()):
+                if self.memory_limit_combo.itemData(i) == memory_limit:
+                    self.memory_limit_combo.setCurrentIndex(i)
+                    break
+            
+            exclusion_patterns = advanced_settings.get("exclusion_patterns", "")
+            self.exclusion_text.setPlainText(exclusion_patterns)
+
             # Real-time protection settings
             protection_settings = self.config.get("realtime_protection", {})
             self.settings_monitor_modifications_cb.setChecked(
@@ -6955,6 +7362,12 @@ System        {perf_status}"""
             # Reset advanced settings to defaults
             self.settings_scan_archives_cb.setChecked(True)
             self.settings_follow_symlinks_cb.setChecked(False)
+
+            # Reset advanced scan settings to defaults (moved from Scan tab)
+            self.scan_depth_combo.setCurrentIndex(1)  # Normal
+            self.file_filter_combo.setCurrentIndex(0)  # All Files
+            self.memory_limit_combo.setCurrentIndex(1)  # Normal (1GB)
+            self.exclusion_text.setPlainText("")
 
             # Reset real-time protection settings to defaults
             self.settings_monitor_modifications_cb.setChecked(True)
@@ -7036,6 +7449,20 @@ System        {perf_status}"""
             self.config["advanced_settings"][
                 "follow_symlinks"
             ] = self.settings_follow_symlinks_cb.isChecked()
+
+            # Advanced scan settings (moved from Scan tab)
+            self.config["advanced_settings"][
+                "scan_depth"
+            ] = self.scan_depth_combo.currentData()
+            self.config["advanced_settings"][
+                "file_filter"
+            ] = self.file_filter_combo.currentData()
+            self.config["advanced_settings"][
+                "memory_limit"
+            ] = self.memory_limit_combo.currentData()
+            self.config["advanced_settings"][
+                "exclusion_patterns"
+            ] = self.exclusion_text.toPlainText().strip()
 
             self.config["realtime_protection"][
                 "monitor_modifications"

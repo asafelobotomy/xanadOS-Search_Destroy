@@ -13,11 +13,12 @@ class ScanThread(QThread):
     scan_completed = pyqtSignal(dict)
     status_updated = pyqtSignal(str)
 
-    def __init__(self, scanner, path, quick_scan=False):
+    def __init__(self, scanner, path, quick_scan=False, scan_options=None):
         super().__init__()
         self.scanner = scanner
         self.path = path
         self.quick_scan = quick_scan
+        self.scan_options = scan_options or {}
 
     def run(self):
         try:
