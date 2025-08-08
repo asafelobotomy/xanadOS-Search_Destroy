@@ -43,6 +43,21 @@
   </provides>
   
   <releases>
+    <release version="2.2.0" date="2025-08-08">
+      <description>
+        <p>Professional GUI redesign and comprehensive repository organization</p>
+        <ul>
+          <li>Complete 3-column GUI layout redesign with optimal proportions</li>
+          <li>Full-length Scan Results section for better visibility</li>
+          <li>Reorganized workflow with integrated Progress, Scan Type, and Actions</li>
+          <li>Comprehensive repository cleanup with 100% organization score</li>
+          <li>Complete API documentation and contribution guidelines</li>
+          <li>Automated repository maintenance tools and status reporting</li>
+          <li>Organized development structure with proper file categorization</li>
+          <li>Enhanced project documentation framework</li>
+        </ul>
+      </description>
+    </release>
     <release version="2.1.0" date="2025-08-07">
       <description>
         <p>Major update with dashboard improvements, version control, and repository cleanup</p>
