@@ -264,7 +264,8 @@ class MainWindow(QMainWindow):
                 self.timer_cycle_count = 0
 
         except Exception as e:
-            print(f"Error in unified timer update: {e}")
+            # Log error in unified timer update
+            pass
 
         # Track performance
         execution_time = time.time() - start_time
@@ -283,19 +284,17 @@ class MainWindow(QMainWindow):
                 # Reduce update frequency during high CPU usage
                 if hasattr(self, "master_timer"):
                     self.master_timer.setInterval(2000)  # Slower updates
-
-                print("🔧 Applied CPU optimization: Reduced update frequency")
+                # CPU optimization applied
 
             elif pressure_type == "memory_pressure":
                 # Force garbage collection
                 import gc
-
                 gc.collect()
-
-                print("🔧 Applied memory optimization: Cleared caches and old data")
+                # Memory optimization applied
 
         except Exception as e:
-            print(f"Error in performance optimization: {e}")
+            # Error in performance optimization
+            pass
 
     def get_performance_card_data(self) -> tuple:
         """Get concise performance data for system tray tooltip."""
@@ -630,7 +629,6 @@ class MainWindow(QMainWindow):
         """Toggle protection when the dashboard status card is clicked."""
         # If monitor wasn't initialized, try to initialize it first
         if self.real_time_monitor is None:
-            print("🔄 Initializing monitoring system from dashboard...")
             success = self.init_real_time_monitoring_safe()
             if not success:
                 self.add_activity_message(
@@ -667,15 +665,11 @@ class MainWindow(QMainWindow):
 
     def toggle_firewall_from_dashboard(self):
         """Toggle firewall when the dashboard status card is clicked."""
-        print("🔍 DEBUG: toggle_firewall_from_dashboard() called")
         
         # Get current firewall status
-        print("🔍 DEBUG: Getting current firewall status...")
         try:
             current_status = get_firewall_status()
-            print(f"🔍 DEBUG: Current status: {current_status}")
         except Exception as e:
-            print(f"❌ DEBUG: Error getting firewall status: {e}")
             import traceback
             traceback.print_exc()
             return
@@ -684,7 +678,6 @@ class MainWindow(QMainWindow):
         
         # Toggle the firewall (enable if currently disabled, disable if currently enabled)
         enable_firewall = not is_currently_active
-        print(f"🔍 DEBUG: Current active: {is_currently_active}, will enable: {enable_firewall}")
         
         # Show confirmation dialog for critical operations
         if enable_firewall:
@@ -694,7 +687,6 @@ class MainWindow(QMainWindow):
             action = "disable"
             message = "This will disable your firewall, reducing system security. Continue?"
         
-        print(f"🔍 DEBUG: Showing confirmation dialog for {action}")
         reply = self.show_themed_message_box(
             "question",
             f"Confirm Firewall {action.title()}", 
@@ -702,22 +694,16 @@ class MainWindow(QMainWindow):
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
         )
         
-        print(f"🔍 DEBUG: User reply: {reply}")
         if reply != QMessageBox.StandardButton.Yes:
-            print("🔍 DEBUG: User cancelled, exiting")
             return
         
         # Show info about authentication
-        print(f"🔍 DEBUG: Adding activity message and calling toggle_firewall({enable_firewall})")
         self.add_activity_message(f"🔒 Requesting admin privileges to {action} firewall...")
         
         # Perform the firewall toggle operation
         try:
-            print("🔍 DEBUG: About to call toggle_firewall...")
             result = toggle_firewall(enable_firewall)
-            print(f"🔍 DEBUG: toggle_firewall returned: {result}")
         except Exception as e:
-            print(f"❌ DEBUG: Exception in toggle_firewall: {e}")
             import traceback
             traceback.print_exc()
             self.add_activity_message(f"❌ Error during firewall {action}: {str(e)}")
@@ -725,7 +711,6 @@ class MainWindow(QMainWindow):
         
         if result.get('success', False):
             # Success - show message and update UI
-            print("🔍 DEBUG: Firewall toggle successful")
             self.add_activity_message(f"🔥 Firewall {action}d successfully from dashboard")
             self.show_themed_message_box(
                 "information",
@@ -733,12 +718,10 @@ class MainWindow(QMainWindow):
                 str(result.get('message', f'Firewall {action}d successfully'))
             )
             # Force immediate status update
-            print("🔍 DEBUG: Updating firewall status...")
             self.update_firewall_status()
             self.update_firewall_status_card()
         else:
             # Error - show error message
-            print(f"🔍 DEBUG: Firewall toggle failed: {result}")
             error_msg = str(result.get('error', 'Unknown error'))
             
             # Check if it's a permission/authentication error

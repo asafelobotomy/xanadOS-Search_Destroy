@@ -51,7 +51,7 @@ def generate_status_report():
     print(f"\nStructure Score: {structure_score}/{len(required_dirs)} ({structure_score/len(required_dirs)*100:.1f}%)")
     
     # Cleanup Results
-    print(f"\n🧹 CLEANUP RESULTS")
+    print("\n🧹 CLEANUP RESULTS")
     print("-" * 40)
     
     cleanup_items = [
@@ -66,7 +66,7 @@ def generate_status_report():
         print(f"{status} {item:<20} → {location}")
     
     # File Organization
-    print(f"\n📁 FILE ORGANIZATION")
+    print("\n📁 FILE ORGANIZATION")
     print("-" * 40)
     
     # Count files in each directory
@@ -84,7 +84,7 @@ def generate_status_report():
             print(f"📄 {path:<25} {count:>3} files")
     
     # Documentation Status
-    print(f"\n📚 DOCUMENTATION STATUS")
+    print("\n📚 DOCUMENTATION STATUS")
     print("-" * 40)
     
     docs = [
@@ -112,7 +112,7 @@ def generate_status_report():
     print(f"\nDocumentation Score: {docs_score}/{len(docs)} ({docs_score/len(docs)*100:.1f}%)")
     
     # Code Quality
-    print(f"\n🔍 CODE QUALITY METRICS")
+    print("\n🔍 CODE QUALITY METRICS")
     print("-" * 40)
     
     # Count Python files
@@ -127,7 +127,7 @@ def generate_status_report():
         try:
             with open(py_file, 'r', encoding='utf-8') as f:
                 total_lines += len(f.readlines())
-        except:
+        except (OSError, UnicodeDecodeError):
             pass
     
     print(f"📏 Estimated lines of code: {total_lines:,}")
@@ -139,7 +139,7 @@ def generate_status_report():
     print(f"🧪 Test files: {len(test_files + dev_test_files)}")
     
     # Git Status
-    print(f"\n📋 REPOSITORY STATUS")
+    print("\n📋 REPOSITORY STATUS")
     print("-" * 40)
     
     git_items = [
@@ -156,7 +156,7 @@ def generate_status_report():
             print(f"⚠️  {item:<20} - {description}")
     
     # Overall Assessment
-    print(f"\n🎯 OVERALL ASSESSMENT")
+    print("\n🎯 OVERALL ASSESSMENT")
     print("-" * 40)
     
     overall_score = (structure_score + docs_score) / (len(required_dirs) + len(docs)) * 100
@@ -180,7 +180,7 @@ def generate_status_report():
     print("✅ Good documentation coverage")
     print("✅ Development tools properly organized")
     
-    print(f"\n🚀 NEXT STEPS")
+    print("\n🚀 NEXT STEPS")
     print("-" * 40)
     print("1. ⚡ Continue developing new features")
     print("2. 🧪 Add more unit tests for better coverage")
