@@ -1111,20 +1111,60 @@ class MainWindow(QMainWindow):
     def create_scan_tab(self):
         scan_widget = QWidget()
         main_layout = QHBoxLayout(scan_widget)
-        main_layout.setSpacing(12)  # Reduced spacing for more compact layout
-        main_layout.setContentsMargins(10, 10, 10, 10)  # Reduced margins
+        main_layout.setSpacing(8)  # Compact spacing between columns
+        main_layout.setContentsMargins(8, 8, 8, 8)  # Reduced margins
 
-        # ========== LEFT COLUMN: Scan Configuration ==========
-        left_column = QWidget()
-        left_layout = QVBoxLayout(left_column)
-        left_layout.setSpacing(10)  # Reduced vertical spacing
-        left_column.setMinimumWidth(300)  # Reduced for more compact layout
-        left_column.setMaximumWidth(450)  # Add maximum width to prevent over-expansion
+        # ========== COLUMN 1: Scan Results ==========
+        column1 = QWidget()
+        column1_layout = QVBoxLayout(column1)
+        column1_layout.setSpacing(8)
+        column1.setMinimumWidth(280)  # Compact width
+        column1.setMaximumWidth(350)  # Prevent over-expansion
+
+        # Results section with optimized height - now has more space
+        results_group = QGroupBox("Scan Results")
+        results_group.setMinimumHeight(200)  # Increased minimum since progress moved
+        # No maximum height - allow full column expansion
+        results_layout = QVBoxLayout(results_group)
+
+        self.results_text = QTextEdit()
+        self.results_text.setObjectName("resultsText")
+        self.results_text.setReadOnly(True)
+        self.results_text.setMinimumHeight(160)  # Minimum for readability
+        # No maximum height - allow full expansion
+        results_layout.addWidget(self.results_text)
+
+        column1_layout.addWidget(results_group)
+        # No stretch - let results section fill the entire column
+
+        # ========== COLUMN 2: Progress, Scan Type & Actions ==========
+        column2 = QWidget()
+        column2_layout = QVBoxLayout(column2)
+        column2_layout.setSpacing(8)
+        column2.setMinimumWidth(350)  # Good width for descriptions
+        column2.setMaximumWidth(500)  # Allow expansion for text
+
+        # Progress section with compact design
+        progress_group = QGroupBox("Scan Progress")
+        progress_group.setMaximumHeight(90)  # Compact for column 2
+        progress_layout = QVBoxLayout(progress_group)
+        progress_layout.setSpacing(4)
+
+        self.status_label = QLabel("Ready to scan")
+        self.status_label.setObjectName("statusLabel")
+        
+        self.progress_bar = QProgressBar()
+        self.progress_bar.setObjectName("modernProgressBar")
+        self.progress_bar.setMinimumHeight(18)  # Compact height
+
+        progress_layout.addWidget(self.status_label)
+        progress_layout.addWidget(self.progress_bar)
+        column2_layout.addWidget(progress_group)
 
         # === Scan Type Selection Section ===
         scan_type_group = QGroupBox("Scan Type")
         scan_type_layout = QVBoxLayout(scan_type_group)
-        scan_type_layout.setSpacing(6)
+        scan_type_layout.setSpacing(8)
         
         self.scan_type_combo = QComboBox()
         self.scan_type_combo.addItem("🚀 Quick Scan", "QUICK")
@@ -1134,11 +1174,18 @@ class MainWindow(QMainWindow):
         self.scan_type_combo.setToolTip("Choose scan thoroughness level")
         self.scan_type_combo.currentTextChanged.connect(self.on_scan_type_changed)
         # Set proper size policy and minimum size for the combo
-        self.scan_type_combo.setMinimumHeight(40)  # Increased for better readability
+        self.scan_type_combo.setMinimumHeight(45)  # Good height for visibility
         self.scan_type_combo.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
         
         scan_type_layout.addWidget(self.scan_type_combo)
-        left_layout.addWidget(scan_type_group)
+        column2_layout.addWidget(scan_type_group)
+
+        # ========== COLUMN 3: Scan Target ==========
+        column3 = QWidget()
+        column3_layout = QVBoxLayout(column3)
+        column3_layout.setSpacing(8)
+        column3.setMinimumWidth(300)  # Adequate width for target controls
+        column3.setMaximumWidth(400)  # Prevent over-expansion
 
         # === Target Selection Section ===
         target_group = QGroupBox("Scan Target")
@@ -1193,7 +1240,8 @@ class MainWindow(QMainWindow):
         path_layout.addWidget(self.path_label)
         target_layout.addWidget(path_container)
         
-        left_layout.addWidget(target_group)
+        column3_layout.addWidget(target_group)
+        column3_layout.addStretch()  # Fill remaining space since actions moved to column2
 
         # === Action Buttons Section ===
         buttons_group = QGroupBox("Actions")
@@ -1237,47 +1285,18 @@ class MainWindow(QMainWindow):
         buttons_layout.addWidget(self.stop_scan_btn)
         buttons_layout.addWidget(self.rkhunter_scan_btn)
         
-        left_layout.addWidget(buttons_group)
-        left_layout.addStretch()  # Push everything to top
+        column2_layout.addWidget(buttons_group)
+        column2_layout.addStretch()  # Push everything to top
 
-        # ========== RIGHT COLUMN: Progress and Results ==========
-        right_column = QWidget()
-        right_layout = QVBoxLayout(right_column)
-        right_layout.setSpacing(10)
-        right_column.setMinimumWidth(500)  # Maintain good minimum width
-
-        # Progress section with better design
-        progress_group = QGroupBox("Scan Progress")
-        progress_layout = QVBoxLayout(progress_group)
-        progress_layout.setSpacing(6)
-
-        self.status_label = QLabel("Ready to scan")
-        self.status_label.setObjectName("statusLabel")
-        
-        self.progress_bar = QProgressBar()
-        self.progress_bar.setObjectName("modernProgressBar")
-        self.progress_bar.setMinimumHeight(20)  # Reduced height
-
-        progress_layout.addWidget(self.status_label)
-        progress_layout.addWidget(self.progress_bar)
-        right_layout.addWidget(progress_group)
-
-        # Results section
-        results_group = QGroupBox("Scan Results")
-        results_layout = QVBoxLayout(results_group)
-
-        self.results_text = QTextEdit()
-        self.results_text.setObjectName("resultsText")
-        self.results_text.setReadOnly(True)
-        results_layout.addWidget(self.results_text)
-
-        right_layout.addWidget(results_group)
-
-        # Add columns to main layout with appropriate proportions
-        main_layout.addWidget(left_column, 2)   # 40% width for scan location
-        main_layout.addWidget(right_column, 3)  # 60% width for progress and results
+        # Add 3 columns to main layout with optimized proportions
+        main_layout.addWidget(column1, 2)   # 25% width for progress and results (compact)
+        main_layout.addWidget(column2, 3)   # 37.5% width for scan type (descriptions)
+        main_layout.addWidget(column3, 3)   # 37.5% width for target and actions
 
         self.tab_widget.addTab(scan_widget, "Scan")
+        
+        # Initialize the scan type description
+        self.on_scan_type_changed()
 
     def create_reports_tab(self):
         reports_widget = QWidget()
@@ -4700,13 +4719,15 @@ System        {perf_status}"""
         """Set the scan path and update the UI."""
         if os.path.exists(path):
             self.scan_path = path
-            # Show a shortened version of the path for better readability
-            if len(path) > 50:
-                display_path = "..." + path[-47:]
-            else:
-                display_path = path
-            self.path_label.setText(display_path)
-            self.path_label.setToolTip(path)  # Full path in tooltip
+            
+            # Auto-switch to Custom scan type when a path is selected
+            for i in range(self.scan_type_combo.count()):
+                if self.scan_type_combo.itemData(i) == "CUSTOM":
+                    self.scan_type_combo.setCurrentIndex(i)
+                    break
+            
+            # Update the path description with custom scan details
+            self.on_scan_type_changed()
         else:
             self.show_themed_message_box(
                 "warning", "Warning", f"Path does not exist: {path}"
@@ -4716,17 +4737,38 @@ System        {perf_status}"""
         path = self.show_themed_file_dialog(
             "directory", "Select Directory to Scan")
         if path:
-            self.scan_path = path
-            self.path_label.setText(path)
+            self.set_scan_path(path)  # Use set_scan_path to handle all updates
     
     def on_scan_type_changed(self):
-        """Handle scan type selection changes."""
+        """Handle scan type selection changes with detailed descriptions."""
         current_type = self.scan_type_combo.currentData()
+        
         if current_type == "QUICK":
-            self.path_label.setText("Will scan common infection vectors")
+            self.path_label.setText(
+                "🚀 Quick Scan: Will scan common infection vectors\n"
+                "• Downloads, temporary files, system startup locations\n"
+                "• Fast scan optimized for most common threats"
+            )
+        elif current_type == "FULL":
+            self.path_label.setText(
+                "🔍 Full Scan: Will scan entire system\n"
+                "• Complete scan of all drives and accessible files\n"
+                "• Thorough protection but takes longer to complete"
+            )
         elif current_type == "CUSTOM":
-            if not hasattr(self, 'scan_path') or not self.scan_path:
-                self.path_label.setText("Please select a custom path")
+            if hasattr(self, 'scan_path') and self.scan_path:
+                self.path_label.setText(
+                    f"⚙️ Custom Scan: Selected path\n"
+                    f"• {self.scan_path}\n"
+                    f"• Targeted scan of your chosen location"
+                )
+            else:
+                self.path_label.setText(
+                    "⚙️ Custom Scan: Please select a custom path\n"
+                    "• Choose specific folder or drive to scan\n"
+                    "• Focused scanning for targeted protection"
+                )
+        
         # Update any relevant UI elements based on scan type
 
     def start_scan(self, quick_scan=False):
