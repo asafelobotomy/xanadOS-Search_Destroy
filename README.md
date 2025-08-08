@@ -5,7 +5,7 @@
 ![S&D Logo](packaging/icons/org.xanados.SearchAndDestroy.png)
 
 [![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg)](CHANGELOG.md)
-[![Version](https://img.shields.io/badge/version-2.1.0-blue.svg)](https://github.com/asafelobotomy/xanadOS-Search_Destroy/releases)
+[![Version](https://img.shields.io/badge/version-2.2.0-blue.svg)](https://github.com/asafelobotomy/xanadOS-Search_Destroy/releases)
 [![License](https://img.shields.io/badge/license-GPL--3.0-blue.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/python-3.13.5-blue.svg)](https://python.org)
 [![Tests](https://img.shields.io/badge/tests-182%20cases-brightgreen.svg)](#testing)
@@ -236,10 +236,10 @@ python app/main.py          # Run in development mode
 
 | 📖 Document                                                | 📝 Description                                |
 | ---------------------------------------------------------- | --------------------------------------------- |
-| **[Development Guide](docs/DEVELOPMENT.md)**               | Development setup and contribution guide      |
-| **[Copilot Setup](docs/COPILOT_SETUP.md)**                 | GitHub Copilot configuration and guidelines   |
-| **[Implementation History](docs/implementation-history/)** | Historical implementation summaries and fixes |
-| **[Changelog](CHANGELOG.md)**                              | Version history and recent changes            |
+| **[Development Guide](docs/developer/DEVELOPMENT.md)**     | Development setup and contribution guide      |
+| **[API Documentation](docs/developer/API.md)**            | Complete API reference for all modules        |
+| **[Implementation Details](docs/implementation/)**        | Technical implementation summaries and guides |
+| **[Changelog](CHANGELOG.md)**                             | Version history and recent changes             |
 
 </div>
 
@@ -292,7 +292,7 @@ python app/main.py          # Run in development mode
 │   ├── 🎨 STRAWBERRY_PALETTE.md # Theme design documentation
 │   ├── 📋 IMPLEMENTATION_SUMMARY.md # Feature implementation summary
 │   ├── 🧹 CLEANUP_SUMMARY.md     # Code cleanup documentation
-│   └── 📋 implementation-history/ # Implementation summaries
+│   └── 📋 implementation/       # Technical implementation documentation
 ├── 🛠️ dev/              # Development resources (demos, test scripts)
 │   ├── 🎨 demos/        # Theme demonstration scripts
 │   └── 🧪 test-scripts/ # Development test utilities
@@ -378,7 +378,7 @@ python app/main.py          # Run in development mode
 
 - 📁 Icons moved from `icons/` → `packaging/icons/`
 - 📦 Flatpak files moved to `packaging/flatpak/`
-- 📚 Implementation docs organized in `docs/implementation-history/`
+- 📚 Implementation docs organized in `docs/implementation/`
 - 🧪 Tests reorganized with unit and integration separation
 
 ### 🎯 **Improved Organization**
@@ -633,7 +633,7 @@ ls -la packaging/icons/org.xanados.SearchAndDestroy*.png
 ### 📞 **Getting Help**
 
 - 📋 Check existing [GitHub Issues](https://github.com/asafelobotomy/xanadOS-Search_Destroy/issues)
-- 📝 Review the [Development Guide](docs/DEVELOPMENT.md)
+- 📝 Review the [Development Guide](docs/developer/DEVELOPMENT.md)
 - 🐛 Report bugs with detailed error messages and system information
 
 ---
@@ -660,7 +660,7 @@ This project uses **GitHub Copilot** with custom instructions for consistent dev
 
 **📚 Quick Access**: `Ctrl+Shift+P` → "Tasks: Run Task" → "Show Copilot Instructions"
 
-See [`docs/COPILOT_SETUP.md`](docs/COPILOT_SETUP.md) for detailed guidelines.
+For detailed development guidelines and GitHub Copilot usage, see the [Development Guide](docs/developer/DEVELOPMENT.md) and [Contributing Guidelines](docs/developer/CONTRIBUTING.md).
 
 ---
 

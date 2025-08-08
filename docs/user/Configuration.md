@@ -426,4 +426,4 @@ python -m json.tool config/user_config.json
 
 ---
 
-**Next Steps**: See the [Troubleshooting Guide](../README.md#troubleshooting) for common configuration issues.
+**Next Steps**: See the [Troubleshooting Guide](../../README.md#troubleshooting) for common configuration issues.

@@ -168,7 +168,7 @@ make build-flatpak
 
 If you encounter issues during installation:
 
-1. **Check the [Troubleshooting Guide](../README.md#troubleshooting)**
+1. **Check the [Troubleshooting Guide](../../README.md#troubleshooting)**
 2. **Review system logs**: `/var/log/syslog` for system-level issues
 3. **Check application logs**: `data/logs/` for application-specific errors
 4. **Report issues**: [GitHub Issues](https://github.com/asafelobotomy/xanadOS-Search_Destroy/issues)

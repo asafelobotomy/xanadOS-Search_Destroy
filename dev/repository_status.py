@@ -91,9 +91,12 @@ def generate_status_report():
         ("README.md", "Project overview and usage"),
         ("CHANGELOG.md", "Version history and changes"),
         ("LICENSE", "Software license"),
-        ("docs/API.md", "API documentation"),
-        ("docs/CONTRIBUTING.md", "Contribution guidelines"),
-        ("docs/DEVELOPMENT.md", "Development documentation"),
+        ("docs/developer/API.md", "API documentation"),
+        ("docs/developer/CONTRIBUTING.md", "Contribution guidelines"),
+        ("docs/developer/DEVELOPMENT.md", "Development documentation"),
+        ("docs/user/Installation.md", "User installation guide"),
+        ("docs/user/User_Manual.md", "User manual and instructions"),
+        ("docs/user/Configuration.md", "Configuration guide"),
         ("dev/README.md", "Development tools guide"),
         ("dev/debug-scripts/README.md", "Debug scripts documentation")
     ]
