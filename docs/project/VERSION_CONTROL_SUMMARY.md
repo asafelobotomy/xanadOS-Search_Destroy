@@ -19,7 +19,7 @@
 
 ### 3. **Version Management**
 
-- Semantic versioning (2.1.0)
+- Semantic versioning (2.2.0)
 - VERSION file tracking
 - Comprehensive CHANGELOG.md
 - Automated release process
@@ -85,7 +85,7 @@ git feature-finish dashboard-improvements
 
 ```bash
 # Automated release
-./scripts/release.sh 2.1.0
+./scripts/release.sh 2.2.0
 
 # Or manual process
 git release-start 2.1.0

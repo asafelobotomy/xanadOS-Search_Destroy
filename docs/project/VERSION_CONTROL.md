@@ -10,7 +10,7 @@ We follow a **Git Flow** branching model for organized development:
 - **`develop`** - Integration branch for features
 - **`feature/*`** - New features (e.g., `feature/dashboard-improvements`)
 - **`hotfix/*`** - Critical bug fixes (e.g., `hotfix/scan-crash-fix`)
-- **`release/*`** - Release preparation (e.g., `release/2.1.0`)
+- **`release/*`** - Release preparation (e.g., `release/2.2.0`)
 
 ### Workflow Steps
 
