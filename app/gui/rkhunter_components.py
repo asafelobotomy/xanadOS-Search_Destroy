@@ -380,17 +380,21 @@ class RKHunterScanThread(QThread):
             
             self.progress_value_updated.emit(20)
 
-            update_success = self.rkhunter.update_database()
-
-            if not update_success:
-                self.logger.warning(
-                    "Failed to update RKHunter database, continuing with scan"
-                )
-                self.progress_updated.emit(
-                    "Database update failed, continuing with existing database..."
-                )
-            else:
-                self.progress_updated.emit("Database updated successfully")
+            # COMBINED APPROACH: Skip separate update call to avoid double authentication
+            # Instead, we'll include the update in the scan operation
+            # update_success = self.rkhunter.update_database()
+            
+            self.progress_updated.emit("Preparing scan with database update...")
+            
+            # if not update_success:
+            #     self.logger.warning(
+            #         "Failed to update RKHunter database, continuing with scan"
+            #     )
+            #     self.progress_updated.emit(
+            #         "Database update failed, continuing with existing database..."
+            #     )
+            # else:
+            #     self.progress_updated.emit("Database updated successfully")
             
             self.progress_value_updated.emit(30)
 
@@ -429,6 +433,7 @@ class RKHunterScanThread(QThread):
                 try:
                     result = self.rkhunter.scan_system_with_output_callback(
                         test_categories=self.test_categories,
+                        update_database=True,  # Include database update to avoid double authentication
                         output_callback=output_callback)
                     scan_result[0] = result
                 except Exception as e:

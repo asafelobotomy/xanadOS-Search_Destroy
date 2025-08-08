@@ -184,7 +184,14 @@ class RKHunterWrapper:
         if os.getuid() == 0:
             escalation_methods.append(("direct", cmd_args))
 
-        # First preference: sudo with GUI password helper (most reliable for GUI apps)
+        # PRIMARY METHOD: pkexec (GUI password dialog - system native)
+        pkexec_path = self._find_executable("pkexec")
+        if pkexec_path:
+            escalation_methods.append(("pkexec", [pkexec_path] + cmd_args))
+
+        # FALLBACK METHODS (for different environments/configurations)
+        
+        # Second preference: sudo with GUI password helper (consistent UI for security software)
         sudo_path = self._find_executable("sudo")
         if sudo_path:
             # Check for GUI password helpers
@@ -204,16 +211,11 @@ class RKHunterWrapper:
             if askpass_cmd and os.environ.get('DISPLAY'):
                 escalation_methods.append(("sudo_gui", [sudo_path, "-A"] + cmd_args))
 
-        # Second preference: sudo -n (passwordless sudo for headless environments)
+        # Third preference: sudo -n (passwordless sudo for headless environments)
         if sudo_path:
             escalation_methods.append(("sudo_nopasswd", [sudo_path, "-n"] + cmd_args))
 
-        # Third preference: pkexec (GUI password dialog)
-        pkexec_path = self._find_executable("pkexec")
-        if pkexec_path:
-            escalation_methods.append(("pkexec", [pkexec_path] + cmd_args))
-
-        # Fallback: sudo (terminal password prompt)
+        # Fourth preference: sudo (terminal password prompt)
         if sudo_path:
             escalation_methods.append(("sudo", [sudo_path] + cmd_args))
 
@@ -225,30 +227,15 @@ class RKHunterWrapper:
                     f"Trying {method_name}: {
                         ' '.join(full_cmd)}")
 
-                if method_name == "sudo_nopasswd":
-                    # sudo -n uses passwordless authentication
-                    self.logger.info("Using passwordless sudo")
+                if method_name == "direct":
+                    # Already running as root
+                    self.logger.info("Running as root directly")
                     result = subprocess.run(
                         full_cmd,
                         capture_output=capture_output,
                         text=True,
                         timeout=timeout,
                         check=False,
-                    )
-                elif method_name == "sudo_gui":
-                    # sudo -A uses GUI password helper
-                    self.logger.info("Using GUI password helper (sudo -A)")
-                    # Set up environment for GUI authentication
-                    env = os.environ.copy()
-                    env['SUDO_ASKPASS'] = '/usr/bin/ksshaskpass'  # We know this exists from our check
-                    
-                    result = subprocess.run(
-                        full_cmd,
-                        capture_output=capture_output,
-                        text=True,
-                        timeout=timeout,
-                        check=False,
-                        env=env,
                     )
                 elif method_name == "pkexec":
                     # pkexec shows GUI password dialog
@@ -267,6 +254,77 @@ class RKHunterWrapper:
                         timeout=timeout,
                         check=False,
                         env=env,
+                    )
+                elif method_name == "sudo_gui":
+                    # sudo -A uses GUI password helper
+                    self.logger.info("Using GUI password helper (sudo -A)")
+                    # Set up environment for GUI authentication
+                    env = os.environ.copy()
+                    env['SUDO_ASKPASS'] = '/usr/bin/ksshaskpass'  # We know this exists from our check
+                    
+                    result = subprocess.run(
+                        full_cmd,
+                        capture_output=capture_output,
+                        text=True,
+                        timeout=timeout,
+                        check=False,
+                        env=env,
+                    )
+                elif method_name == "sudo_nopasswd":
+                    # sudo -n uses passwordless authentication
+                    self.logger.info("Using passwordless sudo")
+                    result = subprocess.run(
+                        full_cmd,
+                        capture_output=capture_output,
+                        text=True,
+                        timeout=timeout,
+                        check=False,
+                    )
+                elif method_name == "pkexec_custom":
+                    # pkexec with custom PolicyKit action (single authentication)
+                    self.logger.info("Using custom PolicyKit action (pkexec_custom)")
+                    
+                    result = subprocess.run(
+                        full_cmd,
+                        capture_output=capture_output,
+                        text=True,
+                        timeout=timeout,
+                        check=False,
+                    )
+                elif method_name == "pkexec":
+                    # pkexec shows GUI password dialog
+                    self.logger.info("Using GUI password dialog (pkexec)")
+                    
+                    # Get current environment variables for GUI
+                    display = os.environ.get('DISPLAY', ':0')
+                    xauthority = os.environ.get('XAUTHORITY', f"{os.environ.get('HOME', '')}/.Xauthority")
+                    
+                    # COMBINED SCRIPT OPTIMIZATION: Check if this is an RKHunter scan command
+                    # and if we have the combined script available
+                    combined_script = "/home/vm/Documents/xanadOS-Search_Destroy/scripts/rkhunter-update-and-scan.sh"
+                    if (len(full_cmd) >= 2 and 
+                        "rkhunter" in full_cmd[1] and 
+                        "--check" in full_cmd and 
+                        os.path.exists(combined_script)):
+                        
+                        self.logger.info("Using combined RKHunter script to avoid double authentication")
+                        # Replace rkhunter path with combined script
+                        scan_args = [arg for arg in full_cmd[2:] if arg != "--check"]  # Get args after rkhunter
+                        env_cmd = ["pkexec", "env", f"DISPLAY={display}", f"XAUTHORITY={xauthority}", combined_script, "--check"] + scan_args
+                    else:
+                        # Modify command to include environment variables with pkexec
+                        # pkexec env DISPLAY=$DISPLAY XAUTHORITY=$XAUTHORITY command
+                        env_cmd = ["pkexec", "env", f"DISPLAY={display}", f"XAUTHORITY={xauthority}"] + full_cmd[1:]  # Skip original pkexec
+                    
+                    self.logger.info(f"Original command: {' '.join(full_cmd)}")
+                    self.logger.info(f"Modified command: {' '.join(env_cmd)}")
+                    
+                    result = subprocess.run(
+                        env_cmd,
+                        capture_output=capture_output,
+                        text=True,
+                        timeout=timeout,
+                        check=False,
                     )
                 elif method_name == "sudo":
                     # sudo uses terminal password prompt
@@ -303,7 +361,6 @@ class RKHunterWrapper:
                         )
                     elif capture_output:
                         # For sudo, we might need to handle interactive input
-                        # differently
                         result = subprocess.run(
                             full_cmd,
                             capture_output=True,
@@ -317,17 +374,25 @@ class RKHunterWrapper:
                         result = subprocess.run(
                             full_cmd, text=True, timeout=timeout, check=False
                         )
-                else:  # direct
-                    result = subprocess.run(
-                        full_cmd,
-                        capture_output=capture_output,
-                        text=True,
-                        timeout=timeout,
-                        check=False,
-                    )
+                else:
+                    # Unknown method
+                    self.logger.error(f"Unknown privilege escalation method: {method_name}")
+                    continue
 
-                # Check if command succeeded
+                # IMPROVED SUCCESS DETECTION: Check if RKHunter actually ran successfully
+                # RKHunter returns exit code 1 when warnings are found, which is normal
+                scan_completed_successfully = False
+                
                 if result.returncode == 0:
+                    # Perfect success
+                    scan_completed_successfully = True
+                elif result.returncode == 1 and result.stdout:
+                    # Check if RKHunter completed but found warnings
+                    if "Info: End date is" in result.stdout or "System checks summary" in result.stdout:
+                        scan_completed_successfully = True
+                        self.logger.info(f"RKHunter completed with warnings (exit code 1) using {method_name}")
+                
+                if scan_completed_successfully:
                     self.logger.info(f"Command succeeded using {method_name}")
                     return result
 
@@ -381,7 +446,14 @@ class RKHunterWrapper:
         if os.getuid() == 0:
             escalation_methods.append(("direct", cmd_args))
 
-        # First preference: sudo with GUI password helper (most reliable for GUI apps)
+        # PRIMARY METHOD: pkexec (GUI password dialog - system native)
+        pkexec_path = self._find_executable("pkexec")
+        if pkexec_path:
+            escalation_methods.append(("pkexec", [pkexec_path] + cmd_args))
+
+        # FALLBACK METHODS (for different environments/configurations)
+        
+        # Second preference: sudo with GUI password helper (consistent UI for security software)
         sudo_path = self._find_executable("sudo")
         if sudo_path:
             # Check for GUI password helpers
@@ -401,16 +473,11 @@ class RKHunterWrapper:
             if askpass_cmd and os.environ.get('DISPLAY'):
                 escalation_methods.append(("sudo_gui", [sudo_path, "-A"] + cmd_args))
 
-        # Second preference: sudo -n (passwordless sudo for headless environments)
+        # Third preference: sudo -n (passwordless sudo for headless environments)
         if sudo_path:
             escalation_methods.append(("sudo_nopasswd", [sudo_path, "-n"] + cmd_args))
 
-        # Third preference: pkexec (GUI password dialog)
-        pkexec_path = self._find_executable("pkexec")
-        if pkexec_path:
-            escalation_methods.append(("pkexec", [pkexec_path] + cmd_args))
-
-        # Fallback: sudo (terminal password prompt)
+        # Fourth preference: sudo (terminal password prompt)
         if sudo_path:
             escalation_methods.append(("sudo", [sudo_path] + cmd_args))
 
@@ -420,8 +487,39 @@ class RKHunterWrapper:
             try:
                 self.logger.debug(f"Trying {method_name}: {' '.join(full_cmd)}")
 
-                if method_name == "sudo_nopasswd":
-                    self.logger.info("Attempting passwordless sudo (requires NOPASSWD in sudoers)")
+                if method_name == "direct":
+                    self.logger.info("Running as root directly")
+                    env = os.environ.copy()
+                elif method_name == "pkexec":
+                    self.logger.info("Using GUI password dialog (pkexec)")
+                    
+                    # Get current environment variables for GUI
+                    display = os.environ.get('DISPLAY', ':0')
+                    xauthority = os.environ.get('XAUTHORITY', f"{os.environ.get('HOME', '')}/.Xauthority")
+                    
+                    # Store original command for logging
+                    original_cmd = full_cmd.copy()
+                    
+                    # COMBINED SCRIPT OPTIMIZATION: Check if this is an RKHunter scan command
+                    # and if we have the combined script available
+                    combined_script = "/home/vm/Documents/xanadOS-Search_Destroy/scripts/rkhunter-update-and-scan.sh"
+                    if (len(full_cmd) >= 2 and 
+                        "rkhunter" in full_cmd[1] and 
+                        "--check" in full_cmd and 
+                        os.path.exists(combined_script)):
+                        
+                        self.logger.info("Using combined RKHunter script to avoid double authentication")
+                        # Replace rkhunter path with combined script
+                        scan_args = [arg for arg in full_cmd[2:] if arg != "--check"]  # Get args after rkhunter
+                        full_cmd = ["pkexec", "env", f"DISPLAY={display}", f"XAUTHORITY={xauthority}", combined_script, "--check"] + scan_args
+                    else:
+                        # Modify command to include environment variables with pkexec
+                        # pkexec env DISPLAY=$DISPLAY XAUTHORITY=$XAUTHORITY command
+                        full_cmd = ["pkexec", "env", f"DISPLAY={display}", f"XAUTHORITY={xauthority}"] + full_cmd[1:]  # Skip original pkexec
+                    
+                    self.logger.info(f"Original command: {' '.join(original_cmd)}")
+                    self.logger.info(f"Modified command: {' '.join(full_cmd)}")
+                    
                     env = os.environ.copy()
                 elif method_name == "sudo_gui":
                     self.logger.info("Using GUI password helper (sudo with askpass)")
@@ -437,18 +535,11 @@ class RKHunterWrapper:
                         if os.path.exists(helper):
                             env['SUDO_ASKPASS'] = helper
                             break
-                elif method_name == "pkexec":
-                    self.logger.info("Using GUI password dialog (pkexec)")
-                    # Set up environment for GUI authentication
+                elif method_name == "sudo_nopasswd":
+                    self.logger.info("Attempting passwordless sudo (requires NOPASSWD in sudoers)")
                     env = os.environ.copy()
-                    if 'DISPLAY' not in env:
-                        env['DISPLAY'] = ':0'
-                    if 'XAUTHORITY' not in env and 'HOME' in env:
-                        env['XAUTHORITY'] = f"{env['HOME']}/.Xauthority"
-                    
                 elif method_name == "sudo":
                     self.logger.info("Using terminal password prompt (sudo)")
-                    
                     # For GUI applications, try to use a GUI password helper
                     env = os.environ.copy()
                     askpass_helpers = [
@@ -470,7 +561,6 @@ class RKHunterWrapper:
                         # Modify command to use -A flag
                         full_cmd = [full_cmd[0], '-A'] + full_cmd[1:]
                         self.logger.info(f"Using GUI password helper: {askpass_cmd}")
-                        
                 else:
                     env = os.environ.copy()
 
@@ -512,8 +602,20 @@ class RKHunterWrapper:
                     stderr=""
                 )
 
-                # Check if command succeeded
+                # IMPROVED SUCCESS DETECTION: Check if RKHunter actually ran successfully
+                # RKHunter returns exit code 1 when warnings are found, which is normal
+                scan_completed_successfully = False
+                
                 if result.returncode == 0:
+                    # Perfect success
+                    scan_completed_successfully = True
+                elif result.returncode == 1 and result.stdout:
+                    # Check if RKHunter completed but found warnings
+                    if "Info: End date is" in result.stdout or "System checks summary" in result.stdout:
+                        scan_completed_successfully = True
+                        self.logger.info(f"RKHunter completed with warnings (exit code 1) using {method_name}")
+                
+                if scan_completed_successfully:
                     self.logger.info(f"Command succeeded using {method_name}")
                     return result
 
@@ -744,6 +846,7 @@ USE_SYSLOG=0
     def scan_system_with_output_callback(self,
                     test_categories: Optional[List[str]] = None,
                     skip_keypress: bool = True,
+                    update_database: bool = True,
                     output_callback: Optional[Callable[[str], None]] = None) -> RKHunterScanResult:
         """
         Perform a full system rootkit scan with real-time output streaming.
@@ -751,6 +854,7 @@ USE_SYSLOG=0
         Args:
             test_categories: List of test categories to run (None for all)
             skip_keypress: Skip manual keypress confirmations
+            update_database: Include database update in the same privileged call
             output_callback: Function to call with real-time output lines
 
         Returns:
