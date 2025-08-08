@@ -7337,21 +7337,72 @@ System        {perf_status}"""
             print("DEBUG: 🧹 Clearing current reports list")
             self.reports_list.clear()
 
-            # Get reports directory from the report manager
-            reports_dir = self.report_manager.daily_reports
-            print(f"DEBUG: 📁 Reports directory: {reports_dir}")
+            # Get ClamAV reports directory from the report manager
+            clamav_reports_dir = self.report_manager.daily_reports
+            print(f"DEBUG: 📁 ClamAV reports directory: {clamav_reports_dir}")
 
-            # Verify the directory exists
-            if not reports_dir.exists():
-                print("DEBUG: ❌ Reports directory does not exist")
-                self.report_viewer.setText("No reports directory found.")
-                return
+            # Get RKHunter reports directory
+            rkhunter_reports_dir = (
+                Path.home() /
+                ".local/share/search-and-destroy/rkhunter_reports"
+            )
+            print(f"DEBUG: 📁 RKHunter reports directory: {rkhunter_reports_dir}")
 
-            # Find all JSON report files
-            report_files = list(reports_dir.glob("scan_*.json"))
-            print(f"DEBUG: 🔍 Found {len(report_files)} report files")
+            all_reports = []
 
-            if not report_files:
+            # Load ClamAV reports
+            if clamav_reports_dir.exists():
+                clamav_files = list(clamav_reports_dir.glob("scan_*.json"))
+                print(f"DEBUG: 🔍 Found {len(clamav_files)} ClamAV report files")
+                
+                for report_file in clamav_files:
+                    try:
+                        with open(report_file, "r", encoding="utf-8") as f:
+                            data = json.load(f)
+                        
+                        # Extract scan ID from filename
+                        scan_id = report_file.stem.replace("scan_", "")
+                        
+                        all_reports.append({
+                            'type': 'clamav',
+                            'file_path': report_file,
+                            'scan_id': scan_id,
+                            'data': data,
+                            'start_time': data.get('start_time', 'Unknown'),
+                            'scan_type': data.get('scan_type', 'Unknown'),
+                            'threats': data.get('threats_found', 0)
+                        })
+                    except (OSError, IOError, PermissionError, json.JSONDecodeError) as e:
+                        print(f"Error loading ClamAV report {report_file}: {e}")
+
+            # Load RKHunter reports
+            if rkhunter_reports_dir.exists():
+                rkhunter_files = list(rkhunter_reports_dir.glob("rkhunter_scan_*.json"))
+                print(f"DEBUG: 🔍 Found {len(rkhunter_files)} RKHunter report files")
+                
+                for report_file in rkhunter_files:
+                    try:
+                        with open(report_file, "r", encoding="utf-8") as f:
+                            data = json.load(f)
+                        
+                        # Extract scan ID from filename
+                        scan_id = report_file.stem
+                        
+                        all_reports.append({
+                            'type': 'rkhunter',
+                            'file_path': report_file,
+                            'scan_id': scan_id,
+                            'data': data,
+                            'start_time': data.get('start_time', 'Unknown'),
+                            'scan_type': data.get('scan_type', 'Unknown'),
+                            'warnings': data.get('statistics', {}).get('warnings_found', 0),
+                            'infections': data.get('statistics', {}).get('infections_found', 0)
+                        })
+                    except (OSError, IOError, PermissionError, json.JSONDecodeError) as e:
+                        print(f"Error loading RKHunter report {report_file}: {e}")
+
+            # Check if no reports found
+            if not all_reports:
                 print("DEBUG: ❌ No report files found")
                 if self.current_theme == "dark":
                     no_reports_html = """
@@ -7375,7 +7426,7 @@ System        {perf_status}"""
                         }
                     </style>
                     <h3>No Scan Reports Found</h3>
-                    <p>Run a scan to generate your first report.</p>
+                    <p>Run a ClamAV or RKHunter scan to generate your first report.</p>
                     """
                 else:
                     no_reports_html = """
@@ -7399,41 +7450,64 @@ System        {perf_status}"""
                         }
                     </style>
                     <h3>No Scan Reports Found</h3>
-                    <p>Run a scan to generate your first report.</p>
+                    <p>Run a ClamAV or RKHunter scan to generate your first report.</p>
                     """
                 self.report_viewer.setHtml(no_reports_html)
                 return
 
-            # Sort reports by date (newest first)
-            report_files.sort(reverse=True)
+            # Sort reports by start time (newest first)
+            all_reports.sort(key=lambda x: x['start_time'], reverse=True)
 
             # Add to list widget
-            for report_file in report_files:
+            for report in all_reports:
                 try:
-                    # Extract scan ID from filename
-                    scan_id = report_file.stem.replace("scan_", "")
+                    data = report['data']
+                    
+                    # Create item text with type indicator
+                    if report['type'] == 'clamav':
+                        type_icon = "🦠"  # Virus icon for ClamAV
+                        scan_type = data.get('scan_type', 'Unknown')
+                        threats = report['threats']
+                        status = f" - {threats} threats found" if threats else " - Clean"
+                    else:  # rkhunter
+                        type_icon = "🔍"  # Magnifying glass for RKHunter
+                        scan_type = "RKHunter Rootkit Scan"
+                        warnings = report['warnings']
+                        infections = report['infections']
+                        if infections > 0:
+                            status = f" - {infections} infections, {warnings} warnings"
+                        elif warnings > 0:
+                            status = f" - {warnings} warnings"
+                        else:
+                            status = " - Clean"
 
-                    # Try to load basic report info
-                    with open(report_file, "r", encoding="utf-8") as f:
-                        data = json.load(f)
+                    # Format timestamp
+                    start_time = report['start_time']
+                    if start_time != 'Unknown':
+                        try:
+                            # Parse ISO format and format for display
+                            from datetime import datetime
+                            dt = datetime.fromisoformat(start_time.replace('Z', '+00:00'))
+                            formatted_time = dt.strftime("%Y-%m-%d %H:%M:%S")
+                        except:
+                            formatted_time = start_time
+                    else:
+                        formatted_time = start_time
 
-                    # Create item with timestamp and scan type
-                    item_text = f"{data.get('start_time',
-                                            'Unknown')} - {data.get('scan_type',
-                                                                    'Unknown')}"
-
-                    # Add threat count if available
-                    threats = data.get("threats_found", 0)
-                    item_text += (
-                        f" - {threats} threats found" if threats else " - Clean")
+                    item_text = f"{type_icon} {formatted_time} - {scan_type}{status}"
 
                     # Create and add the item
                     item = QListWidgetItem(item_text)
-                    item.setData(Qt.ItemDataRole.UserRole, scan_id)
+                    # Store report info for loading
+                    item.setData(Qt.ItemDataRole.UserRole, {
+                        'type': report['type'],
+                        'scan_id': report['scan_id'],
+                        'file_path': str(report['file_path'])
+                    })
                     self.reports_list.addItem(item)
 
-                except (OSError, IOError, PermissionError) as e:
-                    print(f"Error loading report {report_file}: {e}")
+                except Exception as e:
+                    print(f"Error processing report {report.get('file_path', 'unknown')}: {e}")
 
             if self.current_theme == "dark":
                 select_report_html = """
@@ -7537,8 +7611,31 @@ System        {perf_status}"""
     def load_report(self, item):
         """Load and display the selected scan report."""
         try:
-            # Get scan ID from item data
-            scan_id = item.data(Qt.ItemDataRole.UserRole)
+            # Get report info from item data
+            report_info = item.data(Qt.ItemDataRole.UserRole)
+            if not report_info:
+                self._show_report_error("No report data available for this item.")
+                return
+
+            # Handle new format with report type and file path
+            if isinstance(report_info, dict):
+                report_type = report_info.get('type')
+                file_path_str = report_info.get('file_path')
+                if not file_path_str:
+                    self._show_report_error("No file path available for this report.")
+                    return
+                file_path = Path(file_path_str)
+                
+                if report_type == 'clamav':
+                    self._load_clamav_report(file_path, report_info.get('scan_id'))
+                elif report_type == 'rkhunter':
+                    self._load_rkhunter_report(file_path, report_info.get('scan_id'))
+                else:
+                    self._show_report_error(f"Unknown report type: {report_type}")
+                return
+
+            # Legacy format handling for old ClamAV reports
+            scan_id = report_info
             if not scan_id:
                 if self.current_theme == "dark":
                     no_id_html = """
@@ -8136,26 +8233,26 @@ System        {perf_status}"""
             reply = self.show_themed_message_box(
                 "question",
                 "Delete All Reports",
-                "Are you sure you want to delete ALL scan reports?\n\nThis action cannot be undone.",
+                "Are you sure you want to delete ALL scan reports?\n\nThis includes both ClamAV and RKHunter reports.\n\nThis action cannot be undone.",
                 QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
             )
 
             if reply == QMessageBox.StandardButton.Yes:
-                # Delete all reports by cleaning up the reports directory
+                # Delete all reports by cleaning up both directories
                 try:
-                    # Use the report manager's reports directory
-                    reports_dir = self.report_manager.reports_dir
                     deleted_count = 0
-
-                    if reports_dir.exists():
+                    
+                    # Delete ClamAV reports from the report manager's reports directory
+                    clamav_reports_dir = self.report_manager.reports_dir
+                    if clamav_reports_dir.exists():
                         # Delete all .json report files
-                        for report_file in reports_dir.glob("*.json"):
+                        for report_file in clamav_reports_dir.glob("*.json"):
                             report_file.unlink()
                             deleted_count += 1
 
                         # Also clean up any subdirectories like daily
                         # summaries, threats, etc.
-                        for subdir in reports_dir.iterdir():
+                        for subdir in clamav_reports_dir.iterdir():
                             if subdir.is_dir():
                                 for file in subdir.rglob("*"):
                                     if file.is_file():
@@ -8168,10 +8265,26 @@ System        {perf_status}"""
                                 except OSError:
                                     pass  # Directory not empty or other issue
 
+                    # Delete RKHunter reports from their separate directory
+                    rkhunter_reports_dir = (
+                        Path.home() /
+                        ".local/share/search-and-destroy/rkhunter_reports"
+                    )
+                    if rkhunter_reports_dir.exists():
+                        # Delete all RKHunter report files
+                        for report_file in rkhunter_reports_dir.glob("rkhunter_scan_*.json"):
+                            report_file.unlink()
+                            deleted_count += 1
+                        
+                        # Also delete any other files in the RKHunter reports directory
+                        for report_file in rkhunter_reports_dir.glob("*.json"):
+                            report_file.unlink()
+                            deleted_count += 1
+
                     self.show_themed_message_box(
                         "information",
                         "Reports Deleted",
-                        f"Successfully deleted {deleted_count} report files.",
+                        f"Successfully deleted {deleted_count} report files (ClamAV and RKHunter).",
                     )
                     # Refresh the reports list to show it's empty
                     self.refresh_reports()
@@ -8606,3 +8719,380 @@ System        {perf_status}"""
             
         except Exception as e:
             print(f"⚠️ Error setting up auto-save connections: {e}")
+
+    def _load_clamav_report(self, file_path, scan_id):
+        """Load and display a ClamAV report."""
+        try:
+            with open(file_path, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            
+            # Convert to scan result format for display
+            class MockScanResult:
+                def __init__(self, data):
+                    self.start_time = data.get('start_time', 'Unknown')
+                    self.scan_type = type('obj', (object,), {'value': data.get('scan_type', 'Unknown')})
+                    self.duration = data.get('duration', 0)
+                    self.scanned_files = data.get('scanned_files', 0)
+                    self.total_files = data.get('total_files', 0)
+                    self.threats_found = data.get('threats_found', 0)
+                    self.scanned_paths = data.get('scanned_paths', [])
+                    self.threats = []
+                    self.errors = data.get('errors', [])
+                    
+                    # Convert threats to objects if present
+                    for threat_data in data.get('threats', []):
+                        threat = type('obj', (object,), {
+                            'file_path': threat_data.get('file_path', ''),
+                            'threat_name': threat_data.get('threat_name', ''),
+                            'threat_level': type('obj', (object,), {'value': threat_data.get('threat_level', 'unknown')}),
+                            'action_taken': threat_data.get('action_taken', '')
+                        })
+                        self.threats.append(threat)
+
+            scan_result = MockScanResult(data)
+            self._display_clamav_report(scan_result, scan_id)
+            
+        except Exception as e:
+            self._show_report_error(f"Error loading ClamAV report: {e}")
+
+    def _load_rkhunter_report(self, file_path, scan_id):
+        """Load and display an RKHunter report."""
+        try:
+            with open(file_path, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            
+            self._display_rkhunter_report(data, scan_id)
+            
+        except Exception as e:
+            self._show_report_error(f"Error loading RKHunter report: {e}")
+
+    def _display_clamav_report(self, scan_result, scan_id):
+        """Display a ClamAV scan report."""
+        output = f"<h2>🦠 ClamAV Scan Report: {scan_id}</h2>"
+        output += f"<p><b>Date:</b> {scan_result.start_time}</p>"
+        output += f"<p><b>Scan Type:</b> {scan_result.scan_type.value}</p>"
+        output += f"<p><b>Duration:</b> {scan_result.duration:.2f} seconds</p>"
+        output += f"<p><b>Files Scanned:</b> {scan_result.scanned_files}/{scan_result.total_files}</p>"
+        output += f"<p><b>Threats Found:</b> {scan_result.threats_found}</p>"
+
+        # Add paths that were scanned
+        if scan_result.scanned_paths:
+            output += "<h3>Scanned Paths:</h3><ul>"
+            for path in scan_result.scanned_paths:
+                output += f"<li>{path}</li>"
+            output += "</ul>"
+
+        # Add threats if any were found
+        if scan_result.threats_found > 0:
+            output += "<h3>Detected Threats:</h3><table border='1' cellpadding='3'>"
+            output += "<tr><th>File</th><th>Threat</th><th>Level</th><th>Action</th></tr>"
+
+            for threat in scan_result.threats:
+                threat_level_class = (
+                    "error" if threat.threat_level.value == "error"
+                    else ("infected" if threat.threat_level.value == "infected"
+                          else ("suspicious" if threat.threat_level.value == "suspicious"
+                                else "clean")))
+
+                output += f"<tr class='{threat_level_class}'>"
+                output += f"<td>{threat.file_path}</td>"
+                output += f"<td>{threat.threat_name}</td>"
+                output += f"<td>{threat.threat_level.value}</td>"
+                output += f"<td>{threat.action_taken}</td>"
+                output += "</tr>"
+
+            output += "</table>"
+        else:
+            output += "<h3>✅ No threats detected!</h3>"
+
+        # Add any errors
+        if scan_result.errors:
+            output += "<h3>Errors:</h3><ul>"
+            for error in scan_result.errors:
+                output += f"<li>{error}</li>"
+            output += "</ul>"
+
+        self._apply_report_styling(output)
+
+    def _display_rkhunter_report(self, data, scan_id):
+        """Display an RKHunter scan report."""
+        output = f"<h2>🔍 RKHunter Rootkit Scan Report: {scan_id}</h2>"
+        
+        # Basic info
+        output += f"<p><b>Date:</b> {data.get('start_time', 'Unknown')}</p>"
+        output += f"<p><b>Scan Type:</b> {data.get('scan_type', 'Unknown')}</p>"
+        output += f"<p><b>Duration:</b> {data.get('duration', 0):.2f} seconds</p>"
+        output += f"<p><b>Success:</b> {'Yes' if data.get('success', False) else 'No'}</p>"
+
+        # Statistics
+        stats = data.get('statistics', {})
+        output += "<h3>Scan Statistics:</h3>"
+        output += f"<p><b>Total Tests:</b> {stats.get('total_tests', 0)}</p>"
+        output += f"<p><b>Tests Run:</b> {stats.get('tests_run', 0)}</p>"
+        output += f"<p><b>Warnings Found:</b> {stats.get('warnings_found', 0)}</p>"
+        output += f"<p><b>Infections Found:</b> {stats.get('infections_found', 0)}</p>"
+        output += f"<p><b>Skipped Tests:</b> {stats.get('skipped_tests', 0)}</p>"
+
+        # Overall status
+        infections = stats.get('infections_found', 0)
+        warnings = stats.get('warnings_found', 0)
+        
+        if infections > 0:
+            output += "<h3 style='color: #F14666;'>🚨 CRITICAL: Potential rootkits detected!</h3>"
+        elif warnings > 0:
+            output += "<h3 style='color: #FFA500;'>⚠️ Warnings found - review carefully</h3>"
+        else:
+            output += "<h3 style='color: #4CAF50;'>✅ No rootkits detected</h3>"
+
+        # Detailed findings
+        findings = data.get('findings', [])
+        if findings:
+            output += "<h3>Detailed Findings:</h3>"
+            output += "<table border='1' cellpadding='3'>"
+            output += "<tr><th>Test</th><th>Result</th><th>Severity</th><th>Description</th></tr>"
+            
+            for finding in findings:
+                result_value = finding.get('result', 'unknown')
+                status_icon = "🚨" if result_value == "infected" else "⚠️"
+                
+                output += f"<tr>"
+                output += f"<td>{status_icon} {finding.get('test_name', 'Unknown')}</td>"
+                output += f"<td>{result_value.upper()}</td>"
+                output += f"<td>{finding.get('severity', 'unknown').upper()}</td>"
+                output += f"<td>{finding.get('description', 'No description')}</td>"
+                output += "</tr>"
+            
+            output += "</table>"
+
+        # Recommendations
+        recommendations = data.get('recommendations', [])
+        if recommendations:
+            output += "<h3>Recommendations:</h3><ul>"
+            for rec in recommendations:
+                output += f"<li>{rec}</li>"
+            output += "</ul>"
+
+        # Summary
+        summary = data.get('summary', '')
+        if summary:
+            output += f"<h3>Summary:</h3><p>{summary}</p>"
+
+        # Error message if any
+        error_message = data.get('error_message')
+        if error_message:
+            output += f"<h3>Error:</h3><p style='color: #F14666;'>{error_message}</p>"
+
+        self._apply_report_styling(output)
+
+    def _show_report_error(self, message):
+        """Show an error message in the report viewer."""
+        if self.current_theme == "dark":
+            error_html = f"""
+            <style>
+                body {{
+                    font-family: 'Segoe UI', Arial, sans-serif;
+                    color: #FFCDAA;
+                    background-color: #2b2b2b;
+                    margin: 20px;
+                    text-align: center;
+                    line-height: 1.6;
+                }}
+                h3 {{
+                    color: #F14666;
+                    font-weight: 600;
+                    margin-bottom: 10px;
+                }}
+                p {{
+                    color: #FFCDAA;
+                    font-weight: 500;
+                }}
+            </style>
+            <h3>Report Error</h3>
+            <p>{message}</p>
+            """
+        else:
+            error_html = f"""
+            <style>
+                body {{
+                    font-family: 'Segoe UI', Arial, sans-serif;
+                    color: #2c2c2c;
+                    background-color: #fefefe;
+                    margin: 20px;
+                    text-align: center;
+                    line-height: 1.5;
+                }}
+                h3 {{
+                    color: #F89B9B;
+                    font-weight: 600;
+                    margin-bottom: 10px;
+                }}
+                p {{
+                    color: #2c2c2c;
+                    font-weight: 500;
+                }}
+            </style>
+            <h3>Report Error</h3>
+            <p>{message}</p>
+            """
+        self.report_viewer.setHtml(error_html)
+
+    def _apply_report_styling(self, output):
+        """Apply theme-appropriate styling to report output."""
+        if self.current_theme == "dark":
+            # Dark mode styling with Strawberry color palette
+            styled_output = f"""
+            <style>
+                body {{
+                    font-family: 'Segoe UI', Arial, sans-serif;
+                    color: #FFCDAA;
+                    background-color: #2b2b2b;
+                    margin: 8px;
+                    line-height: 1.6;
+                }}
+                h2 {{
+                    color: #F14666;
+                    font-weight: 700;
+                    margin-top: 16px;
+                    margin-bottom: 12px;
+                    border-bottom: 2px solid #EE8980;
+                    padding-bottom: 8px;
+                }}
+                h3 {{
+                    color: #EE8980;
+                    font-weight: 600;
+                    margin-top: 20px;
+                    margin-bottom: 10px;
+                }}
+                table {{
+                    border-collapse: collapse;
+                    width: 100%;
+                    margin: 12px 0;
+                    background-color: #3a3a3a;
+                    border: 1px solid #EE8980;
+                }}
+                th {{
+                    background-color: #F14666;
+                    color: #FFFFFF;
+                    font-weight: 600;
+                    padding: 10px;
+                    text-align: left;
+                    border: 1px solid #EE8980;
+                }}
+                td {{
+                    padding: 8px 10px;
+                    border: 1px solid #EE8980;
+                    color: #FFCDAA;
+                }}
+                tr.error td {{
+                    background-color: #5D1A20;
+                    color: #F14666;
+                    font-weight: 600;
+                }}
+                tr.infected td {{
+                    background-color: #5D1A20;
+                    color: #F14666;
+                    font-weight: 600;
+                }}
+                tr.suspicious td {{
+                    background-color: #4A3419;
+                    color: #F0A500;
+                }}
+                ul {{
+                    margin: 12px 0;
+                    padding-left: 25px;
+                }}
+                li {{
+                    margin: 4px 0;
+                    color: #FFCDAA;
+                }}
+                b {{
+                    color: #EE8980;
+                    font-weight: 600;
+                }}
+                p {{
+                    margin: 8px 0;
+                    color: #FFCDAA;
+                }}
+            </style>
+            {output}
+            """
+        else:
+            # Light mode styling with balanced contrast
+            styled_output = f"""
+            <style>
+                body {{
+                    font-family: 'Segoe UI', Arial, sans-serif;
+                    color: #2c2c2c;
+                    background-color: #fefefe;
+                    margin: 8px;
+                    line-height: 1.5;
+                }}
+                h2 {{
+                    color: #75BDE0;
+                    font-weight: 700;
+                    margin-top: 16px;
+                    margin-bottom: 12px;
+                    border-bottom: 2px solid #F89B9B;
+                    padding-bottom: 8px;
+                }}
+                h3 {{
+                    color: #F89B9B;
+                    font-weight: 600;
+                    margin-top: 20px;
+                    margin-bottom: 10px;
+                }}
+                table {{
+                    border-collapse: collapse;
+                    width: 100%;
+                    margin: 12px 0;
+                    background-color: #f9f9f9;
+                    border: 1px solid #ddd;
+                }}
+                th {{
+                    background-color: #75BDE0;
+                    color: #FFFFFF;
+                    font-weight: 600;
+                    padding: 10px;
+                    text-align: left;
+                    border: 1px solid #ddd;
+                }}
+                td {{
+                    padding: 8px 10px;
+                    border: 1px solid #ddd;
+                    color: #2c2c2c;
+                }}
+                tr.error td {{
+                    background-color: #ffe6e6;
+                    color: #d32f2f;
+                    font-weight: 600;
+                }}
+                tr.infected td {{
+                    background-color: #ffe6e6;
+                    color: #d32f2f;
+                    font-weight: 600;
+                }}
+                tr.suspicious td {{
+                    background-color: #fff3cd;
+                    color: #856404;
+                }}
+                ul {{
+                    margin: 12px 0;
+                    padding-left: 25px;
+                }}
+                li {{
+                    margin: 4px 0;
+                    color: #2c2c2c;
+                }}
+                b {{
+                    color: #75BDE0;
+                    font-weight: 600;
+                }}
+                p {{
+                    margin: 8px 0;
+                    color: #2c2c2c;
+                }}
+            </style>
+            {output}
+            """
+
+        self.report_viewer.setHtml(styled_output)
