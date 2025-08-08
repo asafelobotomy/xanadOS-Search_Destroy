@@ -7740,6 +7740,10 @@ System        {perf_status}"""
                 
             # Re-enable signals after loading is complete
             self.block_settings_signals(False)
+            
+            # Update UI state for dependent controls after loading
+            # This ensures controls are properly enabled/disabled based on loaded settings
+            self.update_ui_state_after_loading()
 
         except (OSError, IOError, PermissionError) as e:
             print(f"❌ Error loading settings: {e}")
@@ -7749,11 +7753,6 @@ System        {perf_status}"""
     def load_default_settings(self):
         """Reset all settings to their default values."""
         try:
-            print("🔄 LOAD_DEFAULT_SETTINGS CALLED!")
-            import traceback
-            print("📍 Call stack:")
-            traceback.print_stack()
-            
             # Import the default config
             from utils.config import get_factory_defaults
             
@@ -7776,6 +7775,8 @@ System        {perf_status}"""
 
         except Exception as e:
             print(f"❌ Error loading default settings: {e}")
+            import traceback
+            traceback.print_exc()
             self.show_themed_message_box(
                 "warning", "Error", f"Could not reset settings: {str(e)}"
             )
@@ -7856,18 +7857,67 @@ System        {perf_status}"""
     def block_settings_signals(self, block):
         """Block or unblock signals from settings controls to prevent auto-save during loading."""
         try:
-            # Block signals from controls that have early connections
-            if hasattr(self, 'settings_activity_retention_combo'):
-                self.settings_activity_retention_combo.blockSignals(block)
-            if hasattr(self, 'settings_enable_scheduled_cb'):
-                self.settings_enable_scheduled_cb.blockSignals(block)
-            if hasattr(self, 'settings_scan_frequency_combo'):
-                self.settings_scan_frequency_combo.blockSignals(block)
-            if hasattr(self, 'settings_scan_time_edit'):
-                self.settings_scan_time_edit.blockSignals(block)
-            # Add other controls that have early signal connections as needed
+            # Block signals from controls that have early connections or need to be blocked during loading
+            controls_to_block = [
+                'settings_activity_retention_combo',
+                'settings_enable_scheduled_cb', 
+                'settings_scan_frequency_combo',
+                'settings_scan_time_edit',
+                'scan_depth_combo',
+                'file_filter_combo', 
+                'memory_limit_combo',
+                'exclusion_text',
+                'settings_max_threads_spin',
+                'settings_timeout_spin',
+                'settings_minimize_to_tray_cb',
+                'settings_show_notifications_cb',
+                'settings_auto_update_cb',
+                'settings_scan_archives_cb',
+                'settings_follow_symlinks_cb',
+                'settings_monitor_modifications_cb',
+                'settings_monitor_new_files_cb',
+                'settings_scan_modified_cb',
+                'settings_enable_rkhunter_cb',
+                'settings_run_rkhunter_with_full_scan_cb',
+                'settings_rkhunter_auto_update_cb'
+            ]
+            
+            for control_name in controls_to_block:
+                if hasattr(self, control_name):
+                    control = getattr(self, control_name)
+                    control.blockSignals(block)
+                    
+            # Also block RKHunter category checkboxes
+            if hasattr(self, 'settings_rkhunter_category_checkboxes'):
+                for checkbox in self.settings_rkhunter_category_checkboxes.values():
+                    checkbox.blockSignals(block)
+                    
+            action = "Blocked" if block else "Unblocked"
+            print(f"🔧 {action} signals for {len(controls_to_block)} controls during settings loading")
+                    
         except Exception as e:
             print(f"❌ Error blocking/unblocking signals: {e}")
+
+    def update_ui_state_after_loading(self):
+        """Update UI state for dependent controls after loading settings."""
+        try:
+            # Update scheduled scan controls based on enable checkbox state
+            scheduled_enabled = self.settings_enable_scheduled_cb.isChecked()
+            self.settings_scan_frequency_combo.setEnabled(scheduled_enabled)
+            self.settings_scan_time_edit.setEnabled(scheduled_enabled)
+            
+            # Update next scheduled scan display if enabled
+            if scheduled_enabled:
+                self.update_next_scheduled_scan_display()
+            else:
+                if hasattr(self, 'settings_next_scan_label'):
+                    self.settings_next_scan_label.setText("None scheduled")
+            
+            # Add other dependent UI state updates here as needed
+            # For example, if RKHunter enable state affects other controls, etc.
+            
+        except Exception as e:
+            print(f"❌ Error updating UI state after loading: {e}")
 
     def update_single_setting(self, section, key, value):
         """Update a single setting and save immediately.
