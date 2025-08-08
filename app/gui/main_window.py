@@ -1519,6 +1519,10 @@ class MainWindow(QMainWindow):
             "Minimize to System Tray")
         self.settings_minimize_to_tray_cb.setChecked(True)
         self.settings_minimize_to_tray_cb.setMinimumHeight(35)
+        self.settings_minimize_to_tray_cb.setToolTip(
+            "When enabled, closing the window or selecting Exit will minimize to system tray instead of closing the application. "
+            "Use 'Force Exit' from the File menu or system tray to actually close the application."
+        )
         ui_layout.addRow(self.settings_minimize_to_tray_cb)
 
         # Show notifications checkbox
@@ -2855,7 +2859,14 @@ class MainWindow(QMainWindow):
 
         exit_action = QAction("Exit", self)
         exit_action.triggered.connect(self.quit_application)
+        exit_action.setToolTip("Exit application (may minimize to tray if enabled)")
         file_menu.addAction(exit_action)
+        
+        force_exit_action = QAction("Force Exit", self)
+        force_exit_action.triggered.connect(self.force_quit_application)
+        force_exit_action.setShortcut("Ctrl+Shift+Q")
+        force_exit_action.setToolTip("Force exit application ignoring minimize to tray setting")
+        file_menu.addAction(force_exit_action)
 
         # View menu for theme selection
         view_menu = QMenu("View", self)
@@ -2935,6 +2946,10 @@ class MainWindow(QMainWindow):
         quit_action = QAction("Quit", self)
         quit_action.triggered.connect(self.quit_application)
         tray_menu.addAction(quit_action)
+        
+        force_quit_action = QAction("Force Quit", self)
+        force_quit_action.triggered.connect(self.force_quit_application)
+        tray_menu.addAction(force_quit_action)
 
         self.tray_icon.setContextMenu(tray_menu)
         self.tray_icon.activated.connect(self.tray_icon_activated)
@@ -6668,6 +6683,27 @@ System        {perf_status}"""
                 self.activateWindow()
 
     def quit_application(self):
+        # Check if minimize to tray is enabled in settings
+        ui_settings = self.config.get("ui_settings", {})
+        minimize_to_tray = ui_settings.get("minimize_to_tray", True)
+        
+        # If minimize to tray is enabled and system tray is available, minimize instead of quitting
+        if (
+            minimize_to_tray
+            and hasattr(self, "tray_icon")
+            and self.tray_icon
+            and self.tray_icon.isVisible()
+        ):
+            self.hide()
+            self.tray_icon.showMessage(
+                "S&D - Search & Destroy",
+                "Application minimized to system tray. Click the tray icon to restore.",
+                QSystemTrayIcon.MessageIcon.Information,
+                3000,
+            )
+            return
+
+        # If minimize to tray is disabled, proceed with normal quit behavior
         # Check if real-time protection is active
         if (
             self.monitoring_enabled
@@ -6710,7 +6746,73 @@ System        {perf_status}"""
 
         QApplication.quit()
 
+    def force_quit_application(self):
+        """Force quit the application regardless of minimize to tray setting."""
+        # Check if real-time protection is active
+        if (
+            self.monitoring_enabled
+            and self.real_time_monitor
+            and hasattr(self.real_time_monitor, "state")
+            and self.real_time_monitor.state.name == "RUNNING"
+        ):
+            reply = self.show_themed_message_box(
+                "question",
+                "Force Exit Application",
+                "Real-time protection is currently active and will be stopped if you exit the application.\n\n"
+                "Are you sure you want to force exit and stop real-time protection?",
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            )
+            if reply == QMessageBox.StandardButton.No:
+                return  # User chose not to exit
+
+            # User confirmed exit - stop real-time protection
+            try:
+                print("🛑 Stopping real-time protection due to force application exit...")
+                self.stop_real_time_protection()
+                print("✅ Real-time protection stopped successfully")
+            except Exception as e:
+                print(f"⚠️ Error stopping real-time protection: {e}")
+
+        # Check for running scans
+        if self.current_scan_thread and self.current_scan_thread.isRunning():
+            reply = self.show_themed_message_box(
+                "question",
+                "Force Quit",
+                "A scan is in progress. Do you want to force quit anyway?",
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            )
+            if reply == QMessageBox.StandardButton.No:
+                return
+            self.current_scan_thread.terminate()
+
+        # Force application to quit
+        from PyQt6.QtWidgets import QApplication
+
+        QApplication.quit()
+
     def closeEvent(self, event):
+        # Check if minimize to tray is enabled in settings
+        ui_settings = self.config.get("ui_settings", {})
+        minimize_to_tray = ui_settings.get("minimize_to_tray", True)
+        
+        # If minimize to tray is enabled and system tray is available, minimize instead of closing
+        if (
+            minimize_to_tray
+            and hasattr(self, "tray_icon")
+            and self.tray_icon
+            and self.tray_icon.isVisible()
+        ):
+            self.hide()
+            self.tray_icon.showMessage(
+                "S&D - Search & Destroy",
+                "Application minimized to system tray. Click the tray icon to restore.",
+                QSystemTrayIcon.MessageIcon.Information,
+                3000,
+            )
+            event.ignore()
+            return
+
+        # If minimize to tray is disabled, proceed with normal close behavior
         # Check if real-time protection is active before closing
         if (
             self.monitoring_enabled
@@ -6722,26 +6824,11 @@ System        {perf_status}"""
                 "question",
                 "Close Application",
                 "Real-time protection is currently active and will be stopped if you close the application.\n\n"
-                "Would you like to:\n"
-                "• Close and stop protection (Yes)\n"
-                "• Minimize to system tray and keep protection running (No)",
+                "Are you sure you want to close and stop real-time protection?",
                 QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
             )
 
             if reply == QMessageBox.StandardButton.No:
-                # User chose to minimize to tray instead of closing
-                if (
-                    hasattr(self, "tray_icon")
-                    and self.tray_icon
-                    and self.tray_icon.isVisible()
-                ):
-                    self.hide()
-                    self.tray_icon.showMessage(
-                        "S&D - Search & Destroy",
-                        "Application minimized to system tray. Real-time protection is still active.",
-                        QSystemTrayIcon.MessageIcon.Information,
-                        3000,
-                    )
                 event.ignore()
                 return
 
