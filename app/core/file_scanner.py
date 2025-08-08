@@ -315,6 +315,7 @@ class FileScanner:
         self._current_scan_id = None
         self._total_files_to_scan = 0
         self._files_completed = 0
+        self._current_thread = None  # Reference to QThread for interruption checks
 
         # Callbacks
         self.progress_callback: Optional[Callable[[float, str], None]] = None
@@ -465,6 +466,7 @@ class FileScanner:
             file_paths: List[str],
             scan_type=None,
             max_workers: int = 4,
+            timeout: Optional[int] = None,
             **kwargs):
         """Scan multiple files with progress tracking and enhanced reporting."""
         from utils.scan_reports import ScanResult as ReportScanResult
@@ -520,7 +522,12 @@ class FileScanner:
         scan_result.signature_version = sig_version
 
         try:
-            with ThreadPoolExecutor(max_workers=max_workers) as executor:
+            # Set up timeout protection
+            scan_timeout = timeout or kwargs.get('timeout', 1800)  # Default 30 minutes
+            scan_start_time = time.time()
+            
+            executor = ThreadPoolExecutor(max_workers=max_workers)
+            try:
                 # Submit all scan tasks
                 future_to_path = {
                     executor.submit(
@@ -530,8 +537,42 @@ class FileScanner:
                 }
 
                 completed = 0
-                for future in as_completed(future_to_path):
+                for future in as_completed(future_to_path, timeout=scan_timeout):
+                    # Check for cancellation (supports both manual flag and Qt6 interruption)
                     if self._scan_cancelled:
+                        self.logger.info("Scan cancelled by user - shutting down executor")
+                        # Cancel all pending futures immediately
+                        for pending_future in future_to_path:
+                            if not pending_future.done():
+                                pending_future.cancel()
+                        # Shutdown executor immediately without waiting
+                        executor.shutdown(wait=False)
+                        break
+                    
+                    # Additional check for Qt6 thread interruption if thread reference available
+                    if hasattr(self, '_current_thread') and self._current_thread:
+                        if hasattr(self._current_thread, 'isInterruptionRequested'):
+                            if self._current_thread.isInterruptionRequested():
+                                self.logger.info("Scan interrupted via Qt6 thread interruption - shutting down executor")
+                                self._scan_cancelled = True
+                                # Cancel all pending futures immediately
+                                for pending_future in future_to_path:
+                                    if not pending_future.done():
+                                        pending_future.cancel()
+                                # Shutdown executor immediately without waiting
+                                executor.shutdown(wait=False)
+                                break
+                    
+                    # Check for timeout
+                    if time.time() - scan_start_time > scan_timeout:
+                        self.logger.warning("Scan timeout reached, stopping")
+                        self._scan_cancelled = True
+                        # Cancel all pending futures immediately
+                        for pending_future in future_to_path:
+                            if not pending_future.done():
+                                pending_future.cancel()
+                        # Shutdown executor immediately without waiting
+                        executor.shutdown(wait=False)
                         break
 
                     file_path = future_to_path[future]
@@ -575,6 +616,25 @@ class FileScanner:
                         current_file = Path(file_path).name
                         status_msg = f"Scanning: {current_file} | Completed: {completed} | Remaining: {files_remaining}"
                         self.progress_callback(progress, status_msg)
+            
+            except Exception as e:
+                self.logger.error("Error during scan execution: %s", e)
+                self._scan_cancelled = True
+            finally:
+                # Always cleanup the executor
+                if 'executor' in locals():
+                    try:
+                        executor.shutdown(wait=False)  # Don't wait for completion
+                    except Exception as e:
+                        self.logger.warning("Error shutting down executor: %s", e)
+
+            # Check if scan was cancelled - return early without saving
+            if self._scan_cancelled:
+                self.logger.info("Scan cancelled, returning without saving results")
+                scan_result.success = False
+                scan_result.end_time = datetime.now().isoformat()
+                scan_result.duration = (datetime.now() - start_time).total_seconds()
+                return scan_result
 
             # Finalize scan result
             end_time = datetime.now()
@@ -590,7 +650,17 @@ class FileScanner:
                 delattr(self, "_files_completed")
 
             # Save scan report
-            self.scan_report_manager.save_scan_result(scan_result)
+            print(f"\n💾 === FILESCANNER SAVE REPORT ===")
+            print(f"DEBUG: FileScanner saving scan report: {scan_result.scan_id}")
+            print(f"DEBUG: Scan type: {scan_result.scan_type}")
+            print(f"DEBUG: Files scanned: {scan_result.scanned_files}")
+            print(f"DEBUG: Threats found: {scan_result.threats_found}")
+            try:
+                self.scan_report_manager.save_scan_result(scan_result)
+                print(f"DEBUG: ✅ FileScanner report saved successfully")
+            except Exception as e:
+                print(f"DEBUG: ❌ FileScanner report save failed: {e}")
+                raise
 
             self.logger.info(
                 "Scan completed: %s - %d files scanned, %d threats found",
@@ -631,18 +701,51 @@ class FileScanner:
 
         # Collect all files
         file_paths = []
-        MAX_FILES_LIMIT = kwargs.get(
-            "max_files", 10000
-        )  # Default limit to prevent crashes
+        # Enhanced memory and performance protection
+        MAX_FILES_LIMIT = kwargs.get("max_files", 1000)  # Reduced default limit
+        MEMORY_LIMIT_MB = kwargs.get("memory_limit_mb", 512)  # Memory limit
+        
+        # Monitor memory usage
+        memory_monitor = MemoryMonitor() if hasattr(self, 'MemoryMonitor') else None
 
         for file_path in directory_obj.rglob("*"):
+            # Check for cancellation (both manual flag and Qt6 interruption)
+            if hasattr(self, '_scan_cancelled') and self._scan_cancelled:
+                self.logger.info("📁 File collection cancelled by manual flag")
+                break
+                
+            # Additional check for Qt6 thread interruption if thread reference available
+            if hasattr(self, '_current_thread') and self._current_thread:
+                if hasattr(self._current_thread, 'isInterruptionRequested'):
+                    if self._current_thread.isInterruptionRequested():
+                        self.logger.info("📁 File collection cancelled by Qt6 thread interruption")
+                        self._scan_cancelled = True
+                        break
+                        
             if file_path.is_file():
                 # Skip hidden files unless requested
                 if not include_hidden and any(
                     part.startswith(".") for part in file_path.parts
                 ):
                     continue
+                
+                # Check memory pressure
+                if memory_monitor and memory_monitor.check_memory_pressure(MEMORY_LIMIT_MB):
+                    self.logger.warning("Memory pressure detected, limiting file collection")
+                    memory_monitor.force_garbage_collection()
+                    MAX_FILES_LIMIT = min(MAX_FILES_LIMIT, len(file_paths) + 100)
+                
                 file_paths.append(str(file_path))
+
+                # More frequent interruption checks for large scans (every 100 files)
+                if len(file_paths) % 100 == 0:
+                    # Check for Qt6 thread interruption
+                    if hasattr(self, '_current_thread') and self._current_thread:
+                        if hasattr(self._current_thread, 'isInterruptionRequested'):
+                            if self._current_thread.isInterruptionRequested():
+                                self.logger.info(f"📁 File collection interrupted after {len(file_paths)} files")
+                                self._scan_cancelled = True
+                                break
 
                 # Safety check: prevent scanning too many files at once
                 if len(file_paths) >= MAX_FILES_LIMIT:
@@ -653,6 +756,12 @@ class FileScanner:
                         MAX_FILES_LIMIT,
                     )
                     break
+                    
+                # Periodic memory check for large directories
+                if len(file_paths) % 500 == 0 and memory_monitor:
+                    if memory_monitor.check_memory_pressure(MEMORY_LIMIT_MB * 0.8):
+                        self.logger.warning("Memory pressure during file collection, forcing GC")
+                        memory_monitor.force_garbage_collection()
 
         self.logger.info(
             "Found %d files in directory: %s", len(file_paths), directory_path
@@ -691,6 +800,12 @@ class FileScanner:
         if self._scan_running:
             self._scan_cancelled = True
             self.logger.info("Scan cancellation requested")
+
+    def reset_scan_state(self) -> None:
+        """Reset scan state for a new scan - clears cancellation flags."""
+        self._scan_cancelled = False
+        self._scan_running = False
+        self.logger.info("🔄 FileScanner state reset for new scan")
 
     def get_scan_progress(self) -> float:
         """Get current scan progress (0-100)."""
@@ -956,8 +1071,15 @@ class FileScanner:
 
             # Save scan report
             try:
+                print(f"\n💾 === FILESCANNER BATCHED SAVE REPORT ===")
+                print(f"DEBUG: FileScanner saving batched scan report: {combined_result.scan_id}")
+                print(f"DEBUG: Batched scan type: {combined_result.scan_type}")
+                print(f"DEBUG: Total files scanned: {combined_result.scanned_files}")
+                print(f"DEBUG: Total threats found: {combined_result.threats_found}")
                 self.scan_report_manager.save_scan_result(combined_result)
+                print(f"DEBUG: ✅ FileScanner batched report saved successfully")
             except Exception as e:
+                print(f"DEBUG: ❌ FileScanner batched report save failed: {e}")
                 self.logger.error("Failed to save scan report: %s", e)
 
         return combined_result

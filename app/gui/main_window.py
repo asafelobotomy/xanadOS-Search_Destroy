@@ -114,12 +114,16 @@ class MainWindow(QMainWindow):
         self.report_manager = ScanReportManager()
         self.current_scan_thread = None
         self.current_rkhunter_thread = None
+        self._scan_manually_stopped = False  # Flag to track manual scan stops
         
         # Initialization state - prevents premature scheduler actions during startup
         self._initialization_complete = False
 
-        # Quick scan state tracking
+        # Enhanced scan state tracking
         self.is_quick_scan_running = False
+        self._scan_state = "idle"  # idle, scanning, stopping, completing
+        self._pending_scan_request = None  # Store scan parameters if user tries to start during stopping
+        self._stop_scan_user_wants_restart = False  # Track if user wants to restart after stop
 
         # Initialize real-time monitoring
         self.real_time_monitor = None
@@ -5007,6 +5011,58 @@ System        {perf_status}"""
         # Update any relevant UI elements based on scan type
 
     def start_scan(self, quick_scan=False):
+        print(f"\n🔄 === START_SCAN CALLED ===")
+        print(f"DEBUG: start_scan() called with quick_scan={quick_scan}")
+        print(f"DEBUG: Current scan state: {self._scan_state}")
+        print(f"DEBUG: Current thread exists: {self.current_scan_thread is not None}")
+        print(f"DEBUG: Thread running: {self.current_scan_thread.isRunning() if self.current_scan_thread else 'N/A'}")
+        print(f"DEBUG: Manual stop flag: {self._scan_manually_stopped}")
+        print(f"DEBUG: Pending request: {self._pending_scan_request}")
+        print(f"DEBUG: User wants restart: {self._stop_scan_user_wants_restart}")
+        
+        # Check if we're in a stopping state OR if there's a completion timer running
+        # This provides a broader detection window for pending requests
+        if self._scan_state == "stopping" or (hasattr(self, '_stop_completion_timer') and self._stop_completion_timer.isActive()):
+            # Queue the scan request to execute after current scan finishes
+            print("DEBUG: ⏳ Scan is stopping OR completion timer active, queuing new scan request")
+            self._pending_scan_request = {"quick_scan": quick_scan}
+            self.status_bar.showMessage("⏳ New scan queued - waiting for current scan to finish...")
+            print(f"DEBUG: Queued request: {self._pending_scan_request}")
+            return
+        
+        # NEW: Check if user recently stopped a scan and wants to restart
+        if self._stop_scan_user_wants_restart:
+            print("DEBUG: 🔄 User previously stopped scan and wants restart - executing immediately")
+            self._stop_scan_user_wants_restart = False  # Reset flag
+            # Continue with normal scan start logic
+        
+        # Check if already scanning
+        if self._scan_state == "scanning":
+            print("DEBUG: ❌ Scan already in progress, ignoring request")
+            self.status_bar.showMessage("⚠️ Scan already in progress")
+            return
+            
+        # Clean up any finished threads
+        if self.current_scan_thread and not self.current_scan_thread.isRunning():
+            print("DEBUG: 🧹 Cleaning up finished thread reference")
+            self.current_scan_thread = None
+        
+        # Prevent starting if there's still an active thread
+        if self.current_scan_thread and self.current_scan_thread.isRunning():
+            print("DEBUG: ⚠️ Thread still running, cannot start new scan")
+            self.status_bar.showMessage("⚠️ Previous scan still finishing - please wait")
+            return
+            
+        # Set scanning state and reset flags for new scan
+        self._scan_state = "scanning"
+        self._scan_manually_stopped = False
+        self.is_quick_scan_running = False  # Reset quick scan flag
+        self._pending_scan_request = None  # Clear any pending requests
+        
+        print(f"DEBUG: ✅ Starting new scan, state set to: {self._scan_state}")
+        print(f"DEBUG: Reset manual stop flag to: {self._scan_manually_stopped}")
+        print(f"DEBUG: Cleared pending request")
+        
         # Get scan type from UI if available, otherwise use parameter
         scan_type_data = None
         if hasattr(self, 'scan_type_combo'):
@@ -5020,7 +5076,9 @@ System        {perf_status}"""
         else:
             effective_scan_type = "FULL"
             
-        # Handle Quick scan type - set appropriate path
+        print(f"DEBUG: Effective scan type determined: {effective_scan_type}")
+        
+        # Handle scan path based on scan type
         if effective_scan_type == "QUICK":
             # Quick scan targets common infection vectors
             import tempfile
@@ -5043,11 +5101,24 @@ System        {perf_status}"""
                 
             self.scan_path = valid_paths[0]  # Use Downloads as primary target
             
-        elif not hasattr(self, "scan_path") or not self.scan_path:
-            self.show_themed_message_box(
-                "warning", "Warning", "Please select a path to scan first."
-            )
-            return
+        elif effective_scan_type == "FULL":
+            # Full scan targets the entire home directory
+            self.scan_path = os.path.expanduser("~")
+            
+        elif effective_scan_type == "CUSTOM":
+            # Custom scan uses the user-selected path
+            if not hasattr(self, "scan_path") or not self.scan_path:
+                self.show_themed_message_box(
+                    "warning", "Warning", "Please select a path to scan first."
+                )
+                return
+        else:
+            # Default fallback
+            if not hasattr(self, "scan_path") or not self.scan_path:
+                self.show_themed_message_box(
+                    "warning", "Warning", "Please select a path to scan first."
+                )
+                return
 
         # Get advanced options if available
         scan_options = {}
@@ -5622,15 +5693,25 @@ System        {perf_status}"""
 
     def save_rkhunter_report(self, result: RKHunterScanResult):
         """Save RKHunter scan results to a report file."""
+        print(f"\n📄 === SAVE RKHUNTER REPORT ===")
+        print(f"DEBUG: save_rkhunter_report() called")
+        print(f"DEBUG: RKHunter result scan_id: {result.scan_id}")
+        print(f"DEBUG: RKHunter result has end_time: {result.end_time is not None}")
+        
         try:
             reports_dir = (
                 Path.home() /
                 ".local/share/search-and-destroy/rkhunter_reports")
+            print(f"DEBUG: 📁 RKHunter reports directory: {reports_dir}")
+            
             reports_dir.mkdir(parents=True, exist_ok=True)
+            print(f"DEBUG: ✅ RKHunter reports directory created/verified")
 
             report_file = reports_dir / f"rkhunter_scan_{result.scan_id}.json"
+            print(f"DEBUG: 📝 Will save RKHunter report to: {report_file}")
 
             # Convert result to dictionary for JSON serialization
+            print("DEBUG: 🔄 Converting RKHunter result to dictionary")
             report_data = {
                 "scan_id": result.scan_id,
                 "scan_type": "rkhunter_rootkit_scan",
@@ -6046,23 +6127,239 @@ System        {perf_status}"""
             print(f"Warning: Could not configure platform dropdown behavior: {e}")
 
     def stop_scan(self):
+        print(f"\n🛑 === STOP_SCAN CALLED ===")
+        print(f"DEBUG: stop_scan() called")
+        print(f"DEBUG: Current scan state: {self._scan_state}")
+        print(f"DEBUG: Current thread exists: {self.current_scan_thread is not None}")
+        print(f"DEBUG: Thread running: {self.current_scan_thread.isRunning() if self.current_scan_thread else 'N/A'}")
+        print(f"DEBUG: Manual stop flag: {self._scan_manually_stopped}")
+        
         if self.current_scan_thread and self.current_scan_thread.isRunning():
-            self.current_scan_thread.terminate()
-            self.scan_completed({"status": "cancelled"})
+            print("DEBUG: 🔍 Thread is running, showing confirmation dialog")
+            # Show confirmation dialog first
+            reply = QMessageBox.question(
+                self, "Confirm Stop Scan",
+                "Are you sure you want to stop the current scan?\n\nNote: The scan may take a few moments to finish safely.",
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                QMessageBox.StandardButton.Yes
+            )
+            
+            if reply == QMessageBox.StandardButton.Yes:
+                print("DEBUG: ✅ User confirmed stop")
+                # Set stopping state immediately
+                self._scan_state = "stopping"
+                self._scan_manually_stopped = True
+                self.is_quick_scan_running = False
+                
+                print(f"DEBUG: 🔄 Scan stop requested, state set to: {self._scan_state}")
+                print(f"DEBUG: Manual stop flag set to: {self._scan_manually_stopped}")
+                
+                # Update UI to show stopping state
+                self.start_scan_btn.setEnabled(False)  # Disable until stopping completes
+                self.stop_scan_btn.setEnabled(False)
+                self.progress_bar.setValue(100)  # Start progress bar at 100% for stop countdown
+                self.status_label.setText("🛑 Stopping scan - please wait...")  # Update status label
+                self.status_bar.showMessage("🛑 Stopping scan safely - please wait...")
+                self.results_text.append("\n🛑 Scan stop requested - finishing current files...")
+                
+                print("DEBUG: 📱 UI updated to stopping state")
+                
+                # Cancel the scan gracefully
+                if hasattr(self.current_scan_thread, 'stop_scan'):
+                    print("DEBUG: 🛑 Calling thread.stop_scan()")
+                    self.current_scan_thread.stop_scan()
+                
+                # Disconnect signals to prevent completion events
+                try:
+                    if hasattr(self.current_scan_thread, 'scan_completed'):
+                        self.current_scan_thread.scan_completed.disconnect()
+                    if hasattr(self.current_scan_thread, 'progress_updated'):
+                        self.current_scan_thread.progress_updated.disconnect()
+                    if hasattr(self.current_scan_thread, 'status_updated'):
+                        self.current_scan_thread.status_updated.disconnect()
+                    print("DEBUG: ✅ Signals disconnected successfully")
+                except Exception as e:
+                    print(f"DEBUG: ❌ Error disconnecting signals: {e}")
+                
+                # Use Qt6 proper thread interruption
+                print("DEBUG: 🧵 Requesting thread interruption (safe method)")
+                self.current_scan_thread.requestInterruption()
+                
+                # Don't wait here - let the scan finish naturally and handle completion
+                # Set a timer to check for completion and enable UI
+                print("DEBUG: ⏲️ Starting completion timer")
+                self._start_stop_completion_timer()
+            else:
+                print("DEBUG: ❌ User cancelled stop request")
+        else:
+            print("DEBUG: ❌ No running scan to stop")
+            
+    def _start_stop_completion_timer(self):
+        """Start a timer to monitor scan completion after stop request"""
+        print(f"\n⏲️ === STARTING COMPLETION TIMER ===")
+        print(f"DEBUG: _start_stop_completion_timer() called")
+        
+        # Initialize or reset the stop attempt counter
+        self._stop_completion_attempts = 0
+        self._stop_max_attempts = 30  # 30 seconds timeout (30 * 1 second checks)
+        
+        if not hasattr(self, '_stop_completion_timer'):
+            from PyQt6.QtCore import QTimer
+            self._stop_completion_timer = QTimer()
+            self._stop_completion_timer.timeout.connect(self._check_stop_completion)
+            print("DEBUG: 🆕 Created new QTimer instance")
+        else:
+            print("DEBUG: ♻️ Reusing existing QTimer instance")
+        
+        # Check every 1 second for thread completion
+        self._stop_completion_timer.start(1000)
+        print("DEBUG: ⏰ Started stop completion monitoring timer (1000ms interval)")
+    
+    def _check_stop_completion(self):
+        """Check if the stopped scan has completed and handle cleanup"""
+        print(f"\n🔍 === CHECKING STOP COMPLETION ===")
+        print(f"DEBUG: _check_stop_completion() called")
+        print(f"DEBUG: Current thread exists: {self.current_scan_thread is not None}")
+        print(f"DEBUG: Thread running: {self.current_scan_thread.isRunning() if self.current_scan_thread else 'N/A'}")
+        print(f"DEBUG: Current state: {self._scan_state}")
+        
+        # Increment attempt counter
+        if not hasattr(self, '_stop_completion_attempts'):
+            self._stop_completion_attempts = 0
+        self._stop_completion_attempts += 1
+        
+        # Update progress bar to show stop progress (reverse progress from 100% to 0%)
+        max_attempts = getattr(self, '_stop_max_attempts', 30)
+        stop_progress = max(0, 100 - int((self._stop_completion_attempts / max_attempts) * 100))
+        self.progress_bar.setValue(stop_progress)
+        
+        # Update status label and status bar to show stop progress
+        remaining_time = max_attempts - self._stop_completion_attempts
+        self.status_label.setText(f"🛑 Stopping scan... ({remaining_time}s remaining)")
+        self.status_bar.showMessage(f"🛑 Stopping scan... ({remaining_time}s remaining)")
+        print(f"DEBUG: 📊 Stop progress: {stop_progress}% (attempt {self._stop_completion_attempts}/{max_attempts})")
+        
+        # Check for timeout (force completion after 30 seconds)
+        if self._stop_completion_attempts >= max_attempts:
+            print(f"DEBUG: ⏰ Stop timeout reached ({self._stop_completion_attempts} attempts)")
+            print("DEBUG: 🚨 Forcing scan stop completion due to timeout")
+            
+            # Force cleanup regardless of thread state
+            if hasattr(self, '_stop_completion_timer'):
+                self._stop_completion_timer.stop()
+                print("DEBUG: ⏰ Stopped completion timer (timeout)")
+            
+            # Force cleanup thread reference
+            if self.current_scan_thread:
+                try:
+                    # Try to terminate if still running
+                    if self.current_scan_thread.isRunning():
+                        print("DEBUG: 🔧 Force terminating stuck thread")
+                        self.current_scan_thread.requestInterruption()
+                        # Give it 2 more seconds
+                        if not self.current_scan_thread.wait(2000):
+                            print("DEBUG: ⚠️ Thread did not stop gracefully, forcing cleanup")
+                except Exception as e:
+                    print(f"DEBUG: ⚠️ Error during force cleanup: {e}")
+                finally:
+                    self.current_scan_thread = None
+                    print("DEBUG: 🧹 Forced thread cleanup completed")
+            
+            # Reset states
+            self._scan_state = "idle"
+            self._scan_manually_stopped = False
+            self._stop_scan_user_wants_restart = True
+            
+            # Reset UI
+            self.start_scan_btn.setEnabled(True)
+            self.stop_scan_btn.setEnabled(False)
+            self.progress_bar.setValue(0)
+            
+            # Show timeout message
+            self.results_text.append("⚠️ Scan stop forced due to timeout (scan was taking too long to stop)")
+            self.status_label.setText("Ready to scan")  # Reset status label
+            self.status_bar.showMessage("🔴 Ready to scan")
+            print("DEBUG: ✅ Forced stop completed due to timeout")
+            return
+        
+        if not self.current_scan_thread or not self.current_scan_thread.isRunning():
+            # Thread has finished - complete the stop process
+            print("DEBUG: ✅ Thread has finished - starting cleanup process")
+            
+            # Stop the timer
+            if hasattr(self, '_stop_completion_timer'):
+                self._stop_completion_timer.stop()
+                print("DEBUG: ⏰ Stopped completion timer")
+            
+            # Clean up thread reference
+            print("DEBUG: 🧹 Cleaning up thread reference")
+            self.current_scan_thread = None
+            
+            # Set state back to idle
+            self._scan_state = "idle"
+            print(f"DEBUG: 🔄 State set back to: {self._scan_state}")
+            
+            # Reset the manual stop flag so next scan can complete normally
+            self._scan_manually_stopped = False
+            print(f"DEBUG: 🔄 Reset _scan_manually_stopped flag to: {self._scan_manually_stopped}")
+            
+            # Set flag indicating user may want to restart after this stop
+            self._stop_scan_user_wants_restart = True
+            print(f"DEBUG: 🔄 Set user wants restart flag to: {self._stop_scan_user_wants_restart}")
+            
+            # Reset UI to ready state with visual confirmation
+            self.start_scan_btn.setEnabled(True)
+            self.stop_scan_btn.setEnabled(False)
+            
+            # Brief visual confirmation that stop completed (flash to 0% then reset)
+            self.progress_bar.setValue(0)
+            from PyQt6.QtCore import QTimer
+            QTimer.singleShot(200, lambda: self.progress_bar.setValue(0))  # Keep at 0%
+            print("DEBUG: 📱 UI reset to ready state")
+            
+            # Show completion message
+            self.results_text.append("✅ Scan stopped successfully")
+            self.status_label.setText("Ready to scan")  # Reset status label
+            self.status_bar.showMessage("🔴 Ready to scan")
+            print("DEBUG: 💬 Completion messages displayed")
+            
+            print(f"DEBUG: ✅ Stop completed, final state: {self._scan_state}")
+            
+            # Check if there's a pending scan request
+            if self._pending_scan_request:
+                print(f"DEBUG: 🚀 Found pending scan request: {self._pending_scan_request}")
+                print("DEBUG: Executing queued scan request")
+                pending = self._pending_scan_request
+                self._pending_scan_request = None
+                print(f"DEBUG: Cleared pending request, will execute: {pending}")
+                # Execute the queued scan
+                from PyQt6.QtCore import QTimer
+                QTimer.singleShot(500, lambda: self.start_scan(pending.get("quick_scan", False)))
+                print("DEBUG: 📅 Queued scan execution scheduled (500ms delay)")
+            else:
+                print("DEBUG: ❌ No pending scan request found")
+        else:
+            print(f"DEBUG: ⏳ Scan still running, continuing to monitor... (attempt {self._stop_completion_attempts}/{getattr(self, '_stop_max_attempts', 30)})")
 
     def update_dashboard_cards(self):
         """Update all dashboard status cards with current information."""
+        print(f"\n📊 === UPDATE DASHBOARD CARDS ===")
         print("DEBUG: update_dashboard_cards() called")
+        
         # Update Last Scan card
         if hasattr(self, "last_scan_card"):
             try:
+                print("DEBUG: 🔍 Updating Last Scan card")
                 # Get the most recent scan report from the reports directory
                 reports_dir = (
                     Path.home() /
                     ".local/share/search-and-destroy/scan_reports/daily")
                 print(f"DEBUG: Looking for reports in: {reports_dir}")
+                print(f"DEBUG: Reports directory exists: {reports_dir.exists()}")
+                
                 if reports_dir.exists():
                     report_files = list(reports_dir.glob("scan_*.json"))
+                    print(f"DEBUG: Found {len(report_files)} report files")
                     print(f"DEBUG: Found {len(report_files)} report files")
                     if report_files:
                         # Get the most recent file
@@ -6161,9 +6458,45 @@ System        {perf_status}"""
                 print(f"Error updating dashboard cards: {e}")
 
     def scan_completed(self, result):
+        print(f"\n🏁 === SCAN_COMPLETED CALLED ===")
+        print(f"DEBUG: scan_completed() called")
+        print(f"DEBUG: Current scan state: {self._scan_state}")
+        print(f"DEBUG: Manual stop flag: {self._scan_manually_stopped}")
+        print(f"DEBUG: Current thread exists: {self.current_scan_thread is not None}")
+        print(f"DEBUG: Result type: {type(result)}")
+        print(f"DEBUG: Result preview: {str(result)[:200]}...")
+        
+        # If scan was manually stopped, ignore this signal to prevent crashes
+        if self._scan_manually_stopped:
+            print("DEBUG: ❌ Ignoring scan_completed signal - scan was manually stopped")
+            return
+            
+        # Also ignore if the scan was cancelled
+        if isinstance(result, dict) and result.get("status") == "cancelled":
+            print("DEBUG: ❌ Ignoring scan_completed signal - scan was cancelled")
+            self.results_text.append("🛑 Scan was cancelled")
+            self.status_bar.showMessage("🛑 Scan cancelled")
+            return
+            
+        # Ignore if no thread reference (shouldn't happen)
+        if not self.current_scan_thread:
+            print("DEBUG: ❌ Ignoring scan_completed signal - no active thread")
+            return
+            
+        print("DEBUG: ✅ Processing scan completion (natural completion)")
+        
         self.start_scan_btn.setEnabled(True)
         self.stop_scan_btn.setEnabled(False)
         self.progress_bar.setValue(100)
+
+        # Reset scan state to idle
+        self._scan_state = "idle"
+        print(f"DEBUG: 🔄 Scan completed naturally, state reset to: {self._scan_state}")
+
+        # Clean up thread reference
+        if self.current_scan_thread:
+            print("DEBUG: 🧹 Cleaning up thread reference")
+            self.current_scan_thread = None
 
         # Reset quick scan button if it was a quick scan
         if hasattr(
@@ -6186,15 +6519,21 @@ System        {perf_status}"""
 
         # Save the scan result to a report file
         try:
+            print(f"\n📊 === SCAN RESULT PROCESSING ===")
+            print(f"DEBUG: Processing scan result for reporting")
+            print(f"DEBUG: Result type: {type(result)}")
+            
             # Note: Report saving is now handled by the FileScanner itself to prevent duplicates
             # The scanner automatically saves reports with proper scan type detection
             #
             # Create a proper ScanResult object from the dictionary for display
             # purposes only
             scan_id = datetime.now().strftime("%Y%m%d_%H%M%S")
+            print(f"DEBUG: Generated scan ID: {scan_id}")
 
             # Handle both dictionary and dataclass result formats
             if isinstance(result, dict):
+                print("DEBUG: Result is dictionary format")
                 total_files = result.get("total_files", 0)
                 scanned_files = result.get(
                     "scanned_files", result.get("files_scanned", 0)
@@ -6204,18 +6543,24 @@ System        {perf_status}"""
                 )
                 duration = result.get("duration", result.get("scan_time", 0))
                 threats_data = result.get("threats", [])
+                print(f"DEBUG: Extracted from dict - total_files: {total_files}, scanned: {scanned_files}, threats: {threats_found}, duration: {duration}")
             else:
+                print("DEBUG: Result is object format")
                 # Assume it's already a proper result object
                 total_files = getattr(result, "total_files", 0)
                 scanned_files = getattr(result, "scanned_files", 0)
                 threats_found = getattr(result, "threats_found", 0)
                 duration = getattr(result, "duration", 0)
                 threats_data = getattr(result, "threats", [])
+                print(f"DEBUG: Extracted from object - total_files: {total_files}, scanned: {scanned_files}, threats: {threats_found}, duration: {duration}")
 
+            print(f"DEBUG: Processing {len(threats_data)} threat entries")
             # Convert threat dictionaries to ThreatInfo objects if any
             threats = []
-            for threat_data in threats_data:
+            for i, threat_data in enumerate(threats_data):
+                print(f"DEBUG: Processing threat {i+1}/{len(threats_data)}: {type(threat_data)}")
                 if isinstance(threat_data, dict):
+                    print(f"DEBUG: Threat dict keys: {list(threat_data.keys())}")
                     # Create ThreatInfo object from the dictionary
                     threat = ThreatInfo(
                         file_path=threat_data.get(
@@ -6242,19 +6587,27 @@ System        {perf_status}"""
                 else:
                     # Already a ThreatInfo object
                     threat = threat_data
+                    print(f"DEBUG: Using existing ThreatInfo object")
                 threats.append(threat)
+                print(f"DEBUG: Added threat: {threat.threat_name if hasattr(threat, 'threat_name') else 'unknown'}")
 
+            print(f"DEBUG: Converted {len(threats)} threats to ThreatInfo objects")
+            
             # Create the ScanResult object with correct scan type
             # Determine scan type based on context
             if hasattr(
                     self,
                     "is_quick_scan_running") and self.is_quick_scan_running:
                 scan_type = ScanType.QUICK
+                print("DEBUG: Determined scan type: QUICK (from is_quick_scan_running)")
             elif self.scan_path == os.path.expanduser("~"):
                 scan_type = ScanType.FULL
+                print("DEBUG: Determined scan type: FULL (from scan_path)")
             else:
                 scan_type = ScanType.CUSTOM
+                print(f"DEBUG: Determined scan type: CUSTOM (scan_path: {self.scan_path})")
 
+            print(f"DEBUG: Creating ScanResult object with scan_type: {scan_type}")
             scan_result = ScanResult(
                 scan_id=scan_id,
                 scan_type=scan_type,
@@ -6272,16 +6625,22 @@ System        {perf_status}"""
                 signature_version="1.0",
                 success=True,
             )
+            print(f"DEBUG: ScanResult created successfully: ID={scan_id}, type={scan_type}, files={scanned_files}/{total_files}, threats={threats_found}")
 
             # Save the scan result
             # Note: Commented out to prevent duplicate reports - FileScanner handles this
             # self.report_manager.save_scan_result(scan_result)
+            print("DEBUG: Report saving skipped (handled by FileScanner to prevent duplicates)")
 
             # Always refresh the reports list after a scan completes
             # This ensures reports show up regardless of which tab is currently active
             # Use a more reliable approach than QTimer
+            print("DEBUG: Preparing to refresh reports after completion")
             def delayed_refresh():
                 try:
+                    print("DEBUG: About to call update_dashboard_cards() after scan completion")
+                    self.update_dashboard_cards()
+                    print("DEBUG: About to refresh reports")
                     self.refresh_reports()
                     print("DEBUG: Reports refreshed after scan completion")
                 except Exception as e:
@@ -6299,7 +6658,15 @@ System        {perf_status}"""
 
         # Update dashboard cards with new scan information
         print("DEBUG: About to call update_dashboard_cards() after scan completion")
-        self.update_dashboard_cards()
+        try:
+            if not self._scan_manually_stopped:
+                self.update_dashboard_cards()
+            else:
+                print("DEBUG: Skipping dashboard update - scan was manually stopped")
+        except Exception as e:
+            print(f"DEBUG: Error updating dashboard cards: {e}")
+            import traceback
+            traceback.print_exc()
 
     def display_scan_results(self, result):
         output = "Scan completed successfully!\n\n"
@@ -6894,22 +7261,30 @@ System        {perf_status}"""
 
     def refresh_reports(self):
         """Load and display scan reports in the reports list."""
+        print(f"\n📋 === REFRESH REPORTS ===")
+        print("DEBUG: refresh_reports() called")
+        
         try:
             # Clear the current list
+            print("DEBUG: 🧹 Clearing current reports list")
             self.reports_list.clear()
 
             # Get reports directory from the report manager
             reports_dir = self.report_manager.daily_reports
+            print(f"DEBUG: 📁 Reports directory: {reports_dir}")
 
             # Verify the directory exists
             if not reports_dir.exists():
+                print("DEBUG: ❌ Reports directory does not exist")
                 self.report_viewer.setText("No reports directory found.")
                 return
 
             # Find all JSON report files
             report_files = list(reports_dir.glob("scan_*.json"))
+            print(f"DEBUG: 🔍 Found {len(report_files)} report files")
 
             if not report_files:
+                print("DEBUG: ❌ No report files found")
                 if self.current_theme == "dark":
                     no_reports_html = """
                     <style>
