@@ -1,14 +1,12 @@
 #!/usr/bin/env python3
 """
 Configuration management for S&D - Search & Destroy
-Clean rewrite to eliminate auto-save conflicts
 """
 import json
 import logging
 import os
-import shutil
 from pathlib import Path
-from logging.handlers import RotatingFileHandler
+from typing import Any, Dict
 
 # XDG Base Directory specification paths
 XDG_CONFIG_HOME = os.environ.get(
@@ -42,7 +40,7 @@ QUARANTINE_DIR.mkdir(exist_ok=True)
 LOG_DIR.mkdir(exist_ok=True)
 
 
-def setup_logging():
+def setup_logging() -> logging.Logger:
     """Setup application logging with rotation."""
     logger = logging.getLogger(APP_NAME)
     if not logger.handlers:
@@ -53,6 +51,8 @@ def setup_logging():
         )
 
         # File handler with rotation
+        from logging.handlers import RotatingFileHandler
+
         log_file = LOG_DIR / "application.log"
         file_handler = RotatingFileHandler(
             log_file, maxBytes=10 * 1024 * 1024, backupCount=5
@@ -72,168 +72,22 @@ def setup_logging():
     return logger
 
 
-def load_config(file_path=None):
-    """Load configuration from file. Return as-is without merging."""
-    config_path = Path(file_path) if file_path else CONFIG_FILE
-
-    if not config_path.exists():
-        # Create initial config with minimal structure
-        initial_config = create_initial_config()
-        save_config(initial_config, str(config_path))
-        return initial_config
-
-    try:
-        with open(config_path, "r", encoding="utf-8") as config_file:
-            config = json.load(config_file)
-            # Return config exactly as saved - no modifications
-            return config
-    except json.JSONDecodeError as e:
-        logging.getLogger(APP_NAME).error(
-            "Invalid JSON in config file: %s", e
-        )
-        # Backup corrupted config and create new one
-        shutil.move(str(config_path), str(config_path) + ".corrupted")
-        initial_config = create_initial_config()
-        save_config(initial_config, str(config_path))
-        return initial_config
-
-
-def save_config(config_data, file_path=None):
-    """Save configuration to file."""
-    config_path = Path(file_path) if file_path else CONFIG_FILE
-    try:
-        with open(config_path, "w", encoding="utf-8") as config_file:
-            json.dump(config_data, config_file, indent=4, sort_keys=True)
-    except (IOError, OSError) as e:
-        logging.getLogger(APP_NAME).error("Failed to save config: %s", e)
-
-
-def update_config_setting(config_dict, section, key, value, file_path=None):
-    """Update a specific setting in config and save to file immediately.
-    
-    Args:
-        config_dict: The configuration dictionary to update
-        section: Configuration section (e.g., 'ui_settings', 'scan_settings')
-        key: Setting key within the section
-        value: New value for the setting
-        file_path: Optional custom file path (uses default if None)
-    
-    Returns:
-        bool: True if successfully saved, False otherwise
-    """
-    try:
-        # Ensure section exists
-        if section not in config_dict:
-            config_dict[section] = {}
-        
-        # Update the setting
-        config_dict[section][key] = value
-        
-        # Save immediately to ensure persistence
-        save_config(config_dict, file_path)
-        return True
-        
-    except Exception as e:
-        logging.getLogger(APP_NAME).error(
-            "Failed to update setting %s.%s: %s", section, key, e
-        )
-        return False
-
-
-def update_multiple_settings(config_dict, updates, file_path=None):
-    """Update multiple settings at once and save to file.
-    
-    Args:
-        config_dict: The configuration dictionary to update
-        updates: Dict of {section: {key: value}} format
-        file_path: Optional custom file path (uses default if None)
-    
-    Returns:
-        bool: True if successfully saved, False otherwise
-    
-    Example:
-        updates = {
-            'ui_settings': {'theme': 'dark', 'minimize_to_tray': True},
-            'scan_settings': {'max_threads': 8}
-        }
-    """
-    try:
-        # Apply all updates
-        for section, settings in updates.items():
-            if section not in config_dict:
-                config_dict[section] = {}
-            
-            for key, value in settings.items():
-                config_dict[section][key] = value
-        
-        # Save once after all updates
-        save_config(config_dict, file_path)
-        return True
-        
-    except Exception as e:
-        logging.getLogger(APP_NAME).error(
-            "Failed to update multiple settings: %s", e
-        )
-        return False
-
-
-def get_config_setting(config_dict, section, key, default=None):
-    """Get a specific setting from config with optional default.
-    
-    Args:
-        config_dict: The configuration dictionary
-        section: Configuration section
-        key: Setting key within the section
-        default: Default value if setting doesn't exist
-    
-    Returns:
-        The setting value or default
-    """
-    return config_dict.get(section, {}).get(key, default)
-
-
-def create_initial_config():
-    """Create initial configuration with settings that auto-save."""
+def get_minimal_initial_config() -> Dict[str, Any]:
+    """Get minimal initial configuration for first-time setup."""
     return {
         "scan_settings": {
             "max_threads": 4,
             "timeout_seconds": 300,
-            # Core ClamAV settings
-            "scan_archives": True,
-            "scan_email": True,
-            "scan_ole2": True,
-            "scan_pdf": True,
-            "scan_html": True,
-            "scan_executable": True,
-            "max_filesize": "100M",
-            "max_recursion": 16,
-            "max_files": 10000,
-            "pcre_match_limit": 10000,
-            "pcre_recmatch_limit": 5000,
         },
         "ui_settings": {
-            "theme": "auto",
-            "show_hidden_files": False,
-            "auto_update_definitions": True,
-            "notifications_enabled": True,
             "minimize_to_tray": True,
-            "show_scan_progress": True,
-            "activity_log_retention": 100,
             "show_notifications": True,
+            "activity_log_retention": 100,
         },
         "security_settings": {
-            "quarantine_enabled": True,
-            "auto_quarantine_threats": False,
-            "scan_removable_media": True,
-            "real_time_protection": False,
             "auto_update_definitions": True,
         },
         "advanced_settings": {
-            "signature_sources": ["main.cvd", "daily.cvd", "bytecode.cvd"],
-            "custom_signature_urls": [],
-            "log_level": "INFO",
-            "scan_timeout": 300,
-            "update_frequency": "daily",
             "scan_archives": True,
             "follow_symlinks": False,
             "scan_depth": 2,
@@ -272,12 +126,43 @@ def create_initial_config():
     }
 
 
-def get_factory_defaults():
-    """Get factory default settings - ONLY used when 'Default Settings' button is pressed."""
+def load_config(file_path: str = None) -> Dict[str, Any]:
+    """Load configuration from file. If no config exists, create one with minimal defaults."""
+    config_path = Path(file_path) if file_path else CONFIG_FILE
+    try:
+        with open(config_path, "r", encoding="utf-8") as config_file:
+            config = json.load(config_file)
+            # Return the config as-is - no merging with defaults
+            return config
+    except FileNotFoundError:
+        # Create minimal initial config if none exists
+        initial_config = get_minimal_initial_config()
+        save_config(initial_config, str(config_path))
+        return initial_config
+    except json.JSONDecodeError as e:
+        logging.getLogger(APP_NAME).error("Invalid JSON in config file: %s", e)
+        # Backup corrupted config and create new one
+        import shutil
+        shutil.move(str(config_path), str(config_path) + ".corrupted")
+        initial_config = get_minimal_initial_config()
+        save_config(initial_config, str(config_path))
+        return initial_config
+
+
+def save_config(config_data: Dict[str, Any], file_path: str = None) -> None:
+    """Save configuration to file."""
+    config_path = Path(file_path) if file_path else CONFIG_FILE
+    try:
+        with open(config_path, "w", encoding="utf-8") as config_file:
+            json.dump(config_data, config_file, indent=4, sort_keys=True)
+    except (IOError, OSError) as e:
+        logging.getLogger(APP_NAME).error("Failed to save config: %s", e)
+
+
+def get_default_config() -> Dict[str, Any]:
+    """Get default configuration values - ONLY used for 'Default Settings' button."""
     return {
         "scan_settings": {
-            "max_threads": 4,
-            "timeout_seconds": 300,
             "scan_archives": True,
             "scan_email": True,
             "scan_ole2": True,
@@ -289,21 +174,24 @@ def get_factory_defaults():
             "max_files": 10000,
             "pcre_match_limit": 10000,
             "pcre_recmatch_limit": 5000,
+            "max_threads": 4,
+            "timeout_seconds": 300,
         },
         "ui_settings": {
-            "theme": "auto",
+            "theme": "auto",  # auto, light, dark
             "show_hidden_files": False,
             "auto_update_definitions": True,
             "notifications_enabled": True,
             "minimize_to_tray": True,
             "show_scan_progress": True,
-            "activity_log_retention": 100,
+            "activity_log_retention": 100,  # Number of recent activity messages to retain
             "show_notifications": True,
         },
         "security_settings": {
             "quarantine_enabled": True,
             "auto_quarantine_threats": False,
             "scan_removable_media": True,
+            # Default: OFF - User can enable for continuous monitoring
             "real_time_protection": False,
             "auto_update_definitions": True,
         },

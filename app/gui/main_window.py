@@ -22,6 +22,7 @@ from PyQt6.QtGui import (
     QWheelEvent,
 )
 from PyQt6.QtWidgets import (
+    QApplication,
     QCheckBox,
     QComboBox,
     QDialog,
@@ -92,15 +93,30 @@ class NoWheelSpinBox(QSpinBox):
         event.ignore()
 
 
+class NoWheelTimeEdit(QTimeEdit):
+    """A QTimeEdit that completely ignores wheel events to prevent accidental changes."""
+
+    def wheelEvent(self, event: QWheelEvent):
+        """Completely ignore all wheel events."""
+        event.ignore()
+
+
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
+        
+        # Configure application to avoid popup window borders on Wayland
+        self._configure_platform_dropdown_behavior()
+        
         self.config = load_config()
         self.scanner = FileScanner()
         self.rkhunter = RKHunterWrapper()
         self.report_manager = ScanReportManager()
         self.current_scan_thread = None
         self.current_rkhunter_thread = None
+        
+        # Initialization state - prevents premature scheduler actions during startup
+        self._initialization_complete = False
 
         # Quick scan state tracking
         self.is_quick_scan_running = False
@@ -158,6 +174,26 @@ class MainWindow(QMainWindow):
 
         # Start performance monitoring
         self.performance_monitor.start_monitoring()
+        
+        # Mark initialization as complete - scheduler can now be started safely
+        self._initialization_complete = True
+        print("✅ Main window initialization complete - scheduler operations now enabled")
+        
+        # Start scheduler if scheduled scans are enabled
+        QTimer.singleShot(100, self.start_scheduler_if_enabled)
+
+    def start_scheduler_if_enabled(self):
+        """Start the scheduler if scheduled scans are enabled (called after initialization)."""
+        try:
+            if hasattr(self, 'settings_enable_scheduled_cb') and self.settings_enable_scheduled_cb.isChecked():
+                print("🔄 Starting scheduler for enabled scheduled scans...")
+                if hasattr(self.scanner, 'start_scheduler'):
+                    self.scanner.start_scheduler()
+                    print("✅ Scheduler started successfully")
+                else:
+                    print("⚠️ Scanner doesn't have scheduler capability")
+        except Exception as e:
+            print(f"⚠️ Error starting scheduler after initialization: {e}")
 
     def get_theme_color(self, color_type):
         """Get theme-appropriate color for any UI element."""
@@ -1149,7 +1185,7 @@ class MainWindow(QMainWindow):
         scan_type_layout = QVBoxLayout(scan_type_group)
         scan_type_layout.setSpacing(8)
         
-        self.scan_type_combo = QComboBox()
+        self.scan_type_combo = NoWheelComboBox()
         self.scan_type_combo.addItem("🚀 Quick Scan", "QUICK")
         self.scan_type_combo.addItem("🔍 Full Scan", "FULL") 
         self.scan_type_combo.addItem("⚙️ Custom Scan", "CUSTOM")
@@ -1362,6 +1398,16 @@ class MainWindow(QMainWindow):
         main_layout.setSpacing(20)
         main_layout.setContentsMargins(20, 20, 20, 20)
 
+        # Default Settings button at the top
+        default_btn_layout = QHBoxLayout()
+        default_settings_btn = QPushButton("Default Settings")
+        default_settings_btn.clicked.connect(self.load_default_settings)
+        default_settings_btn.setMinimumHeight(40)
+        default_settings_btn.setMinimumWidth(140)
+        default_btn_layout.addWidget(default_settings_btn)
+        default_btn_layout.addStretch()
+        main_layout.addLayout(default_btn_layout)
+
         # Create scrollable area for settings
         scroll_area = QScrollArea()
         scroll_area.setObjectName("settingsScrollArea")
@@ -1428,7 +1474,7 @@ class MainWindow(QMainWindow):
         advanced_scan_layout.setSpacing(15)
 
         # Scan depth
-        self.scan_depth_combo = QComboBox()
+        self.scan_depth_combo = NoWheelComboBox()
         self.scan_depth_combo.addItem("Surface (Faster)", 1)
         self.scan_depth_combo.addItem("Normal", 2)
         self.scan_depth_combo.addItem("Deep (Thorough)", 3)
@@ -1437,7 +1483,7 @@ class MainWindow(QMainWindow):
         advanced_scan_layout.addRow("Scan Depth:", self.scan_depth_combo)
         
         # File type filtering
-        self.file_filter_combo = QComboBox()
+        self.file_filter_combo = NoWheelComboBox()
         self.file_filter_combo.addItem("All Files", "all")
         self.file_filter_combo.addItem("Executables Only", "exe")
         self.file_filter_combo.addItem("Documents & Media", "docs")
@@ -1446,7 +1492,7 @@ class MainWindow(QMainWindow):
         advanced_scan_layout.addRow("File Types:", self.file_filter_combo)
         
         # Memory usage limit
-        self.memory_limit_combo = QComboBox()
+        self.memory_limit_combo = NoWheelComboBox()
         self.memory_limit_combo.addItem("Low (512MB)", 512)
         self.memory_limit_combo.addItem("Normal (1GB)", 1024)
         self.memory_limit_combo.addItem("High (2GB)", 2048)
@@ -1528,20 +1574,23 @@ class MainWindow(QMainWindow):
         scheduled_layout.addRow(self.settings_enable_scheduled_cb)
         
         # Scan frequency
-        self.settings_scan_frequency_combo = QComboBox()
+        self.settings_scan_frequency_combo = NoWheelComboBox()
         self.settings_scan_frequency_combo.addItem("Daily", "daily")
         self.settings_scan_frequency_combo.addItem("Weekly", "weekly")
         self.settings_scan_frequency_combo.addItem("Monthly", "monthly")
         self.settings_scan_frequency_combo.setCurrentIndex(0)
         self.settings_scan_frequency_combo.setMinimumHeight(35)
         self.settings_scan_frequency_combo.setEnabled(False)
+        self.settings_scan_frequency_combo.currentTextChanged.connect(self.update_next_scheduled_scan_display)
         scheduled_layout.addRow(QLabel("Scan Frequency:"), self.settings_scan_frequency_combo)
         
         # Scan time
-        self.settings_scan_time_edit = QTimeEdit()
+        self.settings_scan_time_edit = NoWheelTimeEdit()
+        self.settings_scan_time_edit.setObjectName("scanTimeEdit")
         self.settings_scan_time_edit.setTime(QTime(2, 0))  # Default to 2:00 AM
         self.settings_scan_time_edit.setMinimumHeight(35)
         self.settings_scan_time_edit.setEnabled(False)
+        self.settings_scan_time_edit.timeChanged.connect(self.update_next_scheduled_scan_display)
         scheduled_layout.addRow(QLabel("Scan Time:"), self.settings_scan_time_edit)
         
         # Next scheduled scan display
@@ -1793,31 +1842,11 @@ class MainWindow(QMainWindow):
 
         main_layout.addWidget(scroll_area)
 
-        # SETTINGS CONTROL BUTTONS
-        buttons_layout = QHBoxLayout()
-        buttons_layout.setSpacing(15)
-
-        # Load defaults button
-        load_defaults_btn = QPushButton("Reset to Defaults")
-        load_defaults_btn.clicked.connect(self.load_default_settings)
-        load_defaults_btn.setMinimumHeight(40)
-        load_defaults_btn.setMinimumWidth(140)
-
-        # Save settings button
-        save_settings_btn = QPushButton("Save Settings")
-        save_settings_btn.clicked.connect(self.save_settings)
-        save_settings_btn.setMinimumHeight(40)
-        save_settings_btn.setMinimumWidth(120)
-        save_settings_btn.setObjectName("primaryButton")
-
-        buttons_layout.addStretch()
-        buttons_layout.addWidget(load_defaults_btn)
-        buttons_layout.addWidget(save_settings_btn)
-
-        main_layout.addLayout(buttons_layout)
-
         # Load current settings
         self.load_current_settings()
+        
+        # Set up auto-save connections for all settings
+        self.setup_auto_save_connections()
 
         self.tab_widget.addTab(settings_widget, "Settings")
 
@@ -1975,7 +2004,7 @@ class MainWindow(QMainWindow):
         firewall_status_left.addWidget(self.firewall_status_label)
 
         self.firewall_name_label = QLabel("Checking...")
-        self.firewall_name_label.setStyleSheet("font-size: 11px; color: #999;")
+        self.firewall_name_label.setStyleSheet(f"font-size: 11px; color: {self.get_theme_color('secondary_text')};")
         firewall_status_left.addWidget(self.firewall_name_label)
 
         firewall_status_container.addLayout(firewall_status_left)
@@ -2599,6 +2628,7 @@ class MainWindow(QMainWindow):
     def on_retention_setting_changed(self, new_value):
         """Handle changes to the activity log retention setting."""
         try:
+            print(f"🔄 Activity Log Retention changed to: {new_value}")
             new_retention = int(new_value)
 
             # Trim current activity lists to new size
@@ -2606,71 +2636,112 @@ class MainWindow(QMainWindow):
                 while self.activity_list.count() > new_retention:
                     self.activity_list.takeItem(self.activity_list.count() - 1)
 
-            # Save settings immediately when changed
-            self.config["ui_settings"]["activity_log_retention"] = new_retention
-            from utils.config import save_config
-
-            save_config(self.config)
+            # Use unified auto-save method
+            print(f"💾 Auto-saving retention setting: {new_retention}")
+            self.auto_save_settings()
+            print(f"✅ Retention setting saved")
 
         except ValueError:
-            print(f"Invalid retention value: {new_value}")
+            print(f"❌ Invalid retention value: {new_value}")
 
     def on_scheduled_scan_toggled(self, enabled):
         """Handle scheduled scan enable/disable toggle."""
-        # Enable/disable related controls
-        self.settings_scan_frequency_combo.setEnabled(enabled)
-        self.settings_scan_time_edit.setEnabled(enabled)
-        
-        if enabled:
-            # Calculate and display next scheduled scan
-            self.update_next_scheduled_scan_display()
-            # Start scheduler if not already running
-            if hasattr(self.scanner, 'start_scheduler'):
-                self.scanner.start_scheduler()
-        else:
-            self.settings_next_scan_label.setText("None scheduled")
-            # Stop scheduler
-            if hasattr(self.scanner, 'stop_scheduler'):
-                self.scanner.stop_scheduler()
+        try:
+            print(f"🔄 Scheduled Scans toggled to: {enabled}")
+            
+            # Enable/disable related controls
+            self.settings_scan_frequency_combo.setEnabled(enabled)
+            self.settings_scan_time_edit.setEnabled(enabled)
+            
+            if enabled:
+                # Calculate and display next scheduled scan
+                self.update_next_scheduled_scan_display()
+                # Only start scheduler if initialization is complete
+                if self._initialization_complete:
+                    try:
+                        if hasattr(self.scanner, 'start_scheduler'):
+                            self.scanner.start_scheduler()
+                        else:
+                            print("⚠️ Scanner doesn't have scheduler capability yet - will retry when scanner is ready")
+                    except Exception as e:
+                        print(f"⚠️ Error starting scheduler: {e}")
+                        print("⚠️ Scheduler will be started when scanner is fully initialized")
+                        # Do NOT disable the checkbox here - let the setting persist
+                        # The scheduler will be started later when the scanner is ready
+                else:
+                    print("⏳ Scheduled scans enabled but waiting for initialization to complete")
+            else:
+                self.settings_next_scan_label.setText("None scheduled")
+                # Stop scheduler
+                try:
+                    if hasattr(self.scanner, 'stop_scheduler'):
+                        self.scanner.stop_scheduler()
+                except Exception as e:
+                    print(f"Error stopping scheduler: {e}")
+            
+            # Auto-save the scheduled scan settings
+            print(f"💾 Auto-saving scheduled scan setting: {enabled}")
+            self.auto_save_settings()
+            print(f"✅ Scheduled scan setting saved")
+            
+        except Exception as e:
+            print(f"❌ Error in scheduled scan toggle: {e}")
+            import traceback
+            traceback.print_exc()
+            # Do NOT reset the checkbox state automatically
+            # Let the user know about the error but preserve their setting choice
     
     def update_next_scheduled_scan_display(self):
         """Update the display of next scheduled scan time."""
-        if not self.settings_enable_scheduled_cb.isChecked():
-            self.settings_next_scan_label.setText("None scheduled")
-            return
+        try:
+            if not self.settings_enable_scheduled_cb.isChecked():
+                self.settings_next_scan_label.setText("None scheduled")
+                return
+                
+            frequency = self.settings_scan_frequency_combo.currentData()
+            scan_time = self.settings_scan_time_edit.time()
             
-        frequency = self.settings_scan_frequency_combo.currentData()
-        scan_time = self.settings_scan_time_edit.time()
-        
-        # Calculate next scan time based on frequency
-        from datetime import datetime, timedelta
-        now = datetime.now()
-        next_scan = None
-        
-        if frequency == "daily":
-            next_scan = now.replace(hour=scan_time.hour(), minute=scan_time.minute(), second=0, microsecond=0)
-            if next_scan <= now:
-                next_scan += timedelta(days=1)
-        elif frequency == "weekly":
-            # Schedule for next Sunday
-            days_until_sunday = (6 - now.weekday()) % 7
-            if days_until_sunday == 0:  # It's Sunday
+            # Validate inputs
+            if not frequency or not scan_time.isValid():
+                self.settings_next_scan_label.setText("Invalid configuration")
+                return
+            
+            # Calculate next scan time based on frequency
+            from datetime import datetime, timedelta
+            now = datetime.now()
+            next_scan = None
+            
+            if frequency == "daily":
                 next_scan = now.replace(hour=scan_time.hour(), minute=scan_time.minute(), second=0, microsecond=0)
                 if next_scan <= now:
-                    days_until_sunday = 7
-            next_scan = now + timedelta(days=days_until_sunday)
-            next_scan = next_scan.replace(hour=scan_time.hour(), minute=scan_time.minute(), second=0, microsecond=0)
-        elif frequency == "monthly":
-            # Schedule for first of next month
-            if now.month == 12:
-                next_scan = now.replace(year=now.year + 1, month=1, day=1, hour=scan_time.hour(), minute=scan_time.minute(), second=0, microsecond=0)
+                    next_scan += timedelta(days=1)
+            elif frequency == "weekly":
+                # Schedule for next Sunday
+                days_until_sunday = (6 - now.weekday()) % 7
+                if days_until_sunday == 0:  # It's Sunday
+                    next_scan = now.replace(hour=scan_time.hour(), minute=scan_time.minute(), second=0, microsecond=0)
+                    if next_scan <= now:
+                        days_until_sunday = 7
+                    else:
+                        next_scan = now + timedelta(days=days_until_sunday)
+                else:
+                    next_scan = now + timedelta(days=days_until_sunday)
+                next_scan = next_scan.replace(hour=scan_time.hour(), minute=scan_time.minute(), second=0, microsecond=0)
+            elif frequency == "monthly":
+                # Schedule for first of next month
+                if now.month == 12:
+                    next_scan = now.replace(year=now.year + 1, month=1, day=1, hour=scan_time.hour(), minute=scan_time.minute(), second=0, microsecond=0)
+                else:
+                    next_scan = now.replace(month=now.month + 1, day=1, hour=scan_time.hour(), minute=scan_time.minute(), second=0, microsecond=0)
+            
+            if next_scan:
+                self.settings_next_scan_label.setText(next_scan.strftime("%Y-%m-%d %H:%M"))
             else:
-                next_scan = now.replace(month=now.month + 1, day=1, hour=scan_time.hour(), minute=scan_time.minute(), second=0, microsecond=0)
-        
-        if next_scan:
-            self.settings_next_scan_label.setText(next_scan.strftime("%Y-%m-%d %H:%M"))
-        else:
-            self.settings_next_scan_label.setText("Unable to calculate")
+                self.settings_next_scan_label.setText("Unable to calculate")
+                
+        except Exception as e:
+            print(f"Error updating scheduled scan display: {e}")
+            self.settings_next_scan_label.setText("Error calculating next scan")
 
     def update_monitoring_statistics(self):
         """Update the monitoring statistics display."""
@@ -2983,6 +3054,9 @@ System        {perf_status}"""
             
         # Update RKHunter category styling for the new theme
         self.update_rkhunter_category_styling()
+        
+        # Update any components with dynamic styling
+        self.update_dynamic_component_styling()
 
     def set_theme(self, theme):
         """Set the application theme and save to config."""
@@ -3877,6 +3951,44 @@ System        {perf_status}"""
                 background-color: #2a2a2a;
             }
 
+            QTimeEdit, QTimeEdit#scanTimeEdit, QAbstractSpinBox {
+                background-color: #3a3a3a !important;
+                border: 2px solid #EE8980 !important;
+                border-radius: 6px;
+                padding: 8px 12px;
+                color: #FFCDAA !important;
+                font-weight: 500;
+                font-size: 12px;
+            }
+
+            QTimeEdit:focus, QTimeEdit#scanTimeEdit:focus, QAbstractSpinBox:focus {
+                border-color: #F14666 !important;
+                background-color: #2a2a2a !important;
+            }
+
+            QTimeEdit:disabled, QTimeEdit#scanTimeEdit:disabled, QAbstractSpinBox:disabled {
+                background-color: #2a2a2a !important;
+                color: #808080 !important;
+                border-color: #555555 !important;
+            }
+
+            QTimeEdit::up-button, QTimeEdit::down-button {
+                background-color: #444444;
+                border: 1px solid #666666;
+                border-radius: 3px;
+                width: 16px;
+                height: 16px;
+            }
+
+            QTimeEdit::up-button:hover, QTimeEdit::down-button:hover {
+                background-color: #555555;
+                border-color: #F14666;
+            }
+
+            QTimeEdit::up-button:pressed, QTimeEdit::down-button:pressed {
+                background-color: #333333;
+            }
+
             QComboBox {
                 background-color: #3a3a3a;
                 border: 2px solid #EE8980;
@@ -3924,22 +4036,50 @@ System        {perf_status}"""
 
             QComboBox QAbstractItemView {
                 background-color: #2a2a2a;
-                border: 2px solid #EE8980;
-                border-radius: 6px;
+                border: 1px solid #EE8980;
+                border-radius: 4px;
+                color: #FFCDAA;
+                selection-background-color: #F14666;
+                selection-color: #ffffff;
+                outline: none;
+                margin: 0px;
+                padding: 0px;
+            }
+
+            QComboBox QAbstractItemView::item {
+                padding: 8px 12px;
+                min-height: 20px;
+                border: none;
+                margin: 0px;
+            }
+
+            QComboBox QAbstractItemView::item:hover {
+                background-color: #EE8980;
+                color: #ffffff;
+                border: none;
+            }
+
+            QComboBox QAbstractItemView::item:selected {
+                background-color: #F14666;
+                color: #ffffff;
+                border: none;
+            }
+
+            /* Fix dropdown popup frame (this causes the white borders) */
+            QComboBox QListView {
+                background-color: #2a2a2a;
+                border: 1px solid #EE8980;
+                border-radius: 4px;
                 color: #FFCDAA;
                 selection-background-color: #F14666;
                 selection-color: #ffffff;
                 outline: none;
             }
 
-            QComboBox QAbstractItemView::item {
-                padding: 8px 12px;
-                min-height: 20px;
-            }
-
-            QComboBox QAbstractItemView::item:hover {
-                background-color: #EE8980;
-                color: #ffffff;
+            QComboBox QFrame {
+                background-color: #2a2a2a;
+                border: 1px solid #EE8980;
+                border-radius: 4px;
             }
 
             QSpinBox::up-button, QSpinBox::down-button {
@@ -4455,6 +4595,44 @@ System        {perf_status}"""
                 background-color: #f8f8f8;
             }
 
+            QTimeEdit, QTimeEdit#scanTimeEdit, QAbstractSpinBox {
+                background-color: #ffffff !important;
+                border: 2px solid #75BDE0 !important;
+                border-radius: 6px;
+                padding: 8px 12px;
+                color: #333333 !important;
+                font-weight: 500;
+                font-size: 12px;
+            }
+
+            QTimeEdit:focus, QTimeEdit#scanTimeEdit:focus, QAbstractSpinBox:focus {
+                border-color: #F8BC9B !important;
+                background-color: #f8f8f8 !important;
+            }
+
+            QTimeEdit:disabled, QTimeEdit#scanTimeEdit:disabled, QAbstractSpinBox:disabled {
+                background-color: #f0f0f0 !important;
+                color: #888888 !important;
+                border-color: #cccccc !important;
+            }
+
+            QTimeEdit::up-button, QTimeEdit::down-button {
+                background-color: #f8f8f8;
+                border: 1px solid #cccccc;
+                border-radius: 3px;
+                width: 16px;
+                height: 16px;
+            }
+
+            QTimeEdit::up-button:hover, QTimeEdit::down-button:hover {
+                background-color: #e8e8e8;
+                border-color: #F8BC9B;
+            }
+
+            QTimeEdit::up-button:pressed, QTimeEdit::down-button:pressed {
+                background-color: #d8d8d8;
+            }
+
             QComboBox {
                 background-color: #ffffff;
                 border: 2px solid #75BDE0;
@@ -4502,22 +4680,50 @@ System        {perf_status}"""
 
             QComboBox QAbstractItemView {
                 background-color: #ffffff;
-                border: 2px solid #75BDE0;
-                border-radius: 6px;
+                border: 1px solid #75BDE0;
+                border-radius: 4px;
+                color: #333333;
+                selection-background-color: #F8BC9B;
+                selection-color: #2c2c2c;
+                outline: none;
+                margin: 0px;
+                padding: 0px;
+            }
+
+            QComboBox QAbstractItemView::item {
+                padding: 8px 12px;
+                min-height: 20px;
+                border: none;
+                margin: 0px;
+            }
+
+            QComboBox QAbstractItemView::item:hover {
+                background-color: #75BDE0;
+                color: #ffffff;
+                border: none;
+            }
+
+            QComboBox QAbstractItemView::item:selected {
+                background-color: #F8BC9B;
+                color: #2c2c2c;
+                border: none;
+            }
+
+            /* Fix dropdown popup frame (this causes the white borders) */
+            QComboBox QListView {
+                background-color: #ffffff;
+                border: 1px solid #75BDE0;
+                border-radius: 4px;
                 color: #333333;
                 selection-background-color: #F8BC9B;
                 selection-color: #2c2c2c;
                 outline: none;
             }
 
-            QComboBox QAbstractItemView::item {
-                padding: 8px 12px;
-                min-height: 20px;
-            }
-
-            QComboBox QAbstractItemView::item:hover {
-                background-color: #75BDE0;
-                color: #ffffff;
+            QComboBox QFrame {
+                background-color: #ffffff;
+                border: 1px solid #75BDE0;
+                border-radius: 4px;
             }
             
             /* Scan Type Combo Specific Styling */
@@ -5340,14 +5546,17 @@ System        {perf_status}"""
                     severity_color = finding.explanation.category.value.replace('_', ' ').title()
                     common_text = " (Common)" if finding.explanation.is_common else " (Uncommon)"
                     output += f"   Category: {severity_color}{common_text}\n"
-                    output += f"   📖 Click 'Explain Warning #{warning_count}' button below for detailed guidance\n"
+                    output += f"   📖 See detailed explanation in warnings dialog below\n"
 
         # Add explanation buttons for warnings
         if result.findings and any(f.result.value == "warning" for f in result.findings):
+            warning_count = sum(1 for f in result.findings if f.result.value == "warning")
             output += "\n" + "=" * 30 + "\n"
             output += "📖 Warning Explanations Available\n"
             output += "=" * 30 + "\n"
-            output += "Use the buttons below to get detailed explanations\n"
+            output += f"Found {warning_count} warning{'s' if warning_count != 1 else ''} that require attention.\n"
+            output += "Use the button below to view detailed explanations\n"
+            output += "and remediation guidance for each warning.\n"
             output += "and remediation guidance for each warning.\n\n"
             
             # Store findings for button access
@@ -5423,7 +5632,7 @@ System        {perf_status}"""
             print(f"Error saving RKHunter report: {e}")
 
     def _add_warning_explanation_buttons(self, result: RKHunterScanResult):
-        """Add explanation buttons for RKHunter warnings."""
+        """Add a single button to view all warning explanations."""
         # Clear any existing warning buttons
         if hasattr(self, '_warning_buttons_layout'):
             # Remove existing buttons
@@ -5432,7 +5641,7 @@ System        {perf_status}"""
                 if child.widget():
                     child.widget().setParent(None)
             
-        # Only add buttons if there are warnings
+        # Only add button if there are warnings
         warnings = [f for f in (result.findings or []) if f.result.value == "warning"]
         if not warnings:
             return
@@ -5451,27 +5660,153 @@ System        {perf_status}"""
             self._warning_buttons_layout = QHBoxLayout()
             self._warning_buttons_layout.setObjectName("warningButtonsLayout")
             
-            # Add a label
-            from PyQt6.QtWidgets import QLabel
-            explain_label = QLabel("📖 Warning Explanations:")
-            explain_label.setStyleSheet("font-weight: bold; margin: 5px;")
-            self._warning_buttons_layout.addWidget(explain_label)
+            # Single button for all warnings
+            warnings_count = len(warnings)
+            btn = QPushButton(f"View All Warnings ({warnings_count})")
+            btn.setObjectName("viewAllWarnings")
+            btn.setStyleSheet("""
+                QPushButton {
+                    background-color: #FFA500;
+                    color: white;
+                    border: none;
+                    border-radius: 6px;
+                    padding: 8px 16px;
+                    font-weight: bold;
+                    min-width: 150px;
+                }
+                QPushButton:hover {
+                    background-color: #FF8C00;
+                }
+                QPushButton:pressed {
+                    background-color: #FF7F00;
+                }
+            """)
+            btn.clicked.connect(lambda: self._show_all_warnings_dialog())
+            self._warning_buttons_layout.addWidget(btn)
             
-            # Add buttons for each warning
-            for i, warning in enumerate(warnings[:5]):  # Limit to 5 buttons
-                btn = QPushButton(f"Explain Warning #{i+1}")
-                btn.setObjectName(f"explainWarning_{i}")
-                btn.clicked.connect(lambda checked, idx=i: self._show_warning_explanation(idx))
-                self._warning_buttons_layout.addWidget(btn)
-            
-            # Add stretch to left-align buttons
+            # Add stretch to left-align button
             self._warning_buttons_layout.addStretch()
             
             # Add the button layout to the results layout
             results_layout.addLayout(self._warning_buttons_layout)
         
-        # Store current warnings for button access
+        # Store current warnings for dialog access
         self._current_warnings = warnings
+
+    def _show_all_warnings_dialog(self):
+        """Show a comprehensive dialog with all warning explanations."""
+        if not hasattr(self, '_current_warnings') or not self._current_warnings:
+            return
+            
+        # Always use the simpler, more reliable approach for now
+        # TODO: Fix complex dialog import/compatibility issues
+        self._show_simple_warnings_dialog()
+    
+    def _show_simple_warnings_dialog(self):
+        """Fallback simple warnings dialog using basic Qt widgets."""
+        from PyQt6.QtWidgets import QDialog, QVBoxLayout, QTextEdit, QPushButton, QLabel, QHBoxLayout
+        
+        class SimpleWarningsDialog(QDialog):
+            def __init__(self, warnings, parent=None):
+                super().__init__(parent)
+                self.setWindowTitle(f"⚠️ Scan Warnings ({len(warnings)} found)")
+                self.setModal(True)
+                self.resize(800, 600)
+                
+                # Apply dialog theme styling
+                if parent and hasattr(parent, 'get_theme_color'):
+                    bg_color = parent.get_theme_color('background')
+                    text_color = parent.get_theme_color('primary_text')
+                    self.setStyleSheet(f"""
+                        QDialog {{
+                            background-color: {bg_color};
+                            color: {text_color};
+                        }}
+                    """)
+                
+                layout = QVBoxLayout(self)
+                
+                # Header
+                header = QLabel(f"Found {len(warnings)} security warnings that require attention:")
+                error_color = parent.get_theme_color('error') if parent and hasattr(parent, 'get_theme_color') else '#F14666'
+                header.setStyleSheet(f"font-weight: bold; color: {error_color}; margin-bottom: 10px;")
+                layout.addWidget(header)
+                
+                # Text area with all warnings
+                text_area = QTextEdit()
+                text_area.setReadOnly(True)
+                
+                # Apply themed styling
+                bg_color = parent.get_theme_color('background') if parent and hasattr(parent, 'get_theme_color') else '#1E1E1E'
+                tertiary_bg = parent.get_theme_color('tertiary_bg') if parent and hasattr(parent, 'get_theme_color') else '#3a3a3a'
+                text_color = parent.get_theme_color('primary_text') if parent and hasattr(parent, 'get_theme_color') else '#FFFFFF'
+                border_color = parent.get_theme_color('border') if parent and hasattr(parent, 'get_theme_color') else '#444444'
+                accent_color = parent.get_theme_color('accent') if parent and hasattr(parent, 'get_theme_color') else '#F14666'
+                
+                text_area.setStyleSheet(f"""
+                    QTextEdit {{
+                        background-color: {tertiary_bg};
+                        color: {text_color};
+                        border: 2px solid {border_color};
+                        border-radius: 6px;
+                        padding: 10px;
+                        font-family: 'Courier New', monospace;
+                        font-size: 11px;
+                        selection-background-color: {accent_color};
+                        selection-color: {bg_color};
+                    }}
+                """)
+                
+                # Build content
+                content = []
+                for i, warning in enumerate(warnings):
+                    content.append(f"{'='*60}")
+                    content.append(f"WARNING #{i+1}")
+                    content.append(f"{'='*60}")
+                    
+                    if hasattr(warning, 'description'):
+                        content.append(f"Description: {warning.description}")
+                    if hasattr(warning, 'check_name'):
+                        content.append(f"Check: {warning.check_name}")
+                    if hasattr(warning, 'file_path'):
+                        content.append(f"File/Path: {warning.file_path}")
+                    
+                    content.append("")
+                    content.append("RECOMMENDATIONS:")
+                    content.append("• Review the warning details carefully")
+                    content.append("• Check recent system changes and installations") 
+                    content.append("• Verify the legitimacy of any flagged files or processes")
+                    content.append("• Consider running additional security scans")
+                    content.append("• Consult system logs for related events")
+                    content.append("")
+                
+                text_area.setPlainText("\n".join(content))
+                layout.addWidget(text_area)
+                
+                # Buttons
+                button_layout = QHBoxLayout()
+                
+                close_btn = QPushButton("Close")
+                close_btn.setStyleSheet("""
+                    QPushButton {
+                        background-color: #6C757D;
+                        color: white;
+                        border: none;
+                        border-radius: 6px;
+                        padding: 8px 16px;
+                        font-weight: bold;
+                    }
+                    QPushButton:hover { background-color: #545B62; }
+                """)
+                close_btn.clicked.connect(self.accept)
+                
+                button_layout.addStretch()
+                button_layout.addWidget(close_btn)
+                layout.addLayout(button_layout)
+        
+        # Create and show the simple dialog
+        dialog = SimpleWarningsDialog(self._current_warnings, parent=self)
+        dialog.show()  # Use show() instead of exec() for non-blocking
 
     def _show_warning_explanation(self, warning_index: int):
         """Show explanation dialog for a specific warning."""
@@ -5639,6 +5974,30 @@ System        {perf_status}"""
         if hasattr(self, "settings_rkhunter_category_widgets"):
             for widget in self.settings_rkhunter_category_widgets.values():
                 self.apply_rkhunter_category_styling(widget)
+    
+    def update_dynamic_component_styling(self):
+        """Update styling for components that use dynamic colors based on theme."""
+        # Update firewall name label if it exists
+        if hasattr(self, "firewall_name_label"):
+            self.firewall_name_label.setStyleSheet(
+                f"font-size: 11px; color: {self.get_theme_color('secondary_text')};"
+            )
+        
+        # Update any other components that need theme refresh
+        # Note: Most components are handled by the main setStyleSheet() calls
+        # in apply_dark_theme() and apply_light_theme()
+    
+    def _configure_platform_dropdown_behavior(self):
+        """Configure application to prevent popup window issues on Wayland"""
+        try:
+            # Get Qt application instance
+            app = QApplication.instance()
+            if app:
+                # Set attribute to prevent popup windows for combo boxes
+                app.setAttribute(Qt.ApplicationAttribute.AA_DontUseNativeMenuBar, True)
+                
+        except Exception as e:
+            print(f"Warning: Could not configure platform dropdown behavior: {e}")
 
     def stop_scan(self):
         if self.current_scan_thread and self.current_scan_thread.isRunning():
@@ -7271,22 +7630,22 @@ System        {perf_status}"""
     def load_current_settings(self):
         """Load current settings from config into the settings UI controls."""
         try:
+            # Block signals during loading to prevent auto-save triggers
+            self.block_settings_signals(True)
+            
             # Scan settings
             scan_settings = self.config.get("scan_settings", {})
-            self.settings_max_threads_spin.setValue(
-                scan_settings.get("max_threads", 4))
-            self.settings_timeout_spin.setValue(
-                scan_settings.get("timeout_seconds", 300)
-            )
+            max_threads = scan_settings.get("max_threads", 4)
+            timeout_seconds = scan_settings.get("timeout_seconds", 300)
+            self.settings_max_threads_spin.setValue(max_threads)
+            self.settings_timeout_spin.setValue(timeout_seconds)
 
             # UI settings
             ui_settings = self.config.get("ui_settings", {})
-            self.settings_minimize_to_tray_cb.setChecked(
-                ui_settings.get("minimize_to_tray", True)
-            )
-            self.settings_show_notifications_cb.setChecked(
-                ui_settings.get("show_notifications", True)
-            )
+            minimize_to_tray = ui_settings.get("minimize_to_tray", True)
+            show_notifications = ui_settings.get("show_notifications", True)
+            self.settings_minimize_to_tray_cb.setChecked(minimize_to_tray)
+            self.settings_show_notifications_cb.setChecked(show_notifications)
 
             # Activity log retention setting
             retention = str(ui_settings.get("activity_log_retention", 100))
@@ -7294,18 +7653,15 @@ System        {perf_status}"""
 
             # Security settings
             security_settings = self.config.get("security_settings", {})
-            self.settings_auto_update_cb.setChecked(
-                security_settings.get("auto_update_definitions", True)
-            )
+            auto_update_defs = security_settings.get("auto_update_definitions", True)
+            self.settings_auto_update_cb.setChecked(auto_update_defs)
 
             # Advanced settings
             advanced_settings = self.config.get("advanced_settings", {})
-            self.settings_scan_archives_cb.setChecked(
-                advanced_settings.get("scan_archives", True)
-            )
-            self.settings_follow_symlinks_cb.setChecked(
-                advanced_settings.get("follow_symlinks", False)
-            )
+            scan_archives = advanced_settings.get("scan_archives", True)
+            follow_symlinks = advanced_settings.get("follow_symlinks", False)
+            self.settings_scan_archives_cb.setChecked(scan_archives)
+            self.settings_follow_symlinks_cb.setChecked(follow_symlinks)
 
             # Advanced scan settings (moved from Scan tab)
             scan_depth = advanced_settings.get("scan_depth", 2)
@@ -7331,27 +7687,23 @@ System        {perf_status}"""
 
             # Real-time protection settings
             protection_settings = self.config.get("realtime_protection", {})
-            self.settings_monitor_modifications_cb.setChecked(
-                protection_settings.get("monitor_modifications", True)
-            )
-            self.settings_monitor_new_files_cb.setChecked(
-                protection_settings.get("monitor_new_files", True)
-            )
-            self.settings_scan_modified_cb.setChecked(
-                protection_settings.get("scan_modified_files", False)
-            )
+            monitor_mods = protection_settings.get("monitor_modifications", True)
+            monitor_new = protection_settings.get("monitor_new_files", True)
+            scan_modified = protection_settings.get("scan_modified_files", False)
+            self.settings_monitor_modifications_cb.setChecked(monitor_mods)
+            self.settings_monitor_new_files_cb.setChecked(monitor_new)
+            self.settings_scan_modified_cb.setChecked(scan_modified)
 
             # RKHunter settings
             rkhunter_settings = self.config.get("rkhunter_settings", {})
-            self.settings_enable_rkhunter_cb.setChecked(
-                rkhunter_settings.get("enabled", False)
-            )
-            self.settings_run_rkhunter_with_full_scan_cb.setChecked(
-                rkhunter_settings.get("run_with_full_scan", False)
-            )
-            self.settings_rkhunter_auto_update_cb.setChecked(
-                rkhunter_settings.get("auto_update", True)
-            )
+            
+            enabled = rkhunter_settings.get("enabled", False)
+            run_with_full = rkhunter_settings.get("run_with_full_scan", False)
+            auto_update = rkhunter_settings.get("auto_update", True)
+            
+            self.settings_enable_rkhunter_cb.setChecked(enabled)
+            self.settings_run_rkhunter_with_full_scan_cb.setChecked(run_with_full)
+            self.settings_rkhunter_auto_update_cb.setChecked(auto_update)
 
             # Load RKHunter category selections
             if hasattr(self, "settings_rkhunter_category_checkboxes"):
@@ -7367,176 +7719,279 @@ System        {perf_status}"""
                     # Note: If not in saved_categories, keep the default set
                     # during checkbox creation
 
+            # Scheduled scan settings
+            scheduled_settings = self.config.get("scheduled_settings", {})
+            enabled = scheduled_settings.get("enabled", False)
+            frequency = scheduled_settings.get("frequency", "daily")
+            time_str = scheduled_settings.get("time", "02:00")
+            self.settings_enable_scheduled_cb.setChecked(enabled)
+            
+            # Load scan frequency
+            for i in range(self.settings_scan_frequency_combo.count()):
+                if self.settings_scan_frequency_combo.itemData(i) == frequency:
+                    self.settings_scan_frequency_combo.setCurrentIndex(i)
+                    break
+            
+            # Load scan time
+            from PyQt6.QtCore import QTime
+            time_obj = QTime.fromString(time_str, "HH:mm")
+            if time_obj.isValid():
+                self.settings_scan_time_edit.setTime(time_obj)
+                
+            # Re-enable signals after loading is complete
+            self.block_settings_signals(False)
+
         except (OSError, IOError, PermissionError) as e:
-            print(f"Error loading settings: {e}")
+            print(f"❌ Error loading settings: {e}")
+            # Make sure to re-enable signals even if there's an error
+            self.block_settings_signals(False)
 
     def load_default_settings(self):
         """Reset all settings to their default values."""
         try:
-            # Reset scan settings to defaults
-            self.settings_max_threads_spin.setValue(4)
-            self.settings_timeout_spin.setValue(300)
-
-            # Reset UI settings to defaults
-            self.settings_minimize_to_tray_cb.setChecked(True)
-            self.settings_show_notifications_cb.setChecked(True)
-
-            # Reset security settings to defaults
-            self.settings_auto_update_cb.setChecked(True)
-
-            # Reset advanced settings to defaults
-            self.settings_scan_archives_cb.setChecked(True)
-            self.settings_follow_symlinks_cb.setChecked(False)
-
-            # Reset advanced scan settings to defaults (moved from Scan tab)
-            self.scan_depth_combo.setCurrentIndex(1)  # Normal
-            self.file_filter_combo.setCurrentIndex(0)  # All Files
-            self.memory_limit_combo.setCurrentIndex(1)  # Normal (1GB)
-            self.exclusion_text.setPlainText("")
-
-            # Reset real-time protection settings to defaults
-            self.settings_monitor_modifications_cb.setChecked(True)
-            self.settings_monitor_new_files_cb.setChecked(True)
-            self.settings_scan_modified_cb.setChecked(False)
-
-            # Reset RKHunter settings to defaults
-            self.settings_enable_rkhunter_cb.setChecked(False)
-            self.settings_run_rkhunter_with_full_scan_cb.setChecked(False)
-            self.settings_rkhunter_auto_update_cb.setChecked(True)
-
-            # Reset RKHunter category selections to defaults
-            if hasattr(self, "settings_rkhunter_category_checkboxes"):
-                # Reset to the original defaults from the settings creation
-                if hasattr(self, "settings_rkhunter_test_categories"):
-                    for (
-                        category_id,
-                        checkbox,
-                    ) in self.settings_rkhunter_category_checkboxes.items():
-                        default_value = self.settings_rkhunter_test_categories.get(
-                            category_id, {}).get("default", False)
-                        checkbox.setChecked(default_value)
-
-            # Reset Activity Log Retention to default
-            self.settings_activity_retention_combo.setCurrentText("100")
+            print("🔄 LOAD_DEFAULT_SETTINGS CALLED!")
+            import traceback
+            print("📍 Call stack:")
+            traceback.print_stack()
+            
+            # Import the default config
+            from utils.config import get_factory_defaults
+            
+            # Get default configuration
+            default_config = get_factory_defaults()
+            
+            # Update our local config with defaults
+            self.config = default_config
+            
+            # Load the default settings into the UI
+            self.load_current_settings()
+            
+            # Auto-save the default settings
+            self.auto_save_settings()
 
             self.show_themed_message_box(
                 "information",
                 "Settings",
-                "Settings have been reset to defaults.")
+                "Settings have been reset to defaults and saved.")
 
         except Exception as e:
+            print(f"❌ Error loading default settings: {e}")
             self.show_themed_message_box(
                 "warning", "Error", f"Could not reset settings: {str(e)}"
             )
 
-    def save_settings(self):
-        """Save all settings from the UI controls to the config file."""
+    def auto_save_settings(self):
+        """Auto-save settings using the enhanced configuration system."""
         try:
-            # Ensure config sections exist
-            if "scan_settings" not in self.config:
-                self.config["scan_settings"] = {}
-            if "ui_settings" not in self.config:
-                self.config["ui_settings"] = {}
-            if "security_settings" not in self.config:
-                self.config["security_settings"] = {}
-            if "advanced_settings" not in self.config:
-                self.config["advanced_settings"] = {}
-            if "realtime_protection" not in self.config:
-                self.config["realtime_protection"] = {}
-            if "rkhunter_settings" not in self.config:
-                self.config["rkhunter_settings"] = {}
-
-            # Update config with new values from UI
-            self.config["scan_settings"][
-                "max_threads"
-            ] = self.settings_max_threads_spin.value()
-            self.config["scan_settings"][
-                "timeout_seconds"
-            ] = self.settings_timeout_spin.value()
-
-            self.config["ui_settings"][
-                "minimize_to_tray"
-            ] = self.settings_minimize_to_tray_cb.isChecked()
-            self.config["ui_settings"][
-                "show_notifications"
-            ] = self.settings_show_notifications_cb.isChecked()
-            self.config["ui_settings"]["activity_log_retention"] = int(
-                self.settings_activity_retention_combo.currentText()
-            )
-
-            self.config["security_settings"][
-                "auto_update_definitions"
-            ] = self.settings_auto_update_cb.isChecked()
-
-            self.config["advanced_settings"][
-                "scan_archives"
-            ] = self.settings_scan_archives_cb.isChecked()
-            self.config["advanced_settings"][
-                "follow_symlinks"
-            ] = self.settings_follow_symlinks_cb.isChecked()
-
-            # Advanced scan settings (moved from Scan tab)
-            self.config["advanced_settings"][
-                "scan_depth"
-            ] = self.scan_depth_combo.currentData()
-            self.config["advanced_settings"][
-                "file_filter"
-            ] = self.file_filter_combo.currentData()
-            self.config["advanced_settings"][
-                "memory_limit"
-            ] = self.memory_limit_combo.currentData()
-            self.config["advanced_settings"][
-                "exclusion_patterns"
-            ] = self.exclusion_text.toPlainText().strip()
-
-            self.config["realtime_protection"][
-                "monitor_modifications"
-            ] = self.settings_monitor_modifications_cb.isChecked()
-            self.config["realtime_protection"][
-                "monitor_new_files"
-            ] = self.settings_monitor_new_files_cb.isChecked()
-            self.config["realtime_protection"][
-                "scan_modified_files"
-            ] = self.settings_scan_modified_cb.isChecked()
-
-            # RKHunter settings
-            self.config["rkhunter_settings"][
-                "enabled"
-            ] = self.settings_enable_rkhunter_cb.isChecked()
-            self.config["rkhunter_settings"][
-                "run_with_full_scan"
-            ] = self.settings_run_rkhunter_with_full_scan_cb.isChecked()
-            self.config["rkhunter_settings"][
-                "auto_update"
-            ] = self.settings_rkhunter_auto_update_cb.isChecked()
-
-            # Save RKHunter category selections
+            from utils.config import update_multiple_settings
+            
+            # Collect all settings in one batch for efficient saving
+            settings_updates = {
+                "scan_settings": {
+                    "max_threads": self.settings_max_threads_spin.value(),
+                    "timeout_seconds": self.settings_timeout_spin.value(),
+                },
+                "ui_settings": {
+                    "minimize_to_tray": self.settings_minimize_to_tray_cb.isChecked(),
+                    "show_notifications": self.settings_show_notifications_cb.isChecked(),
+                    "activity_log_retention": int(
+                        self.settings_activity_retention_combo.currentText()
+                    ),
+                },
+                "security_settings": {
+                    "auto_update_definitions": self.settings_auto_update_cb.isChecked(),
+                },
+                "advanced_settings": {
+                    "scan_archives": self.settings_scan_archives_cb.isChecked(),
+                    "follow_symlinks": self.settings_follow_symlinks_cb.isChecked(),
+                    "scan_depth": self.scan_depth_combo.currentData(),
+                    "file_filter": self.file_filter_combo.currentData(),
+                    "memory_limit": self.memory_limit_combo.currentData(),
+                    "exclusion_patterns": self.exclusion_text.toPlainText().strip(),
+                },
+                "realtime_protection": {
+                    "monitor_modifications": self.settings_monitor_modifications_cb.isChecked(),
+                    "monitor_new_files": self.settings_monitor_new_files_cb.isChecked(),
+                    "scan_modified_files": self.settings_scan_modified_cb.isChecked(),
+                },
+                "rkhunter_settings": {
+                    "enabled": self.settings_enable_rkhunter_cb.isChecked(),
+                    "run_with_full_scan": self.settings_run_rkhunter_with_full_scan_cb.isChecked(),
+                    "auto_update": self.settings_rkhunter_auto_update_cb.isChecked(),
+                },
+                "scheduled_settings": {
+                    "enabled": self.settings_enable_scheduled_cb.isChecked(),
+                    "frequency": self.settings_scan_frequency_combo.currentData(),
+                    "time": self.settings_scan_time_edit.time().toString("HH:mm"),
+                },
+            }
+            
+            # Add RKHunter categories if available
             if hasattr(self, "settings_rkhunter_category_checkboxes"):
                 rkhunter_categories = {}
-                for (
-                    category_id,
-                    checkbox,
-                ) in self.settings_rkhunter_category_checkboxes.items():
+                for category_id, checkbox in self.settings_rkhunter_category_checkboxes.items():
                     rkhunter_categories[category_id] = checkbox.isChecked()
-                self.config["rkhunter_settings"]["categories"] = rkhunter_categories
+                settings_updates["rkhunter_settings"]["categories"] = rkhunter_categories
+            
+            # Save all settings in one operation for efficiency
+            success = update_multiple_settings(self.config, settings_updates)
+            
+            if success:
+                # Settings auto-saved successfully
+                # Update real-time monitor settings if needed
+                if hasattr(self, "real_time_monitor") and self.real_time_monitor:
+                    try:
+                        # Update real-time monitor settings if it's running
+                        pass  # Could add real-time settings update here if needed
+                    except Exception as monitor_error:
+                        print(f"⚠️ Could not update real-time monitor settings: {monitor_error}")
+            else:
+                print(f"❌ Failed to auto-save settings")
 
-            # Save config to file
-            from utils.config import save_config
+        except Exception as e:
+            print(f"❌ Error auto-saving settings: {e}")
+            import traceback
+            traceback.print_exc()
 
-            save_config(self.config)
+    def block_settings_signals(self, block):
+        """Block or unblock signals from settings controls to prevent auto-save during loading."""
+        try:
+            # Block signals from controls that have early connections
+            if hasattr(self, 'settings_activity_retention_combo'):
+                self.settings_activity_retention_combo.blockSignals(block)
+            if hasattr(self, 'settings_enable_scheduled_cb'):
+                self.settings_enable_scheduled_cb.blockSignals(block)
+            if hasattr(self, 'settings_scan_frequency_combo'):
+                self.settings_scan_frequency_combo.blockSignals(block)
+            if hasattr(self, 'settings_scan_time_edit'):
+                self.settings_scan_time_edit.blockSignals(block)
+            # Add other controls that have early signal connections as needed
+        except Exception as e:
+            print(f"❌ Error blocking/unblocking signals: {e}")
 
-            self.show_themed_message_box(
-                "information", "Settings", "Settings saved successfully!"
-            )
+    def update_single_setting(self, section, key, value):
+        """Update a single setting and save immediately.
+        
+        Args:
+            section: Configuration section (e.g., 'ui_settings')
+            key: Setting key within the section
+            value: New value for the setting
+        """
+        try:
+            from utils.config import update_config_setting
+            success = update_config_setting(self.config, section, key, value)
+            
+            if not success:
+                print(f"⚠️ Failed to save setting {section}.{key}")
+                
+        except Exception as e:
+            print(f"❌ Error updating setting {section}.{key}: {e}")
 
-            # If real-time protection is active, update its settings
-            if hasattr(self, "real_time_monitor") and self.real_time_monitor:
-                try:
-                    # Update real-time monitor settings if it's running
-                    pass  # We could add real-time settings update here if needed
-                except Exception as monitor_error:
-                    print(
-                        f"⚠️ Could not update real-time monitor settings: {monitor_error}")
+    def get_setting(self, section, key, default=None):
+        """Get a setting value with optional default.
+        
+        Args:
+            section: Configuration section
+            key: Setting key
+            default: Default value if setting doesn't exist
+            
+        Returns:
+            The setting value or default
+        """
+        try:
+            from utils.config import get_config_setting
+            return get_config_setting(self.config, section, key, default)
+        except Exception as e:
+            print(f"❌ Error getting setting {section}.{key}: {e}")
+            return default
 
-        except (OSError, IOError, PermissionError) as e:
-            print(f"Error saving settings: {e}")
+    # Example usage methods for specific setting updates
+    def on_theme_changed(self, new_theme):
+        """Called when theme is changed in UI."""
+        self.update_single_setting('ui_settings', 'theme', new_theme)
+    
+    def on_max_threads_changed(self, value):
+        """Called when max threads setting is changed."""
+        self.update_single_setting('scan_settings', 'max_threads', value)
+    
+    def on_real_time_protection_toggled(self, enabled):
+        """Called when real-time protection is toggled."""
+        updates = {
+            'realtime_protection': {
+                'monitor_modifications': enabled,
+                'monitor_new_files': enabled,
+            }
+        }
+        try:
+            from utils.config import update_multiple_settings
+            update_multiple_settings(self.config, updates)
+        except Exception as e:
+            print(f"❌ Error updating real-time protection: {e}")
+
+    def setup_auto_save_connections(self):
+        """Set up auto-save connections for all settings controls."""
+        try:
+            # Spin box controls
+            self.settings_max_threads_spin.valueChanged.connect(self.auto_save_settings)
+            self.settings_timeout_spin.valueChanged.connect(self.auto_save_settings)
+            
+            # Checkbox controls - UI Settings
+            self.settings_minimize_to_tray_cb.toggled.connect(self.auto_save_settings)
+            self.settings_show_notifications_cb.toggled.connect(self.auto_save_settings)
+            
+            # Checkbox controls - Security Settings
+            self.settings_auto_update_cb.toggled.connect(self.auto_save_settings)
+            
+            # Checkbox controls - Advanced Settings  
+            self.settings_scan_archives_cb.toggled.connect(self.auto_save_settings)
+            self.settings_follow_symlinks_cb.toggled.connect(self.auto_save_settings)
+            
+            # Checkbox controls - Real-time Protection
+            self.settings_monitor_modifications_cb.toggled.connect(self.auto_save_settings)
+            self.settings_monitor_new_files_cb.toggled.connect(self.auto_save_settings)
+            self.settings_scan_modified_cb.toggled.connect(self.auto_save_settings)
+            
+            # Checkbox controls - RKHunter Settings
+            self.settings_enable_rkhunter_cb.toggled.connect(self.auto_save_settings)
+            self.settings_run_rkhunter_with_full_scan_cb.toggled.connect(self.auto_save_settings)
+            
+            # RKHunter auto-update checkbox - ensure it's always connected
+            try:
+                self.settings_rkhunter_auto_update_cb.toggled.connect(self.auto_save_settings)
+                print("✅ RKHunter auto-update checkbox connected to auto-save")
+            except AttributeError:
+                print("⚠️ RKHunter auto-update checkbox not found during connection setup")
+            
+            # NOTE: Scheduled Scans checkbox already has auto-save via on_scheduled_scan_toggled()
+            # Do NOT add duplicate connection to avoid double auto-save calls and race conditions
+            
+            # Combo box controls - Advanced Settings
+            self.scan_depth_combo.currentTextChanged.connect(self.auto_save_settings)
+            self.file_filter_combo.currentTextChanged.connect(self.auto_save_settings)
+            self.memory_limit_combo.currentTextChanged.connect(self.auto_save_settings)
+            
+            # NOTE: Activity Log Retention combo already has auto-save via on_retention_setting_changed()
+            # Do NOT add duplicate connection to avoid double auto-save calls
+            
+            # Combo box controls - Scheduled Settings
+            self.settings_scan_frequency_combo.currentTextChanged.connect(self.auto_save_settings)
+            
+            # Time edit control
+            self.settings_scan_time_edit.timeChanged.connect(self.auto_save_settings)
+            
+            # Text edit control
+            self.exclusion_text.textChanged.connect(self.auto_save_settings)
+            
+            # RKHunter category checkboxes - connect them to auto-save
+            if hasattr(self, 'settings_rkhunter_category_checkboxes'):
+                for category_id, checkbox in self.settings_rkhunter_category_checkboxes.items():
+                    checkbox.toggled.connect(self.auto_save_settings)
+                print(f"✅ Connected {len(self.settings_rkhunter_category_checkboxes)} RKHunter category checkboxes to auto-save")
+            else:
+                print("⚠️ RKHunter category checkboxes not found during connection setup")
+                    
+            print("✅ Auto-save connections set up successfully")
+            print("📌 Enhanced RKHunter settings auto-save connections")
+            
+        except Exception as e:
+            print(f"⚠️ Error setting up auto-save connections: {e}")

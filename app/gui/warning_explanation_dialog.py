@@ -33,6 +33,7 @@ class WarningExplanationDialog(QDialog):
         super().__init__(parent)
         self.warning_text = warning_text
         self.explanation = explanation
+        self.parent_window = parent
         
         self.setWindowTitle("RKHunter Warning Explanation")
         self.setMinimumSize(600, 500)
@@ -40,6 +41,10 @@ class WarningExplanationDialog(QDialog):
         
         self._setup_ui()
         self._apply_styles()
+        
+        # Apply parent theme if available
+        if parent and hasattr(parent, "current_theme"):
+            self._apply_theme(parent.current_theme)
     
     def _setup_ui(self):
         """Set up the user interface."""
@@ -66,7 +71,8 @@ class WarningExplanationDialog(QDialog):
         category_text = self.explanation.category.value.replace('_', ' ').title()
         category_label = QLabel(f"Category: {category_text}")
         category_label.setFont(QFont("", 10))
-        category_label.setStyleSheet("color: #666;")
+        category_label.setObjectName("categoryLabel")  # For themed styling
+        # Theme will be applied later - don't hard-code color here
         title_layout.addWidget(category_label)
         
         header_layout.addLayout(title_layout)
@@ -86,14 +92,7 @@ class WarningExplanationDialog(QDialog):
         warning_text_widget.setPlainText(self.warning_text)
         warning_text_widget.setMaximumHeight(80)
         warning_text_widget.setReadOnly(True)
-        warning_text_widget.setStyleSheet("""
-            QTextEdit {
-                background-color: #f8f9fa;
-                border: 1px solid #dee2e6;
-                font-family: monospace;
-                font-size: 10px;
-            }
-        """)
+        # Theme will be applied later - don't hard-code styles here
         warning_layout.addWidget(warning_text_widget)
         layout.addWidget(warning_group)
         
@@ -145,7 +144,8 @@ class WarningExplanationDialog(QDialog):
             tech_layout = QVBoxLayout(tech_group)
             tech_label = QLabel(self.explanation.technical_details)
             tech_label.setWordWrap(True)
-            tech_label.setStyleSheet("font-style: italic; color: #555;")
+            tech_label.setObjectName("techLabel")  # For themed styling
+            # Theme will be applied later - don't hard-code styles here
             tech_layout.addWidget(tech_label)
             scroll_layout.addWidget(tech_group)
         
@@ -155,7 +155,8 @@ class WarningExplanationDialog(QDialog):
             common_layout = QVBoxLayout(common_group)
             common_label = QLabel("This is a common warning that often occurs during normal system operation. It's usually not a cause for concern.")
             common_label.setWordWrap(True)
-            common_label.setStyleSheet("color: #28a745; font-weight: bold;")
+            common_label.setObjectName("commonLabel")  # For themed styling
+            # Theme will be applied later - don't hard-code styles here
             common_layout.addWidget(common_label)
             scroll_layout.addWidget(common_group)
         
@@ -240,7 +241,6 @@ class WarningExplanationDialog(QDialog):
         self.setStyleSheet("""
             QGroupBox {
                 font-weight: bold;
-                border: 2px solid #cccccc;
                 border-radius: 5px;
                 margin-top: 1ex;
                 padding-top: 10px;
@@ -253,19 +253,240 @@ class WarningExplanationDialog(QDialog):
             QPushButton {
                 padding: 8px 16px;
                 border-radius: 4px;
-                border: 1px solid #ccc;
-            }
-            QPushButton:hover {
-                background-color: #f0f0f0;
             }
         """)
     
+    def get_theme_color(self, color_type):
+        """Get theme-appropriate color from parent or fallback."""
+        if self.parent_window and hasattr(self.parent_window, 'get_theme_color'):
+            return self.parent_window.get_theme_color(color_type)
+        
+        # Fallback colors for dark theme
+        fallback_colors = {
+            "background": "#1a1a1a",
+            "secondary_bg": "#2a2a2a", 
+            "tertiary_bg": "#3a3a3a",
+            "primary_text": "#FFCDAA",
+            "secondary_text": "#999",
+            "success": "#9CB898",
+            "error": "#F14666",
+            "warning": "#EE8980",
+            "accent": "#F14666",
+            "border": "#EE8980",
+            "hover_bg": "#4a4a4a",
+            "pressed_bg": "#2a2a2a",
+        }
+        return fallback_colors.get(color_type, "#FFCDAA")
+    
+    def _apply_theme(self, theme_name):
+        """Apply theme styling to this dialog."""
+        bg = self.get_theme_color("background")
+        secondary_bg = self.get_theme_color("secondary_bg")
+        tertiary_bg = self.get_theme_color("tertiary_bg")
+        text = self.get_theme_color("primary_text")
+        secondary_text = self.get_theme_color("secondary_text")
+        success = self.get_theme_color("success")
+        error = self.get_theme_color("error")
+        border = self.get_theme_color("border")
+        hover_bg = self.get_theme_color("hover_bg")
+        pressed_bg = self.get_theme_color("pressed_bg")
+        accent = self.get_theme_color("accent")
+        
+        style = f"""
+            QDialog {{
+                background-color: {bg};
+                color: {text};
+            }}
+            QGroupBox {{
+                color: {text};
+                border: 2px solid {border};
+                border-radius: 8px;
+                margin-top: 1em;
+                padding-top: 0.8em;
+                background-color: {secondary_bg};
+                font-weight: 600;
+            }}
+            QGroupBox::title {{
+                subcontrol-origin: margin;
+                left: 14px;
+                padding: 0 10px 0 10px;
+                color: {accent};
+                font-weight: 700;
+                font-size: 14px;
+            }}
+            QLabel {{
+                color: {text};
+                font-weight: 500;
+            }}
+            QTextEdit {{
+                background-color: {tertiary_bg};
+                border: 2px solid {border};
+                border-radius: 6px;
+                color: {text};
+                font-family: monospace;
+                font-size: 10px;
+                selection-background-color: {accent};
+                selection-color: {bg};
+            }}
+            QCheckBox {{
+                color: {text};
+                spacing: 8px;
+            }}
+            QCheckBox::indicator {{
+                width: 18px;
+                height: 18px;
+            }}
+            QCheckBox::indicator:unchecked {{
+                border: 2px solid {border};
+                background-color: {bg};
+                border-radius: 3px;
+            }}
+            QCheckBox::indicator:checked {{
+                border: 2px solid {success};
+                background-color: {success};
+                border-radius: 3px;
+            }}
+            QPushButton {{
+                background-color: {tertiary_bg};
+                border: 2px solid {border};
+                border-radius: 5px;
+                padding: 8px 16px;
+                color: {text};
+                font-weight: 600;
+                min-width: 80px;
+            }}
+            QPushButton:hover {{
+                background-color: {hover_bg};
+                border-color: {accent};
+                color: {text};
+            }}
+            QPushButton:pressed {{
+                background-color: {pressed_bg};
+                border-color: {accent};
+            }}
+            QPushButton#primaryButton {{
+                background-color: {success};
+                border: 2px solid {success};
+                color: {bg};
+                font-weight: 700;
+            }}
+            QPushButton#primaryButton:hover {{
+                background-color: {hover_bg};
+                border-color: {success};
+            }}
+            QPushButton#dangerButton {{
+                background-color: {error};
+                border: 2px solid {error};
+                color: {bg};
+                font-weight: 700;
+            }}
+            QPushButton#dangerButton:hover {{
+                background-color: {hover_bg};
+                border-color: {error};
+            }}
+            /* Category label styling */
+            QLabel[objectName="categoryLabel"] {{
+                color: {secondary_text};
+                font-size: 10px;
+            }}
+            /* Technical details styling */
+            QLabel[objectName="techLabel"] {{
+                color: {secondary_text};
+                font-style: italic;
+            }}
+            /* Common warning styling */
+            QLabel[objectName="commonLabel"] {{
+                color: {success};
+                font-weight: bold;
+            }}
+        """
+        self.setStyleSheet(style)
+    
+    def _show_themed_message_box(self, msg_type, title, text, buttons=None):
+        """Show a message box with proper theming."""
+        msg_box = QMessageBox(self)
+        msg_box.setWindowTitle(title)
+        msg_box.setText(text)
+
+        # Set message type
+        if msg_type == "warning":
+            msg_box.setIcon(QMessageBox.Icon.Warning)
+        elif msg_type == "information":
+            msg_box.setIcon(QMessageBox.Icon.Information)
+        elif msg_type == "critical":
+            msg_box.setIcon(QMessageBox.Icon.Critical)
+        elif msg_type == "question":
+            msg_box.setIcon(QMessageBox.Icon.Question)
+
+        # Set buttons
+        if buttons:
+            msg_box.setStandardButtons(buttons)
+        else:
+            msg_box.setStandardButtons(QMessageBox.StandardButton.Ok)
+
+        # Apply theme-specific styling
+        bg = self.get_theme_color("background")
+        text_color = self.get_theme_color("primary_text")
+        tertiary_bg = self.get_theme_color("tertiary_bg")
+        border = self.get_theme_color("border")
+        hover_bg = self.get_theme_color("hover_bg")
+        pressed_bg = self.get_theme_color("pressed_bg")
+        accent = self.get_theme_color("accent")
+        success = self.get_theme_color("success")
+
+        style = f"""
+            QMessageBox {{
+                background-color: {bg};
+                color: {text_color};
+                font-size: 12px;
+                font-weight: 500;
+                border: 2px solid {border};
+                border-radius: 6px;
+            }}
+            QMessageBox QLabel {{
+                color: {text_color};
+                font-weight: 600;
+                padding: 10px;
+                line-height: 1.4;
+            }}
+            QMessageBox QPushButton {{
+                background-color: {tertiary_bg};
+                border: 2px solid {border};
+                border-radius: 5px;
+                padding: 8px 16px;
+                color: {text_color};
+                font-weight: 600;
+                min-width: 80px;
+            }}
+            QMessageBox QPushButton:hover {{
+                background-color: {hover_bg};
+                border-color: {accent};
+                color: {text_color};
+            }}
+            QMessageBox QPushButton:pressed {{
+                background-color: {pressed_bg};
+            }}
+            QMessageBox QPushButton:default {{
+                background-color: {success};
+                border-color: {success};
+                color: {bg};
+                font-weight: 700;
+            }}
+            QMessageBox QPushButton:default:hover {{
+                background-color: {hover_bg};
+                border-color: {hover_bg};
+            }}
+        """
+        msg_box.setStyleSheet(style)
+
+        return msg_box.exec()
+
     def _on_investigate(self):
         """Handle investigate button click."""
         self.investigate_requested.emit(self.warning_text)
         # You could also open a web search or documentation
-        QMessageBox.information(
-            self, 
+        self._show_themed_message_box(
+            "information",
             "Investigation Tips",
             f"To investigate this warning further:\n\n"
             f"1. Search online for: \"{self.warning_text[:50]}...\"\n"
@@ -279,8 +500,8 @@ class WarningExplanationDialog(QDialog):
         if not self.mark_safe_checkbox.isChecked():
             return
             
-        reply = QMessageBox.question(
-            self,
+        reply = self._show_themed_message_box(
+            "question",
             "Mark Warning as Safe",
             f"Are you sure you want to mark this warning as safe?\n\n"
             f"This will:\n"
@@ -288,8 +509,7 @@ class WarningExplanationDialog(QDialog):
             f"• Add it to the safe warnings list\n"
             f"• Reduce the warning count in reports\n\n"
             f"Only do this if you're confident the warning is harmless.",
-            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-            QMessageBox.StandardButton.No
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
         )
         
         if reply == QMessageBox.StandardButton.Yes:

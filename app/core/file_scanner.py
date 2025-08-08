@@ -323,6 +323,7 @@ class FileScanner:
         # Scheduled scanning
         self._scheduler_thread = None
         self._scheduler_running = False
+        self._scheduler_stop_event = threading.Event()
 
         # Initialize scheduled scans if enabled
         if self.config.get(
@@ -701,10 +702,13 @@ class FileScanner:
 
     def start_scheduler(self) -> None:
         """Start the scheduled scan scheduler."""
-        if self._scheduler_running:
+        if self._scheduler_running and self._scheduler_thread and self._scheduler_thread.is_alive():
+            self.logger.info("Scheduler is already running")
             return
-
+            
         self._scheduler_running = True
+        # Clear the stop event before starting
+        self._scheduler_stop_event.clear()
         self._scheduler_thread = threading.Thread(
             target=self._run_scheduler, daemon=True
         )
@@ -714,8 +718,17 @@ class FileScanner:
     def stop_scheduler(self) -> None:
         """Stop the scheduled scan scheduler."""
         self._scheduler_running = False
-        if self._scheduler_thread:
-            self._scheduler_thread.join()
+        # Signal the event to wake up the scheduler thread immediately
+        self._scheduler_stop_event.set()
+        
+        if self._scheduler_thread and self._scheduler_thread.is_alive():
+            # With event-based stopping, thread should stop almost immediately
+            self._scheduler_thread.join(timeout=2.0)
+            if self._scheduler_thread.is_alive():
+                self.logger.warning("Scheduler thread did not stop gracefully")
+        
+        # Reset the event for next time
+        self._scheduler_stop_event.clear()
         self.logger.info("Scan scheduler stopped")
 
     def _run_scheduler(self) -> None:
@@ -750,7 +763,11 @@ class FileScanner:
 
         while self._scheduler_running:
             schedule.run_pending()
-            time.sleep(60)  # Check every minute
+            # Use event-based waiting for immediate response to stop signals
+            # Wait for up to 60 seconds, but can be interrupted immediately
+            if self._scheduler_stop_event.wait(timeout=60):
+                # Event was set, we should stop
+                break
 
     def _scheduled_scan(self) -> None:
         """Perform a scheduled scan."""

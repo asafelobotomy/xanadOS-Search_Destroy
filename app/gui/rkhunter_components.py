@@ -371,11 +371,11 @@ class RKHunterScanThread(QThread):
             # Update database first
             if pkexec_available:
                 self.progress_updated.emit(
-                    "Updating RKHunter database (GUI authentication)..."
+                    "Updating threat database (GUI authentication)..."
                 )
             else:
                 self.progress_updated.emit(
-                    "Updating RKHunter database (may require password)..."
+                    "Updating threat database (may require password)..."
                 )
             
             self.progress_value_updated.emit(20)
@@ -384,7 +384,7 @@ class RKHunterScanThread(QThread):
             # Instead, we'll include the update in the scan operation
             # update_success = self.rkhunter.update_database()
             
-            self.progress_updated.emit("Preparing scan with database update...")
+            self.progress_updated.emit("Preparing RKHunter rootkit detection scan...")
             
             # if not update_success:
             #     self.logger.warning(
@@ -399,7 +399,7 @@ class RKHunterScanThread(QThread):
             self.progress_value_updated.emit(30)
 
             # Start the scan with progress simulation
-            self.progress_updated.emit("Starting rootkit detection scan...")
+            self.progress_updated.emit("Initializing security tests...")
             self.progress_value_updated.emit(40)
             
             # Import here to avoid import delays
@@ -407,12 +407,16 @@ class RKHunterScanThread(QThread):
             from PyQt6.QtCore import QTimer
             
             # Simulate progress during scan since RKHunter doesn't provide real-time progress
+            # These steps reflect RKHunter's actual test sequence
             progress_steps = [
-                (50, "Checking system commands..."),
-                (60, "Scanning for rootkits..."),
-                (70, "Checking network connections..."),
-                (80, "Verifying system integrity..."),
-                (90, "Finalizing scan results..."),
+                (45, "Checking system commands and binaries..."),
+                (55, "Testing for known rootkits and malware..."), 
+                (65, "Scanning system startup files..."),
+                (72, "Checking network interfaces and ports..."),
+                (78, "Verifying file permissions and attributes..."),
+                (84, "Testing for suspicious files and processes..."),
+                (90, "Performing system integrity checks..."),
+                (95, "Generating scan report..."),
             ]
             
             # Start scan in a way that allows progress updates
@@ -463,7 +467,7 @@ class RKHunterScanThread(QThread):
             
             result = scan_result[0]
 
-            self.progress_updated.emit("Scan completed")
+            self.progress_updated.emit("Rootkit scan completed successfully")
             self.progress_value_updated.emit(100)
             self.scan_completed.emit(result)
 
