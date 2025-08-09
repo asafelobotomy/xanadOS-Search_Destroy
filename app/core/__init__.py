@@ -4,33 +4,28 @@ Core functionality for S&D application.
 Includes scanning engine, security, quarantine management, and performance optimization.
 """
 
-# Scanner and ClamAV integration
-from .file_scanner import FileScanner
-from .clamav_wrapper import ClamAVWrapper, ScanResult, ScanFileResult
-from .rkhunter_wrapper import RKHunterWrapper, RKHunterResult, RKHunterScanResult
-
 # Performance optimization components
-from .async_scanner import (
-    AsyncFileScanner,
-    ScanProgress,
-    ScanBatch,
-    async_scanner
-)
-from .memory_optimizer import MemoryOptimizer
+from .async_scanner import AsyncFileScanner, ScanBatch, ScanProgress, async_scanner
+from .clamav_wrapper import ClamAVWrapper, ScanFileResult, ScanResult
 from .database_optimizer import (
     DatabaseConnectionPool,
     QueryOptimizer,
     ScanResultsDB,
-    get_scan_db
+    get_scan_db,
 )
+
+# Scanner and ClamAV integration
+from .file_scanner import FileScanner
+from .memory_optimizer import MemoryOptimizer
+from .rkhunter_wrapper import RKHunterResult, RKHunterScanResult, RKHunterWrapper
 from .ui_responsiveness import (
+    LoadingIndicator,
     ResponsiveUI,
     ScanProgressManager,
-    LoadingIndicator,
-    initialize_responsive_ui,
+    get_loading_indicator,
     get_responsive_ui,
     get_scan_progress,
-    get_loading_indicator
+    initialize_responsive_ui,
 )
 
 # Security modules
@@ -44,63 +39,73 @@ except ImportError:
 
 # Advanced feature modules (optional dependencies)
 try:
-    from .automatic_updates import AutoUpdateSystem, UpdateType, UpdateStatus
-    from .advanced_reporting import AdvancedReportingSystem, ReportType, ReportFormat
-    from .web_protection import WebProtectionSystem, ThreatCategory, URLReputation
-    from .system_service import SystemServiceManager, ServiceState, ServiceConfig
-    from .real_time_protection import RealTimeProtectionEngine, ProtectionState, ThreatLevel
-    from .multi_language_support import MultiLanguageSupport, SupportedLanguage
+    from .advanced_reporting import AdvancedReportingSystem, ReportFormat, ReportType
+    from .automatic_updates import AutoUpdateSystem, UpdateStatus, UpdateType
+    from .cloud_integration import (
+        CloudIntegrationSystem,
+        CloudProvider,
+        ThreatIntelSource,
+    )
     from .heuristic_analysis import HeuristicAnalysisEngine, HeuristicType, RiskLevel
-    from .cloud_integration import CloudIntegrationSystem, CloudProvider, ThreatIntelSource
+    from .multi_language_support import MultiLanguageSupport, SupportedLanguage
+    from .real_time_protection import (
+        ProtectionState,
+        RealTimeProtectionEngine,
+        ThreatLevel,
+    )
+    from .system_service import ServiceConfig, ServiceState, SystemServiceManager
+    from .web_protection import ThreatCategory, URLReputation, WebProtectionSystem
 except ImportError as e:
     # Advanced modules may not be available due to missing dependencies
     import logging
-    logging.getLogger(__name__).warning(f"Some advanced features unavailable: {e}")
+
+    logging.getLogger(__name__).warning(
+        f"Some advanced features unavailable: {e}")
 
 __all__ = [
     # Core scanning
-    'FileScanner',
-    'ClamAVWrapper',
-    'RKHunterWrapper',
+    "FileScanner",
+    "ClamAVWrapper",
+    "RKHunterWrapper",
     # Performance optimization
-    'AsyncFileScanner',
-    'ScanProgress', 
-    'ScanBatch',
-    'async_scanner',
-    'MemoryOptimizer',
-    'DatabaseConnectionPool',
-    'QueryOptimizer',
-    'ScanResultsDB',
-    'get_scan_db',
-    'ResponsiveUI',
-    'ScanProgressManager',
-    'LoadingIndicator',
-    'initialize_responsive_ui',
-    'get_responsive_ui',
-    'get_scan_progress',
-    'get_loading_indicator',
+    "AsyncFileScanner",
+    "ScanProgress",
+    "ScanBatch",
+    "async_scanner",
+    "MemoryOptimizer",
+    "DatabaseConnectionPool",
+    "QueryOptimizer",
+    "ScanResultsDB",
+    "get_scan_db",
+    "ResponsiveUI",
+    "ScanProgressManager",
+    "LoadingIndicator",
+    "initialize_responsive_ui",
+    "get_responsive_ui",
+    "get_scan_progress",
+    "get_loading_indicator",
     # Advanced features (if available)
-    'AutoUpdateSystem',
-    'UpdateType',
-    'UpdateStatus',
-    'AdvancedReportingSystem',
-    'ReportType',
-    'ReportFormat',
-    'WebProtectionSystem',
-    'ThreatCategory',
-    'URLReputation',
-    'SystemServiceManager',
-    'ServiceState',
-    'ServiceConfig',
-    'RealTimeProtectionEngine',
-    'ProtectionState',
-    'ThreatLevel',
-    'MultiLanguageSupport',
-    'SupportedLanguage',
-    'HeuristicAnalysisEngine',
-    'HeuristicType',
-    'RiskLevel',
-    'CloudIntegrationSystem',
-    'CloudProvider',
-    'ThreatIntelSource'
+    "AutoUpdateSystem",
+    "UpdateType",
+    "UpdateStatus",
+    "AdvancedReportingSystem",
+    "ReportType",
+    "ReportFormat",
+    "WebProtectionSystem",
+    "ThreatCategory",
+    "URLReputation",
+    "SystemServiceManager",
+    "ServiceState",
+    "ServiceConfig",
+    "RealTimeProtectionEngine",
+    "ProtectionState",
+    "ThreatLevel",
+    "MultiLanguageSupport",
+    "SupportedLanguage",
+    "HeuristicAnalysisEngine",
+    "HeuristicType",
+    "RiskLevel",
+    "CloudIntegrationSystem",
+    "CloudProvider",
+    "ThreatIntelSource",
 ]

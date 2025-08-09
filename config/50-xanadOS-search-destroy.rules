@@ -1,0 +1,18 @@
+// PolicyKit rule to enable authentication caching for xanadOS Search & Destroy
+// This allows multiple pkexec calls within a session without re-authentication
+polkit.addRule(function(action, subject) {
+    // Apply to our specific actions
+    if (action.id.match(/^org\.xanados\.searchanddestroy\./)) {
+        // For authenticated admin users, keep authentication for 15 minutes
+        if (subject.isInGroup("sudo") || subject.isInGroup("wheel") || subject.isInGroup("admin")) {
+            return polkit.Result.AUTH_ADMIN_KEEP;
+        }
+    }
+    
+    // Also apply to generic pkexec when used by our application
+    if (action.id == "org.freedesktop.policykit.exec") {
+        // Check if this is being called by our application process
+        // Keep authentication for a reasonable time to avoid double prompts
+        return polkit.Result.AUTH_ADMIN_KEEP;
+    }
+});

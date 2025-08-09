@@ -1,6 +1,6 @@
 app-id: org.xanados.SearchAndDestroy
 runtime: org.freedesktop.Platform
-runtime-version: '23.08'
+runtime-version: "23.08"
 sdk: org.freedesktop.Sdk
 command: search-and-destroy
 
@@ -9,7 +9,7 @@ finish-args:
   - --share=ipc
   - --socket=fallback-x11
   - --socket=wayland
-  
+
   # File system access for scanning
   - --filesystem=home:ro
   - --filesystem=/tmp:ro
@@ -20,10 +20,10 @@ finish-args:
   - --filesystem=xdg-music:ro
   - --filesystem=xdg-pictures:ro
   - --filesystem=xdg-videos:ro
-  
+
   # Network access for virus definition updates
   - --share=network
-  
+
   # System integration
   - --talk-name=org.freedesktop.Notifications
 

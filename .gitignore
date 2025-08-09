@@ -149,7 +149,10 @@ demo_*.py
 build-dir/
 .flatpak-builder/
 *.flatpak
-archive/
+
+# But allow our project archive directory for code preservation
+# archive/
+!archive/
 
 # ClamAV specific
 *.clamav-db
@@ -212,3 +215,17 @@ site/
 [Tt]humbs.db
 [Dd]esktop.ini
 $RECYCLE.BIN/
+
+# Added by repository organizer
+# Python cache
+# Temporary files
+# Test files in root
+/test_*.py
+# IDE files
+.vscode/settings.json
+.vscode/launch.json
+
+# Documentation organization
+archive/deprecated-docs/
+docs/**/*.bak
+docs/**/*.tmp

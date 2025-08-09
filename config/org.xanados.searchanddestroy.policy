@@ -58,4 +58,29 @@
       <allow_active>auth_admin</allow_active>
     </defaults>
   </action>
+
+  <!-- RKHunter rootkit scanner operation -->
+  <action id="org.xanados.searchanddestroy.run-rkhunter">
+    <description>Run RKHunter rootkit scanner</description>
+    <message>Authentication required to run system rootkit scan</message>
+    <icon_name>org.xanados.SearchAndDestroy</icon_name>
+    <defaults>
+      <allow_any>no</allow_any>
+      <allow_inactive>no</allow_inactive>
+      <allow_active>auth_admin</allow_active>
+    </defaults>
+    <annotate key="org.freedesktop.policykit.exec.path">/home/vm/Documents/xanadOS-Search_Destroy/scripts/rkhunter-wrapper.sh</annotate>
+    <annotate key="org.freedesktop.policykit.exec.allow_gui">true</annotate>
+  </action>
+
+  <!-- Generic pkexec action for our application -->
+  <action id="org.freedesktop.policykit.exec">
+    <description>Run programs as another user</description>
+    <message>Authentication is required to run a program as another user</message>
+    <defaults>
+      <allow_any>no</allow_any>
+      <allow_inactive>no</allow_inactive>
+      <allow_active>auth_admin</allow_active>
+    </defaults>
+  </action>
 </policyconfig>

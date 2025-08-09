@@ -4,20 +4,24 @@ RKHunter (Rootkit Hunter) integration wrapper for S&D - Search & Destroy
 Provides rootkit detection capabilities complementing ClamAV
 """
 
-import os
-import subprocess
 import json
 import logging
+import os
+import subprocess
 import time
-from pathlib import Path
-from typing import Dict, List, Optional, Tuple, Any
-from enum import Enum
 from dataclasses import dataclass
 from datetime import datetime
+from enum import Enum
+from pathlib import Path
+from typing import Any, Dict, List, Optional, Tuple, Callable
+
+# Import the warning analyzer
+from .rkhunter_analyzer import RKHunterWarningAnalyzer, WarningExplanation
 
 
 class RKHunterResult(Enum):
     """RKHunter scan result types."""
+
     CLEAN = "clean"
     WARNING = "warning"
     INFECTED = "infected"
@@ -27,6 +31,7 @@ class RKHunterResult(Enum):
 
 class RKHunterSeverity(Enum):
     """Severity levels for RKHunter findings."""
+
     INFO = "info"
     LOW = "low"
     MEDIUM = "medium"
@@ -37,6 +42,7 @@ class RKHunterSeverity(Enum):
 @dataclass
 class RKHunterFinding:
     """Represents a single RKHunter finding."""
+
     test_name: str
     result: RKHunterResult
     severity: RKHunterSeverity
@@ -45,6 +51,7 @@ class RKHunterFinding:
     file_path: Optional[str] = None
     recommendation: str = ""
     timestamp: Optional[datetime] = None
+    explanation: Optional[WarningExplanation] = None
 
     def __post_init__(self):
         if self.timestamp is None:
@@ -54,6 +61,7 @@ class RKHunterFinding:
 @dataclass
 class RKHunterScanResult:
     """Complete RKHunter scan results."""
+
     scan_id: str
     start_time: datetime
     end_time: Optional[datetime]
@@ -75,7 +83,7 @@ class RKHunterScanResult:
 class RKHunterWrapper:
     """
     Wrapper for RKHunter (Rootkit Hunter) integration.
-    
+
     Provides methods to run rootkit scans, parse results, and integrate
     with the main antivirus application.
     """
@@ -85,28 +93,38 @@ class RKHunterWrapper:
         self.logger = logging.getLogger(__name__)
         self.rkhunter_path = self._find_rkhunter()
         self.available = self.rkhunter_path is not None
-        self.config_path = Path.home() / ".config" / "search-and-destroy" / "rkhunter.conf"
+        self.config_path = (
+            Path.home() / ".config" / "search-and-destroy" / "rkhunter.conf"
+        )
         
+        # Initialize warning analyzer
+        self.warning_analyzer = RKHunterWarningAnalyzer()
+
         # RKHunter test categories
         self.test_categories = {
-            'system_commands': [
-                'system_commands_hashes', 'system_commands_known_rootkits',
-                'system_commands_properties'
+            "system_commands": [
+                "system_commands_hashes",
+                "system_commands_known_rootkits",
+                "system_commands_properties",
             ],
-            'rootkits': [
-                'rootkits', 'trojans', 'malware'
-            ],
-            'network': [
-                'network', 'ports', 'packet_cap_apps'
-            ],
-            'system_integrity': [
-                'filesystem', 'system_configs', 'startup_files'
-            ],
-            'applications': [
-                'applications', 'hidden_procs', 'hidden_files'
-            ]
+            "rootkits": [
+                "rootkits",
+                "trojans",
+                "malware"],
+            "network": [
+                "network",
+                "ports",
+                "packet_cap_apps"],
+            "system_integrity": [
+                "filesystem",
+                "system_configs",
+                "startup_files"],
+            "applications": [
+                "applications",
+                "hidden_procs",
+                "hidden_files"],
         }
-        
+
         if self.available:
             self._initialize_config()
             self.logger.info("RKHunter wrapper initialized successfully")
@@ -116,124 +134,505 @@ class RKHunterWrapper:
     def _find_rkhunter(self) -> Optional[str]:
         """Find RKHunter executable."""
         possible_paths = [
-            '/usr/bin/rkhunter',
-            '/usr/local/bin/rkhunter',
-            '/opt/rkhunter/bin/rkhunter'
+            "/usr/bin/rkhunter",
+            "/usr/local/bin/rkhunter",
+            "/opt/rkhunter/bin/rkhunter",
         ]
-        
+
         for path in possible_paths:
             if Path(path).exists():
                 return path
-        
+
         # Try which command
         try:
-            result = subprocess.run(['which', 'rkhunter'], 
-                                 capture_output=True, text=True, timeout=5)
+            result = subprocess.run(
+                ["which", "rkhunter"], capture_output=True, text=True, timeout=5
+            )
             if result.returncode == 0:
                 return result.stdout.strip()
         except (subprocess.SubprocessError, FileNotFoundError):
             pass
-        
+
         return None
 
     def _find_executable(self, name: str) -> Optional[str]:
         """Find an executable in PATH."""
         import shutil
+
         return shutil.which(name)
 
-    def _run_with_privilege_escalation(self, cmd_args: List[str], 
-                                     capture_output: bool = True,
-                                     timeout: int = 300) -> subprocess.CompletedProcess:
+    def _run_with_privilege_escalation(
+            self,
+            cmd_args: List[str],
+            capture_output: bool = True,
+            timeout: int = 300) -> subprocess.CompletedProcess:
         """
         Run a command with privilege escalation, preferring GUI methods.
-        
+
         Args:
             cmd_args: Command arguments (without sudo/pkexec prefix)
             capture_output: Whether to capture stdout/stderr
             timeout: Command timeout in seconds
-            
+
         Returns:
             subprocess.CompletedProcess: The result of the command
         """
         # Try different privilege escalation methods in order of preference
         escalation_methods = []
-        
-        # First preference: pkexec (GUI password dialog)
-        pkexec_path = self._find_executable('pkexec')
-        if pkexec_path:
-            escalation_methods.append(('pkexec', [pkexec_path] + cmd_args))
-        
-        # Fallback: sudo (terminal password prompt)
-        sudo_path = self._find_executable('sudo')
-        if sudo_path:
-            escalation_methods.append(('sudo', [sudo_path] + cmd_args))
-        
+
         # If already root, run directly
         if os.getuid() == 0:
-            escalation_methods.insert(0, ('direct', cmd_args))
+            escalation_methods.append(("direct", cmd_args))
+
+        # PRIMARY METHOD: pkexec (GUI password dialog - system native)
+        pkexec_path = self._find_executable("pkexec")
+        if pkexec_path:
+            escalation_methods.append(("pkexec", [pkexec_path] + cmd_args))
+
+        # FALLBACK METHODS (for different environments/configurations)
         
+        # Second preference: sudo with GUI password helper (consistent UI for security software)
+        sudo_path = self._find_executable("sudo")
+        if sudo_path:
+            # Check for GUI password helpers
+            askpass_helpers = [
+                "/usr/bin/ssh-askpass",
+                "/usr/bin/x11-ssh-askpass", 
+                "/usr/bin/ksshaskpass",
+                "/usr/bin/lxqt-openssh-askpass"
+            ]
+            
+            askpass_cmd = None
+            for helper in askpass_helpers:
+                if os.path.exists(helper):
+                    askpass_cmd = helper
+                    break
+            
+            if askpass_cmd and os.environ.get('DISPLAY'):
+                escalation_methods.append(("sudo_gui", [sudo_path, "-A"] + cmd_args))
+
+        # Third preference: sudo -n (passwordless sudo for headless environments)
+        if sudo_path:
+            escalation_methods.append(("sudo_nopasswd", [sudo_path, "-n"] + cmd_args))
+
+        # Fourth preference: sudo (terminal password prompt)
+        if sudo_path:
+            escalation_methods.append(("sudo", [sudo_path] + cmd_args))
+
         last_error = None
-        
+
         for method_name, full_cmd in escalation_methods:
             try:
-                self.logger.debug(f"Trying {method_name}: {' '.join(full_cmd)}")
-                
-                if method_name == 'pkexec':
-                    # pkexec shows GUI password dialog
-                    self.logger.info("Using GUI password dialog (pkexec)")
+                self.logger.debug(
+                    f"Trying {method_name}: {
+                        ' '.join(full_cmd)}")
+
+                if method_name == "direct":
+                    # Already running as root
+                    self.logger.info("Running as root directly")
                     result = subprocess.run(
                         full_cmd,
                         capture_output=capture_output,
                         text=True,
                         timeout=timeout,
-                        check=False
+                        check=False,
                     )
-                elif method_name == 'sudo':
+                elif method_name == "pkexec":
+                    # pkexec shows GUI password dialog
+                    self.logger.info("Using GUI password dialog (pkexec)")
+                    # Set up environment for GUI authentication
+                    env = os.environ.copy()
+                    if 'DISPLAY' not in env:
+                        env['DISPLAY'] = ':0'
+                    if 'XAUTHORITY' not in env and 'HOME' in env:
+                        env['XAUTHORITY'] = f"{env['HOME']}/.Xauthority"
+                    
+                    result = subprocess.run(
+                        full_cmd,
+                        capture_output=capture_output,
+                        text=True,
+                        timeout=timeout,
+                        check=False,
+                        env=env,
+                    )
+                elif method_name == "sudo_gui":
+                    # sudo -A uses GUI password helper
+                    self.logger.info("Using GUI password helper (sudo -A)")
+                    # Set up environment for GUI authentication
+                    env = os.environ.copy()
+                    env['SUDO_ASKPASS'] = '/usr/bin/ksshaskpass'  # We know this exists from our check
+                    
+                    result = subprocess.run(
+                        full_cmd,
+                        capture_output=capture_output,
+                        text=True,
+                        timeout=timeout,
+                        check=False,
+                        env=env,
+                    )
+                elif method_name == "sudo_nopasswd":
+                    # sudo -n uses passwordless authentication
+                    self.logger.info("Using passwordless sudo")
+                    result = subprocess.run(
+                        full_cmd,
+                        capture_output=capture_output,
+                        text=True,
+                        timeout=timeout,
+                        check=False,
+                    )
+                elif method_name == "pkexec_custom":
+                    # pkexec with custom PolicyKit action (single authentication)
+                    self.logger.info("Using custom PolicyKit action (pkexec_custom)")
+                    
+                    result = subprocess.run(
+                        full_cmd,
+                        capture_output=capture_output,
+                        text=True,
+                        timeout=timeout,
+                        check=False,
+                    )
+                elif method_name == "pkexec":
+                    # pkexec shows GUI password dialog
+                    self.logger.info("Using GUI password dialog (pkexec)")
+                    
+                    # Get current environment variables for GUI
+                    display = os.environ.get('DISPLAY', ':0')
+                    xauthority = os.environ.get('XAUTHORITY', f"{os.environ.get('HOME', '')}/.Xauthority")
+                    
+                    # COMBINED SCRIPT OPTIMIZATION: Check if this is an RKHunter scan command
+                    # and if we have the combined script available
+                    combined_script = "/home/vm/Documents/xanadOS-Search_Destroy/scripts/rkhunter-update-and-scan.sh"
+                    if (len(full_cmd) >= 2 and 
+                        "rkhunter" in full_cmd[1] and 
+                        "--check" in full_cmd and 
+                        os.path.exists(combined_script)):
+                        
+                        self.logger.info("Using combined RKHunter script to avoid double authentication")
+                        # Replace rkhunter path with combined script
+                        scan_args = [arg for arg in full_cmd[2:] if arg != "--check"]  # Get args after rkhunter
+                        env_cmd = ["pkexec", "env", f"DISPLAY={display}", f"XAUTHORITY={xauthority}", combined_script, "--check"] + scan_args
+                    else:
+                        # Modify command to include environment variables with pkexec
+                        # pkexec env DISPLAY=$DISPLAY XAUTHORITY=$XAUTHORITY command
+                        env_cmd = ["pkexec", "env", f"DISPLAY={display}", f"XAUTHORITY={xauthority}"] + full_cmd[1:]  # Skip original pkexec
+                    
+                    self.logger.info(f"Original command: {' '.join(full_cmd)}")
+                    self.logger.info(f"Modified command: {' '.join(env_cmd)}")
+                    
+                    result = subprocess.run(
+                        env_cmd,
+                        capture_output=capture_output,
+                        text=True,
+                        timeout=timeout,
+                        check=False,
+                    )
+                elif method_name == "sudo":
                     # sudo uses terminal password prompt
                     self.logger.info("Using terminal password prompt (sudo)")
-                    if capture_output:
-                        # For sudo, we might need to handle interactive input differently
+                    
+                    # For GUI applications, try to use a GUI password helper
+                    env = os.environ.copy()
+                    askpass_helpers = [
+                        "/usr/bin/ssh-askpass",
+                        "/usr/bin/x11-ssh-askpass", 
+                        "/usr/bin/ksshaskpass",
+                        "/usr/bin/lxqt-openssh-askpass"
+                    ]
+                    
+                    askpass_cmd = None
+                    for helper in askpass_helpers:
+                        if os.path.exists(helper):
+                            askpass_cmd = helper
+                            break
+                    
+                    if askpass_cmd and os.environ.get('DISPLAY'):
+                        # Use GUI password prompt with sudo -A
+                        env['SUDO_ASKPASS'] = askpass_cmd
+                        # Modify command to use -A flag
+                        gui_cmd = [full_cmd[0], '-A'] + full_cmd[1:]
+                        self.logger.info(f"Using GUI password helper: {askpass_cmd}")
+                        result = subprocess.run(
+                            gui_cmd,
+                            capture_output=capture_output,
+                            text=True,
+                            timeout=timeout,
+                            check=False,
+                            env=env,
+                        )
+                    elif capture_output:
+                        # For sudo, we might need to handle interactive input
                         result = subprocess.run(
                             full_cmd,
                             capture_output=True,
                             text=True,
                             timeout=timeout,
                             check=False,
-                            input='\n'  # Auto-confirm prompts
+                            input="\n",  # Auto-confirm prompts
                         )
                     else:
                         # Let user interact with sudo directly
                         result = subprocess.run(
-                            full_cmd,
-                            text=True,
-                            timeout=timeout,
-                            check=False
+                            full_cmd, text=True, timeout=timeout, check=False
                         )
-                else:  # direct
-                    result = subprocess.run(
-                        full_cmd,
-                        capture_output=capture_output,
-                        text=True,
-                        timeout=timeout,
-                        check=False
-                    )
+                else:
+                    # Unknown method
+                    self.logger.error(f"Unknown privilege escalation method: {method_name}")
+                    continue
+
+                # IMPROVED SUCCESS DETECTION: Check if RKHunter actually ran successfully
+                # RKHunter returns exit code 1 when warnings are found, which is normal
+                scan_completed_successfully = False
                 
-                # Check if command succeeded
                 if result.returncode == 0:
+                    # Perfect success
+                    scan_completed_successfully = True
+                elif result.returncode == 1 and result.stdout:
+                    # Check if RKHunter completed but found warnings
+                    if "Info: End date is" in result.stdout or "System checks summary" in result.stdout:
+                        scan_completed_successfully = True
+                        self.logger.info(f"RKHunter completed with warnings (exit code 1) using {method_name}")
+                
+                if scan_completed_successfully:
                     self.logger.info(f"Command succeeded using {method_name}")
                     return result
-                
+
                 # Log the attempt and try next method
-                self.logger.warning(f"{method_name} failed with return code {result.returncode}")
+                self.logger.warning(
+                    f"{method_name} failed with return code {
+                        result.returncode}")
                 last_error = result
-                
+
             except subprocess.TimeoutExpired as e:
+                self.logger.error(
+                    f"{method_name} timed out after {timeout} seconds")
+                last_error = e
+            except Exception as e:
+                self.logger.error(f"{method_name} failed with exception: {e}")
+                last_error = e
+
+        # If all methods failed, return the last error or create a failure
+        # result
+        if isinstance(last_error, subprocess.CompletedProcess):
+            return last_error
+        else:
+            # Create a failure result
+            return subprocess.CompletedProcess(
+                args=cmd_args,
+                returncode=1,
+                stdout="",
+                stderr=f"All privilege escalation methods failed. Last error: {last_error}",
+            )
+
+    def _run_with_privilege_escalation_streaming(
+            self,
+            cmd_args: List[str],
+            output_callback: Optional[Callable[[str], None]] = None,
+            timeout: int = 300) -> subprocess.CompletedProcess:
+        """
+        Run a command with privilege escalation and real-time output streaming.
+
+        Args:
+            cmd_args: Command arguments (without sudo/pkexec prefix)
+            output_callback: Function to call with each line of output
+            timeout: Command timeout in seconds
+
+        Returns:
+            subprocess.CompletedProcess: The result of the command
+        """
+        # Try different privilege escalation methods in order of preference
+        escalation_methods = []
+
+        # If already root, run directly
+        if os.getuid() == 0:
+            escalation_methods.append(("direct", cmd_args))
+
+        # PRIMARY METHOD: pkexec (GUI password dialog - system native)
+        pkexec_path = self._find_executable("pkexec")
+        if pkexec_path:
+            escalation_methods.append(("pkexec", [pkexec_path] + cmd_args))
+
+        # FALLBACK METHODS (for different environments/configurations)
+        
+        # Second preference: sudo with GUI password helper (consistent UI for security software)
+        sudo_path = self._find_executable("sudo")
+        if sudo_path:
+            # Check for GUI password helpers
+            askpass_helpers = [
+                "/usr/bin/ssh-askpass",
+                "/usr/bin/x11-ssh-askpass", 
+                "/usr/bin/ksshaskpass",
+                "/usr/bin/lxqt-openssh-askpass"
+            ]
+            
+            askpass_cmd = None
+            for helper in askpass_helpers:
+                if os.path.exists(helper):
+                    askpass_cmd = helper
+                    break
+            
+            if askpass_cmd and os.environ.get('DISPLAY'):
+                escalation_methods.append(("sudo_gui", [sudo_path, "-A"] + cmd_args))
+
+        # Third preference: sudo -n (passwordless sudo for headless environments)
+        if sudo_path:
+            escalation_methods.append(("sudo_nopasswd", [sudo_path, "-n"] + cmd_args))
+
+        # Fourth preference: sudo (terminal password prompt)
+        if sudo_path:
+            escalation_methods.append(("sudo", [sudo_path] + cmd_args))
+
+        last_error = None
+
+        for method_name, full_cmd in escalation_methods:
+            try:
+                self.logger.debug(f"Trying {method_name}: {' '.join(full_cmd)}")
+
+                if method_name == "direct":
+                    self.logger.info("Running as root directly")
+                    env = os.environ.copy()
+                elif method_name == "pkexec":
+                    self.logger.info("Using GUI password dialog (pkexec)")
+                    
+                    # Get current environment variables for GUI
+                    display = os.environ.get('DISPLAY', ':0')
+                    xauthority = os.environ.get('XAUTHORITY', f"{os.environ.get('HOME', '')}/.Xauthority")
+                    
+                    # Store original command for logging
+                    original_cmd = full_cmd.copy()
+                    
+                    # COMBINED SCRIPT OPTIMIZATION: Check if this is an RKHunter scan command
+                    # and if we have the combined script available
+                    combined_script = "/home/vm/Documents/xanadOS-Search_Destroy/scripts/rkhunter-update-and-scan.sh"
+                    if (len(full_cmd) >= 2 and 
+                        "rkhunter" in full_cmd[1] and 
+                        "--check" in full_cmd and 
+                        os.path.exists(combined_script)):
+                        
+                        self.logger.info("Using combined RKHunter script to avoid double authentication")
+                        # Replace rkhunter path with combined script
+                        scan_args = [arg for arg in full_cmd[2:] if arg != "--check"]  # Get args after rkhunter
+                        full_cmd = ["pkexec", "env", f"DISPLAY={display}", f"XAUTHORITY={xauthority}", combined_script, "--check"] + scan_args
+                    else:
+                        # Modify command to include environment variables with pkexec
+                        # pkexec env DISPLAY=$DISPLAY XAUTHORITY=$XAUTHORITY command
+                        full_cmd = ["pkexec", "env", f"DISPLAY={display}", f"XAUTHORITY={xauthority}"] + full_cmd[1:]  # Skip original pkexec
+                    
+                    self.logger.info(f"Original command: {' '.join(original_cmd)}")
+                    self.logger.info(f"Modified command: {' '.join(full_cmd)}")
+                    
+                    env = os.environ.copy()
+                elif method_name == "sudo_gui":
+                    self.logger.info("Using GUI password helper (sudo with askpass)")
+                    env = os.environ.copy()
+                    # Set up GUI password helper
+                    askpass_helpers = [
+                        "/usr/bin/ssh-askpass",
+                        "/usr/bin/x11-ssh-askpass", 
+                        "/usr/bin/ksshaskpass",
+                        "/usr/bin/lxqt-openssh-askpass"
+                    ]
+                    for helper in askpass_helpers:
+                        if os.path.exists(helper):
+                            env['SUDO_ASKPASS'] = helper
+                            break
+                elif method_name == "sudo_nopasswd":
+                    self.logger.info("Attempting passwordless sudo (requires NOPASSWD in sudoers)")
+                    env = os.environ.copy()
+                elif method_name == "sudo":
+                    self.logger.info("Using terminal password prompt (sudo)")
+                    # For GUI applications, try to use a GUI password helper
+                    env = os.environ.copy()
+                    askpass_helpers = [
+                        "/usr/bin/ssh-askpass",
+                        "/usr/bin/x11-ssh-askpass", 
+                        "/usr/bin/ksshaskpass",
+                        "/usr/bin/lxqt-openssh-askpass"
+                    ]
+                    
+                    askpass_cmd = None
+                    for helper in askpass_helpers:
+                        if os.path.exists(helper):
+                            askpass_cmd = helper
+                            break
+                    
+                    if askpass_cmd and os.environ.get('DISPLAY'):
+                        # Use GUI password prompt with sudo -A
+                        env['SUDO_ASKPASS'] = askpass_cmd
+                        # Modify command to use -A flag
+                        full_cmd = [full_cmd[0], '-A'] + full_cmd[1:]
+                        self.logger.info(f"Using GUI password helper: {askpass_cmd}")
+                else:
+                    env = os.environ.copy()
+
+                # Start the process with real-time output capture
+                process = subprocess.Popen(
+                    full_cmd,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.STDOUT,
+                    text=True,
+                    bufsize=1,
+                    universal_newlines=True,
+                    env=env
+                )
+
+                stdout_lines = []
+                
+                # Read output line by line in real-time
+                if process.stdout:
+                    while True:
+                        line = process.stdout.readline()
+                        if not line:
+                            break
+                        
+                        line = line.rstrip()
+                        stdout_lines.append(line)
+                        
+                        # Call the output callback if provided
+                        if output_callback:
+                            output_callback(line)
+
+                # Wait for process to complete
+                process.wait(timeout=timeout)
+                
+                # Create result object
+                result = subprocess.CompletedProcess(
+                    args=full_cmd,
+                    returncode=process.returncode,
+                    stdout='\n'.join(stdout_lines),
+                    stderr=""
+                )
+
+                # IMPROVED SUCCESS DETECTION: Check if RKHunter actually ran successfully
+                # RKHunter returns exit code 1 when warnings are found, which is normal
+                scan_completed_successfully = False
+                
+                if result.returncode == 0:
+                    # Perfect success
+                    scan_completed_successfully = True
+                elif result.returncode == 1 and result.stdout:
+                    # Check if RKHunter completed but found warnings
+                    if "Info: End date is" in result.stdout or "System checks summary" in result.stdout:
+                        scan_completed_successfully = True
+                        self.logger.info(f"RKHunter completed with warnings (exit code 1) using {method_name}")
+                
+                if scan_completed_successfully:
+                    self.logger.info(f"Command succeeded using {method_name}")
+                    return result
+
+                # Log the attempt and try next method
+                self.logger.warning(
+                    f"{method_name} failed with return code {result.returncode}")
+                last_error = result
+
+            except subprocess.TimeoutExpired as e:
+                if 'process' in locals():
+                    process.kill()
                 self.logger.error(f"{method_name} timed out after {timeout} seconds")
                 last_error = e
             except Exception as e:
                 self.logger.error(f"{method_name} failed with exception: {e}")
                 last_error = e
-        
+
         # If all methods failed, return the last error or create a failure result
         if isinstance(last_error, subprocess.CompletedProcess):
             return last_error
@@ -243,7 +642,7 @@ class RKHunterWrapper:
                 args=cmd_args,
                 returncode=1,
                 stdout="",
-                stderr=f"All privilege escalation methods failed. Last error: {last_error}"
+                stderr=f"All privilege escalation methods failed. Last error: {last_error}",
             )
 
     def _initialize_config(self):
@@ -251,7 +650,7 @@ class RKHunterWrapper:
         try:
             # Create config directory if it doesn't exist
             self.config_path.parent.mkdir(parents=True, exist_ok=True)
-            
+
             # Create basic configuration if it doesn't exist
             if not self.config_path.exists():
                 config_content = """# RKHunter configuration for S&D Search & Destroy
@@ -273,20 +672,46 @@ UPDATE_MIRRORS=1
 MIRRORS_MODE=0
 WEB_CMD=""
 
-# Database locations
+# Database locations - Arch Linux specific paths
 DBDIR=/var/lib/rkhunter/db
-SCRIPTDIR=/usr/share/rkhunter/scripts
+# Arch Linux script directory
+SCRIPTDIR=/usr/lib/rkhunter/scripts
 BINDIR=/usr/bin
+# Installation directory
+INSTALLDIR=/usr
+# Temporary directory
+TMPDIR=/tmp
+
+# Suppress common warnings and false positives
+DISABLE_TESTS="suspscan hidden_procs deleted_files packet_cap_apps apps"
+
+# Additional Arch Linux specific settings
+ALLOWHIDDENDIR=/etc/.java
+ALLOWHIDDENDIR=/dev/.static
+ALLOWHIDDENDIR=/dev/.udev
+ALLOWHIDDENDIR=/dev/.mount
+
+# Package manager
+PKGMGR=PACMAN
+SCRIPTWHITELIST=""
+ALLOWHIDDENDIR="/etc/.java"
+ALLOWHIDDENFILE="/etc/.java"
 
 # Disable GUI prompts (for automated scanning)
 AUTO_X_DETECT=1
 WHITELISTED_IS_WHITE=1
+SUPPRESS_DEPRECATION_WARNINGS=1
+
+# Reduce grep warnings by using simpler patterns
+USE_SYSLOG=0
 """
-                with open(self.config_path, 'w') as f:
+                with open(self.config_path, "w") as f:
                     f.write(config_content)
-                
-                self.logger.info("Created RKHunter configuration at %s", self.config_path)
-            
+
+                self.logger.info(
+                    "Created RKHunter configuration at %s", self.config_path
+                )
+
         except Exception as e:
             self.logger.error("Failed to initialize RKHunter config: %s", e)
 
@@ -294,7 +719,7 @@ WHITELISTED_IS_WHITE=1
         """Check if RKHunter is available and functional."""
         if not self.available or self.rkhunter_path is None:
             return False
-        
+
         # For GUI applications, we'll use a less intrusive check
         # Just verify the executable exists and is executable
         try:
@@ -302,19 +727,19 @@ WHITELISTED_IS_WHITE=1
             return path_obj.exists() and path_obj.is_file()
         except Exception:
             return False
-    
+
     def is_functional(self) -> bool:
         """Check if RKHunter is functional (may require privilege escalation)."""
         if not self.available or self.rkhunter_path is None:
             return False
-        
+
         try:
             # First try without privilege escalation
             result = subprocess.run(
-                [self.rkhunter_path, '--version'],
+                [self.rkhunter_path, "--version"],
                 capture_output=True,
                 text=True,
-                timeout=10
+                timeout=10,
             )
             if result.returncode == 0:
                 return True
@@ -322,13 +747,11 @@ WHITELISTED_IS_WHITE=1
             pass
         except (subprocess.SubprocessError, FileNotFoundError):
             return False
-        
+
         # If direct execution failed, try with privilege escalation
         try:
             result = self._run_with_privilege_escalation(
-                [self.rkhunter_path, '--version'],
-                capture_output=True,
-                timeout=10
+                [self.rkhunter_path, "--version"], capture_output=True, timeout=10
             )
             return result.returncode == 0
         except Exception:
@@ -338,72 +761,80 @@ WHITELISTED_IS_WHITE=1
         """Get RKHunter version information."""
         if not self.available or self.rkhunter_path is None:
             return "Not Available", "N/A"
-        
+
         try:
             # First try without privilege escalation
             result = subprocess.run(
-                [self.rkhunter_path, '--version'],
+                [self.rkhunter_path, "--version"],
                 capture_output=True,
                 text=True,
-                timeout=10
+                timeout=10,
             )
-            
+
             if result.returncode == 0:
-                lines = result.stdout.strip().split('\n')
-                version_line = next((line for line in lines if 'RKH' in line), "Unknown")
+                lines = result.stdout.strip().split("\n")
+                version_line = next(
+                    (line for line in lines if "RKH" in line), "Unknown"
+                )
                 return version_line.strip(), "Current"
-            
+
         except PermissionError:
             pass
         except (subprocess.SubprocessError, FileNotFoundError):
             return "Error", "N/A"
-        
+
         # If direct execution failed, try with privilege escalation
         try:
             result = self._run_with_privilege_escalation(
-                [self.rkhunter_path, '--version'],
-                capture_output=True,
-                timeout=10
+                [self.rkhunter_path, "--version"], capture_output=True, timeout=10
             )
-            
+
             if result.returncode == 0:
-                lines = result.stdout.strip().split('\n')
-                version_line = next((line for line in lines if 'RKH' in line), "Unknown")
+                lines = result.stdout.strip().split("\n")
+                version_line = next(
+                    (line for line in lines if "RKH" in line), "Unknown"
+                )
                 return version_line.strip(), "Current (requires elevated privileges)"
         except Exception:
             pass
-        
+
         return "Unknown", "Permission denied"
 
     def update_database(self) -> bool:
         """Update RKHunter database using GUI-friendly privilege escalation."""
         if not self.available or self.rkhunter_path is None:
             return False
-        
+
         try:
             self.logger.info("Updating RKHunter database...")
-            
+
             # Use new privilege escalation method (prefers GUI dialog)
             result = self._run_with_privilege_escalation(
-                [self.rkhunter_path, '--update'],
+                [self.rkhunter_path, "--update"],
                 capture_output=True,
-                timeout=300  # 5 minutes timeout
+                timeout=300,  # 5 minutes timeout
             )
-            
+
             if result.returncode == 0:
                 self.logger.info("RKHunter database updated successfully")
                 return True
             else:
                 # Check if database is already up to date
                 output_text = result.stdout + result.stderr
-                if "already have the latest" in output_text.lower() or "up to date" in output_text.lower():
+                if (
+                    "already have the latest" in output_text.lower()
+                    or "up to date" in output_text.lower()
+                ):
                     self.logger.info("RKHunter database is already up to date")
                     return True
-                
-                self.logger.warning("RKHunter database update returned code %d: %s", 
-                                  result.returncode, result.stderr)
+
+                self.logger.warning(
+                    "RKHunter database update returned code %d: %s",
+                    result.returncode,
+                    result.stderr,
+                )
                 return False
-                
+
         except subprocess.TimeoutExpired:
             self.logger.error("RKHunter database update timed out")
             return False
@@ -412,271 +843,537 @@ WHITELISTED_IS_WHITE=1
             return False
             return False
 
-    def scan_system(self, test_categories: Optional[List[str]] = None, 
-                   skip_keypress: bool = True) -> RKHunterScanResult:
+    def scan_system_with_output_callback(self,
+                    test_categories: Optional[List[str]] = None,
+                    skip_keypress: bool = True,
+                    update_database: bool = True,
+                    output_callback: Optional[Callable[[str], None]] = None) -> RKHunterScanResult:
         """
-        Perform a full system rootkit scan.
-        
+        Perform a full system rootkit scan with real-time output streaming.
+
         Args:
             test_categories: List of test categories to run (None for all)
             skip_keypress: Skip manual keypress confirmations
-            
+            update_database: Include database update in the same privileged call
+            output_callback: Function to call with real-time output lines
+
         Returns:
             RKHunterScanResult with scan results
         """
         scan_id = f"rkhunter_scan_{int(time.time())}"
         start_time = datetime.now()
-        
+
         result = RKHunterScanResult(
-            scan_id=scan_id,
-            start_time=start_time,
-            end_time=None
+            scan_id=scan_id, start_time=start_time, end_time=None
         )
-        
+
         if not self.available or self.rkhunter_path is None:
             result.error_message = "RKHunter not available"
             result.end_time = datetime.now()
             return result
-        
+
         try:
             # Build command arguments (without sudo/pkexec prefix)
-            cmd_args = [self.rkhunter_path, '--check']
-            
+            cmd_args = [self.rkhunter_path, "--check"]
+
             if skip_keypress:
-                cmd_args.append('--sk')  # Skip keypress
-            
-            cmd_args.extend(['--nocolors', '--report-warnings-only'])
-            
-            # Add specific test categories if specified
-            if test_categories:
-                for category in test_categories:
-                    if category in self.test_categories:
-                        for test in self.test_categories[category]:
-                            cmd_args.extend(['--enable', test])
-            
-            # Add configuration file
-            if self.config_path.exists():
-                cmd_args.extend(['--configfile', str(self.config_path)])
-            
-            self.logger.info("Running RKHunter scan with command: %s", ' '.join(cmd_args))
-            
-            # Run the scan using privilege escalation (prefers GUI dialog)
-            scan_result = self._run_with_privilege_escalation(
-                cmd_args,
-                capture_output=True,
-                timeout=1800  # 30 minutes timeout
+                cmd_args.append("--sk")  # Skip keypress
+
+            cmd_args.extend([
+                "--nocolors", 
+                "--no-mail-on-warning",  # Don't try to send mail
+            ])
+
+            # Skip specific test categories for now - RKHunter will run all tests by default
+            # if test_categories:
+            #     for category in test_categories:
+            #         if category in self.test_categories:
+            #             for test in self.test_categories[category]:
+            #                 cmd_args.extend(["--enable", test])
+
+            # Add configuration file - use system default with minimal overrides
+            if os.path.exists("/etc/rkhunter.conf"):
+                cmd_args.extend(["--configfile", "/etc/rkhunter.conf"])
+                # Override problematic settings via command line
+                cmd_args.extend(["--tmpdir", "/var/lib/rkhunter/tmp"])  # Use secure temp dir
+            elif self.config_path.exists():
+                cmd_args.extend(["--configfile", str(self.config_path)])
+
+            self.logger.info(
+                "Running RKHunter scan with command: %s", " ".join(cmd_args)
             )
-            
+
+            # Run the scan with real-time output capture
+            scan_result = self._run_with_privilege_escalation_streaming(
+                cmd_args, output_callback=output_callback, timeout=1800
+            )
+
             result.end_time = datetime.now()
-            
+
             # Parse results
             self._parse_scan_results(scan_result, result)
-            
+
             if scan_result.returncode == 0:
                 result.success = True
                 result.scan_summary = "System appears clean"
             elif scan_result.returncode == 1:
                 result.success = True
-                result.scan_summary = f"Warnings found: {result.warnings_found}"
+                result.scan_summary = f"Warnings found: {
+                    result.warnings_found}"
             elif scan_result.returncode == 2:
                 result.success = True  # Still successful scan, but infections found
-                result.scan_summary = f"Potential rootkits detected: {result.infections_found}"
+                result.scan_summary = (
+                    f"Potential rootkits detected: {result.infections_found}"
+                )
             else:
                 result.success = False
-                result.error_message = f"Scan failed with return code {scan_result.returncode}"
-            
-            self.logger.info("RKHunter scan completed: %s", result.scan_summary)
-            
+                result.error_message = (
+                    f"Scan failed with return code {scan_result.returncode}"
+                )
+
+            self.logger.info(
+                "RKHunter scan completed: %s",
+                result.scan_summary)
+
         except subprocess.TimeoutExpired:
             result.end_time = datetime.now()
             result.success = False
             result.error_message = "Scan timed out after 30 minutes"
             self.logger.error("RKHunter scan timed out")
-            
+
         except Exception as e:
             result.end_time = datetime.now()
             result.success = False
             result.error_message = f"Scan error: {str(e)}"
             self.logger.error("RKHunter scan failed: %s", e)
-        
+
         return result
 
-    def _parse_scan_results(self, scan_process: subprocess.CompletedProcess, 
-                          result: RKHunterScanResult):
+    def scan_system(self,
+                    test_categories: Optional[List[str]] = None,
+                    skip_keypress: bool = True) -> RKHunterScanResult:
+        """
+        Perform a full system rootkit scan.
+
+        Args:
+            test_categories: List of test categories to run (None for all)
+            skip_keypress: Skip manual keypress confirmations
+
+        Returns:
+            RKHunterScanResult with scan results
+        """
+        scan_id = f"rkhunter_scan_{int(time.time())}"
+        start_time = datetime.now()
+
+        result = RKHunterScanResult(
+            scan_id=scan_id, start_time=start_time, end_time=None
+        )
+
+        if not self.available or self.rkhunter_path is None:
+            result.error_message = "RKHunter not available"
+            result.end_time = datetime.now()
+            return result
+
+        try:
+            # Build command arguments (without sudo/pkexec prefix)
+            cmd_args = [self.rkhunter_path, "--check"]
+
+            if skip_keypress:
+                cmd_args.append("--sk")  # Skip keypress
+
+            cmd_args.extend([
+                "--nocolors", 
+                "--no-mail-on-warning",  # Don't try to send mail
+            ])
+
+            # Skip specific test categories for now - RKHunter will run all tests by default
+            # if test_categories:
+            #     for category in test_categories:
+            #         if category in self.test_categories:
+            #             for test in self.test_categories[category]:
+            #                 cmd_args.extend(["--enable", test])
+
+            # Add configuration file - use system default with minimal overrides
+            if os.path.exists("/etc/rkhunter.conf"):
+                cmd_args.extend(["--configfile", "/etc/rkhunter.conf"])
+                # Override problematic settings via command line
+                cmd_args.extend(["--tmpdir", "/var/lib/rkhunter/tmp"])  # Use secure temp dir
+            elif self.config_path.exists():
+                cmd_args.extend(["--configfile", str(self.config_path)])
+
+            self.logger.info(
+                "Running RKHunter scan with command: %s", " ".join(cmd_args)
+            )
+
+            # Run the scan using privilege escalation (prefers GUI dialog)
+            scan_result = self._run_with_privilege_escalation(
+                cmd_args, capture_output=True, timeout=1800  # 30 minutes timeout
+            )
+
+            result.end_time = datetime.now()
+
+            # Parse results
+            self._parse_scan_results(scan_result, result)
+
+            if scan_result.returncode == 0:
+                result.success = True
+                result.scan_summary = "System appears clean"
+            elif scan_result.returncode == 1:
+                result.success = True
+                result.scan_summary = f"Warnings found: {
+                    result.warnings_found}"
+            elif scan_result.returncode == 2:
+                result.success = True  # Still successful scan, but infections found
+                result.scan_summary = (
+                    f"Potential rootkits detected: {result.infections_found}"
+                )
+            else:
+                result.success = False
+                result.error_message = (
+                    f"Scan failed with return code {scan_result.returncode}"
+                )
+
+            self.logger.info(
+                "RKHunter scan completed: %s",
+                result.scan_summary)
+
+        except subprocess.TimeoutExpired:
+            result.end_time = datetime.now()
+            result.success = False
+            result.error_message = "Scan timed out after 30 minutes"
+            self.logger.error("RKHunter scan timed out")
+
+        except Exception as e:
+            result.end_time = datetime.now()
+            result.success = False
+            result.error_message = f"Scan error: {str(e)}"
+            self.logger.error("RKHunter scan failed: %s", e)
+
+        return result
+
+    def _parse_scan_results(
+            self,
+            scan_process: subprocess.CompletedProcess,
+            result: RKHunterScanResult):
         """Parse RKHunter scan output and populate results."""
         try:
-            output_lines = scan_process.stdout.split('\n')
-            
+            # Combine stdout and stderr since RKHunter outputs to both
+            all_output = []
+            if scan_process.stdout:
+                all_output.extend(scan_process.stdout.split("\n"))
+            if scan_process.stderr:
+                all_output.extend(scan_process.stderr.split("\n"))
+
             current_test = ""
-            
-            for line in output_lines:
+            test_count = 0
+
+            for line in all_output:
                 line = line.strip()
-                
+
                 if not line:
                     continue
-                
-                # Parse test results
-                if 'Checking' in line:
-                    current_test = line.replace('Checking', '').strip()
-                
-                elif '[ Warning ]' in line:
+
+                # Skip grep/egrep warnings that clutter output
+                if ("grep: warning:" in line or 
+                    "egrep: warning:" in line):
+                    continue
+
+                # Parse test result indicators - these are the actual test completions
+                if (" [ OK ]" in line or " [ Not found ]" in line or 
+                    " [ None found ]" in line or " [ Found ]" in line or
+                    " [ Warning ]" in line or " [ Infected ]" in line or
+                    " [ Skipped ]" in line):
+                    test_count += 1
+
+                # Extract test name from the line
+                if "Checking" in line:
+                    current_test = line.replace("Checking", "").replace("...", "").strip()
+
+                # Parse warnings - RKHunter uses "Warning:" format and "[ Warning ]" 
+                if (" [ Warning ]" in line):
                     result.warnings_found += 1
+                    
+                    # Analyze the warning to get detailed explanation
+                    explanation = self.warning_analyzer.analyze_warning(line)
+                    
+                    # Map analyzer severity to RKHunter severity
+                    from .rkhunter_analyzer import SeverityLevel
+                    severity_mapping = {
+                        SeverityLevel.LOW: RKHunterSeverity.LOW,
+                        SeverityLevel.MEDIUM: RKHunterSeverity.MEDIUM, 
+                        SeverityLevel.HIGH: RKHunterSeverity.HIGH,
+                        SeverityLevel.CRITICAL: RKHunterSeverity.CRITICAL,
+                    }
+                    rk_severity = severity_mapping.get(explanation.severity, RKHunterSeverity.MEDIUM)
+                    
                     finding = RKHunterFinding(
-                        test_name=current_test or "Unknown Test",
+                        test_name=current_test or "Security Check",
                         result=RKHunterResult.WARNING,
-                        severity=RKHunterSeverity.MEDIUM,
-                        description=line
+                        severity=rk_severity,
+                        description=line,
+                        explanation=explanation,
                     )
                     if result.findings is not None:
                         result.findings.append(finding)
-                
-                elif '[ Infected ]' in line or '[ INFECTED ]' in line:
+
+                elif line.startswith("Warning:"):
+                    result.warnings_found += 1
+                    
+                    # Analyze the warning to get detailed explanation
+                    explanation = self.warning_analyzer.analyze_warning(line)
+                    
+                    # Map analyzer severity to RKHunter severity
+                    from .rkhunter_analyzer import SeverityLevel
+                    severity_mapping = {
+                        SeverityLevel.LOW: RKHunterSeverity.LOW,
+                        SeverityLevel.MEDIUM: RKHunterSeverity.MEDIUM, 
+                        SeverityLevel.HIGH: RKHunterSeverity.HIGH,
+                        SeverityLevel.CRITICAL: RKHunterSeverity.CRITICAL,
+                    }
+                    rk_severity = severity_mapping.get(explanation.severity, RKHunterSeverity.MEDIUM)
+                    
+                    finding = RKHunterFinding(
+                        test_name=current_test or "Security Check",
+                        result=RKHunterResult.WARNING,
+                        severity=rk_severity,
+                        description=line,
+                        explanation=explanation,
+                    )
+                    if result.findings is not None:
+                        result.findings.append(finding)
+
+                # Parse traditional format markers (in case they exist)
+                elif "[ Warning ]" in line:
+                    result.warnings_found += 1
+                    
+                    # Analyze the warning to get detailed explanation
+                    explanation = self.warning_analyzer.analyze_warning(line)
+                    
+                    # Map analyzer severity to RKHunter severity
+                    from .rkhunter_analyzer import SeverityLevel
+                    severity_mapping = {
+                        SeverityLevel.LOW: RKHunterSeverity.LOW,
+                        SeverityLevel.MEDIUM: RKHunterSeverity.MEDIUM,
+                        SeverityLevel.HIGH: RKHunterSeverity.HIGH,
+                        SeverityLevel.CRITICAL: RKHunterSeverity.CRITICAL,
+                    }
+                    rk_severity = severity_mapping.get(explanation.severity, RKHunterSeverity.MEDIUM)
+                    
+                    finding = RKHunterFinding(
+                        test_name=current_test or "Unknown Test",
+                        result=RKHunterResult.WARNING,
+                        severity=rk_severity,
+                        description=line,
+                        explanation=explanation,
+                    )
+                    if result.findings is not None:
+                        result.findings.append(finding)
+
+                elif "[ Infected ]" in line or "[ INFECTED ]" in line:
                     result.infections_found += 1
                     finding = RKHunterFinding(
                         test_name=current_test or "Unknown Test",
                         result=RKHunterResult.INFECTED,
                         severity=RKHunterSeverity.HIGH,
-                        description=line
+                        description=line,
                     )
                     if result.findings is not None:
                         result.findings.append(finding)
-                
-                elif '[ Skipped ]' in line:
+
+                elif "[ Skipped ]" in line:
                     result.skipped_tests += 1
-                
-                elif '[ OK ]' in line:
-                    result.tests_run += 1
-            
-            # Parse summary information from stderr if available
-            if scan_process.stderr:
-                self._parse_scan_summary(scan_process.stderr, result)
-            
+
+                elif "[ OK ]" in line or " OK " in line:
+                    # Count successful tests
+                    pass
+
+                # Parse summary information
+                elif "Files checked:" in line:
+                    # Extract file count from summary
+                    try:
+                        parts = line.split(":")
+                        if len(parts) > 1:
+                            file_count = int(parts[1].strip())
+                            # Add to test count if not already counted
+                            pass
+                    except ValueError:
+                        pass
+
+                elif "Rootkits checked" in line:
+                    # Extract rootkit count from summary  
+                    try:
+                        parts = line.split(":")
+                        if len(parts) > 1:
+                            rootkit_count = int(parts[1].strip())
+                            # Add to test count if not already counted
+                            pass
+                    except ValueError:
+                        pass
+
+                elif "Suspect files:" in line:
+                    # Extract suspect file count
+                    try:
+                        parts = line.split(":")
+                        if len(parts) > 1:
+                            suspect_count = int(parts[1].strip())
+                            # These are likely warnings we should count
+                            pass
+                    except ValueError:
+                        pass
+
+            # Set tests run based on actual test execution
+            result.tests_run = test_count
+            result.total_tests = test_count
+
         except Exception as e:
             self.logger.error("Error parsing RKHunter results: %s", e)
 
-    def _parse_scan_summary(self, stderr_output: str, result: RKHunterScanResult):
+    def _parse_scan_summary(
+            self,
+            stderr_output: str,
+            result: RKHunterScanResult):
         """Parse summary information from RKHunter stderr output."""
         try:
-            for line in stderr_output.split('\n'):
+            for line in stderr_output.split("\n"):
                 line = line.strip()
-                
-                if 'tests performed' in line.lower():
+
+                if "tests performed" in line.lower():
                     # Extract number of tests
                     parts = line.split()
                     for i, part in enumerate(parts):
                         if part.isdigit():
                             result.total_tests = int(part)
                             break
-                
+
         except Exception as e:
             self.logger.error("Error parsing RKHunter summary: %s", e)
 
     def get_log_path(self) -> Optional[Path]:
         """Get path to RKHunter log file."""
         log_paths = [
-            Path('/var/log/rkhunter.log'),
-            Path('/tmp/rkhunter-scan.log'),
-            Path.home() / '.rkhunter.log'
+            Path("/var/log/rkhunter.log"),
+            Path("/tmp/rkhunter-scan.log"),
+            Path.home() / ".rkhunter.log",
         ]
-        
+
         for log_path in log_paths:
             if log_path.exists():
                 return log_path
-        
+
         return None
 
     def install_rkhunter(self) -> Tuple[bool, str]:
         """
         Attempt to install RKHunter using system package manager with GUI-friendly auth.
-        
+
         Returns:
             Tuple of (success, message)
         """
         try:
-            # Try different package managers (without sudo prefix - we'll add it via privilege escalation)
+            # Try different package managers (without sudo prefix - we'll add
+            # it via privilege escalation)
             package_managers = [
-                (['pacman', '-S', '--noconfirm', 'rkhunter'], 'pacman'),
-                (['apt-get', 'install', '-y', 'rkhunter'], 'apt'),
-                (['yum', 'install', '-y', 'rkhunter'], 'yum'),
-                (['dnf', 'install', '-y', 'rkhunter'], 'dnf'),
-                (['zypper', 'install', '-y', 'rkhunter'], 'zypper'),
+                (["pacman", "-S", "--noconfirm", "rkhunter"], "pacman"),
+                (["apt-get", "install", "-y", "rkhunter"], "apt"),
+                (["yum", "install", "-y", "rkhunter"], "yum"),
+                (["dnf", "install", "-y", "rkhunter"], "dnf"),
+                (["zypper", "install", "-y", "rkhunter"], "zypper"),
             ]
-            
+
             for cmd_args, pm_name in package_managers:
                 try:
                     # Check if package manager exists
                     if not self._find_executable(cmd_args[0]):
                         continue
-                    
-                    self.logger.info(f"Attempting to install RKHunter using {pm_name}")
-                    
+
+                    self.logger.info(
+                        f"Attempting to install RKHunter using {pm_name}")
+
                     # Use privilege escalation (prefers GUI dialog)
                     result = self._run_with_privilege_escalation(
-                        cmd_args,
-                        capture_output=True,
-                        timeout=300  # 5 minutes
+                        cmd_args, capture_output=True, timeout=300  # 5 minutes
                     )
-                    
+
                     if result.returncode == 0:
                         # Refresh our paths
                         self.rkhunter_path = self._find_rkhunter()
                         self.available = self.rkhunter_path is not None
-                        
+
                         if self.available:
                             self._initialize_config()
-                            return True, f"RKHunter installed successfully using {pm_name}"
+                            return (
+                                True, f"RKHunter installed successfully using {pm_name}", )
                         else:
-                            return False, f"Installation appeared successful but RKHunter not found"
+                            return (
+                                False, f"Installation appeared successful but RKHunter not found", )
                     else:
-                        self.logger.warning(f"Installation with {pm_name} failed: {result.stderr}")
-                    
+                        self.logger.warning(
+                            f"Installation with {pm_name} failed: {
+                                result.stderr}")
+
                 except Exception as e:
                     self.logger.warning(f"Error trying {pm_name}: {e}")
                     continue  # Try next package manager
-            
+
             return False, "No compatible package manager found or installation failed"
-            
+
         except Exception as e:
             return False, f"Installation error: {str(e)}"
 
-    def get_scan_recommendations(self, scan_result: RKHunterScanResult) -> List[str]:
+    def get_scan_recommendations(
+            self, scan_result: RKHunterScanResult) -> List[str]:
         """
         Get recommendations based on scan results.
-        
+
         Args:
             scan_result: The completed scan result
-            
+
         Returns:
             List of recommendation strings
         """
         recommendations = []
-        
+
         if not scan_result.success:
-            recommendations.append("• Scan failed - check RKHunter installation and permissions")
+            recommendations.append(
+                "• Scan failed - check RKHunter installation and permissions"
+            )
             return recommendations
-        
+
         if scan_result.infections_found > 0:
-            recommendations.append("• **CRITICAL**: Potential rootkits detected - immediate action required")
-            recommendations.append("• Run system in rescue mode and perform manual inspection")
-            recommendations.append("• Consider reinstalling the operating system if compromised")
-            recommendations.append("• Change all passwords after cleaning the system")
-        
+            recommendations.append(
+                "• **CRITICAL**: Potential rootkits detected - immediate action required"
+            )
+            recommendations.append(
+                "• Run system in rescue mode and perform manual inspection"
+            )
+            recommendations.append(
+                "• Consider reinstalling the operating system if compromised"
+            )
+            recommendations.append(
+                "• Change all passwords after cleaning the system")
+
         if scan_result.warnings_found > 0:
-            recommendations.append("• Review warnings carefully - they may indicate suspicious activity")
-            recommendations.append("• Update RKHunter database and run scan again")
+            recommendations.append(
+                "• Review warnings carefully - they may indicate suspicious activity"
+            )
+            recommendations.append(
+                "• Update RKHunter database and run scan again")
             recommendations.append("• Check system logs for unusual activity")
-        
+
         if scan_result.warnings_found == 0 and scan_result.infections_found == 0:
             recommendations.append("• System appears clean of rootkits")
             recommendations.append("• Continue regular security monitoring")
-            recommendations.append("• Keep system and antivirus definitions updated")
-        
+            recommendations.append(
+                "• Keep system and antivirus definitions updated")
+
         # Add general recommendations
-        recommendations.extend([
-            "• Perform regular system scans",
-            "• Keep operating system updated",
-            "• Use strong passwords and enable 2FA where possible",
-            "• Monitor system performance and network activity"
-        ])
-        
+        recommendations.extend(
+            [
+                "• Perform regular system scans",
+                "• Keep operating system updated",
+                "• Use strong passwords and enable 2FA where possible",
+                "• Monitor system performance and network activity",
+            ]
+        )
+
         return recommendations
