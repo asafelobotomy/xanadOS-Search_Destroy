@@ -345,8 +345,8 @@ class RKHunterScanThread(QThread):
     def run(self):
         """Run the RKHunter scan in a separate thread."""
         try:
+            # Only emit initial status, no progress bar updates until scan actually starts
             self.progress_updated.emit("Preparing RKHunter scan...")
-            self.progress_value_updated.emit(0)
 
             # Check authentication methods available
             pkexec_available = self.rkhunter._find_executable("pkexec")
@@ -354,84 +354,55 @@ class RKHunterScanThread(QThread):
             if not self.rkhunter.is_functional():
                 if pkexec_available:
                     self.progress_updated.emit(
-                        "🔐 GUI password dialog will appear for authentication..."
+                        "🔐 Waiting for authentication... Please enter your password in the dialog."
                     )
                 else:
                     self.progress_updated.emit(
-                        "⚠️ Terminal password prompt may appear..."
+                        "⚠️ Waiting for authentication... Please enter your password in the terminal."
                     )
-                # Small delay to ensure the message is visible
+                # Don't update progress bar during authentication wait
                 import time
-
                 time.sleep(1)
 
-            self.progress_updated.emit("Initializing RKHunter scan...")
-            self.progress_value_updated.emit(10)
+            # Don't emit progress updates until we know authentication succeeded
+            # and the scan is actually running
+            # Don't emit progress updates until we know authentication succeeded
+            # and the scan is actually running
 
-            # Update database first
-            if pkexec_available:
-                self.progress_updated.emit(
-                    "Updating threat database (GUI authentication)..."
-                )
-            else:
-                self.progress_updated.emit(
-                    "Updating threat database (may require password)..."
-                )
-            
-            self.progress_value_updated.emit(20)
-
-            # COMBINED APPROACH: Skip separate update call to avoid double authentication
-            # Instead, we'll include the update in the scan operation
-            # update_success = self.rkhunter.update_database()
-            
-            self.progress_updated.emit("Preparing RKHunter rootkit detection scan...")
-            
-            # if not update_success:
-            #     self.logger.warning(
-            #         "Failed to update RKHunter database, continuing with scan"
-            #     )
-            #     self.progress_updated.emit(
-            #         "Database update failed, continuing with existing database..."
-            #     )
-            # else:
-            #     self.progress_updated.emit("Database updated successfully")
-            
-            self.progress_value_updated.emit(30)
-
-            # Start the scan with progress simulation
-            self.progress_updated.emit("Initializing security tests...")
-            self.progress_value_updated.emit(40)
+            # Start the scan - this will handle authentication internally
+            # Only start emitting progress once we know scan started successfully
             
             # Import here to avoid import delays
             import time
             from PyQt6.QtCore import QTimer
-            
-            # Simulate progress during scan since RKHunter doesn't provide real-time progress
-            # These steps reflect RKHunter's actual test sequence
-            progress_steps = [
-                (45, "Checking system commands and binaries..."),
-                (55, "Testing for known rootkits and malware..."), 
-                (65, "Scanning system startup files..."),
-                (72, "Checking network interfaces and ports..."),
-                (78, "Verifying file permissions and attributes..."),
-                (84, "Testing for suspicious files and processes..."),
-                (90, "Performing system integrity checks..."),
-                (95, "Generating scan report..."),
-            ]
-            
-            # Start scan in a way that allows progress updates
             import threading
             from typing import Any
             
             scan_completed = threading.Event()
             scan_result: list[Any] = [None]  # Use list to allow modification from inner function
             scan_error: list[Any] = [None]
+            scan_started = threading.Event()  # Track when scan actually starts
             
-            # Define output callback to emit real-time output
+            # Define output callback to emit real-time output and detect scan start
             def output_callback(line: str):
                 """Handle real-time output from RKHunter."""
                 if line.strip():  # Only emit non-empty lines
                     self.output_updated.emit(line)
+                    
+                    # Look for indicators that the scan has actually started
+                    # (not just authentication or initialization)
+                    # Use very specific indicators that won't conflict with stage detection
+                    scan_start_indicators = [
+                        "Rootkit Hunter version",
+                        "Starting to create file hashes",
+                        "Please wait while the file hash values are"
+                    ]
+                    
+                    if any(indicator in line for indicator in scan_start_indicators):
+                        if not scan_started.is_set():
+                            scan_started.set()
+                            # Don't emit progress value here - let main window handle all progress
+                            self.progress_updated.emit("🔍 RKHunter scan is now running...")
             
             def run_scan():
                 try:
@@ -449,17 +420,20 @@ class RKHunterScanThread(QThread):
             scan_thread = threading.Thread(target=run_scan)
             scan_thread.start()
             
-            # Update progress while scan runs
-            step_index = 0
-            while not scan_completed.is_set() and step_index < len(progress_steps):
-                time.sleep(3)  # Wait 3 seconds between updates
-                if not scan_completed.is_set():
-                    progress, message = progress_steps[step_index]
-                    self.progress_updated.emit(message)
-                    self.progress_value_updated.emit(progress)
-                    step_index += 1
+            # Wait for scan to actually start before emitting progress
+            scan_started.wait(timeout=120)  # Wait up to 2 minutes for scan to start
             
-            # Wait for scan to complete
+            if not scan_started.is_set():
+                # If scan hasn't started after timeout, something went wrong
+                self.progress_updated.emit("❌ Scan failed to start - authentication may have been cancelled")
+                scan_thread.join(timeout=5)
+                return
+            
+            # Now we rely on real-time output parsing for progress updates
+            # The main window will handle progress based on actual scan output
+            # No need for simulated progress steps here since we have real output
+            
+            # Just wait for scan to complete while real-time output handles progress
             scan_thread.join()
             
             if scan_error[0]:

@@ -5536,6 +5536,11 @@ System        {perf_status}"""
         
         # Reset progress bar for RKHunter scan
         self.progress_bar.setValue(0)
+        
+        # Reset scan progress tracking state
+        self._rkhunter_progress_stage = 0
+        self._rkhunter_max_progress = 0
+        self._rkhunter_scan_actually_started = False
 
         self.current_rkhunter_thread = RKHunterScanThread(
             self.rkhunter, test_categories
@@ -5543,8 +5548,9 @@ System        {perf_status}"""
         self.current_rkhunter_thread.progress_updated.connect(
             self.update_rkhunter_progress
         )
+        # Don't connect directly to progress bar - use our handler instead
         self.current_rkhunter_thread.progress_value_updated.connect(
-            self.progress_bar.setValue
+            self.handle_rkhunter_progress_value
         )
         self.current_rkhunter_thread.output_updated.connect(
             self.update_rkhunter_output
@@ -5554,13 +5560,37 @@ System        {perf_status}"""
         )
         self.current_rkhunter_thread.start()
 
-        # Update status
-        self.status_label.setText("Running RKHunter rootkit scan...")
-        self.results_text.append("\n🔍 RKHunter rootkit scan started...\n")
+        # Update status - use a more appropriate initial message
+        self.status_label.setText("� Preparing scan - authentication may be required...")
+        self.results_text.append("\n🔍 RKHunter rootkit scan starting - please authenticate when prompted...\n")
 
     def update_rkhunter_progress(self, message):
         """Update progress display for RKHunter scan."""
-        self.status_label.setText(f"RKHunter: {message}")
+        # Only update if we don't have a more specific stage-based message
+        # The dynamic progress from _update_rkhunter_progress_from_output takes priority
+        current_status = self.status_label.text()
+        
+        # Don't override stage-specific messages with generic ones
+        if not any(stage in current_status for stage in [
+            "Checking system configuration", "Analyzing file properties", 
+            "Scanning for rootkits", "additional rootkit checks",
+            "Checking filesystem", "Scanning for malware", "Checking network",
+            "Analyzing applications", "Generating system summary", "Verifying user account",
+            "Checking SSH", "Scanning for hidden"
+        ]):
+            self.status_label.setText(f"🔍 {message}")
+
+    def handle_rkhunter_progress_value(self, value):
+        """Handle progress value updates from RKHunter thread."""
+        # Only update progress bar if scan has actually started
+        # This prevents progress updates during authentication phase
+        if hasattr(self, '_rkhunter_scan_actually_started') and self._rkhunter_scan_actually_started:
+            # Only allow progress to increase, never decrease
+            if value > self.progress_bar.value():
+                self.progress_bar.setValue(value)
+        # If scan hasn't started yet, keep progress at 0
+        elif not hasattr(self, '_rkhunter_scan_actually_started') or not self._rkhunter_scan_actually_started:
+            self.progress_bar.setValue(0)
 
     def update_rkhunter_output(self, output_line):
         """Update the results text with real-time RKHunter output."""
@@ -5586,13 +5616,104 @@ System        {perf_status}"""
         # Clean and format the output line
         formatted_line = output_line.strip()
         
+        # Fix missing emoji characters and clean up the text
+        if "�" in formatted_line:
+            # Replace missing emoji characters with appropriate ones based on content
+            if "Starting RKHunter update" in formatted_line or "update.*sequence" in formatted_line.lower():
+                formatted_line = formatted_line.replace("�", "🔄")
+            elif "Database update completed" in formatted_line or "update completed" in formatted_line.lower():
+                formatted_line = formatted_line.replace("�", "✅")
+            elif "Starting RKHunter scan" in formatted_line:
+                formatted_line = formatted_line.replace("�", "🔍")
+            elif "Updating RKHunter database" in formatted_line:
+                formatted_line = formatted_line.replace("�", "📦")
+            else:
+                # Generic replacement for other missing emojis
+                formatted_line = formatted_line.replace("�", "ℹ️")
+        
         # Enhanced formatting with better structure and visual clarity
         try:
+            # Update progress based on actual scan stages
+            self._update_rkhunter_progress_from_output(formatted_line)
+            
+            # Handle timestamped messages with special formatting
+            if "[" in formatted_line and "]" in formatted_line and "2025-" in formatted_line:
+                # Extract timestamp and message
+                parts = formatted_line.split("]", 1)
+                if len(parts) == 2:
+                    timestamp = parts[0] + "]"
+                    message = parts[1].strip()
+                    
+                    # Format based on message content
+                    if "Starting RKHunter update" in message or "sequence" in message.lower():
+                        self.results_text.append(f"  🔄 <b>{message}</b> <span style='color: #9E9E9E;'><i>{timestamp}</i></span>")
+                    elif "Database update completed" in message or "completed successfully" in message:
+                        self.results_text.append(f"  ✅ <span style='color: #4CAF50;'><b>{message}</b></span> <span style='color: #9E9E9E;'><i>{timestamp}</i></span>")
+                    elif "Starting RKHunter scan" in message:
+                        self.results_text.append(f"  🔍 <b>{message}</b> <span style='color: #9E9E9E;'><i>{timestamp}</i></span>")
+                    elif "Updating RKHunter database" in message:
+                        self.results_text.append(f"  📦 <i>{message}</i> <span style='color: #9E9E9E;'><i>{timestamp}</i></span>")
+                    else:
+                        self.results_text.append(f"  ℹ️  {message} <span style='color: #9E9E9E;'><i>{timestamp}</i></span>")
+                    return
+            
             # Handle section headers and major operations
             if formatted_line.startswith("Performing") or formatted_line.startswith("Starting"):
                 self.results_text.append("")  # Add spacing before new sections
                 self.results_text.append(f"📋 <b>{formatted_line}</b>")
                 self.results_text.append("─" * 50)
+                return
+            
+            # Handle system summary sections with better formatting
+            if (formatted_line == "System checks summary" or 
+                formatted_line == "=" * len(formatted_line)):  # Handle separator lines
+                if formatted_line == "System checks summary":
+                    self.results_text.append("")  # Add spacing
+                    self.results_text.append(f"📊 <b>System Checks Summary</b>")
+                    self.results_text.append("─" * 40)
+                return
+            
+            # Handle scan statistics with proper icons and formatting
+            if any(stat in formatted_line for stat in [
+                "File properties checks", "Files checked:", "Suspect files:",
+                "Rootkit checks", "Rootkits checked", "Possible rootkits:",
+                "Applications checks", "All checks skipped",
+                "The system checks took:"
+            ]):
+                if "File properties checks" in formatted_line:
+                    self.results_text.append(f"  📂 <b>File Analysis:</b>")
+                elif "Files checked:" in formatted_line:
+                    count = formatted_line.split(":")[-1].strip()
+                    self.results_text.append(f"    📄 Files scanned: <b>{count}</b>")
+                elif "Suspect files:" in formatted_line:
+                    count = formatted_line.split(":")[-1].strip()
+                    color = "#F44336" if int(count) > 0 else "#4CAF50"
+                    self.results_text.append(f"    🔍 Suspicious files: <span style='color: {color};'><b>{count}</b></span>")
+                elif "Rootkit checks" in formatted_line:
+                    self.results_text.append(f"  🛡️  <b>Rootkit Detection:</b>")
+                elif "Rootkits checked" in formatted_line:
+                    count = formatted_line.split(":")[-1].strip()
+                    self.results_text.append(f"    📊 Rootkits checked: <b>{count}</b>")
+                elif "Possible rootkits:" in formatted_line:
+                    count = formatted_line.split(":")[-1].strip()
+                    color = "#F44336" if int(count) > 0 else "#4CAF50"
+                    self.results_text.append(f"    🚨 Possible rootkits: <span style='color: {color};'><b>{count}</b></span>")
+                elif "Applications checks" in formatted_line:
+                    self.results_text.append(f"  📱 <b>Application Checks:</b>")
+                elif "All checks skipped" in formatted_line:
+                    self.results_text.append(f"    ⏭️  <span style='color: #9E9E9E;'><i>All checks skipped</i></span>")
+                elif "The system checks took:" in formatted_line:
+                    duration = formatted_line.split(":")[-1].strip()
+                    self.results_text.append("")  # Add spacing
+                    self.results_text.append(f"  ⏱️  <b>Scan Duration:</b> {duration}")
+                return
+            
+            # Handle log file references with better formatting
+            if "written to the log file:" in formatted_line or "check the log file" in formatted_line:
+                if "written to the log file:" in formatted_line:
+                    self.results_text.append(f"  📝 <i>Results saved to system log</i>")
+                elif "check the log file" in formatted_line:
+                    self.results_text.append(f"  📋 <i>Check system log for details</i>")
                 return
                 
             # Handle check results with clear status indicators
@@ -5625,11 +5746,18 @@ System        {perf_status}"""
                     return
             
             # Handle specific types of messages with enhanced formatting
-            if "WARNING" in formatted_line.upper():
-                self.results_text.append(f"  ⚠️  <span style='color: #FF9800;'><b>WARNING:</b></span> {formatted_line.replace('WARNING:', '').strip()}")
+            if "WARNING" in formatted_line.upper() and ":" in formatted_line:
+                warning_text = formatted_line.split(":", 1)[-1].strip()
+                self.results_text.append("")  # Add spacing before warnings
+                self.results_text.append(f"⚠️  <span style='color: #FF9800;'><b>WARNING:</b></span> {warning_text}")
+                return
             elif "ERROR" in formatted_line.upper():
                 self.results_text.append(f"  ❌ <span style='color: #F44336;'><b>ERROR:</b></span> {formatted_line.replace('ERROR:', '').strip()}")
-            elif "INFECTED" in formatted_line.upper() or "ROOTKIT" in formatted_line.upper():
+            elif ("INFECTED" in formatted_line.upper() or 
+                  ("ROOTKIT" in formatted_line.upper() and 
+                   not formatted_line.lower().startswith("checking") and
+                   ("found" in formatted_line.lower() or "detected" in formatted_line.lower() or "positive" in formatted_line.lower()))):
+                # Only show threat detected for actual detections, not status messages
                 self.results_text.append(f"  🚨 <span style='color: #F44336;'><b>THREAT DETECTED:</b></span> {formatted_line}")
             elif "INFO:" in formatted_line.upper():
                 info_msg = formatted_line.replace("INFO:", "").strip()
@@ -5644,9 +5772,17 @@ System        {perf_status}"""
                 self.results_text.append(f"🏁 <b>{formatted_line}</b>")
                 self.results_text.append("")  # Add spacing
             else:
-                # Generic formatting for other lines
+                # Skip very generic or repetitive lines
                 if formatted_line and not formatted_line.isspace():
-                    self.results_text.append(f"  📄 {formatted_line}")
+                    # Don't show generic lines that don't add value
+                    skip_lines = [
+                        "please check the log file",
+                        "all results have been written"
+                    ]
+                    if not any(skip in formatted_line.lower() for skip in skip_lines):
+                        # Only show if it contains useful information
+                        if len(formatted_line.strip()) > 3:  # Avoid very short meaningless lines
+                            self.results_text.append(f"  ℹ️ {formatted_line}")
                     
         except Exception as e:
             # Fallback to basic formatting if parsing fails
@@ -5656,6 +5792,175 @@ System        {perf_status}"""
         scrollbar = self.results_text.verticalScrollBar()
         if scrollbar:
             scrollbar.setValue(scrollbar.maximum())
+
+    def _update_rkhunter_progress_from_output(self, formatted_line):
+        """Update RKHunter scan progress based on actual scan output."""
+        try:
+            # Initialize progress tracking if it doesn't exist
+            if not hasattr(self, '_rkhunter_progress_stage'):
+                self._rkhunter_progress_stage = 0
+                self._rkhunter_max_progress = 0
+                self._rkhunter_scan_actually_started = False
+            
+            # Don't track progress until we know the scan has actually started
+            # Look for indicators that the scan is really running
+            if not self._rkhunter_scan_actually_started:
+                # Only start tracking progress after we see clear scan start indicators
+                # Use the same indicators as the thread for consistency
+                scan_start_indicators = [
+                    "Rootkit Hunter version",
+                    "Starting to create file hashes",
+                    "Please wait while the file hash values are"
+                ]
+                
+                if any(indicator in formatted_line for indicator in scan_start_indicators):
+                    self._rkhunter_scan_actually_started = True
+                    self._rkhunter_max_progress = 0  # Reset to ensure clean start
+                else:
+                    # Scan hasn't started yet, don't update progress
+                    return
+            
+            # Define scan stages in the EXACT order they occur based on actual scan log
+            # Use more specific matching to avoid conflicts between similar stage names
+            stage_map = {
+                # Initial system checks (5-20%) - Use exact matches to avoid conflicts
+                "Performing 'strings' command checks": (5, "🔤 Checking system commands..."),
+                "Performing 'shared libraries' checks": (10, "📚 Analyzing shared libraries..."),
+                "Performing file properties checks": (15, "📄 Analyzing file properties..."),
+                
+                # Rootkit detection (20-40%) - Use more specific terms to avoid conflicts
+                "Performing check of known rootkit files and directories": (25, "🛡️ Scanning for known rootkits..."),
+                "Performing additional rootkit checks": (35, "🔍 Performing additional rootkit checks..."),
+                
+                # Security and malware checks (40-60%)
+                "Performing malware checks": (45, "🦠 Scanning for malware..."),
+                "Performing Linux specific checks": (55, "🐧 Running Linux-specific checks..."),
+                
+                # Network and system checks (60-85%)
+                "Performing checks on the network ports": (65, "🌐 Checking network ports..."),
+                "Performing checks on the network interfaces": (70, "📡 Checking network interfaces..."),
+                "Performing system boot checks": (75, "🚀 Checking system boot configuration..."),
+                "Performing group and account checks": (80, "👥 Analyzing user accounts..."),
+                "Performing system configuration file checks": (85, "⚙️ Checking system configuration..."),
+                "Performing filesystem checks": (90, "💽 Checking filesystem integrity..."),
+                
+                # Final summary (95%)
+                "System checks summary": (95, "📊 Generating scan summary..."),
+            }
+            
+            # Sort stages by progress value to check most specific/highest progress first
+            # This prevents lower progress stages from overriding higher ones
+            sorted_stages = sorted(stage_map.items(), key=lambda x: x[1][0], reverse=True)
+            
+            # Check for major stage changes - use exact matching and check highest progress first
+            for stage_text, (progress, description) in sorted_stages:
+                # Use exact match or very specific substring to avoid conflicts
+                stage_found = False
+                
+                # For exact stage names, require exact match and additional validation
+                if stage_text in formatted_line:
+                    # Additional validation to ensure we have the right stage
+                    if stage_text == "Performing 'strings' command checks":
+                        # Only match if it's specifically about strings command checks
+                        if "'strings'" in formatted_line and "command" in formatted_line.lower():
+                            stage_found = True
+                    elif stage_text == "Performing 'shared libraries' checks":
+                        # Only match if it's specifically about shared libraries
+                        if "'shared libraries'" in formatted_line or "shared libraries" in formatted_line.lower():
+                            stage_found = True
+                    elif stage_text == "Performing file properties checks":
+                        # Only match if it's specifically about file properties
+                        if "file properties" in formatted_line.lower():
+                            stage_found = True
+                    elif stage_text == "Performing check of known rootkit files and directories":
+                        # Only match if it's specifically about known rootkit files
+                        if "known rootkit files" in formatted_line.lower():
+                            stage_found = True
+                    elif stage_text == "Performing additional rootkit checks":
+                        # Only match if it's specifically about additional rootkit checks
+                        if "additional rootkit" in formatted_line.lower():
+                            stage_found = True
+                    elif stage_text == "Performing malware checks":
+                        # Only match if it's specifically about malware
+                        if "malware" in formatted_line.lower() and "additional" not in formatted_line.lower():
+                            stage_found = True
+                    elif stage_text == "Performing Linux specific checks":
+                        # Only match if it's specifically about Linux checks
+                        if "linux specific" in formatted_line.lower():
+                            stage_found = True
+                    elif stage_text == "Performing checks on the network ports":
+                        if "network ports" in formatted_line.lower():
+                            stage_found = True
+                    elif stage_text == "Performing checks on the network interfaces":
+                        if "network interfaces" in formatted_line.lower():
+                            stage_found = True
+                    elif stage_text == "Performing system boot checks":
+                        if "system boot" in formatted_line.lower():
+                            stage_found = True
+                    elif stage_text == "Performing group and account checks":
+                        if "group and account" in formatted_line.lower():
+                            stage_found = True
+                    elif stage_text == "Performing system configuration file checks":
+                        if "system configuration file" in formatted_line.lower():
+                            stage_found = True
+                    elif stage_text == "Performing filesystem checks":
+                        if "filesystem" in formatted_line.lower():
+                            stage_found = True
+                    elif stage_text == "System checks summary":
+                        if "system checks summary" in formatted_line.lower():
+                            stage_found = True
+                    else:
+                        # For any other stages, exact match is sufficient
+                        stage_found = True
+                
+                if stage_found:
+                    # Only advance progress, never go backwards
+                    if progress > self._rkhunter_max_progress:
+                        self._rkhunter_max_progress = progress
+                        self.status_label.setText(description)
+                        self.progress_bar.setValue(progress)
+                    return  # Exit after first match to avoid conflicts
+            
+            # Handle scan completion
+            if "scan completed" in formatted_line.lower() or "The system checks took:" in formatted_line or "Scan Duration:" in formatted_line:
+                if self._rkhunter_max_progress < 100:
+                    self._rkhunter_max_progress = 100
+                    self.status_label.setText("✅ Scan completed successfully!")
+                    self.progress_bar.setValue(100)
+                return
+            
+            # Handle specific detailed checks for smoother progress
+            # SSH configuration checks (within system config stage)
+            if "if SSH root access is allowed" in formatted_line or "if SSH protocol v1 is allowed" in formatted_line:
+                if self._rkhunter_max_progress >= 85 and self._rkhunter_max_progress < 87:
+                    self._rkhunter_max_progress = 87
+                    self.status_label.setText("🔒 Checking SSH security settings...")
+                    self.progress_bar.setValue(87)
+                return
+            
+            # Hidden files check (within filesystem stage)
+            if "for hidden files and directories" in formatted_line:
+                if self._rkhunter_max_progress >= 90 and self._rkhunter_max_progress < 93:
+                    self._rkhunter_max_progress = 93
+                    self.status_label.setText("👁️ Scanning for hidden threats...")
+                    self.progress_bar.setValue(93)
+                return
+            
+            # Account security checks (within group/account stage)
+            if any(check in formatted_line for check in [
+                "for passwd file changes",
+                "for group file changes",
+                "for root equivalent"
+            ]):
+                if self._rkhunter_max_progress >= 80 and self._rkhunter_max_progress < 83:
+                    self._rkhunter_max_progress = 83
+                    self.status_label.setText("🔐 Verifying account security...")
+                    self.progress_bar.setValue(83)
+                return
+                        
+        except Exception as e:
+            # Don't break the scan if progress update fails
+            pass
 
     def rkhunter_scan_completed(self, result: RKHunterScanResult):
         """Handle completion of RKHunter scan."""
@@ -5705,36 +6010,14 @@ System        {perf_status}"""
         else:
             output += "✅ No rootkits detected\n\n"
 
-        # Detailed findings with explanation buttons
-        if result.findings:
-            output += "Detailed Findings:\n"
-            warning_count = 0
-            for finding in result.findings:
-                status_icon = "🚨" if finding.result.value == "infected" else "⚠️"
-                output += f"\n{status_icon} {finding.test_name}\n"
-                output += f"   Result: {finding.result.value.upper()}\n"
-                output += f"   Severity: {finding.severity.value.upper()}\n"
-                output += f"   Description: {finding.description}\n"
-                if finding.details:
-                    output += f"   Details: {finding.details}\n"
-                
-                # Add explanation info for warnings
-                if finding.result.value == "warning" and finding.explanation:
-                    warning_count += 1
-                    severity_color = finding.explanation.category.value.replace('_', ' ').title()
-                    common_text = " (Common)" if finding.explanation.is_common else " (Uncommon)"
-                    output += f"   Category: {severity_color}{common_text}\n"
-                    output += f"   📖 See detailed explanation in warnings dialog below\n"
-
-        # Add explanation buttons for warnings
+        # Add explanation buttons for warnings (without detailed findings)
         if result.findings and any(f.result.value == "warning" for f in result.findings):
             warning_count = sum(1 for f in result.findings if f.result.value == "warning")
-            output += "\n" + "=" * 30 + "\n"
+            output += "=" * 30 + "\n"
             output += "📖 Warning Explanations Available\n"
             output += "=" * 30 + "\n"
             output += f"Found {warning_count} warning{'s' if warning_count != 1 else ''} that require attention.\n"
             output += "Use the button below to view detailed explanations\n"
-            output += "and remediation guidance for each warning.\n"
             output += "and remediation guidance for each warning.\n\n"
             
             # Store findings for button access
