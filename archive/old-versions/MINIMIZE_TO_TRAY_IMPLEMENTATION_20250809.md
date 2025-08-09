@@ -1,3 +1,9 @@
+# ARCHIVED 2025-08-09: Consolidated into organized structure
+# Original location: docs/implementation/features/MINIMIZE_TO_TRAY_IMPLEMENTATION.md
+# Archive category: old-versions
+# ========================================
+
+
 ## Minimize to Tray Feature Implementation Summary
 
 ### Problem

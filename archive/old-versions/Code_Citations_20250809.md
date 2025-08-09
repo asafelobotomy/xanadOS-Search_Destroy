@@ -1,3 +1,9 @@
+# ARCHIVED 2025-08-09: Documentation reorganization - consolidated
+# Original location: docs/Code_Citations.md
+# Archive category: old-versions
+# ========================================
+
+
 # Code Citations
 
 ## License: MIT

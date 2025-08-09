@@ -1,3 +1,9 @@
+# ARCHIVED 2025-08-09: Consolidated into organized structure
+# Original location: docs/implementation/rkhunter-realtime.md
+# Archive category: old-versions
+# ========================================
+
+
 # RKHunter Real-Time Output Integration
 
 ## Overview

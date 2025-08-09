@@ -1,3 +1,9 @@
+# ARCHIVED 2025-08-09: Consolidated into organized structure
+# Original location: docs/implementation/arch-linux-integration.md
+# Archive category: old-versions
+# ========================================
+
+
 # RKHunter Arch Linux Integration Fixes
 
 ## Issues Identified and Fixed

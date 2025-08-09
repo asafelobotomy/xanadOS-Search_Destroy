@@ -1,3 +1,9 @@
+# ARCHIVED 2025-08-09: Consolidated into organized structure
+# Original location: docs/implementation/COMPREHENSIVE_THREADING_TEST.md
+# Archive category: old-versions
+# ========================================
+
+
 # Comprehensive Threading State Management Test
 
 ## Overview

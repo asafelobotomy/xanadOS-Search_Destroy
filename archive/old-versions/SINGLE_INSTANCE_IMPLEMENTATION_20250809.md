@@ -1,3 +1,9 @@
+# ARCHIVED 2025-08-09: Consolidated into organized structure
+# Original location: docs/implementation/features/SINGLE_INSTANCE_IMPLEMENTATION.md
+# Archive category: old-versions
+# ========================================
+
+
 # Single Instance Implementation Summary
 
 ## Problem

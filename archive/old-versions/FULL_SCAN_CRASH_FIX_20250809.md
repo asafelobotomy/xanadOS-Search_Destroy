@@ -1,3 +1,9 @@
+# ARCHIVED 2025-08-09: Consolidated into organized structure
+# Original location: docs/implementation/FULL_SCAN_CRASH_FIX.md
+# Archive category: old-versions
+# ========================================
+
+
 # Full Scan Crash Fix Summary
 *Applied on: Fri  8 Aug 21:46:52 BST 2025*
 
