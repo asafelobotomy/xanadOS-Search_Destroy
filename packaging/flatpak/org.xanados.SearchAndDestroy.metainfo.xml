@@ -43,6 +43,21 @@
   </provides>
   
   <releases>
+    <release version="2.3.0" date="2025-08-09">
+      <description>
+        <p>Enhanced RKHunter integration with advanced progress tracking and unified report management</p>
+        <ul>
+          <li>Enhanced Delete All Reports functionality for both ClamAV and RKHunter reports</li>
+          <li>Advanced RKHunter progress tracking with real-time stage-based updates</li>
+          <li>Authentication-aware progress tracking that respects password dialogs</li>
+          <li>Comprehensive RKHunter output formatting with color-coded results</li>
+          <li>Improved scan tab layout optimization with better column proportions</li>
+          <li>Fixed progress bar regression issues and stage detection conflicts</li>
+          <li>Enhanced visual feedback with emoji indicators and hierarchical formatting</li>
+          <li>Robust progress tracking architecture with single authoritative source</li>
+        </ul>
+      </description>
+    </release>
     <release version="2.2.0" date="2025-08-08">
       <description>
         <p>Professional GUI redesign and comprehensive repository organization</p>

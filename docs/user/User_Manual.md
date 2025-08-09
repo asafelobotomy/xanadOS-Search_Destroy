@@ -51,6 +51,37 @@ For targeted scanning:
    - Scan depth restrictions
 4. **Execute the custom scan**
 
+### RKHunter Rootkit Scanning
+
+**New in Version 2.3.0**: Enhanced rootkit detection with RKHunter integration.
+
+For advanced rootkit and system security scanning:
+
+1. **Select "RKHunter Scan"** from available scan types
+2. **Authentication Required**: 
+   - A secure password dialog will appear (pkexec systems)
+   - Or enter password in terminal when prompted
+   - This is normal - rootkit scanning requires elevated privileges
+3. **Monitor Real-time Progress**:
+   - Progress bar shows accurate scan progression
+   - Stage-based updates with clear descriptions
+   - Color-coded results with status indicators
+4. **Scan Phases Include**:
+   - System command validation
+   - Shared library analysis  
+   - File properties verification
+   - Known rootkit detection
+   - Additional security checks
+   - Malware scanning
+   - Network security analysis
+   - System configuration review
+
+**Enhanced Features**:
+- ✅ **Real-time Progress**: Accurate progression from 0% to 100%
+- ✅ **Visual Feedback**: Color-coded results (green=clean, red=threat, orange=warning)
+- ✅ **Detailed Reporting**: Comprehensive scan results with emoji indicators
+- ✅ **Authentication Aware**: Progress only advances after successful login
+
 ### Real-time Protection
 
 Enable continuous monitoring:
@@ -86,6 +117,32 @@ Access quarantined files:
 3. **View quarantined items** with details
 4. **Restore or delete** quarantined files as needed
 
+### Enhanced Report Management
+
+**New in Version 2.3.0**: Unified report management for all scan types.
+
+Managing scan history and reports:
+
+1. **Access Reports Tab** to view all scan results
+2. **View Different Report Types**:
+   - ClamAV virus scan reports
+   - RKHunter rootkit scan reports
+   - System scan summaries
+3. **Delete All Reports** (Enhanced):
+   - Single button removes ALL scan reports
+   - Clears both ClamAV and RKHunter history
+   - Provides clean slate for new scanning
+4. **Export Options**:
+   - Save reports in multiple formats
+   - Archive important scan results
+   - Share reports for analysis
+
+**Report Features**:
+- ✅ **Unified Management**: Single interface for all report types
+- ✅ **Complete Cleanup**: One action removes all scan history
+- ✅ **Multiple Formats**: CSV, JSON, and text exports available
+- ✅ **Detailed Information**: Timestamps, scan types, and results
+
 ## Advanced Features
 
 ### Scheduled Scanning
@@ -101,15 +158,33 @@ Set up automatic scans:
 
 ### RKHunter Integration
 
-For rootkit detection:
+**Updated in Version 2.3.0**: Enhanced rootkit detection with improved user experience.
 
-1. **Enable RKHunter** in settings (requires root privileges)
-2. **Configure scan categories**:
-   - System Commands
-   - Rootkits & Trojans
-   - Network Security
-   - System Integrity
-3. **Run combined ClamAV + RKHunter scans**
+Advanced rootkit and system security scanning:
+
+1. **Authentication Handling**:
+   - Automatic privilege escalation with secure dialogs
+   - Clear progress indication during authentication
+   - No progress updates until scan actually begins
+2. **Enhanced Scan Categories**:
+   - System Commands & Binaries
+   - Known Rootkit Detection
+   - Additional Security Checks
+   - Malware Scanning
+   - Network Security Analysis
+   - System Configuration Review
+   - File System Integrity
+3. **Real-time Visual Feedback**:
+   - Stage-based progress tracking (14 distinct phases)
+   - Color-coded results with emoji indicators
+   - Enhanced output formatting for better readability
+   - Professional scan result presentation
+
+**Key Improvements**:
+- ✅ **Authentication Aware**: Progress tracking respects password dialogs
+- ✅ **Accurate Progress**: Real-time updates based on actual scan phases  
+- ✅ **Enhanced Output**: Color-coded, emoji-rich results display
+- ✅ **Error Resilience**: Better handling of authentication and scan errors
 
 ### Performance Tuning
 

@@ -12,7 +12,7 @@
 - ✅ README.md - Main project documentation
 - ✅ CHANGELOG.md - Version history 
 - ✅ LICENSE - GPL-3.0 license file
-- ✅ VERSION - Current version (2.2.0)
+- ✅ VERSION - Current version (2.3.0)
 - ✅ requirements.txt - Python dependencies
 - ✅ package.json - Node.js metadata
 - ✅ run.sh - Application launcher

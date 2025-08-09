@@ -42,7 +42,7 @@ Project management, organization, and maintenance documentation.
 ### 📦 Release Documentation
 Version history and release information.
 
-- **[Latest Release](releases/RELEASE_2.2.0.md)** - Current version release notes
+- **[Latest Release](releases/RELEASE_2.3.0.md)** - Current version release notes
 - **[Changelog](../CHANGELOG.md)** - Complete version history
 
 ### 📖 Reference Documentation

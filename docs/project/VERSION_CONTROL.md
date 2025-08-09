@@ -10,7 +10,7 @@ We follow a **Git Flow** branching model for organized development:
 - **`develop`** - Integration branch for features
 - **`feature/*`** - New features (e.g., `feature/dashboard-improvements`)
 - **`hotfix/*`** - Critical bug fixes (e.g., `hotfix/scan-crash-fix`)
-- **`release/*`** - Release preparation (e.g., `release/2.2.0`)
+- **`release/*`** - Release preparation (e.g., `release/2.3.0`)
 
 ### Workflow Steps
 
@@ -208,14 +208,18 @@ git config --global alias.lg "log --oneline --graph --decorate"
 ### Cleanup Commands
 
 ```bash
+# Use automated cleanup script (recommended)
+./scripts/cleanup-repository.sh
+
 # Remove merged branches
 git branch --merged | grep -v master | xargs git branch -d
 
-# Clean up remote tracking branches
+# Clean up remote tracking branches  
 git remote prune origin
 
 # Remove untracked files (be careful!)
-git clean -fd
+git clean -fd --dry-run  # Preview first
+git clean -fd           # Execute cleanup
 ```
 
 ### Repository Statistics
@@ -255,7 +259,7 @@ git log --stat --oneline
 
 ### 3. **Version Management**
 
-- Semantic versioning (2.2.0)
+- Semantic versioning (2.3.0)
 - VERSION file tracking
 - Comprehensive CHANGELOG.md
 - Automated release process
@@ -321,7 +325,7 @@ git feature-finish dashboard-improvements
 
 ```bash
 # Automated release
-./scripts/release.sh 2.2.0
+./scripts/release.sh 2.3.0
 
 # Or manual process
 git release-start 2.1.0
