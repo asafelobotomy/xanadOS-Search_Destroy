@@ -1172,8 +1172,8 @@ class MainWindow(QMainWindow):
         column1 = QWidget()
         column1_layout = QVBoxLayout(column1)
         column1_layout.setSpacing(8)
-        column1.setMinimumWidth(280)  # Compact width
-        column1.setMaximumWidth(350)  # Prevent over-expansion
+        column1.setMinimumWidth(300)  # Equal minimum width
+        column1.setMaximumWidth(450)  # Equal maximum width
 
         # Results section with optimized height - now has more space
         results_group = QGroupBox("Scan Results")
@@ -1184,6 +1184,7 @@ class MainWindow(QMainWindow):
         self.results_text = QTextEdit()
         self.results_text.setObjectName("resultsText")
         self.results_text.setReadOnly(True)
+        self.results_text.setAcceptRichText(True)  # Enable HTML formatting
         self.results_text.setMinimumHeight(160)  # Minimum for readability
         # No maximum height - allow full expansion
         results_layout.addWidget(self.results_text)
@@ -1195,8 +1196,8 @@ class MainWindow(QMainWindow):
         column2 = QWidget()
         column2_layout = QVBoxLayout(column2)
         column2_layout.setSpacing(8)
-        column2.setMinimumWidth(350)  # Good width for descriptions
-        column2.setMaximumWidth(500)  # Allow expansion for text
+        column2.setMinimumWidth(300)  # Equal minimum width
+        column2.setMaximumWidth(450)  # Equal maximum width
 
         # Progress section with compact design
         progress_group = QGroupBox("Scan Progress")
@@ -1238,8 +1239,8 @@ class MainWindow(QMainWindow):
         column3 = QWidget()
         column3_layout = QVBoxLayout(column3)
         column3_layout.setSpacing(8)
-        column3.setMinimumWidth(300)  # Adequate width for target controls
-        column3.setMaximumWidth(400)  # Prevent over-expansion
+        column3.setMinimumWidth(300)  # Equal minimum width
+        column3.setMaximumWidth(450)  # Equal maximum width
 
         # === Target Selection Section ===
         target_group = QGroupBox("Scan Target")
@@ -1342,10 +1343,10 @@ class MainWindow(QMainWindow):
         column2_layout.addWidget(buttons_group)
         column2_layout.addStretch()  # Push everything to top
 
-        # Add 3 columns to main layout with optimized proportions
-        main_layout.addWidget(column1, 2)   # 25% width for progress and results (compact)
-        main_layout.addWidget(column2, 3)   # 37.5% width for scan type (descriptions)
-        main_layout.addWidget(column3, 3)   # 37.5% width for target and actions
+        # Add 3 columns to main layout with equal proportions
+        main_layout.addWidget(column1, 1)   # 33.3% width for results
+        main_layout.addWidget(column2, 1)   # 33.3% width for scan type & actions
+        main_layout.addWidget(column3, 1)   # 33.3% width for target
 
         self.tab_widget.addTab(scan_widget, "Scan")
         
@@ -5563,45 +5564,98 @@ System        {perf_status}"""
 
     def update_rkhunter_output(self, output_line):
         """Update the results text with real-time RKHunter output."""
-        if output_line.strip():  # Only add non-empty lines
-            # Filter out common noise/warnings that don't add value
-            line_lower = output_line.lower()
+        if not output_line.strip():  # Skip empty lines
+            return
             
-            # Skip common grep warnings and noise
-            if any(skip_phrase in line_lower for skip_phrase in [
-                "grep: warning: stray",
-                "egrep: warning: egrep is obsolescent",
-                "invalid scriptdir configuration",
-                "sudo: a terminal is required",
-                "sudo: a password is required"
-            ]):
-                return  # Don't display these lines
+        # Filter out common noise/warnings that don't add value
+        line_lower = output_line.lower()
+        
+        # Skip common grep warnings and noise
+        if any(skip_phrase in line_lower for skip_phrase in [
+            "grep: warning: stray",
+            "egrep: warning: egrep is obsolescent", 
+            "invalid scriptdir configuration",
+            "sudo: a terminal is required",
+            "sudo: a password is required",
+            "info: starting",
+            "info: checking",
+            "info: end of"
+        ]):
+            return  # Don't display these lines
+        
+        # Clean and format the output line
+        formatted_line = output_line.strip()
+        
+        # Enhanced formatting with better structure and visual clarity
+        try:
+            # Handle section headers and major operations
+            if formatted_line.startswith("Performing") or formatted_line.startswith("Starting"):
+                self.results_text.append("")  # Add spacing before new sections
+                self.results_text.append(f"📋 <b>{formatted_line}</b>")
+                self.results_text.append("─" * 50)
+                return
+                
+            # Handle check results with clear status indicators
+            if "[ " in formatted_line and " ]" in formatted_line:
+                # Extract the check description and result
+                parts = formatted_line.split("[")
+                if len(parts) >= 2:
+                    check_desc = parts[0].strip()
+                    result_part = "[" + parts[1]
+                    
+                    # Clean up the check description
+                    if check_desc.startswith("Checking"):
+                        check_desc = check_desc[8:].strip()  # Remove "Checking" prefix
+                    
+                    # Format based on result type
+                    if "[ None found ]" in result_part or "[ OK ]" in result_part:
+                        self.results_text.append(f"  ✅ {check_desc} <span style='color: #4CAF50;'><b>CLEAN</b></span>")
+                    elif "[ Found ]" in result_part:
+                        self.results_text.append(f"  🔍 {check_desc} <span style='color: #FF9800;'><b>FOUND</b></span>")
+                    elif "[ Warning ]" in result_part or "[ WARN ]" in result_part:
+                        self.results_text.append(f"  ⚠️  {check_desc} <span style='color: #FF9800;'><b>WARNING</b></span>")
+                    elif "[ Not found ]" in result_part:
+                        self.results_text.append(f"  ✅ {check_desc} <span style='color: #4CAF50;'><b>NOT FOUND</b></span>")
+                    elif "[ Skipped ]" in result_part:
+                        self.results_text.append(f"  ⏭️  {check_desc} <span style='color: #9E9E9E;'><i>SKIPPED</i></span>")
+                    else:
+                        # Generic result formatting
+                        result_clean = result_part.replace("[", "").replace("]", "").strip()
+                        self.results_text.append(f"  🔍 {check_desc} <span style='color: #2196F3;'><b>{result_clean}</b></span>")
+                    return
             
-            # Format the output line for better readability
-            formatted_line = output_line.strip()
-            
-            # Add some basic formatting for important messages
+            # Handle specific types of messages with enhanced formatting
             if "WARNING" in formatted_line.upper():
-                formatted_line = f"⚠️  {formatted_line}"
-            elif "OK" in formatted_line.upper():
-                formatted_line = f"✅ {formatted_line}"
+                self.results_text.append(f"  ⚠️  <span style='color: #FF9800;'><b>WARNING:</b></span> {formatted_line.replace('WARNING:', '').strip()}")
+            elif "ERROR" in formatted_line.upper():
+                self.results_text.append(f"  ❌ <span style='color: #F44336;'><b>ERROR:</b></span> {formatted_line.replace('ERROR:', '').strip()}")
             elif "INFECTED" in formatted_line.upper() or "ROOTKIT" in formatted_line.upper():
-                formatted_line = f"🚨 {formatted_line}"
-            elif "INFO" in formatted_line.upper():
-                formatted_line = f"ℹ️  {formatted_line}"
+                self.results_text.append(f"  🚨 <span style='color: #F44336;'><b>THREAT DETECTED:</b></span> {formatted_line}")
+            elif "INFO:" in formatted_line.upper():
+                info_msg = formatted_line.replace("INFO:", "").strip()
+                if info_msg:  # Only show if there's actual content
+                    self.results_text.append(f"  ℹ️  <span style='color: #2196F3;'>{info_msg}</span>")
             elif formatted_line.startswith("Checking"):
-                formatted_line = f"🔍 {formatted_line}"
-            elif "found" in formatted_line.lower() and "clean" in formatted_line.lower():
-                formatted_line = f"✅ {formatted_line}"
-            elif "error" in formatted_line.lower():
-                formatted_line = f"❌ {formatted_line}"
-            
+                # Format ongoing checks with a more subtle appearance
+                check_item = formatted_line.replace("Checking", "").strip()
+                self.results_text.append(f"  🔄 <i>Checking {check_item}...</i>")
+            elif "scan completed" in formatted_line.lower():
+                self.results_text.append("")  # Add spacing
+                self.results_text.append(f"🏁 <b>{formatted_line}</b>")
+                self.results_text.append("")  # Add spacing
+            else:
+                # Generic formatting for other lines
+                if formatted_line and not formatted_line.isspace():
+                    self.results_text.append(f"  📄 {formatted_line}")
+                    
+        except Exception as e:
+            # Fallback to basic formatting if parsing fails
             self.results_text.append(formatted_line)
-            
-            # Auto-scroll to bottom to show latest output
-            scrollbar = self.results_text.verticalScrollBar()
-            if scrollbar:
-                scrollbar.setValue(scrollbar.maximum())
+        
+        # Auto-scroll to bottom to show latest output
+        scrollbar = self.results_text.verticalScrollBar()
+        if scrollbar:
+            scrollbar.setValue(scrollbar.maximum())
 
     def rkhunter_scan_completed(self, result: RKHunterScanResult):
         """Handle completion of RKHunter scan."""
