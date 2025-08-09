@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Archive Helper Script for xanadOS Search & Destroy
-# Usage: ./scripts/archive.sh <file_path> <category> [reason]
+# Usage: ./scripts/archive.sh <file_path> <category> [reason] [--yes]
 
 set -e
 
@@ -13,7 +13,10 @@ NC='\033[0m' # No Color
 
 # Function to display usage
 usage() {
-    echo "Usage: $0 <file_path> <category> [reason]"
+    echo "Usage: $0 <file_path> <category> [reason] [--yes|-y]"
+    echo ""
+    echo "Options:"
+    echo "  --yes, -y         - Automatically answer yes to all prompts (batch mode)"
     echo ""
     echo "Categories:"
     echo "  cleanup-stubs     - Files created as stubs during cleanup"
@@ -23,18 +26,49 @@ usage() {
     echo ""
     echo "Examples:"
     echo "  $0 app/gui/old_dialog.py unused-components \"Replaced by new dialog system\""
-    echo "  $0 app/core/legacy_scanner.py old-versions \"Superseded by async scanner\""
+    echo "  $0 app/core/legacy_scanner.py old-versions \"Superseded by async scanner\" --yes"
+    echo "  $0 debug_file.py experimental \"Debug script\" -y"
     exit 1
 }
 
-# Check arguments
-if [ $# -lt 2 ]; then
+# Parse arguments
+AUTO_YES=false
+FILE_PATH=""
+CATEGORY=""
+REASON=""
+
+# Parse command line arguments
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        --yes|-y)
+            AUTO_YES=true
+            shift
+            ;;
+        *)
+            if [ -z "$FILE_PATH" ]; then
+                FILE_PATH="$1"
+            elif [ -z "$CATEGORY" ]; then
+                CATEGORY="$1"
+            elif [ -z "$REASON" ]; then
+                REASON="$1"
+            else
+                echo -e "${RED}Error: Too many arguments${NC}"
+                usage
+            fi
+            shift
+            ;;
+    esac
+done
+
+# Check required arguments
+if [ -z "$FILE_PATH" ] || [ -z "$CATEGORY" ]; then
     usage
 fi
 
-FILE_PATH="$1"
-CATEGORY="$2"
-REASON="${3:-Archived on $(date '+%Y-%m-%d')}"
+# Set default reason if not provided
+if [ -z "$REASON" ]; then
+    REASON="Archived on $(date '+%Y-%m-%d')"
+fi
 
 # Validate file exists
 if [ ! -f "$FILE_PATH" ]; then
@@ -74,11 +108,15 @@ ARCHIVE_PATH="$ARCHIVE_DIR/$ARCHIVED_FILENAME"
 # Check if archive file already exists
 if [ -f "$ARCHIVE_PATH" ]; then
     echo -e "${YELLOW}Warning: Archive file '$ARCHIVE_PATH' already exists${NC}"
-    read -p "Overwrite? (y/N): " -n 1 -r
-    echo
-    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-        echo "Archiving cancelled"
-        exit 1
+    if [ "$AUTO_YES" = true ]; then
+        echo "Auto-yes mode: Overwriting existing file"
+    else
+        read -p "Overwrite? (y/N): " -n 1 -r
+        echo
+        if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+            echo "Archiving cancelled"
+            exit 1
+        fi
     fi
 fi
 
@@ -103,13 +141,19 @@ echo "  Reason:   $REASON"
 
 # Ask if user wants to remove original
 echo ""
-read -p "Remove original file? (y/N): " -n 1 -r
-echo
-if [[ $REPLY =~ ^[Yy]$ ]]; then
+if [ "$AUTO_YES" = true ]; then
+    echo "Auto-yes mode: Removing original file"
     rm "$FILE_PATH"
     echo -e "${GREEN}✓ Original file removed${NC}"
 else
-    echo -e "${YELLOW}Original file kept${NC}"
+    read -p "Remove original file? (y/N): " -n 1 -r
+    echo
+    if [[ $REPLY =~ ^[Yy]$ ]]; then
+        rm "$FILE_PATH"
+        echo -e "${GREEN}✓ Original file removed${NC}"
+    else
+        echo -e "${YELLOW}Original file kept${NC}"
+    fi
 fi
 
 # Add to git if in a git repository

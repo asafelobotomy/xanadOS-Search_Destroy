@@ -5,6 +5,7 @@ from pathlib import Path
 
 from gui.main_window import MainWindow
 from PyQt6.QtWidgets import QApplication
+from PyQt6.QtCore import Qt
 from core.single_instance import SingleInstanceManager
 
 from gui import APP_VERSION
@@ -34,6 +35,18 @@ def main():
     app.setApplicationVersion(APP_VERSION)
     app.setOrganizationName("xanadOS")
     app.setOrganizationDomain("xanados.org")
+
+    # Force Qt to use Fusion style to avoid system theme interference
+    # This should help ensure dropdown menus use application styling instead of system (Breeze) styling
+    try:
+        app.setStyle('Fusion')
+        print("Set application style to Fusion for consistent theming")
+    except Exception as e:
+        print(f"Warning: Could not set Fusion style: {e}")
+    
+    # Additional platform-specific settings to prevent native widget usage
+    app.setAttribute(Qt.ApplicationAttribute.AA_DontUseNativeDialogs, True)
+    app.setAttribute(Qt.ApplicationAttribute.AA_DontUseNativeMenuBar, True)
 
     window = MainWindow()
     

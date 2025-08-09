@@ -80,9 +80,119 @@ class ClickableFrame(QFrame):
 class NoWheelComboBox(QComboBox):
     """A QComboBox that completely ignores wheel events to prevent accidental changes."""
 
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        # Store reference to main window for theme access
+        self.main_window = None
+        
+    def set_main_window(self, main_window):
+        """Set reference to main window for theme access."""
+        self.main_window = main_window
+
     def wheelEvent(self, event: QWheelEvent):
         """Completely ignore all wheel events."""
         event.ignore()
+        
+    def showPopup(self):
+        """Override showPopup to ensure dark theme is applied to popup every time."""
+        super().showPopup()
+        
+        # Apply theme styling every time the popup is shown
+        self.apply_popup_styling()
+        
+    def apply_popup_styling(self):
+        """Apply proper styling to the popup view."""
+        popup_view = self.view()
+        if not popup_view:
+            return
+            
+        # Determine current theme (default to dark if no main window reference)
+        is_dark_theme = True
+        if self.main_window and hasattr(self.main_window, 'current_theme'):
+            is_dark_theme = self.main_window.current_theme == "dark"
+            
+        if is_dark_theme:
+            # Dark theme styling
+            popup_view.setStyleSheet("""
+                QListView {
+                    background-color: #2a2a2a !important;
+                    border: 1px solid #EE8980 !important;
+                    border-radius: 4px !important;
+                    color: #FFCDAA !important;
+                    selection-background-color: #F14666 !important;
+                    selection-color: #ffffff !important;
+                    outline: none !important;
+                }
+                QListView::item {
+                    padding: 8px 12px;
+                    min-height: 20px;
+                    border: none;
+                }
+                QListView::item:hover {
+                    background-color: #EE8980 !important;
+                    color: #ffffff !important;
+                }
+                QListView::item:selected {
+                    background-color: #F14666 !important;
+                    color: #ffffff !important;
+                }
+            """)
+        else:
+            # Light theme styling
+            popup_view.setStyleSheet("""
+                QListView {
+                    background-color: #ffffff !important;
+                    border: 1px solid #F8D49B !important;
+                    border-radius: 4px !important;
+                    color: #2c2c2c !important;
+                    selection-background-color: #75BDE0 !important;
+                    selection-color: #ffffff !important;
+                    outline: none !important;
+                }
+                QListView::item {
+                    padding: 8px 12px;
+                    min-height: 20px;
+                    border: none;
+                }
+                QListView::item:hover {
+                    background-color: #F8BC9B !important;
+                    color: #2c2c2c !important;
+                }
+                QListView::item:selected {
+                    background-color: #75BDE0 !important;
+                    color: #ffffff !important;
+                }
+            """)
+            
+        # Also force background on popup frame containers
+        parent = popup_view.parent()
+        if parent and hasattr(parent, 'setStyleSheet'):
+            if is_dark_theme:
+                parent.setStyleSheet("""
+                    QFrame {
+                        background-color: #2a2a2a !important;
+                        border: 1px solid #EE8980 !important;
+                        border-radius: 4px !important;
+                    }
+                """)
+            else:
+                parent.setStyleSheet("""
+                    QFrame {
+                        background-color: #ffffff !important;
+                        border: 1px solid #F8D49B !important;
+                        border-radius: 4px !important;
+                    }
+                """)
+            
+            # Also check for grandparent containers
+            grandparent = parent.parent()
+            if grandparent and hasattr(grandparent, 'setStyleSheet'):
+                bg_color = "#2a2a2a" if is_dark_theme else "#ffffff"
+                grandparent.setStyleSheet(f"""
+                    QWidget {{
+                        background-color: {bg_color} !important;
+                    }}
+                """)
 
 
 class NoWheelSpinBox(QSpinBox):
@@ -990,32 +1100,35 @@ class MainWindow(QMainWindow):
 
             if error:
                 # Error state
+                error_color = self.get_theme_color("error")
                 self.firewall_on_off_label.setText("ERROR")
                 self.firewall_on_off_label.setStyleSheet(
-                    "font-weight: bold; font-size: 16px; color: #F14666;"
+                    f"font-weight: bold; font-size: 16px; color: {error_color};"
                 )
                 self.firewall_status_circle.setStyleSheet(
-                    "font-size: 20px; color: #F14666;"
+                    f"font-size: 20px; color: {error_color};"
                 )
                 if hasattr(self, "firewall_name_label"):
                     self.firewall_name_label.setText(f"Error: {error}")
             elif is_active:
                 # Active state - green
+                success_color = self.get_theme_color("success")
                 self.firewall_on_off_label.setText("ON")
                 self.firewall_on_off_label.setStyleSheet(
-                    "font-weight: bold; font-size: 16px; color: #9CB898;"
+                    f"font-weight: bold; font-size: 16px; color: {success_color};"
                 )
                 self.firewall_status_circle.setStyleSheet(
-                    "font-size: 20px; color: #9CB898;"
+                    f"font-size: 20px; color: {success_color};"
                 )
             else:
                 # Inactive state - red
+                error_color = self.get_theme_color("error")
                 self.firewall_on_off_label.setText("OFF")
                 self.firewall_on_off_label.setStyleSheet(
-                    "font-weight: bold; font-size: 16px; color: #F14666;"
+                    f"font-weight: bold; font-size: 16px; color: {error_color};"
                 )
                 self.firewall_status_circle.setStyleSheet(
-                    "font-size: 20px; color: #F14666;"
+                    f"font-size: 20px; color: {error_color};"
                 )
 
             # Update button text based on current status
@@ -1035,12 +1148,14 @@ class MainWindow(QMainWindow):
         except Exception as e:
             print(f"⚠️ Error updating firewall status: {e}")
             # Fallback to unknown state
+            secondary_text_color = self.get_theme_color("secondary_text")
             self.firewall_on_off_label.setText("UNKNOWN")
             self.firewall_on_off_label.setStyleSheet(
-                "font-weight: bold; font-size: 16px; color: #999;"
+                f"font-weight: bold; font-size: 16px; color: {secondary_text_color};"
             )
             self.firewall_status_circle.setStyleSheet(
-                "font-size: 20px; color: #999;")
+                f"font-size: 20px; color: {secondary_text_color};"
+            )
             if hasattr(self, "firewall_name_label"):
                 self.firewall_name_label.setText("Unable to detect")
 
@@ -1794,7 +1909,9 @@ class MainWindow(QMainWindow):
             checkbox.setChecked(category_info["default"])
             checkbox.setToolTip(category_info["description"])
             checkbox.setMinimumHeight(25)  # Larger checkbox
-            checkbox.setStyleSheet("font-weight: bold; font-size: 12px;")  # Larger font
+            # Use theme-aware text styling
+            primary_text_color = self.get_theme_color("primary_text")
+            checkbox.setStyleSheet(f"font-weight: bold; font-size: 12px; color: {primary_text_color};")  # Theme-aware font
 
             # Description with much better sizing for readability
             desc_label = QLabel(category_info["description"])
@@ -3529,6 +3646,289 @@ System        {perf_status}"""
                 }
             """
 
+    def fix_combobox_popups(self):
+        """Fix styling for all ComboBox popups in the application."""
+        # Initialize popup monitoring timer for continuous styling enforcement
+        if not hasattr(self, 'popup_monitor_timer'):
+            self.popup_monitor_timer = QTimer()
+            self.popup_monitor_timer.timeout.connect(self.monitor_popup_styling)
+            self.popup_monitor_timer.start(100)  # Check every 100ms for open popups
+            print("✅ Started ComboBox popup monitoring system")
+        
+        # Find all ComboBox widgets and enhance their popup styling
+        all_combos = self.findChildren(QComboBox)
+        self.monitored_combos = all_combos  # Store for monitoring
+        
+        for combo in all_combos:
+            if isinstance(combo, NoWheelComboBox):
+                # Set main window reference for theme access
+                combo.set_main_window(self)
+            else:
+                # For regular ComboBoxes, override showPopup method to apply styling every time
+                original_showPopup = combo.showPopup
+                
+                def make_enhanced_showPopup(combo_ref, main_window_ref):
+                    def enhanced_showPopup():
+                        original_showPopup()
+                        # Apply theme to popup view after it's created
+                        popup_view = combo_ref.view()
+                        if popup_view:
+                            # Force theme styling on the popup every time
+                            if main_window_ref.current_theme == "dark":
+                                popup_view.setStyleSheet("""
+                                    QListView {
+                                        background-color: #2a2a2a !important;
+                                        border: 1px solid #EE8980 !important;
+                                        border-radius: 4px !important;
+                                        color: #FFCDAA !important;
+                                        selection-background-color: #F14666 !important;
+                                        selection-color: #ffffff !important;
+                                        outline: none !important;
+                                    }
+                                    QListView::item {
+                                        padding: 8px 12px;
+                                        min-height: 20px;
+                                        border: none;
+                                    }
+                                    QListView::item:hover {
+                                        background-color: #EE8980 !important;
+                                        color: #ffffff !important;
+                                    }
+                                    QListView::item:selected {
+                                        background-color: #F14666 !important;
+                                        color: #ffffff !important;
+                                    }
+                                """)
+                            else:  # light theme
+                                popup_view.setStyleSheet("""
+                                    QListView {
+                                        background-color: #ffffff !important;
+                                        border: 1px solid #F8D49B !important;
+                                        border-radius: 4px !important;
+                                        color: #2c2c2c !important;
+                                        selection-background-color: #75BDE0 !important;
+                                        selection-color: #ffffff !important;
+                                        outline: none !important;
+                                    }
+                                    QListView::item {
+                                        padding: 8px 12px;
+                                        min-height: 20px;
+                                        border: none;
+                                    }
+                                    QListView::item:hover {
+                                        background-color: #F8BC9B !important;
+                                        color: #2c2c2c !important;
+                                    }
+                                    QListView::item:selected {
+                                        background-color: #75BDE0 !important;
+                                        color: #ffffff !important;
+                                    }
+                                """)
+                            
+                            # Also force background on popup frame containers
+                            parent = popup_view.parent()
+                            if parent and hasattr(parent, 'setStyleSheet'):
+                                if main_window_ref.current_theme == "dark":
+                                    parent.setStyleSheet("""
+                                        QFrame {
+                                            background-color: #2a2a2a !important;
+                                            border: 1px solid #EE8980 !important;
+                                            border-radius: 4px !important;
+                                        }
+                                    """)
+                                else:
+                                    parent.setStyleSheet("""
+                                        QFrame {
+                                            background-color: #ffffff !important;
+                                            border: 1px solid #F8D49B !important;
+                                            border-radius: 4px !important;
+                                        }
+                                    """)
+                    return enhanced_showPopup
+                
+                # Replace the showPopup method with our enhanced version
+                try:
+                    combo.showPopup = make_enhanced_showPopup(combo, self)
+                except Exception as e:
+                    print(f"⚠️ Failed to enhance ComboBox popup styling for {combo}: {e}")
+    
+    def monitor_popup_styling(self):
+        """Continuously monitor and enforce popup styling for all ComboBoxes."""
+        if not hasattr(self, 'monitored_combos'):
+            return
+            
+        for combo in self.monitored_combos:
+            try:
+                popup_view = combo.view()
+                # Only apply styling if popup is actually visible
+                if popup_view and popup_view.isVisible():
+                    # Re-apply styling to combat any overrides
+                    if self.current_theme == "dark":
+                        popup_view.setStyleSheet("""
+                            QListView {
+                                background-color: #2a2a2a !important;
+                                border: 1px solid #EE8980 !important;
+                                border-radius: 4px !important;
+                                color: #FFCDAA !important;
+                                selection-background-color: #F14666 !important;
+                                selection-color: #ffffff !important;
+                                outline: none !important;
+                            }
+                            QListView::item {
+                                padding: 8px 12px;
+                                min-height: 20px;
+                                border: none;
+                            }
+                            QListView::item:hover {
+                                background-color: #EE8980 !important;
+                                color: #ffffff !important;
+                            }
+                            QListView::item:selected {
+                                background-color: #F14666 !important;
+                                color: #ffffff !important;
+                            }
+                            QScrollBar:vertical {
+                                background-color: #3a3a3a !important;
+                                border: 1px solid #EE8980 !important;
+                                border-radius: 6px !important;
+                                width: 16px !important;
+                                margin: 0px 0px 0px 0px !important;
+                            }
+                            QScrollBar::handle:vertical {
+                                background-color: #EE8980 !important;
+                                border: none !important;
+                                border-radius: 5px !important;
+                                min-height: 30px !important;
+                                margin: 2px !important;
+                            }
+                            QScrollBar::handle:vertical:hover {
+                                background-color: #F14666 !important;
+                            }
+                            QScrollBar::handle:vertical:pressed {
+                                background-color: #E03256 !important;
+                            }
+                            QScrollBar::add-line:vertical {
+                                height: 0px !important;
+                                width: 0px !important;
+                                subcontrol-position: bottom !important;
+                                subcontrol-origin: margin !important;
+                                background: transparent !important;
+                                border: none !important;
+                            }
+                            QScrollBar::sub-line:vertical {
+                                height: 0px !important;
+                                width: 0px !important;
+                                subcontrol-position: top !important;
+                                subcontrol-origin: margin !important;
+                                background: transparent !important;
+                                border: none !important;
+                            }
+                            QScrollBar::up-arrow:vertical, QScrollBar::down-arrow:vertical {
+                                width: 0px !important;
+                                height: 0px !important;
+                                background: transparent !important;
+                                border: none !important;
+                            }
+                            QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {
+                                background: transparent !important;
+                                border: none !important;
+                            }
+                        """)
+                    else:  # light theme
+                        popup_view.setStyleSheet("""
+                            QListView {
+                                background-color: #ffffff !important;
+                                border: 1px solid #F8D49B !important;
+                                border-radius: 4px !important;
+                                color: #2c2c2c !important;
+                                selection-background-color: #75BDE0 !important;
+                                selection-color: #ffffff !important;
+                                outline: none !important;
+                            }
+                            QListView::item {
+                                padding: 8px 12px;
+                                min-height: 20px;
+                                border: none;
+                            }
+                            QListView::item:hover {
+                                background-color: #F8BC9B !important;
+                                color: #2c2c2c !important;
+                            }
+                            QListView::item:selected {
+                                background-color: #75BDE0 !important;
+                                color: #ffffff !important;
+                            }
+                            QScrollBar:vertical {
+                                background-color: #f5f5f5 !important;
+                                border: 1px solid #F8D49B !important;
+                                border-radius: 6px !important;
+                                width: 16px !important;
+                                margin: 0px 0px 0px 0px !important;
+                            }
+                            QScrollBar::handle:vertical {
+                                background-color: #75BDE0 !important;
+                                border: none !important;
+                                border-radius: 5px !important;
+                                min-height: 30px !important;
+                                margin: 2px !important;
+                            }
+                            QScrollBar::handle:vertical:hover {
+                                background-color: #F8BC9B !important;
+                            }
+                            QScrollBar::handle:vertical:pressed {
+                                background-color: #5BA3C5 !important;
+                            }
+                            QScrollBar::add-line:vertical {
+                                height: 0px !important;
+                                width: 0px !important;
+                                subcontrol-position: bottom !important;
+                                subcontrol-origin: margin !important;
+                                background: transparent !important;
+                                border: none !important;
+                            }
+                            QScrollBar::sub-line:vertical {
+                                height: 0px !important;
+                                width: 0px !important;
+                                subcontrol-position: top !important;
+                                subcontrol-origin: margin !important;
+                                background: transparent !important;
+                                border: none !important;
+                            }
+                            QScrollBar::up-arrow:vertical, QScrollBar::down-arrow:vertical {
+                                width: 0px !important;
+                                height: 0px !important;
+                                background: transparent !important;
+                                border: none !important;
+                            }
+                            QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {
+                                background: transparent !important;
+                                border: none !important;
+                            }
+                        """)
+                    
+                    # Also fix parent containers
+                    parent = popup_view.parent()
+                    if parent and hasattr(parent, 'setStyleSheet'):
+                        if self.current_theme == "dark":
+                            parent.setStyleSheet("""
+                                QFrame {
+                                    background-color: #2a2a2a !important;
+                                    border: 1px solid #EE8980 !important;
+                                    border-radius: 4px !important;
+                                }
+                            """)
+                        else:
+                            parent.setStyleSheet("""
+                                QFrame {
+                                    background-color: #ffffff !important;
+                                    border: 1px solid #F8D49B !important;
+                                    border-radius: 4px !important;
+                                }
+                            """)
+            except Exception:
+                # Ignore errors from deleted widgets
+                pass
+
     def apply_dark_theme(self):
         """Apply dark theme styling using Strawberry color palette for optimal readability."""
         # Based on Color Theory principles:
@@ -4116,21 +4516,144 @@ System        {perf_status}"""
                 border: none;
             }
 
-            /* Fix dropdown popup frame (this causes the white borders) */
+            /* Fix dropdown popup frame - more specific selectors to override system theme */
             QComboBox QListView {
-                background-color: #2a2a2a;
-                border: 1px solid #EE8980;
-                border-radius: 4px;
-                color: #FFCDAA;
-                selection-background-color: #F14666;
-                selection-color: #ffffff;
-                outline: none;
+                background-color: #2a2a2a !important;
+                border: 1px solid #EE8980 !important;
+                border-radius: 4px !important;
+                color: #FFCDAA !important;
+                selection-background-color: #F14666 !important;
+                selection-color: #ffffff !important;
+                outline: none !important;
+                margin: 0px !important;
+                padding: 0px !important;
             }
 
             QComboBox QFrame {
-                background-color: #2a2a2a;
-                border: 1px solid #EE8980;
-                border-radius: 4px;
+                background-color: #2a2a2a !important;
+                border: 1px solid #EE8980 !important;
+                border-radius: 4px !important;
+                margin: 0px !important;
+                padding: 0px !important;
+            }
+
+            /* Target all possible popup container elements */
+            QComboBox QWidget {
+                background-color: #2a2a2a !important;
+                border: none !important;
+                color: #FFCDAA !important;
+                margin: 0px !important;
+                padding: 0px !important;
+            }
+
+            QComboBox QScrollArea {
+                background-color: #2a2a2a !important;
+                border: none !important;
+                margin: 0px !important;
+                padding: 0px !important;
+            }
+
+            QComboBox QScrollArea QWidget {
+                background-color: #2a2a2a !important;
+                border: none !important;
+                margin: 0px !important;
+                padding: 0px !important;
+            }
+
+            QComboBox QScrollBar:vertical {
+                background-color: #3a3a3a !important;
+                border: 1px solid #EE8980 !important;
+                border-radius: 6px !important;
+                width: 16px !important;
+                margin: 0px 0px 0px 0px !important;
+            }
+
+            QComboBox QScrollBar::handle:vertical {
+                background-color: #EE8980 !important;
+                border: none !important;
+                border-radius: 5px !important;
+                min-height: 30px !important;
+                margin: 2px !important;
+            }
+
+            QComboBox QScrollBar::handle:vertical:hover {
+                background-color: #F14666 !important;
+            }
+
+            QComboBox QScrollBar::handle:vertical:pressed {
+                background-color: #E03256 !important;
+            }
+
+            QComboBox QScrollBar::add-line:vertical {
+                height: 0px !important;
+                width: 0px !important;
+                subcontrol-position: bottom !important;
+                subcontrol-origin: margin !important;
+                background: transparent !important;
+                border: none !important;
+            }
+
+            QComboBox QScrollBar::sub-line:vertical {
+                height: 0px !important;
+                width: 0px !important;
+                subcontrol-position: top !important;
+                subcontrol-origin: margin !important;
+                background: transparent !important;
+                border: none !important;
+            }
+
+            QComboBox QScrollBar::add-page:vertical, QComboBox QScrollBar::sub-page:vertical {
+                background: transparent !important;
+                border: none !important;
+            }
+
+            QComboBox QScrollBar::up-arrow:vertical, QComboBox QScrollBar::down-arrow:vertical {
+                width: 0px !important;
+                height: 0px !important;
+                background: transparent !important;
+                border: none !important;
+            }
+            
+            /* Force all popup widgets to use dark theme - most aggressive override */
+            QComboBox * {
+                background-color: #2a2a2a !important;
+                color: #FFCDAA !important;
+                border: none !important;
+                margin: 0px !important;
+            }
+
+            /* Target the popup window container itself */
+            QComboBox QListView::item {
+                padding: 8px 12px !important;
+                min-height: 20px !important;
+                border: none !important;
+                margin: 0px !important;
+                background-color: transparent !important;
+            }
+
+            /* Universal ComboBox theming for dialogs and child windows */
+            QDialog QComboBox,
+            QDialog QComboBox * {
+                background-color: #2a2a2a !important;
+                color: #FFCDAA !important;
+                border: 1px solid #EE8980 !important;
+                border-radius: 4px !important;
+            }
+
+            QDialog QComboBox QListView,
+            QDialog QComboBox QAbstractItemView {
+                background-color: #2a2a2a !important;
+                color: #FFCDAA !important;
+                border: 1px solid #EE8980 !important;
+                selection-background-color: #F14666 !important;
+                selection-color: #ffffff !important;
+            }
+
+            /* Ensure all child widgets and popups inherit theme */
+            * QComboBox,
+            * QComboBox * {
+                background-color: #2a2a2a !important;
+                color: #FFCDAA !important;
             }
 
             QSpinBox::up-button, QSpinBox::down-button {
@@ -4176,6 +4699,9 @@ System        {perf_status}"""
 
         # Apply activity list styling after theme
         self.setup_activity_list_styling()
+        
+        # Fix ComboBox popup styling
+        self.fix_combobox_popups()
 
     def apply_light_theme(self):
         """Apply light theme styling using Sunrise color palette for optimal readability."""
@@ -4760,21 +5286,149 @@ System        {perf_status}"""
                 border: none;
             }
 
-            /* Fix dropdown popup frame (this causes the white borders) */
+            /* Fix dropdown popup frame - more specific selectors to override system theme */
             QComboBox QListView {
-                background-color: #ffffff;
-                border: 1px solid #75BDE0;
-                border-radius: 4px;
-                color: #333333;
-                selection-background-color: #F8BC9B;
-                selection-color: #2c2c2c;
-                outline: none;
+                background-color: #ffffff !important;
+                border: 1px solid #75BDE0 !important;
+                border-radius: 4px !important;
+                color: #333333 !important;
+                selection-background-color: #F8BC9B !important;
+                selection-color: #2c2c2c !important;
+                outline: none !important;
+                margin: 0px !important;
+                padding: 0px !important;
             }
 
             QComboBox QFrame {
-                background-color: #ffffff;
-                border: 1px solid #75BDE0;
-                border-radius: 4px;
+                background-color: #ffffff !important;
+                border: 1px solid #75BDE0 !important;
+                border-radius: 4px !important;
+                margin: 0px !important;
+                padding: 0px !important;
+            }
+
+            /* Target all possible popup container elements */
+            QComboBox QWidget {
+                background-color: #ffffff !important;
+                border: none !important;
+                color: #333333 !important;
+                margin: 0px !important;
+                padding: 0px !important;
+            }
+
+            QComboBox QScrollArea {
+                background-color: #ffffff !important;
+                border: none !important;
+                margin: 0px !important;
+                padding: 0px !important;
+            }
+
+            QComboBox QScrollArea QWidget {
+                background-color: #ffffff !important;
+                border: none !important;
+                margin: 0px !important;
+                padding: 0px !important;
+            }
+
+            QComboBox QScrollBar:vertical {
+                background-color: #f5f5f5 !important;
+                border: 1px solid #F8D49B !important;
+                border-radius: 6px !important;
+                width: 16px !important;
+                margin: 0px 0px 0px 0px !important;
+            }
+
+            QComboBox QScrollBar::handle:vertical {
+                background-color: #75BDE0 !important;
+                border: none !important;
+                border-radius: 5px !important;
+                min-height: 30px !important;
+                margin: 2px !important;
+            }
+
+            QComboBox QScrollBar::handle:vertical:hover {
+                background-color: #F8BC9B !important;
+            }
+
+            QComboBox QScrollBar::handle:vertical:pressed {
+                background-color: #F89B9B !important;
+            }
+
+            QComboBox QScrollBar::add-line:vertical {
+                height: 0px !important;
+                width: 0px !important;
+                subcontrol-position: bottom !important;
+                subcontrol-origin: margin !important;
+                background: transparent !important;
+                border: none !important;
+            }
+
+            QComboBox QScrollBar::sub-line:vertical {
+                height: 0px !important;
+                width: 0px !important;
+                subcontrol-position: top !important;
+                subcontrol-origin: margin !important;
+                background: transparent !important;
+                border: none !important;
+            }
+
+            QComboBox QScrollBar::add-page:vertical, QComboBox QScrollBar::sub-page:vertical {
+                background: transparent !important;
+                border: none !important;
+            }
+
+            QComboBox QScrollBar::up-arrow:vertical, QComboBox QScrollBar::down-arrow:vertical {
+                width: 0px !important;
+                height: 0px !important;
+                background: transparent !important;
+                border: none !important;
+            }
+
+            QComboBox QScrollBar::add-page, QComboBox QScrollBar::sub-page {
+                background: none !important;
+                border: none !important;
+            }
+            
+            /* Force all popup widgets to use light theme - most aggressive override */
+            QComboBox * {
+                background-color: #ffffff !important;
+                color: #333333 !important;
+                border: none !important;
+                margin: 0px !important;
+            }
+
+            /* Target the popup window container itself */
+            QComboBox QListView::item {
+                padding: 8px 12px !important;
+                min-height: 20px !important;
+                border: none !important;
+                margin: 0px !important;
+                background-color: transparent !important;
+            }
+
+            /* Universal ComboBox theming for dialogs and child windows */
+            QDialog QComboBox,
+            QDialog QComboBox * {
+                background-color: #ffffff !important;
+                color: #333333 !important;
+                border: 1px solid #75BDE0 !important;
+                border-radius: 4px !important;
+            }
+
+            QDialog QComboBox QListView,
+            QDialog QComboBox QAbstractItemView {
+                background-color: #ffffff !important;
+                color: #333333 !important;
+                border: 1px solid #75BDE0 !important;
+                selection-background-color: #F8BC9B !important;
+                selection-color: #2c2c2c !important;
+            }
+
+            /* Ensure all child widgets and popups inherit theme */
+            * QComboBox,
+            * QComboBox * {
+                background-color: #ffffff !important;
+                color: #333333 !important;
             }
             
             /* Scan Type Combo Specific Styling */
@@ -4948,6 +5602,9 @@ System        {perf_status}"""
 
         # Apply activity list styling after theme
         self.setup_activity_list_styling()
+        
+        # Fix ComboBox popup styling
+        self.fix_combobox_popups()
 
     def apply_system_theme(self):
         """Apply system theme (falls back to light theme for now)."""
@@ -6454,18 +7111,42 @@ System        {perf_status}"""
                 f"font-size: 11px; color: {self.get_theme_color('secondary_text')};"
             )
         
+        # Update any card value labels that might have been created
+        for widget in self.findChildren(QLabel):
+            if widget.objectName() == "cardValue":
+                # Re-apply theme-aware colors to dashboard cards
+                current_color = widget.styleSheet()
+                if "color:" in current_color:
+                    # Keep the same logic but refresh the theme colors
+                    pass
+        
+        # Refresh firewall status display to use current theme colors
+        if hasattr(self, "firewall_on_off_label") and hasattr(self, "firewall_status_circle"):
+            # Trigger firewall status update to refresh colors
+            QTimer.singleShot(100, self.update_firewall_status)
+        
         # Update any other components that need theme refresh
         # Note: Most components are handled by the main setStyleSheet() calls
         # in apply_dark_theme() and apply_light_theme()
     
     def _configure_platform_dropdown_behavior(self):
-        """Configure application to prevent popup window issues on Wayland"""
+        """Configure application to prevent popup window issues on Wayland and force custom styling"""
         try:
             # Get Qt application instance
             app = QApplication.instance()
             if app:
                 # Set attribute to prevent popup windows for combo boxes
                 app.setAttribute(Qt.ApplicationAttribute.AA_DontUseNativeMenuBar, True)
+                
+                # Prevent native dialogs which might use system theme
+                app.setAttribute(Qt.ApplicationAttribute.AA_DontUseNativeDialogs, True)
+                
+                # Force Qt to use Fusion style instead of system style
+                # This helps ensure consistent theming across all widgets including dropdowns
+                try:
+                    app.setStyle('Fusion')
+                except Exception as style_error:
+                    print(f"Warning: Could not set Fusion style: {style_error}")
                 
         except Exception as e:
             print(f"Warning: Could not configure platform dropdown behavior: {e}")

@@ -561,3 +561,10 @@ class AllWarningsDialog(QDialog):
                 "Export Error",
                 f"Failed to export report:\n{str(e)}"
             )
+
+    def _apply_theme(self, theme_name):
+        """Apply theme styling to this dialog."""
+        # This method is called from __init__ but wasn't implemented
+        # For now, we'll rely on the existing hardcoded styling
+        # In a future update, this could be enhanced to use dynamic theming
+        pass
