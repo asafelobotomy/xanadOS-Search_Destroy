@@ -59,7 +59,7 @@ class ServiceConfig:
     restart_on_failure: bool = True
     restart_delay_seconds: int = 10
     max_restart_attempts: int = 5
-    environment_vars: Dict[str, str] = None
+    environment_vars: Optional[Dict[str, str]] = None
 
     def __post_init__(self):
         if self.environment_vars is None:
@@ -86,7 +86,7 @@ class SystemServiceManager:
     Handles service installation, management, and monitoring across different init systems.
     """
 
-    def __init__(self, config: ServiceConfig = None):
+    def __init__(self, config: Optional[ServiceConfig] = None):
         self.logger = logging.getLogger(__name__)
         self.config = config or ServiceConfig()
 

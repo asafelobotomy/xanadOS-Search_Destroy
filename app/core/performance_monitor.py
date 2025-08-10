@@ -303,9 +303,8 @@ class PerformanceMonitor:
 
         if not current:
             return {"status": "no_data"}
-
         # Calculate performance score (0-100, higher is better)
-        performance_score = 100
+        performance_score: float = 100.0
 
         if current.cpu_percent > 50:
             performance_score -= (current.cpu_percent - 50) * 0.8
@@ -313,11 +312,11 @@ class PerformanceMonitor:
         if current.memory_mb > 200:
             performance_score -= (current.memory_mb - 200) * 0.2
 
-        performance_score = max(0, min(100, performance_score))
+        performance_score = max(0.0, min(100.0, performance_score))
 
         return {
             "status": "active" if self.monitoring_active else "inactive",
-            "performance_score": performance_score,
+            "performance_score": int(performance_score),
             "current": asdict(current) if current else None,
             "average_5min": average,
             "component_count": len(self.component_metrics),
@@ -331,7 +330,7 @@ class PerformanceMonitor:
 
     def _get_optimization_suggestions(self) -> List[str]:
         """Generate optimization suggestions based on current metrics."""
-        suggestions = []
+        suggestions: List[str] = []
         current = self.get_current_metrics()
 
         if not current:

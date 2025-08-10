@@ -28,40 +28,44 @@ class MemoryStats:
 
 
 class MemoryPool:
-    """
-    Memory pool for efficient object reuse.
-    Reduces garbage collection overhead for frequently created objects.
+    """Memory pool for efficient object reuse.
+
+    Reduces garbage collection overhead for frequently created objects by
+    reusing objects instead of creating/destroying them repeatedly.
     """
 
-    def __init__(self, object_factory: Callable, max_size: int = 100):
-        """
-        Initialize memory pool.
+    def __init__(self, object_factory: Callable[[], object], max_size: int = 100):
+        """Initialize memory pool.
 
         Args:
-            object_factory: Function to create new objects
-            max_size: Maximum pool size
+            object_factory: Zero-arg callable that creates a new object instance
+            max_size: Maximum number of idle objects to retain
         """
         self.object_factory = object_factory
         self.max_size = max_size
-        self.pool = []
+        self.pool: List[object] = []
         self.lock = threading.Lock()
         self.logger = logging.getLogger(__name__)
 
-    def get_object(self):
-        """Get an object from the pool or create new one."""
+    def get_object(self) -> object:
+        """Get an object from the pool or create a new one if empty."""
         with self.lock:
             if self.pool:
                 return self.pool.pop()
-            else:
-                return self.object_factory()
+        # Fallthrough outside lock (object_factory may be expensive)
+        return self.object_factory()
 
-    def return_object(self, obj):
-        """Return an object to the pool."""
+    def return_object(self, obj: object) -> None:
+        """Return an object to the pool if capacity allows."""
         with self.lock:
             if len(self.pool) < self.max_size:
                 # Reset object state if it has a reset method
-                if hasattr(obj, "reset"):
-                    obj.reset()
+                reset = getattr(obj, "reset", None)
+                if callable(reset):
+                    try:
+                        reset()
+                    except Exception:  # Best effort; don't block returning
+                        self.logger.debug("Object reset() failed", exc_info=True)
                 self.pool.append(obj)
 
 
@@ -104,253 +108,136 @@ class StreamProcessor:
 
 
 class MemoryOptimizer:
-    """
-    Memory optimizer that monitors and manages memory usage.
-    Provides automatic garbage collection and memory pressure handling.
-    """
+    """Monitors process/system memory and applies optimization strategies."""
 
-    def __init__(self, memory_limit_mb: int = 512, gc_threshold: float = 0.8):
-        """
-        Initialize memory optimizer.
-
-        Args:
-            memory_limit_mb: Memory limit in MB before taking action
-            gc_threshold: Threshold (0-1) for triggering garbage collection
-        """
+    def __init__(self, memory_limit_mb: int = 512, gc_threshold: float = 0.8) -> None:
         self.memory_limit_mb = memory_limit_mb
         self.gc_threshold = gc_threshold
         self.logger = logging.getLogger(__name__)
-
-        # Monitoring state
+        # Monitoring
         self.monitoring = False
-        self.monitor_thread = None
-        self.monitor_interval = 5.0  # seconds
-
+        self.monitor_thread: Optional[threading.Thread] = None
+        self.monitor_interval = 5.0
         # Callbacks
-        self.memory_warning_callback: Optional[Callable[[
-            MemoryStats], None]] = None
-        self.memory_critical_callback: Optional[Callable[[
-            MemoryStats], None]] = None
-
-        # Object pools
+        self.memory_warning_callback: Optional[Callable[[MemoryStats], None]] = None
+        self.memory_critical_callback: Optional[Callable[[MemoryStats], None]] = None
+        # Pools / caches
         self.pools: Dict[str, MemoryPool] = {}
-
-        # Cache management
-        self.cache_refs = weakref.WeakSet()
+        self.cache_refs: "weakref.WeakSet[object]" = weakref.WeakSet()
 
     def get_memory_stats(self) -> MemoryStats:
-        """
-        Get current memory statistics.
-
-        Returns:
-            Memory statistics
-        """
         try:
-            # System memory
             system_memory = psutil.virtual_memory()
-
-            # Handle case where psutil returns Mock objects during testing
-            if hasattr(
-                    system_memory,
-                    "total") and isinstance(
-                    system_memory.total,
-                    int):
+            if hasattr(system_memory, "total") and isinstance(system_memory.total, int):
                 total_mb = system_memory.total / 1024 / 1024
                 available_mb = system_memory.available / 1024 / 1024
                 used_mb = system_memory.used / 1024 / 1024
                 used_percent = system_memory.percent
             else:
-                # Fallback values for testing
                 total_mb = 8192.0
                 available_mb = 4096.0
                 used_mb = 4096.0
                 used_percent = 50.0
-
-            # Process memory
             try:
-                process = psutil.Process()
-                process_memory = process.memory_info()
-                if hasattr(process_memory, "rss") and isinstance(
-                    process_memory.rss, int
-                ):
+                process_memory = psutil.Process().memory_info()
+                if hasattr(process_memory, "rss") and isinstance(process_memory.rss, int):
                     process_mb = process_memory.rss / 1024 / 1024
                 else:
-                    process_mb = 100.0  # Fallback
+                    process_mb = 100.0
             except (AttributeError, TypeError):
-                process_mb = 100.0  # Fallback
-
+                process_mb = 100.0
             cache_mb = 0.0
             if hasattr(system_memory, "cached"):
                 cached = getattr(system_memory, "cached", 0)
                 if isinstance(cached, int):
                     cache_mb = cached / 1024 / 1024
-
-            return MemoryStats(
-                total_mb=total_mb,
-                available_mb=available_mb,
-                used_mb=used_mb,
-                used_percent=used_percent,
-                process_mb=process_mb,
-                cache_mb=cache_mb,
-            )
-        except Exception as e:
+            return MemoryStats(total_mb, available_mb, used_mb, used_percent, process_mb, cache_mb)
+        except Exception as e:  # pragma: no cover
             self.logger.error("Failed to get memory stats: %s", e)
-            # Return default stats
             return MemoryStats(0, 0, 0, 0, 0, 0)
 
     def check_memory_pressure(self) -> bool:
-        """
-        Check if system is under memory pressure.
-
-        Returns:
-            True if memory pressure detected, False otherwise
-        """
         stats = self.get_memory_stats()
-
-        # Check process memory limit
         if stats.process_mb > self.memory_limit_mb:
-            self.logger.warning(
-                "Process memory %.1f MB exceeds limit %d MB",
-                stats.process_mb,
-                self.memory_limit_mb,
-            )
+            self.logger.warning("Process memory %.1f MB exceeds limit %d MB", stats.process_mb, self.memory_limit_mb)
             return True
-
-        # Check system memory pressure
         if stats.used_percent > 90:
-            self.logger.warning(
-                "System memory usage %.1f%% is critically high",
-                stats.used_percent)
+            self.logger.warning("System memory usage %.1f%% is critically high", stats.used_percent)
             return True
-
         return False
 
-    def optimize_memory(self, aggressive: bool = False):
-        """
-        Perform memory optimization.
-
-        Args:
-            aggressive: Whether to perform aggressive optimization
-        """
-        self.logger.info(
-            "Performing memory optimization (aggressive=%s)",
-            aggressive)
-
-        # Force garbage collection
+    def optimize_memory(self, aggressive: bool = False) -> None:
+        self.logger.info("Performing memory optimization (aggressive=%s)", aggressive)
         collected = gc.collect()
         self.logger.debug("Garbage collected %d objects", collected)
-
         if aggressive:
-            # More aggressive optimization
-            gc.collect(0)  # Collect generation 0
-            gc.collect(1)  # Collect generation 1
-            gc.collect(2)  # Collect generation 2
-
-            # Clear caches
+            gc.collect(0)
+            gc.collect(1)
+            gc.collect(2)
             self._clear_caches()
-
-            # Clear object pools if needed
             self._clear_pools()
 
-    def _clear_caches(self):
-        """Clear registered caches."""
-        cleared_count = 0
+    def _clear_caches(self) -> None:
+        cleared = 0
         for cache_ref in list(self.cache_refs):
             try:
                 if hasattr(cache_ref, "clear"):
                     cache_ref.clear()
-                    cleared_count += 1
-            except Exception as e:
-                self.logger.debug("Error clearing cache: %s", e)
+                    cleared += 1
+            except Exception:
+                self.logger.debug("Error clearing cache", exc_info=True)
+        self.logger.debug("Cleared %d caches", cleared)
 
-        self.logger.debug("Cleared %d caches", cleared_count)
-
-    def _clear_pools(self):
-        """Clear object pools to free memory."""
-        for pool_name, pool in self.pools.items():
+    def _clear_pools(self) -> None:
+        for name, pool in self.pools.items():
             with pool.lock:
                 cleared = len(pool.pool)
                 pool.pool.clear()
-                self.logger.debug(
-                    "Cleared pool '%s': %d objects", pool_name, cleared)
+                self.logger.debug("Cleared pool '%s': %d objects", name, cleared)
 
-    def register_cache(self, cache_obj):
-        """
-        Register a cache object for automatic cleanup.
-
-        Args:
-            cache_obj: Cache object with a clear() method
-        """
+    def register_cache(self, cache_obj: object) -> None:
         self.cache_refs.add(cache_obj)
 
-    def register_pool(self, name: str, pool: MemoryPool):
-        """
-        Register an object pool for management.
-
-        Args:
-            name: Pool name
-            pool: Memory pool instance
-        """
+    def register_pool(self, name: str, pool: MemoryPool) -> None:
         self.pools[name] = pool
 
-    def _monitor_memory(self):
-        """Memory monitoring loop (runs in separate thread)."""
+    def _monitor_memory(self) -> None:
         while self.monitoring:
             try:
                 stats = self.get_memory_stats()
-
-                # Check for warnings
-                if stats.used_percent > 80:
-                    if self.memory_warning_callback:
-                        self.memory_warning_callback(stats)
-
-                # Check for critical conditions
+                if stats.used_percent > 80 and self.memory_warning_callback:
+                    self.memory_warning_callback(stats)
                 if self.check_memory_pressure():
                     if self.memory_critical_callback:
                         self.memory_critical_callback(stats)
-
-                    # Automatic optimization
                     self.optimize_memory(aggressive=True)
-
-                # Normal optimization at threshold
                 elif stats.process_mb > self.memory_limit_mb * self.gc_threshold:
                     self.optimize_memory(aggressive=False)
-
+                time.sleep(self.monitor_interval)
+            except Exception:
+                self.logger.error("Memory monitoring error", exc_info=True)
                 time.sleep(self.monitor_interval)
 
-            except Exception as e:
-                self.logger.error("Memory monitoring error: %s", e)
-                time.sleep(self.monitor_interval)
-
-    def start_monitoring(self):
-        """Start memory monitoring."""
+    def start_monitoring(self) -> None:
         if self.monitoring:
             return
-
         self.logger.info("Starting memory monitoring")
         self.monitoring = True
-        self.monitor_thread = threading.Thread(
-            target=self._monitor_memory, daemon=True)
+        self.monitor_thread = threading.Thread(target=self._monitor_memory, daemon=True)
         self.monitor_thread.start()
 
-    def stop_monitoring(self):
-        """Stop memory monitoring."""
+    def stop_monitoring(self) -> None:
         if not self.monitoring:
             return
-
         self.logger.info("Stopping memory monitoring")
         self.monitoring = False
         if self.monitor_thread:
             self.monitor_thread.join(timeout=5)
 
-    def set_memory_warning_callback(
-            self, callback: Callable[[MemoryStats], None]):
-        """Set callback for memory warnings."""
+    def set_memory_warning_callback(self, callback: Callable[[MemoryStats], None]) -> None:
         self.memory_warning_callback = callback
 
-    def set_memory_critical_callback(
-            self, callback: Callable[[MemoryStats], None]):
-        """Set callback for critical memory conditions."""
+    def set_memory_critical_callback(self, callback: Callable[[MemoryStats], None]) -> None:
         self.memory_critical_callback = callback
 
 

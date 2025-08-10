@@ -303,7 +303,7 @@ class EventProcessor:
 
     def _extract_metadata(self, event: WatchEvent) -> Dict[str, Any]:
         """Extract metadata from file event."""
-        metadata = {}
+        metadata: Dict[str, Any] = {}
 
         try:
             file_path = Path(event.file_path)

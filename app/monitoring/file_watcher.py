@@ -62,42 +62,40 @@ class WatchEvent:
 
 
 class FileSystemWatcher:
-    """
-    Cross-platform file system watcher with real-time event detection.
-    """
+    """Cross-platform file system watcher with real-time event detection."""
 
     def __init__(
         self,
         paths_to_watch: Optional[List[str]] = None,
         event_callback: Optional[Callable[[WatchEvent], None]] = None,
-    ):
-        """
-        Initialize file system watcher.
+    ) -> None:
+        """Initialize file system watcher.
 
         Args:
             paths_to_watch: List of paths to monitor
             event_callback: Callback function for events
         """
+        # Core configuration
         self.logger = logging.getLogger(__name__)
-        self.paths_to_watch = paths_to_watch or ["/home"]
+        self.paths_to_watch = list(paths_to_watch) if paths_to_watch else ["/home"]
         self.event_callback = event_callback
 
         # Event filtering
-        self.excluded_extensions = {".tmp", ".swp", ".log", ".cache"}
-        self.excluded_paths = {"/proc", "/sys", "/dev", "/tmp"}
-        self.max_file_size = 100 * 1024 * 1024  # 100MB
+        self.excluded_extensions: Set[str] = {".tmp", ".swp", ".log", ".cache"}
+        self.excluded_paths: Set[str] = {"/proc", "/sys", "/dev", "/tmp"}
+        self.max_file_size: int = 100 * 1024 * 1024  # 100MB
 
         # State management
         self.watching = False
-        self.watch_thread = None
-        self.inotify_adapter = None
+        self.watch_thread: Optional[threading.Thread] = None
+        self.inotify_adapter: Optional["inotify.adapters.Inotify"] = None
 
         # Enhanced event throttling and debouncing
-        self.event_queue = []
-        self.last_event_time = {}
+        self.event_queue: List[WatchEvent] = []
+        self.last_event_time: Dict[str, float] = {}
         self.throttle_duration = 1.0  # seconds
-        self.debounce_buffer = {}  # For batching similar events
-        self.debounce_timer = None
+        self.debounce_buffer: Dict[str, List[WatchEvent]] = {}
+        self.debounce_timer: Optional[threading.Timer] = None
         self.debounce_delay = 0.5  # seconds
 
         # Performance monitoring

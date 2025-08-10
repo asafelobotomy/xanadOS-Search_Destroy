@@ -14,6 +14,7 @@ import time
 import urllib.error
 import urllib.parse
 import urllib.request
+import contextlib
 from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
@@ -53,11 +54,11 @@ class SecureNetworkManager:
     and protection against network-based attacks.
     """
 
-    # Official ClamAV update servers and their certificate fingerprints
+    # Official ClamAV update servers (fingerprints loaded dynamically from pin file)
     CLAMAV_ENDPOINTS = {
         "database.clamav.net": SecureEndpoint(
             url="https://database.clamav.net",
-            certificate_fingerprint="sha256:1234567890abcdef...",  # Replace with actual
+            certificate_fingerprint=None,  # Loaded dynamically
             security_level=NetworkSecurityLevel.STRICT,
         ),
         "db.local.clamav.net": SecureEndpoint(
@@ -65,6 +66,8 @@ class SecureNetworkManager:
             security_level=NetworkSecurityLevel.STANDARD,
         ),
     }
+
+    PIN_FILE = Path(os.environ.get("XANADOS_PIN_FILE", "pins/cert_pins.json"))
 
     def __init__(self):
         """Initialize the secure network manager."""
@@ -77,16 +80,75 @@ class SecureNetworkManager:
         self.ssl_context.check_hostname = True
         self.ssl_context.verify_mode = ssl.CERT_REQUIRED
 
-        # Disable weak protocols and ciphers
-        self.ssl_context.options |= ssl.OP_NO_SSLv2
-        self.ssl_context.options |= ssl.OP_NO_SSLv3
-        self.ssl_context.options |= ssl.OP_NO_TLSv1
-        self.ssl_context.options |= ssl.OP_NO_TLSv1_1
+        # Disable weak protocols and force minimum modern TLS version.
+        # Prefer setting minimum_version (avoids deprecated OP_NO_* flags in newer Python versions).
+        if hasattr(ssl, "TLSVersion"):
+            try:
+                self.ssl_context.minimum_version = ssl.TLSVersion.TLSv1_2
+            except Exception:  # pragma: no cover - very unlikely
+                pass
+        else:  # Fallback for very old Python (unlikely in supported environments)
+            with contextlib.suppress(AttributeError):
+                self.ssl_context.options |= getattr(ssl, "OP_NO_SSLv2", 0)
+            with contextlib.suppress(AttributeError):
+                self.ssl_context.options |= getattr(ssl, "OP_NO_SSLv3", 0)
+            with contextlib.suppress(AttributeError):
+                self.ssl_context.options |= getattr(ssl, "OP_NO_TLSv1", 0)
+            with contextlib.suppress(AttributeError):
+                self.ssl_context.options |= getattr(ssl, "OP_NO_TLSv1_1", 0)
 
         # Set strong cipher suites
         self.ssl_context.set_ciphers(
             "ECDHE+AESGCM:ECDHE+CHACHA20:DHE+AESGCM:DHE+CHACHA20:!aNULL:!MD5:!DSS"
         )
+
+        # Attempt to load certificate pins (best-effort)
+        self._load_certificate_pins()
+
+    def _load_certificate_pins(self) -> None:
+        """Load certificate fingerprints from a JSON pin file.
+
+        Expected JSON format:
+        {
+          "hosts": {
+              "database.clamav.net": "sha256:abcdef...",
+              "other.host": {"sha256": "sha256:...", "expires": "2025-12-31"}
+          }
+        }
+        """
+        if not self.PIN_FILE.exists():
+            return
+        try:
+            import json
+            try:
+                mode = self.PIN_FILE.stat().st_mode & 0o777
+                if mode & 0o077:
+                    self.logger.warning(
+                        "Skipping pin file with insecure permissions (%o): %s", mode, self.PIN_FILE
+                    )
+                    return
+            except OSError:
+                return
+            with open(self.PIN_FILE, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            hosts = data.get("hosts", {})
+            for host, fp in hosts.items():
+                candidate = fp.get("sha256") if isinstance(fp, dict) else fp
+                if not candidate or not str(candidate).startswith("sha256:"):
+                    continue
+                if host in self.CLAMAV_ENDPOINTS:
+                    self.CLAMAV_ENDPOINTS[host].certificate_fingerprint = candidate
+        except Exception as e:  # pragma: no cover - best effort logging
+            self.logger.debug("Failed to load certificate pins: %s", e)
+
+    def refresh_pins(self) -> bool:
+        """Reload pins at runtime. Returns True if any pin changed.
+
+        Ignores pin files with insecure permissions (group/other access)."""
+        before = {h: ep.certificate_fingerprint for h, ep in self.CLAMAV_ENDPOINTS.items()}
+        self._load_certificate_pins()
+        after = {h: ep.certificate_fingerprint for h, ep in self.CLAMAV_ENDPOINTS.items()}
+        return before != after
 
     def _verify_certificate_fingerprint(
         self, hostname: str, port: int, expected_fingerprint: str

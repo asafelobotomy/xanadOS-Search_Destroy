@@ -19,7 +19,7 @@ try:
     from core.clamav_wrapper import ClamAVWrapper
 except ImportError:
     # Fallback for development/testing
-    class ClamAVWrapper:
+    class ClamAVWrapper:  # type: ignore[no-redef]
         def __init__(self):
             self.available = False
 
@@ -72,13 +72,10 @@ class ScanTask:
 
 
 class BackgroundScanner:
-    """
-    Background scanner that processes file system events and performs scheduled scans.
-    """
+    """Background scanner that processes file system events and performs scheduled scans."""
 
     def __init__(self, file_scanner: Optional[ClamAVWrapper] = None):
-        """
-        Initialize background scanner.
+        """Initialize background scanner.
 
         Args:
             file_scanner: ClamAV wrapper instance to use
@@ -87,7 +84,7 @@ class BackgroundScanner:
         self.file_scanner = file_scanner or ClamAVWrapper()
 
         # Task management
-        self.scan_queue = Queue()
+        self.scan_queue: Queue[ScanTask] = Queue()
         self.active_scans: Set[str] = set()
         self.scan_results: Dict[str, Any] = {}
 
@@ -98,7 +95,7 @@ class BackgroundScanner:
 
         # Scheduling
         self.scheduler = schedule
-        self.scheduler_thread = None
+        self.scheduler_thread: Optional[threading.Thread] = None
 
         # Event callbacks
         self.result_callback: Optional[Callable[[str, Any], None]] = None
@@ -112,8 +109,7 @@ class BackgroundScanner:
         # Configuration
         self.scan_timeout = 30.0  # seconds
         self.max_concurrent_scans = 3
-        self.immediate_scan_extensions = {
-            ".exe", ".dll", ".bat", ".sh", ".py", ".jar"}
+        self.immediate_scan_extensions: Set[str] = {".exe", ".dll", ".bat", ".sh", ".py", ".jar"}
 
         self._setup_scheduled_tasks()
 

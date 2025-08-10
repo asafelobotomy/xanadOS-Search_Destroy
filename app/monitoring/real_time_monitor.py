@@ -19,7 +19,7 @@ try:
     from core.clamav_wrapper import ClamAVWrapper
 except ImportError:
     # Fallback for development/testing
-    class ClamAVWrapper:
+    class ClamAVWrapper:  # type: ignore[no-redef]
         def __init__(self):
             self.available = False
 
