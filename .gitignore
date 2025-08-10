@@ -229,3 +229,9 @@ $RECYCLE.BIN/
 archive/deprecated-docs/
 docs/**/*.bak
 docs/**/*.tmp
+
+# Added by repository organizer
+temp/
+tmp/
+# Testing
+# Backup files

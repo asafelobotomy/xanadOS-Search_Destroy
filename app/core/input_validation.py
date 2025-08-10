@@ -8,7 +8,7 @@ import logging
 import os
 import stat
 from pathlib import Path
-from typing import List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple
 
 # Maximum file sizes (in bytes)
 MAX_FILE_SIZE = 100 * 1024 * 1024  # 100MB
@@ -238,7 +238,16 @@ class InputSanitizer:
             "|",
             "?",
             "*",
-            "\x00"]
+            ";",  # Command separator
+            "`",  # Command substitution
+            "$",  # Variable expansion
+            "&",  # Background process
+            "(",  # Subshell
+            ")",  # Subshell
+            "\n", # Newline
+            "\r", # Carriage return
+            "\t", # Tab
+            "\x00"]  # Null byte
 
         sanitized = filename
         for char in dangerous_chars:
@@ -326,17 +335,22 @@ class FileSizeMonitor:
 
 def validate_scan_request(
         scan_path: str,
-        max_depth: Optional[int] = None) -> dict:
+        max_depth: Optional[int] = None,
+        additional_options: Optional[Dict[str, str]] = None) -> dict:
     """
-    Comprehensive validation of a scan request.
+    Comprehensive validation of scan requests.
+
+    Args:
+        scan_path: Path to scan
+        max_depth: Maximum directory depth
+        additional_options: Additional scan options to validate
 
     Returns:
-        Dictionary with validation results
+        Dict with validation results
     """
     validator = PathValidator()
     result = {
         "valid": False,
-        "path": scan_path,
         "errors": [],
         "warnings": [],
         "estimated_files": 0,
@@ -354,6 +368,14 @@ def validate_scan_request(
         result["errors"].append(
             f"Scan depth too deep: {max_depth} > {MAX_SCAN_DEPTH}")
         return result
+
+    # Validate additional options for security
+    if additional_options:
+        for key, value in additional_options.items():
+            # Check for injection patterns in option values
+            if not _validate_option_security(key, value):
+                result["errors"].append(f"Potentially unsafe option: {key}")
+                return result
 
     # Estimate scan size and complexity
     try:
@@ -383,3 +405,27 @@ def validate_scan_request(
 
     result["valid"] = len(result["errors"]) == 0
     return result
+
+
+def _validate_option_security(key: str, value: str) -> bool:
+    """
+    Validate option key-value pairs for security issues.
+
+    Args:
+        key: Option key
+        value: Option value
+
+    Returns:
+        True if safe, False if potentially dangerous
+    """
+    # Check for dangerous characters in keys
+    if not key.replace('_', '').replace('-', '').isalnum():
+        return False
+    
+    # Check for injection patterns in values
+    dangerous_patterns = [';', '&&', '||', '`', '$', '|', '\n', '\r', '../']
+    for pattern in dangerous_patterns:
+        if pattern in value:
+            return False
+    
+    return True

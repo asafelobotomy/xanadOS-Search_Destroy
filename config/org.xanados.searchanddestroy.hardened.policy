@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE policyconfig PUBLIC
+"-//freedesktop//DTD PolicyKit Policy Configuration 1.0//EN"
+"http://www.freedesktop.org/standards/PolicyKit/1/policyconfig.dtd">
+
+<policyconfig>
+  <!-- Hardened Security Policy for xanadOS Search & Destroy -->
+  <vendor>xanadOS</vendor>
+  <vendor_url>https://github.com/asafelobotomy/xanadOS-Search_Destroy</vendor_url>
+  
+  <!-- RKHunter Scan Operation - Highly Restricted -->
+  <action id="org.xanados.searchanddestroy.rkhunter.scan">
+    <description>Run RKHunter rootkit scanner with scan operation only</description>
+    <message>Authentication required to perform system rootkit scan</message>
+    <icon_name>org.xanados.SearchAndDestroy</icon_name>
+    <defaults>
+      <allow_any>no</allow_any>
+      <allow_inactive>no</allow_inactive>
+      <allow_active>auth_admin</allow_active>
+    </defaults>
+    <!-- SECURITY: Restrict to specific RKHunter executable paths only -->
+    <annotate key="org.freedesktop.policykit.exec.path">/usr/bin/rkhunter</annotate>
+    <!-- SECURITY: Only allow scan commands -->
+    <annotate key="org.freedesktop.policykit.exec.argv1">--check</annotate>
+    <!-- SECURITY: Disable GUI for security -->
+    <annotate key="org.freedesktop.policykit.exec.allow_gui">false</annotate>
+  </action>
+
+  <!-- RKHunter Update Operation - Highly Restricted -->
+  <action id="org.xanados.searchanddestroy.rkhunter.update">
+    <description>Update RKHunter database</description>
+    <message>Authentication required to update RKHunter database</message>
+    <icon_name>org.xanados.SearchAndDestroy</icon_name>
+    <defaults>
+      <allow_any>no</allow_any>
+      <allow_inactive>no</allow_inactive>
+      <allow_active>auth_admin</allow_active>
+    </defaults>
+    <!-- SECURITY: Restrict to specific RKHunter executable paths only -->
+    <annotate key="org.freedesktop.policykit.exec.path">/usr/bin/rkhunter</annotate>
+    <!-- SECURITY: Only allow update commands -->
+    <annotate key="org.freedesktop.policykit.exec.argv1">--update</annotate>
+    <!-- SECURITY: Disable GUI for security -->
+    <annotate key="org.freedesktop.policykit.exec.allow_gui">false</annotate>
+  </action>
+
+  <!-- RKHunter Version Check - Read-only Operation -->
+  <action id="org.xanados.searchanddestroy.rkhunter.version">
+    <description>Check RKHunter version information</description>
+    <message>Authentication required to check RKHunter version</message>
+    <icon_name>org.xanados.SearchAndDestroy</icon_name>
+    <defaults>
+      <allow_any>no</allow_any>
+      <allow_inactive>no</allow_inactive>
+      <allow_active>auth_admin</allow_active>
+    </defaults>
+    <!-- SECURITY: Restrict to specific RKHunter executable paths only -->
+    <annotate key="org.freedesktop.policykit.exec.path">/usr/bin/rkhunter</annotate>
+    <!-- SECURITY: Only allow version commands -->
+    <annotate key="org.freedesktop.policykit.exec.argv1">--version</annotate>
+    <!-- SECURITY: Disable GUI for security -->
+    <annotate key="org.freedesktop.policykit.exec.allow_gui">false</annotate>
+  </action>
+
+  <!-- Kill Command for Process Termination - Emergency Only -->
+  <action id="org.xanados.searchanddestroy.kill">
+    <description>Terminate RKHunter processes</description>
+    <message>Authentication required to terminate system processes</message>
+    <icon_name>org.xanados.SearchAndDestroy</icon_name>
+    <defaults>
+      <allow_any>no</allow_any>
+      <allow_inactive>no</allow_inactive>
+      <allow_active>auth_admin</allow_active>
+    </defaults>
+    <!-- SECURITY: Only allow kill command -->
+    <annotate key="org.freedesktop.policykit.exec.path">/usr/bin/kill</annotate>
+    <!-- SECURITY: Disable GUI for security -->
+    <annotate key="org.freedesktop.policykit.exec.allow_gui">false</annotate>
+  </action>
+
+  <!-- SECURITY NOTE: Removed generic pkexec action to prevent arbitrary command execution -->
+  <!-- All commands must go through specific, validated actions above -->
+
+</policyconfig>

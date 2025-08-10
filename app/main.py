@@ -3,15 +3,14 @@ import os
 import sys
 from pathlib import Path
 
-from gui.main_window import MainWindow
-from PyQt6.QtWidgets import QApplication
-from core.single_instance import SingleInstanceManager
-
-from gui import APP_VERSION
-
 # Add app directory to Python path for proper imports
 app_dir = Path(__file__).parent
 sys.path.insert(0, str(app_dir))
+
+from gui.main_window import MainWindow
+from PyQt6.QtWidgets import QApplication
+from core.single_instance import SingleInstanceManager
+from gui import APP_VERSION
 
 # Import version info
 

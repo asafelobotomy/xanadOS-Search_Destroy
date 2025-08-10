@@ -12,6 +12,7 @@ class ScanThread(QThread):
     progress_updated = pyqtSignal(int)
     scan_completed = pyqtSignal(dict)
     status_updated = pyqtSignal(str)
+    scan_detail_updated = pyqtSignal(dict)  # New signal for detailed scan information
 
     def __init__(self, scanner, path, quick_scan=False, scan_options=None):
         super().__init__()
@@ -20,6 +21,7 @@ class ScanThread(QThread):
         self.quick_scan = quick_scan
         self.scan_options = scan_options or {}
         self._cancelled = False
+        self._current_scan_type = "quick" if quick_scan else "full"  # Default values
 
     def stop_scan(self):
         """Safely stop the scan using Qt6 proper interruption"""
@@ -53,6 +55,18 @@ class ScanThread(QThread):
             # Set up progress callback
             self.scanner.set_progress_callback(safe_progress_callback)
             
+            # Set up detailed progress callback for scan results display
+            def safe_detailed_progress_callback(detail_info):
+                # Check Qt6 interruption request
+                if self.isInterruptionRequested() or self._cancelled:
+                    return
+                try:
+                    self.scan_detail_updated.emit(detail_info)
+                except Exception as e:
+                    print(f"Detailed progress callback error: {e}")
+            
+            self.scanner.set_detailed_progress_callback(safe_detailed_progress_callback)
+            
             # Check for Qt6 interruption or early cancellation
             if self.isInterruptionRequested() or self._cancelled:
                 self.status_updated.emit("Scan cancelled before start")
@@ -79,22 +93,74 @@ class ScanThread(QThread):
                 try:
                     from utils.scan_reports import ScanType
                     
-                    self.status_updated.emit("Quick scan starting...")
-                    result = self.scanner.scan_directory(
-                        self.path, 
-                        scan_type=ScanType.QUICK, 
-                        max_files=max_files,
-                        max_workers=max_workers,
-                        timeout=300  # 5 minute timeout for quick scans
-                    )
+                    # Handle multiple paths for comprehensive quick scan
+                    if isinstance(self.path, list):
+                        # Comprehensive quick scan of multiple directories
+                        all_results = []
+                        total_paths = len(self.path)
+                        
+                        self.status_updated.emit(f"Quick scan starting...")
+                        
+                        for i, directory in enumerate(self.path):
+                            # Check for cancellation before each directory
+                            if self.isInterruptionRequested() or self._cancelled:
+                                break
+                                
+                            directory_name = os.path.basename(directory)
+                            self.status_updated.emit(f"Scanning: {directory_name} | Remaining: {total_paths - i - 1}")
+                            
+                            # Calculate progress as percentage of directories completed
+                            progress = int((i / total_paths) * 100)
+                            self.progress_updated.emit(progress)
+                            
+                            try:
+                                dir_result = self.scanner.scan_directory(
+                                    directory, 
+                                    scan_type=ScanType.QUICK, 
+                                    max_files=max_files,
+                                    max_workers=max_workers,
+                                    timeout=180  # 3 minute timeout per directory
+                                )
+                                
+                                if dir_result and isinstance(dir_result, dict):
+                                    all_results.append(dir_result)
+                                    
+                            except Exception as e:
+                                print(f"Error scanning {directory}: {e}")
+                                # Continue with other directories even if one fails
+                                continue
+                        
+                        # Combine results from all directories
+                        if all_results:
+                            result = self._combine_scan_results(all_results)
+                        else:
+                            result = {"status": "completed", "threats": [], "threats_found": 0}
+                        
+                        self.status_updated.emit("Quick scan completed successfully")
+                        
+                    else:
+                        # Single directory quick scan (fallback)
+                        self.status_updated.emit("Quick scan starting...")
+                        result = self.scanner.scan_directory(
+                            self.path, 
+                            scan_type=ScanType.QUICK, 
+                            max_files=max_files,
+                            max_workers=max_workers,
+                            timeout=300  # 5 minute timeout for quick scans
+                        )
+                        self.status_updated.emit("Quick scan completed successfully")
+                        
                 except ImportError:
                     # Fallback if import fails
-                    result = self.scanner.scan_directory(
-                        self.path, 
-                        max_files=max_files,
-                        max_workers=max_workers
-                    )
-                self.status_updated.emit("Quick scan in progress...")
+                    if isinstance(self.path, list):
+                        result = {"status": "error", "error": "Multiple path scanning requires ScanType import"}
+                    else:
+                        result = self.scanner.scan_directory(
+                            self.path, 
+                            max_files=max_files,
+                            max_workers=max_workers
+                        )
+                        self.status_updated.emit("Quick scan completed successfully")
             else:
                 # Full scan with enhanced stability measures
                 try:
@@ -103,12 +169,14 @@ class ScanThread(QThread):
                     # Determine scan type based on path
                     if self.path == os.path.expanduser("~") or self.path == "/":
                         scan_type = ScanType.FULL
+                        self._current_scan_type = "full"
                         max_files = 2000  # Increased limit for full scans but still safe
                         max_workers = 4   # Slightly more workers for full scans
+                        self.status_updated.emit("Full scan starting...")
                     else:
                         scan_type = ScanType.CUSTOM
-                    
-                    self.status_updated.emit("Full scan starting...")
+                        self._current_scan_type = "custom"
+                        self.status_updated.emit("Custom scan starting...")
                     
                     # Check for Qt6 interruption before starting intensive work
                     if self.isInterruptionRequested() or self._cancelled:
@@ -135,11 +203,15 @@ class ScanThread(QThread):
                     self.scan_completed.emit({
                         "error": str(scan_error), 
                         "status": "error",
-                        "scan_type": "full"
+                        "scan_type": getattr(self, '_current_scan_type', 'full')
                     })
                     return
                     
-                self.status_updated.emit("Full scan in progress...")
+                # Update status based on scan type
+                if hasattr(self, '_current_scan_type') and self._current_scan_type == "custom":
+                    self.status_updated.emit("Custom scan in progress...")
+                else:
+                    self.status_updated.emit("Full scan in progress...")
 
             # Check for Qt6 interruption before processing results
             if self.isInterruptionRequested() or self._cancelled:
@@ -223,3 +295,48 @@ class ScanThread(QThread):
                     self.scanner.cleanup()
             except:
                 pass
+
+    def _combine_scan_results(self, results_list):
+        """Combine multiple scan results into a single comprehensive result."""
+        if not results_list:
+            return {"status": "completed", "threats": [], "threats_found": 0}
+        
+        # Initialize combined result
+        combined = {
+            "status": "completed",
+            "threats": [],
+            "threats_found": 0,
+            "scanned_files": 0,
+            "total_files": 0,
+            "duration": 0,
+            "scanned_paths": [],
+            "scan_type": "QUICK_COMPREHENSIVE"
+        }
+        
+        # Combine data from all results
+        for result in results_list:
+            if isinstance(result, dict):
+                # Add threats
+                if "threats" in result and result["threats"]:
+                    combined["threats"].extend(result["threats"])
+                
+                # Sum numerical values
+                combined["threats_found"] += result.get("threats_found", 0)
+                combined["scanned_files"] += result.get("scanned_files", 0)
+                combined["total_files"] += result.get("total_files", 0)
+                combined["duration"] += result.get("duration", 0)
+                
+                # Collect scanned paths
+                if "scan_path" in result:
+                    combined["scanned_paths"].append(result["scan_path"])
+                elif "scanned_paths" in result:
+                    combined["scanned_paths"].extend(result["scanned_paths"])
+        
+        # Generate a unique scan ID for the combined result
+        import time
+        combined["scan_id"] = f"comprehensive_quick_{int(time.time())}"
+        
+        # Update final threat count
+        combined["threats_found"] = len(combined["threats"])
+        
+        return combined

@@ -33,6 +33,7 @@ from PyQt6.QtWidgets import (
     QGroupBox,
     QHBoxLayout,
     QLabel,
+    QLineEdit,
     QListWidget,
     QListWidgetItem,
     QMainWindow,
@@ -118,7 +119,49 @@ class MainWindow(QMainWindow):
         
         # Initialization state - prevents premature scheduler actions during startup
         self._initialization_complete = False
+        
+        # Initialize tooltip styling
+        self._setup_tooltip_styling()
+        
+        # Initialize scan state
+        self._initialize_scan_state()
 
+    def _setup_tooltip_styling(self):
+        """Set up standardized tooltip styling for consistent width and appearance."""
+        # Set application-wide tooltip styling
+        tooltip_style = """
+        QToolTip {
+            background-color: #2b2b2b;
+            color: #ffffff;
+            border: 1px solid #555555;
+            border-radius: 4px;
+            padding: 8px;
+            font-size: 11px;
+            max-width: 350px;
+        }
+        """
+        self.setStyleSheet(self.styleSheet() + tooltip_style)
+
+    def _format_tooltip(self, text, max_chars_per_line=50):
+        """Format tooltip text with consistent width and line breaks."""
+        import textwrap
+        
+        # Split by existing newlines and process each paragraph
+        paragraphs = text.split('\n')
+        formatted_paragraphs = []
+        
+        for paragraph in paragraphs:
+            if paragraph.strip():  # Non-empty paragraph
+                # Wrap long lines
+                wrapped = textwrap.fill(paragraph.strip(), width=max_chars_per_line)
+                formatted_paragraphs.append(wrapped)
+            else:  # Empty line
+                formatted_paragraphs.append("")
+        
+        return '\n'.join(formatted_paragraphs)
+
+    def _initialize_scan_state(self):
+        """Initialize scan state tracking variables."""
         # Enhanced scan state tracking
         self.is_quick_scan_running = False
         self._scan_state = "idle"  # idle, scanning, stopping, completing
@@ -130,7 +173,6 @@ class MainWindow(QMainWindow):
         self.monitoring_enabled = self.config.get("security_settings", {}).get(
             "real_time_protection", False
         )
-
         # Firewall change tracking - to avoid reporting GUI changes as
         # "external"
         self._firewall_change_from_gui = False
@@ -326,9 +368,7 @@ class MainWindow(QMainWindow):
                 # Update system tray tooltip with performance info
                 self.update_system_tray_tooltip()
 
-            # Save activity logs every 30 cycles (30 seconds)
-            if self.timer_cycle_count % 30 == 0:
-                self.save_activity_logs()
+            # Activity logs are now saved immediately when entries are added
 
             # Reset counter to prevent overflow
             if self.timer_cycle_count >= 300:  # Reset every 5 minutes
@@ -481,6 +521,12 @@ class MainWindow(QMainWindow):
         self.quick_scan_btn.setMinimumSize(
             120, 40
         )  # Increased size to prevent text cutoff
+        self.quick_scan_btn.setToolTip(
+            "Comprehensive Quick Scan of multiple directories\n"
+            "• Downloads, Documents, Pictures, Videos, Music\n"
+            "• Browser data, temporary files, application data\n"
+            "• Fast scanning optimized for common threat locations"
+        )
         self.quick_scan_btn.clicked.connect(self.quick_scan)
 
         # Update definitions button with status
@@ -588,8 +634,8 @@ class MainWindow(QMainWindow):
 
         layout.addLayout(
             status_row
-        )  # Real-Time Protection Activity (expanded to fill the space)
-        activity_group = QGroupBox("Real-Time Protection Activity")
+        )  # Activity Report (expanded to fill the space)
+        activity_group = QGroupBox("Activity Report")
         activity_layout = QVBoxLayout(activity_group)
 
         self.dashboard_activity = QListWidget()
@@ -771,12 +817,17 @@ class MainWindow(QMainWindow):
         # Show info about authentication
         self.add_activity_message(f"🔒 Requesting admin privileges to {action} firewall...")
         
+        # Set flag to indicate this change is from GUI (prevents "external" messages)
+        self._firewall_change_from_gui = True
+        
         # Perform the firewall toggle operation
         try:
             result = toggle_firewall(enable_firewall)
         except Exception as e:
             import traceback
             traceback.print_exc()
+            # Reset flag since operation failed
+            self._firewall_change_from_gui = False
             self.add_activity_message(f"❌ Error during firewall {action}: {str(e)}")
             return
         
@@ -792,7 +843,8 @@ class MainWindow(QMainWindow):
             self.update_firewall_status()
             self.update_firewall_status_card()
         else:
-            # Error - show error message
+            # Error - show error message and reset flag
+            self._firewall_change_from_gui = False
             error_msg = str(result.get('error', 'Unknown error'))
             
             # Check if it's a permission/authentication error
@@ -1087,6 +1139,9 @@ class MainWindow(QMainWindow):
             # Update button to show authentication in progress
             self.firewall_toggle_btn.setText("Authenticating...")
             
+            # Set flag to indicate this change is from GUI (prevents "external" messages)
+            self._firewall_change_from_gui = True
+            
             # Perform the firewall toggle operation
             print(f"🔍 DEBUG (Protection): About to call toggle_firewall({enable_firewall})")
             try:
@@ -1096,6 +1151,8 @@ class MainWindow(QMainWindow):
                 print(f"❌ DEBUG (Protection): Exception in toggle_firewall: {e}")
                 import traceback
                 traceback.print_exc()
+                # Reset flag since operation failed
+                self._firewall_change_from_gui = False
                 self.add_activity_message(f"❌ Error during firewall {action}: {str(e)}")
                 self._restore_firewall_button()
                 return
@@ -1111,7 +1168,8 @@ class MainWindow(QMainWindow):
                 # Force immediate status update
                 self.update_firewall_status()
             else:
-                # Error - show error message
+                # Error - show error message and reset flag
+                self._firewall_change_from_gui = False
                 error_msg = str(result.get('error', 'Unknown error'))
                 
                 # Check if it's a permission/authentication error
@@ -1186,6 +1244,15 @@ class MainWindow(QMainWindow):
         self.results_text.setReadOnly(True)
         self.results_text.setAcceptRichText(True)  # Enable HTML formatting
         self.results_text.setMinimumHeight(160)  # Minimum for readability
+        
+        # Initialize autoscroll tracking
+        self._user_has_scrolled = False
+        self._last_scroll_position = 0
+        
+        # Connect to scroll events to detect user scrolling
+        scrollbar = self.results_text.verticalScrollBar()
+        scrollbar.valueChanged.connect(self._on_scroll_changed)
+        
         # No maximum height - allow full expansion
         results_layout.addWidget(self.results_text)
 
@@ -1226,7 +1293,12 @@ class MainWindow(QMainWindow):
         self.scan_type_combo.addItem("🔍 Full Scan", "FULL") 
         self.scan_type_combo.addItem("⚙️ Custom Scan", "CUSTOM")
         self.scan_type_combo.setObjectName("scanTypeCombo")
-        self.scan_type_combo.setToolTip("Choose scan thoroughness level")
+        self.scan_type_combo.setToolTip(
+            "Choose scan thoroughness level:\n"
+            "• Quick: Scans your selected path with optimized settings\n"
+            "• Full: Complete system scan of entire home directory\n"
+            "• Custom: Targeted scan of your specific folder selection"
+        )
         self.scan_type_combo.currentTextChanged.connect(self.on_scan_type_changed)
         # Set proper size policy and minimum size for the combo
         self.scan_type_combo.setMinimumHeight(45)  # Good height for visibility
@@ -1303,20 +1375,15 @@ class MainWindow(QMainWindow):
         buttons_layout = QVBoxLayout(buttons_group)
         buttons_layout.setSpacing(8)  # Reduced spacing between buttons
         
-        # Primary scan button with proper size
-        self.start_scan_btn = QPushButton("🚀 Start Scan")
-        self.start_scan_btn.setObjectName("primaryButton")
-        self.start_scan_btn.setMinimumHeight(32)  # Reduced primary button height
-        self.start_scan_btn.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
-        self.start_scan_btn.clicked.connect(self.start_scan)
-
-        # Secondary buttons with consistent sizing
-        self.stop_scan_btn = QPushButton("⏹️ Stop Scan")
-        self.stop_scan_btn.setObjectName("dangerButton")
-        self.stop_scan_btn.setMinimumHeight(28)
-        self.stop_scan_btn.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
-        self.stop_scan_btn.clicked.connect(self.stop_scan)
-        self.stop_scan_btn.setEnabled(False)
+        # Primary scan toggle button
+        self.scan_toggle_btn = QPushButton("🚀 Start Scan")
+        self.scan_toggle_btn.setObjectName("primaryButton")
+        self.scan_toggle_btn.setMinimumHeight(32)
+        self.scan_toggle_btn.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+        self.scan_toggle_btn.clicked.connect(self.toggle_scan)
+        
+        # Keep track of current scan state for button toggling
+        self._scan_running = False
 
         # RKHunter button
         self.rkhunter_scan_btn = QPushButton("🔍 RKHunter Scan")
@@ -1336,8 +1403,7 @@ class MainWindow(QMainWindow):
             self.rkhunter_scan_btn.setToolTip("RKHunter not available - click to install or configure")
             self.rkhunter_scan_btn.clicked.connect(self.install_rkhunter)
 
-        buttons_layout.addWidget(self.start_scan_btn)
-        buttons_layout.addWidget(self.stop_scan_btn)
+        buttons_layout.addWidget(self.scan_toggle_btn)
         buttons_layout.addWidget(self.rkhunter_scan_btn)
         
         column2_layout.addWidget(buttons_group)
@@ -1440,6 +1506,10 @@ class MainWindow(QMainWindow):
         default_settings_btn.clicked.connect(self.load_default_settings)
         default_settings_btn.setMinimumHeight(40)
         default_settings_btn.setMinimumWidth(140)
+        default_settings_btn.setToolTip(
+            "Reset all settings to their default values. This will restore recommended settings "
+            "for optimal security and performance. Your current settings will be overwritten."
+        )
         default_btn_layout.addWidget(default_settings_btn)
         default_btn_layout.addStretch()
         main_layout.addLayout(default_btn_layout)
@@ -1478,6 +1548,11 @@ class MainWindow(QMainWindow):
         self.settings_max_threads_spin.setRange(1, 16)
         self.settings_max_threads_spin.setValue(4)
         self.settings_max_threads_spin.setMinimumHeight(35)
+        self.settings_max_threads_spin.setToolTip(
+            self._format_tooltip(
+                "Number of parallel threads to use during scanning. Higher values can speed up scans but use more CPU and memory. Recommended: 4-8 threads for most systems."
+            )
+        )
         scan_layout.addRow(
             QLabel("Max Threads:"),
             self.settings_max_threads_spin)
@@ -1488,18 +1563,33 @@ class MainWindow(QMainWindow):
         self.settings_timeout_spin.setValue(300)
         self.settings_timeout_spin.setSuffix(" seconds")
         self.settings_timeout_spin.setMinimumHeight(35)
+        self.settings_timeout_spin.setToolTip(
+            self._format_tooltip(
+                "Maximum time to wait for a scan to complete before timing out. Increase for large file systems or slow storage. Default: 300 seconds (5 minutes)."
+            )
+        )
         scan_layout.addRow(QLabel("Scan Timeout:"), self.settings_timeout_spin)
 
         # Scan archives checkbox
         self.settings_scan_archives_cb = QCheckBox("Scan Archive Files")
         self.settings_scan_archives_cb.setChecked(True)
         self.settings_scan_archives_cb.setMinimumHeight(35)
+        self.settings_scan_archives_cb.setToolTip(
+            self._format_tooltip(
+                "Enable scanning inside compressed files and archives (ZIP, RAR, TAR, etc.). Provides more thorough malware detection but increases scan time and memory usage."
+            )
+        )
         scan_layout.addRow(self.settings_scan_archives_cb)
 
         # Follow symlinks checkbox
         self.settings_follow_symlinks_cb = QCheckBox("Follow Symbolic Links")
         self.settings_follow_symlinks_cb.setChecked(False)
         self.settings_follow_symlinks_cb.setMinimumHeight(35)
+        self.settings_follow_symlinks_cb.setToolTip(
+            self._format_tooltip(
+                "Follow symbolic links during scanning. Warning: May cause infinite loops if links create cycles. Disable unless you specifically need to scan symlinked content."
+            )
+        )
         scan_layout.addRow(self.settings_follow_symlinks_cb)
 
         left_column_layout.addWidget(scan_group)
@@ -1516,6 +1606,12 @@ class MainWindow(QMainWindow):
         self.scan_depth_combo.addItem("Deep (Thorough)", 3)
         self.scan_depth_combo.setCurrentIndex(1)
         self.scan_depth_combo.setMinimumHeight(35)
+        self.scan_depth_combo.setToolTip(
+            "Controls how deep the scanner searches subdirectories:\n"
+            "• Surface: Top-level files only (fastest)\n"
+            "• Normal: 2 directory levels deep (balanced)\n"
+            "• Deep: 3+ levels deep (most thorough)"
+        )
         advanced_scan_layout.addRow("Scan Depth:", self.scan_depth_combo)
         
         # File type filtering
@@ -1525,6 +1621,13 @@ class MainWindow(QMainWindow):
         self.file_filter_combo.addItem("Documents & Media", "docs")
         self.file_filter_combo.addItem("System Files", "system")
         self.file_filter_combo.setMinimumHeight(35)
+        self.file_filter_combo.setToolTip(
+            "Filter which file types to scan:\n"
+            "• All Files: Scan everything (most thorough)\n"
+            "• Executables: .exe, .dll, .so files (faster, security-focused)\n"
+            "• Documents & Media: Office docs, PDFs, images, videos\n"
+            "• System Files: Core OS and configuration files"
+        )
         advanced_scan_layout.addRow("File Types:", self.file_filter_combo)
         
         # Memory usage limit
@@ -1534,6 +1637,12 @@ class MainWindow(QMainWindow):
         self.memory_limit_combo.addItem("High (2GB)", 2048)
         self.memory_limit_combo.setCurrentIndex(1)
         self.memory_limit_combo.setMinimumHeight(35)
+        self.memory_limit_combo.setToolTip(
+            "Maximum memory the scanner can use:\n"
+            "• Low: Best for older/limited systems\n"
+            "• Normal: Good balance for most systems\n"
+            "• High: Fastest scanning for systems with plenty of RAM"
+        )
         advanced_scan_layout.addRow("Memory Limit:", self.memory_limit_combo)
         
         # Exclusion patterns
@@ -1541,6 +1650,14 @@ class MainWindow(QMainWindow):
         self.exclusion_text = QTextEdit()
         self.exclusion_text.setMaximumHeight(60)  # Slightly larger in settings
         self.exclusion_text.setPlaceholderText("*.tmp, *.log, /proc/*, /sys/* (separate with commas)")
+        self.exclusion_text.setToolTip(
+            "Files and directories to skip during scanning. Use wildcards (*, ?) and separate with commas.\n"
+            "Examples:\n"
+            "• *.tmp - Skip temporary files\n"
+            "• /proc/* - Skip process filesystem\n"
+            "• ~/.cache/* - Skip user cache directory\n"
+            "• *.log, *.bak - Skip multiple file types"
+        )
         advanced_scan_layout.addRow(exclusion_patterns_label, self.exclusion_text)
 
         left_column_layout.addWidget(advanced_scan_group)
@@ -1556,8 +1673,9 @@ class MainWindow(QMainWindow):
         self.settings_minimize_to_tray_cb.setChecked(True)
         self.settings_minimize_to_tray_cb.setMinimumHeight(35)
         self.settings_minimize_to_tray_cb.setToolTip(
-            "When enabled, closing the window or selecting Exit will minimize to system tray instead of closing the application. "
-            "Use 'Force Exit' from the File menu or system tray to actually close the application."
+            self._format_tooltip(
+                "When enabled, closing the window or selecting Exit will minimize to system tray instead of closing the application. Use 'Force Exit' from the File menu or system tray to actually close the application."
+            )
         )
         ui_layout.addRow(self.settings_minimize_to_tray_cb)
 
@@ -1565,6 +1683,11 @@ class MainWindow(QMainWindow):
         self.settings_show_notifications_cb = QCheckBox("Show Notifications")
         self.settings_show_notifications_cb.setChecked(True)
         self.settings_show_notifications_cb.setMinimumHeight(35)
+        self.settings_show_notifications_cb.setToolTip(
+            self._format_tooltip(
+                "Display desktop notifications for important events like scan completion, threats found, and protection status changes. Notifications appear in your system tray area."
+            )
+        )
         ui_layout.addRow(self.settings_show_notifications_cb)
 
         # Activity log retention setting
@@ -1576,7 +1699,9 @@ class MainWindow(QMainWindow):
             "100")  # Default to 100
         self.settings_activity_retention_combo.setMinimumHeight(35)
         self.settings_activity_retention_combo.setToolTip(
-            "Number of recent activity messages to retain between sessions"
+            self._format_tooltip(
+                "Number of activity messages to retain between sessions. Higher values keep more history but use more memory. Default: 100 messages."
+            )
         )
         self.settings_activity_retention_combo.currentTextChanged.connect(
             self.on_retention_setting_changed
@@ -1597,6 +1722,11 @@ class MainWindow(QMainWindow):
             "Auto-update Virus Definitions")
         self.settings_auto_update_cb.setChecked(True)
         self.settings_auto_update_cb.setMinimumHeight(35)
+        self.settings_auto_update_cb.setToolTip(
+            self._format_tooltip(
+                "Automatically download and install the latest virus definition updates to ensure protection against new threats. Updates are checked when the application starts and before scans."
+            )
+        )
         security_layout.addRow(self.settings_auto_update_cb)
 
         left_column_layout.addWidget(security_group)
@@ -1610,6 +1740,11 @@ class MainWindow(QMainWindow):
         self.settings_enable_scheduled_cb = QCheckBox("Enable Scheduled Scans")
         self.settings_enable_scheduled_cb.setChecked(False)
         self.settings_enable_scheduled_cb.setMinimumHeight(35)
+        self.settings_enable_scheduled_cb.setToolTip(
+            self._format_tooltip(
+                "Automatically run security scans on a regular schedule. The application will perform unattended scans at the specified time and frequency, even when you're away from your computer."
+            )
+        )
         self.settings_enable_scheduled_cb.toggled.connect(self.on_scheduled_scan_toggled)
         scheduled_layout.addRow(self.settings_enable_scheduled_cb)
         
@@ -1621,6 +1756,11 @@ class MainWindow(QMainWindow):
         self.settings_scan_frequency_combo.setCurrentIndex(0)
         self.settings_scan_frequency_combo.setMinimumHeight(35)
         self.settings_scan_frequency_combo.setEnabled(False)
+        self.settings_scan_frequency_combo.setToolTip(
+            self._format_tooltip(
+                "How often to run scheduled scans:\n• Daily: Run every day at the specified time\n• Weekly: Run once per week (same day and time)\n• Monthly: Run once per month (same date and time)"
+            )
+        )
         self.settings_scan_frequency_combo.currentTextChanged.connect(self.update_next_scheduled_scan_display)
         scheduled_layout.addRow(QLabel("Scan Frequency:"), self.settings_scan_frequency_combo)
         
@@ -1630,12 +1770,71 @@ class MainWindow(QMainWindow):
         self.settings_scan_time_edit.setTime(QTime(2, 0))  # Default to 2:00 AM
         self.settings_scan_time_edit.setMinimumHeight(35)
         self.settings_scan_time_edit.setEnabled(False)
+        self.settings_scan_time_edit.setToolTip(
+            self._format_tooltip(
+                "What time of day to run scheduled scans. Choose a time when your computer is likely to be on but not in heavy use. Default: 2:00 AM (recommended for minimal interference)."
+            )
+        )
         self.settings_scan_time_edit.timeChanged.connect(self.update_next_scheduled_scan_display)
         scheduled_layout.addRow(QLabel("Scan Time:"), self.settings_scan_time_edit)
+        
+        # Scan type selection
+        self.settings_scan_type_combo = NoWheelComboBox()
+        self.settings_scan_type_combo.addItem("Quick Scan", "quick")
+        self.settings_scan_type_combo.addItem("Full System Scan", "full")
+        self.settings_scan_type_combo.addItem("Custom Directory", "custom")
+        self.settings_scan_type_combo.setCurrentIndex(0)  # Default to Quick Scan
+        self.settings_scan_type_combo.setMinimumHeight(35)
+        self.settings_scan_type_combo.setEnabled(False)
+        self.settings_scan_type_combo.setToolTip(
+            self._format_tooltip(
+                "Type of scan to perform during scheduled scans:\n• Quick Scan: Fast scan of common malware locations\n• Full System Scan: Comprehensive scan of entire system\n• Custom Directory: Scan a specific directory you choose"
+            )
+        )
+        self.settings_scan_type_combo.currentTextChanged.connect(self.on_scheduled_scan_type_changed)
+        scheduled_layout.addRow(QLabel("Scan Type:"), self.settings_scan_type_combo)
+        
+        # Custom directory selection (initially hidden)
+        self.settings_custom_dir_widget = QWidget()
+        custom_dir_layout = QHBoxLayout(self.settings_custom_dir_widget)
+        custom_dir_layout.setContentsMargins(0, 0, 0, 0)
+        
+        self.settings_custom_dir_edit = QLineEdit()
+        self.settings_custom_dir_edit.setPlaceholderText("Select directory for custom scans...")
+        self.settings_custom_dir_edit.setMinimumHeight(35)
+        self.settings_custom_dir_edit.setEnabled(False)
+        self.settings_custom_dir_edit.setReadOnly(True)
+        
+        # Set object name for theme-based styling
+        self.settings_custom_dir_edit.setObjectName("themedLineEdit")
+        
+        self.settings_custom_dir_edit.setToolTip(
+            self._format_tooltip(
+                "Directory path for custom scheduled scans. Click the browse button to select a different directory."
+            )
+        )
+        
+        self.settings_custom_dir_btn = QPushButton("Browse...")
+        self.settings_custom_dir_btn.setMinimumHeight(35)
+        self.settings_custom_dir_btn.setMaximumWidth(80)
+        self.settings_custom_dir_btn.setEnabled(False)
+        self.settings_custom_dir_btn.setToolTip("Select directory for custom scheduled scans")
+        self.settings_custom_dir_btn.clicked.connect(self.select_scheduled_custom_directory)
+        
+        custom_dir_layout.addWidget(self.settings_custom_dir_edit)
+        custom_dir_layout.addWidget(self.settings_custom_dir_btn)
+        
+        self.settings_custom_dir_widget.setVisible(False)  # Hide initially
+        scheduled_layout.addRow(QLabel("Custom Directory:"), self.settings_custom_dir_widget)
         
         # Next scheduled scan display
         self.settings_next_scan_label = QLabel("None scheduled")
         self.settings_next_scan_label.setObjectName("nextScanLabel")
+        self.settings_next_scan_label.setToolTip(
+            self._format_tooltip(
+                "Shows when the next scheduled scan will run based on your current settings. The scan will automatically start at this time if the application is running."
+            )
+        )
         scheduled_layout.addRow(QLabel("Next Scan:"), self.settings_next_scan_label)
         
         left_column_layout.addWidget(scheduled_group)
@@ -1650,12 +1849,23 @@ class MainWindow(QMainWindow):
             "Monitor File Modifications")
         self.settings_monitor_modifications_cb.setChecked(True)
         self.settings_monitor_modifications_cb.setMinimumHeight(35)
+        self.settings_monitor_modifications_cb.setToolTip(
+            self._format_tooltip(
+                "Watch for changes to existing files in monitored directories. Detects when files are modified, which could indicate malware activity or unauthorized changes."
+            )
+        )
         protection_layout.addRow(self.settings_monitor_modifications_cb)
 
         # Monitor new files
         self.settings_monitor_new_files_cb = QCheckBox("Monitor New Files")
         self.settings_monitor_new_files_cb.setChecked(True)
         self.settings_monitor_new_files_cb.setMinimumHeight(35)
+        self.settings_monitor_new_files_cb.setToolTip(
+            self._format_tooltip(
+                "Watch for new files being created in monitored directories. Important for detecting malware downloads, newly installed threats, or suspicious file creation."
+            )
+        )
+        protection_layout.addRow(self.settings_monitor_new_files_cb)
         protection_layout.addRow(self.settings_monitor_new_files_cb)
 
         # Scan modified files immediately
@@ -1663,6 +1873,11 @@ class MainWindow(QMainWindow):
             "Scan Modified Files Immediately")
         self.settings_scan_modified_cb.setChecked(False)
         self.settings_scan_modified_cb.setMinimumHeight(35)
+        self.settings_scan_modified_cb.setToolTip(
+            self._format_tooltip(
+                "Automatically scan files as soon as they are created or modified. Provides immediate threat detection but may impact system performance. Disable for better performance on busy systems."
+            )
+        )
         protection_layout.addRow(self.settings_scan_modified_cb)
 
         right_column_layout.addWidget(protection_group)
@@ -1695,7 +1910,9 @@ class MainWindow(QMainWindow):
             "Enable RKHunter Integration")
         self.settings_enable_rkhunter_cb.setChecked(False)
         self.settings_enable_rkhunter_cb.setToolTip(
-            "Enable integration with RKHunter rootkit detection"
+            self._format_tooltip(
+                "Enable integration with RKHunter rootkit detection system. Provides advanced scanning capabilities for detecting rootkits, backdoors, and other sophisticated threats."
+            )
         )
         self.settings_enable_rkhunter_cb.setMinimumHeight(35)
 
@@ -1704,21 +1921,49 @@ class MainWindow(QMainWindow):
         )
         self.settings_run_rkhunter_with_full_scan_cb.setChecked(False)
         self.settings_run_rkhunter_with_full_scan_cb.setToolTip(
-            "Automatically run RKHunter when performing full system scans"
+            self._format_tooltip(
+                "Automatically run RKHunter when performing full system scans. Combines comprehensive file scanning with rootkit detection for maximum security coverage."
+            )
         )
         self.settings_run_rkhunter_with_full_scan_cb.setMinimumHeight(35)
+
+        self.settings_run_rkhunter_with_quick_scan_cb = QCheckBox(
+            "Run RKHunter with Quick Scans"
+        )
+        self.settings_run_rkhunter_with_quick_scan_cb.setChecked(False)
+        self.settings_run_rkhunter_with_quick_scan_cb.setToolTip(
+            self._format_tooltip(
+                "Automatically run RKHunter when performing quick scans for enhanced security. Adds rootkit detection to rapid scans without significantly increasing scan time."
+            )
+        )
+        self.settings_run_rkhunter_with_quick_scan_cb.setMinimumHeight(35)
+
+        self.settings_run_rkhunter_with_custom_scan_cb = QCheckBox(
+            "Run RKHunter with Custom Scans"
+        )
+        self.settings_run_rkhunter_with_custom_scan_cb.setChecked(False)
+        self.settings_run_rkhunter_with_custom_scan_cb.setToolTip(
+            self._format_tooltip(
+                "Automatically run RKHunter when performing custom scans for comprehensive security. Adds rootkit detection to custom directory scans for targeted security analysis."
+            )
+        )
+        self.settings_run_rkhunter_with_custom_scan_cb.setMinimumHeight(35)
 
         self.settings_rkhunter_auto_update_cb = QCheckBox(
             "Auto-update RKHunter Database"
         )
         self.settings_rkhunter_auto_update_cb.setChecked(True)
         self.settings_rkhunter_auto_update_cb.setToolTip(
-            "Automatically update RKHunter database before scans"
+            self._format_tooltip(
+                "Automatically update RKHunter database before scans to ensure detection of the latest threats. Keeps rootkit signatures current for optimal protection."
+            )
         )
         self.settings_rkhunter_auto_update_cb.setMinimumHeight(35)
 
         settings_layout.addWidget(self.settings_enable_rkhunter_cb)
         settings_layout.addWidget(self.settings_run_rkhunter_with_full_scan_cb)
+        settings_layout.addWidget(self.settings_run_rkhunter_with_quick_scan_cb)
+        settings_layout.addWidget(self.settings_run_rkhunter_with_custom_scan_cb)
         settings_layout.addWidget(self.settings_rkhunter_auto_update_cb)
         
         # Add right stretch to center the settings
@@ -1899,9 +2144,9 @@ class MainWindow(QMainWindow):
         main_layout.setSpacing(20)
         main_layout.setContentsMargins(20, 20, 20, 20)
 
-        # LEFT PANEL: Recent Activity (largest panel)
+        # LEFT PANEL: Activity Report (largest panel)
         left_panel = QVBoxLayout()
-        activity_group = QGroupBox("Recent Activity")
+        activity_group = QGroupBox("Activity Report")
         activity_layout = QVBoxLayout(activity_group)
         activity_layout.setSpacing(10)  # Add spacing between elements
         activity_layout.setContentsMargins(
@@ -2119,7 +2364,7 @@ class MainWindow(QMainWindow):
         right_panel.addStretch()
 
         # Add panels to main layout with proper proportions
-        main_layout.addLayout(left_panel, 2)  # 40% - Recent Activity (largest)
+        main_layout.addLayout(left_panel, 2)  # 40% - Activity Report (largest)
         # 30% - Status & Stats (compact)
         main_layout.addLayout(center_panel, 1)
         main_layout.addLayout(right_panel, 1)  # 30% - Monitored Paths
@@ -2357,9 +2602,6 @@ class MainWindow(QMainWindow):
                 self.add_activity_message("✅ Real-time protection started")
                 self.status_bar.showMessage("Real-time protection active")
 
-                # Save activity logs immediately for important events
-                self.save_activity_logs()
-
                 # Save user preference
                 self.monitoring_enabled = True
                 if "security_settings" not in self.config:
@@ -2418,9 +2660,6 @@ class MainWindow(QMainWindow):
                 self.protection_toggle_btn.setText("Start")
                 self.add_activity_message("🛑 Real-time protection stopped")
                 self.status_bar.showMessage("🛑 Real-time protection stopped")
-
-                # Save activity logs immediately for important events
-                self.save_activity_logs()
 
                 # Save user preference
                 self.monitoring_enabled = False
@@ -2511,11 +2750,11 @@ class MainWindow(QMainWindow):
                 self.dashboard_activity.takeItem(
                     self.dashboard_activity.count() - 1)
 
-        # Save activity logs periodically (but not on every single message to avoid excessive I/O)
-        # We'll save on app close, settings changes, and periodically
+        # Save activity logs immediately when a new entry is added
+        self.save_activity_logs()
 
     def save_activity_logs(self):
-        """Save current activity logs to persistent storage."""
+        """Save current activity logs to persistent storage immediately."""
         try:
             from utils.config import DATA_DIR
 
@@ -2692,6 +2931,13 @@ class MainWindow(QMainWindow):
             # Enable/disable related controls
             self.settings_scan_frequency_combo.setEnabled(enabled)
             self.settings_scan_time_edit.setEnabled(enabled)
+            self.settings_scan_type_combo.setEnabled(enabled)
+            
+            # Enable custom directory controls only if custom scan is selected
+            if hasattr(self, 'settings_custom_dir_edit'):
+                is_custom = self.settings_scan_type_combo.currentData() == "custom"
+                self.settings_custom_dir_edit.setEnabled(enabled and is_custom)
+                self.settings_custom_dir_btn.setEnabled(enabled and is_custom)
             
             if enabled:
                 # Calculate and display next scheduled scan
@@ -2731,6 +2977,62 @@ class MainWindow(QMainWindow):
             # Do NOT reset the checkbox state automatically
             # Let the user know about the error but preserve their setting choice
     
+    def on_scheduled_scan_type_changed(self, scan_type):
+        """Handle scheduled scan type change."""
+        try:
+            print(f"🔄 Scheduled scan type changed to: {scan_type}")
+            
+            # Show/hide custom directory widget based on selection
+            is_custom = scan_type == "Custom Directory"
+            self.settings_custom_dir_widget.setVisible(is_custom)
+            
+            # Enable/disable custom directory controls
+            if hasattr(self, 'settings_custom_dir_edit'):
+                self.settings_custom_dir_edit.setEnabled(is_custom and self.settings_enable_scheduled_cb.isChecked())
+                self.settings_custom_dir_btn.setEnabled(is_custom and self.settings_enable_scheduled_cb.isChecked())
+            
+            # Update next scheduled scan display to reflect new type
+            self.update_next_scheduled_scan_display()
+            
+            # Auto-save settings
+            self.auto_save_settings()
+            print(f"✅ Scheduled scan type setting saved: {scan_type}")
+            
+        except Exception as e:
+            print(f"❌ Error in scheduled scan type change: {e}")
+            import traceback
+            traceback.print_exc()
+    
+    def select_scheduled_custom_directory(self):
+        """Open directory selector for scheduled custom scans."""
+        try:
+            current_path = self.settings_custom_dir_edit.text()
+            if not current_path:
+                current_path = str(Path.home())
+            
+            directory = QFileDialog.getExistingDirectory(
+                self,
+                "Select Directory for Scheduled Scans",
+                current_path,
+                QFileDialog.Option.ShowDirsOnly | QFileDialog.Option.DontResolveSymlinks
+            )
+            
+            if directory:
+                self.settings_custom_dir_edit.setText(directory)
+                print(f"📁 Selected scheduled custom directory: {directory}")
+                
+                # Update next scheduled scan display
+                self.update_next_scheduled_scan_display()
+                
+                # Auto-save settings
+                self.auto_save_settings()
+                print(f"✅ Custom directory setting saved: {directory}")
+                
+        except Exception as e:
+            print(f"❌ Error selecting scheduled custom directory: {e}")
+            import traceback
+            traceback.print_exc()
+    
     def update_next_scheduled_scan_display(self):
         """Update the display of next scheduled scan time."""
         try:
@@ -2740,11 +3042,20 @@ class MainWindow(QMainWindow):
                 
             frequency = self.settings_scan_frequency_combo.currentData()
             scan_time = self.settings_scan_time_edit.time()
+            scan_type = self.settings_scan_type_combo.currentText()
+            scan_type_data = self.settings_scan_type_combo.currentData()
             
             # Validate inputs
             if not frequency or not scan_time.isValid():
                 self.settings_next_scan_label.setText("Invalid configuration")
                 return
+            
+            # For custom scans, check if directory is selected
+            if scan_type_data == "custom":
+                custom_dir = self.settings_custom_dir_edit.text()
+                if not custom_dir:
+                    self.settings_next_scan_label.setText("Select custom directory")
+                    return
             
             # Calculate next scan time based on frequency
             from datetime import datetime, timedelta
@@ -2775,7 +3086,8 @@ class MainWindow(QMainWindow):
                     next_scan = now.replace(month=now.month + 1, day=1, hour=scan_time.hour(), minute=scan_time.minute(), second=0, microsecond=0)
             
             if next_scan:
-                self.settings_next_scan_label.setText(next_scan.strftime("%Y-%m-%d %H:%M"))
+                display_text = f"{next_scan.strftime('%Y-%m-%d %H:%M')} ({scan_type})"
+                self.settings_next_scan_label.setText(display_text)
             else:
                 self.settings_next_scan_label.setText("Unable to calculate")
                 
@@ -3692,6 +4004,26 @@ System        {perf_status}"""
                 background-color: #4a4a4a;
             }
 
+            QLineEdit#themedLineEdit {
+                border: 2px solid #EE8980;
+                border-radius: 6px;
+                background-color: #3a3a3a;
+                color: #FFCDAA;
+                font-weight: 500;
+                padding: 5px;
+            }
+
+            QLineEdit#themedLineEdit:focus {
+                border-color: #F14666;
+                background-color: #4a4a4a;
+            }
+
+            QLineEdit#themedLineEdit:disabled {
+                border-color: #666666;
+                background-color: #2a2a2a;
+                color: #999999;
+            }
+
             QLabel {
                 color: #FFCDAA;
                 font-weight: 600;
@@ -4332,6 +4664,25 @@ System        {perf_status}"""
 
             QTextEdit:focus, QListWidget:focus {
                 border-color: #75BDE0;
+            }
+
+            QLineEdit#themedLineEdit {
+                border: 2px solid #F8D49B;
+                border-radius: 6px;
+                background-color: #ffffff;
+                color: #2c2c2c;
+                font-weight: 500;
+                padding: 5px;
+            }
+
+            QLineEdit#themedLineEdit:focus {
+                border-color: #75BDE0;
+            }
+
+            QLineEdit#themedLineEdit:disabled {
+                border-color: #cccccc;
+                background-color: #f5f5f5;
+                color: #999999;
             }
 
             QLabel {
@@ -4985,9 +5336,9 @@ System        {perf_status}"""
         
         if current_type == "QUICK":
             self.path_label.setText(
-                "🚀 Quick Scan: Will scan common infection vectors\n"
-                "• Downloads, temporary files, system startup locations\n"
-                "• Fast scan optimized for most common threats"
+                "🚀 Quick Scan: Comprehensive multi-directory scanning\n"
+                "• Scans user directories, browser data, temp files\n"
+                "• Fast scan optimized for common threat locations"
             )
         elif current_type == "FULL":
             self.path_label.setText(
@@ -5010,6 +5361,38 @@ System        {perf_status}"""
                 )
         
         # Update any relevant UI elements based on scan type
+
+    def toggle_scan(self):
+        """Toggle between starting and stopping scans based on current state."""
+        print(f"\n🔄 === TOGGLE_SCAN CALLED ===")
+        print(f"DEBUG: Current scan running state: {self._scan_running}")
+        print(f"DEBUG: Current scan state: {self._scan_state}")
+        
+        if self._scan_running:
+            # If scan is running, stop it
+            print("🛑 Toggle: Stopping scan...")
+            self.stop_scan()
+        else:
+            # If scan is not running, start it
+            print("🚀 Toggle: Starting scan...")
+            self.start_scan()
+
+    def update_scan_button_state(self, is_running):
+        """Update the scan toggle button appearance based on scan state."""
+        self._scan_running = is_running
+        
+        if is_running:
+            self.scan_toggle_btn.setText("⏹️ Stop Scan")
+            self.scan_toggle_btn.setObjectName("dangerButton")
+            print("🔴 Button updated to Stop Scan mode")
+        else:
+            self.scan_toggle_btn.setText("🚀 Start Scan")
+            self.scan_toggle_btn.setObjectName("primaryButton")
+            print("🟢 Button updated to Start Scan mode")
+        
+        # Reapply style to pick up the new object name
+        self.scan_toggle_btn.style().unpolish(self.scan_toggle_btn)
+        self.scan_toggle_btn.style().polish(self.scan_toggle_btn)
 
     def start_scan(self, quick_scan=False):
         print(f"\n🔄 === START_SCAN CALLED ===")
@@ -5046,13 +5429,24 @@ System        {perf_status}"""
         # Clean up any finished threads
         if self.current_scan_thread and not self.current_scan_thread.isRunning():
             print("DEBUG: 🧹 Cleaning up finished thread reference")
-            self.current_scan_thread = None
+            # Make sure the thread is properly cleaned up before proceeding
+            try:
+                self.current_scan_thread.deleteLater()
+            except Exception as e:
+                print(f"DEBUG: ⚠️ Error during thread cleanup: {e}")
+            finally:
+                self.current_scan_thread = None
         
         # Prevent starting if there's still an active thread
         if self.current_scan_thread and self.current_scan_thread.isRunning():
             print("DEBUG: ⚠️ Thread still running, cannot start new scan")
             self.status_bar.showMessage("⚠️ Previous scan still finishing - please wait")
             return
+            
+        # Additional safety check: ensure we don't have lingering thread references
+        if self.current_scan_thread is not None:
+            print("DEBUG: ⚠️ Lingering thread reference detected, clearing it")
+            self.current_scan_thread = None
             
         # Set scanning state and reset flags for new scan
         self._scan_state = "scanning"
@@ -5076,31 +5470,58 @@ System        {perf_status}"""
             effective_scan_type = scan_type_data
         else:
             effective_scan_type = "FULL"
-            
-        print(f"DEBUG: Effective scan type determined: {effective_scan_type}")
         
         # Handle scan path based on scan type
         if effective_scan_type == "QUICK":
-            # Quick scan targets common infection vectors
+            # Quick scan targets multiple common infection vectors and user directories
             import tempfile
-            quick_scan_paths = [
-                os.path.expanduser("~/Downloads"),  
-                os.path.expanduser("~/Desktop"),   
-                os.path.expanduser("~/Documents"), 
-                tempfile.gettempdir(),  
-                "/tmp" if os.path.exists("/tmp") else None,  
-            ]
             
-            # Filter out non-existent paths
-            valid_paths = [path for path in quick_scan_paths if path and os.path.exists(path)]
-            
-            if not valid_paths:
-                self.show_themed_message_box(
-                    "warning", "Warning", "No valid directories found for quick scan."
-                )
-                return
+            # Check if we already have comprehensive paths from quick scan button
+            if hasattr(self, 'quick_scan_paths') and self.quick_scan_paths:
+                # Use the comprehensive paths from the quick scan button
+                valid_paths = self.quick_scan_paths
+                self.scan_path = valid_paths
+            else:
+                # Fallback for combo box quick scan - create comprehensive path list
+                quick_scan_paths = [
+                    # Primary infection vectors
+                    os.path.expanduser("~/Downloads"),
+                    os.path.expanduser("~/Desktop"),
+                    os.path.expanduser("~/Documents"),
+                    os.path.expanduser("~/Pictures"),
+                    os.path.expanduser("~/Videos"),
+                    os.path.expanduser("~/Music"),
+                    
+                    # Browser directories
+                    os.path.expanduser("~/.mozilla"),
+                    os.path.expanduser("~/.config/google-chrome"),
+                    os.path.expanduser("~/.config/chromium"),
+                    
+                    # System temporary
+                    tempfile.gettempdir(),
+                    "/tmp" if os.path.exists("/tmp") else None,
+                    "/var/tmp" if os.path.exists("/var/tmp") else None,
+                    
+                    # User application data
+                    os.path.expanduser("~/.local/share"),
+                    os.path.expanduser("~/.cache"),
+                ]
                 
-            self.scan_path = valid_paths[0]  # Use Downloads as primary target
+                # Filter out non-existent paths
+                valid_paths = [
+                    path for path in quick_scan_paths 
+                    if path and os.path.exists(path) and os.path.isdir(path)
+                ]
+                
+                if not valid_paths:
+                    self.show_themed_message_box(
+                        "warning", "Warning", "No valid directories found for quick scan."
+                    )
+                    return
+                
+                # For Quick Scan, always use comprehensive scan paths regardless of previous selection
+                self.scan_path = valid_paths
+                print(f"DEBUG: Quick scan using {len(valid_paths)} directories: {valid_paths[:3]}{'...' if len(valid_paths) > 3 else ''}")
             
         elif effective_scan_type == "FULL":
             # Full scan targets the entire home directory
@@ -5110,15 +5531,17 @@ System        {perf_status}"""
             # Custom scan uses the user-selected path
             if not hasattr(self, "scan_path") or not self.scan_path:
                 self.show_themed_message_box(
-                    "warning", "Warning", "Please select a path to scan first."
+                    "warning", "Warning", "Please select a path to scan first.\n\nClick the 'Browse...' button below the scan type dropdown to choose a directory to scan."
                 )
+                self._scan_state = "idle"  # Reset scan state
                 return
         else:
             # Default fallback
             if not hasattr(self, "scan_path") or not self.scan_path:
                 self.show_themed_message_box(
-                    "warning", "Warning", "Please select a path to scan first."
+                    "warning", "Warning", "Please select a path to scan first.\n\nClick the 'Browse...' button to choose a directory to scan."
                 )
+                self._scan_state = "idle"  # Reset scan state
                 return
 
         # Get advanced options if available
@@ -5134,23 +5557,19 @@ System        {perf_status}"""
             if exclusions:
                 scan_options['exclusions'] = [pattern.strip() for pattern in exclusions.split('\n') if pattern.strip()]
 
-        self.start_scan_btn.setEnabled(False)
-        self.stop_scan_btn.setEnabled(True)
+        self.update_scan_button_state(True)  # Set to "Stop Scan" mode
         self.progress_bar.setValue(0)
         self.results_text.clear()
-
-        # Display scan information with better formatting and spacing
-        self.results_text.append(f"🔍 <b>Starting {effective_scan_type.lower()} scan...</b>")
-        self.results_text.append("")  # Add spacing
-        self.results_text.append(f"📁 <b>Target:</b> {self.scan_path}")
-        self.results_text.append("")  # Add spacing
-        if scan_options:
-            friendly_options = self.format_scan_options_user_friendly(scan_options)
-            self.results_text.append("⚙️ <b>Options:</b>")
-            self.results_text.append(friendly_options)
-        else:
-            self.results_text.append("⚙️ <b>Options:</b> Default settings")
-        self.results_text.append("")  # Add spacing after options
+        
+        # Reset autoscroll tracking for new scan
+        self._user_has_scrolled = False
+        self._last_scroll_position = 0
+        
+        # Initialize detailed scan tracking
+        self._scan_directories_info = {}
+        self._last_displayed_directory = None
+        self._scanned_directories = []  # Use list to maintain order
+        self._completed_directories = []  # Track truly completed directories
 
         # Check if this is a full system scan and RKHunter integration is enabled
         is_full_system_scan = hasattr(self, "scan_path") and (
@@ -5158,14 +5577,46 @@ System        {perf_status}"""
         )
 
         rkhunter_settings = self.config.get("rkhunter_settings", {})
-        should_run_rkhunter = (
+        should_run_rkhunter_full = (
             is_full_system_scan
             and rkhunter_settings.get("enabled", False)
             and rkhunter_settings.get("run_with_full_scan", False)
             and self.rkhunter.is_available()
         )
 
-        if should_run_rkhunter and effective_scan_type in ["FULL", "CUSTOM"]:
+        should_run_rkhunter_quick = (
+            (quick_scan or effective_scan_type == "QUICK")  # Check both parameter and effective type
+            and rkhunter_settings.get("enabled", False)
+            and rkhunter_settings.get("run_with_quick_scan", False)
+            and self.rkhunter.is_available()
+        )
+
+        should_run_rkhunter_custom = (
+            effective_scan_type == "CUSTOM"
+            and rkhunter_settings.get("enabled", False)
+            and rkhunter_settings.get("run_with_custom_scan", False)
+            and self.rkhunter.is_available()
+        )
+
+        should_run_rkhunter = should_run_rkhunter_full or should_run_rkhunter_quick or should_run_rkhunter_custom
+
+        # Don't display the initial scan message yet - wait for user decision on RKHunter
+        # We'll display it after the dialog choices
+
+        if should_run_rkhunter_full and effective_scan_type == "FULL":
+            # Display initial scan info before showing dialog
+            self._append_with_autoscroll(f"🔍 <b>Starting {effective_scan_type.lower()} scan...</b>")
+            self._append_with_autoscroll("")  # Add spacing
+            self._append_with_autoscroll(f"📁 <b>Target:</b> {self.format_target_display(self.scan_path)}")
+            self._append_with_autoscroll("")  # Add spacing
+            if scan_options:
+                friendly_options = self.format_scan_options_user_friendly(scan_options)
+                self._append_with_autoscroll("⚙️ <b>Options:</b>")
+                self._append_with_autoscroll(friendly_options)
+            else:
+                self._append_with_autoscroll("⚙️ <b>Options:</b> Default settings")
+            self._append_with_autoscroll("")  # Add spacing after options
+            
             # Show confirmation for combined scan
             reply = self.show_themed_message_box(
                 "question",
@@ -5179,11 +5630,100 @@ System        {perf_status}"""
             )
 
             if reply == QMessageBox.StandardButton.Yes:
-                self.results_text.append("🔒 Starting comprehensive security scan...")
-                self.results_text.append("📊 Running ClamAV scan first, followed by RKHunter...")
-                # Start combined scan
+                self._append_with_autoscroll("🔒 <b>Enhanced Security Scan</b> - RKHunter + ClamAV")
+                self._append_with_autoscroll("")  # Add spacing
+                # Start combined scan with RKHunter first
                 self.start_combined_security_scan(quick_scan, scan_options)
                 return
+
+        elif should_run_rkhunter_quick and (quick_scan or effective_scan_type == "QUICK"):
+            # Display initial scan info before showing dialog
+            self._append_with_autoscroll(f"🔍 <b>Starting {effective_scan_type.lower()} scan...</b>")
+            self._append_with_autoscroll("")  # Add spacing
+            self._append_with_autoscroll(f"📁 <b>Target:</b> {self.format_target_display(self.scan_path)}")
+            self._append_with_autoscroll("")  # Add spacing
+            if scan_options:
+                friendly_options = self.format_scan_options_user_friendly(scan_options)
+                self._append_with_autoscroll("⚙️ <b>Options:</b>")
+                self._append_with_autoscroll(friendly_options)
+            else:
+                self._append_with_autoscroll("⚙️ <b>Options:</b> Default settings")
+            self._append_with_autoscroll("")  # Add spacing after options
+            
+            # Show confirmation for combined quick scan
+            reply = self.show_themed_message_box(
+                "question",
+                "Enhanced Quick Security Scan",
+                "RKHunter integration is enabled for quick scans.\n\n"
+                "Would you like to include RKHunter rootkit detection with your quick scan?\n\n"
+                "• RKHunter will first check for rootkits and system issues\n"
+                "• ClamAV will then perform a quick malware scan\n\n"
+                "This will provide enhanced security coverage in your quick scan.",
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+            )
+
+            if reply == QMessageBox.StandardButton.Yes:
+                self._append_with_autoscroll("🔒 <b>Enhanced Quick Security Scan</b> - RKHunter + ClamAV")
+                self._append_with_autoscroll("")  # Add spacing
+                # Start combined scan with RKHunter first - determine if this is truly a quick scan
+                is_quick_scan = quick_scan or effective_scan_type == "QUICK"
+                self.start_combined_security_scan(is_quick_scan, scan_options)
+                return
+            else:
+                # User chose No - just run regular ClamAV scan
+                self._append_with_autoscroll("🔍 <b>ClamAV Malware Scan</b>")
+                self._append_with_autoscroll("")  # Add spacing
+
+        elif should_run_rkhunter_custom and effective_scan_type == "CUSTOM":
+            # Display initial scan info before showing dialog
+            self._append_with_autoscroll(f"🔍 <b>Starting {effective_scan_type.lower()} scan...</b>")
+            self._append_with_autoscroll("")  # Add spacing
+            self._append_with_autoscroll(f"📁 <b>Target:</b> {self.format_target_display(self.scan_path)}")
+            self._append_with_autoscroll("")  # Add spacing
+            if scan_options:
+                friendly_options = self.format_scan_options_user_friendly(scan_options)
+                self._append_with_autoscroll("⚙️ <b>Options:</b>")
+                self._append_with_autoscroll(friendly_options)
+            else:
+                self._append_with_autoscroll("⚙️ <b>Options:</b> Default settings")
+            self._append_with_autoscroll("")  # Add spacing after options
+            
+            # Show confirmation for combined custom scan
+            reply = self.show_themed_message_box(
+                "question",
+                "Enhanced Custom Security Scan",
+                "RKHunter integration is enabled for custom scans.\n\n"
+                "Would you like to include RKHunter rootkit detection with your custom scan?\n\n"
+                "• RKHunter will first perform rootkit detection\n"
+                "• ClamAV will then scan your selected directory for malware\n\n"
+                "This will provide comprehensive security analysis for your custom scan target.",
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+            )
+
+            if reply == QMessageBox.StandardButton.Yes:
+                self._append_with_autoscroll("🔒 <b>Enhanced Custom Security Scan</b> - RKHunter + ClamAV")
+                self._append_with_autoscroll("")  # Add spacing
+                # Start combined scan with RKHunter first for custom scan
+                self.start_combined_security_scan(False, scan_options)  # Custom scans are not quick scans
+                return
+            else:
+                # User chose No - just run regular ClamAV scan
+                self._append_with_autoscroll("🔍 <b>ClamAV Custom Scan</b>")
+                self._append_with_autoscroll("")  # Add spacing
+
+        else:
+            # No RKHunter integration - display regular scan info
+            self._append_with_autoscroll(f"🔍 <b>Starting {effective_scan_type.lower()} scan...</b>")
+            self._append_with_autoscroll("")  # Add spacing
+            self._append_with_autoscroll(f"📁 <b>Target:</b> {self.format_target_display(self.scan_path)}")
+            self._append_with_autoscroll("")  # Add spacing
+            if scan_options:
+                friendly_options = self.format_scan_options_user_friendly(scan_options)
+                self._append_with_autoscroll("⚙️ <b>Options:</b>")
+                self._append_with_autoscroll(friendly_options)
+            else:
+                self._append_with_autoscroll("⚙️ <b>Options:</b> Default settings")
+            self._append_with_autoscroll("")  # Add spacing after options
 
         # Start regular scan in separate thread with enhanced options
         self.current_scan_thread = ScanThread(
@@ -5195,42 +5735,38 @@ System        {perf_status}"""
             self.progress_bar.setValue)
         self.current_scan_thread.status_updated.connect(
             self.status_label.setText)
+        self.current_scan_thread.scan_detail_updated.connect(
+            self.handle_detailed_scan_progress)
         self.current_scan_thread.scan_completed.connect(self.scan_completed)
         self.current_scan_thread.start()
 
     def start_combined_security_scan(self, quick_scan=False, scan_options=None):
-        """Start a combined ClamAV + RKHunter security scan."""
-        # Start ClamAV scan first
-        self.current_scan_thread = ScanThread(
-            self.scanner, self.scan_path, quick_scan=quick_scan
-        )
-        self.current_scan_thread.progress_updated.connect(
-            self.progress_bar.setValue)
-        self.current_scan_thread.status_updated.connect(
-            self.status_label.setText)
-        self.current_scan_thread.scan_completed.connect(
-            self.clamav_scan_completed_start_rkhunter
-        )
-        self.current_scan_thread.start()
-
-    def clamav_scan_completed_start_rkhunter(self, clamav_result):
-        """Handle ClamAV scan completion and start RKHunter scan."""
-        # Display ClamAV results first
-        self.display_scan_results(clamav_result)
-
-        # Add separator
-        self.results_text.append("\n" + "=" * 60 + "\n")
-
+        """Start a combined security scan with RKHunter first, then ClamAV."""
+        
         # Check if RKHunter should still run
         if not self.rkhunter.is_available():
-            self.results_text.append(
-                "❌ RKHunter not available, skipping rootkit scan")
-            self.scan_completed(clamav_result)
+            self.results_text.append("❌ RKHunter not available, falling back to ClamAV only")
+            # Fall back to regular ClamAV scan
+            self.current_scan_thread = ScanThread(
+                self.scanner, self.scan_path, quick_scan=quick_scan, scan_options=scan_options
+            )
+            self.current_scan_thread.progress_updated.connect(self.progress_bar.setValue)
+            self.current_scan_thread.status_updated.connect(self.status_label.setText)
+            self.current_scan_thread.scan_detail_updated.connect(
+                self.handle_detailed_scan_progress)
+            self.current_scan_thread.scan_completed.connect(self.scan_completed)
+            self.current_scan_thread.start()
             return
 
-        # Start RKHunter scan automatically
-        self.results_text.append("🔍 Starting RKHunter rootkit scan...\n")
-        self.status_label.setText("Running RKHunter rootkit scan...")
+        # Start RKHunter scan first
+        self.status_label.setText("RKHunter scan starting...")
+        
+        # Add specific message for combined scans about the grace period
+        self.results_text.append("\n🔍 Starting RKHunter scan (part of combined security scan)...")
+        self.results_text.append("⏱️ Grace period: You can stop this scan without re-authentication for 30 seconds after it starts\n")
+        
+        # Update button state to show scan is running
+        self.update_scan_button_state(True)
 
         # Get test categories from settings
         test_categories = self.get_selected_rkhunter_categories()
@@ -5247,17 +5783,54 @@ System        {perf_status}"""
         self.current_rkhunter_thread.output_updated.connect(
             self.update_rkhunter_output
         )
+        # Store the scan parameters for the next phase
+        self._pending_clamav_scan = {"quick_scan": quick_scan, "scan_options": scan_options}
+        # Ensure no leftover signal connections from other scan types
+        try:
+            self.current_rkhunter_thread.scan_completed.disconnect()
+        except:
+            pass  # No connections to disconnect
         self.current_rkhunter_thread.scan_completed.connect(
-            lambda rk_result: self.combined_scan_completed(
-                clamav_result, rk_result))
+            self.rkhunter_scan_completed_start_clamav
+        )
         self.current_rkhunter_thread.start()
 
-    def combined_scan_completed(
-        self, clamav_result, rkhunter_result: RKHunterScanResult
-    ):
-        """Handle completion of combined ClamAV + RKHunter scan."""
-        # Display RKHunter results
+    def rkhunter_scan_completed_start_clamav(self, rkhunter_result):
+        """Handle RKHunter scan completion and start ClamAV scan."""
+        # Display RKHunter results first
         self.display_rkhunter_results(rkhunter_result)
+
+        # Add separator
+        self.results_text.append("\n" + "=" * 60 + "\n")
+
+        # Retrieve the stored scan parameters
+        clamav_params = getattr(self, '_pending_clamav_scan', {"quick_scan": False, "scan_options": None})
+        quick_scan = clamav_params.get("quick_scan", False)
+        scan_options = clamav_params.get("scan_options", None)
+
+        # Start ClamAV scan automatically
+        self.status_label.setText("ClamAV scan starting...")
+
+        self.current_scan_thread = ScanThread(
+            self.scanner, self.scan_path, quick_scan=quick_scan, scan_options=scan_options
+        )
+        self.current_scan_thread.progress_updated.connect(
+            self.progress_bar.setValue)
+        self.current_scan_thread.status_updated.connect(
+            self.status_label.setText)
+        self.current_scan_thread.scan_detail_updated.connect(
+            self.handle_detailed_scan_progress)
+        self.current_scan_thread.scan_completed.connect(
+            lambda clamav_result: self.combined_scan_completed_rkhunter_first(
+                rkhunter_result, clamav_result))
+        self.current_scan_thread.start()
+
+    def combined_scan_completed_rkhunter_first(
+        self, rkhunter_result: RKHunterScanResult, clamav_result
+    ):
+        """Handle completion of combined RKHunter + ClamAV scan (RKHunter first)."""
+        # Display ClamAV results
+        self.display_scan_results(clamav_result)
 
         # Save both reports
         self.save_rkhunter_report(rkhunter_result)
@@ -5267,7 +5840,14 @@ System        {perf_status}"""
         self.results_text.append("\n🔒 COMPREHENSIVE SECURITY SCAN SUMMARY")
         self.results_text.append("=" * 60)
 
-        # ClamAV summary
+        # RKHunter summary (ran first)
+        self.results_text.append(f"\n🔍 RKHunter Results (Rootkit Detection):")
+        self.results_text.append(
+            f"   • Warnings: {rkhunter_result.warnings_found}")
+        self.results_text.append(
+            f"   • Infections: {rkhunter_result.infections_found}")
+
+        # ClamAV summary (ran second)
         clamav_threats = 0
         if isinstance(clamav_result, dict):
             clamav_threats = clamav_result.get(
@@ -5276,17 +5856,8 @@ System        {perf_status}"""
         else:
             clamav_threats = getattr(clamav_result, "threats_found", 0)
 
-        self.results_text.append(f"\n📊 ClamAV Results:")
+        self.results_text.append(f"\n📊 ClamAV Results (Malware Detection):")
         self.results_text.append(f"   • Threats Found: {clamav_threats}")
-
-        # RKHunter summary
-        self.results_text.append(f"\n🔍 RKHunter Results:")
-        self.results_text.append(
-            f"   • Warnings: {
-                rkhunter_result.warnings_found}")
-        self.results_text.append(
-            f"   • Infections: {
-                rkhunter_result.infections_found}")
 
         # Overall assessment
         total_issues = (
@@ -5311,9 +5882,19 @@ System        {perf_status}"""
                 "   Review findings and take appropriate action.")
 
         self.results_text.append("\n" + "=" * 60)
+        
+        # Add grace period reminder for future combined scans
+        self.results_text.append("\n💡 Security Scan Tips:")
+        self.results_text.append("   • Combined scans provide comprehensive protection")
+        self.results_text.append("   • You can stop scans without re-authentication within 30 seconds of starting")
+        self.results_text.append("   • RKHunter (rootkit detection) runs first, then ClamAV (malware detection)")
 
         # Complete the scan
         self.scan_completed(clamav_result)
+
+        # Clean up the stored parameters
+        if hasattr(self, '_pending_clamav_scan'):
+            delattr(self, '_pending_clamav_scan')
 
     def install_rkhunter(self):
         """Install or configure RKHunter."""
@@ -5532,7 +6113,10 @@ System        {perf_status}"""
 
         # Start RKHunter scan in thread
         self.rkhunter_scan_btn.setEnabled(False)
-        self.rkhunter_scan_btn.setText("🔄 Scanning...")
+        self.rkhunter_scan_btn.setText("🔄 RKHunter scanning...")
+        
+        # Update button state to show scan is running
+        self.update_scan_button_state(True)
         
         # Reset progress bar for RKHunter scan
         self.progress_bar.setValue(0)
@@ -5561,7 +6145,7 @@ System        {perf_status}"""
         self.current_rkhunter_thread.start()
 
         # Update status - use a more appropriate initial message
-        self.status_label.setText("� Preparing scan - authentication may be required...")
+        self.status_label.setText("RKHunter scan starting...")
         self.results_text.append("\n🔍 RKHunter rootkit scan starting - please authenticate when prompted...\n")
 
     def update_rkhunter_progress(self, message):
@@ -5592,6 +6176,180 @@ System        {perf_status}"""
         elif not hasattr(self, '_rkhunter_scan_actually_started') or not self._rkhunter_scan_actually_started:
             self.progress_bar.setValue(0)
 
+    def handle_detailed_scan_progress(self, detail_info):
+        """Handle detailed scan progress updates for ClamAV scans."""
+        try:
+            if detail_info.get("type") == "file_scanned":
+                current_dir = detail_info.get("current_directory", "")
+                current_file = detail_info.get("current_file", "")
+                scan_result = detail_info.get("scan_result", "clean")
+                files_completed = detail_info.get("files_completed", 0)
+                files_remaining = detail_info.get("files_remaining", 0)
+                total_files = detail_info.get("total_files", 0)
+                
+                # Initialize or get existing directory information
+                if not hasattr(self, '_scan_directories_info'):
+                    self._scan_directories_info = {}
+                    self._last_displayed_directory = None
+                    self._scanned_directories = []  # Use list to maintain order
+                    self._completed_directories = []  # Track truly completed directories
+                
+                # Track files by directory
+                if current_dir not in self._scan_directories_info:
+                    self._scan_directories_info[current_dir] = {
+                        "clean_files": [],
+                        "infected_files": [],
+                        "total_files": 0
+                    }
+                
+                # Update directory info
+                if scan_result == "clean":
+                    if current_file not in self._scan_directories_info[current_dir]["clean_files"]:
+                        self._scan_directories_info[current_dir]["clean_files"].append(current_file)
+                elif scan_result == "infected":
+                    if current_file not in self._scan_directories_info[current_dir]["infected_files"]:
+                        self._scan_directories_info[current_dir]["infected_files"].append(current_file)
+                
+                # Get the main scan directory for grouping purposes
+                main_scan_dir = self._get_main_scan_directory(current_dir)
+                
+                # Display directory header ONLY when switching to a new MAIN directory
+                last_main_dir = self._get_main_scan_directory(self._last_displayed_directory) if self._last_displayed_directory else None
+                
+                if last_main_dir != main_scan_dir:
+                    # Mark previous main directory as completed (if there was one)
+                    if last_main_dir and last_main_dir not in self._completed_directories:
+                        self._completed_directories.append(last_main_dir)
+                    
+                    # Add current main directory to scanned list (if not already there)
+                    if main_scan_dir not in self._scanned_directories:
+                        self._scanned_directories.append(main_scan_dir)
+                    
+                    # Calculate accurate counts
+                    completed_count = len(self._completed_directories)
+                    remaining_estimate = self._calculate_remaining_directories(files_remaining, total_files)
+                    
+                    self._append_with_autoscroll("")  # Add spacing
+                    short_dir = main_scan_dir.replace(str(Path.home()), "~") if str(Path.home()) in main_scan_dir else main_scan_dir
+                    self._append_with_autoscroll(f"📁 <b>Scanning Directory:</b> {short_dir}")
+                    
+                    # Show directory progress info (always show after first directory)
+                    if len(self._scanned_directories) > 1:  # Show from second directory onwards
+                        self._append_with_autoscroll(f"📊 <i>Directories scanned: {completed_count} | Remaining: {remaining_estimate}</i>")
+                    
+                    self._last_displayed_directory = current_dir
+                
+                # Display clean file
+                if scan_result == "clean":
+                    self._append_with_autoscroll(f"    ✅ {current_file}")
+                elif scan_result == "infected":
+                    self.results_text.append(f"    � <span style='color: #F44336;'><b>INFECTED:</b></span> {current_file}")
+                
+        except Exception as e:
+            print(f"Error in detailed scan progress: {e}")
+    
+    def _calculate_remaining_directories(self, files_remaining, total_files):
+        """Calculate remaining directories based on actual scanning patterns."""
+        if files_remaining <= 0 or total_files <= 0:
+            return 0
+        
+        if not hasattr(self, '_completed_directories') or not self._completed_directories:
+            # For early estimation, use a conservative approach
+            if files_remaining > 0 and total_files > 0:
+                # Estimate based on typical directory sizes (conservative estimate)
+                avg_files_per_dir = 20  # Conservative assumption
+                return max(1, min(10, int(files_remaining / avg_files_per_dir)))
+            return 0
+        
+        # Calculate based on completed directories
+        completed_count = len(self._completed_directories)
+        files_scanned = total_files - files_remaining
+        
+        if completed_count > 0 and files_scanned > 0:
+            # Get average files per completed directory
+            avg_files_per_dir = files_scanned / (completed_count + 1)  # +1 for current directory
+            if avg_files_per_dir > 0:
+                estimated = int(files_remaining / avg_files_per_dir)
+                # Apply reasonable bounds
+                return max(0, min(estimated, completed_count * 2))  # Cap at 2x completed directories
+        
+        return 0
+
+    def _get_main_scan_directory(self, directory_path):
+        """Get the main scan directory for a given path to group subdirectories."""
+        if not directory_path:
+            return ""
+        
+        # Convert to Path object for easier handling
+        path = Path(directory_path)
+        home_path = Path.home()
+        
+        # Define main directories to group by
+        main_directories = [
+            "Downloads", "Documents", "Pictures", "Videos", "Music", 
+            "Desktop", "Public", "Templates", "tmp", "temp"
+        ]
+        
+        # Check if this is under home directory
+        if str(home_path) in str(path):
+            # Get relative path from home
+            try:
+                rel_path = path.relative_to(home_path)
+                parts = rel_path.parts
+                
+                # Check if first part matches main directories
+                if parts and parts[0] in main_directories:
+                    return str(home_path / parts[0])
+                
+                # Check for browser data directories
+                if len(parts) >= 2:
+                    if parts[0] == ".config" and any(browser in parts[1] for browser in ["google-chrome", "firefox", "chromium"]):
+                        return str(home_path / parts[0] / parts[1])
+                    elif parts[0] == ".mozilla" and "firefox" in str(rel_path):
+                        return str(home_path / ".mozilla" / "firefox")
+                    elif parts[0] == ".cache" and any(browser in parts[1] for browser in ["google-chrome", "firefox", "chromium"]):
+                        return str(home_path / ".cache" / parts[1])
+                
+            except ValueError:
+                pass
+        
+        # Check for system temp directories
+        if "/tmp" in str(path) or "/var/tmp" in str(path):
+            if "/tmp" in str(path):
+                return "/tmp"
+            else:
+                return "/var/tmp"
+        
+        # Default: return the directory as-is if we can't group it
+        return directory_path
+
+    def _on_scroll_changed(self, value):
+        """Track when user manually scrolls to disable auto-scrolling."""
+        scrollbar = self.results_text.verticalScrollBar()
+        max_value = scrollbar.maximum()
+        
+        # If user scrolls up from the bottom, disable auto-scroll
+        if value < max_value and value != self._last_scroll_position:
+            # Check if this is a user-initiated scroll (not programmatic)
+            if abs(value - self._last_scroll_position) > 1:  # Threshold to ignore minor adjustments
+                self._user_has_scrolled = True
+        
+        # If user scrolls back to bottom, re-enable auto-scroll
+        if value == max_value:
+            self._user_has_scrolled = False
+            
+        self._last_scroll_position = value
+
+    def _append_with_autoscroll(self, text):
+        """Append text to results with intelligent autoscroll behavior."""
+        # Add the text
+        self.results_text.append(text)
+        
+        # Auto-scroll to bottom unless user has manually scrolled up
+        if not self._user_has_scrolled:
+            scrollbar = self.results_text.verticalScrollBar()
+            scrollbar.setValue(scrollbar.maximum())
+
     def update_rkhunter_output(self, output_line):
         """Update the results text with real-time RKHunter output."""
         if not output_line.strip():  # Skip empty lines
@@ -5609,7 +6367,10 @@ System        {perf_status}"""
             "sudo: a password is required",
             "info: starting",
             "info: checking",
-            "info: end of"
+            "info: end of",
+            "starting rkhunter update and scan sequence",
+            "starting rkhunter scan...",
+            "updating rkhunter database..."
         ]):
             return  # Don't display these lines
         
@@ -5644,33 +6405,27 @@ System        {perf_status}"""
                     timestamp = parts[0] + "]"
                     message = parts[1].strip()
                     
-                    # Format based on message content
-                    if "Starting RKHunter update" in message or "sequence" in message.lower():
-                        self.results_text.append(f"  🔄 <b>{message}</b> <span style='color: #9E9E9E;'><i>{timestamp}</i></span>")
-                    elif "Database update completed" in message or "completed successfully" in message:
-                        self.results_text.append(f"  ✅ <span style='color: #4CAF50;'><b>{message}</b></span> <span style='color: #9E9E9E;'><i>{timestamp}</i></span>")
-                    elif "Starting RKHunter scan" in message:
-                        self.results_text.append(f"  🔍 <b>{message}</b> <span style='color: #9E9E9E;'><i>{timestamp}</i></span>")
-                    elif "Updating RKHunter database" in message:
-                        self.results_text.append(f"  📦 <i>{message}</i> <span style='color: #9E9E9E;'><i>{timestamp}</i></span>")
-                    else:
-                        self.results_text.append(f"  ℹ️  {message} <span style='color: #9E9E9E;'><i>{timestamp}</i></span>")
+                    # Only show essential timestamped messages
+                    if "Database update completed" in message or "completed successfully" in message:
+                        self._append_with_autoscroll(f"✅ <span style='color: #4CAF50;'><b>Database updated successfully</b></span>")
+                        return
+                    # Skip other timestamped messages to reduce clutter
                     return
             
             # Handle section headers and major operations
             if formatted_line.startswith("Performing") or formatted_line.startswith("Starting"):
-                self.results_text.append("")  # Add spacing before new sections
-                self.results_text.append(f"📋 <b>{formatted_line}</b>")
-                self.results_text.append("─" * 50)
+                self._append_with_autoscroll("")  # Add spacing before new sections
+                self._append_with_autoscroll(f"📋 <b>{formatted_line}</b>")
+                self._append_with_autoscroll("─" * 50)
                 return
             
             # Handle system summary sections with better formatting
             if (formatted_line == "System checks summary" or 
                 formatted_line == "=" * len(formatted_line)):  # Handle separator lines
                 if formatted_line == "System checks summary":
-                    self.results_text.append("")  # Add spacing
-                    self.results_text.append(f"📊 <b>System Checks Summary</b>")
-                    self.results_text.append("─" * 40)
+                    self._append_with_autoscroll("")  # Add spacing
+                    self._append_with_autoscroll(f"📊 <b>System Checks Summary</b>")
+                    self._append_with_autoscroll("─" * 40)
                 return
             
             # Handle scan statistics with proper icons and formatting
@@ -5681,16 +6436,16 @@ System        {perf_status}"""
                 "The system checks took:"
             ]):
                 if "File properties checks" in formatted_line:
-                    self.results_text.append(f"  📂 <b>File Analysis:</b>")
+                    self._append_with_autoscroll(f"  📂 <b>File Analysis:</b>")
                 elif "Files checked:" in formatted_line:
                     count = formatted_line.split(":")[-1].strip()
-                    self.results_text.append(f"    📄 Files scanned: <b>{count}</b>")
+                    self._append_with_autoscroll(f"    📄 Files scanned: <b>{count}</b>")
                 elif "Suspect files:" in formatted_line:
                     count = formatted_line.split(":")[-1].strip()
                     color = "#F44336" if int(count) > 0 else "#4CAF50"
-                    self.results_text.append(f"    🔍 Suspicious files: <span style='color: {color};'><b>{count}</b></span>")
+                    self._append_with_autoscroll(f"    🔍 Suspicious files: <span style='color: {color};'><b>{count}</b></span>")
                 elif "Rootkit checks" in formatted_line:
-                    self.results_text.append(f"  🛡️  <b>Rootkit Detection:</b>")
+                    self._append_with_autoscroll(f"  🛡️  <b>Rootkit Detection:</b>")
                 elif "Rootkits checked" in formatted_line:
                     count = formatted_line.split(":")[-1].strip()
                     self.results_text.append(f"    📊 Rootkits checked: <b>{count}</b>")
@@ -5816,6 +6571,9 @@ System        {perf_status}"""
                 if any(indicator in formatted_line for indicator in scan_start_indicators):
                     self._rkhunter_scan_actually_started = True
                     self._rkhunter_max_progress = 0  # Reset to ensure clean start
+                    
+                    # Notify user about grace period for stopping
+                    self.results_text.append("✅ RKHunter scan started - you can stop the scan without re-authentication for the next 30 seconds\n")
                 else:
                     # Scan hasn't started yet, don't update progress
                     return
@@ -5942,7 +6700,7 @@ System        {perf_status}"""
             if "for hidden files and directories" in formatted_line:
                 if self._rkhunter_max_progress >= 90 and self._rkhunter_max_progress < 93:
                     self._rkhunter_max_progress = 93
-                    self.status_label.setText("👁️ Scanning for hidden threats...")
+                    self.status_label.setText("RKHunter scan in progress...")
                     self.progress_bar.setValue(93)
                 return
             
@@ -5967,6 +6725,11 @@ System        {perf_status}"""
         self.rkhunter_scan_btn.setEnabled(True)
         self.rkhunter_scan_btn.setText("🔍 RKHunter Scan")
         
+        # Reset button state if this was a standalone RKHunter scan
+        # (for combined scans, button state will be managed by ClamAV completion)
+        if not (self.current_scan_thread and self.current_scan_thread.isRunning()):
+            self.update_scan_button_state(False)
+        
         # Reset progress bar
         self.progress_bar.setValue(100 if result.success else 0)
 
@@ -5983,7 +6746,16 @@ System        {perf_status}"""
         # Save results to report
         self.save_rkhunter_report(result)
 
-        self.status_label.setText("RKHunter scan completed")
+        # Set completion status message
+        if result.infections_found > 0:
+            self.status_label.setText(f"✅ RKHunter scan completed - {result.infections_found} infections found")
+        elif result.warnings_found > 0:
+            self.status_label.setText(f"✅ RKHunter scan completed - {result.warnings_found} warnings found")
+        else:
+            self.status_label.setText("✅ RKHunter scan completed successfully")
+        
+        # Add info about the grace period feature for future scans
+        self.results_text.append("\n💡 Tip: You can stop RKHunter scans without re-authentication within 30 seconds of starting them.\n")
 
     def display_rkhunter_results(self, result: RKHunterScanResult):
         """Display RKHunter scan results in the results text area."""
@@ -6478,12 +7250,24 @@ System        {perf_status}"""
         print(f"DEBUG: Thread running: {self.current_scan_thread.isRunning() if self.current_scan_thread else 'N/A'}")
         print(f"DEBUG: Manual stop flag: {self._scan_manually_stopped}")
         
-        if self.current_scan_thread and self.current_scan_thread.isRunning():
+        if (self.current_scan_thread and self.current_scan_thread.isRunning()) or (self.current_rkhunter_thread and self.current_rkhunter_thread.isRunning()):
             print("DEBUG: 🔍 Thread is running, showing confirmation dialog")
+            
+            # Determine what type of scan is running
+            scan_type = "scan"
+            grace_period_message = ""
+            if self.current_rkhunter_thread and self.current_rkhunter_thread.isRunning():
+                if self.current_scan_thread and self.current_scan_thread.isRunning():
+                    scan_type = "combined scan (RKHunter + ClamAV)"
+                    grace_period_message = "\n\n⏱️ RKHunter can be stopped without re-authentication if within 30 seconds of starting."
+                else:
+                    scan_type = "RKHunter scan"
+                    grace_period_message = "\n\n⏱️ Can be stopped without re-authentication if within 30 seconds of starting."
+            
             # Show confirmation dialog first
             reply = QMessageBox.question(
                 self, "Confirm Stop Scan",
-                "Are you sure you want to stop the current scan?\n\nNote: The scan may take a few moments to finish safely.",
+                f"Are you sure you want to stop the current {scan_type}?\n\nNote: The scan may take a few moments to finish safely.{grace_period_message}",
                 QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
                 QMessageBox.StandardButton.Yes
             )
@@ -6499,35 +7283,71 @@ System        {perf_status}"""
                 print(f"DEBUG: Manual stop flag set to: {self._scan_manually_stopped}")
                 
                 # Update UI to show stopping state
-                self.start_scan_btn.setEnabled(False)  # Disable until stopping completes
-                self.stop_scan_btn.setEnabled(False)
+                self.scan_toggle_btn.setEnabled(False)  # Disable during stopping process
                 self.progress_bar.setValue(100)  # Start progress bar at 100% for stop countdown
                 self.status_label.setText("🛑 Stopping scan - please wait...")  # Update status label
                 self.status_bar.showMessage("🛑 Stopping scan safely - please wait...")
-                self.results_text.append("\n🛑 Scan stop requested - finishing current files...")
+                
+                # Add grace period message for RKHunter scans
+                if self.current_rkhunter_thread and self.current_rkhunter_thread.isRunning():
+                    self.results_text.append("\n🛑 Scan stop requested - using grace period termination if available...")
+                else:
+                    self.results_text.append("\n🛑 Scan stop requested - finishing current files...")
                 
                 print("DEBUG: 📱 UI updated to stopping state")
                 
                 # Cancel the scan gracefully
                 if hasattr(self.current_scan_thread, 'stop_scan'):
-                    print("DEBUG: 🛑 Calling thread.stop_scan()")
+                    print("DEBUG: 🛑 Calling ClamAV thread.stop_scan()")
                     self.current_scan_thread.stop_scan()
                 
-                # Disconnect signals to prevent completion events
+                # Cancel RKHunter scan if running
+                if self.current_rkhunter_thread and self.current_rkhunter_thread.isRunning():
+                    print("DEBUG: 🛑 Calling RKHunter thread.stop_scan()")
+                    if hasattr(self.current_rkhunter_thread, 'stop_scan'):
+                        self.current_rkhunter_thread.stop_scan()
+                    self.current_rkhunter_thread.requestInterruption()
+                
+                # Disconnect signals to prevent completion events during stop
                 try:
+                    # Disconnect only our specific connections to avoid affecting other signals
                     if hasattr(self.current_scan_thread, 'scan_completed'):
-                        self.current_scan_thread.scan_completed.disconnect()
+                        try:
+                            self.current_scan_thread.scan_completed.disconnect(self.scan_completed)
+                        except TypeError:
+                            # Already disconnected or not connected to this slot
+                            pass
                     if hasattr(self.current_scan_thread, 'progress_updated'):
-                        self.current_scan_thread.progress_updated.disconnect()
+                        try:
+                            self.current_scan_thread.progress_updated.disconnect(self.progress_bar.setValue)
+                        except TypeError:
+                            # Already disconnected or not connected to this slot
+                            pass
                     if hasattr(self.current_scan_thread, 'status_updated'):
-                        self.current_scan_thread.status_updated.disconnect()
+                        try:
+                            self.current_scan_thread.status_updated.disconnect(self.status_label.setText)
+                        except TypeError:
+                            # Already disconnected or not connected to this slot
+                            pass
+                    if hasattr(self.current_scan_thread, 'scan_detail_updated'):
+                        try:
+                            self.current_scan_thread.scan_detail_updated.disconnect(self.handle_detailed_scan_progress)
+                        except TypeError:
+                            # Already disconnected or not connected to this slot
+                            pass
                     print("DEBUG: ✅ Signals disconnected successfully")
                 except Exception as e:
                     print(f"DEBUG: ❌ Error disconnecting signals: {e}")
                 
-                # Use Qt6 proper thread interruption
-                print("DEBUG: 🧵 Requesting thread interruption (safe method)")
-                self.current_scan_thread.requestInterruption()
+                # Use Qt6 proper thread interruption for ClamAV scans
+                if self.current_scan_thread and self.current_scan_thread.isRunning():
+                    print("DEBUG: 🧵 Requesting ClamAV thread interruption (safe method)")
+                    self.current_scan_thread.requestInterruption()
+                
+                # Use Qt6 proper thread interruption for RKHunter scans
+                if self.current_rkhunter_thread and self.current_rkhunter_thread.isRunning():
+                    print("DEBUG: 🧵 Requesting RKHunter thread interruption (safe method)")
+                    self.current_rkhunter_thread.requestInterruption()
                 
                 # Don't wait here - let the scan finish naturally and handle completion
                 # Set a timer to check for completion and enable UI
@@ -6565,6 +7385,8 @@ System        {perf_status}"""
         print(f"DEBUG: _check_stop_completion() called")
         print(f"DEBUG: Current thread exists: {self.current_scan_thread is not None}")
         print(f"DEBUG: Thread running: {self.current_scan_thread.isRunning() if self.current_scan_thread else 'N/A'}")
+        print(f"DEBUG: Current RKHunter thread exists: {self.current_rkhunter_thread is not None}")
+        print(f"DEBUG: RKHunter thread running: {self.current_rkhunter_thread.isRunning() if self.current_rkhunter_thread else 'N/A'}")
         print(f"DEBUG: Current state: {self._scan_state}")
         
         # Increment attempt counter
@@ -6573,7 +7395,9 @@ System        {perf_status}"""
         self._stop_completion_attempts += 1
         
         # Update progress bar to show stop progress (reverse progress from 100% to 0%)
-        max_attempts = getattr(self, '_stop_max_attempts', 30)
+        max_attempts = 10  # 10 seconds timeout for better responsiveness
+        if not hasattr(self, '_stop_max_attempts'):
+            self._stop_max_attempts = max_attempts
         stop_progress = max(0, 100 - int((self._stop_completion_attempts / max_attempts) * 100))
         self.progress_bar.setValue(stop_progress)
         
@@ -6583,7 +7407,8 @@ System        {perf_status}"""
         self.status_bar.showMessage(f"🛑 Stopping scan... ({remaining_time}s remaining)")
         print(f"DEBUG: 📊 Stop progress: {stop_progress}% (attempt {self._stop_completion_attempts}/{max_attempts})")
         
-        # Check for timeout (force completion after 30 seconds)
+        # Check for timeout (force completion after 10 seconds for RKHunter)
+        max_attempts = getattr(self, '_stop_max_attempts', 10)  # Reduced from 30 to 10 seconds
         if self._stop_completion_attempts >= max_attempts:
             print(f"DEBUG: ⏰ Stop timeout reached ({self._stop_completion_attempts} attempts)")
             print("DEBUG: 🚨 Forcing scan stop completion due to timeout")
@@ -6593,21 +7418,36 @@ System        {perf_status}"""
                 self._stop_completion_timer.stop()
                 print("DEBUG: ⏰ Stopped completion timer (timeout)")
             
-            # Force cleanup thread reference
+            # Force cleanup thread references
             if self.current_scan_thread:
                 try:
                     # Try to terminate if still running
                     if self.current_scan_thread.isRunning():
-                        print("DEBUG: 🔧 Force terminating stuck thread")
+                        print("DEBUG: 🔧 Force terminating stuck scan thread")
                         self.current_scan_thread.requestInterruption()
                         # Give it 2 more seconds
                         if not self.current_scan_thread.wait(2000):
-                            print("DEBUG: ⚠️ Thread did not stop gracefully, forcing cleanup")
+                            print("DEBUG: ⚠️ Scan thread did not stop gracefully, forcing cleanup")
                 except Exception as e:
-                    print(f"DEBUG: ⚠️ Error during force cleanup: {e}")
+                    print(f"DEBUG: ⚠️ Error during force scan thread cleanup: {e}")
                 finally:
                     self.current_scan_thread = None
-                    print("DEBUG: 🧹 Forced thread cleanup completed")
+                    print("DEBUG: 🧹 Forced scan thread cleanup completed")
+            
+            if self.current_rkhunter_thread:
+                try:
+                    # Try to terminate if still running
+                    if self.current_rkhunter_thread.isRunning():
+                        print("DEBUG: 🔧 Force terminating stuck RKHunter thread")
+                        self.current_rkhunter_thread.stop_scan()
+                        # Give it 2 more seconds
+                        if not self.current_rkhunter_thread.wait(2000):
+                            print("DEBUG: ⚠️ RKHunter thread did not stop gracefully, forcing cleanup")
+                except Exception as e:
+                    print(f"DEBUG: ⚠️ Error during force RKHunter thread cleanup: {e}")
+                finally:
+                    self.current_rkhunter_thread = None
+                    print("DEBUG: 🧹 Forced RKHunter thread cleanup completed")
             
             # Reset states
             self._scan_state = "idle"
@@ -6615,29 +7455,49 @@ System        {perf_status}"""
             self._stop_scan_user_wants_restart = True
             
             # Reset UI
-            self.start_scan_btn.setEnabled(True)
-            self.stop_scan_btn.setEnabled(False)
+            self.update_scan_button_state(False)  # Reset to "Start Scan" mode
+            self.scan_toggle_btn.setEnabled(True)  # Re-enable the button
             self.progress_bar.setValue(0)
             
             # Show timeout message
-            self.results_text.append("⚠️ Scan stop forced due to timeout (scan was taking too long to stop)")
+            self.results_text.append("🛑 RKHunter scan stop completed\n\n"
+                                    "⚠️ Note: RKHunter runs with elevated privileges and may not respond "
+                                    "immediately to stop requests. The underlying scan process may continue "
+                                    "briefly but will not affect the application.")
             self.status_label.setText("Ready to scan")  # Reset status label
             self.status_bar.showMessage("🔴 Ready to scan")
             print("DEBUG: ✅ Forced stop completed due to timeout")
             return
         
-        if not self.current_scan_thread or not self.current_scan_thread.isRunning():
-            # Thread has finished - complete the stop process
-            print("DEBUG: ✅ Thread has finished - starting cleanup process")
+        if not ((self.current_scan_thread and self.current_scan_thread.isRunning()) or 
+                (self.current_rkhunter_thread and self.current_rkhunter_thread.isRunning())):
+            # All threads have finished - complete the stop process
+            print("DEBUG: ✅ All threads have finished - starting cleanup process")
             
             # Stop the timer
             if hasattr(self, '_stop_completion_timer'):
                 self._stop_completion_timer.stop()
                 print("DEBUG: ⏰ Stopped completion timer")
             
-            # Clean up thread reference
-            print("DEBUG: 🧹 Cleaning up thread reference")
-            self.current_scan_thread = None
+            # Clean up thread references properly
+            print("DEBUG: 🧹 Cleaning up thread references")
+            if self.current_scan_thread:
+                try:
+                    # Ensure the thread is properly cleaned up
+                    self.current_scan_thread.deleteLater()
+                except Exception as e:
+                    print(f"DEBUG: ⚠️ Error during scan thread cleanup: {e}")
+                finally:
+                    self.current_scan_thread = None
+            
+            if self.current_rkhunter_thread:
+                try:
+                    # Ensure the RKHunter thread is properly cleaned up
+                    self.current_rkhunter_thread.deleteLater()
+                except Exception as e:
+                    print(f"DEBUG: ⚠️ Error during RKHunter thread cleanup: {e}")
+                finally:
+                    self.current_rkhunter_thread = None
             
             # Set state back to idle
             self._scan_state = "idle"
@@ -6652,8 +7512,8 @@ System        {perf_status}"""
             print(f"DEBUG: 🔄 Set user wants restart flag to: {self._stop_scan_user_wants_restart}")
             
             # Reset UI to ready state with visual confirmation
-            self.start_scan_btn.setEnabled(True)
-            self.stop_scan_btn.setEnabled(False)
+            self.update_scan_button_state(False)  # Reset to "Start Scan" mode
+            self.scan_toggle_btn.setEnabled(True)  # Re-enable the button
             
             # Brief visual confirmation that stop completed (flash to 0% then reset)
             self.progress_bar.setValue(0)
@@ -6829,18 +7689,24 @@ System        {perf_status}"""
             
         print("DEBUG: ✅ Processing scan completion (natural completion)")
         
-        self.start_scan_btn.setEnabled(True)
-        self.stop_scan_btn.setEnabled(False)
+        self.update_scan_button_state(False)  # Reset to "Start Scan" mode
+        self.scan_toggle_btn.setEnabled(True)  # Re-enable the button
         self.progress_bar.setValue(100)
 
         # Reset scan state to idle
         self._scan_state = "idle"
         print(f"DEBUG: 🔄 Scan completed naturally, state reset to: {self._scan_state}")
 
-        # Clean up thread reference
+        # Clean up thread reference properly
         if self.current_scan_thread:
             print("DEBUG: 🧹 Cleaning up thread reference")
-            self.current_scan_thread = None
+            try:
+                # Ensure the thread is properly cleaned up
+                self.current_scan_thread.deleteLater()
+            except Exception as e:
+                print(f"DEBUG: ⚠️ Error during thread cleanup: {e}")
+            finally:
+                self.current_scan_thread = None
 
         # Reset quick scan button if it was a quick scan
         if hasattr(
@@ -6852,6 +7718,9 @@ System        {perf_status}"""
             error_msg = result["error"]
             self.results_text.setText(f"Scan error: {error_msg}")
             self.status_bar.showMessage(f"Scan failed: {error_msg}")
+            # Reset button state on error
+            self.update_scan_button_state(False)
+            self.scan_toggle_btn.setEnabled(True)
             return
 
         # Handle cancelled scans
@@ -6859,6 +7728,9 @@ System        {perf_status}"""
             cancel_msg = result.get("message", "Scan was cancelled")
             self.results_text.setText(cancel_msg)
             self.status_bar.showMessage(cancel_msg)
+            # Reset button state on cancellation
+            self.update_scan_button_state(False)
+            self.scan_toggle_btn.setEnabled(True)
             return
 
         # Save the scan result to a report file
@@ -6944,7 +7816,8 @@ System        {perf_status}"""
                     "is_quick_scan_running") and self.is_quick_scan_running:
                 scan_type = ScanType.QUICK
                 print("DEBUG: Determined scan type: QUICK (from is_quick_scan_running)")
-            elif self.scan_path == os.path.expanduser("~"):
+            elif (isinstance(self.scan_path, str) and 
+                  self.scan_path == os.path.expanduser("~")):
                 scan_type = ScanType.FULL
                 print("DEBUG: Determined scan type: FULL (from scan_path)")
             else:
@@ -6999,6 +7872,17 @@ System        {perf_status}"""
 
         # Display the results in the UI
         self.display_scan_results(result)
+        
+        # Set completion status message
+        if isinstance(result, dict):
+            threats_found = result.get("threats_found", len(result.get("threats", [])))
+        else:
+            threats_found = getattr(result, "threats_found", 0)
+        
+        if threats_found > 0:
+            self.status_bar.showMessage(f"✅ Scan completed - {threats_found} threats found")
+        else:
+            self.status_bar.showMessage("✅ Scan completed successfully - No threats found")
 
         # Update dashboard cards with new scan information
         print("DEBUG: About to call update_dashboard_cards() after scan completion")
@@ -7011,6 +7895,35 @@ System        {perf_status}"""
             print(f"DEBUG: Error updating dashboard cards: {e}")
             import traceback
             traceback.print_exc()
+
+    def format_target_display(self, scan_path):
+        """Format the scan target for user-friendly display."""
+        if isinstance(scan_path, list):
+            # For Quick Scan with multiple directories
+            if len(scan_path) <= 3:
+                # Show individual paths for small lists
+                formatted_paths = []
+                for path in scan_path:
+                    display_path = path.replace(str(Path.home()), "~") if str(Path.home()) in str(path) else str(path)
+                    formatted_paths.append(display_path)
+                return ", ".join(formatted_paths)
+            else:
+                # Show count for large lists
+                home_dirs = sum(1 for path in scan_path if str(Path.home()) in str(path))
+                system_dirs = len(scan_path) - home_dirs
+                
+                parts = []
+                if home_dirs > 0:
+                    parts.append(f"{home_dirs} user directories")
+                if system_dirs > 0:
+                    parts.append(f"{system_dirs} system directories")
+                
+                return f"Multiple directories ({', '.join(parts)})"
+        else:
+            # Single directory/file path
+            if str(Path.home()) in str(scan_path):
+                return str(scan_path).replace(str(Path.home()), "~")
+            return str(scan_path)
 
     def format_scan_options_user_friendly(self, scan_options):
         """Convert technical scan options into user-friendly descriptions."""
@@ -7138,22 +8051,42 @@ System        {perf_status}"""
             self.start_quick_scan()
 
     def start_quick_scan(self):
-        """Start a quick scan and update button state."""
-        # Quick scan targets common infection vectors, not entire home directory
-        # This prevents crashes from scanning millions of files
+        """Start a comprehensive quick scan of multiple high-risk directories."""
+        # Quick scan targets multiple common infection vectors and user directories
+        # This provides comprehensive coverage while still being faster than full system scan
         import tempfile
 
+        # Comprehensive quick scan paths - ordered by infection risk priority
         quick_scan_paths = [
-            os.path.expanduser("~/Downloads"),  # Most common infection vector
-            os.path.expanduser("~/Desktop"),  # User accessible files
-            os.path.expanduser("~/Documents"),  # User documents
-            tempfile.gettempdir(),  # Temporary files
-            "/tmp" if os.path.exists("/tmp") else None,  # System temp (Linux)
+            # Primary infection vectors (highest priority)
+            os.path.expanduser("~/Downloads"),     # Downloads - most common infection vector
+            os.path.expanduser("~/Desktop"),       # Desktop - user accessible files
+            
+            # User content directories (medium-high priority)  
+            os.path.expanduser("~/Documents"),     # Documents - user documents and files
+            os.path.expanduser("~/Pictures"),      # Pictures - image files, potential threats
+            os.path.expanduser("~/Videos"),        # Videos - media files
+            os.path.expanduser("~/Music"),         # Music - audio files
+            
+            # Web browser directories (medium priority)
+            os.path.expanduser("~/.mozilla"),      # Firefox profile
+            os.path.expanduser("~/.config/google-chrome"),  # Chrome config
+            os.path.expanduser("~/.config/chromium"),       # Chromium config
+            
+            # System and temporary directories (medium priority)
+            tempfile.gettempdir(),                 # System temporary files
+            "/tmp" if os.path.exists("/tmp") else None,  # Linux temp
+            "/var/tmp" if os.path.exists("/var/tmp") else None,  # Linux var temp
+            
+            # User application directories (lower priority but still important)
+            os.path.expanduser("~/.local/share"),  # User application data
+            os.path.expanduser("~/.cache"),        # User cache files
         ]
 
-        # Filter out non-existent paths
+        # Filter out non-existent paths and None values
         valid_paths = [
-            path for path in quick_scan_paths if path and os.path.exists(path)
+            path for path in quick_scan_paths 
+            if path and os.path.exists(path) and os.path.isdir(path)
         ]
 
         if not valid_paths:
@@ -7162,16 +8095,23 @@ System        {perf_status}"""
             self.reset_quick_scan_button()
             return
 
-        # Use the first valid path (Downloads is most important)
-        self.scan_path = valid_paths[0]
+        # Store all valid paths for comprehensive scanning
+        self.quick_scan_paths = valid_paths
+        self.scan_path = valid_paths  # Pass all paths to the scanner
+        
+        # Update UI to show comprehensive scan
         self.path_label.setText(
-            f"Quick Scan ({os.path.basename(self.scan_path)})")
+            f"Comprehensive Quick Scan\n"
+            f"Scanning {len(valid_paths)} directories:\n" +
+            "\n".join([f"• {os.path.basename(path)}" for path in valid_paths[:5]]) +
+            (f"\n• ...and {len(valid_paths) - 5} more" if len(valid_paths) > 5 else "")
+        )
 
         # Update button state
         self.is_quick_scan_running = True
         self.quick_scan_btn.setText("Stop Quick Scan")
 
-        # Start the scan with file limit for quick scans
+        # Start the comprehensive scan
         self.start_scan(quick_scan=True)
 
     def stop_quick_scan(self):
@@ -8710,10 +9650,14 @@ System        {perf_status}"""
             
             enabled = rkhunter_settings.get("enabled", False)
             run_with_full = rkhunter_settings.get("run_with_full_scan", False)
+            run_with_quick = rkhunter_settings.get("run_with_quick_scan", False)
+            run_with_custom = rkhunter_settings.get("run_with_custom_scan", False)
             auto_update = rkhunter_settings.get("auto_update", True)
             
             self.settings_enable_rkhunter_cb.setChecked(enabled)
             self.settings_run_rkhunter_with_full_scan_cb.setChecked(run_with_full)
+            self.settings_run_rkhunter_with_quick_scan_cb.setChecked(run_with_quick)
+            self.settings_run_rkhunter_with_custom_scan_cb.setChecked(run_with_custom)
             self.settings_rkhunter_auto_update_cb.setChecked(auto_update)
 
             # Load RKHunter category selections
@@ -8735,6 +9679,9 @@ System        {perf_status}"""
             enabled = scheduled_settings.get("enabled", False)
             frequency = scheduled_settings.get("frequency", "daily")
             time_str = scheduled_settings.get("time", "02:00")
+            scan_type = scheduled_settings.get("scan_type", "quick")
+            custom_directory = scheduled_settings.get("custom_directory", "")
+            
             self.settings_enable_scheduled_cb.setChecked(enabled)
             
             # Load scan frequency
@@ -8742,6 +9689,19 @@ System        {perf_status}"""
                 if self.settings_scan_frequency_combo.itemData(i) == frequency:
                     self.settings_scan_frequency_combo.setCurrentIndex(i)
                     break
+            
+            # Load scan type
+            for i in range(self.settings_scan_type_combo.count()):
+                if self.settings_scan_type_combo.itemData(i) == scan_type:
+                    self.settings_scan_type_combo.setCurrentIndex(i)
+                    break
+            
+            # Load custom directory
+            if custom_directory:
+                self.settings_custom_dir_edit.setText(custom_directory)
+            
+            # Show/hide custom directory widget based on scan type
+            self.settings_custom_dir_widget.setVisible(scan_type == "custom")
             
             # Load scan time
             from PyQt6.QtCore import QTime
@@ -8829,12 +9789,16 @@ System        {perf_status}"""
                 "rkhunter_settings": {
                     "enabled": self.settings_enable_rkhunter_cb.isChecked(),
                     "run_with_full_scan": self.settings_run_rkhunter_with_full_scan_cb.isChecked(),
+                    "run_with_quick_scan": self.settings_run_rkhunter_with_quick_scan_cb.isChecked(),
+                    "run_with_custom_scan": self.settings_run_rkhunter_with_custom_scan_cb.isChecked(),
                     "auto_update": self.settings_rkhunter_auto_update_cb.isChecked(),
                 },
                 "scheduled_settings": {
                     "enabled": self.settings_enable_scheduled_cb.isChecked(),
                     "frequency": self.settings_scan_frequency_combo.currentData(),
                     "time": self.settings_scan_time_edit.time().toString("HH:mm"),
+                    "scan_type": self.settings_scan_type_combo.currentData(),
+                    "custom_directory": self.settings_custom_dir_edit.text(),
                 },
             }
             
@@ -8874,6 +9838,8 @@ System        {perf_status}"""
                 'settings_enable_scheduled_cb', 
                 'settings_scan_frequency_combo',
                 'settings_scan_time_edit',
+                'settings_scan_type_combo',
+                'settings_custom_dir_edit',
                 'scan_depth_combo',
                 'file_filter_combo', 
                 'memory_limit_combo',
@@ -8916,6 +9882,14 @@ System        {perf_status}"""
             scheduled_enabled = self.settings_enable_scheduled_cb.isChecked()
             self.settings_scan_frequency_combo.setEnabled(scheduled_enabled)
             self.settings_scan_time_edit.setEnabled(scheduled_enabled)
+            self.settings_scan_type_combo.setEnabled(scheduled_enabled)
+            
+            # Update custom directory controls based on scan type and enabled state
+            if hasattr(self, 'settings_scan_type_combo'):
+                is_custom = self.settings_scan_type_combo.currentData() == "custom"
+                self.settings_custom_dir_edit.setEnabled(scheduled_enabled and is_custom)
+                self.settings_custom_dir_btn.setEnabled(scheduled_enabled and is_custom)
+                self.settings_custom_dir_widget.setVisible(is_custom)
             
             # Update next scheduled scan display if enabled
             if scheduled_enabled:
@@ -9015,6 +9989,9 @@ System        {perf_status}"""
             # Checkbox controls - RKHunter Settings
             self.settings_enable_rkhunter_cb.toggled.connect(self.auto_save_settings)
             self.settings_run_rkhunter_with_full_scan_cb.toggled.connect(self.auto_save_settings)
+            self.settings_run_rkhunter_with_quick_scan_cb.toggled.connect(self.auto_save_settings)
+            self.settings_run_rkhunter_with_custom_scan_cb.toggled.connect(self.auto_save_settings)
+            self.settings_run_rkhunter_with_custom_scan_cb.toggled.connect(self.auto_save_settings)
             
             # RKHunter auto-update checkbox - ensure it's always connected
             try:

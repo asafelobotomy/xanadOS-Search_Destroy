@@ -106,8 +106,51 @@ class PrivilegeEscalationManager:
             self.logger.error("Authorization check timed out")
             return False
         except Exception as e:
-            self.logger.error("Authorization check failed: %s", e)
+            self._safe_log_error("authorization check", e)
             return False
+
+    def _validate_command_security(self, command: List[str]) -> bool:
+        """
+        Validate command arguments for security issues.
+
+        Args:
+            command: List of command arguments to validate
+
+        Returns:
+            True if command is safe, False otherwise
+        """
+        # Check for dangerous shell metacharacters that could enable injection
+        dangerous_patterns = [
+            ';', '&&', '||', '`', '$', '|', '>', '<', '&', '\n', '\r'
+        ]
+        
+        for arg in command:
+            # Check for dangerous patterns in arguments
+            for pattern in dangerous_patterns:
+                if pattern in arg:
+                    self.logger.warning(
+                        "Potentially dangerous pattern '%s' found in command argument: %s",
+                        pattern, arg[:50]  # Limit log output
+                    )
+                    return False
+        
+        return True
+
+    def _safe_log_error(self, operation: str, error: Exception, include_type: bool = True) -> None:
+        """
+        Log errors safely without exposing sensitive information.
+
+        Args:
+            operation: Description of the operation that failed
+            error: The exception that occurred
+            include_type: Whether to include the exception type
+        """
+        if include_type:
+            error_info = f"{type(error).__name__}"
+        else:
+            error_info = "Error occurred"
+        
+        self.logger.error("Operation '%s' failed: %s", operation, error_info)
 
     def _create_secure_wrapper_script(self, request: ElevationRequest) -> str:
         """
@@ -147,7 +190,10 @@ class PrivilegeEscalationManager:
                         f.write(f"export {safe_key}='{safe_value}'\n")
 
                 # Execute the command with timeout
-                cmd_str = " ".join(f"'{arg}'" for arg in request.command)
+                # Use shlex.quote for proper shell escaping to prevent injection
+                import shlex
+                escaped_args = [shlex.quote(arg) for arg in request.command]
+                cmd_str = " ".join(escaped_args)
                 f.write(f"\ntimeout {request.timeout} {cmd_str}\n")
 
             # Set script permissions (read/execute for owner only)
@@ -188,6 +234,10 @@ class PrivilegeEscalationManager:
             isinstance(arg, str) for arg in request.command
         ):
             raise SecureElevationError("Invalid command arguments")
+
+        # Additional security validation for command arguments
+        if not self._validate_command_security(request.command):
+            raise SecureElevationError("Command contains potentially dangerous patterns")
 
         # Create secure wrapper script
         script_path = None
@@ -234,10 +284,8 @@ class PrivilegeEscalationManager:
             raise SecureElevationError(error_msg)
 
         except Exception as e:
-            error_msg = f"Elevation failed for operation {
-                request.operation.value}: {e}"
-            self.logger.error(error_msg)
-            raise SecureElevationError(error_msg)
+            self._safe_log_error(f"elevation for operation {request.operation.value}", e)
+            raise SecureElevationError(f"Elevation failed for operation: {request.operation.value}")
 
         finally:
             # Clean up wrapper script

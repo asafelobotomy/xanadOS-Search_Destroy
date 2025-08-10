@@ -1,0 +1,48 @@
+# Extended Grace Period Security Configuration
+# Configuration for RKHunter authentication grace period
+
+[grace_period]
+# Duration of the grace period in seconds
+# Default: 1800 (30 minutes) - covers typical RKHunter scan duration
+# Range: 30-3600 seconds (30 seconds to 1 hour)
+duration = 1800
+
+# Maximum allowed grace period duration in seconds
+# This is an absolute limit that cannot be exceeded
+# Default: 3600 (1 hour) - for very large systems
+max_duration = 3600
+
+# Enable adaptive grace period based on system load
+# If true, grace period may be extended on high-load systems
+adaptive_grace_period = true
+
+# Maximum number of grace period extensions allowed per session
+# This prevents abuse of the extended grace period
+max_extensions = 3
+
+[security]
+# Enable enhanced security logging
+# Logs all grace period usage for audit purposes
+enhanced_logging = true
+
+# Enable security audit trail
+# Creates detailed logs for privileged operations
+audit_trail = true
+
+# High security mode
+# Reduces grace period duration in high-security environments
+# Can be enabled by creating /etc/security/high-security-mode file
+high_security_mode = false
+
+[monitoring]
+# Enable real-time security monitoring
+# Monitors for suspicious grace period usage patterns
+real_time_monitoring = true
+
+# Alert threshold for grace period extensions
+# Alerts if grace period extensions exceed this number per hour
+alert_threshold = 5
+
+# Log suspicious patterns
+# Enables pattern detection for potential abuse
+pattern_detection = true

@@ -177,73 +177,71 @@ class WebProtectionSystem:
     def _init_database(self):
         """Initialize web protection database."""
         try:
-            conn = sqlite3.connect(self.db_path)
-            cursor = conn.cursor()
+            with sqlite3.connect(self.db_path) as conn:
+                cursor = conn.cursor()
 
-            # URL analysis cache table
-            cursor.execute(
+                # URL analysis cache table
+                cursor.execute(
+                    """
+                    CREATE TABLE IF NOT EXISTS url_cache (
+                        url TEXT PRIMARY KEY,
+                        domain TEXT,
+                        ip_addresses TEXT,
+                        ssl_info TEXT,
+                        threat_indicators TEXT,
+                        reputation TEXT,
+                        risk_score REAL,
+                        analysis_time DATETIME DEFAULT CURRENT_TIMESTAMP,
+                        details TEXT
+                    )
                 """
-                CREATE TABLE IF NOT EXISTS url_cache (
-                    url TEXT PRIMARY KEY,
-                    domain TEXT,
-                    ip_addresses TEXT,
-                    ssl_info TEXT,
-                    threat_indicators TEXT,
-                    reputation TEXT,
-                    risk_score REAL,
-                    analysis_time REAL,
-                    details TEXT,
-                    cached_at DATETIME DEFAULT CURRENT_TIMESTAMP
                 )
-            """
-            )
 
-            # Threat detections table
-            cursor.execute(
+                # Threat detections table
+                cursor.execute(
+                    """
+                    CREATE TABLE IF NOT EXISTS threat_detections (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        url TEXT,
+                        threat_category TEXT,
+                        reputation TEXT,
+                        risk_score REAL,
+                        detection_time DATETIME DEFAULT CURRENT_TIMESTAMP,
+                        source TEXT,
+                        details TEXT,
+                        blocked BOOLEAN DEFAULT FALSE
+                    )
                 """
-                CREATE TABLE IF NOT EXISTS threat_detections (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    url TEXT,
-                    threat_category TEXT,
-                    reputation TEXT,
-                    risk_score REAL,
-                    detection_time DATETIME,
-                    source TEXT,
-                    details TEXT,
-                    blocked BOOLEAN
                 )
-            """
-            )
 
-            # Domain reputation table
-            cursor.execute(
+                # URL reputation table
+                cursor.execute(
+                    """
+                    CREATE TABLE IF NOT EXISTS url_reputation (
+                        domain TEXT PRIMARY KEY,
+                        reputation TEXT,
+                        threat_categories TEXT,
+                        risk_score REAL,
+                        last_updated DATETIME DEFAULT CURRENT_TIMESTAMP,
+                        source TEXT
+                    )
                 """
-                CREATE TABLE IF NOT EXISTS domain_reputation (
-                    domain TEXT PRIMARY KEY,
-                    reputation TEXT,
-                    threat_categories TEXT,
-                    risk_score REAL,
-                    last_updated DATETIME DEFAULT CURRENT_TIMESTAMP,
-                    source TEXT
                 )
-            """
-            )
 
-            # Blocked domains table
-            cursor.execute(
+                # Blocked domains table
+                cursor.execute(
+                    """
+                    CREATE TABLE IF NOT EXISTS blocked_domains (
+                        domain TEXT PRIMARY KEY,
+                        threat_category TEXT,
+                        added_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                        source TEXT,
+                        active BOOLEAN DEFAULT TRUE
+                    )
                 """
-                CREATE TABLE IF NOT EXISTS blocked_domains (
-                    domain TEXT PRIMARY KEY,
-                    threat_category TEXT,
-                    added_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-                    source TEXT,
-                    active BOOLEAN DEFAULT TRUE
                 )
-            """
-            )
 
-            conn.commit()
-            conn.close()
+                conn.commit()
 
         except Exception as e:
             self.logger.error(
@@ -297,25 +295,23 @@ class WebProtectionSystem:
     def _load_cached_threat_lists(self):
         """Load threat lists from database cache."""
         try:
-            conn = sqlite3.connect(self.db_path)
-            cursor = conn.cursor()
+            with sqlite3.connect(self.db_path) as conn:
+                cursor = conn.cursor()
 
-            cursor.execute(
+                cursor.execute(
+                    """
+                    SELECT domain, threat_category FROM blocked_domains
+                    WHERE active = TRUE
                 """
-                SELECT domain, threat_category FROM blocked_domains
-                WHERE active = TRUE
-            """
-            )
+                )
 
-            for domain, category in cursor.fetchall():
-                if category == ThreatCategory.MALWARE.value:
-                    self.malware_domains.add(domain)
-                elif category == ThreatCategory.PHISHING.value:
-                    self.phishing_domains.add(domain)
-                elif category == ThreatCategory.SUSPICIOUS.value:
-                    self.suspicious_domains.add(domain)
-
-            conn.close()
+                for domain, category in cursor.fetchall():
+                    if category == ThreatCategory.MALWARE.value:
+                        self.malware_domains.add(domain)
+                    elif category == ThreatCategory.PHISHING.value:
+                        self.phishing_domains.add(domain)
+                    elif category == ThreatCategory.SUSPICIOUS.value:
+                        self.suspicious_domains.add(domain)
 
         except Exception as e:
             self.logger.error("Error loading cached threat lists: %s", e)
@@ -655,20 +651,19 @@ class WebProtectionSystem:
                 }
 
             # Check database reputation
-            conn = sqlite3.connect(self.db_path)
-            cursor = conn.cursor()
+            with sqlite3.connect(self.db_path) as conn:
+                cursor = conn.cursor()
 
-            cursor.execute(
-                """
-                SELECT reputation, risk_score, threat_categories, source
-                FROM domain_reputation
-                WHERE domain = ? AND last_updated > datetime('now', '-7 days')
-            """,
-                (domain,),
-            )
+                cursor.execute(
+                    """
+                    SELECT reputation, risk_score, threat_categories, source
+                    FROM domain_reputation
+                    WHERE domain = ? AND last_updated > datetime('now', '-7 days')
+                """,
+                    (domain,),
+                )
 
-            result = cursor.fetchone()
-            conn.close()
+                result = cursor.fetchone()
 
             if result:
                 reputation_str, risk_score, threat_categories, source = result
@@ -1055,31 +1050,30 @@ class WebProtectionSystem:
     def _store_analysis_result(self, analysis: URLAnalysis):
         """Store analysis result in database."""
         try:
-            conn = sqlite3.connect(self.db_path)
-            cursor = conn.cursor()
+            with sqlite3.connect(self.db_path) as conn:
+                cursor = conn.cursor()
 
-            cursor.execute(
-                """
-                INSERT OR REPLACE INTO url_cache
-                (url, domain, ip_addresses, ssl_info, threat_indicators,
-                 reputation, risk_score, analysis_time, details)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """,
-                (
-                    analysis.url,
-                    analysis.domain,
-                    json.dumps(analysis.ip_addresses),
-                    json.dumps(analysis.ssl_info),
-                    json.dumps(analysis.threat_indicators),
-                    analysis.reputation.value,
-                    analysis.risk_score,
-                    analysis.analysis_time,
-                    json.dumps(analysis.details),
-                ),
-            )
+                cursor.execute(
+                    """
+                    INSERT OR REPLACE INTO url_cache
+                    (url, domain, ip_addresses, ssl_info, threat_indicators,
+                     reputation, risk_score, analysis_time, details)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                    (
+                        analysis.url,
+                        analysis.domain,
+                        json.dumps(analysis.ip_addresses),
+                        json.dumps(analysis.ssl_info),
+                        json.dumps(analysis.threat_indicators),
+                        analysis.reputation.value,
+                        analysis.risk_score,
+                        analysis.analysis_time,
+                        json.dumps(analysis.details),
+                    ),
+                )
 
-            conn.commit()
-            conn.close()
+                conn.commit()
 
         except Exception as e:
             self.logger.error("Error storing analysis result: %s", e)

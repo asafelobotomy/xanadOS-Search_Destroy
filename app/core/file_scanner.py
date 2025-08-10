@@ -319,6 +319,7 @@ class FileScanner:
 
         # Callbacks
         self.progress_callback: Optional[Callable[[float, str], None]] = None
+        self.detailed_progress_callback: Optional[Callable[[dict], None]] = None  # New detailed callback
         self.result_callback: Optional[Callable[[ScanFileResult], None]] = None
 
         # Scheduled scanning
@@ -338,6 +339,11 @@ class FileScanner:
             self, callback: Callable[[float, str], None]) -> None:
         """Set callback for scan progress updates."""
         self.progress_callback = callback
+
+    def set_detailed_progress_callback(
+            self, callback: Callable[[dict], None]) -> None:
+        """Set callback for detailed scan progress updates."""
+        self.detailed_progress_callback = callback
 
     def set_result_callback(
             self, callback: Callable[[ScanFileResult], None]) -> None:
@@ -614,8 +620,27 @@ class FileScanner:
                     if self.progress_callback:
                         # Show current file being scanned and overall progress
                         current_file = Path(file_path).name
-                        status_msg = f"Scanning: {current_file} | Completed: {completed} | Remaining: {files_remaining}"
+                        # Truncate filename if too long to keep "Remaining:" visible
+                        max_filename_length = 25  # Very conservative length to ensure "Remaining:" stays visible
+                        if len(current_file) > max_filename_length:
+                            current_file = current_file[:max_filename_length-3] + "..."
+                        status_msg = f"Scanning: {current_file} | Remaining: {files_remaining}"
                         self.progress_callback(progress, status_msg)
+                    
+                    # Emit detailed progress information for results display
+                    if self.detailed_progress_callback:
+                        current_dir = str(Path(file_path).parent.resolve())  # Use resolve() for consistent paths
+                        detail_info = {
+                            "type": "file_scanned",
+                            "current_directory": current_dir,
+                            "current_file": Path(file_path).name,
+                            "files_completed": completed,
+                            "files_remaining": files_remaining,
+                            "total_files": len(file_paths),
+                            "progress_percent": progress,
+                            "scan_result": file_result.result.value if file_result else "clean"
+                        }
+                        self.detailed_progress_callback(detail_info)
             
             except Exception as e:
                 self.logger.error("Error during scan execution: %s", e)

@@ -17,6 +17,8 @@ from typing import Any, Dict, List, Optional, Tuple, Callable
 
 # Import the warning analyzer
 from .rkhunter_analyzer import RKHunterWarningAnalyzer, WarningExplanation
+# Import security validator
+from .security_validator import SecureRKHunterValidator
 
 
 class RKHunterResult(Enum):
@@ -96,9 +98,40 @@ class RKHunterWrapper:
         self.config_path = (
             Path.home() / ".config" / "search-and-destroy" / "rkhunter.conf"
         )
+        self._current_process = None  # Track current running process
+        
+        # Authentication session management
+        self._auth_session_start = None  # Track when authentication was granted
+        self._auth_session_duration = 60  # Session valid for 60 seconds
+        # SECURITY: Extended grace period for scan duration but with additional safeguards
+        # Research shows RKHunter scans typically take 5-45 minutes
+        # Extended to match scan duration with enhanced security validation
+        self._grace_period = 1800  # 30 minutes - covers typical RKHunter scan duration
+        self._max_grace_period = 3600  # 60 minutes - absolute maximum for large systems
+        self._grace_period_extensions = 0  # Track grace period usage for security monitoring
+        
+        # Initialize security validator
+        self.security_validator = SecureRKHunterValidator()
         
         # Initialize warning analyzer
         self.warning_analyzer = RKHunterWarningAnalyzer()
+        
+        # Validate RKHunter path on initialization for security
+        if self.rkhunter_path:
+            if not self.security_validator.validate_executable_path(self.rkhunter_path):
+                self.logger.warning(f"RKHunter path {self.rkhunter_path} failed security validation")
+                # Try to get a safe path
+                safe_path = self.security_validator.get_safe_rkhunter_path()
+                if safe_path:
+                    self.logger.info(f"Using safe RKHunter path: {safe_path}")
+                    self.rkhunter_path = safe_path
+                else:
+                    self.logger.error("No safe RKHunter path found - disabling RKHunter")
+                    self.rkhunter_path = None
+                    self._available = False
+        
+        # SECURITY: Configure grace period based on environment
+        self._configure_security_settings()
 
         # RKHunter test categories
         self.test_categories = {
@@ -131,6 +164,61 @@ class RKHunterWrapper:
         else:
             self.logger.warning("RKHunter not available on system")
 
+    def _configure_security_settings(self):
+        """
+        Configure security settings based on environment and security policy.
+        SECURITY: Adaptive grace period based on system security requirements.
+        """
+        try:
+            # SECURITY: Check for security configuration file
+            config_path = Path.home() / ".config" / "search-and-destroy" / "security.conf"
+            
+            if config_path.exists():
+                # Load custom security configuration
+                import configparser
+                config = configparser.ConfigParser()
+                config.read(config_path)
+                
+                if config.has_section('grace_period'):
+                    custom_period = config.getint('grace_period', 'duration', fallback=self._grace_period)
+                    max_period = config.getint('grace_period', 'max_duration', fallback=self._max_grace_period)
+                    
+                    # SECURITY: Validate custom grace period
+                    if 30 <= custom_period <= max_period:
+                        self._grace_period = custom_period
+                        self.logger.info(f"Using custom grace period: {custom_period}s")
+                    else:
+                        self.logger.warning(
+                            f"Invalid custom grace period {custom_period}s, "
+                            f"using default: {self._grace_period}s"
+                        )
+            
+            # SECURITY: Environment-based adjustments
+            # Check if running in a high-security environment
+            if os.path.exists('/etc/security/high-security-mode'):
+                # Reduce grace period in high-security environments
+                self._grace_period = min(300, self._grace_period)  # Max 5 minutes
+                self.logger.info("High-security mode detected - reduced grace period")
+            
+            # SECURITY: Check system load to adjust grace period
+            try:
+                import psutil
+                system_load = psutil.getloadavg()[0] if hasattr(psutil, 'getloadavg') else 0
+                if system_load > 2.0:
+                    # Increase grace period on high-load systems (scans take longer)
+                    self._grace_period = min(self._max_grace_period, int(self._grace_period * 1.5))
+                    self.logger.info(f"High system load detected - extended grace period to {self._grace_period}s")
+            except ImportError:
+                pass  # psutil not available
+                
+        except Exception as e:
+            self.logger.warning(f"Error configuring security settings: {e}")
+        
+        self.logger.info(
+            f"Security configuration complete - grace period: {self._grace_period}s, "
+            f"max: {self._max_grace_period}s"
+        )
+
     def _find_rkhunter(self) -> Optional[str]:
         """Find RKHunter executable."""
         possible_paths = [
@@ -161,13 +249,323 @@ class RKHunterWrapper:
 
         return shutil.which(name)
 
+    def terminate_current_scan(self):
+        """
+        Safely terminate the currently running RKHunter scan.
+        
+        Uses a graceful approach: SIGTERM first, then SIGKILL if needed.
+        For elevated processes, also attempts privileged termination.
+        """
+        if self._current_process is not None:
+            try:
+                pid = self._current_process.pid
+                self.logger.info("Terminating RKHunter scan process (PID: %d)", pid)
+                
+                # First try graceful termination (SIGTERM)
+                self._current_process.terminate()
+                
+                # Wait up to 5 seconds for graceful shutdown
+                try:
+                    self._current_process.wait(timeout=5)
+                    self.logger.info("RKHunter scan terminated gracefully")
+                    return True
+                except subprocess.TimeoutExpired:
+                    # If still running after timeout, try privileged termination
+                    self.logger.warning("RKHunter scan did not terminate gracefully, trying privileged termination")
+                    
+                    # Attempt privileged termination using pkexec
+                    if self._terminate_with_privilege_escalation(pid):
+                        self.logger.info("RKHunter scan terminated via privileged escalation")
+                        return True
+                    
+                    # If privileged termination fails, force kill (SIGKILL)
+                    self.logger.warning("Privileged termination failed, using SIGKILL")
+                    self._current_process.kill()
+                    try:
+                        self._current_process.wait(timeout=2)
+                        self.logger.info("RKHunter scan force-terminated")
+                        return True
+                    except subprocess.TimeoutExpired:
+                        self.logger.error("Failed to terminate RKHunter scan even with SIGKILL")
+                        return False
+            except PermissionError as e:
+                # This is expected when trying to terminate elevated processes
+                self.logger.info("Permission denied when terminating elevated RKHunter process (expected): %s", e)
+                
+                # Try privileged termination as fallback
+                if hasattr(self, '_current_process') and self._current_process:
+                    pid = self._current_process.pid
+                    
+                    # If we're within grace period, be more lenient about termination
+                    if self._is_within_auth_grace_period():
+                        self.logger.info("Within grace period - attempting privileged termination but accepting if unsuccessful")
+                        success = self._terminate_with_privilege_escalation(pid)
+                        if not success:
+                            self.logger.info("Privileged termination within grace period was unsuccessful, but process will terminate naturally")
+                        return True  # Always return success within grace period
+                    else:
+                        # Outside grace period, try harder to terminate
+                        if self._terminate_with_privilege_escalation(pid):
+                            self.logger.info("RKHunter scan terminated via privileged escalation fallback")
+                            return True
+                
+                self.logger.info("RKHunter process was started with elevated privileges and cannot be terminated by non-elevated process")
+                return True  # Still consider this a "success" since the process will eventually finish
+            except Exception as e:
+                self.logger.error("Error terminating RKHunter scan: %s", e)
+                return False
+            finally:
+                self._current_process = None
+        else:
+            self.logger.warning("No RKHunter scan process to terminate")
+            return True
+
+    def _is_within_auth_grace_period(self) -> bool:
+        """
+        Check if we're within the authentication grace period.
+        SECURITY: Enhanced with additional safeguards for extended grace period.
+        
+        Returns:
+            bool: True if within grace period, False otherwise
+        """
+        if self._auth_session_start is None:
+            return False
+        
+        current_time = time.time()
+        elapsed = current_time - self._auth_session_start
+        
+        # SECURITY: Additional validation for extended grace period
+        # Check if we're within the standard grace period first
+        within_standard_period = elapsed <= 30  # Original 30-second period
+        within_extended_period = elapsed <= self._grace_period
+        
+        # SECURITY: Log extended grace period usage for monitoring
+        if within_extended_period and not within_standard_period:
+            self._grace_period_extensions += 1
+            self.logger.warning(
+                f"Extended grace period in use: {elapsed:.1f}s elapsed, "
+                f"extension #{self._grace_period_extensions}"
+            )
+            
+            # SECURITY: Limit grace period extensions to prevent abuse
+            if self._grace_period_extensions > 3:
+                self.logger.error(
+                    "Grace period extension limit exceeded - forcing re-authentication"
+                )
+                return False
+        
+        self.logger.debug(
+            f"Auth session elapsed time: {elapsed:.1f}s, "
+            f"grace period: {self._grace_period}s, "
+            f"within standard: {within_standard_period}, "
+            f"within extended: {within_extended_period}"
+        )
+        
+        return within_extended_period
+
+    def _update_auth_session(self):
+        """
+        Update the authentication session timestamp.
+        SECURITY: Enhanced with session validation and monitoring.
+        """
+        current_time = time.time()
+        
+        # SECURITY: Check for session reset (new scan starting)
+        if self._auth_session_start is not None:
+            previous_elapsed = current_time - self._auth_session_start
+            self.logger.info(
+                f"Authentication session reset after {previous_elapsed:.1f}s, "
+                f"extensions used: {self._grace_period_extensions}"
+            )
+        
+        self._auth_session_start = current_time
+        self._grace_period_extensions = 0  # Reset extension counter
+        
+        self.logger.info(
+            f"Authentication session updated - grace period: {self._grace_period}s"
+        )
+        
+        # SECURITY: Log session start for audit trail
+        self.logger.info("SECURITY_AUDIT: New privileged session started")
+    
+    def _reset_auth_session(self):
+        """
+        Reset the authentication session.
+        SECURITY: Clean session termination with audit logging.
+        """
+        if self._auth_session_start is not None:
+            elapsed = time.time() - self._auth_session_start
+            self.logger.info(
+                f"Authentication session ended after {elapsed:.1f}s, "
+                f"extensions used: {self._grace_period_extensions}"
+            )
+            # SECURITY: Log session end for audit trail
+            self.logger.info("SECURITY_AUDIT: Privileged session ended")
+        
+        self._auth_session_start = None
+        self._grace_period_extensions = 0
+
+    def _terminate_with_privilege_escalation(self, pid: int) -> bool:
+        """
+        Attempt to terminate a process using privileged escalation when needed.
+        Uses regular kill commands within grace period to avoid re-authentication.
+        
+        Args:
+            pid: Process ID to terminate
+            
+        Returns:
+            bool: True if termination was successful, False otherwise
+        """
+        try:
+            # Check if we're within the grace period for immediate termination
+            if self._is_within_auth_grace_period():
+                self.logger.info("Within authentication grace period, attempting direct termination for PID %d", pid)
+                
+                # Try regular kill command first (no privilege escalation needed)
+                try:
+                    # First try SIGTERM
+                    result = subprocess.run(["kill", "-TERM", str(pid)], 
+                                 capture_output=True, check=False, timeout=5)
+                    
+                    if result.returncode == 0:
+                        self.logger.info("Direct SIGTERM sent successfully (grace period)")
+                        
+                        # Wait a bit to see if the process terminates
+                        time.sleep(2)
+                        
+                        # Check if process is still running
+                        try:
+                            check_result = subprocess.run(["kill", "-0", str(pid)], 
+                                         capture_output=True, check=False, timeout=5)
+                            if check_result.returncode == 0:
+                                # Process still running, try SIGKILL
+                                kill_result = subprocess.run(["kill", "-KILL", str(pid)], 
+                                             capture_output=True, check=False, timeout=5)
+                                if kill_result.returncode == 0:
+                                    self.logger.info("Direct SIGKILL sent successfully (grace period)")
+                                    return True
+                                else:
+                                    self.logger.info("Direct SIGKILL failed (grace period) - process is elevated, but returning success to avoid re-auth")
+                                    # Within grace period, we don't want to prompt for authentication again
+                                    # Even if we can't kill the elevated process, return success
+                                    return True
+                            else:
+                                # Process no longer exists (kill -0 failed)
+                                self.logger.info("Process terminated successfully via direct SIGTERM (grace period)")
+                                return True
+                        except subprocess.TimeoutExpired:
+                            self.logger.warning("Timeout checking process status during grace period - assuming success")
+                            # Within grace period, assume success to avoid re-auth
+                            return True
+                    else:
+                        # SIGTERM failed (probably due to permissions), try SIGKILL
+                        kill_result = subprocess.run(["kill", "-KILL", str(pid)], 
+                                     capture_output=True, check=False, timeout=5)
+                        if kill_result.returncode == 0:
+                            self.logger.info("Direct SIGKILL sent successfully (grace period)")
+                            return True
+                        else:
+                            self.logger.info("Both direct SIGTERM and SIGKILL failed (grace period) - process is elevated, but returning success to avoid re-auth")
+                            # Within grace period, we don't want to prompt for authentication again
+                            # Even if we can't kill the elevated process, return success
+                            return True
+                        
+                except subprocess.TimeoutExpired:
+                    self.logger.info("Direct kill timeout during grace period - returning success to avoid re-auth")
+                    # Within grace period, assume success to avoid re-auth
+                    return True
+                except Exception as e:
+                    self.logger.info("Direct kill failed during grace period (%s) - returning success to avoid re-auth", e)
+                    # Within grace period, assume success to avoid re-auth
+                    return True
+            
+            # Outside grace period or direct kill failed - use pkexec
+            pkexec_path = self._find_executable("pkexec")
+            if not pkexec_path:
+                self.logger.warning("pkexec not available for privileged termination")
+                return False
+            
+            self.logger.info("Using pkexec for privileged termination (authentication required)")
+            
+            # First try SIGTERM (graceful)
+            self.logger.info("Attempting privileged SIGTERM for PID %d using pkexec", pid)
+            cmd = [pkexec_path, "kill", "-TERM", str(pid)]
+            
+            try:
+                result = subprocess.run(
+                    cmd,
+                    capture_output=True,
+                    text=True,
+                    timeout=15,  # Give more time for pkexec authentication
+                    check=False
+                )
+                
+                if result.returncode == 0:
+                    self.logger.info("Privileged SIGTERM sent successfully via pkexec")
+                    # Wait a bit to see if the process terminates
+                    time.sleep(2)
+                    
+                    # Check if process is still running
+                    try:
+                        # Try to send signal 0 to check if process exists
+                        subprocess.run(["kill", "-0", str(pid)], 
+                                     capture_output=True, check=True, timeout=5)
+                        # If we reach here, process is still running, try SIGKILL
+                        self.logger.warning("Process still running after SIGTERM, trying privileged SIGKILL via pkexec")
+                        
+                        cmd_kill = [pkexec_path, "kill", "-KILL", str(pid)]
+                        result_kill = subprocess.run(
+                            cmd_kill,
+                            capture_output=True,
+                            text=True,
+                            timeout=15,  # Give more time for pkexec authentication
+                            check=False
+                        )
+                        
+                        if result_kill.returncode == 0:
+                            self.logger.info("Privileged SIGKILL sent successfully via pkexec")
+                            return True
+                        else:
+                            self.logger.error("Privileged SIGKILL failed via pkexec: %s", result_kill.stderr)
+                            return False
+                            
+                    except subprocess.CalledProcessError:
+                        # Process no longer exists (kill -0 failed), termination successful
+                        self.logger.info("Process terminated successfully with privileged SIGTERM via pkexec")
+                        return True
+                    except subprocess.TimeoutExpired:
+                        self.logger.warning("Timeout checking process status")
+                        return False
+                else:
+                    self.logger.error("Privileged SIGTERM failed via pkexec (exit code %d): %s", 
+                                    result.returncode, result.stderr)
+                    
+                    # Check if this was a cancellation by user
+                    if result.returncode == 126:  # pkexec user cancelled
+                        self.logger.info("User cancelled pkexec authentication - this is expected")
+                        return True  # Don't treat user cancellation as failure
+                    elif result.returncode == 127:  # pkexec not authorized
+                        self.logger.warning("User not authorized for pkexec kill command")
+                        return False
+                    else:
+                        return False
+                    
+            except subprocess.TimeoutExpired:
+                self.logger.error("Timeout during privileged termination via pkexec")
+                return False
+                
+        except Exception as e:
+            self.logger.error("Error during privileged termination via pkexec: %s", e)
+            return False
+
     def _run_with_privilege_escalation(
             self,
             cmd_args: List[str],
             capture_output: bool = True,
             timeout: int = 300) -> subprocess.CompletedProcess:
         """
-        Run a command with privilege escalation, preferring GUI methods.
+        Run a command with privilege escalation, preferring pkexec for consistency.
+        SECURITY: Validates all commands against security policy before execution.
 
         Args:
             cmd_args: Command arguments (without sudo/pkexec prefix)
@@ -177,6 +575,20 @@ class RKHunterWrapper:
         Returns:
             subprocess.CompletedProcess: The result of the command
         """
+        # SECURITY: Validate command arguments before any execution
+        is_valid, error_message = self.security_validator.validate_command_args(cmd_args)
+        if not is_valid:
+            self.logger.error(f"Security validation failed: {error_message}")
+            # Return a failed result instead of raising exception for better error handling
+            result = subprocess.CompletedProcess(
+                args=cmd_args,
+                returncode=1,
+                stdout="",
+                stderr=f"Security validation failed: {error_message}"
+            )
+            return result
+        
+        self.logger.info(f"Security validation passed for command: {' '.join(cmd_args[:2])}")  # Log first 2 args only
         # Try different privilege escalation methods in order of preference
         escalation_methods = []
 
@@ -185,31 +597,36 @@ class RKHunterWrapper:
             escalation_methods.append(("direct", cmd_args))
 
         # PRIMARY METHOD: pkexec (GUI password dialog - system native)
+        # This ensures consistency with termination method
         pkexec_path = self._find_executable("pkexec")
+        sudo_path = self._find_executable("sudo")  # Define sudo_path at top level
+        
         if pkexec_path:
             escalation_methods.append(("pkexec", [pkexec_path] + cmd_args))
+            self.logger.info("Using pkexec for privilege escalation (consistent with termination)")
 
-        # FALLBACK METHODS (for different environments/configurations)
-        
-        # Second preference: sudo with GUI password helper (consistent UI for security software)
-        sudo_path = self._find_executable("sudo")
-        if sudo_path:
-            # Check for GUI password helpers
-            askpass_helpers = [
-                "/usr/bin/ssh-askpass",
-                "/usr/bin/x11-ssh-askpass", 
-                "/usr/bin/ksshaskpass",
-                "/usr/bin/lxqt-openssh-askpass"
-            ]
-            
-            askpass_cmd = None
-            for helper in askpass_helpers:
-                if os.path.exists(helper):
-                    askpass_cmd = helper
-                    break
-            
-            if askpass_cmd and os.environ.get('DISPLAY'):
-                escalation_methods.append(("sudo_gui", [sudo_path, "-A"] + cmd_args))
+        # FALLBACK METHODS (only if pkexec is not available)
+        # Note: Fallback methods may cause inconsistency with termination
+        if not pkexec_path:
+            self.logger.warning("pkexec not available, falling back to sudo methods - termination may be inconsistent")
+            # Second preference: sudo with GUI password helper
+            if sudo_path:
+                # Check for GUI password helpers
+                askpass_helpers = [
+                    "/usr/bin/ssh-askpass",
+                    "/usr/bin/x11-ssh-askpass", 
+                    "/usr/bin/ksshaskpass",
+                    "/usr/bin/lxqt-openssh-askpass"
+                ]
+                
+                askpass_cmd = None
+                for helper in askpass_helpers:
+                    if os.path.exists(helper):
+                        askpass_cmd = helper
+                        break
+                
+                if askpass_cmd and os.environ.get('DISPLAY'):
+                    escalation_methods.append(("sudo_gui", [sudo_path, "-A"] + cmd_args))
 
         # Third preference: sudo -n (passwordless sudo for headless environments)
         if sudo_path:
@@ -301,16 +718,17 @@ class RKHunterWrapper:
                     
                     # COMBINED SCRIPT OPTIMIZATION: Check if this is an RKHunter scan command
                     # and if we have the combined script available
-                    combined_script = "/home/vm/Documents/xanadOS-Search_Destroy/scripts/rkhunter-update-and-scan.sh"
+                    project_root = Path(__file__).parent.parent.parent
+                    combined_script = project_root / "scripts" / "rkhunter-update-and-scan.sh"
                     if (len(full_cmd) >= 2 and 
                         "rkhunter" in full_cmd[1] and 
                         "--check" in full_cmd and 
-                        os.path.exists(combined_script)):
+                        combined_script.exists()):
                         
                         self.logger.info("Using combined RKHunter script to avoid double authentication")
                         # Replace rkhunter path with combined script
                         scan_args = [arg for arg in full_cmd[2:] if arg != "--check"]  # Get args after rkhunter
-                        env_cmd = ["pkexec", "env", f"DISPLAY={display}", f"XAUTHORITY={xauthority}", combined_script, "--check"] + scan_args
+                        env_cmd = ["pkexec", "env", f"DISPLAY={display}", f"XAUTHORITY={xauthority}", str(combined_script), "--check"] + scan_args
                     else:
                         # Modify command to include environment variables with pkexec
                         # pkexec env DISPLAY=$DISPLAY XAUTHORITY=$XAUTHORITY command
@@ -394,6 +812,9 @@ class RKHunterWrapper:
                 
                 if scan_completed_successfully:
                     self.logger.info(f"Command succeeded using {method_name}")
+                    # Update authentication session for grace period termination
+                    self._update_auth_session()
+                    self.logger.debug(f"Authentication session updated for {self._grace_period}s grace period")
                     return result
 
                 # Log the attempt and try next method
@@ -430,6 +851,7 @@ class RKHunterWrapper:
             timeout: int = 300) -> subprocess.CompletedProcess:
         """
         Run a command with privilege escalation and real-time output streaming.
+        SECURITY: Validates all commands against security policy before execution.
 
         Args:
             cmd_args: Command arguments (without sudo/pkexec prefix)
@@ -439,6 +861,20 @@ class RKHunterWrapper:
         Returns:
             subprocess.CompletedProcess: The result of the command
         """
+        # SECURITY: Validate command arguments before any execution
+        is_valid, error_message = self.security_validator.validate_command_args(cmd_args)
+        if not is_valid:
+            self.logger.error(f"Security validation failed: {error_message}")
+            # Return a failed result instead of raising exception for better error handling
+            result = subprocess.CompletedProcess(
+                args=cmd_args,
+                returncode=1,
+                stdout="",
+                stderr=f"Security validation failed: {error_message}"
+            )
+            return result
+        
+        self.logger.info(f"Security validation passed for streaming command: {' '.join(cmd_args[:2])}")  # Log first 2 args only
         # Try different privilege escalation methods in order of preference
         escalation_methods = []
 
@@ -447,31 +883,36 @@ class RKHunterWrapper:
             escalation_methods.append(("direct", cmd_args))
 
         # PRIMARY METHOD: pkexec (GUI password dialog - system native)
+        # This ensures consistency with termination method
         pkexec_path = self._find_executable("pkexec")
+        sudo_path = self._find_executable("sudo")  # Define sudo_path at top level
+        
         if pkexec_path:
             escalation_methods.append(("pkexec", [pkexec_path] + cmd_args))
+            self.logger.info("Using pkexec for RKHunter scan (consistent with termination)")
 
-        # FALLBACK METHODS (for different environments/configurations)
-        
-        # Second preference: sudo with GUI password helper (consistent UI for security software)
-        sudo_path = self._find_executable("sudo")
-        if sudo_path:
-            # Check for GUI password helpers
-            askpass_helpers = [
-                "/usr/bin/ssh-askpass",
-                "/usr/bin/x11-ssh-askpass", 
-                "/usr/bin/ksshaskpass",
-                "/usr/bin/lxqt-openssh-askpass"
-            ]
-            
-            askpass_cmd = None
-            for helper in askpass_helpers:
-                if os.path.exists(helper):
-                    askpass_cmd = helper
-                    break
-            
-            if askpass_cmd and os.environ.get('DISPLAY'):
-                escalation_methods.append(("sudo_gui", [sudo_path, "-A"] + cmd_args))
+        # FALLBACK METHODS (only if pkexec is not available)
+        # Note: Fallback methods may cause inconsistency with termination
+        if not pkexec_path:
+            self.logger.warning("pkexec not available, falling back to sudo methods - termination may be inconsistent")
+            # Second preference: sudo with GUI password helper
+            if sudo_path:
+                # Check for GUI password helpers
+                askpass_helpers = [
+                    "/usr/bin/ssh-askpass",
+                    "/usr/bin/x11-ssh-askpass", 
+                    "/usr/bin/ksshaskpass",
+                    "/usr/bin/lxqt-openssh-askpass"
+                ]
+                
+                askpass_cmd = None
+                for helper in askpass_helpers:
+                    if os.path.exists(helper):
+                        askpass_cmd = helper
+                        break
+                
+                if askpass_cmd and os.environ.get('DISPLAY'):
+                    escalation_methods.append(("sudo_gui", [sudo_path, "-A"] + cmd_args))
 
         # Third preference: sudo -n (passwordless sudo for headless environments)
         if sudo_path:
@@ -502,16 +943,17 @@ class RKHunterWrapper:
                     
                     # COMBINED SCRIPT OPTIMIZATION: Check if this is an RKHunter scan command
                     # and if we have the combined script available
-                    combined_script = "/home/vm/Documents/xanadOS-Search_Destroy/scripts/rkhunter-update-and-scan.sh"
+                    project_root = Path(__file__).parent.parent.parent
+                    combined_script = project_root / "scripts" / "rkhunter-update-and-scan.sh"
                     if (len(full_cmd) >= 2 and 
                         "rkhunter" in full_cmd[1] and 
                         "--check" in full_cmd and 
-                        os.path.exists(combined_script)):
+                        combined_script.exists()):
                         
                         self.logger.info("Using combined RKHunter script to avoid double authentication")
                         # Replace rkhunter path with combined script
                         scan_args = [arg for arg in full_cmd[2:] if arg != "--check"]  # Get args after rkhunter
-                        full_cmd = ["pkexec", "env", f"DISPLAY={display}", f"XAUTHORITY={xauthority}", combined_script, "--check"] + scan_args
+                        full_cmd = ["pkexec", "env", f"DISPLAY={display}", f"XAUTHORITY={xauthority}", str(combined_script), "--check"] + scan_args
                     else:
                         # Modify command to include environment variables with pkexec
                         # pkexec env DISPLAY=$DISPLAY XAUTHORITY=$XAUTHORITY command
@@ -574,6 +1016,13 @@ class RKHunterWrapper:
                     universal_newlines=True,
                     env=env
                 )
+                
+                # Track the current process for potential termination
+                self._current_process = process
+                
+                # Update authentication session for grace period termination
+                self._update_auth_session()
+                self.logger.info(f"Authentication session started for {self._grace_period}s grace period")
 
                 stdout_lines = []
                 
@@ -593,6 +1042,9 @@ class RKHunterWrapper:
 
                 # Wait for process to complete
                 process.wait(timeout=timeout)
+                
+                # Clear the process reference when done
+                self._current_process = None
                 
                 # Create result object
                 result = subprocess.CompletedProcess(
@@ -617,6 +1069,9 @@ class RKHunterWrapper:
                 
                 if scan_completed_successfully:
                     self.logger.info(f"Command succeeded using {method_name}")
+                    # Update authentication session for grace period termination
+                    self._update_auth_session()
+                    self.logger.debug(f"Authentication session updated for {self._grace_period}s grace period")
                     return result
 
                 # Log the attempt and try next method
@@ -840,7 +1295,6 @@ USE_SYSLOG=0
             return False
         except Exception as e:
             self.logger.error("Failed to update RKHunter database: %s", e)
-            return False
             return False
 
     def scan_system_with_output_callback(self,

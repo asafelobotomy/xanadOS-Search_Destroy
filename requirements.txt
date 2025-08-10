@@ -1,22 +1,22 @@
-PyQt6>=6.5.0
+PyQt6>=6.7.0
 pyclamd>=0.4.0
-requests>=2.26.0
-python-dotenv>=0.19.1
-psutil>=5.8.0
-schedule>=1.1.0
-setuptools>=65.0.0
-inotify>=0.2.0
+requests>=2.32.0
+python-dotenv>=1.0.0
+psutil>=6.0.0
+schedule>=1.2.0
+setuptools>=70.0.0
+inotify>=0.2.10
 
 # Advanced feature dependencies
-aiohttp>=3.8.0
-dnspython>=2.3.0
-matplotlib>=3.6.0
-pandas>=1.5.0
-numpy>=1.24.0
-jinja2>=3.1.0
-cryptography>=40.0.0
-boto3>=1.26.0
-aiofiles>=23.0.0
+aiohttp>=3.10.0
+dnspython>=2.6.0
+matplotlib>=3.8.0
+pandas>=2.2.0
+numpy>=1.26.0
+jinja2>=3.1.4
+cryptography>=43.0.0
+boto3>=1.34.0
+aiofiles>=24.0.0
 
 # Development dependencies
 pylint>=3.0.0
