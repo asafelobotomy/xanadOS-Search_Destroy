@@ -12,17 +12,17 @@ def get_version():
     """Read version from VERSION file in the project root."""
     try:
         # Get the project root directory (3 levels up from this file)
-        project_root = Path(__file__).parent.parent
+        project_root = Path(__file__).parent.parent.parent
         version_file = project_root / "VERSION"
 
         if version_file.exists():
             return version_file.read_text().strip()
         else:
             # Fallback version if VERSION file doesn't exist
-            return "2.3.0"
+            return "2.4.0"
     except (OSError, IOError, FileNotFoundError):
         # Fallback version in case of any file reading errors
-        return "2.3.0"
+        return "2.4.0"
 
 
 __version__ = get_version()
