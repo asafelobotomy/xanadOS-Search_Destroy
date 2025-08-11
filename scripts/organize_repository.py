@@ -285,11 +285,13 @@ archive/
         self.create_organization_summary()
         print()
         
-        print("✅ Repository organization completed successfully!")
+    print("✅ Repository organization completed successfully!")
     print("📋 See docs/project/REPOSITORY_ORGANIZATION_RUNTIME.md for detailed summary")
 
 
 if __name__ == "__main__":
-    repo_path = "/home/vm/Documents/xanadOS-Search_Destroy"
+    # Determine repository root dynamically based on script location
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    repo_path = os.path.abspath(os.path.join(current_dir, ".."))  # parent of scripts/
     organizer = RepositoryOrganizer(repo_path)
     organizer.run_organization()

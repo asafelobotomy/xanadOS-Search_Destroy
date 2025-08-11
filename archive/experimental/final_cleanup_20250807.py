@@ -254,7 +254,8 @@ def main():
     """Run all final fixes."""
     print("🔧 Running final cleanup fixes...")
     
-    os.chdir("/home/vm/Documents/xanadOS-Search_Destroy")
+    # Change to repository root dynamically
+    os.chdir(Path(__file__).resolve().parents[2])
     
     print("\n1. Adding required imports...")
     add_required_imports()

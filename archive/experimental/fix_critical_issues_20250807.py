@@ -219,7 +219,8 @@ def main():
     """Run all fixes."""
     print("🔧 Fixing critical syntax errors...")
     
-    os.chdir("/home/vm/Documents/xanadOS-Search_Destroy")
+    # Change to repository root dynamically
+    os.chdir(Path(__file__).resolve().parents[2])
     
     print("\n1. Fixing indentation errors...")
     fix_indentation_errors()

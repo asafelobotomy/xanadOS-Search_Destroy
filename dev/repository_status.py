@@ -18,7 +18,8 @@ def generate_status_report():
     print(f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     print()
     
-    repo_root = Path("/home/vm/Documents/xanadOS-Search_Destroy")
+    # Resolve repository root dynamically relative to this script
+    repo_root = Path(__file__).resolve().parent.parent
     os.chdir(repo_root)
     
     # Project Structure Analysis

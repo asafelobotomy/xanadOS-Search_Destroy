@@ -186,7 +186,7 @@ cd xanadOS-Search_Destroy
 ./scripts/prepare-build.sh
 
 # Install dependencies
-/home/vm/Documents/xanadOS-Search_Destroy/.venv/bin/python -m pip install -r requirements.txt
+$(pwd)/.venv/bin/python -m pip install -r requirements.txt  # avoid hardcoded user-specific absolute path
 
 # Run application
 ./run.sh

@@ -12,7 +12,8 @@ def check_repository_structure():
     """Verify the repository structure is clean and organized."""
     print("🔍 Verifying Repository Structure...")
     
-    base_dir = Path("/home/vm/Documents/xanadOS-Search_Destroy")
+    # Determine base directory dynamically (two levels up from this script if run from dev/)
+    base_dir = Path(__file__).resolve().parent.parent
     
     # Check for cache directories in application code
     app_cache_dirs = list(base_dir.glob("app/**/__pycache__"))
@@ -51,7 +52,7 @@ def check_application_imports():
     
     try:
         # Add the app directory to Python path
-        sys.path.insert(0, "/home/vm/Documents/xanadOS-Search_Destroy/app")
+    sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "app"))
         
         # Try importing core modules
         import core.rkhunter_wrapper

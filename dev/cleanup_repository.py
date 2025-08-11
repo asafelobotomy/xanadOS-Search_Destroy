@@ -25,7 +25,8 @@ def cleanup_repository():
     print("🧹 Starting Repository Cleanup and Organization...")
     print("=" * 60)
     
-    repo_root = Path("/home/vm/Documents/xanadOS-Search_Destroy")
+    # Determine repository root dynamically (parent of dev directory)
+    repo_root = Path(__file__).resolve().parent.parent
     os.chdir(repo_root)
     
     # Task 1: Move test and debug files to dev directory
