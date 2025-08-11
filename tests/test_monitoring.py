@@ -32,14 +32,16 @@ try:
             monitor = RealTimeMonitor(config)
 
             # Simple callbacks (smoke validation)
+            events = {"threats": [], "completed": [], "errors": []}
+
             def on_threat_detected(file_path, threat_name):
-                logger.warning("THREAT DETECTED: %s - %s", file_path, threat_name)
+                events["threats"].append((file_path, threat_name))
 
             def on_scan_completed(file_path, result):
-                logger.info("SCAN COMPLETED: %s - %s", file_path, result)
+                events["completed"].append((file_path, result))
 
             def on_error(error_msg):
-                logger.error("MONITOR ERROR: %s", error_msg)
+                events["errors"].append(error_msg)
 
             monitor.set_threat_detected_callback(on_threat_detected)
             monitor.set_scan_completed_callback(on_scan_completed)
@@ -59,10 +61,9 @@ try:
             time.sleep(3)
 
             stats = monitor.get_statistics()
-            logger.info("Monitor statistics:")
             assert isinstance(stats, dict) and stats, "Statistics should not be empty"
-            for component, data in stats.items():
-                logger.info("  %s: %s", component, data)
+            # Ensure no errors recorded during basic operation
+            assert not events["errors"], f"Unexpected monitor errors: {events['errors']}"
 
             logger.info("Stopping monitor...")
             monitor.stop()

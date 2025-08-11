@@ -3,12 +3,13 @@ import sys
 from dataclasses import asdict
 
 from PyQt6.QtCore import QThread, pyqtSignal
+from .thread_cancellation import CooperativeCancellationMixin
 
 # Add the app directory to the path for imports
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 
-class ScanThread(QThread):
+class ScanThread(QThread, CooperativeCancellationMixin):
     progress_updated = pyqtSignal(int)
     scan_completed = pyqtSignal(dict)
     status_updated = pyqtSignal(str)
@@ -24,12 +25,15 @@ class ScanThread(QThread):
         self._current_scan_type = "quick" if quick_scan else "full"  # Default values
 
     def stop_scan(self):
-        """Safely stop the scan using Qt6 proper interruption"""
+        """Cooperative cancellation: set flags, interruption, propagate to scanner."""
+        self.cooperative_cancel()
         self._cancelled = True
-        # Use Qt6 proper thread interruption instead of manual flags
         self.requestInterruption()
         if hasattr(self.scanner, 'cancel_scan'):
-            self.scanner.cancel_scan()
+            try:
+                self.scanner.cancel_scan()
+            except Exception:
+                pass
 
     def run(self):
         try:
@@ -295,6 +299,7 @@ class ScanThread(QThread):
                     self.scanner.cleanup()
             except:
                 pass
+            self.mark_cancellation_complete()
 
     def _combine_scan_results(self, results_list):
         """Combine multiple scan results into a single comprehensive result."""

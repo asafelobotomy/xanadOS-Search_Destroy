@@ -418,12 +418,8 @@ class SecureNetworkManager:
                 return True  # Skip verification for now
 
             # Verify signature using GPG or similar
-            result = subprocess.run(
-                ["gpg", "--verify", str(sig_file), str(file_path)],
-                capture_output=True,
-                text=True,
-                timeout=30,
-            )
+            from .secure_subprocess import run_secure
+            result = run_secure(["gpg", "--verify", str(sig_file), str(file_path)], timeout=30)
 
             return result.returncode == 0
 

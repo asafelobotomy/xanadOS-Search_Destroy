@@ -14,6 +14,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
 import requests
+from .secure_subprocess import run_secure
 
 
 class ScanResult(Enum):
@@ -124,12 +125,9 @@ class ClamAVWrapper:
             return False
 
         try:
-            result = subprocess.run(
-                [self.clamscan_path, "--version"],
-                capture_output=True,
-                text=True,
-                timeout=10,
-            )
+            result = run_secure([
+                self.clamscan_path, "--version"
+            ], timeout=10, capture_output=True, text=True)
             return result.returncode == 0
         except (subprocess.SubprocessError, FileNotFoundError):
             return False
@@ -140,12 +138,9 @@ class ClamAVWrapper:
             return "Not available", "Not available"
 
         try:
-            result = subprocess.run(
-                [self.clamscan_path, "--version"],
-                capture_output=True,
-                text=True,
-                timeout=10,
-            )
+            result = run_secure([
+                self.clamscan_path, "--version"
+            ], timeout=10, capture_output=True, text=True)
 
             if result.returncode == 0:
                 # Parse version output
@@ -170,6 +165,17 @@ class ClamAVWrapper:
 
     def scan_file(self, file_path: str, **kwargs) -> ScanFileResult:
         """Scan a single file with ClamAV."""
+        # Path validation: reject world-writable, symlink traversal
+        try:
+            p = Path(file_path)
+            if p.is_symlink():
+                return ScanFileResult(file_path=file_path, result=ScanResult.ERROR, error_message="Symlink not allowed")
+            if os.name == "posix":
+                st = p.stat()
+                if st.st_mode & 0o002:
+                    return ScanFileResult(file_path=file_path, result=ScanResult.ERROR, error_message="World-writable file blocked")
+        except OSError:
+            return ScanFileResult(file_path=file_path, result=ScanResult.ERROR, error_message="Path validation failed")
         if not self.available:
             return ScanFileResult(
                 file_path=file_path,
@@ -196,11 +202,11 @@ class ClamAVWrapper:
             cmd.append(str(file_path_obj))
 
             # Run scan
-            result = subprocess.run(
+            result = run_secure(
                 cmd,
+                timeout=self.config["advanced_settings"]["scan_timeout"],
                 capture_output=True,
                 text=True,
-                timeout=self.config["advanced_settings"]["scan_timeout"],
             )
 
             scan_time = (datetime.now() - start_time).total_seconds()
@@ -224,7 +230,7 @@ class ClamAVWrapper:
                 scan_time=scan_time,
                 error_message="Scan timeout",
             )
-        except (subprocess.SubprocessError, OSError) as e:
+        except (subprocess.SubprocessError, OSError, ValueError, PermissionError) as e:
             scan_time = (datetime.now() - start_time).total_seconds()
             return ScanFileResult(
                 file_path=file_path,
@@ -237,6 +243,17 @@ class ClamAVWrapper:
     def scan_directory(self, directory_path: str, **
                        kwargs) -> List[ScanFileResult]:
         """Scan a directory recursively."""
+        # Directory validation
+        try:
+            d = Path(directory_path)
+            if d.is_symlink():
+                return [ScanFileResult(file_path=directory_path, result=ScanResult.ERROR, error_message="Symlink directory not allowed")]
+            if os.name == "posix":
+                st = d.stat()
+                if st.st_mode & 0o002:
+                    return [ScanFileResult(file_path=directory_path, result=ScanResult.ERROR, error_message="World-writable directory blocked")]
+        except OSError:
+            return [ScanFileResult(file_path=directory_path, result=ScanResult.ERROR, error_message="Directory validation failed")]
         if not self.available:
             return [
                 ScanFileResult(

@@ -54,6 +54,8 @@ from PyQt6.QtWidgets import (
     QTimeEdit,
     QVBoxLayout,
     QWidget,
+    QStackedWidget,
+    QSpacerItem,
 )
 from utils.config import load_config, save_config
 from utils.scan_reports import (
@@ -65,6 +67,25 @@ from utils.scan_reports import (
 )
 
 from gui import APP_VERSION
+from gui import settings_pages
+
+
+class NoWheelComboBox(QComboBox):
+    """ComboBox that ignores wheel events to prevent accidental changes."""
+    def wheelEvent(self, event: QWheelEvent):  # type: ignore[override]
+        event.ignore()
+
+
+class NoWheelSpinBox(QSpinBox):
+    """SpinBox that ignores wheel events."""
+    def wheelEvent(self, event: QWheelEvent):  # type: ignore[override]
+        event.ignore()
+
+
+class NoWheelTimeEdit(QTimeEdit):
+    """TimeEdit that ignores wheel events."""
+    def wheelEvent(self, event: QWheelEvent):  # type: ignore[override]
+        event.ignore()
 
 
 class ClickableFrame(QFrame):
@@ -78,69 +99,96 @@ class ClickableFrame(QFrame):
         super().mousePressEvent(event)
 
 
-class NoWheelComboBox(QComboBox):
-    """A QComboBox that completely ignores wheel events to prevent accidental changes."""
-
-    def wheelEvent(self, event: QWheelEvent):
-        """Completely ignore all wheel events."""
-        event.ignore()
-
-
-class NoWheelSpinBox(QSpinBox):
-    """A QSpinBox that completely ignores wheel events to prevent accidental changes."""
-
-    def wheelEvent(self, event: QWheelEvent):
-        """Completely ignore all wheel events."""
-        event.ignore()
-
-
-class NoWheelTimeEdit(QTimeEdit):
-    """A QTimeEdit that completely ignores wheel events to prevent accidental changes."""
-
-    def wheelEvent(self, event: QWheelEvent):
-        """Completely ignore all wheel events."""
-        event.ignore()
-
-
 class MainWindow(QMainWindow):
+    """Primary application window."""
+
     def __init__(self):
         super().__init__()
-        
-        # Configure application to avoid popup window borders on Wayland
-        self._configure_platform_dropdown_behavior()
-        
-        self.config = load_config()
-        self.scanner = FileScanner()
-        self.rkhunter = RKHunterWrapper()
-        self.report_manager = ScanReportManager()
-        self.current_scan_thread = None
-        self.current_rkhunter_thread = None
-        self._scan_manually_stopped = False  # Flag to track manual scan stops
-        
-        # Initialization state - prevents premature scheduler actions during startup
-        self._initialization_complete = False
-        
-        # Initialize tooltip styling
-        self._setup_tooltip_styling()
-        
-        # Initialize scan state
-        self._initialize_scan_state()
 
-    def _setup_tooltip_styling(self):
-        """Set up standardized tooltip styling for consistent width and appearance."""
-        # Set application-wide tooltip styling
-        tooltip_style = """
-        QToolTip {
-            background-color: #2b2b2b;
-            color: #ffffff;
-            border: 1px solid #555555;
-            border-radius: 4px;
-            padding: 8px;
-            font-size: 11px;
-            max-width: 350px;
-        }
-        """
-        self.setStyleSheet(self.styleSheet() + tooltip_style)
+        # 1. Configuration
+        try:
+            self.config = load_config()
+        except Exception:
+            self.config = {}
+
+        # 2. Core managers / engines
+        self.report_manager = ScanReportManager()
+        try:
+            self.rkhunter = RKHunterWrapper()
+        except Exception:
+            self.rkhunter = None
+        try:
+            self.scanner = FileScanner()
+        except Exception:
+            self.scanner = None
+        self.current_scan_thread = None
+
+        # 3. Scan state flags (must exist before any UI logic references them)
+        self._scan_running = False
+        self._scan_state = "idle"
+        self._scan_manually_stopped = False
+        self._pending_scan_request = None
+        self._stop_scan_user_wants_restart = False
+
+        # 4. Initialize model state & UI
+        self._initialize_scan_state()
+        self.init_ui()
+
+        # 5. Theme
+        try:
+            self.apply_theme(self.config.get("theme", "dark"))
+        except Exception:
+            pass
+
+        # 6. Debounced settings saver
+        self._settings_save_timer = QTimer(self)
+        self._settings_save_timer.setSingleShot(True)
+        self._settings_save_timer.timeout.connect(self._auto_save_settings_commit)
+
+        # 7. Post-start self checks
+        QTimer.singleShot(0, self._run_startup_self_check)
+
+    # --- RKHunter safe availability helper ---
+    def _rkhunter_available(self) -> bool:
+        rk = getattr(self, 'rkhunter', None)
+        if not rk:
+            return False
+        if hasattr(rk, 'is_available'):
+            try:
+                return bool(rk.is_available())  # type: ignore[attr-defined]
+            except Exception:
+                return bool(getattr(rk, 'available', False))
+        return bool(getattr(rk, 'available', False))
+
+    def create_settings_tab(self):
+        """Create the settings tab (modular layout only; legacy removed)."""
+        return self._create_settings_tab_modular()
+
+    # --- Settings Widget Factories (used by external builders) ---
+    def _make_activity_retention_combo(self):
+        combo = NoWheelComboBox(); combo.addItems(["10","25","50","100","200"]); combo.setCurrentText("100"); combo.currentTextChanged.connect(self.on_retention_setting_changed); return combo
+    def _make_threads_spin(self):
+        spin = NoWheelSpinBox(); spin.setRange(1,16); spin.setValue(4); return spin
+    def _make_timeout_spin(self):
+        spin = NoWheelSpinBox(); spin.setRange(30,3600); spin.setValue(300); spin.setSuffix(' seconds'); return spin
+    def _make_depth_combo(self):
+        combo = NoWheelComboBox(); combo.addItems(['Surface (Faster)','Normal','Deep (Thorough)']); combo.setCurrentIndex(1); return combo
+    def _make_file_filter_combo(self):
+        combo = NoWheelComboBox(); combo.addItems(['All Files','Executables Only','Documents & Media','System Files']); return combo
+    def _make_memory_limit_combo(self):
+        combo = NoWheelComboBox(); combo.addItems(['Low (512MB)','Normal (1GB)','High (2GB)']); combo.setCurrentIndex(1); return combo
+    def _make_frequency_combo(self):
+        combo = NoWheelComboBox(); combo.addItems(['Daily','Weekly','Monthly']); return combo
+    def _make_time_edit(self):
+        return NoWheelTimeEdit()
+    def _make_scan_type_combo(self):
+        combo = NoWheelComboBox(); combo.addItems(['Quick Scan','Full System Scan','Custom Directory']); return combo
+    def _build_custom_dir_widget(self):
+        container = QWidget(); from PyQt6.QtWidgets import QHBoxLayout, QLineEdit, QPushButton
+        layout = QHBoxLayout(container); layout.setContentsMargins(0,0,0,0)
+        self.settings_custom_dir_edit = QLineEdit(); self.settings_custom_dir_edit.setReadOnly(True); layout.addWidget(self.settings_custom_dir_edit)
+        self.settings_custom_dir_btn = QPushButton('Browse...'); layout.addWidget(self.settings_custom_dir_btn)
+        self.settings_custom_dir_widget = container
 
     def _format_tooltip(self, text, max_chars_per_line=50):
         """Format tooltip text with consistent width and line breaks."""
@@ -1221,6 +1269,12 @@ class MainWindow(QMainWindow):
                 self.firewall_toggle_btn.setText("Toggle Firewall")
 
     def create_scan_tab(self):
+        # DEBUG: log available rkhunter attributes related to availability/version
+        try:
+            import logging
+            logging.getLogger(__name__).debug('create_scan_tab rkhunter attrs: %s', [m for m in dir(getattr(self,'rkhunter', object())) if 'avail' in m or 'version' in m])
+        except Exception:
+            pass
         scan_widget = QWidget()
         main_layout = QHBoxLayout(scan_widget)
         main_layout.setSpacing(8)  # Compact spacing between columns
@@ -1395,7 +1449,17 @@ class MainWindow(QMainWindow):
         )
 
         # Check if RKHunter is available
-        rkhunter_available = self.rkhunter.is_available()
+        # Robust availability check (wrapper refactor safety)
+        rkhunter_available = False
+        if self.rkhunter is not None:
+            try:
+                if hasattr(self.rkhunter, 'is_available'):
+                    rkhunter_available = self.rkhunter.is_available()
+                else:
+                    # Fallback to attribute if method missing
+                    rkhunter_available = bool(getattr(self.rkhunter, 'available', False))
+            except Exception:
+                rkhunter_available = False
         if rkhunter_available:
             self.rkhunter_scan_btn.clicked.connect(self.start_rkhunter_scan)
         else:
@@ -1490,650 +1554,89 @@ class MainWindow(QMainWindow):
 
         self.tab_widget.addTab(quarantine_widget, "Quarantine")
 
-    def create_settings_tab(self):
-        """Create the settings tab with full settings interface."""
+    # --- Modular Settings Scaffold (Restored) ---
+    def _create_settings_tab_modular(self):
         settings_widget = QWidget()
         settings_widget.setObjectName("settingsTabWidget")
+        root_layout = QVBoxLayout(settings_widget)
+        root_layout.setContentsMargins(12, 12, 12, 12)
+        root_layout.setSpacing(12)
 
-        # Main layout with proper spacing
-        main_layout = QVBoxLayout(settings_widget)
-        main_layout.setSpacing(20)
-        main_layout.setContentsMargins(20, 20, 20, 20)
+        top_bar = QHBoxLayout()
+        default_btn = QPushButton("Default Settings")
+        default_btn.setMinimumHeight(34)
+        default_btn.clicked.connect(self.load_default_settings)
+        top_bar.addWidget(default_btn)
+        top_bar.addStretch()
+        root_layout.addLayout(top_bar)
 
-        # Default Settings button at the top
-        default_btn_layout = QHBoxLayout()
-        default_settings_btn = QPushButton("Default Settings")
-        default_settings_btn.clicked.connect(self.load_default_settings)
-        default_settings_btn.setMinimumHeight(40)
-        default_settings_btn.setMinimumWidth(140)
-        default_settings_btn.setToolTip(
-            "Reset all settings to their default values. This will restore recommended settings "
-            "for optimal security and performance. Your current settings will be overwritten."
-        )
-        default_btn_layout.addWidget(default_settings_btn)
-        default_btn_layout.addStretch()
-        main_layout.addLayout(default_btn_layout)
+        split_layout = QHBoxLayout()
+        split_layout.setSpacing(10)
 
-        # Create scrollable area for settings
-        scroll_area = QScrollArea()
-        scroll_area.setObjectName("settingsScrollArea")
-        scroll_content = QWidget()
-        scroll_content.setObjectName("settingsScrollContent")
-        scroll_layout = QVBoxLayout(scroll_content)
-        scroll_layout.setSpacing(20)
+        self.settings_category_list = QListWidget()
+        self.settings_category_list.setFixedWidth(180)
+        self.settings_category_list.setSelectionMode(QListWidget.SelectionMode.SingleSelection)
+        self.settings_category_list.currentRowChanged.connect(self._on_settings_category_changed)
+        split_layout.addWidget(self.settings_category_list)
 
-        # Create two-column layout for the main settings groups
-        two_column_layout = QHBoxLayout()
-        two_column_layout.setSpacing(20)
+        self.settings_pages = QStackedWidget()
+        split_layout.addWidget(self.settings_pages, 1)
+        root_layout.addLayout(split_layout, 1)
 
-        # LEFT COLUMN
-        left_column_widget = QWidget()
-        left_column_layout = QVBoxLayout(left_column_widget)
-        left_column_layout.setSpacing(20)
-        left_column_layout.setContentsMargins(0, 0, 0, 0)
+        self._settings_pages_builders = [
+            ("General", settings_pages.build_general_page),
+            ("Scanning", settings_pages.build_scanning_page),
+            ("Real-Time", settings_pages.build_realtime_page),
+            ("Scheduling", settings_pages.build_scheduling_page),
+            ("Security", settings_pages.build_security_page),
+            ("RKHunter", settings_pages.build_rkhunter_page),
+            ("Interface", settings_pages.build_interface_page),
+        ]
+        for label, builder in self._settings_pages_builders:
+            page = builder(self)
+            self.settings_pages.addWidget(page)
+            self.settings_category_list.addItem(label)
 
-        # RIGHT COLUMN
-        right_column_widget = QWidget()
-        right_column_layout = QVBoxLayout(right_column_widget)
-        right_column_layout.setSpacing(20)
-        right_column_layout.setContentsMargins(0, 0, 0, 0)
+        if self.settings_category_list.count():
+            self.settings_category_list.setCurrentRow(0)
 
-        # SCAN SETTINGS SECTION (LEFT COLUMN)
-        scan_group = QGroupBox("Scan Settings")
-        scan_layout = QFormLayout(scan_group)
-        scan_layout.setSpacing(15)
+        self.load_current_settings()
+        self.setup_auto_save_connections()
+        self.tab_widget.addTab(settings_widget, "Settings")
 
-        # Max threads setting
-        self.settings_max_threads_spin = NoWheelSpinBox()
-        self.settings_max_threads_spin.setRange(1, 16)
-        self.settings_max_threads_spin.setValue(4)
-        self.settings_max_threads_spin.setMinimumHeight(35)
-        self.settings_max_threads_spin.setToolTip(
-            self._format_tooltip(
-                "Number of parallel threads to use during scanning. Higher values can speed up scans but use more CPU and memory. Recommended: 4-8 threads for most systems."
-            )
-        )
-        scan_layout.addRow(
-            QLabel("Max Threads:"),
-            self.settings_max_threads_spin)
+    def _on_settings_category_changed(self, row: int):
+        if 0 <= row < self.settings_pages.count():
+            self.settings_pages.setCurrentIndex(row)
 
-        # Scan timeout setting
-        self.settings_timeout_spin = NoWheelSpinBox()
-        self.settings_timeout_spin.setRange(30, 3600)
-        self.settings_timeout_spin.setValue(300)
-        self.settings_timeout_spin.setSuffix(" seconds")
-        self.settings_timeout_spin.setMinimumHeight(35)
-        self.settings_timeout_spin.setToolTip(
-            self._format_tooltip(
-                "Maximum time to wait for a scan to complete before timing out. Increase for large file systems or slow storage. Default: 300 seconds (5 minutes)."
-            )
-        )
-        scan_layout.addRow(QLabel("Scan Timeout:"), self.settings_timeout_spin)
+    # Removed inline page builder methods; now in settings_pages module.
 
-        # Scan archives checkbox
-        self.settings_scan_archives_cb = QCheckBox("Scan Archive Files")
-        self.settings_scan_archives_cb.setChecked(True)
-        self.settings_scan_archives_cb.setMinimumHeight(35)
-        self.settings_scan_archives_cb.setToolTip(
-            self._format_tooltip(
-                "Enable scanning inside compressed files and archives (ZIP, RAR, TAR, etc.). Provides more thorough malware detection but increases scan time and memory usage."
-            )
-        )
-        scan_layout.addRow(self.settings_scan_archives_cb)
+    # SECURITY SETTINGS SECTION (LEGACY - MIGRATED TO MODULAR 'Security' PAGE)
+    # (Removed to prevent duplicate widget creation during modular migration)
+    # security_group = QGroupBox("Security Settings")
+    # security_layout = QFormLayout(security_group)
+    # security_layout.setSpacing(15)
+    # self.settings_auto_update_cb = QCheckBox("Auto-update Virus Definitions")
+    # self.settings_auto_update_cb.setChecked(True)
+    # self.settings_auto_update_cb.setMinimumHeight(35)
+    # self.settings_auto_update_cb.setToolTip(self._format_tooltip("Automatically download and install the latest virus definition updates..."))
+    # security_layout.addRow(self.settings_auto_update_cb)
+    # left_column_layout.addWidget(security_group)
 
-        # Follow symlinks checkbox
-        self.settings_follow_symlinks_cb = QCheckBox("Follow Symbolic Links")
-        self.settings_follow_symlinks_cb.setChecked(False)
-        self.settings_follow_symlinks_cb.setMinimumHeight(35)
-        self.settings_follow_symlinks_cb.setToolTip(
-            self._format_tooltip(
-                "Follow symbolic links during scanning. Warning: May cause infinite loops if links create cycles. Disable unless you specifically need to scan symlinked content."
-            )
-        )
-        scan_layout.addRow(self.settings_follow_symlinks_cb)
+        # security_layout.addRow(self.settings_auto_update_cb)
 
-        left_column_layout.addWidget(scan_group)
-
-        # ADVANCED SCAN SETTINGS SECTION (LEFT COLUMN) - Moved from Scan tab
-        advanced_scan_group = QGroupBox("Advanced Scan Settings")
-        advanced_scan_layout = QFormLayout(advanced_scan_group)
-        advanced_scan_layout.setSpacing(15)
-
-        # Scan depth
-        self.scan_depth_combo = NoWheelComboBox()
-        self.scan_depth_combo.addItem("Surface (Faster)", 1)
-        self.scan_depth_combo.addItem("Normal", 2)
-        self.scan_depth_combo.addItem("Deep (Thorough)", 3)
-        self.scan_depth_combo.setCurrentIndex(1)
-        self.scan_depth_combo.setMinimumHeight(35)
-        self.scan_depth_combo.setToolTip(
-            "Controls how deep the scanner searches subdirectories:\n"
-            "• Surface: Top-level files only (fastest)\n"
-            "• Normal: 2 directory levels deep (balanced)\n"
-            "• Deep: 3+ levels deep (most thorough)"
-        )
-        advanced_scan_layout.addRow("Scan Depth:", self.scan_depth_combo)
-        
-        # File type filtering
-        self.file_filter_combo = NoWheelComboBox()
-        self.file_filter_combo.addItem("All Files", "all")
-        self.file_filter_combo.addItem("Executables Only", "exe")
-        self.file_filter_combo.addItem("Documents & Media", "docs")
-        self.file_filter_combo.addItem("System Files", "system")
-        self.file_filter_combo.setMinimumHeight(35)
-        self.file_filter_combo.setToolTip(
-            "Filter which file types to scan:\n"
-            "• All Files: Scan everything (most thorough)\n"
-            "• Executables: .exe, .dll, .so files (faster, security-focused)\n"
-            "• Documents & Media: Office docs, PDFs, images, videos\n"
-            "• System Files: Core OS and configuration files"
-        )
-        advanced_scan_layout.addRow("File Types:", self.file_filter_combo)
-        
-        # Memory usage limit
-        self.memory_limit_combo = NoWheelComboBox()
-        self.memory_limit_combo.addItem("Low (512MB)", 512)
-        self.memory_limit_combo.addItem("Normal (1GB)", 1024)
-        self.memory_limit_combo.addItem("High (2GB)", 2048)
-        self.memory_limit_combo.setCurrentIndex(1)
-        self.memory_limit_combo.setMinimumHeight(35)
-        self.memory_limit_combo.setToolTip(
-            "Maximum memory the scanner can use:\n"
-            "• Low: Best for older/limited systems\n"
-            "• Normal: Good balance for most systems\n"
-            "• High: Fastest scanning for systems with plenty of RAM"
-        )
-        advanced_scan_layout.addRow("Memory Limit:", self.memory_limit_combo)
-        
-        # Exclusion patterns
-        exclusion_patterns_label = QLabel("Exclusion Patterns:")
-        self.exclusion_text = QTextEdit()
-        self.exclusion_text.setMaximumHeight(60)  # Slightly larger in settings
-        self.exclusion_text.setPlaceholderText("*.tmp, *.log, /proc/*, /sys/* (separate with commas)")
-        self.exclusion_text.setToolTip(
-            "Files and directories to skip during scanning. Use wildcards (*, ?) and separate with commas.\n"
-            "Examples:\n"
-            "• *.tmp - Skip temporary files\n"
-            "• /proc/* - Skip process filesystem\n"
-            "• ~/.cache/* - Skip user cache directory\n"
-            "• *.log, *.bak - Skip multiple file types"
-        )
-        advanced_scan_layout.addRow(exclusion_patterns_label, self.exclusion_text)
-
-        left_column_layout.addWidget(advanced_scan_group)
-
-        # USER INTERFACE SETTINGS SECTION (RIGHT COLUMN)
-        ui_group = QGroupBox("User Interface Settings")
-        ui_layout = QFormLayout(ui_group)
-        ui_layout.setSpacing(15)
-
-        # Minimize to tray checkbox
-        self.settings_minimize_to_tray_cb = QCheckBox(
-            "Minimize to System Tray")
-        self.settings_minimize_to_tray_cb.setChecked(True)
-        self.settings_minimize_to_tray_cb.setMinimumHeight(35)
-        self.settings_minimize_to_tray_cb.setToolTip(
-            self._format_tooltip(
-                "When enabled, closing the window or selecting Exit will minimize to system tray instead of closing the application. Use 'Force Exit' from the File menu or system tray to actually close the application."
-            )
-        )
-        ui_layout.addRow(self.settings_minimize_to_tray_cb)
-
-        # Show notifications checkbox
-        self.settings_show_notifications_cb = QCheckBox("Show Notifications")
-        self.settings_show_notifications_cb.setChecked(True)
-        self.settings_show_notifications_cb.setMinimumHeight(35)
-        self.settings_show_notifications_cb.setToolTip(
-            self._format_tooltip(
-                "Display desktop notifications for important events like scan completion, threats found, and protection status changes. Notifications appear in your system tray area."
-            )
-        )
-        ui_layout.addRow(self.settings_show_notifications_cb)
-
-        # Activity log retention setting
-        self.settings_activity_retention_combo = NoWheelComboBox()
-        self.settings_activity_retention_combo.addItems(
-            ["10", "25", "50", "100", "200"]
-        )
-        self.settings_activity_retention_combo.setCurrentText(
-            "100")  # Default to 100
-        self.settings_activity_retention_combo.setMinimumHeight(35)
-        self.settings_activity_retention_combo.setToolTip(
-            self._format_tooltip(
-                "Number of activity messages to retain between sessions. Higher values keep more history but use more memory. Default: 100 messages."
-            )
-        )
-        self.settings_activity_retention_combo.currentTextChanged.connect(
-            self.on_retention_setting_changed
-        )
-        ui_layout.addRow(
-            QLabel("Activity Log Retention:"),
-            self.settings_activity_retention_combo)
-
-        right_column_layout.addWidget(ui_group)
-
-        # SECURITY SETTINGS SECTION (LEFT COLUMN)
-        security_group = QGroupBox("Security Settings")
-        security_layout = QFormLayout(security_group)
-        security_layout.setSpacing(15)
-
-        # Auto-update definitions checkbox
-        self.settings_auto_update_cb = QCheckBox(
-            "Auto-update Virus Definitions")
-        self.settings_auto_update_cb.setChecked(True)
-        self.settings_auto_update_cb.setMinimumHeight(35)
-        self.settings_auto_update_cb.setToolTip(
-            self._format_tooltip(
-                "Automatically download and install the latest virus definition updates to ensure protection against new threats. Updates are checked when the application starts and before scans."
-            )
-        )
-        security_layout.addRow(self.settings_auto_update_cb)
-
-        left_column_layout.addWidget(security_group)
+        # left_column_layout.addWidget(security_group)
 
         # SCHEDULED SCAN SETTINGS SECTION (LEFT COLUMN)
-        scheduled_group = QGroupBox("Scheduled Scan Settings")
-        scheduled_layout = QFormLayout(scheduled_group)
-        scheduled_layout.setSpacing(15)
-        
-        # Enable scheduled scans
-        self.settings_enable_scheduled_cb = QCheckBox("Enable Scheduled Scans")
-        self.settings_enable_scheduled_cb.setChecked(False)
-        self.settings_enable_scheduled_cb.setMinimumHeight(35)
-        self.settings_enable_scheduled_cb.setToolTip(
-            self._format_tooltip(
-                "Automatically run security scans on a regular schedule. The application will perform unattended scans at the specified time and frequency, even when you're away from your computer."
-            )
-        )
-        self.settings_enable_scheduled_cb.toggled.connect(self.on_scheduled_scan_toggled)
-        scheduled_layout.addRow(self.settings_enable_scheduled_cb)
-        
-        # Scan frequency
-        self.settings_scan_frequency_combo = NoWheelComboBox()
-        self.settings_scan_frequency_combo.addItem("Daily", "daily")
-        self.settings_scan_frequency_combo.addItem("Weekly", "weekly")
-        self.settings_scan_frequency_combo.addItem("Monthly", "monthly")
-        self.settings_scan_frequency_combo.setCurrentIndex(0)
-        self.settings_scan_frequency_combo.setMinimumHeight(35)
-        self.settings_scan_frequency_combo.setEnabled(False)
-        self.settings_scan_frequency_combo.setToolTip(
-            self._format_tooltip(
-                "How often to run scheduled scans:\n• Daily: Run every day at the specified time\n• Weekly: Run once per week (same day and time)\n• Monthly: Run once per month (same date and time)"
-            )
-        )
-        self.settings_scan_frequency_combo.currentTextChanged.connect(self.update_next_scheduled_scan_display)
-        scheduled_layout.addRow(QLabel("Scan Frequency:"), self.settings_scan_frequency_combo)
-        
-        # Scan time
-        self.settings_scan_time_edit = NoWheelTimeEdit()
-        self.settings_scan_time_edit.setObjectName("scanTimeEdit")
-        self.settings_scan_time_edit.setTime(QTime(2, 0))  # Default to 2:00 AM
-        self.settings_scan_time_edit.setMinimumHeight(35)
-        self.settings_scan_time_edit.setEnabled(False)
-        self.settings_scan_time_edit.setToolTip(
-            self._format_tooltip(
-                "What time of day to run scheduled scans. Choose a time when your computer is likely to be on but not in heavy use. Default: 2:00 AM (recommended for minimal interference)."
-            )
-        )
-        self.settings_scan_time_edit.timeChanged.connect(self.update_next_scheduled_scan_display)
-        scheduled_layout.addRow(QLabel("Scan Time:"), self.settings_scan_time_edit)
-        
-        # Scan type selection
-        self.settings_scan_type_combo = NoWheelComboBox()
-        self.settings_scan_type_combo.addItem("Quick Scan", "quick")
-        self.settings_scan_type_combo.addItem("Full System Scan", "full")
-        self.settings_scan_type_combo.addItem("Custom Directory", "custom")
-        self.settings_scan_type_combo.setCurrentIndex(0)  # Default to Quick Scan
-        self.settings_scan_type_combo.setMinimumHeight(35)
-        self.settings_scan_type_combo.setEnabled(False)
-        self.settings_scan_type_combo.setToolTip(
-            self._format_tooltip(
-                "Type of scan to perform during scheduled scans:\n• Quick Scan: Fast scan of common malware locations\n• Full System Scan: Comprehensive scan of entire system\n• Custom Directory: Scan a specific directory you choose"
-            )
-        )
-        self.settings_scan_type_combo.currentTextChanged.connect(self.on_scheduled_scan_type_changed)
-        scheduled_layout.addRow(QLabel("Scan Type:"), self.settings_scan_type_combo)
-        
-        # Custom directory selection (initially hidden)
-        self.settings_custom_dir_widget = QWidget()
-        custom_dir_layout = QHBoxLayout(self.settings_custom_dir_widget)
-        custom_dir_layout.setContentsMargins(0, 0, 0, 0)
-        
-        self.settings_custom_dir_edit = QLineEdit()
-        self.settings_custom_dir_edit.setPlaceholderText("Select directory for custom scans...")
-        self.settings_custom_dir_edit.setMinimumHeight(35)
-        self.settings_custom_dir_edit.setEnabled(False)
-        self.settings_custom_dir_edit.setReadOnly(True)
-        
-        # Set object name for theme-based styling
-        self.settings_custom_dir_edit.setObjectName("themedLineEdit")
-        
-        self.settings_custom_dir_edit.setToolTip(
-            self._format_tooltip(
-                "Directory path for custom scheduled scans. Click the browse button to select a different directory."
-            )
-        )
-        
-        self.settings_custom_dir_btn = QPushButton("Browse...")
-        self.settings_custom_dir_btn.setMinimumHeight(35)
-        self.settings_custom_dir_btn.setMaximumWidth(80)
-        self.settings_custom_dir_btn.setEnabled(False)
-        self.settings_custom_dir_btn.setToolTip("Select directory for custom scheduled scans")
-        self.settings_custom_dir_btn.clicked.connect(self.select_scheduled_custom_directory)
-        
-        custom_dir_layout.addWidget(self.settings_custom_dir_edit)
-        custom_dir_layout.addWidget(self.settings_custom_dir_btn)
-        
-        self.settings_custom_dir_widget.setVisible(False)  # Hide initially
-        scheduled_layout.addRow(QLabel("Custom Directory:"), self.settings_custom_dir_widget)
-        
-        # Next scheduled scan display
-        self.settings_next_scan_label = QLabel("None scheduled")
-        self.settings_next_scan_label.setObjectName("nextScanLabel")
-        self.settings_next_scan_label.setToolTip(
-            self._format_tooltip(
-                "Shows when the next scheduled scan will run based on your current settings. The scan will automatically start at this time if the application is running."
-            )
-        )
-        scheduled_layout.addRow(QLabel("Next Scan:"), self.settings_next_scan_label)
-        
-        left_column_layout.addWidget(scheduled_group)
+    # (Legacy scheduled and real-time protection sections removed.)
 
-        # REAL-TIME PROTECTION SETTINGS SECTION (RIGHT COLUMN)
-        protection_group = QGroupBox("Real-Time Protection Settings")
-        protection_layout = QFormLayout(protection_group)
-        protection_layout.setSpacing(15)
+    # (Removed legacy RKHunter integration block; now provided via modular page builder.)
 
-        # Monitor file modifications
-        self.settings_monitor_modifications_cb = QCheckBox(
-            "Monitor File Modifications")
-        self.settings_monitor_modifications_cb.setChecked(True)
-        self.settings_monitor_modifications_cb.setMinimumHeight(35)
-        self.settings_monitor_modifications_cb.setToolTip(
-            self._format_tooltip(
-                "Watch for changes to existing files in monitored directories. Detects when files are modified, which could indicate malware activity or unauthorized changes."
-            )
-        )
-        protection_layout.addRow(self.settings_monitor_modifications_cb)
-
-        # Monitor new files
-        self.settings_monitor_new_files_cb = QCheckBox("Monitor New Files")
-        self.settings_monitor_new_files_cb.setChecked(True)
-        self.settings_monitor_new_files_cb.setMinimumHeight(35)
-        self.settings_monitor_new_files_cb.setToolTip(
-            self._format_tooltip(
-                "Watch for new files being created in monitored directories. Important for detecting malware downloads, newly installed threats, or suspicious file creation."
-            )
-        )
-        protection_layout.addRow(self.settings_monitor_new_files_cb)
-        protection_layout.addRow(self.settings_monitor_new_files_cb)
-
-        # Scan modified files immediately
-        self.settings_scan_modified_cb = QCheckBox(
-            "Scan Modified Files Immediately")
-        self.settings_scan_modified_cb.setChecked(False)
-        self.settings_scan_modified_cb.setMinimumHeight(35)
-        self.settings_scan_modified_cb.setToolTip(
-            self._format_tooltip(
-                "Automatically scan files as soon as they are created or modified. Provides immediate threat detection but may impact system performance. Disable for better performance on busy systems."
-            )
-        )
-        protection_layout.addRow(self.settings_scan_modified_cb)
-
-        right_column_layout.addWidget(protection_group)
-
-        # Add stretch to balance columns
-        left_column_layout.addStretch()
-        right_column_layout.addStretch()
-
-        # Add columns to two-column layout
-        two_column_layout.addWidget(left_column_widget)
-        two_column_layout.addWidget(right_column_widget)
-
-        # Add two-column layout to main scroll layout
-        scroll_layout.addLayout(two_column_layout)
-
-        # RKHUNTER SETTINGS SECTION
-        rkhunter_group = QGroupBox("RKHunter Integration")
-        rkhunter_layout = QVBoxLayout(rkhunter_group)
-        rkhunter_layout.setSpacing(20)
-
-        # BASIC SETTINGS SECTION - Now at the top
-        settings_group = QGroupBox("Settings")
-        settings_layout = QHBoxLayout(settings_group)
-        settings_layout.setSpacing(30)
-
-        # Add left stretch to center the settings
-        settings_layout.addStretch()
-
-        self.settings_enable_rkhunter_cb = QCheckBox(
-            "Enable RKHunter Integration")
-        self.settings_enable_rkhunter_cb.setChecked(False)
-        self.settings_enable_rkhunter_cb.setToolTip(
-            self._format_tooltip(
-                "Enable integration with RKHunter rootkit detection system. Provides advanced scanning capabilities for detecting rootkits, backdoors, and other sophisticated threats."
-            )
-        )
-        self.settings_enable_rkhunter_cb.setMinimumHeight(35)
-
-        self.settings_run_rkhunter_with_full_scan_cb = QCheckBox(
-            "Run RKHunter with Full System Scans"
-        )
-        self.settings_run_rkhunter_with_full_scan_cb.setChecked(False)
-        self.settings_run_rkhunter_with_full_scan_cb.setToolTip(
-            self._format_tooltip(
-                "Automatically run RKHunter when performing full system scans. Combines comprehensive file scanning with rootkit detection for maximum security coverage."
-            )
-        )
-        self.settings_run_rkhunter_with_full_scan_cb.setMinimumHeight(35)
-
-        self.settings_run_rkhunter_with_quick_scan_cb = QCheckBox(
-            "Run RKHunter with Quick Scans"
-        )
-        self.settings_run_rkhunter_with_quick_scan_cb.setChecked(False)
-        self.settings_run_rkhunter_with_quick_scan_cb.setToolTip(
-            self._format_tooltip(
-                "Automatically run RKHunter when performing quick scans for enhanced security. Adds rootkit detection to rapid scans without significantly increasing scan time."
-            )
-        )
-        self.settings_run_rkhunter_with_quick_scan_cb.setMinimumHeight(35)
-
-        self.settings_run_rkhunter_with_custom_scan_cb = QCheckBox(
-            "Run RKHunter with Custom Scans"
-        )
-        self.settings_run_rkhunter_with_custom_scan_cb.setChecked(False)
-        self.settings_run_rkhunter_with_custom_scan_cb.setToolTip(
-            self._format_tooltip(
-                "Automatically run RKHunter when performing custom scans for comprehensive security. Adds rootkit detection to custom directory scans for targeted security analysis."
-            )
-        )
-        self.settings_run_rkhunter_with_custom_scan_cb.setMinimumHeight(35)
-
-        self.settings_rkhunter_auto_update_cb = QCheckBox(
-            "Auto-update RKHunter Database"
-        )
-        self.settings_rkhunter_auto_update_cb.setChecked(True)
-        self.settings_rkhunter_auto_update_cb.setToolTip(
-            self._format_tooltip(
-                "Automatically update RKHunter database before scans to ensure detection of the latest threats. Keeps rootkit signatures current for optimal protection."
-            )
-        )
-        self.settings_rkhunter_auto_update_cb.setMinimumHeight(35)
-
-        settings_layout.addWidget(self.settings_enable_rkhunter_cb)
-        settings_layout.addWidget(self.settings_run_rkhunter_with_full_scan_cb)
-        settings_layout.addWidget(self.settings_run_rkhunter_with_quick_scan_cb)
-        settings_layout.addWidget(self.settings_run_rkhunter_with_custom_scan_cb)
-        settings_layout.addWidget(self.settings_rkhunter_auto_update_cb)
-        
-        # Add right stretch to center the settings
-        settings_layout.addStretch()
-
-        rkhunter_layout.addWidget(settings_group)
-
-        # SCAN CATEGORIES SECTION - Now below settings, single row layout
-        categories_group = QGroupBox("Default Scan Categories")
-        categories_layout = QVBoxLayout(categories_group)
-
-        # Define test categories with descriptions - organized by priority
-        self.settings_rkhunter_test_categories = {
-            "system_commands": {
-                "name": "System Commands",
-                "description": "Check system command integrity and known rootkit modifications",
-                "default": True,
-                "priority": 1,
-            },
-            "rootkits": {
-                "name": "Rootkits & Trojans",
-                "description": "Scan for known rootkits, trojans, and malware signatures",
-                "default": True,
-                "priority": 1,
-            },
-            "system_integrity": {
-                "name": "System Integrity",
-                "description": "Verify filesystem integrity, system configs, and startup files",
-                "default": True,
-                "priority": 2,
-            },
-            "network": {
-                "name": "Network Security",
-                "description": "Check network interfaces, ports, and packet capture tools",
-                "default": True,
-                "priority": 2,
-            },
-            "applications": {
-                "name": "Applications",
-                "description": "Check for hidden processes, files, and suspicious applications",
-                "default": False,
-                "priority": 3,
-            },
-        }
-
-        # Create checkboxes in a single row layout for all 5 categories
-        self.settings_rkhunter_category_checkboxes = {}
-        self.settings_rkhunter_category_widgets = {}  # Store widget references for theme updates
-
-        # Sort categories by priority and name for better organization
-        sorted_categories = sorted(
-            self.settings_rkhunter_test_categories.items(),
-            key=lambda x: (x[1]["priority"], x[1]["name"]),
-        )
-
-        # Create single horizontal row layout for all categories
-        row_layout = QHBoxLayout()
-        row_layout.setSpacing(15)  # Good spacing between cards
-        row_layout.setContentsMargins(10, 15, 10, 15)  # Better margins
-
-        # Add left stretch to center the items
-        row_layout.addStretch(1)
-
-        # Add all items in a single row
-        for category_id, category_info in sorted_categories:
-            # Create larger item container
-            item_layout = QVBoxLayout()
-            item_layout.setSpacing(8)  # More space between checkbox and description
-            item_layout.setContentsMargins(12, 10, 12, 10)  # Better padding
-
-            # Checkbox with better sizing
-            checkbox = QCheckBox(category_info["name"])
-            checkbox.setChecked(category_info["default"])
-            checkbox.setToolTip(category_info["description"])
-            checkbox.setMinimumHeight(25)  # Larger checkbox
-            checkbox.setStyleSheet("font-weight: bold; font-size: 12px;")  # Larger font
-
-            # Description with much better sizing for readability
-            desc_label = QLabel(category_info["description"])
-            desc_color = self.get_theme_color("secondary_text")
-            desc_label.setStyleSheet(
-                f"color: {desc_color}; font-size: 11px; margin: 0px; padding: 4px; line-height: 1.3;")  # Larger text
-            desc_label.setWordWrap(True)
-            desc_label.setMaximumHeight(80)  # Much more height for description
-            desc_label.setMinimumHeight(60)  # Consistent minimum height
-            desc_label.setAlignment(Qt.AlignmentFlag.AlignTop)
-
-            item_layout.addWidget(checkbox)
-            item_layout.addWidget(desc_label)
-            item_layout.addStretch()  # Push content to top
-
-            # Create larger item widget for better readability - slightly smaller for single row
-            item_widget = QWidget()
-            item_widget.setLayout(item_layout)
-            # Adjusted dimensions to fit 5 cards in a single row
-            item_widget.setFixedWidth(180)  # Reduced width for better fit
-            item_widget.setFixedHeight(150)  # Increased height for better text display
-
-            # Apply initial styling
-            self.apply_rkhunter_category_styling(item_widget)
-
-            row_layout.addWidget(item_widget)
-            self.settings_rkhunter_category_checkboxes[category_id] = checkbox
-            self.settings_rkhunter_category_widgets[category_id] = item_widget  # Store for theme updates
-
-        # Add right stretch to center the items
-        row_layout.addStretch(1)
-
-        # Add the row layout to categories section
-        categories_layout.addLayout(row_layout)
-
-        # Quick select buttons for RKHunter categories
-        quick_select_layout = QHBoxLayout()
-
-        # Add left stretch to center the buttons
-        quick_select_layout.addStretch()
-
-        select_all_btn = QPushButton("Select All")
-        select_all_btn.clicked.connect(self.select_all_rkhunter_categories)
-        select_all_btn.setMaximumWidth(150)
-        select_all_btn.setMinimumHeight(35)
-
-        select_recommended_btn = QPushButton("Recommended")
-        select_recommended_btn.clicked.connect(
-            self.select_recommended_rkhunter_categories
-        )
-        select_recommended_btn.setToolTip(
-            "Select recommended test categories for most users"
-        )
-        select_recommended_btn.setMaximumWidth(150)
-        select_recommended_btn.setMinimumHeight(35)
-
-        select_none_btn = QPushButton("Select None")
-        select_none_btn.clicked.connect(self.select_no_rkhunter_categories)
-        select_none_btn.setMaximumWidth(150)
-        select_none_btn.setMinimumHeight(35)
-
-        quick_select_layout.addWidget(select_all_btn)
-        quick_select_layout.addWidget(select_recommended_btn)
-        quick_select_layout.addWidget(select_none_btn)
-        
-        # Add right stretch to center the buttons
-        quick_select_layout.addStretch()
-
-        categories_layout.addLayout(quick_select_layout)
-
-        rkhunter_layout.addWidget(categories_group)
-
-        scroll_layout.addWidget(rkhunter_group)
-
-        # Add stretch to push everything to the top
-        scroll_layout.addStretch()
-
-        # Set up scroll area
-        scroll_area.setWidget(scroll_content)
-        scroll_area.setWidgetResizable(True)
-        scroll_area.setVerticalScrollBarPolicy(
-            Qt.ScrollBarPolicy.ScrollBarAsNeeded)
-        scroll_area.setHorizontalScrollBarPolicy(
-            Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-
-        main_layout.addWidget(scroll_area)
-
-        # Load current settings
-        self.load_current_settings()
-        
-        # Set up auto-save connections for all settings
-        self.setup_auto_save_connections()
-
-        self.tab_widget.addTab(settings_widget, "Settings")
+    def _build_settings_page_security(self):
+        page = QWidget(); layout = QVBoxLayout(page)
+        if not hasattr(self, 'settings_auto_update_cb'):
+            self.settings_auto_update_cb = QCheckBox('Auto-update Virus Definitions'); self.settings_auto_update_cb.setChecked(True)
+        layout.addWidget(self.settings_auto_update_cb)
+        layout.addStretch(); return page
 
     def create_real_time_tab(self):
         """Create the real-time protection tab with improved three-column layout."""
@@ -3402,8 +2905,13 @@ System        {perf_status}"""
         if hasattr(self, "status_bar"):
             self.status_bar.setAccessibleName("Application status")
 
-    def apply_theme(self):
-        """Apply the current theme to the application."""
+    def apply_theme(self, theme: str | None = None):
+        """Apply the current theme to the application.
+        Args:
+            theme: Optional explicit theme override ('dark','light','system').
+        """
+        if theme:
+            self.current_theme = theme
         if self.current_theme == "dark":
             self.apply_dark_theme()
         elif self.current_theme == "light":
@@ -5581,21 +5089,21 @@ System        {perf_status}"""
             is_full_system_scan
             and rkhunter_settings.get("enabled", False)
             and rkhunter_settings.get("run_with_full_scan", False)
-            and self.rkhunter.is_available()
+            and self._rkhunter_available()
         )
 
         should_run_rkhunter_quick = (
             (quick_scan or effective_scan_type == "QUICK")  # Check both parameter and effective type
             and rkhunter_settings.get("enabled", False)
             and rkhunter_settings.get("run_with_quick_scan", False)
-            and self.rkhunter.is_available()
+            and self._rkhunter_available()
         )
 
         should_run_rkhunter_custom = (
             effective_scan_type == "CUSTOM"
             and rkhunter_settings.get("enabled", False)
             and rkhunter_settings.get("run_with_custom_scan", False)
-            and self.rkhunter.is_available()
+            and self._rkhunter_available()
         )
 
         should_run_rkhunter = should_run_rkhunter_full or should_run_rkhunter_quick or should_run_rkhunter_custom
@@ -5742,9 +5250,8 @@ System        {perf_status}"""
 
     def start_combined_security_scan(self, quick_scan=False, scan_options=None):
         """Start a combined security scan with RKHunter first, then ClamAV."""
-        
         # Check if RKHunter should still run
-        if not self.rkhunter.is_available():
+        if not self._rkhunter_available():
             self.results_text.append("❌ RKHunter not available, falling back to ClamAV only")
             # Fall back to regular ClamAV scan
             self.current_scan_thread = ScanThread(
@@ -7935,13 +7442,17 @@ System        {perf_status}"""
         # Format scan depth
         if 'depth' in scan_options:
             depth = scan_options['depth']
+            try:
+                depth_int = int(depth)
+            except (TypeError, ValueError):
+                depth_int = None
             if depth == 1:
                 friendly_options.append("&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;📏 <b>Depth:</b> Shallow (top-level files only)")
             elif depth == 2:
                 friendly_options.append("&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;📏 <b>Depth:</b> Medium (2 folder levels)")
             elif depth == 3:
                 friendly_options.append("&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;📏 <b>Depth:</b> Deep (3 folder levels)")
-            elif depth >= 4:
+            elif isinstance(depth_int, int) and depth_int >= 4:
                 friendly_options.append("&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;📏 <b>Depth:</b> Very Deep (all subfolders)")
             else:
                 friendly_options.append(f"&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;📏 <b>Depth:</b> {depth} levels")
@@ -7963,14 +7474,19 @@ System        {perf_status}"""
         # Format memory limit
         if 'memory_limit' in scan_options:
             memory_mb = scan_options['memory_limit']
-            if memory_mb < 512:
-                friendly_options.append(f"&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;💾 <b>Memory:</b> Low usage ({memory_mb}MB)")
-            elif memory_mb < 1024:
-                friendly_options.append(f"&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;💾 <b>Memory:</b> Medium usage ({memory_mb}MB)")
-            elif memory_mb < 2048:
-                friendly_options.append(f"&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;💾 <b>Memory:</b> High usage ({memory_mb}MB)")
-            else:
-                friendly_options.append(f"&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;💾 <b>Memory:</b> Very high usage ({memory_mb}MB)")
+            try:
+                mem_int = int(memory_mb)
+            except (TypeError, ValueError):
+                mem_int = None
+            if mem_int is not None:
+                if mem_int < 512:
+                    friendly_options.append(f"&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;💾 <b>Memory:</b> Low usage ({mem_int}MB)")
+                elif mem_int < 1024:
+                    friendly_options.append(f"&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;💾 <b>Memory:</b> Medium usage ({mem_int}MB)")
+                elif mem_int < 2048:
+                    friendly_options.append(f"&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;💾 <b>Memory:</b> High usage ({mem_int}MB)")
+                else:
+                    friendly_options.append(f"&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;💾 <b>Memory:</b> Very high usage ({mem_int}MB)")
         
         # Format exclusions
         if 'exclusions' in scan_options:
@@ -8122,14 +7638,19 @@ System        {perf_status}"""
                 and self.current_scan_thread
                 and self.current_scan_thread.isRunning()
             ):
-                # Gracefully stop the thread
-                self.current_scan_thread.terminate()
-                # Give the thread time to clean up
-                self.current_scan_thread.wait(3000)  # Wait up to 3 seconds
-
-                # Force completion if thread hasn't terminated
+                # Cooperative cancellation path
+                if hasattr(self.current_scan_thread, "stop_scan"):
+                    self.current_scan_thread.stop_scan()
+                else:
+                    # Fallback: set interruption request
+                    try:
+                        self.current_scan_thread.requestInterruption()
+                    except Exception:
+                        pass
+                # Wait up to 3 seconds for graceful exit
+                self.current_scan_thread.wait(3000)
                 if self.current_scan_thread.isRunning():
-                    print("Warning: Scan thread did not terminate gracefully")
+                    print("Warning: scan thread still running after cooperative cancellation window")
 
                 self.scan_completed(
                     {"status": "cancelled", "message": "Quick scan cancelled by user"}
@@ -8482,7 +8003,15 @@ System        {perf_status}"""
             )
             if reply == QMessageBox.StandardButton.No:
                 return
-            self.current_scan_thread.terminate()
+            # Cooperative cancellation instead of terminate()
+            if hasattr(self.current_scan_thread, "stop_scan"):
+                self.current_scan_thread.stop_scan()
+            else:
+                try:
+                    self.current_scan_thread.requestInterruption()
+                except Exception:
+                    pass
+            self.current_scan_thread.wait(3000)
 
         # Force application to quit instead of just closing the window
         from PyQt6.QtWidgets import QApplication
@@ -8526,7 +8055,14 @@ System        {perf_status}"""
             )
             if reply == QMessageBox.StandardButton.No:
                 return
-            self.current_scan_thread.terminate()
+            if hasattr(self.current_scan_thread, "stop_scan"):
+                self.current_scan_thread.stop_scan()
+            else:
+                try:
+                    self.current_scan_thread.requestInterruption()
+                except Exception:
+                    pass
+            self.current_scan_thread.wait(1500)
 
         # Force application to quit
         from PyQt6.QtWidgets import QApplication
@@ -9753,7 +9289,12 @@ System        {perf_status}"""
             )
 
     def auto_save_settings(self):
-        """Auto-save settings using the enhanced configuration system."""
+        """Schedule a debounced settings save to reduce disk writes."""
+        # 300ms debounce window groups rapid UI changes
+        self._settings_save_timer.start(300)
+    
+    def _auto_save_settings_commit(self):
+        """Commit the pending settings to disk (invoked after debounce)."""
         try:
             from utils.config import update_multiple_settings
             
@@ -9828,6 +9369,36 @@ System        {perf_status}"""
             print(f"❌ Error auto-saving settings: {e}")
             import traceback
             traceback.print_exc()
+
+    def _run_startup_self_check(self):
+        """Perform basic integrity & permission checks; log warnings only."""
+        try:
+            from utils.config import CONFIG_DIR, DATA_DIR, QUARANTINE_DIR, LOG_DIR
+            dirs = {
+                "config": CONFIG_DIR,
+                "data": DATA_DIR,
+                "quarantine": QUARANTINE_DIR,
+                "logs": LOG_DIR,
+            }
+            issues = []
+            for name, d in dirs.items():
+                if not d.exists():
+                    issues.append(f"Missing {name} dir: {d}")
+                    continue
+                if os.name == "posix":
+                    mode = d.stat().st_mode & 0o777
+                    if name in ("config", "quarantine") and mode not in (0o700, 0o750):
+                        issues.append(f"Weak permissions on {name} ({oct(mode)}); expected 0o700")
+            # Config sanity keys
+            expected_sections = ["scan_settings", "advanced_settings", "security_settings"]
+            for sec in expected_sections:
+                if sec not in self.config:
+                    issues.append(f"Config missing section: {sec}")
+            if issues:
+                msg = "Startup self-check warnings:\n" + "\n".join(issues)
+                print(msg)
+        except Exception as e:
+            print(f"Self-check error: {e}")
 
     def block_settings_signals(self, block):
         """Block or unblock signals from settings controls to prevent auto-save during loading."""

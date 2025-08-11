@@ -61,9 +61,8 @@ class PrivilegeEscalationManager:
     def _check_polkit_availability(self) -> bool:
         """Check if polkit is available on the system."""
         try:
-            result = subprocess.run(
-                ["pkcheck", "--version"], capture_output=True, text=True, timeout=5
-            )
+            from .secure_subprocess import run_secure
+            result = run_secure(["pkcheck", "--version"], timeout=5)
             return result.returncode == 0
         except (subprocess.TimeoutExpired, FileNotFoundError):
             self.logger.warning("Polkit not available on this system")
@@ -85,21 +84,15 @@ class PrivilegeEscalationManager:
             return os.geteuid() == 0  # Fallback to root check
 
         try:
-            # Use pkcheck to verify authorization
-            result = subprocess.run(
-                [
-                    "pkcheck",
-                    "--action-id",
-                    operation.value,
-                    "--process",
-                    str(os.getpid()),
-                    "--allow-user-interaction",
-                ],
-                capture_output=True,
-                text=True,
-                timeout=30,
-            )
-
+            from .secure_subprocess import run_secure
+            result = run_secure([
+                "pkcheck",
+                "--action-id",
+                operation.value,
+                "--process",
+                str(os.getpid()),
+                "--allow-user-interaction",
+            ], timeout=30)
             return result.returncode == 0
 
         except subprocess.TimeoutExpired:
@@ -239,26 +232,11 @@ class PrivilegeEscalationManager:
         if not self._validate_command_security(request.command):
             raise SecureElevationError("Command contains potentially dangerous patterns")
 
-        # Create secure wrapper script
         script_path = None
         try:
             script_path = self._create_secure_wrapper_script(request)
-
-            # Execute with pkexec if available, otherwise use sudo
-            if self._polkit_available:
-                elevation_cmd = ["pkexec", script_path]
-            else:
-                self.logger.warning(
-                    "Using sudo fallback for privilege escalation")
-                elevation_cmd = ["sudo", script_path]
-
-            # Execute the elevated command
-            result = subprocess.run(
-                elevation_cmd,
-                capture_output=True,
-                text=True,
-                timeout=request.timeout + 30,  # Extra timeout for elevation
-            )
+            from .elevated_runner import elevated_run
+            result = elevated_run([script_path], timeout=request.timeout + 30, allow_script=True)
 
             success = result.returncode == 0
             stdout = result.stdout or ""
@@ -278,8 +256,7 @@ class PrivilegeEscalationManager:
             return success, stdout, stderr
 
         except subprocess.TimeoutExpired:
-            error_msg = f"Elevation timed out for operation: {
-                request.operation.value}"
+            error_msg = f"Elevation timed out for operation: {request.operation.value}"
             self.logger.error(error_msg)
             raise SecureElevationError(error_msg)
 
@@ -288,13 +265,11 @@ class PrivilegeEscalationManager:
             raise SecureElevationError(f"Elevation failed for operation: {request.operation.value}")
 
         finally:
-            # Clean up wrapper script
-            if script_path and os.path.exists(script_path):
+            if 'script_path' in locals() and script_path and os.path.exists(script_path):
                 try:
                     os.unlink(script_path)
                 except OSError as e:
-                    self.logger.warning(
-                        "Failed to clean up wrapper script: %s", e)
+                    self.logger.warning("Failed to clean up wrapper script: %s", e)
 
     def scan_system_directories(
         self, scan_paths: List[str], scan_options: Optional[Dict[str, str]] = None
@@ -405,14 +380,9 @@ class PrivilegeEscalationManager:
 
         try:
             # Copy policy file with proper permissions
-            subprocess.run(
-                ["sudo", "cp", str(self._policy_file), str(policy_dest)],
-                check=True,
-                timeout=30,
-            )
-
-            subprocess.run(["sudo", "chmod", "644", str(
-                policy_dest)], check=True, timeout=10)
+            from .secure_subprocess import run_secure
+            run_secure(["sudo", "cp", str(self._policy_file), str(policy_dest)], timeout=30, check=True)
+            run_secure(["sudo", "chmod", "644", str(policy_dest)], timeout=10, check=True)
 
             self.logger.info("Policy file installed successfully")
             return True

@@ -20,6 +20,12 @@ from .rkhunter_analyzer import RKHunterWarningAnalyzer, WarningExplanation
 # Import security validator
 from .security_validator import SecureRKHunterValidator
 
+# Provide a module-level alias for elevated_run to ease monkeypatching in tests.
+try:  # pragma: no cover - import guard
+    from .elevated_runner import elevated_run as _elevated_run
+except Exception:  # pragma: no cover - fallback if elevated runner unavailable
+    _elevated_run = None
+
 
 class RKHunterResult(Enum):
     """RKHunter scan result types."""
@@ -164,6 +170,44 @@ class RKHunterWrapper:
         else:
             self.logger.warning("RKHunter not available on system")
 
+
+    def _initialize_config(self):
+        """Initialize RKHunter configuration (early definition for tests)."""
+        try:
+            self.config_path.parent.mkdir(parents=True, exist_ok=True)
+            if not self.config_path.exists():
+                self.config_path.write_text("# minimal rkhunter config generated for tests\n")
+        except Exception:
+            pass
+
+    def get_version(self) -> Tuple[str, str]:
+        """Return (version_string, status). Single authoritative implementation."""
+        if not self.available or self.rkhunter_path is None:
+            return "Not Available", "N/A"
+        try:
+            from .secure_subprocess import run_secure
+            result = run_secure([self.rkhunter_path, "--version"], timeout=5)
+            if result.returncode == 0 and result.stdout:
+                line = result.stdout.strip().split("\n")[0].strip()
+                return line, "Current"
+        except PermissionError:
+            pass
+        except Exception:
+            pass
+        try:
+            elevated_result = self._run_with_privilege_escalation(
+                [self.rkhunter_path, "--version"], capture_output=True, timeout=10
+            )
+            if elevated_result.returncode == 0 and elevated_result.stdout:
+                line = elevated_result.stdout.strip().split("\n")[0].strip()
+                return line, "Current (requires elevated privileges)"
+            if elevated_result.returncode != 0:
+                return "Unknown", "Permission denied"
+        except Exception:
+            return "Unknown", "Permission denied"
+        return "Unknown", "Error"
+
+
     def _configure_security_settings(self):
         """
         Configure security settings based on environment and security policy.
@@ -233,12 +277,11 @@ class RKHunterWrapper:
 
         # Try which command
         try:
-            result = subprocess.run(
-                ["which", "rkhunter"], capture_output=True, text=True, timeout=5
-            )
-            if result.returncode == 0:
+            from .secure_subprocess import run_secure
+            result = run_secure(["which", "rkhunter"], timeout=5)
+            if result.returncode == 0 and result.stdout:
                 return result.stdout.strip()
-        except (subprocess.SubprocessError, FileNotFoundError):
+        except Exception:
             pass
 
         return None
@@ -260,34 +303,15 @@ class RKHunterWrapper:
             try:
                 pid = self._current_process.pid
                 self.logger.info("Terminating RKHunter scan process (PID: %d)", pid)
-                
-                # First try graceful termination (SIGTERM)
-                self._current_process.terminate()
-                
-                # Wait up to 5 seconds for graceful shutdown
-                try:
-                    self._current_process.wait(timeout=5)
-                    self.logger.info("RKHunter scan terminated gracefully")
+                from .safe_kill import kill_sequence
+                within_grace = self._is_within_auth_grace_period()
+                result = kill_sequence(pid, escalate=within_grace is False)
+                if result.success:
+                    self.logger.info("Scan termination success (escalated=%s attempts=%s)", result.escalated, result.attempts)
                     return True
-                except subprocess.TimeoutExpired:
-                    # If still running after timeout, try privileged termination
-                    self.logger.warning("RKHunter scan did not terminate gracefully, trying privileged termination")
-                    
-                    # Attempt privileged termination using pkexec
-                    if self._terminate_with_privilege_escalation(pid):
-                        self.logger.info("RKHunter scan terminated via privileged escalation")
-                        return True
-                    
-                    # If privileged termination fails, force kill (SIGKILL)
-                    self.logger.warning("Privileged termination failed, using SIGKILL")
-                    self._current_process.kill()
-                    try:
-                        self._current_process.wait(timeout=2)
-                        self.logger.info("RKHunter scan force-terminated")
-                        return True
-                    except subprocess.TimeoutExpired:
-                        self.logger.error("Failed to terminate RKHunter scan even with SIGKILL")
-                        return False
+                else:
+                    self.logger.warning("Scan termination failed (escalated=%s attempts=%s error=%s)", result.escalated, result.attempts, result.error)
+                    return within_grace  # Treat as soft-success inside grace window
             except PermissionError as e:
                 # This is expected when trying to terminate elevated processes
                 self.logger.info("Permission denied when terminating elevated RKHunter process (expected): %s", e)
@@ -407,155 +431,26 @@ class RKHunterWrapper:
 
     def _terminate_with_privilege_escalation(self, pid: int) -> bool:
         """
-        Attempt to terminate a process using privileged escalation when needed.
-        Uses regular kill commands within grace period to avoid re-authentication.
-        
-        Args:
-            pid: Process ID to terminate
-            
-        Returns:
-            bool: True if termination was successful, False otherwise
+        Legacy compatibility wrapper now using kill_sequence abstraction.
+        Prefer graceful TERM then KILL; escalate only when outside grace
+        period (to avoid unnecessary auth prompts) and direct signals denied.
         """
         try:
-            # Check if we're within the grace period for immediate termination
-            if self._is_within_auth_grace_period():
-                self.logger.info("Within authentication grace period, attempting direct termination for PID %d", pid)
-                
-                # Try regular kill command first (no privilege escalation needed)
-                try:
-                    # First try SIGTERM
-                    result = subprocess.run(["kill", "-TERM", str(pid)], 
-                                 capture_output=True, check=False, timeout=5)
-                    
-                    if result.returncode == 0:
-                        self.logger.info("Direct SIGTERM sent successfully (grace period)")
-                        
-                        # Wait a bit to see if the process terminates
-                        time.sleep(2)
-                        
-                        # Check if process is still running
-                        try:
-                            check_result = subprocess.run(["kill", "-0", str(pid)], 
-                                         capture_output=True, check=False, timeout=5)
-                            if check_result.returncode == 0:
-                                # Process still running, try SIGKILL
-                                kill_result = subprocess.run(["kill", "-KILL", str(pid)], 
-                                             capture_output=True, check=False, timeout=5)
-                                if kill_result.returncode == 0:
-                                    self.logger.info("Direct SIGKILL sent successfully (grace period)")
-                                    return True
-                                else:
-                                    self.logger.info("Direct SIGKILL failed (grace period) - process is elevated, but returning success to avoid re-auth")
-                                    # Within grace period, we don't want to prompt for authentication again
-                                    # Even if we can't kill the elevated process, return success
-                                    return True
-                            else:
-                                # Process no longer exists (kill -0 failed)
-                                self.logger.info("Process terminated successfully via direct SIGTERM (grace period)")
-                                return True
-                        except subprocess.TimeoutExpired:
-                            self.logger.warning("Timeout checking process status during grace period - assuming success")
-                            # Within grace period, assume success to avoid re-auth
-                            return True
-                    else:
-                        # SIGTERM failed (probably due to permissions), try SIGKILL
-                        kill_result = subprocess.run(["kill", "-KILL", str(pid)], 
-                                     capture_output=True, check=False, timeout=5)
-                        if kill_result.returncode == 0:
-                            self.logger.info("Direct SIGKILL sent successfully (grace period)")
-                            return True
-                        else:
-                            self.logger.info("Both direct SIGTERM and SIGKILL failed (grace period) - process is elevated, but returning success to avoid re-auth")
-                            # Within grace period, we don't want to prompt for authentication again
-                            # Even if we can't kill the elevated process, return success
-                            return True
-                        
-                except subprocess.TimeoutExpired:
-                    self.logger.info("Direct kill timeout during grace period - returning success to avoid re-auth")
-                    # Within grace period, assume success to avoid re-auth
-                    return True
-                except Exception as e:
-                    self.logger.info("Direct kill failed during grace period (%s) - returning success to avoid re-auth", e)
-                    # Within grace period, assume success to avoid re-auth
-                    return True
-            
-            # Outside grace period or direct kill failed - use pkexec
-            pkexec_path = self._find_executable("pkexec")
-            if not pkexec_path:
-                self.logger.warning("pkexec not available for privileged termination")
-                return False
-            
-            self.logger.info("Using pkexec for privileged termination (authentication required)")
-            
-            # First try SIGTERM (graceful)
-            self.logger.info("Attempting privileged SIGTERM for PID %d using pkexec", pid)
-            cmd = [pkexec_path, "kill", "-TERM", str(pid)]
-            
-            try:
-                result = subprocess.run(
-                    cmd,
-                    capture_output=True,
-                    text=True,
-                    timeout=15,  # Give more time for pkexec authentication
-                    check=False
-                )
-                
-                if result.returncode == 0:
-                    self.logger.info("Privileged SIGTERM sent successfully via pkexec")
-                    # Wait a bit to see if the process terminates
-                    time.sleep(2)
-                    
-                    # Check if process is still running
-                    try:
-                        # Try to send signal 0 to check if process exists
-                        subprocess.run(["kill", "-0", str(pid)], 
-                                     capture_output=True, check=True, timeout=5)
-                        # If we reach here, process is still running, try SIGKILL
-                        self.logger.warning("Process still running after SIGTERM, trying privileged SIGKILL via pkexec")
-                        
-                        cmd_kill = [pkexec_path, "kill", "-KILL", str(pid)]
-                        result_kill = subprocess.run(
-                            cmd_kill,
-                            capture_output=True,
-                            text=True,
-                            timeout=15,  # Give more time for pkexec authentication
-                            check=False
-                        )
-                        
-                        if result_kill.returncode == 0:
-                            self.logger.info("Privileged SIGKILL sent successfully via pkexec")
-                            return True
-                        else:
-                            self.logger.error("Privileged SIGKILL failed via pkexec: %s", result_kill.stderr)
-                            return False
-                            
-                    except subprocess.CalledProcessError:
-                        # Process no longer exists (kill -0 failed), termination successful
-                        self.logger.info("Process terminated successfully with privileged SIGTERM via pkexec")
-                        return True
-                    except subprocess.TimeoutExpired:
-                        self.logger.warning("Timeout checking process status")
-                        return False
-                else:
-                    self.logger.error("Privileged SIGTERM failed via pkexec (exit code %d): %s", 
-                                    result.returncode, result.stderr)
-                    
-                    # Check if this was a cancellation by user
-                    if result.returncode == 126:  # pkexec user cancelled
-                        self.logger.info("User cancelled pkexec authentication - this is expected")
-                        return True  # Don't treat user cancellation as failure
-                    elif result.returncode == 127:  # pkexec not authorized
-                        self.logger.warning("User not authorized for pkexec kill command")
-                        return False
-                    else:
-                        return False
-                    
-            except subprocess.TimeoutExpired:
-                self.logger.error("Timeout during privileged termination via pkexec")
-                return False
-                
-        except Exception as e:
-            self.logger.error("Error during privileged termination via pkexec: %s", e)
+            from .safe_kill import kill_sequence
+            within_grace = self._is_within_auth_grace_period()
+            # escalate only if NOT within grace period to avoid extra prompts
+            result = kill_sequence(pid, escalate=not within_grace)
+            if result.success:
+                self.logger.info("Termination succeeded (grace=%s escalated=%s attempts=%s)", within_grace, result.escalated, result.attempts)
+                return True
+            if within_grace:
+                # treat as soft-success to avoid prompting again
+                self.logger.info("Termination treated as success inside grace window (attempts=%s error=%s)", result.attempts, result.error)
+                return True
+            self.logger.warning("Termination failed (escalated=%s attempts=%s error=%s)", result.escalated, result.attempts, result.error)
+            return False
+        except Exception as e:  # pragma: no cover - defensive
+            self.logger.error("safe_kill termination error: %s", e)
             return False
 
     def _run_with_privilege_escalation(
@@ -563,286 +458,50 @@ class RKHunterWrapper:
             cmd_args: List[str],
             capture_output: bool = True,
             timeout: int = 300) -> subprocess.CompletedProcess:
-        """
-        Run a command with privilege escalation, preferring pkexec for consistency.
-        SECURITY: Validates all commands against security policy before execution.
-
-        Args:
-            cmd_args: Command arguments (without sudo/pkexec prefix)
-            capture_output: Whether to capture stdout/stderr
-            timeout: Command timeout in seconds
-
-        Returns:
-            subprocess.CompletedProcess: The result of the command
-        """
-        # SECURITY: Validate command arguments before any execution
+        # Use injected/aliased elevated_run so tests can monkeypatch without
+        # hitting real privilege escalation paths.
+        elevated_run = _elevated_run
+        if elevated_run is None:  # Lazy import fallback
+            from .elevated_runner import elevated_run as _fallback
+            elevated_run = _fallback
         is_valid, error_message = self.security_validator.validate_command_args(cmd_args)
         if not is_valid:
-            self.logger.error(f"Security validation failed: {error_message}")
-            # Return a failed result instead of raising exception for better error handling
-            result = subprocess.CompletedProcess(
-                args=cmd_args,
-                returncode=1,
-                stdout="",
-                stderr=f"Security validation failed: {error_message}"
-            )
-            return result
-        
-        self.logger.info(f"Security validation passed for command: {' '.join(cmd_args[:2])}")  # Log first 2 args only
-        # Try different privilege escalation methods in order of preference
-        escalation_methods = []
+            return subprocess.CompletedProcess(args=cmd_args, returncode=1, stdout="", stderr=f"Security validation failed: {error_message}")
+        self.logger.info(f"Security validation passed for command: {' '.join(cmd_args[:2])}")
+        result = elevated_run(cmd_args, timeout=timeout, capture_output=capture_output)
+        # Apply success heuristic abstraction
+        try:
+            if _is_successful_scan(result.returncode, getattr(result, 'stdout', '')):
+                self._update_auth_session()
+        except Exception:  # pragma: no cover - defensive
+            pass
+        return result
 
-        # If already root, run directly
-        if os.getuid() == 0:
-            escalation_methods.append(("direct", cmd_args))
 
-        # PRIMARY METHOD: pkexec (GUI password dialog - system native)
-        # This ensures consistency with termination method
-        pkexec_path = self._find_executable("pkexec")
-        sudo_path = self._find_executable("sudo")  # Define sudo_path at top level
-        
-        if pkexec_path:
-            escalation_methods.append(("pkexec", [pkexec_path] + cmd_args))
-            self.logger.info("Using pkexec for privilege escalation (consistent with termination)")
+def _is_successful_scan(returncode: int, stdout: str) -> bool:
+    """Determine whether a rkhunter execution indicates a successful scan completion.
 
-        # FALLBACK METHODS (only if pkexec is not available)
-        # Note: Fallback methods may cause inconsistency with termination
-        if not pkexec_path:
-            self.logger.warning("pkexec not available, falling back to sudo methods - termination may be inconsistent")
-            # Second preference: sudo with GUI password helper
-            if sudo_path:
-                # Check for GUI password helpers
-                askpass_helpers = [
-                    "/usr/bin/ssh-askpass",
-                    "/usr/bin/x11-ssh-askpass", 
-                    "/usr/bin/ksshaskpass",
-                    "/usr/bin/lxqt-openssh-askpass"
-                ]
-                
-                askpass_cmd = None
-                for helper in askpass_helpers:
-                    if os.path.exists(helper):
-                        askpass_cmd = helper
-                        break
-                
-                if askpass_cmd and os.environ.get('DISPLAY'):
-                    escalation_methods.append(("sudo_gui", [sudo_path, "-A"] + cmd_args))
+    Success criteria (tight to avoid false positives):
+    - Return code must be 0 (clean) or 1 (warnings) ONLY.
+    - Output must contain one of the known terminal sentinel phrases produced
+      at the end of a full rkhunter check run.
+    - Empty stdout is never success.
 
-        # Third preference: sudo -n (passwordless sudo for headless environments)
-        if sudo_path:
-            escalation_methods.append(("sudo_nopasswd", [sudo_path, "-n"] + cmd_args))
+    Args:
+        returncode: Process return code.
+        stdout: Captured standard output text.
 
-        # Fourth preference: sudo (terminal password prompt)
-        if sudo_path:
-            escalation_methods.append(("sudo", [sudo_path] + cmd_args))
-
-        last_error = None
-
-        for method_name, full_cmd in escalation_methods:
-            try:
-                self.logger.debug(
-                    f"Trying {method_name}: {
-                        ' '.join(full_cmd)}")
-
-                if method_name == "direct":
-                    # Already running as root
-                    self.logger.info("Running as root directly")
-                    result = subprocess.run(
-                        full_cmd,
-                        capture_output=capture_output,
-                        text=True,
-                        timeout=timeout,
-                        check=False,
-                    )
-                elif method_name == "pkexec":
-                    # pkexec shows GUI password dialog
-                    self.logger.info("Using GUI password dialog (pkexec)")
-                    # Set up environment for GUI authentication
-                    env = os.environ.copy()
-                    if 'DISPLAY' not in env:
-                        env['DISPLAY'] = ':0'
-                    if 'XAUTHORITY' not in env and 'HOME' in env:
-                        env['XAUTHORITY'] = f"{env['HOME']}/.Xauthority"
-                    
-                    result = subprocess.run(
-                        full_cmd,
-                        capture_output=capture_output,
-                        text=True,
-                        timeout=timeout,
-                        check=False,
-                        env=env,
-                    )
-                elif method_name == "sudo_gui":
-                    # sudo -A uses GUI password helper
-                    self.logger.info("Using GUI password helper (sudo -A)")
-                    # Set up environment for GUI authentication
-                    env = os.environ.copy()
-                    env['SUDO_ASKPASS'] = '/usr/bin/ksshaskpass'  # We know this exists from our check
-                    
-                    result = subprocess.run(
-                        full_cmd,
-                        capture_output=capture_output,
-                        text=True,
-                        timeout=timeout,
-                        check=False,
-                        env=env,
-                    )
-                elif method_name == "sudo_nopasswd":
-                    # sudo -n uses passwordless authentication
-                    self.logger.info("Using passwordless sudo")
-                    result = subprocess.run(
-                        full_cmd,
-                        capture_output=capture_output,
-                        text=True,
-                        timeout=timeout,
-                        check=False,
-                    )
-                elif method_name == "pkexec_custom":
-                    # pkexec with custom PolicyKit action (single authentication)
-                    self.logger.info("Using custom PolicyKit action (pkexec_custom)")
-                    
-                    result = subprocess.run(
-                        full_cmd,
-                        capture_output=capture_output,
-                        text=True,
-                        timeout=timeout,
-                        check=False,
-                    )
-                elif method_name == "pkexec":
-                    # pkexec shows GUI password dialog
-                    self.logger.info("Using GUI password dialog (pkexec)")
-                    
-                    # Get current environment variables for GUI
-                    display = os.environ.get('DISPLAY', ':0')
-                    xauthority = os.environ.get('XAUTHORITY', f"{os.environ.get('HOME', '')}/.Xauthority")
-                    
-                    # COMBINED SCRIPT OPTIMIZATION: Check if this is an RKHunter scan command
-                    # and if we have the combined script available
-                    project_root = Path(__file__).parent.parent.parent
-                    combined_script = project_root / "scripts" / "rkhunter-update-and-scan.sh"
-                    if (len(full_cmd) >= 2 and 
-                        "rkhunter" in full_cmd[1] and 
-                        "--check" in full_cmd and 
-                        combined_script.exists()):
-                        
-                        self.logger.info("Using combined RKHunter script to avoid double authentication")
-                        # Replace rkhunter path with combined script
-                        scan_args = [arg for arg in full_cmd[2:] if arg != "--check"]  # Get args after rkhunter
-                        env_cmd = ["pkexec", "env", f"DISPLAY={display}", f"XAUTHORITY={xauthority}", str(combined_script), "--check"] + scan_args
-                    else:
-                        # Modify command to include environment variables with pkexec
-                        # pkexec env DISPLAY=$DISPLAY XAUTHORITY=$XAUTHORITY command
-                        env_cmd = ["pkexec", "env", f"DISPLAY={display}", f"XAUTHORITY={xauthority}"] + full_cmd[1:]  # Skip original pkexec
-                    
-                    self.logger.info(f"Original command: {' '.join(full_cmd)}")
-                    self.logger.info(f"Modified command: {' '.join(env_cmd)}")
-                    
-                    result = subprocess.run(
-                        env_cmd,
-                        capture_output=capture_output,
-                        text=True,
-                        timeout=timeout,
-                        check=False,
-                    )
-                elif method_name == "sudo":
-                    # sudo uses terminal password prompt
-                    self.logger.info("Using terminal password prompt (sudo)")
-                    
-                    # For GUI applications, try to use a GUI password helper
-                    env = os.environ.copy()
-                    askpass_helpers = [
-                        "/usr/bin/ssh-askpass",
-                        "/usr/bin/x11-ssh-askpass", 
-                        "/usr/bin/ksshaskpass",
-                        "/usr/bin/lxqt-openssh-askpass"
-                    ]
-                    
-                    askpass_cmd = None
-                    for helper in askpass_helpers:
-                        if os.path.exists(helper):
-                            askpass_cmd = helper
-                            break
-                    
-                    if askpass_cmd and os.environ.get('DISPLAY'):
-                        # Use GUI password prompt with sudo -A
-                        env['SUDO_ASKPASS'] = askpass_cmd
-                        # Modify command to use -A flag
-                        gui_cmd = [full_cmd[0], '-A'] + full_cmd[1:]
-                        self.logger.info(f"Using GUI password helper: {askpass_cmd}")
-                        result = subprocess.run(
-                            gui_cmd,
-                            capture_output=capture_output,
-                            text=True,
-                            timeout=timeout,
-                            check=False,
-                            env=env,
-                        )
-                    elif capture_output:
-                        # For sudo, we might need to handle interactive input
-                        result = subprocess.run(
-                            full_cmd,
-                            capture_output=True,
-                            text=True,
-                            timeout=timeout,
-                            check=False,
-                            input="\n",  # Auto-confirm prompts
-                        )
-                    else:
-                        # Let user interact with sudo directly
-                        result = subprocess.run(
-                            full_cmd, text=True, timeout=timeout, check=False
-                        )
-                else:
-                    # Unknown method
-                    self.logger.error(f"Unknown privilege escalation method: {method_name}")
-                    continue
-
-                # IMPROVED SUCCESS DETECTION: Check if RKHunter actually ran successfully
-                # RKHunter returns exit code 1 when warnings are found, which is normal
-                scan_completed_successfully = False
-                
-                if result.returncode == 0:
-                    # Perfect success
-                    scan_completed_successfully = True
-                elif result.returncode == 1 and result.stdout:
-                    # Check if RKHunter completed but found warnings
-                    if "Info: End date is" in result.stdout or "System checks summary" in result.stdout:
-                        scan_completed_successfully = True
-                        self.logger.info(f"RKHunter completed with warnings (exit code 1) using {method_name}")
-                
-                if scan_completed_successfully:
-                    self.logger.info(f"Command succeeded using {method_name}")
-                    # Update authentication session for grace period termination
-                    self._update_auth_session()
-                    self.logger.debug(f"Authentication session updated for {self._grace_period}s grace period")
-                    return result
-
-                # Log the attempt and try next method
-                self.logger.warning(
-                    f"{method_name} failed with return code {
-                        result.returncode}")
-                last_error = result
-
-            except subprocess.TimeoutExpired as e:
-                self.logger.error(
-                    f"{method_name} timed out after {timeout} seconds")
-                last_error = e
-            except Exception as e:
-                self.logger.error(f"{method_name} failed with exception: {e}")
-                last_error = e
-
-        # If all methods failed, return the last error or create a failure
-        # result
-        if isinstance(last_error, subprocess.CompletedProcess):
-            return last_error
-        else:
-            # Create a failure result
-            return subprocess.CompletedProcess(
-                args=cmd_args,
-                returncode=1,
-                stdout="",
-                stderr=f"All privilege escalation methods failed. Last error: {last_error}",
-            )
+    Returns:
+        True if conditions classify as successful scan, else False.
+    """
+    if returncode not in (0, 1):
+        return False
+    if not stdout:
+        return False
+    # Sentinel phrases drawn from typical end-of-run summary markers.
+    if ("Info: End date is" in stdout) or ("System checks summary" in stdout):
+        return True
+    return False
 
     def _run_with_privilege_escalation_streaming(
             self,
@@ -875,230 +534,34 @@ class RKHunterWrapper:
             return result
         
         self.logger.info(f"Security validation passed for streaming command: {' '.join(cmd_args[:2])}")  # Log first 2 args only
-        # Try different privilege escalation methods in order of preference
-        escalation_methods = []
-
-        # If already root, run directly
-        if os.getuid() == 0:
-            escalation_methods.append(("direct", cmd_args))
-
-        # PRIMARY METHOD: pkexec (GUI password dialog - system native)
-        # This ensures consistency with termination method
-        pkexec_path = self._find_executable("pkexec")
-        sudo_path = self._find_executable("sudo")  # Define sudo_path at top level
-        
-        if pkexec_path:
-            escalation_methods.append(("pkexec", [pkexec_path] + cmd_args))
-            self.logger.info("Using pkexec for RKHunter scan (consistent with termination)")
-
-        # FALLBACK METHODS (only if pkexec is not available)
-        # Note: Fallback methods may cause inconsistency with termination
-        if not pkexec_path:
-            self.logger.warning("pkexec not available, falling back to sudo methods - termination may be inconsistent")
-            # Second preference: sudo with GUI password helper
-            if sudo_path:
-                # Check for GUI password helpers
-                askpass_helpers = [
-                    "/usr/bin/ssh-askpass",
-                    "/usr/bin/x11-ssh-askpass", 
-                    "/usr/bin/ksshaskpass",
-                    "/usr/bin/lxqt-openssh-askpass"
-                ]
-                
-                askpass_cmd = None
-                for helper in askpass_helpers:
-                    if os.path.exists(helper):
-                        askpass_cmd = helper
+        from .elevated_runner import elevated_popen
+        is_valid, error_message = self.security_validator.validate_command_args(cmd_args)
+        if not is_valid:
+            return subprocess.CompletedProcess(args=cmd_args, returncode=1, stdout="", stderr=f"Security validation failed: {error_message}")
+        # Launch process
+        process = elevated_popen(cmd_args)
+        self._current_process = process
+        self._update_auth_session()
+        stdout_lines: list[str] = []
+        try:
+            if process.stdout:
+                for line in iter(process.stdout.readline, ''):
+                    if not line:
                         break
-                
-                if askpass_cmd and os.environ.get('DISPLAY'):
-                    escalation_methods.append(("sudo_gui", [sudo_path, "-A"] + cmd_args))
-
-        # Third preference: sudo -n (passwordless sudo for headless environments)
-        if sudo_path:
-            escalation_methods.append(("sudo_nopasswd", [sudo_path, "-n"] + cmd_args))
-
-        # Fourth preference: sudo (terminal password prompt)
-        if sudo_path:
-            escalation_methods.append(("sudo", [sudo_path] + cmd_args))
-
-        last_error = None
-
-        for method_name, full_cmd in escalation_methods:
-            try:
-                self.logger.debug(f"Trying {method_name}: {' '.join(full_cmd)}")
-
-                if method_name == "direct":
-                    self.logger.info("Running as root directly")
-                    env = os.environ.copy()
-                elif method_name == "pkexec":
-                    self.logger.info("Using GUI password dialog (pkexec)")
-                    
-                    # Get current environment variables for GUI
-                    display = os.environ.get('DISPLAY', ':0')
-                    xauthority = os.environ.get('XAUTHORITY', f"{os.environ.get('HOME', '')}/.Xauthority")
-                    
-                    # Store original command for logging
-                    original_cmd = full_cmd.copy()
-                    
-                    # COMBINED SCRIPT OPTIMIZATION: Check if this is an RKHunter scan command
-                    # and if we have the combined script available
-                    project_root = Path(__file__).parent.parent.parent
-                    combined_script = project_root / "scripts" / "rkhunter-update-and-scan.sh"
-                    if (len(full_cmd) >= 2 and 
-                        "rkhunter" in full_cmd[1] and 
-                        "--check" in full_cmd and 
-                        combined_script.exists()):
-                        
-                        self.logger.info("Using combined RKHunter script to avoid double authentication")
-                        # Replace rkhunter path with combined script
-                        scan_args = [arg for arg in full_cmd[2:] if arg != "--check"]  # Get args after rkhunter
-                        full_cmd = ["pkexec", "env", f"DISPLAY={display}", f"XAUTHORITY={xauthority}", str(combined_script), "--check"] + scan_args
-                    else:
-                        # Modify command to include environment variables with pkexec
-                        # pkexec env DISPLAY=$DISPLAY XAUTHORITY=$XAUTHORITY command
-                        full_cmd = ["pkexec", "env", f"DISPLAY={display}", f"XAUTHORITY={xauthority}"] + full_cmd[1:]  # Skip original pkexec
-                    
-                    self.logger.info(f"Original command: {' '.join(original_cmd)}")
-                    self.logger.info(f"Modified command: {' '.join(full_cmd)}")
-                    
-                    env = os.environ.copy()
-                elif method_name == "sudo_gui":
-                    self.logger.info("Using GUI password helper (sudo with askpass)")
-                    env = os.environ.copy()
-                    # Set up GUI password helper
-                    askpass_helpers = [
-                        "/usr/bin/ssh-askpass",
-                        "/usr/bin/x11-ssh-askpass", 
-                        "/usr/bin/ksshaskpass",
-                        "/usr/bin/lxqt-openssh-askpass"
-                    ]
-                    for helper in askpass_helpers:
-                        if os.path.exists(helper):
-                            env['SUDO_ASKPASS'] = helper
-                            break
-                elif method_name == "sudo_nopasswd":
-                    self.logger.info("Attempting passwordless sudo (requires NOPASSWD in sudoers)")
-                    env = os.environ.copy()
-                elif method_name == "sudo":
-                    self.logger.info("Using terminal password prompt (sudo)")
-                    # For GUI applications, try to use a GUI password helper
-                    env = os.environ.copy()
-                    askpass_helpers = [
-                        "/usr/bin/ssh-askpass",
-                        "/usr/bin/x11-ssh-askpass", 
-                        "/usr/bin/ksshaskpass",
-                        "/usr/bin/lxqt-openssh-askpass"
-                    ]
-                    
-                    askpass_cmd = None
-                    for helper in askpass_helpers:
-                        if os.path.exists(helper):
-                            askpass_cmd = helper
-                            break
-                    
-                    if askpass_cmd and os.environ.get('DISPLAY'):
-                        # Use GUI password prompt with sudo -A
-                        env['SUDO_ASKPASS'] = askpass_cmd
-                        # Modify command to use -A flag
-                        full_cmd = [full_cmd[0], '-A'] + full_cmd[1:]
-                        self.logger.info(f"Using GUI password helper: {askpass_cmd}")
-                else:
-                    env = os.environ.copy()
-
-                # Start the process with real-time output capture
-                process = subprocess.Popen(
-                    full_cmd,
-                    stdout=subprocess.PIPE,
-                    stderr=subprocess.STDOUT,
-                    text=True,
-                    bufsize=1,
-                    universal_newlines=True,
-                    env=env
-                )
-                
-                # Track the current process for potential termination
-                self._current_process = process
-                
-                # Update authentication session for grace period termination
-                self._update_auth_session()
-                self.logger.info(f"Authentication session started for {self._grace_period}s grace period")
-
-                stdout_lines = []
-                
-                # Read output line by line in real-time
-                if process.stdout:
-                    while True:
-                        line = process.stdout.readline()
-                        if not line:
-                            break
-                        
-                        line = line.rstrip()
-                        stdout_lines.append(line)
-                        
-                        # Call the output callback if provided
-                        if output_callback:
-                            output_callback(line)
-
-                # Wait for process to complete
-                process.wait(timeout=timeout)
-                
-                # Clear the process reference when done
-                self._current_process = None
-                
-                # Create result object
-                result = subprocess.CompletedProcess(
-                    args=full_cmd,
-                    returncode=process.returncode,
-                    stdout='\n'.join(stdout_lines),
-                    stderr=""
-                )
-
-                # IMPROVED SUCCESS DETECTION: Check if RKHunter actually ran successfully
-                # RKHunter returns exit code 1 when warnings are found, which is normal
-                scan_completed_successfully = False
-                
-                if result.returncode == 0:
-                    # Perfect success
-                    scan_completed_successfully = True
-                elif result.returncode == 1 and result.stdout:
-                    # Check if RKHunter completed but found warnings
-                    if "Info: End date is" in result.stdout or "System checks summary" in result.stdout:
-                        scan_completed_successfully = True
-                        self.logger.info(f"RKHunter completed with warnings (exit code 1) using {method_name}")
-                
-                if scan_completed_successfully:
-                    self.logger.info(f"Command succeeded using {method_name}")
-                    # Update authentication session for grace period termination
-                    self._update_auth_session()
-                    self.logger.debug(f"Authentication session updated for {self._grace_period}s grace period")
-                    return result
-
-                # Log the attempt and try next method
-                self.logger.warning(
-                    f"{method_name} failed with return code {result.returncode}")
-                last_error = result
-
-            except subprocess.TimeoutExpired as e:
-                if 'process' in locals():
-                    process.kill()
-                self.logger.error(f"{method_name} timed out after {timeout} seconds")
-                last_error = e
-            except Exception as e:
-                self.logger.error(f"{method_name} failed with exception: {e}")
-                last_error = e
-
-        # If all methods failed, return the last error or create a failure result
-        if isinstance(last_error, subprocess.CompletedProcess):
-            return last_error
-        else:
-            # Create a failure result
-            return subprocess.CompletedProcess(
-                args=cmd_args,
-                returncode=1,
-                stdout="",
-                stderr=f"All privilege escalation methods failed. Last error: {last_error}",
-            )
+                    line_clean = line.rstrip()
+                    stdout_lines.append(line_clean)
+                    if output_callback:
+                        output_callback(line_clean)
+            process.wait(timeout=timeout)
+        except subprocess.TimeoutExpired:
+            process.kill()
+            return subprocess.CompletedProcess(args=cmd_args, returncode=124, stdout='\n'.join(stdout_lines), stderr='timeout')
+        finally:
+            self._current_process = None
+        result = subprocess.CompletedProcess(args=cmd_args, returncode=process.returncode, stdout='\n'.join(stdout_lines), stderr='')
+        if result.returncode in (0,1) and ("Info: End date is" in result.stdout or "System checks summary" in result.stdout or result.returncode==0):
+            self._update_auth_session()
+        return result
 
     def _initialize_config(self):
         """Initialize RKHunter configuration."""
@@ -1108,64 +571,63 @@ class RKHunterWrapper:
 
             # Create basic configuration if it doesn't exist
             if not self.config_path.exists():
-                config_content = """# RKHunter configuration for S&D Search & Destroy
-# This file configures RKHunter behavior within the antivirus application
-
-# Logging
-LOGFILE=/tmp/rkhunter-scan.log
-APPEND_LOG=1
-COPY_LOG_ON_ERROR=1
-
-# Scan behavior
-SCANROOTKITMODE=1
-UNHIDETCPUDP=1
-ALLOW_SSH_ROOT_USER=no
-ALLOW_SSH_PROT_V1=0
-
-# Update behavior
-UPDATE_MIRRORS=1
-MIRRORS_MODE=0
-WEB_CMD=""
-
-# Database locations - Arch Linux specific paths
-DBDIR=/var/lib/rkhunter/db
-# Arch Linux script directory
-SCRIPTDIR=/usr/lib/rkhunter/scripts
-BINDIR=/usr/bin
-# Installation directory
-INSTALLDIR=/usr
-# Temporary directory
-TMPDIR=/tmp
-
-# Suppress common warnings and false positives
-DISABLE_TESTS="suspscan hidden_procs deleted_files packet_cap_apps apps"
-
-# Additional Arch Linux specific settings
-ALLOWHIDDENDIR=/etc/.java
-ALLOWHIDDENDIR=/dev/.static
-ALLOWHIDDENDIR=/dev/.udev
-ALLOWHIDDENDIR=/dev/.mount
-
-# Package manager
-PKGMGR=PACMAN
-SCRIPTWHITELIST=""
-ALLOWHIDDENDIR="/etc/.java"
-ALLOWHIDDENFILE="/etc/.java"
-
-# Disable GUI prompts (for automated scanning)
-AUTO_X_DETECT=1
-WHITELISTED_IS_WHITE=1
-SUPPRESS_DEPRECATION_WARNINGS=1
-
-# Reduce grep warnings by using simpler patterns
-USE_SYSLOG=0
-"""
-                with open(self.config_path, "w") as f:
-                    f.write(config_content)
-
-                self.logger.info(
-                    "Created RKHunter configuration at %s", self.config_path
-                )
+                config_lines = [
+                    "# RKHunter configuration for S&D Search & Destroy",
+                    "# This file configures RKHunter behavior within the antivirus application",
+                    "",
+                    "# Logging",
+                    "LOGFILE=/tmp/rkhunter-scan.log",
+                    "APPEND_LOG=1",
+                    "COPY_LOG_ON_ERROR=1",
+                    "",
+                    "# Scan behavior",
+                    "SCANROOTKITMODE=1",
+                    "UNHIDETCPUDP=1",
+                    "ALLOW_SSH_ROOT_USER=no",
+                    "ALLOW_SSH_PROT_V1=0",
+                    "",
+                    "# Update behavior",
+                    "UPDATE_MIRRORS=1",
+                    "MIRRORS_MODE=0",
+                    "WEB_CMD=\"\"",
+                    "",
+                    "# Database locations - Arch Linux specific paths",
+                    "DBDIR=/var/lib/rkhunter/db",
+                    "SCRIPTDIR=/usr/lib/rkhunter/scripts",
+                    "BINDIR=/usr/bin",
+                    "INSTALLDIR=/usr",
+                    "TMPDIR=/tmp",
+                    "",
+                    "# Suppress common warnings and false positives",
+                    "DISABLE_TESTS=\"suspscan hidden_procs deleted_files packet_cap_apps apps\"",
+                    "",
+                    "# Additional Arch Linux specific settings",
+                    "ALLOWHIDDENDIR=/etc/.java",
+                    "ALLOWHIDDENDIR=/dev/.static",
+                    "ALLOWHIDDENDIR=/dev/.udev",
+                    "ALLOWHIDDENDIR=/dev/.mount",
+                    "",
+                    "# Package manager",
+                    "PKGMGR=PACMAN",
+                    "SCRIPTWHITELIST=\"\"",
+                    "ALLOWHIDDENDIR=\"/etc/.java\"",
+                    "ALLOWHIDDENFILE=\"/etc/.java\"",
+                    "",
+                    "# Disable GUI prompts (for automated scanning)",
+                    "AUTO_X_DETECT=1",
+                    "WHITELISTED_IS_WHITE=1",
+                    "SUPPRESS_DEPRECATION_WARNINGS=1",
+                    "",
+                    "# Reduce grep warnings by using simpler patterns",
+                    "USE_SYSLOG=0",
+                    "",
+                ]
+                try:
+                    with open(self.config_path, "w") as f:
+                        f.write("\n".join(config_lines))
+                    self.logger.info("Created RKHunter configuration at %s", self.config_path)
+                except Exception as write_err:
+                    self.logger.warning("Failed writing RKHunter config: %s", write_err)
 
         except Exception as e:
             self.logger.error("Failed to initialize RKHunter config: %s", e)
@@ -1190,12 +652,8 @@ USE_SYSLOG=0
 
         try:
             # First try without privilege escalation
-            result = subprocess.run(
-                [self.rkhunter_path, "--version"],
-                capture_output=True,
-                text=True,
-                timeout=10,
-            )
+            from .secure_subprocess import run_secure
+            result = run_secure([self.rkhunter_path, "--version"], timeout=10)
             if result.returncode == 0:
                 return True
         except PermissionError:
@@ -1211,91 +669,42 @@ USE_SYSLOG=0
             return result.returncode == 0
         except Exception:
             return False
-
-    def get_version(self) -> Tuple[str, str]:
-        """Get RKHunter version information."""
-        if not self.available or self.rkhunter_path is None:
-            return "Not Available", "N/A"
-
-        try:
-            # First try without privilege escalation
-            result = subprocess.run(
-                [self.rkhunter_path, "--version"],
-                capture_output=True,
-                text=True,
-                timeout=10,
-            )
-
-            if result.returncode == 0:
-                lines = result.stdout.strip().split("\n")
-                version_line = next(
-                    (line for line in lines if "RKH" in line), "Unknown"
-                )
-                return version_line.strip(), "Current"
-
-        except PermissionError:
-            pass
-        except (subprocess.SubprocessError, FileNotFoundError):
-            return "Error", "N/A"
-
-        # If direct execution failed, try with privilege escalation
-        try:
-            result = self._run_with_privilege_escalation(
-                [self.rkhunter_path, "--version"], capture_output=True, timeout=10
-            )
-
-            if result.returncode == 0:
-                lines = result.stdout.strip().split("\n")
-                version_line = next(
-                    (line for line in lines if "RKH" in line), "Unknown"
-                )
-                return version_line.strip(), "Current (requires elevated privileges)"
-        except Exception:
-            pass
-
-        return "Unknown", "Permission denied"
+        
 
     def update_database(self) -> bool:
-        """Update RKHunter database using GUI-friendly privilege escalation."""
+        """Update the RKHunter database (returns True on success)."""
         if not self.available or self.rkhunter_path is None:
             return False
-
         try:
             self.logger.info("Updating RKHunter database...")
-
-            # Use new privilege escalation method (prefers GUI dialog)
             result = self._run_with_privilege_escalation(
-                [self.rkhunter_path, "--update"],
-                capture_output=True,
-                timeout=300,  # 5 minutes timeout
+                [self.rkhunter_path, "--update"], capture_output=True, timeout=300
             )
-
             if result.returncode == 0:
                 self.logger.info("RKHunter database updated successfully")
                 return True
-            else:
-                # Check if database is already up to date
-                output_text = result.stdout + result.stderr
-                if (
-                    "already have the latest" in output_text.lower()
-                    or "up to date" in output_text.lower()
-                ):
-                    self.logger.info("RKHunter database is already up to date")
-                    return True
-
-                self.logger.warning(
-                    "RKHunter database update returned code %d: %s",
-                    result.returncode,
-                    result.stderr,
-                )
-                return False
-
+            output_text = (result.stdout or "") + (result.stderr or "")
+            if any(s in output_text.lower() for s in ("already have the latest", "up to date")):
+                self.logger.info("RKHunter database already up to date")
+                return True
+            self.logger.warning(
+                "RKHunter database update failed (code %d)", result.returncode
+            )
+            return False
         except subprocess.TimeoutExpired:
             self.logger.error("RKHunter database update timed out")
             return False
-        except Exception as e:
-            self.logger.error("Failed to update RKHunter database: %s", e)
+        except Exception as e:  # pragma: no cover
+            self.logger.error("RKHunter database update error: %s", e)
             return False
+
+
+# Import elevated_run for module-level usage/fallback (outside class)
+try:  # pragma: no cover - testing convenience
+    from .elevated_runner import elevated_run  # type: ignore  # noqa: F401
+except Exception:  # pragma: no cover
+    def elevated_run(*a, **k):  # type: ignore
+        raise RuntimeError("elevated_run unavailable")
 
     def scan_system_with_output_callback(self,
                     test_categories: Optional[List[str]] = None,

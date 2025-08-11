@@ -7,6 +7,7 @@ import json
 import logging
 import os
 import shutil
+import tempfile
 from pathlib import Path
 from logging.handlers import RotatingFileHandler
 
@@ -26,10 +27,26 @@ CONFIG_DIR = Path(XDG_CONFIG_HOME) / APP_NAME
 DATA_DIR = Path(XDG_DATA_HOME) / APP_NAME
 CACHE_DIR = Path(XDG_CACHE_HOME) / APP_NAME
 
-# Ensure directories exist
-CONFIG_DIR.mkdir(parents=True, exist_ok=True)
-DATA_DIR.mkdir(parents=True, exist_ok=True)
-CACHE_DIR.mkdir(parents=True, exist_ok=True)
+def _ensure_secure_dir(path: Path):
+    """Create directory if missing and enforce 700 permissions (best-effort).
+
+    This limits exposure of potentially sensitive security application data
+    (quarantine, reports, logs, config). Failures to chmod are logged but not fatal.
+    """
+    path.mkdir(parents=True, exist_ok=True)
+    try:
+        # Only adjust on POSIX systems
+        if os.name == "posix":
+            current_mode = path.stat().st_mode & 0o777
+            # Avoid relaxing if already more restrictive
+            if current_mode != 0o700:
+                path.chmod(0o700)
+    except OSError as e:
+        logging.getLogger(APP_NAME).warning("Could not set secure permissions on %s: %s", path, e)
+
+_ensure_secure_dir(CONFIG_DIR)
+_ensure_secure_dir(DATA_DIR)
+_ensure_secure_dir(CACHE_DIR)
 
 CONFIG_FILE = CONFIG_DIR / "config.json"
 SCAN_REPORTS_DIR = DATA_DIR / "scan_reports"
@@ -46,6 +63,20 @@ def setup_logging():
     """Setup application logging with rotation."""
     logger = logging.getLogger(APP_NAME)
     if not logger.handlers:
+        class _RateLimitFilter(logging.Filter):
+            def __init__(self, interval=5):
+                super().__init__()
+                self.interval = interval
+                self._last: dict[tuple[str,int], float] = {}
+            def filter(self, record: logging.LogRecord) -> bool:
+                import time
+                key = (record.getMessage()[:120], record.levelno)
+                now = time.time()
+                last = self._last.get(key, 0)
+                if now - last < self.interval:
+                    return False
+                self._last[key] = now
+                return True
         # Create formatter
         formatter = logging.Formatter(
             "%(asctime)s - %(name)s - %(levelname)s - %(message)s",
@@ -64,6 +95,28 @@ def setup_logging():
         console_handler = logging.StreamHandler()
         console_handler.setFormatter(formatter)
         console_handler.setLevel(logging.WARNING)
+
+        # Optional structured logging
+        from .config import CONFIG_FILE  # circular safe inside function
+        try:
+            with open(CONFIG_FILE, 'r', encoding='utf-8') as cf:
+                cfg_json = json.load(cf)
+            structured = cfg_json.get('advanced_settings', {}).get('structured_logging', False)
+        except Exception:
+            structured = False
+        if structured:
+            formatter = logging.Formatter(json.dumps({
+                "time": "%(asctime)s",
+                "logger": "%(name)s",
+                "level": "%(levelname)s",
+                "message": "%(message)s"
+            }))
+            file_handler.setFormatter(formatter)
+            console_handler.setFormatter(formatter)
+
+        rate_filter = _RateLimitFilter(interval=5)
+        file_handler.addFilter(rate_filter)
+        console_handler.addFilter(rate_filter)
 
         logger.addHandler(file_handler)
         logger.addHandler(console_handler)
@@ -98,14 +151,41 @@ def load_config(file_path=None):
         return initial_config
 
 
+def _atomic_write_json(config_path: Path, config_data):
+    """Internal helper split out for testability (atomic write + chmod)."""
+    tmp_fd = None
+    tmp_path = None
+    try:
+        _ensure_secure_dir(config_path.parent)
+        tmp_fd, tmp_path = tempfile.mkstemp(prefix=".config.", dir=str(config_path.parent))
+        with os.fdopen(tmp_fd, "w", encoding="utf-8") as tmp_file:
+            json.dump(config_data, tmp_file, indent=4, sort_keys=True)
+            tmp_file.flush(); os.fsync(tmp_file.fileno())
+        os.replace(tmp_path, config_path)
+        if os.name == "posix":
+            try:
+                os.chmod(config_path, 0o600)
+            except OSError:
+                pass
+    finally:
+        if tmp_fd is not None and tmp_path and os.path.exists(tmp_path):
+            try:
+                os.unlink(tmp_path)
+            except OSError:
+                pass
+
 def save_config(config_data, file_path=None):
-    """Save configuration to file."""
+    """Atomically save configuration to file with restrictive permissions.
+
+    Writes to a temporary file in the same directory and then uses os.replace
+    to ensure readers never observe a partially written JSON file.
+    Permissions are set to 600 (owner rw) on POSIX systems.
+    """
     config_path = Path(file_path) if file_path else CONFIG_FILE
     try:
-        with open(config_path, "w", encoding="utf-8") as config_file:
-            json.dump(config_data, config_file, indent=4, sort_keys=True)
+        _atomic_write_json(config_path, config_data)
     except (IOError, OSError) as e:
-        logging.getLogger(APP_NAME).error("Failed to save config: %s", e)
+        logging.getLogger(APP_NAME).error("Failed to save config atomically: %s", e)
 
 
 def update_config_setting(config_dict, section, key, value, file_path=None):
@@ -232,6 +312,7 @@ def create_initial_config():
             "signature_sources": ["main.cvd", "daily.cvd", "bytecode.cvd"],
             "custom_signature_urls": [],
             "log_level": "INFO",
+            "structured_logging": False,
             "scan_timeout": 300,
             "update_frequency": "daily",
             "scan_archives": True,
@@ -311,6 +392,7 @@ def get_factory_defaults():
             "signature_sources": ["main.cvd", "daily.cvd", "bytecode.cvd"],
             "custom_signature_urls": [],
             "log_level": "INFO",
+            "structured_logging": False,
             "scan_timeout": 300,
             "update_frequency": "daily",
             "scan_archives": True,

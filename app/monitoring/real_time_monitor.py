@@ -285,24 +285,66 @@ class RealTimeMonitor:
         """Quarantine a file immediately."""
         try:
             file_path = Path(event.original_event.file_path)
-
-            # Only quarantine if file still exists
             if file_path.exists():
-                # Move to quarantine (simplified - would integrate with
-                # QuarantineManager)
-                self.logger.warning(
-                    "QUARANTINE: %s (rule: %s)", file_path, event.rule_name
-                )
-
-                with self.lock:
-                    self.files_quarantined += 1
-
-                if self.file_quarantined_callback:
+                # Determine quarantine destination (reuse configured path if available)
+                try:
+                    from utils.config import QUARANTINE_DIR
+                    quarantine_dir = QUARANTINE_DIR
+                except Exception:
+                    quarantine_dir = Path.home() / ".local/share/search-and-destroy/quarantine"
+                quarantine_dir.mkdir(parents=True, exist_ok=True)
+                # Hard permission on directory
+                if os.name == "posix":
                     try:
-                        self.file_quarantined_callback(str(file_path))
-                    except Exception as e:
-                        self.logger.error(
-                            "Error in quarantine callback: %s", e)
+                        if (quarantine_dir.stat().st_mode & 0o777) != 0o700:
+                            quarantine_dir.chmod(0o700)
+                    except OSError:
+                        pass
+                # Unique name with timestamp
+                ts = datetime.now().strftime("%Y%m%d%H%M%S")
+                dest = quarantine_dir / f"{ts}_{file_path.name}.quarantine"
+                try:
+                    # Compute hash before moving
+                    sha256 = None
+                    try:
+                        import hashlib
+                        h = hashlib.sha256()
+                        with file_path.open('rb') as f_in:
+                            for chunk in iter(lambda: f_in.read(8192), b''):
+                                h.update(chunk)
+                        sha256 = h.hexdigest()
+                    except Exception:
+                        pass
+                    file_path.rename(dest)
+                    if os.name == "posix":
+                        try:
+                            dest.chmod(0o600)
+                        except OSError:
+                            pass
+                    self.logger.warning("QUARANTINE: %s -> %s (rule: %s)", file_path, dest, event.rule_name)
+                    # Write metadata JSON
+                    try:
+                        import json
+                        meta = {
+                            "original_path": str(file_path),
+                            "quarantine_path": str(dest),
+                            "timestamp": ts,
+                            "rule": event.rule_name,
+                            "sha256": sha256,
+                        }
+                        with (dest.with_suffix(dest.suffix + '.metadata.json')).open('w', encoding='utf-8') as m_out:
+                            json.dump(meta, m_out, indent=2, sort_keys=True)
+                    except Exception as m_err:
+                        self.logger.error("Failed writing quarantine metadata: %s", m_err)
+                    with self.lock:
+                        self.files_quarantined += 1
+                    if self.file_quarantined_callback:
+                        try:
+                            self.file_quarantined_callback(str(dest))
+                        except Exception as cb_err:
+                            self.logger.error("Error in quarantine callback: %s", cb_err)
+                except OSError as move_err:
+                    self.logger.error("Failed moving file to quarantine: %s", move_err)
 
         except Exception as e:
             self.logger.error(

@@ -8,6 +8,7 @@ from typing import List, Optional
 
 from core.rkhunter_wrapper import RKHunterScanResult, RKHunterWrapper
 from PyQt6.QtCore import QThread, pyqtSignal
+from .thread_cancellation import CooperativeCancellationMixin
 from PyQt6.QtWidgets import (
     QCheckBox,
     QDialog,
@@ -327,7 +328,7 @@ class RKHunterScanDialog(QDialog):
         self.setStyleSheet(style)
 
 
-class RKHunterScanThread(QThread):
+class RKHunterScanThread(QThread, CooperativeCancellationMixin):
     """Thread for running RKHunter scans without blocking the UI."""
 
     progress_updated = pyqtSignal(str)
@@ -346,6 +347,7 @@ class RKHunterScanThread(QThread):
 
     def stop_scan(self):
         """Request to stop the current scan safely."""
+        self.cooperative_cancel()
         self._scan_cancelled = True
         self.logger.info("Stop scan requested for RKHunter")
         
@@ -534,3 +536,5 @@ class RKHunterScanThread(QThread):
             )
 
             self.scan_completed.emit(error_result)
+        finally:
+            self.mark_cancellation_complete()

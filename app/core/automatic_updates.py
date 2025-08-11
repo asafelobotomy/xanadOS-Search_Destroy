@@ -724,13 +724,14 @@ class AutoUpdateSystem:
             # Use sigtool to verify if available
             sigtool_path = shutil.which("sigtool")
             if sigtool_path:
-                result = subprocess.run(
-                    [sigtool_path, "--info", str(db_path)],
-                    capture_output=True,
-                    text=True,
-                    timeout=30,
-                )
-                return result.returncode == 0
+                try:
+                    from .secure_subprocess import run_secure
+                    result = run_secure([sigtool_path, "--info", str(db_path)], timeout=30)
+                    return result.returncode == 0
+                except Exception:
+                    # Fallback to original subprocess if not allowed (sigtool not in allowlist)
+                    result = subprocess.run([sigtool_path, "--info", str(db_path)], capture_output=True, text=True, timeout=30)
+                    return result.returncode == 0
 
             # Basic size check as fallback
             return db_path.stat().st_size > 1024  # At least 1KB

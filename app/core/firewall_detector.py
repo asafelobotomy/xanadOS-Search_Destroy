@@ -8,6 +8,7 @@ Detects and monitors various Linux firewall systems and their status.
 import os
 import shutil
 import subprocess
+from .secure_subprocess import run_secure
 from typing import Any, Dict, Optional, Tuple
 
 
@@ -66,17 +67,11 @@ class FirewallDetector:
         # For systemd systems, also check if service exists
         if self._has_systemd():
             try:
-                result = subprocess.run(
-                    [
-                        "systemctl",
-                        "list-unit-files",
-                        f"{fw_info['service_name']}.service",
-                    ],
-                    capture_output=True,
-                    text=True,
-                    timeout=5,
-                    check=False,
-                )
+                result = run_secure([
+                    "systemctl",
+                    "list-unit-files",
+                    f"{fw_info['service_name']}.service",
+                ], timeout=5, capture_output=True, text=True)
                 return (result.returncode ==
                         0 and fw_info["service_name"] in result.stdout)
             except (subprocess.TimeoutExpired, OSError, FileNotFoundError):
@@ -132,23 +127,11 @@ class FirewallDetector:
         try:
             # First try without sudo (some systems allow status check without
             # root)
-            result = subprocess.run(
-                ["ufw", "status"],
-                capture_output=True,
-                text=True,
-                timeout=10,
-                check=False,
-            )
+            result = run_secure(["ufw", "status"], timeout=10, capture_output=True, text=True)
 
             # If that fails, try with sudo
             if result.returncode != 0:
-                result = subprocess.run(
-                    ["sudo", "-n", "ufw", "status"],  # -n = non-interactive
-                    capture_output=True,
-                    text=True,
-                    timeout=10,
-                    check=False,
-                )
+                result = run_secure(["sudo", "-n", "ufw", "status"], timeout=10, capture_output=True, text=True)
 
             if result.returncode == 0:
                 output = result.stdout.lower()
@@ -201,13 +184,7 @@ class FirewallDetector:
                     continue
 
             # Method 3: Check systemctl status (original fallback)
-            result = subprocess.run(
-                ["systemctl", "is-active", "ufw"],
-                capture_output=True,
-                text=True,
-                timeout=5,
-                check=False,
-            )
+            result = run_secure(["systemctl", "is-active", "ufw"], timeout=5, capture_output=True, text=True)
 
             is_active = result.stdout.strip() == "active"
 
@@ -221,13 +198,7 @@ class FirewallDetector:
     def _get_firewalld_status(self) -> Dict[str, str | bool]:
         """Get firewalld status."""
         try:
-            result = subprocess.run(
-                ["firewall-cmd", "--state"],
-                capture_output=True,
-                text=True,
-                timeout=10,
-                check=False,
-            )
+            result = run_secure(["firewall-cmd", "--state"], timeout=10, capture_output=True, text=True)
 
             if result.returncode == 0:
                 is_active = "running" in result.stdout.lower()
@@ -245,13 +216,7 @@ class FirewallDetector:
     def _get_iptables_status(self) -> Dict[str, str | bool]:
         """Get iptables status."""
         try:
-            result = subprocess.run(
-                ["iptables", "-L", "-n"],
-                capture_output=True,
-                text=True,
-                timeout=10,
-                check=False,
-            )
+            result = run_secure(["iptables", "-L", "-n"], timeout=10, capture_output=True, text=True)
 
             if result.returncode == 0:
                 # Check if there are any rules beyond the default chains

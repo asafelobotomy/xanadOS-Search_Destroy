@@ -427,7 +427,8 @@ class SystemServiceManager:
             service_file.chmod(0o644)
 
             # Reload systemd
-            subprocess.run(["systemctl", "daemon-reload"], check=True)
+            from .secure_subprocess import run_secure
+            run_secure(["systemctl", "daemon-reload"], check=True)
 
             # Enable if configured
             if self.config.auto_start:
@@ -630,7 +631,8 @@ exec /usr/bin/python3 {self.config.executable_path} --daemon
                 service_file.unlink()
 
             # Reload systemd
-            subprocess.run(["systemctl", "daemon-reload"], check=True)
+            from .secure_subprocess import run_secure
+            run_secure(["systemctl", "daemon-reload"], check=True)
 
             self.logger.info("Systemd service uninstalled")
             return True
@@ -677,11 +679,8 @@ exec /usr/bin/python3 {self.config.executable_path} --daemon
     def _systemctl_action(self, action: str) -> bool:
         """Execute systemctl action."""
         try:
-            result = subprocess.run(
-                ["systemctl", action, self.config.service_name],
-                capture_output=True,
-                text=True,
-            )
+            from .secure_subprocess import run_secure
+            result = run_secure(["systemctl", action, self.config.service_name])
             return result.returncode == 0
         except Exception:
             return False
@@ -710,7 +709,8 @@ exec /usr/bin/python3 {self.config.executable_path} --daemon
             else:
                 return False
 
-            result = subprocess.run(cmd, capture_output=True, text=True)
+            from .secure_subprocess import run_secure
+            result = run_secure(cmd)
             return result.returncode == 0
         except Exception:
             return False
@@ -735,8 +735,18 @@ exec /usr/bin/python3 {self.config.executable_path} --daemon
         try:
             pid = self._get_service_pid()
             if pid:
-                os.kill(pid, signal.SIGTERM)
-                return True
+                try:
+                    from .safe_kill import kill_sequence
+                    result = kill_sequence(pid, escalate=False)
+                    if result.success:
+                        self.logger.info("Manual stop sent signals: %s", ','.join(result.attempts))
+                        return True
+                    else:
+                        self.logger.warning("Manual stop failed attempts=%s error=%s", result.attempts, result.error)
+                        return False
+                except Exception as e:
+                    self.logger.error("Manual stop kill_sequence error: %s", e)
+                    return False
             return False
         except Exception:
             return False
@@ -744,11 +754,8 @@ exec /usr/bin/python3 {self.config.executable_path} --daemon
     def _chkconfig_enable(self) -> bool:
         """Enable service with chkconfig."""
         try:
-            result = subprocess.run(
-                ["chkconfig", self.config.service_name, "on"],
-                capture_output=True,
-                text=True,
-            )
+            from .secure_subprocess import run_secure
+            result = run_secure(["chkconfig", self.config.service_name, "on"])
             return result.returncode == 0
         except Exception:
             return False
@@ -756,11 +763,8 @@ exec /usr/bin/python3 {self.config.executable_path} --daemon
     def _chkconfig_disable(self) -> bool:
         """Disable service with chkconfig."""
         try:
-            result = subprocess.run(
-                ["chkconfig", self.config.service_name, "off"],
-                capture_output=True,
-                text=True,
-            )
+            from .secure_subprocess import run_secure
+            result = run_secure(["chkconfig", self.config.service_name, "off"])
             return result.returncode == 0
         except Exception:
             return False
@@ -769,11 +773,8 @@ exec /usr/bin/python3 {self.config.executable_path} --daemon
         """Update current service state."""
         try:
             if self.service_type == ServiceType.SYSTEMD:
-                result = subprocess.run(
-                    ["systemctl", "is-active", self.config.service_name],
-                    capture_output=True,
-                    text=True,
-                )
+                from .secure_subprocess import run_secure
+                result = run_secure(["systemctl", "is-active", self.config.service_name])
                 if result.returncode == 0:
                     status = result.stdout.strip()
                     if status == "active":
@@ -814,8 +815,8 @@ exec /usr/bin/python3 {self.config.executable_path} --daemon
     def _is_process_running(self, pid: int) -> bool:
         """Check if process is running."""
         try:
-            os.kill(pid, 0)
-            return True
+            from .safe_kill import _process_exists  # type: ignore
+            return _process_exists(pid)
         except OSError:
             return False
 
@@ -953,18 +954,15 @@ exec /usr/bin/python3 {self.config.executable_path} --daemon
         """Get recent service logs."""
         try:
             if self.service_type == ServiceType.SYSTEMD:
-                result = subprocess.run(
-                    [
-                        "journalctl",
-                        "-u",
-                        self.config.service_name,
-                        "-n",
-                        str(lines),
-                        "--no-pager",
-                    ],
-                    capture_output=True,
-                    text=True,
-                )
+                from .secure_subprocess import run_secure
+                result = run_secure([
+                    "journalctl",
+                    "-u",
+                    self.config.service_name,
+                    "-n",
+                    str(lines),
+                    "--no-pager",
+                ])
                 if result.returncode == 0:
                     return result.stdout.split("\n")
 
@@ -1005,18 +1003,12 @@ exec /usr/bin/python3 {self.config.executable_path} --daemon
         """Check if service is enabled for auto-start."""
         try:
             if self.service_type == ServiceType.SYSTEMD:
-                result = subprocess.run(
-                    ["systemctl", "is-enabled", self.config.service_name],
-                    capture_output=True,
-                    text=True,
-                )
+                from .secure_subprocess import run_secure
+                result = run_secure(["systemctl", "is-enabled", self.config.service_name])
                 return result.returncode == 0 and result.stdout.strip() == "enabled"
             elif self.service_type == ServiceType.SYSV_INIT:
-                result = subprocess.run(
-                    ["chkconfig", "--list", self.config.service_name],
-                    capture_output=True,
-                    text=True,
-                )
+                from .secure_subprocess import run_secure
+                result = run_secure(["chkconfig", "--list", self.config.service_name])
                 return result.returncode == 0 and ":on" in result.stdout
             elif self.service_type == ServiceType.UPSTART:
                 # Upstart services are enabled by default if config exists
