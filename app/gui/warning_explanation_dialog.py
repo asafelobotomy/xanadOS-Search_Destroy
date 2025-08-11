@@ -14,12 +14,14 @@ sys.path.insert(0, str(project_root))
 from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtGui import QFont, QIcon, QPixmap
 from PyQt6.QtWidgets import (
-    QDialog, QVBoxLayout, QHBoxLayout, QLabel, QPushButton,
-    QTextEdit, QScrollArea, QWidget, QFrame, QGroupBox,
-    QCheckBox, QMessageBox
+    QDialog, QVBoxLayout, QHBoxLayout, QLabel, 
+    QPushButton, QTextEdit, QFrame, QScrollArea,
+    QWidget, QMessageBox, QSpacerItem, QSizePolicy,
+    QGridLayout
 )
 
-from app.core.rkhunter_analyzer import WarningExplanation, SeverityLevel
+from core.rkhunter_wrapper import RKHunterWarning, SeverityLevel
+from gui.theme_manager import get_theme_manager
 from app.gui.themed_widgets import ThemedDialog
 
 
@@ -69,15 +71,15 @@ class WarningExplanationDialog(ThemedDialog):
         badge.setAlignment(Qt.AlignmentFlag.AlignCenter)
         badge.setMinimumSize(80, 30)
         
-        # Color based on severity
+        # Color based on severity - using theme colors where appropriate
         colors = {
-            SeverityLevel.LOW: "#28a745",      # Green
-            SeverityLevel.MEDIUM: "#ffc107",   # Yellow  
-            SeverityLevel.HIGH: "#fd7e14",     # Orange
-            SeverityLevel.CRITICAL: "#dc3545"  # Red
+            SeverityLevel.LOW: get_theme_manager().get_color("success"),      # Green
+            SeverityLevel.MEDIUM: get_theme_manager().get_color("warning"),   # Yellow/Orange
+            SeverityLevel.HIGH: get_theme_manager().get_color("warning"),     # Orange
+            SeverityLevel.CRITICAL: get_theme_manager().get_color("error")    # Red
         }
         
-        color = colors.get(self.explanation.severity, "#6c757d")
+        color = colors.get(self.explanation.severity, get_theme_manager().get_color("muted_text"))
         badge.setStyleSheet(f"""
             QLabel {{
                 background-color: {color};
@@ -95,26 +97,26 @@ class WarningExplanationDialog(ThemedDialog):
         # Removed: Now handled by global theme manager
     
     def get_theme_color(self, color_type):
-        """Get theme-appropriate color from parent or fallback."""
-        if self.parent_window and hasattr(self.parent_window, 'get_theme_color'):
-            return self.parent_window.get_theme_color(color_type)
-        
-        # Fallback colors for dark theme
-        fallback_colors = {
-            "background": "#1a1a1a",
-            "secondary_bg": "#2a2a2a", 
-            "tertiary_bg": "#3a3a3a",
-            "primary_text": "#FFCDAA",
-            "secondary_text": "#999",
-            "success": "#9CB898",
-            "error": "#F14666",
-            "warning": "#EE8980",
-            "accent": "#F14666",
-            "border": "#EE8980",
-            "hover_bg": "#4a4a4a",
-            "pressed_bg": "#2a2a2a",
-        }
-        return fallback_colors.get(color_type, "#FFCDAA")
+        """Get theme-appropriate color from theme manager."""
+        try:
+            return get_theme_manager().get_color(color_type)
+        except:
+            # Fallback colors for dark theme if theme manager fails
+            fallback_colors = {
+                "background": "#1a1a1a",
+                "secondary_bg": "#2a2a2a", 
+                "tertiary_bg": "#3a3a3a",
+                "primary_text": "#FFCDAA",
+                "secondary_text": "#999",
+                "success": "#9CB898",
+                "error": "#F14666",
+                "warning": "#EE8980",
+                "accent": "#F14666",
+                "border": "#EE8980",
+                "hover_bg": "#4a4a4a",
+                "pressed_bg": "#2a2a2a",
+            }
+            return fallback_colors.get(color_type, "#FFCDAA")
     
     
     def _show_themed_message_box(self, msg_type, title, text, buttons=None):

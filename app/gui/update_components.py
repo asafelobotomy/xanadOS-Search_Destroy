@@ -12,6 +12,7 @@ from PyQt6.QtWidgets import (
 from PyQt6.QtGui import QFont, QPixmap, QIcon
 
 from core.auto_updater import AutoUpdater
+from gui.theme_manager import get_theme_manager
 
 
 class UpdateCheckThread(QThread):
@@ -164,7 +165,7 @@ class UpdateDialog(QDialog):
         
         # Status
         self.status_label = QLabel("Click 'Check for Updates' to begin")
-        self.status_label.setStyleSheet("color: #666; font-style: italic;")
+        self.status_label.setStyleSheet(f"color: {get_theme_manager().get_color('muted_text')}; font-style: italic;")
         layout.addWidget(self.status_label)
         
         # Buttons
@@ -217,7 +218,7 @@ class UpdateDialog(QDialog):
         self.download_button.setVisible(True)
         
         self.status_label.setText(f"Update available: v{update_info['latest_version']}")
-        self.status_label.setStyleSheet("color: #2E7D32; font-weight: bold;")
+        self.status_label.setStyleSheet(f"color: {get_theme_manager().get_color('success')}; font-weight: bold;")
         
         self.check_button.setEnabled(True)
         self.check_button.setText("Check Again")
@@ -225,14 +226,14 @@ class UpdateDialog(QDialog):
     def on_no_update(self):
         """Handle when no update is available."""
         self.status_label.setText("Your application is up to date!")
-        self.status_label.setStyleSheet("color: #2E7D32;")
+        self.status_label.setStyleSheet(f"color: {get_theme_manager().get_color('success')};")
         self.check_button.setEnabled(True)
         self.check_button.setText("Check Again")
     
     def on_check_error(self, error_message):
         """Handle errors during update check."""
         self.status_label.setText(f"Error checking for updates: {error_message}")
-        self.status_label.setStyleSheet("color: #D32F2F;")
+        self.status_label.setStyleSheet(f"color: {get_theme_manager().get_color('error')};")
         self.check_button.setEnabled(True)
     
     def download_update(self):
@@ -269,15 +270,15 @@ class UpdateDialog(QDialog):
         self.progress_label.setText("Download completed!")
         self.install_button.setVisible(True)
         self.status_label.setText("Update downloaded. Ready to install.")
-        self.status_label.setStyleSheet("color: #2E7D32;")
-    
+        self.status_label.setStyleSheet(f"color: {get_theme_manager().get_color('success')};")
+
     def on_download_failed(self, error_message):
         """Handle download failure."""
         self.progress_label.setText(f"Download failed: {error_message}")
         self.download_button.setEnabled(True)
         self.status_label.setText("Download failed. Please try again.")
-        self.status_label.setStyleSheet("color: #D32F2F;")
-    
+        self.status_label.setStyleSheet(f"color: {get_theme_manager().get_color('error')};")
+
     def install_update(self):
         """Install the downloaded update."""
         if not self.download_path:

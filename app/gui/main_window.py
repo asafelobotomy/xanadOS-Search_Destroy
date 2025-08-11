@@ -278,9 +278,6 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
         self.tooltip_timer.setSingleShot(True)
 
 
-        # Theme management - default to dark mode
-        self.current_theme = self.config.get("ui_settings", {}).get("theme", "dark")
-
     def _setup_signal_handlers(self):
         """Set up signal handlers for external termination detection."""
         try:
@@ -400,18 +397,12 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
     
     def get_status_color(self, status_type):
         """Get theme-appropriate color for status indicators."""
-        if self.current_theme == "dark":
-            colors = {
-                "success": "#9CB898",  # Sage Green for dark theme
-                "error": "#F14666",  # Deep Strawberry for dark theme
-                "warning": "#EE8980",  # Coral for dark theme
-            }
-        else:  # light theme
-            colors = {
-                "success": "#75BDE0",  # Sky Blue for light theme
-                "error": "#F89B9B",  # Coral Pink for light theme
-                "warning": "#F8BC9B",  # Peach Orange for light theme
-            }
+        # Use theme manager colors directly
+        colors = {
+            "success": get_theme_manager().get_color("success"),
+            "error": get_theme_manager().get_color("error"), 
+            "warning": get_theme_manager().get_color("warning"),
+        }
         return colors.get(status_type, colors["error"])
 
     def init_unified_timer_system(self):
@@ -500,23 +491,23 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
         try:
             summary = self.performance_monitor.get_performance_summary()
             if summary.get("status") == "no_data":
-                return "Initializing", "#666", ""
+                return "Initializing", get_theme_manager().get_color("muted_text"), ""
 
             score = summary.get("performance_score", 0)
             current = summary.get("current", {})
 
             if score >= 80:
                 status = "Excellent"
-                color = "#27AE60"  # Green
+                color = get_theme_manager().get_color("success")
             elif score >= 60:
                 status = "Good"
-                color = "#3498DB"  # Blue
+                color = get_theme_manager().get_color("accent")
             elif score >= 40:
                 status = "Fair"
-                color = "#F39C12"  # Orange
+                color = get_theme_manager().get_color("warning")
             else:
                 status = "Poor"
-                color = "#E74C3C"  # Red
+                color = get_theme_manager().get_color("error")
 
             # Create compact metrics for detailed tooltip if needed
             details = ""
@@ -528,7 +519,7 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
             return status, color, details
 
         except Exception as e:
-            return "Error", "#E74C3C", f"Monitor error: {e}"
+            return "Error", get_theme_manager().get_color("error"), f"Monitor error: {e}"
 
     def init_ui(self):
         self.setWindowTitle("S&D - Search & Destroy")
@@ -668,11 +659,11 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
         status_row = QHBoxLayout()
         status_row.setSpacing(15)
 
-        # Protection Status Card - using strawberry palette
+        # Protection Status Card - using theme colors
         self.protection_card = self.create_clickable_status_card(
             "Real-Time Protection",
             "Active" if self.monitoring_enabled else "Inactive",
-            "#9CB898" if self.monitoring_enabled else "#F14666",
+            get_theme_manager().get_color("success") if self.monitoring_enabled else get_theme_manager().get_color("error"),
             (
                 "Your system is being monitored"
                 if self.monitoring_enabled
@@ -683,13 +674,13 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
         self.protection_card.clicked.connect(
             self.toggle_protection_from_dashboard)
 
-        # Firewall Status Card - using firewall palette
+        # Firewall Status Card - using theme colors
         firewall_status = get_firewall_status()
         firewall_active = firewall_status.get("is_active", False)
         self.firewall_card = self.create_clickable_status_card(
             "Firewall Protection",
             "Active" if firewall_active else "Inactive",
-            "#9CB898" if firewall_active else "#F14666",
+            get_theme_manager().get_color("success") if firewall_active else get_theme_manager().get_color("error"),
             (
                 "Firewall is protecting your system"
                 if firewall_active
@@ -703,17 +694,17 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
         self.last_scan_card = self.create_clickable_status_card(
             "Last Scan",
             "Not scanned yet",  # Will be updated dynamically
-            "#17a2b8",
+            get_theme_manager().get_color("accent"),
             "Click to go to Scan tab",  # Updated description
         )
         # Connect the click signal
         self.last_scan_card.clicked.connect(self.open_scan_tab)
 
-        # Threats Card - now clickable - using strawberry palette
+        # Threats Card - now clickable - using theme colors
         self.threats_card = self.create_clickable_status_card(
             "Threats Found",
             "0",  # Will be updated dynamically
-            "#9CB898",
+            get_theme_manager().get_color("success"),
             "Click to view quarantine",  # Updated description
         )
         # Connect the click signal
@@ -1017,8 +1008,7 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
                     child.setText(
                         "Active" if self.monitoring_enabled else "Inactive")
                     child.setStyleSheet(
-                        f"color: {
-                            '#9CB898' if self.monitoring_enabled else '#F14666'}; font-size: 20px; font-weight: bold;")
+                        f"color: {get_theme_manager().get_color('success') if self.monitoring_enabled else get_theme_manager().get_color('error')}; font-size: 20px; font-weight: bold;")
                 elif child.objectName() == "cardDescription":
                     child.setText(
                         "Your system is being monitored"
@@ -1038,8 +1028,7 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
                 if child.objectName() == "cardValue":
                     child.setText("Active" if is_active else "Inactive")
                     child.setStyleSheet(
-                        f"color: {
-                            '#9CB898' if is_active else '#F14666'}; font-size: 20px; font-weight: bold;")
+                        f"color: {get_theme_manager().get_color('success') if is_active else get_theme_manager().get_color('error')}; font-size: 20px; font-weight: bold;")
                 elif child.objectName() == "cardDescription":
                     child.setText(
                         "Firewall is protecting your system"
@@ -1167,10 +1156,10 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
                 # Error state
                 self.firewall_on_off_label.setText("ERROR")
                 self.firewall_on_off_label.setStyleSheet(
-                    "font-weight: bold; font-size: 16px; color: #F14666;"
+                    f"font-weight: bold; font-size: 16px; color: {get_theme_manager().get_color('error')};"
                 )
                 self.firewall_status_circle.setStyleSheet(
-                    "font-size: 20px; color: #F14666;"
+                    f"font-size: 20px; color: {get_theme_manager().get_color('error')};"
                 )
                 if hasattr(self, "firewall_name_label"):
                     self.firewall_name_label.setText(f"Error: {error}")
@@ -1178,19 +1167,19 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
                 # Active state - green
                 self.firewall_on_off_label.setText("ON")
                 self.firewall_on_off_label.setStyleSheet(
-                    "font-weight: bold; font-size: 16px; color: #9CB898;"
+                    f"font-weight: bold; font-size: 16px; color: {get_theme_manager().get_color('success')};"
                 )
                 self.firewall_status_circle.setStyleSheet(
-                    "font-size: 20px; color: #9CB898;"
+                    f"font-size: 20px; color: {get_theme_manager().get_color('success')};"
                 )
             else:
                 # Inactive state - red
                 self.firewall_on_off_label.setText("OFF")
                 self.firewall_on_off_label.setStyleSheet(
-                    "font-weight: bold; font-size: 16px; color: #F14666;"
+                    f"font-weight: bold; font-size: 16px; color: {get_theme_manager().get_color('error')};"
                 )
                 self.firewall_status_circle.setStyleSheet(
-                    "font-size: 20px; color: #F14666;"
+                    f"font-size: 20px; color: {get_theme_manager().get_color('error')};"
                 )
 
             # Update button text based on current status
@@ -1212,10 +1201,10 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
             # Fallback to unknown state
             self.firewall_on_off_label.setText("UNKNOWN")
             self.firewall_on_off_label.setStyleSheet(
-                "font-weight: bold; font-size: 16px; color: #999;"
+                f"font-weight: bold; font-size: 16px; color: {get_theme_manager().get_color('muted_text')};"
             )
             self.firewall_status_circle.setStyleSheet(
-                "font-size: 20px; color: #999;")
+                f"font-size: 20px; color: {get_theme_manager().get_color('muted_text')};")
             if hasattr(self, "firewall_name_label"):
                 self.firewall_name_label.setText("Unable to detect")
 
@@ -1990,7 +1979,7 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
 
         self.firewall_on_off_label = QLabel("OFF")
         self.firewall_on_off_label.setStyleSheet(
-            "font-weight: bold; font-size: 16px; color: #F14666;"
+            f"font-weight: bold; font-size: 16px; color: {get_theme_manager().get_color('error')};"
         )
         self.firewall_on_off_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         firewall_status_right.addWidget(self.firewall_on_off_label)
@@ -1998,7 +1987,7 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
         # Status circle
         self.firewall_status_circle = QLabel("●")
         self.firewall_status_circle.setStyleSheet(
-            "font-size: 20px; color: #F14666;")
+            f"font-size: 20px; color: {get_theme_manager().get_color('error')};")
         self.firewall_status_circle.setAlignment(Qt.AlignmentFlag.AlignCenter)
         firewall_status_right.addWidget(self.firewall_status_circle)
 
@@ -3160,7 +3149,7 @@ System        {perf_status}"""
             self.icon_label.setPixmap(scaled_pixmap)
         else:
             # Fallback to colored circle if icon not found
-            fallback_color = "#404040" if current_theme == "dark" else "#2196F3"
+            fallback_color = get_theme_manager().get_color("muted_text") if current_theme == "dark" else get_theme_manager().get_color("accent")
             self.icon_label.setStyleSheet(
                 f"background-color: {fallback_color}; border-radius: 64px;"
             )
@@ -3410,1523 +3399,10 @@ System        {perf_status}"""
             self.paths_list.setStyleSheet(style)
 
     def _get_list_widget_style(self):
-        """Get consistent list widget styling based on current theme."""
-        if self.current_theme == "dark":
-            return """
-                QListWidget {
-                    background-color: #2a2a2a;
-                    color: #FFCDAA;
-                    selection-background-color: #F14666;
-                    selection-color: #ffffff;
-                    border: 1px solid #EE8980;
-                    border-radius: 6px;
-                }
-                QListWidget::item {
-                    padding: 4px;
-                    border-bottom: 1px solid rgba(238, 137, 128, 0.1);
-                }
-                QListWidget::item:hover {
-                    background-color: rgba(241, 70, 102, 0.1);
-                }
-                QListWidget::item:selected {
-                    background-color: #F14666;
-                    color: #ffffff;
-                    font-weight: 600;
-                }
-            """
-        else:  # light theme
-            return """
-                QListWidget {
-                    background-color: #ffffff;
-                    color: #2c2c2c;
-                    selection-background-color: #75BDE0;
-                    selection-color: #ffffff;
-                    border: 1px solid #75BDE0;
-                    border-radius: 6px;
-                }
-                QListWidget::item {
-                    padding: 4px;
-                    border-bottom: 1px solid rgba(117, 189, 224, 0.1);
-                }
-                QListWidget::item:hover {
-                    background-color: rgba(117, 189, 224, 0.15);
-                    color: #1a1a1a;
-                }
-                QListWidget::item:selected {
-                    background-color: #75BDE0;
-                    color: #ffffff;
-                    font-weight: 600;
-                }
-                QListWidget::item:selected:hover {
-                    background-color: #5AADD4;
-                    color: #ffffff;
-                }
-            """
-
-    def apply_dark_theme(self):
-        """Apply dark theme styling using Strawberry color palette for optimal readability."""
-        # Based on Color Theory principles:
-        # - F14666 (Deep Strawberry): Primary accent, high energy/attention
-        # - EE8980 (Coral): Secondary accent, warm complement
-        # - FFCDAA (Peach Cream): Main text, high contrast on dark
-        # - 9CB898 (Sage Green): Success states, natural balance
-        # Dark neutrals
-        # (https://www.uxdesigninstitute.com/blog/what-is-a-gui/#1a1a1a,
-        # #2a2a2a, #3a3a3a) for depth hierarchy
-
-        self.setStyleSheet(
-            """
-            QMainWindow {
-                background-color: #1a1a1a;
-                color: #FFCDAA;
-                font-size: 12px;
-                font-weight: 500;
-            }
-
-            QGroupBox {
-                font-weight: 600;
-                border: 2px solid #EE8980;
-                border-radius: 8px;
-                margin-top: 1em;
-                padding-top: 0.8em;
-                background-color: #2a2a2a;
-                color: #FFCDAA;
-            }
-
-            QGroupBox::title {
-                subcontrol-origin: margin;
-                left: 14px;
-                padding: 0 10px 0 10px;
-                color: #F14666;
-                font-weight: 700;
-                font-size: 14px;
-            }
-
-            QPushButton {
-                background-color: #3a3a3a;
-                border: 2px solid #EE8980;
-                border-radius: 4px;
-                padding: 4px 8px;
-                min-width: 60px;
-                color: #FFCDAA;
-                font-weight: 600;
-            }
-
-            QPushButton:hover {
-                background-color: #4a4a4a;
-                border-color: #F14666;
-                color: #ffffff;
-            }
-
-            QPushButton:pressed {
-                background-color: #2a2a2a;
-                border-color: #F14666;
-            }
-
-            QPushButton#primaryButton {
-                background-color: #9CB898;
-                border: 2px solid #9CB898;
-                color: #1a1a1a;
-                font-weight: 700;
-            }
-
-            QPushButton#primaryButton:hover {
-                background-color: #ACC8A8;
-                border-color: #9CB898;
-                color: #000000;
-            }
-
-            QPushButton#dangerButton {
-                background-color: #F14666;
-                border: 2px solid #F14666;
-                color: #ffffff;
-                font-weight: 700;
-            }
-
-            QPushButton#dangerButton:hover {
-                background-color: #FF5676;
-                border-color: #F14666;
-                color: #ffffff;
-            }
-
-            QProgressBar {
-                border: 2px solid #EE8980;
-                border-radius: 4px;
-                text-align: center;
-                height: 20px;
-                background-color: #3a3a3a;
-                color: #FFCDAA;
-                font-weight: 600;
-            }
-
-            QProgressBar::chunk {
-                background-color: #9CB898;
-                border-radius: 4px;
-                margin: 2px;
-            }
-
-            QTabWidget::pane {
-                border: 2px solid #EE8980;
-                border-radius: 8px;
-                top: -1px;
-                background-color: #2a2a2a;
-            }
-
-            QTabBar::tab {
-                background-color: #3a3a3a;
-                border: 2px solid #EE8980;
-                border-bottom: none;
-                border-top-left-radius: 4px;
-                border-top-right-radius: 4px;
-                padding: 6px 12px;
-                margin-right: 2px;
-                color: #FFCDAA;
-                font-weight: 600;
-            }
-
-            QTabBar::tab:selected {
-                background-color: #2a2a2a;
-                border-bottom: 2px solid #2a2a2a;
-                border-left: 2px solid #F14666;
-                border-right: 2px solid #F14666;
-                border-top: 2px solid #F14666;
-                color: #F14666;
-                font-weight: 700;
-            }
-
-            QTabBar::tab:hover:!selected {
-                background-color: #4a4a4a;
-                border-color: #F14666;
-                color: #ffffff;
-            }
-
-            QHeaderView::section {
-                background-color: #3a3a3a;
-                padding: 6px;
-                border: 1px solid #EE8980;
-                border-left: none;
-                border-top: none;
-                color: #FFCDAA;
-                font-weight: 600;
-            }
-
-            QTextEdit, QListWidget {
-                border: 2px solid #EE8980;
-                border-radius: 6px;
-                background-color: #3a3a3a;
-                color: #FFCDAA;
-                font-weight: 500;
-                selection-background-color: #F14666;
-                selection-color: #ffffff;
-                padding: 5px;
-            }
-
-            QTextEdit:focus, QListWidget:focus {
-                border-color: #F14666;
-                background-color: #4a4a4a;
-            }
-
-            QLineEdit#themedLineEdit {
-                border: 2px solid #EE8980;
-                border-radius: 6px;
-                background-color: #3a3a3a;
-                color: #FFCDAA;
-                font-weight: 500;
-                padding: 5px;
-            }
-
-            QLineEdit#themedLineEdit:focus {
-                border-color: #F14666;
-                background-color: #4a4a4a;
-            }
-
-            QLineEdit#themedLineEdit:disabled {
-                border-color: #666666;
-                background-color: #2a2a2a;
-                color: #999999;
-            }
-
-            QLabel {
-                color: #FFCDAA;
-                font-weight: 600;
-            }
-
-            QStatusBar {
-                background-color: #3a3a3a;
-                color: #FFCDAA;
-                border-top: 2px solid #EE8980;
-                font-weight: 600;
-                padding: 4px;
-            }
-
-            QMenuBar {
-                background-color: #3a3a3a;
-                color: #FFCDAA;
-                border-bottom: 2px solid #EE8980;
-                font-weight: 600;
-            }
-
-            QMenuBar::item {
-                background-color: transparent;
-                padding: 6px 12px;
-                border-radius: 4px;
-            }
-
-            QMenuBar::item:selected {
-                background-color: #4a4a4a;
-                color: #ffffff;
-            }
-
-            QMenu {
-                background-color: #3a3a3a;
-                color: #FFCDAA;
-                border: 2px solid #F14666;
-                border: 2px solid #F14666;
-                border-radius: 6px;
-                font-weight: 600;
-                padding: 4px;
-            }
-
-            QMenu::item {
-                padding: 6px 12px;
-                border-radius: 4px;
-                margin: 2px;
-            }
-
-            QMenu::item:selected {
-                background-color: #EE8980;
-                color: #ffffff;
-            }
-
-            #headerFrame {
-                background-color: #F14666;
-                color: white;
-                border-radius: 8px;
-                padding: 15px;
-                margin-bottom: 10px;
-                border: 2px solid #F14666;
-            }
-
-            #appTitle {
-                color: white;
-                font-size: 22px;
-                font-weight: 700;
-            }
-
-            #pathLabel {
-                font-weight: 600;
-                padding: 8px 12px;
-                background-color: #4a4a4a;
-                border-radius: 6px;
-                color: #FFCDAA;
-                border: 1px solid #EE8980;
-            }
-
-            #actionButton {
-                background-color: #F14666;
-                color: white;
-                border: 4px solid #F14666;
-                border-radius: 6px;
-                font-weight: 700;
-                padding: 6px 12px;
-                min-width: 120px;
-                min-height: 32px;
-                text-align: center;
-                line-height: 1.3;
-                font-size: 13px;
-            }
-
-            #actionButton:hover {
-                background-color: #FF5676;
-                border: 4px solid #EE8980;
-                color: #ffffff;
-                padding: 6px 12px;
-                min-height: 32px;
-                line-height: 1.3;
-                font-size: 13px;
-            }
-
-            #actionButton:pressed {
-                background-color: #E03256;
-                border: 4px solid #FFCDAA;
-                padding: 6px 12px;
-                min-height: 32px;
-                line-height: 1.3;
-                font-size: 13px;
-            }
-
-            #lastUpdateLabel {
-                color: white;
-                font-size: 12px;
-                margin: 3px;
-                font-weight: 600;
-                background-color: rgba(255, 205, 170, 0.1);
-                padding: 4px 8px;
-                border-radius: 4px;
-                border: 1px solid rgba(255, 205, 170, 0.3);
-            }
-
-            #lastCheckedLabel {
-                color: white;
-                font-size: 11px;
-                margin: 2px;
-                font-style: italic;
-                font-weight: 500;
-                background-color: rgba(255, 205, 170, 0.1);
-                padding: 2px 6px;
-                border-radius: 3px;
-                border: 1px solid rgba(255, 205, 170, 0.2);
-            }
-
-            /* Scan report sections - enhanced readability */
-            #resultsText {
-                font-weight: 500;
-                color: #FFCDAA;
-                line-height: 1.4;
-            }
-
-            #reportViewer {
-                font-weight: 500;
-                color: #FFCDAA;
-                line-height: 1.4;
-            }
-
-            /* Real-time protection status styles */
-            #protectionStatus {
-                font-size: 16px;
-                font-weight: 700;
-                padding: 10px;
-                border-radius: 6px;
-                background-color: #3a3a3a;
-                border: 2px solid #EE8980;
-            }
-
-            /* Dashboard Status Cards with improved visual hierarchy */
-            QFrame#statusCard {
-                background-color: #3a3a3a;
-                border: 2px solid #EE8980;
-                border-radius: 12px;
-                padding: 10px;
-                margin: 5px;
-            }
-
-            QFrame#statusCard:hover {
-                border-color: #F14666;
-                background-color: #4a4a4a;
-            }
-
-            QLabel#cardTitle {
-                color: #FFCDAA;
-                font-size: 14px;
-                font-weight: 600;
-                margin-bottom: 5px;
-            }
-
-            QLabel#cardValue {
-                font-size: 28px;
-                font-weight: 700;
-                margin: 8px 0px;
-            }
-
-            QLabel#cardDescription {
-                color: #EE8980;
-                font-size: 11px;
-                font-weight: 500;
-                line-height: 1.4;
-            }
-
-            /* Dashboard Action Buttons with solid colors */
-            QPushButton#dashboardPrimaryButton {
-                background-color: #9CB898;
-                border: 2px solid #9CB898;
-                border-radius: 8px;
-                color: #1a1a1a;
-                font-weight: 700;
-                font-size: 14px;
-                min-height: 40px;
-                padding: 0px 20px;
-            }
-
-            QPushButton#dashboardPrimaryButton:hover {
-                background-color: #ACC8A8;
-                border-color: #ACC8A8;
-            }
-
-            QPushButton#dashboardSecondaryButton {
-                background-color: #4a4a4a;
-                border: 2px solid #EE8980;
-                border-radius: 8px;
-                color: #FFCDAA;
-                font-weight: 600;
-                font-size: 13px;
-                min-height: 40px;
-                padding: 0px 16px;
-            }
-
-            QPushButton#dashboardSecondaryButton:hover {
-                background-color: #5a5a5a;
-                border-color: #F14666;
-                color: #ffffff;
-            }
-
-            /* Preset Scan Buttons with enhanced styling */
-            QPushButton#presetButton {
-                background: #4a4a4a;
-                border: 2px solid #EE8980;
-                border-radius: 6px;
-                color: #FFCDAA;
-                font-weight: 600;
-                font-size: 12px;
-                padding: 8px 12px;
-                min-height: 35px;
-            }
-
-            QPushButton#presetButton:hover {
-                background: #5a5a5a;
-                border-color: #F14666;
-                color: #ffffff;
-            }
-
-            QLabel#presetLabel {
-                color: #FFCDAA;
-                font-weight: 600;
-                font-size: 12px;
-                margin-bottom: 5px;
-            }
-
-            /* Scrollbar styling for consistency */
-            QScrollBar:vertical {
-                background-color: #3a3a3a;
-                width: 12px;
-                border-radius: 6px;
-                border: 1px solid #EE8980;
-            }
-
-            QScrollBar::handle:vertical {
-                background-color: #F14666;
-                border-radius: 5px;
-                min-height: 20px;
-            }
-
-            QScrollBar::handle:vertical:hover {
-                background-color: #FF5676;
-            }
-
-            QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
-                height: 0px;
-            }
-
-            /* Settings Tab Controls */
-            QCheckBox {
-                color: #FFCDAA;
-                font-weight: 500;
-                font-size: 12px;
-                spacing: 8px;
-            }
-
-            QCheckBox::indicator {
-                width: 18px;
-                height: 18px;
-                border: 2px solid #EE8980;
-                border-radius: 4px;
-                background-color: #3a3a3a;
-            }
-
-            QCheckBox::indicator:checked {
-                background-color: #9CB898;
-                border-color: #9CB898;
-            }
-
-            QCheckBox::indicator:hover {
-                border-color: #F14666;
-            }
-
-            QSpinBox {
-                background-color: #3a3a3a;
-                border: 2px solid #EE8980;
-                border-radius: 6px;
-                padding: 8px 12px;
-                color: #FFCDAA;
-                font-weight: 500;
-                font-size: 12px;
-            }
-
-            QSpinBox:focus {
-                border-color: #F14666;
-                background-color: #2a2a2a;
-            }
-
-            QTimeEdit, QTimeEdit#scanTimeEdit, QAbstractSpinBox {
-                background-color: #3a3a3a !important;
-                border: 2px solid #EE8980 !important;
-                border-radius: 6px;
-                padding: 8px 12px;
-                color: #FFCDAA !important;
-                font-weight: 500;
-                font-size: 12px;
-            }
-
-            QTimeEdit:focus, QTimeEdit#scanTimeEdit:focus, QAbstractSpinBox:focus {
-                border-color: #F14666 !important;
-                background-color: #2a2a2a !important;
-            }
-
-            QTimeEdit:disabled, QTimeEdit#scanTimeEdit:disabled, QAbstractSpinBox:disabled {
-                background-color: #2a2a2a !important;
-                color: #808080 !important;
-                border-color: #555555 !important;
-            }
-
-            QTimeEdit::up-button, QTimeEdit::down-button {
-                background-color: #444444;
-                border: 1px solid #666666;
-                border-radius: 3px;
-                width: 16px;
-                height: 16px;
-            }
-
-            QTimeEdit::up-button:hover, QTimeEdit::down-button:hover {
-                background-color: #555555;
-                border-color: #F14666;
-            }
-
-            QTimeEdit::up-button:pressed, QTimeEdit::down-button:pressed {
-                background-color: #333333;
-            }
-
-            QComboBox {
-                background-color: #3a3a3a;
-                border: 2px solid #EE8980;
-                border-radius: 6px;
-                padding: 10px 16px;
-                color: #FFCDAA;
-                font-weight: 500;
-                font-size: 12px;
-                min-width: 120px;
-            }
-
-            QComboBox:focus {
-                border-color: #F14666;
-                background-color: #2a2a2a;
-            }
-
-            QComboBox:hover {
-                border-color: #F14666;
-            }
-
-            QComboBox::drop-down {
-                subcontrol-origin: padding;
-                subcontrol-position: top right;
-                width: 25px;
-                border-left-width: 1px;
-                border-left-color: #EE8980;
-                border-left-style: solid;
-                border-top-right-radius: 4px;
-                border-bottom-right-radius: 4px;
-                background-color: #4a4a4a;
-            }
-
-            QComboBox::drop-down:hover {
-                background-color: #F14666;
-            }
-
-            QComboBox::down-arrow {
-                image: none;
-                border-left: 4px solid transparent;
-                border-right: 4px solid transparent;
-                border-top: 6px solid #FFCDAA;
-                width: 0px;
-                height: 0px;
-            }
-
-            QComboBox QAbstractItemView {
-                background-color: #2a2a2a;
-                border: 1px solid #EE8980;
-                border-radius: 4px;
-                color: #FFCDAA;
-                selection-background-color: #F14666;
-                selection-color: #ffffff;
-                outline: none;
-                margin: 0px;
-                padding: 0px;
-            }
-
-            QComboBox QAbstractItemView::item {
-                padding: 8px 12px;
-                min-height: 20px;
-                border: none;
-                margin: 0px;
-            }
-
-            QComboBox QAbstractItemView::item:hover {
-                background-color: #EE8980;
-                color: #ffffff;
-                border: none;
-            }
-
-            QComboBox QAbstractItemView::item:selected {
-                background-color: #F14666;
-                color: #ffffff;
-                border: none;
-            }
-
-            /* Fix dropdown popup frame (this causes the white borders) */
-            QComboBox QListView {
-                background-color: #2a2a2a;
-                border: 1px solid #EE8980;
-                border-radius: 4px;
-                color: #FFCDAA;
-                selection-background-color: #F14666;
-                selection-color: #ffffff;
-                outline: none;
-            }
-
-            QComboBox QFrame {
-                background-color: #2a2a2a;
-                border: 1px solid #EE8980;
-                border-radius: 4px;
-            }
-
-            QSpinBox::up-button, QSpinBox::down-button {
-                background-color: #EE8980;
-                border: none;
-                border-radius: 3px;
-                width: 16px;
-                color: #1a1a1a;
-                font-weight: 600;
-            }
-
-            QSpinBox::up-button:hover, QSpinBox::down-button:hover {
-                background-color: #F14666;
-            }
-
-            QFormLayout QLabel {
-                color: #FFCDAA;
-                font-weight: 600;
-                font-size: 12px;
-                padding: 5px;
-            }
-
-            QScrollArea {
-                background-color: #1a1a1a;
-                border: none;
-            }
-
-            /* Settings Tab Specific Widgets */
-            QWidget#settingsTabWidget {
-                background-color: #1a1a1a;
-            }
-
-            QScrollArea#settingsScrollArea {
-                background-color: #1a1a1a;
-                border: none;
-            }
-
-            QWidget#settingsScrollContent {
-                background-color: #1a1a1a;
-            }
-        """
-        )
-
-        # Apply activity list styling after theme
-        self.setup_activity_list_styling()
-
-    def apply_light_theme(self):
-        """Apply light theme styling using Sunrise color palette for optimal readability."""
-        # Based on Color Theory principles:
-        # - 75BDE0 (Sky Blue): Primary accent, trust and stability
-        # - F8D49B (Golden Yellow): Secondary accent, warm energy
-        # - F8BC9B (Peach Orange): Interactive elements, friendly warmth
-        # - F89B9B (Coral Pink): Danger/attention states, warm warnings
-        # Light neutrals (#fefefe, #ffffff, #f5f5f5) for clean hierarchy
-
-        self.setStyleSheet(
-            """
-            QMainWindow {
-                background-color: #fefefe;
-                color: #2c2c2c;
-                font-size: 12px;
-                font-weight: 500;
-            }
-
-            QGroupBox {
-                font-weight: 600;
-                border: 2px solid #75BDE0;
-                border-radius: 8px;
-                margin-top: 1em;
-                padding-top: 0.8em;
-                background-color: #ffffff;
-                color: #2c2c2c;
-            }
-
-            QGroupBox::title {
-                subcontrol-origin: margin;
-                left: 15px;
-                padding: 0 8px 0 8px;
-                color: #75BDE0;
-                font-weight: 700;
-                font-size: 13px;
-            }
-
-            QPushButton {
-                background-color: #F8D49B;
-                border: 1px solid #F8BC9B;
-                border-radius: 6px;
-                padding: 8px 16px;
-                min-width: 80px;
-                color: #2c2c2c;
-                font-weight: 600;
-            }
-
-            QPushButton:hover {
-                background-color: #F8BC9B;
-                border-color: #F89B9B;
-                color: #1a1a1a;
-            }
-
-            QPushButton:pressed {
-                background-color: #F89B9B;
-                border-color: #75BDE0;
-            }
-
-            QPushButton#primaryButton {
-                background-color: #75BDE0;
-                border: 2px solid #75BDE0;
-                color: #ffffff;
-                font-weight: 700;
-            }
-
-            QPushButton#primaryButton:hover {
-                background-color: #5AADD4;
-                border-color: #5AADD4;
-            }
-
-            QPushButton#dangerButton {
-                background-color: #F89B9B;
-                border: 2px solid #F89B9B;
-                color: #2c2c2c;
-                font-weight: 700;
-            }
-
-            QPushButton#dangerButton:hover {
-                background-color: #F67B7B;
-                border-color: #F67B7B;
-            }
-
-            QProgressBar {
-                border: 2px solid #F8D49B;
-                border-radius: 6px;
-                text-align: center;
-                height: 24px;
-                background-color: #ffffff;
-                color: #2c2c2c;
-                font-weight: 600;
-            }
-
-            QProgressBar::chunk {
-                background-color: #75BDE0;
-                border-radius: 4px;
-                margin: 2px;
-            }
-
-            QTabWidget::pane {
-                border: 2px solid #F8D49B;
-                border-radius: 6px;
-                top: -1px;
-                background-color: #ffffff;
-            }
-
-            QTabBar::tab {
-                background-color: #F8D49B;
-                border: 1px solid #F8BC9B;
-                border-bottom: none;
-                border-top-left-radius: 6px;
-                border-top-right-radius: 6px;
-                padding: 8px 16px;
-                margin-right: 3px;
-                color: #2c2c2c;
-                font-weight: 600;
-            }
-
-            QTabBar::tab:selected {
-                background-color: #ffffff;
-                border-bottom: 2px solid #ffffff;
-                border-left: 2px solid #75BDE0;
-                border-right: 2px solid #75BDE0;
-                border-top: 2px solid #75BDE0;
-                color: #75BDE0;
-                font-weight: 700;
-            }
-
-            QTabBar::tab:hover:!selected {
-                background-color: #F8BC9B;
-                color: #1a1a1a;
-            }
-
-            QHeaderView::section {
-                background-color: #F8D49B;
-                padding: 6px;
-                border: 1px solid #F8BC9B;
-                border-left: none;
-                border-top: none;
-                color: #2c2c2c;
-                font-weight: 600;
-            }
-
-            QTextEdit, QListWidget {
-                border: 2px solid #F8D49B;
-                border-radius: 6px;
-                background-color: #ffffff;
-                color: #2c2c2c;
-                font-weight: 400;
-                selection-background-color: #75BDE0;
-                selection-color: #ffffff;
-                padding: 5px;
-            }
-
-            QTextEdit:focus, QListWidget:focus {
-                border-color: #75BDE0;
-            }
-
-            QLineEdit#themedLineEdit {
-                border: 2px solid #F8D49B;
-                border-radius: 6px;
-                background-color: #ffffff;
-                color: #2c2c2c;
-                font-weight: 500;
-                padding: 5px;
-            }
-
-            QLineEdit#themedLineEdit:focus {
-                border-color: #75BDE0;
-            }
-
-            QLineEdit#themedLineEdit:disabled {
-                border-color: #cccccc;
-                background-color: #f5f5f5;
-                color: #999999;
-            }
-
-            QLabel {
-                color: #2c2c2c;
-                font-weight: 600;
-            }
-
-            QStatusBar {
-                background-color: #F8D49B;
-                color: #2c2c2c;
-                border-top: 2px solid #F8BC9B;
-                font-weight: 600;
-            }
-
-            QMenuBar {
-                background-color: #F8D49B;
-                color: #2c2c2c;
-                border-bottom: 2px solid #F8BC9B;
-                font-weight: 600;
-            }
-
-            QMenuBar::item {
-                background-color: transparent;
-                padding: 6px 12px;
-                border-radius: 4px;
-            }
-
-            QMenuBar::item:selected {
-                background-color: #F8BC9B;
-                color: #1a1a1a;
-            }
-
-            QMenu {
-                background-color: #ffffff;
-                color: #2c2c2c;
-                border: 2px solid #75BDE0;
-                border-radius: 6px;
-                font-weight: 600;
-            }
-
-            QMenu::item {
-                padding: 6px 12px;
-                border-radius: 4px;
-                margin: 2px;
-            }
-
-            QMenu::item:selected {
-                background-color: #F8D49B;
-                color: #2c2c2c;
-            }
-
-            #headerFrame {
-                background-color: #75BDE0;
-                color: white;
-                border-radius: 8px;
-                padding: 15px;
-                margin-bottom: 10px;
-                border: 2px solid #75BDE0;
-            }
-
-            #appTitle {
-                color: white;
-                font-size: 22px;
-                font-weight: 700;
-            }
-
-            #pathLabel {
-                font-weight: 600;
-                padding: 8px;
-                background-color: #F8D49B;
-                border-radius: 6px;
-                color: #2c2c2c;
-                border: 1px solid #F8BC9B;
-            }
-
-            #actionButton {
-                background-color: #75BDE0;
-                color: white;
-                border: 4px solid #75BDE0;
-                border-radius: 6px;
-                font-weight: 700;
-                padding: 6px 12px;
-                min-width: 120px;
-                min-height: 32px;
-                text-align: center;
-                line-height: 1.3;
-                font-size: 13px;
-            }
-
-            #actionButton:hover {
-                background-color: #5AADD4;
-                border: 4px solid #F8BC9B;
-                color: #ffffff;
-                padding: 6px 12px;
-                min-height: 32px;
-                line-height: 1.3;
-                font-size: 13px;
-            }
-
-            #actionButton:pressed {
-                background-color: #4A9DC4;
-                border: 4px solid #F89B9B;
-                padding: 6px 12px;
-                min-height: 32px;
-                line-height: 1.3;
-                font-size: 13px;
-            }
-
-            #lastUpdateLabel {
-                color: #2c2c2c;
-                font-size: 12px;
-                margin: 3px;
-                font-weight: 600;
-                background-color: rgba(255, 255, 255, 0.9);
-                padding: 4px 8px;
-                border-radius: 4px;
-                border: 1px solid #F8D49B;
-                text-align: center;
-            }
-
-            #lastCheckedLabel {
-                color: #2c2c2c;
-                font-size: 11px;
-                margin: 2px;
-                font-style: italic;
-                font-weight: 500;
-                background-color: rgba(255, 255, 255, 0.9);
-                padding: 2px 6px;
-                border-radius: 3px;
-                border: 1px solid #F8BC9B;
-                text-align: center;
-            }
-
-            /* Scan report sections - enhanced readability with sunrise palette */
-            #resultsText {
-                font-weight: 400;
-                line-height: 1.5;
-                color: #2c2c2c;
-                background-color: #ffffff;
-                border: 2px solid #F8D49B;
-                border-radius: 6px;
-            }
-
-            #reportViewer {
-                font-weight: 400;
-                line-height: 1.5;
-                color: #2c2c2c;
-            }
-
-            /* Real-time protection status styles */
-            #protectionStatus {
-                font-size: 16px;
-                font-weight: 700;
-                padding: 10px;
-                border-radius: 6px;
-                background-color: #ffffff;
-                border: 2px solid #F8D49B;
-            }
-
-            /* Dashboard Status Cards with solid colors */
-            QFrame#statusCard {
-                background-color: #ffffff;
-                border: 2px solid #F8D49B;
-                border-radius: 12px;
-                padding: 10px;
-                margin: 5px;
-            }
-
-            QFrame#statusCard:hover {
-                border-color: #75BDE0;
-                background-color: #f8f8f8;
-            }
-
-            QLabel#cardTitle {
-                color: #2c2c2c;
-                font-size: 14px;
-                font-weight: 600;
-                margin-bottom: 5px;
-            }
-
-            QLabel#cardValue {
-                font-size: 28px;
-                font-weight: 700;
-                margin: 8px 0px;
-            }
-
-            QLabel#cardDescription {
-                color: #75BDE0;
-                font-size: 11px;
-                font-weight: 500;
-                line-height: 1.4;
-            }
-
-            /* Dashboard Action Buttons with solid colors */
-            QPushButton#dashboardPrimaryButton {
-                background-color: #75BDE0;
-                border: 2px solid #75BDE0;
-                border-radius: 8px;
-                color: #ffffff;
-                font-weight: 700;
-                font-size: 14px;
-                min-height: 40px;
-                padding: 0px 20px;
-            }
-
-            QPushButton#dashboardPrimaryButton:hover {
-                background-color: #5AADD4;
-                border-color: #5AADD4;
-            }
-
-            QPushButton#dashboardSecondaryButton {
-                background-color: #F8D49B;
-                border: 2px solid #F8BC9B;
-                border-radius: 8px;
-                color: #2c2c2c;
-                font-weight: 600;
-                font-size: 13px;
-                min-height: 40px;
-                padding: 0px 16px;
-            }
-
-            QPushButton#dashboardSecondaryButton:hover {
-                background-color: #F8BC9B;
-                border-color: #F89B9B;
-                color: #1a1a1a;
-            }
-
-            /* Preset Scan Buttons with sunrise styling */
-            QPushButton#presetButton {
-                background: #F8D49B;
-                border: 2px solid #F8BC9B;
-                border-radius: 6px;
-                color: #2c2c2c;
-                font-weight: 600;
-                font-size: 12px;
-                padding: 8px 12px;
-                min-height: 35px;
-            }
-
-            QPushButton#presetButton:hover {
-                background: #F8BC9B;
-                border-color: #75BDE0;
-                color: #1a1a1a;
-            }
-
-            QLabel#presetLabel {
-                color: #2c2c2c;
-                font-weight: 600;
-                font-size: 12px;
-                margin-bottom: 5px;
-            }
-
-            /* Scrollbar styling for consistency */
-            QScrollBar:vertical {
-                background-color: #f8f8f8;
-                width: 12px;
-                border-radius: 6px;
-                border: 1px solid #F8D49B;
-            }
-
-            QScrollBar::handle:vertical {
-                background-color: #75BDE0;
-                border-radius: 5px;
-                min-height: 20px;
-            }
-
-            QScrollBar::handle:vertical:hover {
-                background-color: #5AADD4;
-            }
-
-            QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
-                height: 0px;
-            }
-
-            /* Settings Tab Controls */
-            QCheckBox {
-                color: #333333;
-                font-weight: 500;
-                font-size: 12px;
-                spacing: 8px;
-            }
-
-            QCheckBox::indicator {
-                width: 18px;
-                height: 18px;
-                border: 2px solid #75BDE0;
-                border-radius: 4px;
-                background-color: #ffffff;
-            }
-
-            QCheckBox::indicator:checked {
-                background-color: #75BDE0;
-                border-color: #75BDE0;
-            }
-
-            QCheckBox::indicator:hover {
-                border-color: #F8BC9B;
-            }
-
-            QSpinBox {
-                background-color: #ffffff;
-                border: 2px solid #75BDE0;
-                border-radius: 6px;
-                padding: 8px 12px;
-                color: #333333;
-                font-weight: 500;
-                font-size: 12px;
-            }
-
-            QSpinBox:focus {
-                border-color: #F8BC9B;
-                background-color: #f8f8f8;
-            }
-
-            QTimeEdit, QTimeEdit#scanTimeEdit, QAbstractSpinBox {
-                background-color: #ffffff !important;
-                border: 2px solid #75BDE0 !important;
-                border-radius: 6px;
-                padding: 8px 12px;
-                color: #333333 !important;
-                font-weight: 500;
-                font-size: 12px;
-            }
-
-            QTimeEdit:focus, QTimeEdit#scanTimeEdit:focus, QAbstractSpinBox:focus {
-                border-color: #F8BC9B !important;
-                background-color: #f8f8f8 !important;
-            }
-
-            QTimeEdit:disabled, QTimeEdit#scanTimeEdit:disabled, QAbstractSpinBox:disabled {
-                background-color: #f0f0f0 !important;
-                color: #888888 !important;
-                border-color: #cccccc !important;
-            }
-
-            QTimeEdit::up-button, QTimeEdit::down-button {
-                background-color: #f8f8f8;
-                border: 1px solid #cccccc;
-                border-radius: 3px;
-                width: 16px;
-                height: 16px;
-            }
-
-            QTimeEdit::up-button:hover, QTimeEdit::down-button:hover {
-                background-color: #e8e8e8;
-                border-color: #F8BC9B;
-            }
-
-            QTimeEdit::up-button:pressed, QTimeEdit::down-button:pressed {
-                background-color: #d8d8d8;
-            }
-
-            QComboBox {
-                background-color: #ffffff;
-                border: 2px solid #75BDE0;
-                border-radius: 6px;
-                padding: 8px 12px;
-                color: #333333;
-                font-weight: 500;
-                font-size: 12px;
-                min-width: 120px;
-            }
-
-            QComboBox:focus {
-                border-color: #F8BC9B;
-                background-color: #f8f8f8;
-            }
-
-            QComboBox:hover {
-                border-color: #F8BC9B;
-            }
-
-            QComboBox::drop-down {
-                subcontrol-origin: padding;
-                subcontrol-position: top right;
-                width: 25px;
-                border-left-width: 1px;
-                border-left-color: #75BDE0;
-                border-left-style: solid;
-                border-top-right-radius: 4px;
-                border-bottom-right-radius: 4px;
-                background-color: #f0f0f0;
-            }
-
-            QComboBox::drop-down:hover {
-                background-color: #F8BC9B;
-            }
-
-            QComboBox::down-arrow {
-                image: none;
-                border-left: 4px solid transparent;
-                border-right: 4px solid transparent;
-                border-top: 6px solid #333333;
-                width: 0px;
-                height: 0px;
-            }
-
-            QComboBox QAbstractItemView {
-                background-color: #ffffff;
-                border: 1px solid #75BDE0;
-                border-radius: 4px;
-                color: #333333;
-                selection-background-color: #F8BC9B;
-                selection-color: #2c2c2c;
-                outline: none;
-                margin: 0px;
-                padding: 0px;
-            }
-
-            QComboBox QAbstractItemView::item {
-                padding: 8px 12px;
-                min-height: 20px;
-                border: none;
-                margin: 0px;
-            }
-
-            QComboBox QAbstractItemView::item:hover {
-                background-color: #75BDE0;
-                color: #ffffff;
-                border: none;
-            }
-
-            QComboBox QAbstractItemView::item:selected {
-                background-color: #F8BC9B;
-                color: #2c2c2c;
-                border: none;
-            }
-
-            /* Fix dropdown popup frame (this causes the white borders) */
-            QComboBox QListView {
-                background-color: #ffffff;
-                border: 1px solid #75BDE0;
-                border-radius: 4px;
-                color: #333333;
-                selection-background-color: #F8BC9B;
-                selection-color: #2c2c2c;
-                outline: none;
-            }
-
-            QComboBox QFrame {
-                background-color: #ffffff;
-                border: 1px solid #75BDE0;
-                border-radius: 4px;
-            }
-            
-            /* Scan Type Combo Specific Styling */
-            QComboBox#scanTypeCombo {
-                background-color: #ffffff;
-                border: 2px solid #2E8B57;
-                border-radius: 8px;
-                padding: 12px 18px;
-                font-weight: 600;
-                font-size: 13px;
-                min-width: 150px;
-            }
-            
-            QComboBox#scanTypeCombo:focus {
-                border-color: #32CD32;
-                background-color: #f0fff0;
-            }
-            
-            /* Next Scan Label Styling */
-            QLabel#nextScanLabel {
-                background-color: #f0f8ff;
-                border: 1px solid #87CEEB;
-                border-radius: 4px;
-                padding: 6px 10px;
-                color: #2E8B57;
-                font-weight: 500;
-                font-size: 11px;
-            }
-
-            /* Enhanced Button Styling for Better Spacing */
-            QPushButton#presetButton {
-                background-color: #ffffff;
-                border: 2px solid #75BDE0;
-                border-radius: 8px;
-                padding: 8px 16px;
-                color: #2c2c2c;
-                font-weight: 600;
-                font-size: 12px;
-                min-height: 36px;
-                min-width: 88px;
-            }
-            
-            QPushButton#presetButton:hover {
-                background-color: #f0f8ff;
-                border-color: #32CD32;
-            }
-            
-            QPushButton#presetButton:pressed {
-                background-color: #e6f3ff;
-            }
-
-            /* Section Labels */
-            QLabel#sectionLabel {
-                color: #2c2c2c;
-                font-weight: 600;
-                font-size: 12px;
-                margin-bottom: 5px;
-            }
-
-            /* Path Label */
-            QLabel#pathLabel {
-                background-color: #f8f8f8;
-                border: 1px solid #d0d0d0;
-                border-radius: 4px;
-                padding: 8px 12px;
-                color: #333333;
-                font-family: monospace;
-                font-size: 11px;
-            }
-
-            /* Status Label */
-            QLabel#statusLabel {
-                color: #2c2c2c;
-                font-weight: 500;
-                font-size: 13px;
-                padding: 4px 8px;
-            }
-
-            /* Progress Bar Enhanced */
-            QProgressBar#modernProgressBar {
-                background-color: #f0f0f0;
-                border: 2px solid #d0d0d0;
-                border-radius: 12px;
-                text-align: center;
-                font-weight: 600;
-                font-size: 12px;
-                min-height: 24px;
-            }
-
-            QProgressBar#modernProgressBar::chunk {
-                background: qlineargradient(x1: 0, y1: 0, x2: 1, y2: 0,
-                    stop: 0 #32CD32, stop: 1 #228B22);
-                border-radius: 10px;
-                margin: 2px;
-            }
-
-            /* Form Layout Improvements */
-            QFormLayout QLabel {
-                color: #2c2c2c;
-                font-weight: 600;
-                font-size: 11px;
-                min-width: 80px;
-            }
-
-            /* Scroll Area */
-            QScrollArea {
-                background-color: transparent;
-                border: none;
-            }
-
-            QScrollArea > QWidget > QWidget {
-                background-color: transparent;
-            }
-
-            QScrollBar:vertical {
-                background-color: #f0f0f0;
-                width: 12px;
-                border-radius: 6px;
-            }
-
-            QScrollBar::handle:vertical {
-                background-color: #c0c0c0;
-                border-radius: 6px;
-                min-height: 20px;
-            }
-
-            QScrollBar::handle:vertical:hover {
-                background-color: #a0a0a0;
-            }
-
-            QSpinBox::up-button, QSpinBox::down-button {
-                background-color: #75BDE0;
-                border: none;
-                border-radius: 3px;
-                width: 16px;
-                color: #ffffff;
-                font-weight: 600;
-            }
-
-            QSpinBox::up-button:hover, QSpinBox::down-button:hover {
-                background-color: #F8BC9B;
-            }
-
-            QFormLayout QLabel {
-                color: #333333;
-                font-weight: 600;
-                font-size: 12px;
-                padding: 5px;
-            }
-
-            QScrollArea {
-                background-color: #f8f8f8;
-                border: none;
-            }
-
-            /* Settings Tab Specific Widgets */
-            QWidget#settingsTabWidget {
-                background-color: #f8f8f8;
-            }
-
-            QScrollArea#settingsScrollArea {
-                background-color: #f8f8f8;
-                border: none;
-            }
-
-            QWidget#settingsScrollContent {
-                background-color: #f8f8f8;
-            }
-        """
-        )
-
-        # Apply activity list styling after theme
-        self.setup_activity_list_styling()
-
-    def apply_system_theme(self):
-        """Apply system theme (falls back to light theme for now)."""
-        # For now, system theme defaults to light theme
-        # In a full implementation, you could detect system theme preference
-        self.apply_light_theme()
+        """Get consistent list widget styling based on current theme from theme manager."""
+        # Theme manager now handles all styling automatically
+        # Return empty string since styling is handled globally
+        return ""
 
     def apply_text_orientation_setting(self, orientation_text=None):
         """Apply text orientation setting to scan results display."""
@@ -6038,7 +4514,7 @@ System        {perf_status}"""
                     if scan_result == "clean":
                         self._append_with_autoscroll(f"    ✅ {current_file}")
                     elif scan_result == "infected":
-                        self.results_text.append(f"    🚨 <span style='color: #F44336;'><b>INFECTED:</b></span> {current_file}")
+                        self.results_text.append(f"    🚨 <span style='color: {get_theme_manager().get_color('error')};'><b>INFECTED:</b></span> {current_file}")
                 
         except Exception as e:
             print(f"Error in detailed scan progress: {e}")
@@ -6202,7 +4678,7 @@ System        {perf_status}"""
                     
                     # Only show essential timestamped messages
                     if "Database update completed" in message or "completed successfully" in message:
-                        self._append_with_autoscroll(f"✅ <span style='color: #4CAF50;'><b>Database updated successfully</b></span>")
+                        self._append_with_autoscroll(f"✅ <span style='color: {get_theme_manager().get_color('success')};'><b>Database updated successfully</b></span>")
                         return
                     # Skip other timestamped messages to reduce clutter
                     return
@@ -6237,7 +4713,7 @@ System        {perf_status}"""
                     self._append_with_autoscroll(f"    📄 Files scanned: <b>{count}</b>")
                 elif "Suspect files:" in formatted_line:
                     count = formatted_line.split(":")[-1].strip()
-                    color = "#F44336" if int(count) > 0 else "#4CAF50"
+                    color = get_theme_manager().get_color("error") if int(count) > 0 else get_theme_manager().get_color("success")
                     self._append_with_autoscroll(f"    🔍 Suspicious files: <span style='color: {color};'><b>{count}</b></span>")
                 elif "Rootkit checks" in formatted_line:
                     self._append_with_autoscroll(f"  🛡️  <b>Rootkit Detection:</b>")
@@ -6246,12 +4722,12 @@ System        {perf_status}"""
                     self.results_text.append(f"    📊 Rootkits checked: <b>{count}</b>")
                 elif "Possible rootkits:" in formatted_line:
                     count = formatted_line.split(":")[-1].strip()
-                    color = "#F44336" if int(count) > 0 else "#4CAF50"
+                    color = get_theme_manager().get_color("error") if int(count) > 0 else get_theme_manager().get_color("success")
                     self.results_text.append(f"    🚨 Possible rootkits: <span style='color: {color};'><b>{count}</b></span>")
                 elif "Applications checks" in formatted_line:
                     self.results_text.append(f"  📱 <b>Application Checks:</b>")
                 elif "All checks skipped" in formatted_line:
-                    self.results_text.append(f"    ⏭️  <span style='color: #9E9E9E;'><i>All checks skipped</i></span>")
+                    self.results_text.append(f"    ⏭️  <span style='color: {get_theme_manager().get_color('muted_text')};'><i>All checks skipped</i></span>")
                 elif "The system checks took:" in formatted_line:
                     duration = formatted_line.split(":")[-1].strip()
                     self.results_text.append("")  # Add spacing
@@ -6280,15 +4756,15 @@ System        {perf_status}"""
                     
                     # Format based on result type
                     if "[ None found ]" in result_part or "[ OK ]" in result_part:
-                        self.results_text.append(f"  ✅ {check_desc} <span style='color: #4CAF50;'><b>CLEAN</b></span>")
+                        self.results_text.append(f"  ✅ {check_desc} <span style='color: {get_theme_manager().get_color('success')};'><b>CLEAN</b></span>")
                     elif "[ Found ]" in result_part:
-                        self.results_text.append(f"  🔍 {check_desc} <span style='color: #FF9800;'><b>FOUND</b></span>")
+                        self.results_text.append(f"  🔍 {check_desc} <span style='color: {get_theme_manager().get_color('warning')};'><b>FOUND</b></span>")
                     elif "[ Warning ]" in result_part or "[ WARN ]" in result_part:
-                        self.results_text.append(f"  ⚠️  {check_desc} <span style='color: #FF9800;'><b>WARNING</b></span>")
+                        self.results_text.append(f"  ⚠️  {check_desc} <span style='color: {get_theme_manager().get_color('warning')};'><b>WARNING</b></span>")
                     elif "[ Not found ]" in result_part:
-                        self.results_text.append(f"  ✅ {check_desc} <span style='color: #4CAF50;'><b>NOT FOUND</b></span>")
+                        self.results_text.append(f"  ✅ {check_desc} <span style='color: {get_theme_manager().get_color('success')};'><b>NOT FOUND</b></span>")
                     elif "[ Skipped ]" in result_part:
-                        self.results_text.append(f"  ⏭️  {check_desc} <span style='color: #9E9E9E;'><i>SKIPPED</i></span>")
+                        self.results_text.append(f"  ⏭️  {check_desc} <span style='color: {get_theme_manager().get_color('muted_text')};'><i>SKIPPED</i></span>")
                     else:
                         # Generic result formatting
                         result_clean = result_part.replace("[", "").replace("]", "").strip()
@@ -6302,13 +4778,13 @@ System        {perf_status}"""
                 self.results_text.append(f"⚠️  <span style='color: #FF9800;'><b>WARNING:</b></span> {warning_text}")
                 return
             elif "ERROR" in formatted_line.upper():
-                self.results_text.append(f"  ❌ <span style='color: #F44336;'><b>ERROR:</b></span> {formatted_line.replace('ERROR:', '').strip()}")
+                self.results_text.append(f"  ❌ <span style='color: {get_theme_manager().get_color('error')};'><b>ERROR:</b></span> {formatted_line.replace('ERROR:', '').strip()}")
             elif ("INFECTED" in formatted_line.upper() or 
                   ("ROOTKIT" in formatted_line.upper() and 
                    not formatted_line.lower().startswith("checking") and
                    ("found" in formatted_line.lower() or "detected" in formatted_line.lower() or "positive" in formatted_line.lower()))):
                 # Only show threat detected for actual detections, not status messages
-                self.results_text.append(f"  🚨 <span style='color: #F44336;'><b>THREAT DETECTED:</b></span> {formatted_line}")
+                self.results_text.append(f"  🚨 <span style='color: {get_theme_manager().get_color('error')};'><b>THREAT DETECTED:</b></span> {formatted_line}")
             elif "INFO:" in formatted_line.upper():
                 info_msg = formatted_line.replace("INFO:", "").strip()
                 if info_msg:  # Only show if there's actual content
@@ -8912,7 +7388,7 @@ System        {perf_status}"""
             # Check if no reports found
             if not all_reports:
                 print("DEBUG: ❌ No report files found")
-                if self.current_theme == "dark":
+                if get_theme_manager().get_current_theme() == "dark":
                     no_reports_html = """
                     <style>
                         body {
@@ -9017,7 +7493,7 @@ System        {perf_status}"""
                 except Exception as e:
                     print(f"Error processing report {report.get('file_path', 'unknown')}: {e}")
 
-            if self.current_theme == "dark":
+            if get_theme_manager().get_current_theme() == "dark":
                 select_report_html = """
                 <style>
                     body {
@@ -9068,7 +7544,7 @@ System        {perf_status}"""
             self.report_viewer.setHtml(select_report_html)
 
         except Exception as e:
-            if self.current_theme == "dark":
+            if get_theme_manager().get_current_theme() == "dark":
                 error_html = f"""
                 <style>
                     body {{
@@ -9145,7 +7621,7 @@ System        {perf_status}"""
             # Legacy format handling for old ClamAV reports
             scan_id = report_info
             if not scan_id:
-                if self.current_theme == "dark":
+                if get_theme_manager().get_current_theme() == "dark":
                     no_id_html = """
                     <style>
                         body {
@@ -9200,7 +7676,7 @@ System        {perf_status}"""
             scan_result = self.report_manager.load_scan_result(scan_id)
 
             if not scan_result:
-                if self.current_theme == "dark":
+                if get_theme_manager().get_current_theme() == "dark":
                     load_error_html = f"""
                     <style>
                         body {{
@@ -9311,7 +7787,7 @@ System        {perf_status}"""
                 output += "</ul>"
 
             # Add CSS styling based on current theme
-            if self.current_theme == "dark":
+            if get_theme_manager().get_current_theme() == "dark":
                 # Dark mode styling with Strawberry color palette
                 output = f"""
                 <style>
@@ -9494,7 +7970,7 @@ System        {perf_status}"""
             self.report_viewer.setHtml(output)
 
         except Exception as e:
-            if self.current_theme == "dark":
+            if get_theme_manager().get_current_theme() == "dark":
                 final_error_html = f"""
                 <style>
                     body {{
@@ -10027,7 +8503,7 @@ System        {perf_status}"""
                     "activity_log_retention": int(
                         self.settings_activity_retention_combo.currentText()
                     ),
-                    "theme": self.current_theme,
+                    "theme": get_theme_manager().get_current_theme(),
                     "text_orientation": self.text_orientation_combo.currentText() if hasattr(self, 'text_orientation_combo') else "Centered",
                 },
                 "security_settings": {
@@ -10510,7 +8986,7 @@ System        {perf_status}"""
 
     def _show_report_error(self, message):
         """Show an error message in the report viewer."""
-        if self.current_theme == "dark":
+        if get_theme_manager().get_current_theme() == "dark":
             error_html = f"""
             <style>
                 body {{
@@ -10562,7 +9038,7 @@ System        {perf_status}"""
 
     def _apply_report_styling(self, output):
         """Apply theme-appropriate styling to report output."""
-        if self.current_theme == "dark":
+        if get_theme_manager().get_current_theme() == "dark":
             # Dark mode styling with Strawberry color palette
             styled_output = f"""
             <style>
