@@ -5196,7 +5196,9 @@ System        {perf_status}"""
         try:
             if hasattr(self, 'auto_updater'):
                 from gui.update_components import UpdateDialog
-                dialog = UpdateDialog(self.auto_updater, self)
+                # First argument must be the QWidget parent; second is current version string
+                current_version = getattr(self.auto_updater, 'current_version', '0.0.0')
+                dialog = UpdateDialog(self, current_version)
                 dialog.exec()
             else:
                 self.show_themed_message_box(
