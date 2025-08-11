@@ -193,14 +193,16 @@ class ScanThread(QThread, CooperativeCancellationMixin):
                         max_workers=max_workers,
                         timeout=1800,  # 30 minute timeout for full scans
                         include_hidden=False,  # Skip hidden files for performance
-                        memory_limit_mb=512    # Limit memory usage
+                        memory_limit_mb=512,   # Limit memory usage
+                        **self.scan_options    # Pass scan options to the scanner
                     )
                 except ImportError:
                     # Fallback if import fails
                     result = self.scanner.scan_directory(
                         self.path,
                         max_files=max_files,
-                        max_workers=max_workers
+                        max_workers=max_workers,
+                        **self.scan_options    # Pass scan options to the scanner
                     )
                 except Exception as scan_error:
                     self.status_updated.emit(f"Scan error: {str(scan_error)}")

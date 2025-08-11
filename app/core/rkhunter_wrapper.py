@@ -477,31 +477,30 @@ class RKHunterWrapper:
             pass
         return result
 
+    def _is_successful_scan(self, returncode: int, stdout: str) -> bool:
+        """Determine whether a rkhunter execution indicates a successful scan completion.
 
-def _is_successful_scan(returncode: int, stdout: str) -> bool:
-    """Determine whether a rkhunter execution indicates a successful scan completion.
+        Success criteria (tight to avoid false positives):
+        - Return code must be 0 (clean) or 1 (warnings) ONLY.
+        - Output must contain one of the known terminal sentinel phrases produced
+          at the end of a full rkhunter check run.
+        - Empty stdout is never success.
 
-    Success criteria (tight to avoid false positives):
-    - Return code must be 0 (clean) or 1 (warnings) ONLY.
-    - Output must contain one of the known terminal sentinel phrases produced
-      at the end of a full rkhunter check run.
-    - Empty stdout is never success.
+        Args:
+            returncode: Process return code.
+            stdout: Captured standard output text.
 
-    Args:
-        returncode: Process return code.
-        stdout: Captured standard output text.
-
-    Returns:
-        True if conditions classify as successful scan, else False.
-    """
-    if returncode not in (0, 1):
+        Returns:
+            True if conditions classify as successful scan, else False.
+        """
+        if returncode not in (0, 1):
+            return False
+        if not stdout:
+            return False
+        # Sentinel phrases drawn from typical end-of-run summary markers.
+        if ("Info: End date is" in stdout) or ("System checks summary" in stdout):
+            return True
         return False
-    if not stdout:
-        return False
-    # Sentinel phrases drawn from typical end-of-run summary markers.
-    if ("Info: End date is" in stdout) or ("System checks summary" in stdout):
-        return True
-    return False
 
     def _run_with_privilege_escalation_streaming(
             self,
@@ -697,14 +696,6 @@ def _is_successful_scan(returncode: int, stdout: str) -> bool:
         except Exception as e:  # pragma: no cover
             self.logger.error("RKHunter database update error: %s", e)
             return False
-
-
-# Import elevated_run for module-level usage/fallback (outside class)
-try:  # pragma: no cover - testing convenience
-    from .elevated_runner import elevated_run  # type: ignore  # noqa: F401
-except Exception:  # pragma: no cover
-    def elevated_run(*a, **k):  # type: ignore
-        raise RuntimeError("elevated_run unavailable")
 
     def scan_system_with_output_callback(self,
                     test_categories: Optional[List[str]] = None,
@@ -1240,3 +1231,11 @@ except Exception:  # pragma: no cover
         )
 
         return recommendations
+
+
+# Import elevated_run for module-level usage/fallback (outside class)
+try:  # pragma: no cover - testing convenience
+    from .elevated_runner import elevated_run  # type: ignore  # noqa: F401
+except Exception:  # pragma: no cover
+    def elevated_run(*a, **k):  # type: ignore
+        raise RuntimeError("elevated_run unavailable")

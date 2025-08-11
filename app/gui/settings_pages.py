@@ -1,5 +1,5 @@
 """Modular settings page builders separated from main_window for clarity."""
-from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QFormLayout, QHBoxLayout, QLabel, QCheckBox, QPushButton, QTextEdit)
+from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QFormLayout, QHBoxLayout, QLabel, QCheckBox, QPushButton, QTextEdit, QGroupBox, QSpinBox)
 from PyQt6.QtCore import QTime
 
 # Expect host MainWindow to provide helper widget classes: NoWheelComboBox, NoWheelSpinBox, NoWheelTimeEdit
@@ -106,6 +106,97 @@ def build_rkhunter_page(host):
 
 def build_interface_page(host):
     page = QWidget(); layout = QVBoxLayout(page)
-    from PyQt6.QtWidgets import QLabel
-    placeholder = QLabel('Additional interface customization options will appear here.')
-    placeholder.setWordWrap(True); layout.addWidget(placeholder); layout.addStretch(); return page
+    from PyQt6.QtWidgets import QLabel, QComboBox, QFormLayout
+    
+    # Create text orientation setting
+    if not hasattr(host, 'text_orientation_combo'):
+        host.text_orientation_combo = host.NoWheelComboBox() if hasattr(host, 'NoWheelComboBox') else QComboBox()
+        host.text_orientation_combo.addItems(['Left Aligned', 'Centered', 'Right Aligned'])
+        host.text_orientation_combo.setCurrentText('Centered')  # Default to current behavior
+        # Connect to apply changes immediately (this also triggers auto-save)
+        host.text_orientation_combo.currentTextChanged.connect(host.apply_text_orientation_setting)
+    
+    # Create form layout for settings
+    form = QFormLayout()
+    form.addRow('Scan Results Text Orientation:', host.text_orientation_combo)
+    
+    layout.addLayout(form)
+    layout.addStretch()
+    return page
+
+def build_updates_page(host):
+    """Build the auto-update settings page."""
+    page = QWidget()
+    layout = QVBoxLayout(page)
+    
+    # Auto-update settings group
+    update_group = QGroupBox("Auto-Update Settings")
+    form = QFormLayout(update_group)
+    
+    # Auto-check setting
+    if not hasattr(host, 'settings_auto_check_updates_cb'):
+        host.settings_auto_check_updates_cb = QCheckBox("Automatically check for updates")
+        host.settings_auto_check_updates_cb.setChecked(True)
+    form.addRow(host.settings_auto_check_updates_cb)
+    
+    # Check interval
+    if not hasattr(host, 'settings_update_check_interval_spin'):
+        host.settings_update_check_interval_spin = host.NoWheelSpinBox() if hasattr(host, 'NoWheelSpinBox') else QSpinBox()
+        host.settings_update_check_interval_spin.setRange(1, 30)
+        host.settings_update_check_interval_spin.setSuffix(" days")
+        host.settings_update_check_interval_spin.setValue(1)
+    form.addRow("Check interval:", host.settings_update_check_interval_spin)
+    
+    # Auto-download setting
+    if not hasattr(host, 'settings_auto_download_updates_cb'):
+        host.settings_auto_download_updates_cb = QCheckBox("Automatically download updates")
+        host.settings_auto_download_updates_cb.setChecked(False)
+    form.addRow(host.settings_auto_download_updates_cb)
+    
+    # Auto-install setting (with warning)
+    if not hasattr(host, 'settings_auto_install_updates_cb'):
+        host.settings_auto_install_updates_cb = QCheckBox("Automatically install updates")
+        host.settings_auto_install_updates_cb.setChecked(False)
+        host.settings_auto_install_updates_cb.setToolTip("Not recommended for security applications - manual review is safer")
+    form.addRow(host.settings_auto_install_updates_cb)
+    
+    layout.addWidget(update_group)
+    
+    # Current version info group
+    version_group = QGroupBox("Version Information")
+    version_form = QFormLayout(version_group)
+    
+    # Current version display
+    if not hasattr(host, 'current_version_label'):
+        from gui import APP_VERSION
+        host.current_version_label = QLabel(f"v{APP_VERSION}")
+        host.current_version_label.setStyleSheet("font-weight: bold;")
+    version_form.addRow("Current Version:", host.current_version_label)
+    
+    # Last update check
+    if not hasattr(host, 'last_update_check_label'):
+        host.last_update_check_label = QLabel("Never")
+    version_form.addRow("Last Update Check:", host.last_update_check_label)
+    
+    layout.addWidget(version_group)
+    
+    # Manual update controls
+    manual_group = QGroupBox("Manual Update")
+    manual_layout = QVBoxLayout(manual_group)
+    
+    # Check for updates button
+    if not hasattr(host, 'check_updates_button'):
+        host.check_updates_button = QPushButton("Check for Updates Now")
+        host.check_updates_button.clicked.connect(host.open_update_dialog)
+    manual_layout.addWidget(host.check_updates_button)
+    
+    # Update status label
+    if not hasattr(host, 'update_status_label'):
+        host.update_status_label = QLabel("Click 'Check for Updates Now' to check for the latest version")
+        host.update_status_label.setStyleSheet("color: #666; font-style: italic;")
+    manual_layout.addWidget(host.update_status_label)
+    
+    layout.addWidget(manual_group)
+    
+    layout.addStretch()
+    return page

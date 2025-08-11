@@ -427,7 +427,7 @@ class RKHunterScanThread(QThread, CooperativeCancellationMixin):
                         if not scan_started.is_set():
                             scan_started.set()
                             # Don't emit progress value here - let main window handle all progress
-                            self.progress_updated.emit("🔍 RKHunter scan is now running...")
+                            self.progress_updated.emit("RKHunter scan is now running...")
             
             def run_scan():
                 try:

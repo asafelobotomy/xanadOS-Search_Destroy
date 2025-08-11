@@ -55,7 +55,15 @@ LOG_DIR = DATA_DIR / "logs"
 
 # Create subdirectories
 SCAN_REPORTS_DIR.mkdir(exist_ok=True)
+
+# Create quarantine directory with secure permissions (0o700)
 QUARANTINE_DIR.mkdir(exist_ok=True)
+if os.name == "posix":  # Unix-like systems
+    try:
+        QUARANTINE_DIR.chmod(0o700)  # Only owner can read/write/execute
+    except (OSError, PermissionError) as e:
+        print(f"Warning: Could not set secure permissions on quarantine directory: {e}")
+
 LOG_DIR.mkdir(exist_ok=True)
 
 

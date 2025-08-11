@@ -1,5 +1,6 @@
 import json
 import os
+import signal
 import subprocess
 from datetime import datetime
 from pathlib import Path
@@ -7,8 +8,10 @@ from pathlib import Path
 from core.file_scanner import FileScanner
 from core.firewall_detector import get_firewall_status, toggle_firewall
 from core.rkhunter_wrapper import RKHunterScanResult, RKHunterWrapper
+from core.auto_updater import AutoUpdater, UpdateNotifier
 from gui.rkhunter_components import RKHunterScanDialog, RKHunterScanThread
 from gui.scan_thread import ScanThread
+from gui.update_components import UpdateNotifier
 from monitoring import MonitorConfig, MonitorState, RealTimeMonitor
 from PyQt6.QtCore import Qt, QTimer, QTime, pyqtSignal
 from PyQt6.QtGui import (
@@ -19,6 +22,7 @@ from PyQt6.QtGui import (
     QMouseEvent,
     QPixmap,
     QShortcut,
+    QTextOption,
     QWheelEvent,
 )
 from PyQt6.QtWidgets import (
@@ -130,17 +134,34 @@ class MainWindow(QMainWindow):
         self._pending_scan_request = None
         self._stop_scan_user_wants_restart = False
 
-        # 4. Initialize model state & UI
+        # 4. Initialize model state & UI (handles first-time UI build internally)
         self._initialize_scan_state()
-        self.init_ui()
+
+        # Initialize force quit tracking
+        self._force_quitting = False
+        
+        # Set up signal handlers for external termination
+        self._setup_signal_handlers()
 
         # 5. Theme
         try:
-            self.apply_theme(self.config.get("theme", "dark"))
+            self.apply_theme(self.config.get("ui_settings", {}).get("theme", "dark"))
         except Exception:
-            pass
+            self.apply_theme("dark")
+        
+        # 6. Apply text orientation setting at startup
+        try:
+            self.apply_text_orientation_setting()
+        except Exception:
+            pass  # Will use default center alignment
 
-        # 6. Debounced settings saver
+        # 7. Initialize auto-update system
+        try:
+            self._initialize_auto_updater()
+        except Exception as e:
+            print(f"Warning: Could not initialize auto-updater: {e}")
+
+        # 8. Debounced settings saver
         self._settings_save_timer = QTimer(self)
         self._settings_save_timer.setSingleShot(True)
         self._settings_save_timer.timeout.connect(self._auto_save_settings_commit)
@@ -172,11 +193,27 @@ class MainWindow(QMainWindow):
     def _make_timeout_spin(self):
         spin = NoWheelSpinBox(); spin.setRange(30,3600); spin.setValue(300); spin.setSuffix(' seconds'); return spin
     def _make_depth_combo(self):
-        combo = NoWheelComboBox(); combo.addItems(['Surface (Faster)','Normal','Deep (Thorough)']); combo.setCurrentIndex(1); return combo
+        combo = NoWheelComboBox()
+        combo.addItem('Surface (Faster)', 1)
+        combo.addItem('Normal', 2)  
+        combo.addItem('Deep (Thorough)', 3)
+        combo.setCurrentIndex(1)
+        return combo
     def _make_file_filter_combo(self):
-        combo = NoWheelComboBox(); combo.addItems(['All Files','Executables Only','Documents & Media','System Files']); return combo
+        combo = NoWheelComboBox()
+        combo.addItem('All Files', 'all')
+        combo.addItem('Executables Only', 'executables')
+        combo.addItem('Documents & Media', 'documents')
+        combo.addItem('System Files', 'system')
+        combo.setCurrentIndex(0)  # Default to "All Files"
+        return combo
     def _make_memory_limit_combo(self):
-        combo = NoWheelComboBox(); combo.addItems(['Low (512MB)','Normal (1GB)','High (2GB)']); combo.setCurrentIndex(1); return combo
+        combo = NoWheelComboBox()
+        combo.addItem('Low (512MB)', 512)
+        combo.addItem('Normal (1GB)', 1024)
+        combo.addItem('High (2GB)', 2048)
+        combo.setCurrentIndex(1)  # Default to "Normal (1GB)"
+        return combo
     def _make_frequency_combo(self):
         combo = NoWheelComboBox(); combo.addItems(['Daily','Weekly','Monthly']); return combo
     def _make_time_edit(self):
@@ -237,15 +274,47 @@ class MainWindow(QMainWindow):
         self.tooltip_detailed = False
         self.tooltip_timer = QTimer()
         self.tooltip_timer.setSingleShot(True)
-        self.tooltip_timer.timeout.connect(self.show_detailed_tooltip)
+
 
         # Theme management - default to dark mode
-        self.current_theme = self.config.get("theme", "dark")
+        self.current_theme = self.config.get("ui_settings", {}).get("theme", "dark")
 
-        self.init_ui()
-        self.setup_system_tray()
-        self.setup_accessibility()  # Add accessibility features
-        self.apply_theme()
+    def _setup_signal_handlers(self):
+        """Set up signal handlers for external termination detection."""
+        try:
+            # Handle common termination signals
+            def signal_handler(signum, frame):
+                self._force_quitting = True
+                # Attempt graceful shutdown
+                try:
+                    from PyQt6.QtWidgets import QApplication
+                    QApplication.quit()
+                except:
+                    pass
+            
+            # Set up handlers for SIGINT (Ctrl+C) and SIGTERM (kill command)
+            signal.signal(signal.SIGINT, signal_handler)
+            signal.signal(signal.SIGTERM, signal_handler)
+            
+            # On Unix systems, also handle SIGHUP (terminal close)
+            if hasattr(signal, 'SIGHUP'):
+                signal.signal(signal.SIGHUP, signal_handler)
+                
+        except Exception as e:
+            # Signal handling might not be available on all platforms
+            print(f"Warning: Could not set up signal handlers: {e}")
+
+        # IMPORTANT: The UI is already constructed in __init__. Historically this method re-ran
+        # init_ui() and other setup methods which caused duplicate widgets, signal connections,
+        # excessive memory use and occasional crashes during scans when progress callbacks tried
+        # to update stale/duplicate widgets. We remove those duplicate calls and add a guard so
+        # future refactors don't regress.
+        if getattr(self, "_ui_initialized", False):
+            pass  # UI already initialized safely
+        else:
+            # In rare cases if _initialize_scan_state() is called prior to explicit init, allow build
+            self.init_ui()
+            self._ui_initialized = True
 
         # Initialize real-time monitoring (with error handling)
         self.init_real_time_monitoring_safe()
@@ -272,6 +341,9 @@ class MainWindow(QMainWindow):
         # Mark initialization as complete - scheduler can now be started safely
         self._initialization_complete = True
         print("✅ Main window initialization complete - scheduler operations now enabled")
+        
+        # Add welcome message to results display
+        self._show_welcome_message()
         
         # Start scheduler if scheduled scans are enabled
         QTimer.singleShot(100, self.start_scheduler_if_enabled)
@@ -533,6 +605,9 @@ class MainWindow(QMainWindow):
 
         # Menu bar
         self.create_menu_bar()
+
+        # System tray setup
+        self.setup_system_tray()
 
     def create_header_section(self, layout):
         header_frame = QFrame()
@@ -881,11 +956,21 @@ class MainWindow(QMainWindow):
         
         if result.get('success', False):
             # Success - show message and update UI
+            success_msg = str(result.get('message', f'Firewall {action}d successfully'))
+            
+            # Check if alternative method was used
+            if 'method' in result:
+                method = result['method']
+                if method.startswith('iptables_direct'):
+                    success_msg += "\n\n⚠️ Note: Using direct iptables (UFW unavailable due to kernel module issues)"
+                elif method.startswith('systemd_'):
+                    success_msg += f"\n\n⚠️ Note: Using systemd service fallback ({method.split('_')[1]})"
+            
             self.add_activity_message(f"🔥 Firewall {action}d successfully from dashboard")
             self.show_themed_message_box(
                 "information",
                 "Firewall Control",
-                str(result.get('message', f'Firewall {action}d successfully'))
+                success_msg
             )
             # Force immediate status update
             self.update_firewall_status()
@@ -913,11 +998,32 @@ class MainWindow(QMainWindow):
             else:
                 print("🔍 DEBUG: Other error detected")
                 self.add_activity_message(f"❌ Failed to {action} firewall: {error_msg}")
-                self.show_themed_message_box(
-                    "critical",
-                    "Firewall Error",
-                    f"Failed to {action} firewall:\n{error_msg}",
-                )
+                
+                # Check if there's diagnostic information for kernel module issues
+                diagnosis = result.get('diagnosis', '')
+                if diagnosis:
+                    # Kernel module issue detected - show detailed dialog
+                    detailed_msg = f"Failed to {action} firewall:\n{error_msg}\n\n"
+                    detailed_msg += "Diagnostic Information:\n"
+                    detailed_msg += diagnosis
+                    detailed_msg += "\n\nSuggestions:\n"
+                    detailed_msg += "• Try 'Alternative Firewall Mode' - the app will attempt direct iptables rules\n"
+                    detailed_msg += "• Update your system and reboot: sudo pacman -Syu && sudo reboot\n"
+                    detailed_msg += "• Load modules manually: sudo modprobe iptable_filter iptable_nat\n"
+                    detailed_msg += "• Check if iptables packages are installed"
+                    
+                    self.show_themed_message_box(
+                        "critical",
+                        "Firewall Kernel Module Error",
+                        detailed_msg,
+                    )
+                else:
+                    # Regular error message
+                    self.show_themed_message_box(
+                        "critical",
+                        "Firewall Error",
+                        f"Failed to {action} firewall:\n{error_msg}",
+                    )
         print("🔍 DEBUG: toggle_firewall_from_dashboard() complete")
 
     def open_scan_tab(self):
@@ -1207,11 +1313,21 @@ class MainWindow(QMainWindow):
             
             if result.get('success', False):
                 # Success - show message and update UI
+                success_msg = str(result.get('message', f'Firewall {action}d successfully'))
+                
+                # Check if alternative method was used
+                if 'method' in result:
+                    method = result['method']
+                    if method.startswith('iptables_direct'):
+                        success_msg += "\n\n⚠️ Note: Using direct iptables (UFW unavailable due to kernel module issues)"
+                    elif method.startswith('systemd_'):
+                        success_msg += f"\n\n⚠️ Note: Using systemd service fallback ({method.split('_')[1]})"
+                
                 self.add_activity_message(f"🔥 Firewall {action}d successfully")
                 self.show_themed_message_box(
                     "information",
                     "Firewall Control",
-                    str(result.get('message', f'Firewall {action}d successfully'))
+                    success_msg
                 )
                 # Force immediate status update
                 self.update_firewall_status()
@@ -1235,11 +1351,32 @@ class MainWindow(QMainWindow):
                     )
                 else:
                     self.add_activity_message(f"❌ Failed to {action} firewall: {error_msg}")
-                    self.show_themed_message_box(
-                        "critical",
-                        "Firewall Control Error",
-                        f"Failed to {action} firewall:\n{str(result.get('message', error_msg))}"
-                    )
+                    
+                    # Check if there's diagnostic information for kernel module issues
+                    diagnosis = result.get('diagnosis', '')
+                    if diagnosis:
+                        # Kernel module issue detected - show detailed dialog
+                        detailed_msg = f"Failed to {action} firewall:\n{str(result.get('message', error_msg))}\n\n"
+                        detailed_msg += "Diagnostic Information:\n"
+                        detailed_msg += diagnosis
+                        detailed_msg += "\n\nSuggestions:\n"
+                        detailed_msg += "• Try 'Alternative Firewall Mode' - the app will attempt direct iptables rules\n"
+                        detailed_msg += "• Update your system and reboot: sudo pacman -Syu && sudo reboot\n"
+                        detailed_msg += "• Load modules manually: sudo modprobe iptable_filter iptable_nat\n"
+                        detailed_msg += "• Check if iptables packages are installed"
+                        
+                        self.show_themed_message_box(
+                            "critical",
+                            "Firewall Kernel Module Error",
+                            detailed_msg
+                        )
+                    else:
+                        # Regular error message
+                        self.show_themed_message_box(
+                            "critical",
+                            "Firewall Control Error",
+                            f"Failed to {action} firewall:\n{str(result.get('message', error_msg))}"
+                        )
             
         except Exception as e:
             # Handle unexpected errors
@@ -1267,6 +1404,100 @@ class MainWindow(QMainWindow):
                 )
             except (OSError, subprocess.SubprocessError):
                 self.firewall_toggle_btn.setText("Toggle Firewall")
+
+    def toggle_alternative_firewall(self):
+        """Toggle firewall using alternative methods when standard UFW fails."""
+        print("🔍 DEBUG: toggle_alternative_firewall() called")
+        
+        # Prevent multiple simultaneous operations
+        if hasattr(self, '_alt_firewall_change_from_gui') and self._alt_firewall_change_from_gui:
+            print("🔍 DEBUG: Alternative firewall operation already in progress")
+            return
+        
+        self._alt_firewall_change_from_gui = True
+        self.alt_firewall_btn.setEnabled(False)
+        self.alt_firewall_btn.setText("Working...")
+        
+        try:
+            # Determine current firewall state
+            current_status = get_firewall_status()
+            is_active = current_status.get('is_active', False)
+            
+            # Toggle the opposite state
+            enable_firewall = not is_active
+            action = "enable" if enable_firewall else "disable"
+            
+            self.add_activity_message(f"🔄 Attempting alternative firewall {action}...")
+            
+            # Use the alternative firewall method directly
+            from core.firewall_detector import FirewallDetector
+            detector = FirewallDetector()
+            
+            try:
+                result = detector._try_alternative_firewall_method(enable_firewall)
+                print(f"🔍 DEBUG: Alternative firewall result: {result}")
+            except Exception as e:
+                print(f"❌ DEBUG: Exception in alternative firewall: {e}")
+                import traceback
+                traceback.print_exc()
+                # Reset flag since operation failed
+                self._alt_firewall_change_from_gui = False
+                self.add_activity_message(f"❌ Error during alternative firewall {action}: {str(e)}")
+                self._restore_alt_firewall_button()
+                return
+            
+            if result.get('success', False):
+                # Success - show message and update UI
+                success_msg = str(result.get('message', f'Alternative firewall {action}d successfully'))
+                method = result.get('method', 'unknown')
+                
+                if method.startswith('iptables_direct'):
+                    success_msg += "\n\n✅ Used direct iptables rules for basic protection"
+                elif method.startswith('systemd_'):
+                    service_name = method.split('_')[1] if '_' in method else 'service'
+                    success_msg += f"\n\n✅ Used systemd service management ({service_name})"
+                
+                self.add_activity_message(f"🔥 Alternative firewall {action}d successfully")
+                self.show_themed_message_box(
+                    "information",
+                    "Alternative Firewall",
+                    success_msg
+                )
+                
+                # Force immediate status update
+                self.update_firewall_status()
+            else:
+                # Error - show error message and reset flag
+                self._alt_firewall_change_from_gui = False
+                error_msg = str(result.get('message', 'Unknown error'))
+                
+                self.add_activity_message(f"❌ Alternative firewall {action} failed: {error_msg}")
+                self.show_themed_message_box(
+                    "warning",
+                    "Alternative Firewall Failed",
+                    f"Alternative firewall methods failed:\n{error_msg}\n\n"
+                    f"This may indicate that your system needs a reboot to use newer kernel modules, "
+                    f"or that firewall packages need to be reinstalled."
+                )
+            
+        except Exception as e:
+            # Handle unexpected errors
+            error_msg = f"Unexpected error: {str(e)}"
+            self.add_activity_message(f"❌ Alternative firewall error: {error_msg}")
+            self.show_themed_message_box(
+                "critical",
+                "Alternative Firewall Error",
+                f"An unexpected error occurred:\n{error_msg}"
+            )
+        
+        self._alt_firewall_change_from_gui = False
+        self._restore_alt_firewall_button()
+
+    def _restore_alt_firewall_button(self):
+        """Restore the alternative firewall button to its normal state."""
+        if hasattr(self, 'alt_firewall_btn'):
+            self.alt_firewall_btn.setEnabled(True)
+            self.alt_firewall_btn.setText("Alt Mode")
 
     def create_scan_tab(self):
         # DEBUG: log available rkhunter attributes related to availability/version
@@ -1298,6 +1529,12 @@ class MainWindow(QMainWindow):
         self.results_text.setReadOnly(True)
         self.results_text.setAcceptRichText(True)  # Enable HTML formatting
         self.results_text.setMinimumHeight(160)  # Minimum for readability
+        
+        # Set default text alignment to center
+        doc = self.results_text.document()
+        option = doc.defaultTextOption()
+        option.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        doc.setDefaultTextOption(option)
         
         # Initialize autoscroll tracking
         self._user_has_scrolled = False
@@ -1591,6 +1828,7 @@ class MainWindow(QMainWindow):
             ("Security", settings_pages.build_security_page),
             ("RKHunter", settings_pages.build_rkhunter_page),
             ("Interface", settings_pages.build_interface_page),
+            ("Updates", settings_pages.build_updates_page),
         ]
         for label, builder in self._settings_pages_builders:
             page = builder(self)
@@ -1609,27 +1847,6 @@ class MainWindow(QMainWindow):
             self.settings_pages.setCurrentIndex(row)
 
     # Removed inline page builder methods; now in settings_pages module.
-
-    # SECURITY SETTINGS SECTION (LEGACY - MIGRATED TO MODULAR 'Security' PAGE)
-    # (Removed to prevent duplicate widget creation during modular migration)
-    # security_group = QGroupBox("Security Settings")
-    # security_layout = QFormLayout(security_group)
-    # security_layout.setSpacing(15)
-    # self.settings_auto_update_cb = QCheckBox("Auto-update Virus Definitions")
-    # self.settings_auto_update_cb.setChecked(True)
-    # self.settings_auto_update_cb.setMinimumHeight(35)
-    # self.settings_auto_update_cb.setToolTip(self._format_tooltip("Automatically download and install the latest virus definition updates..."))
-    # security_layout.addRow(self.settings_auto_update_cb)
-    # left_column_layout.addWidget(security_group)
-
-        # security_layout.addRow(self.settings_auto_update_cb)
-
-        # left_column_layout.addWidget(security_group)
-
-        # SCHEDULED SCAN SETTINGS SECTION (LEFT COLUMN)
-    # (Legacy scheduled and real-time protection sections removed.)
-
-    # (Removed legacy RKHunter integration block; now provided via modular page builder.)
 
     def _build_settings_page_security(self):
         page = QWidget(); layout = QVBoxLayout(page)
@@ -1831,8 +2048,19 @@ class MainWindow(QMainWindow):
         self.firewall_toggle_btn.setToolTip(
             "Click to enable or disable the firewall")
 
+        # Add alternative firewall button for older kernel compatibility
+        self.alt_firewall_btn = QPushButton("Alt Mode")
+        self.alt_firewall_btn.clicked.connect(self.toggle_alternative_firewall)
+        self.alt_firewall_btn.setMinimumHeight(35)
+        self.alt_firewall_btn.setObjectName("secondaryButton")
+        self.alt_firewall_btn.setToolTip(
+            "Alternative firewall mode for older kernels or when UFW fails")
+        self.alt_firewall_btn.setMaximumWidth(80)
+
         firewall_button_layout.addStretch()
         firewall_button_layout.addWidget(self.firewall_toggle_btn)
+        firewall_button_layout.addSpacing(10)
+        firewall_button_layout.addWidget(self.alt_firewall_btn)
         firewall_button_layout.addStretch()
         firewall_layout.addLayout(firewall_button_layout)
 
@@ -2753,6 +2981,15 @@ class MainWindow(QMainWindow):
         help_menu = QMenu("Help", self)
         menu_bar.addMenu(help_menu)
 
+        # Check for Updates menu item
+        update_action = QAction("Check for Updates", self)
+        update_action.triggered.connect(self.check_for_updates_manual)
+        update_action.setStatusTip("Check for application updates")
+        help_menu.addAction(update_action)
+        
+        # Separator
+        help_menu.addSeparator()
+
         about_action = QAction("About", self)
         about_action.triggered.connect(self.show_about)
         help_menu.addAction(about_action)
@@ -2856,9 +3093,7 @@ System        {perf_status}"""
             self.tray_icon.setToolTip("S&D - Search & Destroy")
             print(f"Error updating tray tooltip: {e}")
 
-    def show_detailed_tooltip(self):
-        """Deprecated - now using single tooltip display only."""
-        pass
+
 
     def setup_accessibility(self):
         """Set up accessibility features including keyboard shortcuts and ARIA-like labels."""
@@ -2932,7 +3167,9 @@ System        {perf_status}"""
     def set_theme(self, theme):
         """Set the application theme and save to config."""
         self.current_theme = theme
-        self.config["theme"] = theme
+        if "ui_settings" not in self.config:
+            self.config["ui_settings"] = {}
+        self.config["ui_settings"]["theme"] = theme
         save_config(self.config)
         self.apply_theme()
         self.update_theme_menu()
@@ -4814,6 +5051,136 @@ System        {perf_status}"""
         # In a full implementation, you could detect system theme preference
         self.apply_light_theme()
 
+    def apply_text_orientation_setting(self, orientation_text=None):
+        """Apply text orientation setting to scan results display."""
+        try:
+            # Get the orientation from parameter or settings
+            if orientation_text is None:
+                ui_settings = self.config.get("ui_settings", {})
+                orientation_text = ui_settings.get("text_orientation", "Centered")
+            
+            # Map text orientation to Qt alignment flags
+            alignment_map = {
+                "Left Aligned": Qt.AlignmentFlag.AlignLeft,
+                "Centered": Qt.AlignmentFlag.AlignCenter,
+                "Right Aligned": Qt.AlignmentFlag.AlignRight
+            }
+            
+            alignment = alignment_map.get(orientation_text, Qt.AlignmentFlag.AlignCenter)
+            
+            # Apply the alignment to the results text widget
+            if hasattr(self, 'results_text') and self.results_text:
+                doc = self.results_text.document()
+                option = doc.defaultTextOption()
+                option.setAlignment(alignment)
+                doc.setDefaultTextOption(option)
+                
+                # Force a repaint to apply the alignment to existing text
+                self.results_text.update()
+                
+                print(f"✅ Applied text orientation: {orientation_text}")
+            
+            # Auto-save the setting if it was changed via UI
+            if orientation_text and hasattr(self, 'text_orientation_combo'):
+                # Only auto-save if the timer is initialized
+                if hasattr(self, '_settings_save_timer'):
+                    self.auto_save_settings()
+                
+        except Exception as e:
+            print(f"❌ Error applying text orientation: {e}")
+
+    def _initialize_auto_updater(self):
+        """Initialize the auto-update system."""
+        try:
+            from pathlib import Path
+            
+            # Read current version from VERSION file
+            version_file = Path(__file__).parent.parent.parent / "VERSION"
+            try:
+                current_version = version_file.read_text().strip()
+            except (FileNotFoundError, IOError):
+                current_version = "2.4.0"  # Fallback version
+                
+            # Repository information
+            # Initialize the auto-updater with configuration
+            self.auto_updater = AutoUpdater(current_version=current_version)
+            
+            # Initialize the update notifier  
+            self.update_notifier = UpdateNotifier(self.auto_updater, self)
+            
+            # Check for updates in the background if auto-check is enabled
+            settings = self.load_settings()
+            auto_check = settings.get('auto_check_updates', True)
+            check_interval = settings.get('update_check_interval', 24)  # hours
+            
+            if auto_check:
+                # Set up periodic update checking
+                self.update_check_timer = QTimer()
+                self.update_check_timer.timeout.connect(self.update_notifier.check_for_updates_background)
+                self.update_check_timer.start(check_interval * 60 * 60 * 1000)  # Convert hours to milliseconds
+                
+                # Do an initial check (delayed by 30 seconds to avoid blocking startup)
+                QTimer.singleShot(30000, self.update_notifier.check_for_updates_background)
+                
+            print("✅ Auto-updater initialized successfully")
+            
+        except Exception as e:
+            print(f"❌ Error initializing auto-updater: {e}")
+
+    def check_for_updates_manual(self):
+        """Manually check for updates when user clicks Help menu item."""
+        if hasattr(self, 'update_notifier') and self.update_notifier:
+            self.update_notifier.check_for_updates()
+        else:
+            from PyQt6.QtWidgets import QMessageBox
+            QMessageBox.warning(self, "Update Check", 
+                              "Auto-updater is not initialized. Please restart the application.")
+
+    def get_update_settings(self):
+        """Get current auto-update settings."""
+        try:
+            settings = self.load_settings()
+            return settings.get('auto_update_settings', {
+                'auto_check_updates': True,
+                'auto_download_updates': False,
+                'update_check_interval': 24
+            })
+        except Exception:
+            return {
+                'auto_check_updates': True,
+                'auto_download_updates': False,
+                'update_check_interval': 24
+            }
+
+    def load_settings(self):
+        """Load and return current settings from config."""
+        try:
+            return self.config
+        except Exception:
+            # Return defaults if config is not available
+            from utils.config import get_factory_defaults
+            return get_factory_defaults()
+
+    def open_update_dialog(self):
+        """Open the update dialog for manual update checking."""
+        try:
+            if hasattr(self, 'auto_updater'):
+                from gui.update_components import UpdateDialog
+                dialog = UpdateDialog(self.auto_updater, self)
+                dialog.exec()
+            else:
+                self.show_themed_message_box(
+                    "warning", 
+                    "Updates", 
+                    "Auto-updater is not initialized. Please restart the application."
+                )
+        except Exception as e:
+            self.show_themed_message_box(
+                "warning", 
+                "Error", 
+                f"Could not open update dialog: {str(e)}"
+            )
+
     def set_scan_path(self, path):
         """Set the scan path and update the UI."""
         if os.path.exists(path):
@@ -5067,7 +5434,7 @@ System        {perf_status}"""
 
         self.update_scan_button_state(True)  # Set to "Stop Scan" mode
         self.progress_bar.setValue(0)
-        self.results_text.clear()
+        self._clear_results_with_header()
         
         # Reset autoscroll tracking for new scan
         self._user_has_scrolled = False
@@ -5268,9 +5635,8 @@ System        {perf_status}"""
         # Start RKHunter scan first
         self.status_label.setText("RKHunter scan starting...")
         
-        # Add specific message for combined scans about the grace period
+        # Add message for combined scans
         self.results_text.append("\n🔍 Starting RKHunter scan (part of combined security scan)...")
-        self.results_text.append("⏱️ Grace period: You can stop this scan without re-authentication for 30 seconds after it starts\n")
         
         # Update button state to show scan is running
         self.update_scan_button_state(True)
@@ -5308,7 +5674,7 @@ System        {perf_status}"""
         self.display_rkhunter_results(rkhunter_result)
 
         # Add separator
-        self.results_text.append("\n" + "=" * 60 + "\n")
+        self.results_text.append("\n" + "=" * 45 + "\n")
 
         # Retrieve the stored scan parameters
         clamav_params = getattr(self, '_pending_clamav_scan', {"quick_scan": False, "scan_options": None})
@@ -5343,9 +5709,9 @@ System        {perf_status}"""
         self.save_rkhunter_report(rkhunter_result)
 
         # Create combined summary
-        self.results_text.append("\n" + "=" * 60)
+        self.results_text.append("\n" + "=" * 45)
         self.results_text.append("\n🔒 COMPREHENSIVE SECURITY SCAN SUMMARY")
-        self.results_text.append("=" * 60)
+        self.results_text.append("=" * 45)
 
         # RKHunter summary (ran first)
         self.results_text.append(f"\n🔍 RKHunter Results (Rootkit Detection):")
@@ -5388,13 +5754,13 @@ System        {perf_status}"""
             self.results_text.append(
                 "   Review findings and take appropriate action.")
 
-        self.results_text.append("\n" + "=" * 60)
+        self.results_text.append("\n" + "=" * 45)
         
-        # Add grace period reminder for future combined scans
+        # Add reminder for future combined scans
         self.results_text.append("\n💡 Security Scan Tips:")
         self.results_text.append("   • Combined scans provide comprehensive protection")
-        self.results_text.append("   • You can stop scans without re-authentication within 30 seconds of starting")
         self.results_text.append("   • RKHunter (rootkit detection) runs first, then ClamAV (malware detection)")
+        self.results_text.append("   • Regular combined scans help maintain system security")
 
         # Complete the scan
         self.scan_completed(clamav_result)
@@ -5514,7 +5880,9 @@ System        {perf_status}"""
     def start_rkhunter_scan(self):
         """Start an RKHunter rootkit scan."""
         # Check if already running
-        if self.current_rkhunter_thread and self.current_rkhunter_thread.isRunning():
+        if (hasattr(self, 'current_rkhunter_thread') and 
+            self.current_rkhunter_thread and 
+            self.current_rkhunter_thread.isRunning()):
             self.show_themed_message_box(
                 "warning",
                 "Scan in Progress",
@@ -5694,6 +6062,11 @@ System        {perf_status}"""
                 files_remaining = detail_info.get("files_remaining", 0)
                 total_files = detail_info.get("total_files", 0)
                 
+                # Track actual files processed for statistics correction
+                if not hasattr(self, '_scan_files_actually_processed'):
+                    self._scan_files_actually_processed = 0
+                self._scan_files_actually_processed = files_completed
+                
                 # Initialize or get existing directory information
                 if not hasattr(self, '_scan_directories_info'):
                     self._scan_directories_info = {}
@@ -5709,13 +6082,18 @@ System        {perf_status}"""
                         "total_files": 0
                     }
                 
-                # Update directory info
+                # Check if file has already been displayed (to prevent duplicates)
+                file_already_displayed = False
                 if scan_result == "clean":
                     if current_file not in self._scan_directories_info[current_dir]["clean_files"]:
                         self._scan_directories_info[current_dir]["clean_files"].append(current_file)
+                    else:
+                        file_already_displayed = True
                 elif scan_result == "infected":
                     if current_file not in self._scan_directories_info[current_dir]["infected_files"]:
                         self._scan_directories_info[current_dir]["infected_files"].append(current_file)
+                    else:
+                        file_already_displayed = True
                 
                 # Get the main scan directory for grouping purposes
                 main_scan_dir = self._get_main_scan_directory(current_dir)
@@ -5746,11 +6124,12 @@ System        {perf_status}"""
                     
                     self._last_displayed_directory = current_dir
                 
-                # Display clean file
-                if scan_result == "clean":
-                    self._append_with_autoscroll(f"    ✅ {current_file}")
-                elif scan_result == "infected":
-                    self.results_text.append(f"    � <span style='color: #F44336;'><b>INFECTED:</b></span> {current_file}")
+                # Display file only if not already displayed (prevents duplicates)
+                if not file_already_displayed:
+                    if scan_result == "clean":
+                        self._append_with_autoscroll(f"    ✅ {current_file}")
+                    elif scan_result == "infected":
+                        self.results_text.append(f"    🚨 <span style='color: #F44336;'><b>INFECTED:</b></span> {current_file}")
                 
         except Exception as e:
             print(f"Error in detailed scan progress: {e}")
@@ -6079,8 +6458,8 @@ System        {perf_status}"""
                     self._rkhunter_scan_actually_started = True
                     self._rkhunter_max_progress = 0  # Reset to ensure clean start
                     
-                    # Notify user about grace period for stopping
-                    self.results_text.append("✅ RKHunter scan started - you can stop the scan without re-authentication for the next 30 seconds\n")
+                    # Notify user that scan has started
+                    self.results_text.append("✅ RKHunter scan started successfully\n")
                 else:
                     # Scan hasn't started yet, don't update progress
                     return
@@ -6261,58 +6640,152 @@ System        {perf_status}"""
         else:
             self.status_label.setText("✅ RKHunter scan completed successfully")
         
-        # Add info about the grace period feature for future scans
-        self.results_text.append("\n💡 Tip: You can stop RKHunter scans without re-authentication within 30 seconds of starting them.\n")
+        # Add scan completion info
+        self.results_text.append("\n💡 Tip: Regular RKHunter scans help maintain system security.\n")
 
     def display_rkhunter_results(self, result: RKHunterScanResult):
-        """Display RKHunter scan results in the results text area."""
-        output = "\n🔍 RKHunter Rootkit Scan Results\n"
-        output += "=" * 50 + "\n"
-
-        # Scan summary
+        """Display comprehensive RKHunter scan results in the results text area."""
+        # Create a separator for multiple scans
+        if self.results_text.toPlainText().strip():
+            self.results_text.append("\n" + "="*60 + "\n")
+        
+        # Header with scan completion status
+        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         duration = (
             (result.end_time - result.start_time).total_seconds()
             if result.end_time
             else 0
         )
-        output += f"Scan Duration: {duration:.1f} seconds\n"
-        output += f"Tests Run: {result.tests_run}\n"
-        output += f"Warnings: {result.warnings_found}\n"
-        output += f"Infections: {result.infections_found}\n"
-        output += f"Skipped: {result.skipped_tests}\n\n"
-
-        # Overall status
-        if result.infections_found > 0:
-            output += "🚨 **CRITICAL**: Potential rootkits detected!\n\n"
-        elif result.warnings_found > 0:
-            output += "⚠️  Warnings found - review carefully\n\n"
+        
+        # Format duration nicely
+        if duration < 60:
+            formatted_time = f"{duration:.1f} seconds"
         else:
-            output += "✅ No rootkits detected\n\n"
+            minutes = int(duration // 60)
+            seconds = duration % 60
+            formatted_time = f"{minutes}m {seconds:.1f}s"
+        
+        # Determine scan status and icon
+        if result.infections_found > 0:
+            self.results_text.append(f"🚨 RKHUNTER SCAN COMPLETED - {result.infections_found} INFECTIONS FOUND")
+            status_icon = "🚨"
+        elif result.warnings_found > 0:
+            self.results_text.append(f"⚠️  RKHUNTER SCAN COMPLETED - {result.warnings_found} WARNINGS FOUND")
+            status_icon = "⚠️"
+        else:
+            self.results_text.append("✅ RKHUNTER SCAN COMPLETED - NO THREATS FOUND")
+            status_icon = "✅"
+        
+        self.results_text.append(f"📅 Completed at: {timestamp}")
+        self.results_text.append("")
 
-        # Add explanation buttons for warnings (without detailed findings)
-        if result.findings and any(f.result.value == "warning" for f in result.findings):
-            warning_count = sum(1 for f in result.findings if f.result.value == "warning")
-            output += "=" * 30 + "\n"
-            output += "📖 Warning Explanations Available\n"
-            output += "=" * 30 + "\n"
-            output += f"Found {warning_count} warning{'s' if warning_count != 1 else ''} that require attention.\n"
-            output += "Use the button below to view detailed explanations\n"
-            output += "and remediation guidance for each warning.\n\n"
+        # Scan details section
+        self.results_text.append("📊 SCAN DETAILS:")
+        self.results_text.append(f"   🔍 Type: RKHunter Rootkit Detection")
+        self.results_text.append(f"   📈 Tests run: {result.tests_run}")
+        self.results_text.append(f"   ⏱️  Duration: {formatted_time}")
+        self.results_text.append(f"   🔧 Scan ID: {result.scan_id}")
+        self.results_text.append("")
+
+        # Results summary section
+        self.results_text.append("📋 SCAN SUMMARY:")
+        self.results_text.append(f"   🚨 Infections found: {result.infections_found}")
+        self.results_text.append(f"   ⚠️  Warnings found: {result.warnings_found}")
+        self.results_text.append(f"   ⏭️  Tests skipped: {result.skipped_tests}")
+        self.results_text.append("")
+
+        # Overall status assessment
+        if result.infections_found > 0:
+            self.results_text.append("🚨 CRITICAL SECURITY ALERT:")
+            self.results_text.append("   Potential rootkits or malware detected!")
+            self.results_text.append("   Immediate action required to secure your system.")
+            self.results_text.append("")
+        elif result.warnings_found > 0:
+            self.results_text.append("⚠️  ATTENTION REQUIRED:")
+            self.results_text.append("   System configuration issues detected.")
+            self.results_text.append("   Review warnings carefully for security implications.")
+            self.results_text.append("")
+        else:
+            self.results_text.append("✅ SYSTEM STATUS: CLEAN")
+            self.results_text.append("   No rootkits or suspicious activity detected.")
+            self.results_text.append("   Your system appears secure.")
+            self.results_text.append("")
+
+        # Detailed findings section
+        if result.findings:
+            # Group findings by severity
+            infections = [f for f in result.findings if f.result.value == "infection"]
+            warnings = [f for f in result.findings if f.result.value == "warning"]
+            clean = [f for f in result.findings if f.result.value == "clean"]
             
-            # Store findings for button access
-            self._current_rkhunter_findings = result.findings
+            if infections:
+                self.results_text.append(f"🚨 INFECTIONS DETECTED ({len(infections)}):")
+                for i, finding in enumerate(infections[:10], 1):  # Show first 10
+                    self.results_text.append(f"   {i}. {finding.test_name}")
+                    if hasattr(finding, 'details') and finding.details:
+                        self.results_text.append(f"      ℹ️ Details: {finding.details}")
+                    if hasattr(finding, 'file_path') and finding.file_path:
+                        display_path = self.format_target_display(finding.file_path)
+                        self.results_text.append(f"      📁 Location: {display_path}")
+                if len(infections) > 10:
+                    self.results_text.append(f"   ... and {len(infections)-10} more infections")
+                self.results_text.append("")
+            
+            if warnings:
+                self.results_text.append(f"⚠️  WARNINGS DETECTED ({len(warnings)}):")
+                for i, finding in enumerate(warnings[:10], 1):  # Show first 10
+                    self.results_text.append(f"   {i}. {finding.test_name}")
+                    if hasattr(finding, 'details') and finding.details:
+                        self.results_text.append(f"      📄 Details: {finding.details}")
+                if len(warnings) > 10:
+                    self.results_text.append(f"   ... and {len(warnings)-10} more warnings")
+                self.results_text.append("")
+                
+                # Store findings for explanation button
+                self._current_rkhunter_findings = result.findings
+                
+                self.results_text.append("📖 DETAILED EXPLANATIONS AVAILABLE:")
+                self.results_text.append("   Use the 'Explain Warnings' button below for")
+                self.results_text.append("   detailed analysis and remediation guidance.")
+                self.results_text.append("")
 
-        # Recommendations
+        # Recommendations section
         recommendations = self.rkhunter.get_scan_recommendations(result)
         if recommendations:
-            output += "\n\nRecommendations:\n"
-            for rec in recommendations:
-                output += f"{rec}\n"
+            self.results_text.append("🔧 RECOMMENDED ACTIONS:")
+            for i, rec in enumerate(recommendations, 1):
+                self.results_text.append(f"   {i}. {rec}")
+            self.results_text.append("")
+        elif result.infections_found == 0 and result.warnings_found == 0:
+            self.results_text.append("💡 MAINTENANCE RECOMMENDATIONS:")
+            self.results_text.append("   • Run regular rootkit scans weekly")
+            self.results_text.append("   • Keep system packages updated")
+            self.results_text.append("   • Monitor system logs for unusual activity")
+            self.results_text.append("   • Enable file integrity monitoring")
+            self.results_text.append("")
 
-        self.results_text.append(output)
+        # Performance and scan statistics
+        if hasattr(result, 'scan_stats') or duration > 0:
+            self.results_text.append("📈 SCAN STATISTICS:")
+            if duration > 0:
+                tests_per_second = result.tests_run / duration if duration > 0 else 0
+                self.results_text.append(f"   ⚡ Performance: {tests_per_second:.1f} tests/second")
+            if hasattr(result, 'memory_usage'):
+                self.results_text.append(f"   💾 Memory usage: {result.memory_usage}")
+            self.results_text.append("")
+
+        # Add helpful tip
+        self.results_text.append("💡 TIP:")
+        self.results_text.append("   Regular RKHunter scans help detect rootkits and system integrity issues.")
+        self.results_text.append("   Consider scheduling automated scans for ongoing protection.")
         
         # Add explanation buttons for warnings if any exist
         self._add_warning_explanation_buttons(result)
+        
+        # Scroll to bottom to show latest results
+        cursor = self.results_text.textCursor()
+        cursor.movePosition(cursor.MoveOperation.End)
+        self.results_text.setTextCursor(cursor)
 
     def save_rkhunter_report(self, result: RKHunterScanResult):
         """Save RKHunter scan results to a report file."""
@@ -6753,28 +7226,48 @@ System        {perf_status}"""
         print(f"\n🛑 === STOP_SCAN CALLED ===")
         print(f"DEBUG: stop_scan() called")
         print(f"DEBUG: Current scan state: {self._scan_state}")
-        print(f"DEBUG: Current thread exists: {self.current_scan_thread is not None}")
-        print(f"DEBUG: Thread running: {self.current_scan_thread.isRunning() if self.current_scan_thread else 'N/A'}")
+        print(f"DEBUG: Current scan thread exists: {self.current_scan_thread is not None}")
+        print(f"DEBUG: Scan thread running: {self.current_scan_thread.isRunning() if self.current_scan_thread else 'N/A'}")
+        print(f"DEBUG: Current RKHunter thread exists: {hasattr(self, 'current_rkhunter_thread') and self.current_rkhunter_thread is not None}")
+        print(f"DEBUG: RKHunter thread running: {self.current_rkhunter_thread.isRunning() if hasattr(self, 'current_rkhunter_thread') and self.current_rkhunter_thread else 'N/A'}")
         print(f"DEBUG: Manual stop flag: {self._scan_manually_stopped}")
         
-        if (self.current_scan_thread and self.current_scan_thread.isRunning()) or (self.current_rkhunter_thread and self.current_rkhunter_thread.isRunning()):
-            print("DEBUG: 🔍 Thread is running, showing confirmation dialog")
+        # Check if any scan threads are running (with safe error handling)
+        clamav_running = False
+        rkhunter_running = False
+        
+        try:
+            clamav_running = self.current_scan_thread and self.current_scan_thread.isRunning()
+        except Exception as e:
+            print(f"DEBUG: ⚠️ Error checking ClamAV thread state: {e}")
+            # If we can't check state, assume it might be running
+            clamav_running = self.current_scan_thread is not None
+        
+        try:
+            rkhunter_running = (hasattr(self, 'current_rkhunter_thread') and 
+                              self.current_rkhunter_thread and 
+                              self.current_rkhunter_thread.isRunning())
+        except Exception as e:
+            print(f"DEBUG: ⚠️ Error checking RKHunter thread state: {e}")
+            # If we can't check state, assume it might be running
+            rkhunter_running = (hasattr(self, 'current_rkhunter_thread') and 
+                              self.current_rkhunter_thread is not None)
+        
+        if clamav_running or rkhunter_running:
+            print("DEBUG: 🔍 At least one thread is running, showing confirmation dialog")
             
             # Determine what type of scan is running
-            scan_type = "scan"
-            grace_period_message = ""
-            if self.current_rkhunter_thread and self.current_rkhunter_thread.isRunning():
-                if self.current_scan_thread and self.current_scan_thread.isRunning():
-                    scan_type = "combined scan (RKHunter + ClamAV)"
-                    grace_period_message = "\n\n⏱️ RKHunter can be stopped without re-authentication if within 30 seconds of starting."
-                else:
-                    scan_type = "RKHunter scan"
-                    grace_period_message = "\n\n⏱️ Can be stopped without re-authentication if within 30 seconds of starting."
+            if clamav_running and rkhunter_running:
+                scan_type = "combined scan (RKHunter + ClamAV)"
+            elif rkhunter_running:
+                scan_type = "RKHunter scan"
+            else:
+                scan_type = "ClamAV scan"
             
             # Show confirmation dialog first
             reply = QMessageBox.question(
                 self, "Confirm Stop Scan",
-                f"Are you sure you want to stop the current {scan_type}?\n\nNote: The scan may take a few moments to finish safely.{grace_period_message}",
+                f"Are you sure you want to stop the current {scan_type}?\n\nNote: The scan may take a few moments to finish safely.",
                 QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
                 QMessageBox.StandardButton.Yes
             )
@@ -6792,87 +7285,109 @@ System        {perf_status}"""
                 # Update UI to show stopping state
                 self.scan_toggle_btn.setEnabled(False)  # Disable during stopping process
                 self.progress_bar.setValue(100)  # Start progress bar at 100% for stop countdown
-                self.status_label.setText("🛑 Stopping scan - please wait...")  # Update status label
+                self.status_label.setText("🛑 Stopping scan - please wait...")
                 self.status_bar.showMessage("🛑 Stopping scan safely - please wait...")
                 
-                # Add grace period message for RKHunter scans
-                if self.current_rkhunter_thread and self.current_rkhunter_thread.isRunning():
-                    self.results_text.append("\n🛑 Scan stop requested - using grace period termination if available...")
+                # Add appropriate message based on what's running
+                if rkhunter_running:
+                    self.results_text.append("\n🛑 Scan stop requested - stopping RKHunter scan safely...")
                 else:
                     self.results_text.append("\n🛑 Scan stop requested - finishing current files...")
                 
                 print("DEBUG: 📱 UI updated to stopping state")
                 
-                # Cancel the scan gracefully
-                if hasattr(self.current_scan_thread, 'stop_scan'):
-                    print("DEBUG: 🛑 Calling ClamAV thread.stop_scan()")
-                    self.current_scan_thread.stop_scan()
-                
-                # Cancel RKHunter scan if running
-                if self.current_rkhunter_thread and self.current_rkhunter_thread.isRunning():
-                    print("DEBUG: 🛑 Calling RKHunter thread.stop_scan()")
-                    if hasattr(self.current_rkhunter_thread, 'stop_scan'):
+                # Stop threads in the right order - stop RKHunter first if running
+                if rkhunter_running:
+                    print("DEBUG: 🛑 Stopping RKHunter thread first")
+                    if (hasattr(self, 'current_rkhunter_thread') and 
+                        self.current_rkhunter_thread and 
+                        hasattr(self.current_rkhunter_thread, 'stop_scan')):
                         self.current_rkhunter_thread.stop_scan()
-                    self.current_rkhunter_thread.requestInterruption()
+                    if (hasattr(self, 'current_rkhunter_thread') and 
+                        self.current_rkhunter_thread):
+                        self.current_rkhunter_thread.requestInterruption()
                 
-                # Disconnect signals to prevent completion events during stop
-                try:
-                    # Disconnect only our specific connections to avoid affecting other signals
-                    if hasattr(self.current_scan_thread, 'scan_completed'):
-                        try:
-                            self.current_scan_thread.scan_completed.disconnect(self.scan_completed)
-                        except TypeError:
-                            # Already disconnected or not connected to this slot
-                            pass
-                    if hasattr(self.current_scan_thread, 'progress_updated'):
-                        try:
-                            self.current_scan_thread.progress_updated.disconnect(self.progress_bar.setValue)
-                        except TypeError:
-                            # Already disconnected or not connected to this slot
-                            pass
-                    if hasattr(self.current_scan_thread, 'status_updated'):
-                        try:
-                            self.current_scan_thread.status_updated.disconnect(self.status_label.setText)
-                        except TypeError:
-                            # Already disconnected or not connected to this slot
-                            pass
-                    if hasattr(self.current_scan_thread, 'scan_detail_updated'):
-                        try:
-                            self.current_scan_thread.scan_detail_updated.disconnect(self.handle_detailed_scan_progress)
-                        except TypeError:
-                            # Already disconnected or not connected to this slot
-                            pass
-                    print("DEBUG: ✅ Signals disconnected successfully")
-                except Exception as e:
-                    print(f"DEBUG: ❌ Error disconnecting signals: {e}")
-                
-                # Use Qt6 proper thread interruption for ClamAV scans
-                if self.current_scan_thread and self.current_scan_thread.isRunning():
-                    print("DEBUG: 🧵 Requesting ClamAV thread interruption (safe method)")
+                # Then stop ClamAV scan if running
+                if clamav_running:
+                    print("DEBUG: 🛑 Stopping ClamAV thread")
+                    if hasattr(self.current_scan_thread, 'stop_scan'):
+                        self.current_scan_thread.stop_scan()
                     self.current_scan_thread.requestInterruption()
                 
-                # Use Qt6 proper thread interruption for RKHunter scans
-                if self.current_rkhunter_thread and self.current_rkhunter_thread.isRunning():
-                    print("DEBUG: 🧵 Requesting RKHunter thread interruption (safe method)")
-                    self.current_rkhunter_thread.requestInterruption()
+                # Disconnect signals to prevent completion events during stop
+                self._disconnect_scan_signals()
                 
-                # Don't wait here - let the scan finish naturally and handle completion
-                # Set a timer to check for completion and enable UI
+                # Start stop completion monitoring with shorter timeout
                 print("DEBUG: ⏲️ Starting completion timer")
                 self._start_stop_completion_timer()
             else:
                 print("DEBUG: ❌ User cancelled stop request")
         else:
             print("DEBUG: ❌ No running scan to stop")
+
+    def _disconnect_scan_signals(self):
+        """Disconnect scan thread signals to prevent events during stop"""
+        try:
+            # Disconnect ClamAV scan signals
+            if self.current_scan_thread:
+                if hasattr(self.current_scan_thread, 'scan_completed'):
+                    try:
+                        self.current_scan_thread.scan_completed.disconnect(self.scan_completed)
+                    except (TypeError, RuntimeError):
+                        # Already disconnected or not connected to this slot
+                        pass
+                if hasattr(self.current_scan_thread, 'progress_updated'):
+                    try:
+                        self.current_scan_thread.progress_updated.disconnect(self.progress_bar.setValue)
+                    except (TypeError, RuntimeError):
+                        # Already disconnected or not connected to this slot
+                        pass
+                if hasattr(self.current_scan_thread, 'status_updated'):
+                    try:
+                        self.current_scan_thread.status_updated.disconnect(self.status_label.setText)
+                    except (TypeError, RuntimeError):
+                        # Already disconnected or not connected to this slot
+                        pass
+                if hasattr(self.current_scan_thread, 'scan_detail_updated'):
+                    try:
+                        self.current_scan_thread.scan_detail_updated.disconnect(self.handle_detailed_scan_progress)
+                    except (TypeError, RuntimeError):
+                        # Already disconnected or not connected to this slot
+                        pass
+            
+            # Disconnect RKHunter scan signals
+            if hasattr(self, 'current_rkhunter_thread') and self.current_rkhunter_thread:
+                if hasattr(self.current_rkhunter_thread, 'scan_completed'):
+                    try:
+                        self.current_rkhunter_thread.scan_completed.disconnect()
+                    except (TypeError, RuntimeError):
+                        # Already disconnected
+                        pass
+                if hasattr(self.current_rkhunter_thread, 'progress_updated'):
+                    try:
+                        self.current_rkhunter_thread.progress_updated.disconnect()
+                    except (TypeError, RuntimeError):
+                        # Already disconnected
+                        pass
+                if hasattr(self.current_rkhunter_thread, 'progress_value_updated'):
+                    try:
+                        self.current_rkhunter_thread.progress_value_updated.disconnect()
+                    except (TypeError, RuntimeError):
+                        # Already disconnected
+                        pass
+            
+            print("DEBUG: ✅ Signals disconnected successfully")
+        except Exception as e:
+            print(f"DEBUG: ❌ Error disconnecting signals: {e}")
             
     def _start_stop_completion_timer(self):
-        """Start a timer to monitor scan completion after stop request"""
+        """Start a timer to monitor scan completion after stop request with faster checking"""
         print(f"\n⏲️ === STARTING COMPLETION TIMER ===")
         print(f"DEBUG: _start_stop_completion_timer() called")
         
         # Initialize or reset the stop attempt counter
         self._stop_completion_attempts = 0
-        self._stop_max_attempts = 30  # 30 seconds timeout (30 * 1 second checks)
+        self._stop_max_attempts = 5  # Reduced to 5 seconds for better user experience
         
         if not hasattr(self, '_stop_completion_timer'):
             from PyQt6.QtCore import QTimer
@@ -6885,15 +7400,16 @@ System        {perf_status}"""
         # Check every 1 second for thread completion
         self._stop_completion_timer.start(1000)
         print("DEBUG: ⏰ Started stop completion monitoring timer (1000ms interval)")
+            
     
     def _check_stop_completion(self):
         """Check if the stopped scan has completed and handle cleanup"""
         print(f"\n🔍 === CHECKING STOP COMPLETION ===")
         print(f"DEBUG: _check_stop_completion() called")
-        print(f"DEBUG: Current thread exists: {self.current_scan_thread is not None}")
-        print(f"DEBUG: Thread running: {self.current_scan_thread.isRunning() if self.current_scan_thread else 'N/A'}")
-        print(f"DEBUG: Current RKHunter thread exists: {self.current_rkhunter_thread is not None}")
-        print(f"DEBUG: RKHunter thread running: {self.current_rkhunter_thread.isRunning() if self.current_rkhunter_thread else 'N/A'}")
+        print(f"DEBUG: Current scan thread exists: {self.current_scan_thread is not None}")
+        print(f"DEBUG: Scan thread running: {self.current_scan_thread.isRunning() if self.current_scan_thread else 'N/A'}")
+        print(f"DEBUG: Current RKHunter thread exists: {hasattr(self, 'current_rkhunter_thread') and self.current_rkhunter_thread is not None}")
+        print(f"DEBUG: RKHunter thread running: {self.current_rkhunter_thread.isRunning() if hasattr(self, 'current_rkhunter_thread') and self.current_rkhunter_thread else 'N/A'}")
         print(f"DEBUG: Current state: {self._scan_state}")
         
         # Increment attempt counter
@@ -6901,10 +7417,12 @@ System        {perf_status}"""
             self._stop_completion_attempts = 0
         self._stop_completion_attempts += 1
         
-        # Update progress bar to show stop progress (reverse progress from 100% to 0%)
-        max_attempts = 10  # 10 seconds timeout for better responsiveness
+        # Use shorter timeout for better responsiveness - 5 seconds instead of 10-30
+        max_attempts = 5
         if not hasattr(self, '_stop_max_attempts'):
             self._stop_max_attempts = max_attempts
+        
+        # Update progress bar to show stop progress (reverse progress from 100% to 0%)
         stop_progress = max(0, 100 - int((self._stop_completion_attempts / max_attempts) * 100))
         self.progress_bar.setValue(stop_progress)
         
@@ -6914,8 +7432,27 @@ System        {perf_status}"""
         self.status_bar.showMessage(f"🛑 Stopping scan... ({remaining_time}s remaining)")
         print(f"DEBUG: 📊 Stop progress: {stop_progress}% (attempt {self._stop_completion_attempts}/{max_attempts})")
         
-        # Check for timeout (force completion after 10 seconds for RKHunter)
-        max_attempts = getattr(self, '_stop_max_attempts', 10)  # Reduced from 30 to 10 seconds
+        # Check current thread states with safe error handling
+        clamav_running = False
+        rkhunter_running = False
+        
+        try:
+            clamav_running = self.current_scan_thread and self.current_scan_thread.isRunning()
+        except Exception as e:
+            print(f"DEBUG: ⚠️ Error checking ClamAV thread state: {e}")
+            # If we can't check, assume it's not running
+            clamav_running = False
+            
+        try:
+            rkhunter_running = (hasattr(self, 'current_rkhunter_thread') and 
+                               self.current_rkhunter_thread and 
+                               self.current_rkhunter_thread.isRunning())
+        except Exception as e:
+            print(f"DEBUG: ⚠️ Error checking RKHunter thread state: {e}")
+            # If we can't check, assume it's not running
+            rkhunter_running = False
+        
+        # Check for timeout - force completion after reduced timeout
         if self._stop_completion_attempts >= max_attempts:
             print(f"DEBUG: ⏰ Stop timeout reached ({self._stop_completion_attempts} attempts)")
             print("DEBUG: 🚨 Forcing scan stop completion due to timeout")
@@ -6925,36 +7462,8 @@ System        {perf_status}"""
                 self._stop_completion_timer.stop()
                 print("DEBUG: ⏰ Stopped completion timer (timeout)")
             
-            # Force cleanup thread references
-            if self.current_scan_thread:
-                try:
-                    # Try to terminate if still running
-                    if self.current_scan_thread.isRunning():
-                        print("DEBUG: 🔧 Force terminating stuck scan thread")
-                        self.current_scan_thread.requestInterruption()
-                        # Give it 2 more seconds
-                        if not self.current_scan_thread.wait(2000):
-                            print("DEBUG: ⚠️ Scan thread did not stop gracefully, forcing cleanup")
-                except Exception as e:
-                    print(f"DEBUG: ⚠️ Error during force scan thread cleanup: {e}")
-                finally:
-                    self.current_scan_thread = None
-                    print("DEBUG: 🧹 Forced scan thread cleanup completed")
-            
-            if self.current_rkhunter_thread:
-                try:
-                    # Try to terminate if still running
-                    if self.current_rkhunter_thread.isRunning():
-                        print("DEBUG: 🔧 Force terminating stuck RKHunter thread")
-                        self.current_rkhunter_thread.stop_scan()
-                        # Give it 2 more seconds
-                        if not self.current_rkhunter_thread.wait(2000):
-                            print("DEBUG: ⚠️ RKHunter thread did not stop gracefully, forcing cleanup")
-                except Exception as e:
-                    print(f"DEBUG: ⚠️ Error during force RKHunter thread cleanup: {e}")
-                finally:
-                    self.current_rkhunter_thread = None
-                    print("DEBUG: 🧹 Forced RKHunter thread cleanup completed")
+            # Force cleanup both thread types
+            self._force_cleanup_threads()
             
             # Reset states
             self._scan_state = "idle"
@@ -6966,18 +7475,21 @@ System        {perf_status}"""
             self.scan_toggle_btn.setEnabled(True)  # Re-enable the button
             self.progress_bar.setValue(0)
             
-            # Show timeout message
-            self.results_text.append("🛑 RKHunter scan stop completed\n\n"
-                                    "⚠️ Note: RKHunter runs with elevated privileges and may not respond "
-                                    "immediately to stop requests. The underlying scan process may continue "
-                                    "briefly but will not affect the application.")
-            self.status_label.setText("Ready to scan")  # Reset status label
+            # Show appropriate completion message
+            if rkhunter_running or clamav_running:
+                self.results_text.append("🛑 Scan stop completed (forced after 5 seconds)\n\n"
+                                        "⚠️ Note: Some background processes may continue briefly "
+                                        "but will not affect the application.")
+            else:
+                self.results_text.append("🛑 Scan stop completed successfully")
+            
+            self.status_label.setText("Ready to scan")
             self.status_bar.showMessage("🔴 Ready to scan")
             print("DEBUG: ✅ Forced stop completed due to timeout")
             return
         
-        if not ((self.current_scan_thread and self.current_scan_thread.isRunning()) or 
-                (self.current_rkhunter_thread and self.current_rkhunter_thread.isRunning())):
+        # Check if all threads have actually stopped
+        if not clamav_running and not rkhunter_running:
             # All threads have finished - complete the stop process
             print("DEBUG: ✅ All threads have finished - starting cleanup process")
             
@@ -6987,34 +7499,97 @@ System        {perf_status}"""
                 print("DEBUG: ⏰ Stopped completion timer")
             
             # Clean up thread references properly
-            print("DEBUG: 🧹 Cleaning up thread references")
-            if self.current_scan_thread:
-                try:
-                    # Ensure the thread is properly cleaned up
-                    self.current_scan_thread.deleteLater()
-                except Exception as e:
-                    print(f"DEBUG: ⚠️ Error during scan thread cleanup: {e}")
-                finally:
-                    self.current_scan_thread = None
-            
-            if self.current_rkhunter_thread:
-                try:
-                    # Ensure the RKHunter thread is properly cleaned up
-                    self.current_rkhunter_thread.deleteLater()
-                except Exception as e:
-                    print(f"DEBUG: ⚠️ Error during RKHunter thread cleanup: {e}")
-                finally:
-                    self.current_rkhunter_thread = None
+            self._cleanup_finished_threads()
             
             # Set state back to idle
             self._scan_state = "idle"
-            print(f"DEBUG: 🔄 State set back to: {self._scan_state}")
-            
-            # Reset the manual stop flag so next scan can complete normally
             self._scan_manually_stopped = False
+            self._stop_scan_user_wants_restart = True
+            
+            print(f"DEBUG: 🔄 State set back to: {self._scan_state}")
             print(f"DEBUG: 🔄 Reset _scan_manually_stopped flag to: {self._scan_manually_stopped}")
             
-            # Set flag indicating user may want to restart after this stop
+            # Reset UI to ready state
+            self.update_scan_button_state(False)  # Reset to "Start Scan" mode
+            self.scan_toggle_btn.setEnabled(True)  # Re-enable the button
+            self.progress_bar.setValue(0)
+            self.status_label.setText("Ready to scan")
+            self.status_bar.showMessage("🔴 Ready to scan")
+            
+            # Show success message
+            self.results_text.append("🛑 Scan stopped successfully")
+            
+            print("DEBUG: ✅ Clean stop completed successfully")
+        else:
+            # Still waiting for threads to finish
+            threads_still_running = []
+            if clamav_running:
+                threads_still_running.append("ClamAV")
+            if rkhunter_running:
+                threads_still_running.append("RKHunter")
+            
+            print(f"DEBUG: ⏳ Still waiting for {', '.join(threads_still_running)} to finish... (attempt {self._stop_completion_attempts}/{max_attempts})")
+
+    def _force_cleanup_threads(self):
+        """Force cleanup of all scan threads"""
+        print("DEBUG: 🧹 Starting forced thread cleanup")
+        
+        # Force cleanup scan thread
+        if self.current_scan_thread:
+            try:
+                if self.current_scan_thread.isRunning():
+                    print("DEBUG: 🔧 Force terminating stuck ClamAV thread")
+                    self.current_scan_thread.requestInterruption()
+                    # Give it 1 more second
+                    if not self.current_scan_thread.wait(1000):
+                        print("DEBUG: ⚠️ ClamAV thread did not stop gracefully, forcing cleanup")
+            except Exception as e:
+                print(f"DEBUG: ⚠️ Error during force ClamAV thread cleanup: {e}")
+            finally:
+                self.current_scan_thread = None
+                print("DEBUG: 🧹 Forced ClamAV thread cleanup completed")
+        
+        # Force cleanup RKHunter thread
+        if hasattr(self, 'current_rkhunter_thread') and self.current_rkhunter_thread:
+            try:
+                if self.current_rkhunter_thread.isRunning():
+                    print("DEBUG: 🔧 Force terminating stuck RKHunter thread")
+                    if hasattr(self.current_rkhunter_thread, 'stop_scan'):
+                        self.current_rkhunter_thread.stop_scan()
+                    # Give it 1 more second
+                    if not self.current_rkhunter_thread.wait(1000):
+                        print("DEBUG: ⚠️ RKHunter thread did not stop gracefully, forcing cleanup")
+            except Exception as e:
+                print(f"DEBUG: ⚠️ Error during force RKHunter thread cleanup: {e}")
+            finally:
+                self.current_rkhunter_thread = None
+                print("DEBUG: 🧹 Forced RKHunter thread cleanup completed")
+
+    def _cleanup_finished_threads(self):
+        """Clean up finished thread references properly"""
+        print("DEBUG: 🧹 Cleaning up finished thread references")
+        
+        if self.current_scan_thread:
+            try:
+                # Ensure the thread is properly cleaned up
+                if not self.current_scan_thread.isRunning():
+                    self.current_scan_thread.deleteLater()
+                    print("DEBUG: 🧹 ClamAV thread marked for deletion")
+            except Exception as e:
+                print(f"DEBUG: ⚠️ Error during ClamAV thread cleanup: {e}")
+            finally:
+                self.current_scan_thread = None
+        
+        if self.current_rkhunter_thread:
+            try:
+                # Ensure the RKHunter thread is properly cleaned up
+                if not self.current_rkhunter_thread.isRunning():
+                    self.current_rkhunter_thread.deleteLater()
+                    print("DEBUG: 🧹 RKHunter thread marked for deletion")
+            except Exception as e:
+                print(f"DEBUG: ⚠️ Error during RKHunter thread cleanup: {e}")
+            finally:
+                self.current_rkhunter_thread = None
             self._stop_scan_user_wants_restart = True
             print(f"DEBUG: 🔄 Set user wants restart flag to: {self._stop_scan_user_wants_restart}")
             
@@ -7403,6 +7978,49 @@ System        {perf_status}"""
             import traceback
             traceback.print_exc()
 
+    def _show_welcome_message(self):
+        """Display a welcome message with app information and instructions."""
+        
+        self.results_text.append("🛡️  XANADOS SEARCH & DESTROY")
+        self.results_text.append("=" * 45)
+        self.results_text.append("Advanced Anti-Malware & Rootkit Detection System")
+        self.results_text.append("")
+        
+        self.results_text.append(" SCAN TYPES:")
+        self.results_text.append("   • Quick: Common threat locations")
+        self.results_text.append("   • Full: Comprehensive system scan")
+        self.results_text.append("   • Custom: Specific files/directories")
+        self.results_text.append("   • RKHunter: Rootkit detection")
+        self.results_text.append("")
+        
+        self.results_text.append("💡 QUICK START:")
+        self.results_text.append("   1. Choose scan type above")
+        self.results_text.append("   2. Click 'Start Scan'")
+        self.results_text.append("   3. Results appear here")
+        self.results_text.append("")
+        
+        self.results_text.append("Ready to scan! 🚀")
+        self.results_text.append("=" * 40)
+
+    def _clear_results_with_header(self):
+        """Clear results and show a scan preparation header."""
+        self.results_text.clear()
+        
+        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        self.results_text.append("🔄 PREPARING NEW SCAN")
+        self.results_text.append("=" * 45)
+        self.results_text.append(f"📅 Scan initiated: {timestamp}")
+        self.results_text.append("")
+        self.results_text.append("⏳ Initializing scan engine...")
+        self.results_text.append("")
+        
+        # Record scan start time for accurate duration calculation
+        self._scan_start_time = datetime.now()
+        
+        # Reset file tracking for accurate statistics
+        if hasattr(self, '_scan_files_actually_processed'):
+            delattr(self, '_scan_files_actually_processed')
+
     def format_target_display(self, scan_path):
         """Format the scan target for user-friendly display."""
         if isinstance(scan_path, list):
@@ -7503,27 +8121,86 @@ System        {perf_status}"""
         return "<br>".join(friendly_options) if friendly_options else "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b>Default settings</b>"
 
     def display_scan_results(self, result):
-        output = "Scan completed successfully!\n\n"
-
+        """Display comprehensive scan results with detailed information."""
+        # Create a separator for multiple scans
+        if self.results_text.toPlainText().strip():
+            self.results_text.append("\n" + "="*60 + "\n")
+        
+        # Header with scan completion status
+        if isinstance(result, dict) and result.get("status") == "error":
+            self.results_text.append("❌ Scan Failed!")
+            self.results_text.append(f"Error: {result.get('error', 'Unknown error')}")
+            return
+        elif isinstance(result, dict) and result.get("status") == "cancelled":
+            self.results_text.append("🛑 Scan Cancelled")
+            self.results_text.append(f"Reason: {result.get('message', 'User cancelled')}")
+            return
+        
         # Handle both dictionary and dataclass result formats
         if isinstance(result, dict):
-            files_scanned = result.get(
-                "scanned_files", result.get(
-                    "files_scanned", 0))
-            threats_found = result.get(
-                "threats_found", len(
-                    result.get(
-                        "threats", [])))
-            scan_time = result.get(
-                "duration", result.get(
-                    "scan_time", "Unknown"))
+            files_scanned = result.get("scanned_files", result.get("files_scanned", 0))
+            total_files = result.get("total_files", files_scanned)
+            threats_found = result.get("threats_found", len(result.get("threats", [])))
+            scan_time = result.get("duration", result.get("scan_time", 0))
             threats = result.get("threats", [])
+            scan_type = result.get("scan_type", "Unknown")
+            scan_path = result.get("scan_path", result.get("scanned_paths", "Unknown"))
+            errors = result.get("errors", [])
+            
+            # Debug the scan statistics to identify issues
+            print(f"DEBUG: Scan result dictionary analysis:")
+            print(f"  - scanned_files: {result.get('scanned_files', 'NOT_FOUND')}")
+            print(f"  - files_scanned: {result.get('files_scanned', 'NOT_FOUND')}")
+            print(f"  - total_files: {result.get('total_files', 'NOT_FOUND')}")
+            print(f"  - duration: {result.get('duration', 'NOT_FOUND')}")
+            print(f"  - scan_time: {result.get('scan_time', 'NOT_FOUND')}")
+            print(f"  - Final values: files_scanned={files_scanned}, total_files={total_files}, scan_time={scan_time}")
         else:
             # Assume it's a dataclass-like object
             files_scanned = getattr(result, "scanned_files", 0)
+            total_files = getattr(result, "total_files", files_scanned)
             threats_found = getattr(result, "threats_found", 0)
-            scan_time = getattr(result, "duration", "Unknown")
+            scan_time = getattr(result, "duration", 0)
             threats = getattr(result, "threats", [])
+            scan_type = getattr(result, "scan_type", "Unknown")
+            scan_path = getattr(result, "scanned_paths", ["Unknown"])
+            errors = getattr(result, "errors", [])
+            
+            # Debug the scan statistics for object format
+            print(f"DEBUG: Scan result object analysis:")
+            print(f"  - scanned_files attr: {getattr(result, 'scanned_files', 'NOT_FOUND')}")
+            print(f"  - total_files attr: {getattr(result, 'total_files', 'NOT_FOUND')}")
+            print(f"  - duration attr: {getattr(result, 'duration', 'NOT_FOUND')}")
+            print(f"  - Final values: files_scanned={files_scanned}, total_files={total_files}, scan_time={scan_time}")
+            
+        # Handle scan statistics inconsistencies and edge cases
+        if files_scanned == 0 and hasattr(self, '_scan_files_actually_processed'):
+            # Use the count from our progress tracking if FileScanner result is incorrect
+            files_scanned = getattr(self, '_scan_files_actually_processed', 0)
+            print(f"DEBUG: Using progress tracking count: {files_scanned} files")
+            
+        # Ensure total_files is at least as large as files_scanned
+        if total_files < files_scanned:
+            total_files = files_scanned
+            print(f"DEBUG: Corrected total_files to match scanned_files: {total_files}")
+            
+        # Handle scan_time default to avoid "Unknown" in final display
+        if scan_time == "Unknown" or scan_time == 0:
+            # Calculate actual duration from our tracked start time
+            if hasattr(self, '_scan_start_time'):
+                actual_duration = (datetime.now() - self._scan_start_time).total_seconds()
+                scan_time = actual_duration
+                self._last_scan_duration = actual_duration
+                print(f"DEBUG: Calculated actual scan duration: {scan_time:.1f} seconds")
+            else:
+                scan_time = getattr(self, '_last_scan_duration', 0)
+                print(f"DEBUG: Using fallback scan duration: {scan_time}")
+        
+        # Also fix the path consistency issue for better display
+        if isinstance(scan_path, str) and scan_path == "Unknown":
+            # Fallback to the actual scan path that was used
+            scan_path = getattr(self, 'scan_path', 'Unknown')
+            print(f"DEBUG: Using fallback scan path: {scan_path}")
 
         # Format scan time nicely
         if isinstance(scan_time, (int, float)) and scan_time != "Unknown":
@@ -7536,26 +8213,106 @@ System        {perf_status}"""
         else:
             formatted_time = str(scan_time)
 
-        output += f"Files scanned: {files_scanned}\n"
-        output += f"Threats found: {threats_found}\n"
-        output += f"Scan time: {formatted_time}\n\n"
+        # Main result header
+        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        if threats_found > 0:
+            self.results_text.append(f"⚠️  SCAN COMPLETED - {threats_found} THREATS FOUND")
+        else:
+            self.results_text.append("✅ SCAN COMPLETED - NO THREATS FOUND")
+        
+        self.results_text.append(f"📅 Completed at: {timestamp}")
+        self.results_text.append("")
 
-        if threats:
-            output += "Threats detected:\n"
-            for threat in threats:
+        # Scan details section
+        self.results_text.append("📊 SCAN DETAILS:")
+        
+        # Format scan type
+        if scan_type != "Unknown":
+            if hasattr(scan_type, 'value'):  # Handle enum
+                type_display = scan_type.value.title()
+            else:
+                type_display = str(scan_type).replace("_", " ").title()
+            self.results_text.append(f"   📋 Type: {type_display}")
+        
+        # Format scan path
+        if scan_path != "Unknown":
+            if isinstance(scan_path, list):
+                if len(scan_path) == 1:
+                    path_display = self.format_target_display(scan_path[0])
+                    self.results_text.append(f"   📁 Target: {path_display}")
+                else:
+                    self.results_text.append(f"   📁 Targets: {len(scan_path)} directories")
+                    for i, path in enumerate(scan_path[:5]):  # Show first 5
+                        path_display = self.format_target_display(path)
+                        self.results_text.append(f"      {i+1}. {path_display}")
+                    if len(scan_path) > 5:
+                        self.results_text.append(f"      ... and {len(scan_path)-5} more")
+            else:
+                path_display = self.format_target_display(scan_path)
+                self.results_text.append(f"   📁 Target: {path_display}")
+        
+        self.results_text.append(f"   📈 Files scanned: {files_scanned:,}")
+        if total_files != files_scanned:
+            self.results_text.append(f"   📊 Total files found: {total_files:,}")
+        self.results_text.append(f"   ⏱️  Duration: {formatted_time}")
+        self.results_text.append("")
+
+        # Threats section
+        if threats_found > 0:
+            self.results_text.append(f"🚨 THREATS DETECTED ({threats_found}):")
+            for i, threat in enumerate(threats, 1):
                 if isinstance(threat, dict):
-                    file_path = threat.get(
-                        "file_path", threat.get(
-                            "file", "Unknown"))
-                    threat_name = threat.get(
-                        "threat_name", threat.get("threat", "Unknown")
-                    )
+                    file_path = threat.get("file_path", threat.get("file", "Unknown"))
+                    threat_name = threat.get("threat_name", threat.get("threat", "Unknown"))
+                    threat_type = threat.get("threat_type", threat.get("type", "Unknown"))
+                    action_taken = threat.get("action_taken", threat.get("action", "detected"))
                 else:
                     file_path = getattr(threat, "file_path", "Unknown")
                     threat_name = getattr(threat, "threat_name", "Unknown")
-                output += f"  - {file_path}: {threat_name}\n"
+                    threat_type = getattr(threat, "threat_type", "Unknown")
+                    action_taken = getattr(threat, "action_taken", "detected")
+                
+                # Format file path for display
+                display_path = self.format_target_display(file_path)
+                
+                self.results_text.append(f"   {i}. {threat_name}")
+                self.results_text.append(f"      📄 File: {display_path}")
+                if threat_type != "Unknown":
+                    self.results_text.append(f"      🏷️  Type: {threat_type}")
+                if action_taken != "detected":
+                    self.results_text.append(f"      ⚡ Action: {action_taken}")
+                self.results_text.append("")
+        else:
+            self.results_text.append("✅ NO THREATS DETECTED")
+            self.results_text.append("   Your system appears clean!")
+            self.results_text.append("")
 
-        self.results_text.setText(output)
+        # Errors section
+        if errors:
+            self.results_text.append(f"⚠️  SCAN WARNINGS ({len(errors)}):")
+            for i, error in enumerate(errors[:10], 1):  # Show first 10 errors
+                self.results_text.append(f"   {i}. {error}")
+            if len(errors) > 10:
+                self.results_text.append(f"   ... and {len(errors)-10} more warnings")
+            self.results_text.append("")
+
+        # Summary and recommendations
+        if threats_found > 0:
+            self.results_text.append("🔧 RECOMMENDED ACTIONS:")
+            self.results_text.append("   • Review detected threats carefully")
+            self.results_text.append("   • Consider quarantining or removing infected files")
+            self.results_text.append("   • Run additional scans to ensure complete cleanup")
+            self.results_text.append("   • Update your antivirus definitions regularly")
+        else:
+            self.results_text.append("💡 RECOMMENDATIONS:")
+            self.results_text.append("   • Schedule regular scans for ongoing protection")
+            self.results_text.append("   • Keep your antivirus definitions up to date")
+            self.results_text.append("   • Enable real-time protection if available")
+        
+        # Scroll to bottom to show latest results
+        cursor = self.results_text.textCursor()
+        cursor.movePosition(cursor.MoveOperation.End)
+        self.results_text.setTextCursor(cursor)
 
     def quick_scan(self):
         # Toggle quick scan based on current state
@@ -8020,6 +8777,9 @@ System        {perf_status}"""
 
     def force_quit_application(self):
         """Force quit the application regardless of minimize to tray setting."""
+        # Set flag to indicate we're force quitting (prevents minimize notification)
+        self._force_quitting = True
+        
         # Check if real-time protection is active
         if (
             self.monitoring_enabled
@@ -8074,6 +8834,12 @@ System        {perf_status}"""
         ui_settings = self.config.get("ui_settings", {})
         minimize_to_tray = ui_settings.get("minimize_to_tray", True)
         
+        # If we're force quitting, don't minimize to tray or show notification
+        if hasattr(self, '_force_quitting') and self._force_quitting:
+            # Skip minimize to tray behavior during force quit
+            self._cleanup_before_exit(event)
+            return
+        
         # If minimize to tray is enabled and system tray is available, minimize instead of closing
         if (
             minimize_to_tray
@@ -8092,6 +8858,10 @@ System        {perf_status}"""
             return
 
         # If minimize to tray is disabled, proceed with normal close behavior
+        self._cleanup_before_exit(event)
+
+    def _cleanup_before_exit(self, event):
+        """Common cleanup logic for application exit."""
         # Check if real-time protection is active before closing
         if (
             self.monitoring_enabled
@@ -9131,8 +9901,16 @@ System        {perf_status}"""
             ui_settings = self.config.get("ui_settings", {})
             minimize_to_tray = ui_settings.get("minimize_to_tray", True)
             show_notifications = ui_settings.get("show_notifications", True)
+            text_orientation = ui_settings.get("text_orientation", "Centered")
+            
             self.settings_minimize_to_tray_cb.setChecked(minimize_to_tray)
             self.settings_show_notifications_cb.setChecked(show_notifications)
+            
+            # Set text orientation if combo exists
+            if hasattr(self, 'text_orientation_combo'):
+                self.text_orientation_combo.setCurrentText(text_orientation)
+                # Apply the loaded text orientation setting
+                self.apply_text_orientation_setting(text_orientation)
 
             # Activity log retention setting
             retention = str(ui_settings.get("activity_log_retention", 100))
@@ -9245,6 +10023,20 @@ System        {perf_status}"""
             if time_obj.isValid():
                 self.settings_scan_time_edit.setTime(time_obj)
                 
+            # Auto-update settings
+            auto_update_settings = self.config.get("auto_update_settings", {})
+            if hasattr(self, 'settings_auto_check_updates_cb'):
+                auto_check = auto_update_settings.get("auto_check_updates", True)
+                self.settings_auto_check_updates_cb.setChecked(auto_check)
+            
+            if hasattr(self, 'settings_auto_download_updates_cb'):
+                auto_download = auto_update_settings.get("auto_download_updates", False)
+                self.settings_auto_download_updates_cb.setChecked(auto_download)
+                
+            if hasattr(self, 'settings_update_check_interval_spin'):
+                check_interval = auto_update_settings.get("update_check_interval", 24)
+                self.settings_update_check_interval_spin.setValue(check_interval)
+                
             # Re-enable signals after loading is complete
             self.block_settings_signals(False)
             
@@ -9310,6 +10102,8 @@ System        {perf_status}"""
                     "activity_log_retention": int(
                         self.settings_activity_retention_combo.currentText()
                     ),
+                    "theme": self.current_theme,
+                    "text_orientation": self.text_orientation_combo.currentText() if hasattr(self, 'text_orientation_combo') else "Centered",
                 },
                 "security_settings": {
                     "auto_update_definitions": self.settings_auto_update_cb.isChecked(),
@@ -9340,6 +10134,11 @@ System        {perf_status}"""
                     "time": self.settings_scan_time_edit.time().toString("HH:mm"),
                     "scan_type": self.settings_scan_type_combo.currentData(),
                     "custom_directory": self.settings_custom_dir_edit.text(),
+                },
+                "auto_update_settings": {
+                    "auto_check_updates": getattr(self, 'settings_auto_check_updates_cb', None) and self.settings_auto_check_updates_cb.isChecked() if hasattr(self, 'settings_auto_check_updates_cb') else True,
+                    "auto_download_updates": getattr(self, 'settings_auto_download_updates_cb', None) and self.settings_auto_download_updates_cb.isChecked() if hasattr(self, 'settings_auto_download_updates_cb') else False,
+                    "update_check_interval": getattr(self, 'settings_update_check_interval_spin', None) and self.settings_update_check_interval_spin.value() if hasattr(self, 'settings_update_check_interval_spin') else 24,
                 },
             }
             
@@ -9388,6 +10187,15 @@ System        {perf_status}"""
                 if os.name == "posix":
                     mode = d.stat().st_mode & 0o777
                     if name in ("config", "quarantine") and mode not in (0o700, 0o750):
+                        # Try to fix quarantine permissions automatically
+                        if name == "quarantine":
+                            try:
+                                d.chmod(0o700)
+                                print(f"✅ Fixed quarantine directory permissions: {oct(mode)} → 0o700")
+                                continue  # Skip adding to issues since we fixed it
+                            except (OSError, PermissionError) as e:
+                                issues.append(f"Weak permissions on {name} ({oct(mode)}); expected 0o700 - Failed to fix: {e}")
+                                continue
                         issues.append(f"Weak permissions on {name} ({oct(mode)}); expected 0o700")
             # Config sanity keys
             expected_sections = ["scan_settings", "advanced_settings", "security_settings"]
@@ -9545,6 +10353,12 @@ System        {perf_status}"""
             self.settings_minimize_to_tray_cb.toggled.connect(self.auto_save_settings)
             self.settings_show_notifications_cb.toggled.connect(self.auto_save_settings)
             
+            # Combo box controls - UI Settings
+            if hasattr(self, 'text_orientation_combo'):
+                # Note: We don't connect to auto_save_settings here because the combo already 
+                # calls apply_text_orientation_setting which calls auto_save_settings
+                pass
+            
             # Checkbox controls - Security Settings
             self.settings_auto_update_cb.toggled.connect(self.auto_save_settings)
             
@@ -9562,7 +10376,6 @@ System        {perf_status}"""
             self.settings_run_rkhunter_with_full_scan_cb.toggled.connect(self.auto_save_settings)
             self.settings_run_rkhunter_with_quick_scan_cb.toggled.connect(self.auto_save_settings)
             self.settings_run_rkhunter_with_custom_scan_cb.toggled.connect(self.auto_save_settings)
-            self.settings_run_rkhunter_with_custom_scan_cb.toggled.connect(self.auto_save_settings)
             
             # RKHunter auto-update checkbox - ensure it's always connected
             try:
@@ -9571,8 +10384,8 @@ System        {perf_status}"""
             except AttributeError:
                 print("⚠️ RKHunter auto-update checkbox not found during connection setup")
             
-            # NOTE: Scheduled Scans checkbox already has auto-save via on_scheduled_scan_toggled()
-            # Do NOT add duplicate connection to avoid double auto-save calls and race conditions
+            # NOTE: Scheduled Scans checkbox connected to on_scheduled_scan_toggled() which calls auto_save_settings()
+            self.settings_enable_scheduled_cb.toggled.connect(self.on_scheduled_scan_toggled)
             
             # Combo box controls - Advanced Settings
             self.scan_depth_combo.currentTextChanged.connect(self.auto_save_settings)
@@ -9584,6 +10397,7 @@ System        {perf_status}"""
             
             # Combo box controls - Scheduled Settings
             self.settings_scan_frequency_combo.currentTextChanged.connect(self.auto_save_settings)
+            self.settings_scan_type_combo.currentTextChanged.connect(self.auto_save_settings)
             
             # Time edit control
             self.settings_scan_time_edit.timeChanged.connect(self.auto_save_settings)
