@@ -325,7 +325,8 @@ echo "✅ Installed git hooks for repository organization"
         """Generate organization report."""
         print("\n📋 Generating organization report...")
         
-        report_path = self.repo_root / "docs" / "project" / "REPOSITORY_ORGANIZATION.md"
+    # Use runtime-specific filename to avoid clobbering curated static doc
+    report_path = self.repo_root / "docs" / "project" / "REPOSITORY_ORGANIZATION_RUNTIME.md"
         report_path.parent.mkdir(parents=True, exist_ok=True)
         
         timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")

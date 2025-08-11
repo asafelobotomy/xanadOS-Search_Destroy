@@ -137,7 +137,7 @@ When contributing new development tools:
 
 ---
 
-For more information about repository organization, see `docs/project/REPOSITORY_ORGANIZATION.md`.
+For more information about repository organization, see `docs/project/REPOSITORY_ORGANIZATION.md` (static guide) and `docs/project/REPOSITORY_ORGANIZATION_RUNTIME.md` (latest generated report).
 
 ## Usage
 

@@ -250,7 +250,10 @@ archive/
 5. **Better Maintenance**: Updated .gitignore prevents future clutter
 """
         
-        summary_path = self.repo_path / "REPOSITORY_ORGANIZATION.md"
+    # Write dynamic (runtime-generated) organization report into docs/project
+    reports_dir = self.repo_path / "docs" / "project"
+    reports_dir.mkdir(parents=True, exist_ok=True)
+    summary_path = reports_dir / "REPOSITORY_ORGANIZATION_RUNTIME.md"
         with open(summary_path, 'w') as f:
             f.write(summary_content)
         
@@ -283,7 +286,7 @@ archive/
         print()
         
         print("✅ Repository organization completed successfully!")
-        print("📋 See REPOSITORY_ORGANIZATION.md for detailed summary")
+    print("📋 See docs/project/REPOSITORY_ORGANIZATION_RUNTIME.md for detailed summary")
 
 
 if __name__ == "__main__":

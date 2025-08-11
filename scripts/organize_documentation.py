@@ -170,7 +170,8 @@ Detailed technical implementation guides and feature documentation.
 ### 📋 Project Documentation
 Project management, organization, and maintenance documentation.
 
-- **[Repository Organization](project/REPOSITORY_ORGANIZATION.md)** - Project structure and organization
+- **[Repository Organization](project/REPOSITORY_ORGANIZATION.md)** - Project structure and organization (static)
+- **[Runtime Organization Report](project/REPOSITORY_ORGANIZATION_RUNTIME.md)** - Latest auto-generated report
 - **[Version Control Guidelines](project/VERSION_CONTROL.md)** - Git workflow and branching strategy
 - **[Performance Optimizations](project/PERFORMANCE_OPTIMIZATIONS.md)** - System performance improvements
 - **[Cleanup Summary](project/CLEANUP_SUMMARY.md)** - Repository maintenance history
