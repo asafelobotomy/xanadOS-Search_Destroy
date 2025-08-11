@@ -5,6 +5,30 @@ All notable changes to the xanadOS-Search_Destroy project will be documented in 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.4.1] - 2025-08-11
+
+### Enhanced
+
+#### 🎨 **Theme System Optimizations**
+- **Removed all gradient effects** - Converted to solid colors for professional appearance and consistency
+- **Enhanced Update Definitions styling** - Background now matches header with beautiful coral color theme
+- **Improved visual consistency** - All UI elements use unified coral/strawberry color palette
+- **Optimized theme performance** - Streamlined theme application with solid colors
+
+### Fixed
+
+#### 🔧 **Code Quality & Maintenance**
+- **Theme import optimization** - Fixed all references to use unified theme manager instead of deprecated versions
+- **Cleaned up theme system** - Removed redundant theme manager references in themed_widgets.py
+- **Enhanced main window imports** - Updated all theme manager function calls for consistency
+
+### Organized
+
+#### 📁 **Repository Structure**
+- **Archived deprecated theme files** - Moved optimized_theme_manager.py, theme_manager_optimized_version.py, and theme_manager_backup.py to archive
+- **Created comprehensive archive documentation** - Added detailed README.md explaining deprecated files and current system
+- **Improved file organization** - Clean GUI directory with only active theme files
+
 ## [2.4.0] - 2025-08-10
 
 ### Added
