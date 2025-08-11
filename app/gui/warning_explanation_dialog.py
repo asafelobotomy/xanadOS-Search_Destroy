@@ -14,7 +14,7 @@ sys.path.insert(0, str(project_root))
 from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtGui import QFont, QIcon, QPixmap
 from PyQt6.QtWidgets import (
-    QDialog, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, 
+    QDialog, QVBoxLayout, QHBoxLayout, QLabel, QPushButton,
     QTextEdit, QScrollArea, QWidget, QFrame, QGroupBox,
     QCheckBox, QMessageBox
 )
@@ -45,110 +45,112 @@ class WarningExplanationDialog(QDialog):
         # Apply parent theme if available
         if parent and hasattr(parent, "current_theme"):
             self._apply_theme(parent.current_theme)
-    
-    def _setup_ui(self):
-        """Set up the user interface."""
-        layout = QVBoxLayout(self)
-        layout.setSpacing(15)
+        else:
+            # Default to dark for consistency
+            self._apply_theme("dark")
+    def _apply_theme(self, theme_name):
+        """Apply theme styling to this dialog (supports dark & light)."""
+        # Determine if using light theme heuristically
+        is_light = theme_name == "light"
+        bg = self.get_theme_color("background") if not is_light else "#ffffff"
+        secondary_bg = self.get_theme_color("secondary_bg") if not is_light else "#f7f7f9"
+        tertiary_bg = self.get_theme_color("tertiary_bg") if not is_light else "#ededf0"
+        text = self.get_theme_color("primary_text") if not is_light else "#222222"
+        border = self.get_theme_color("border") if not is_light else "#d0d0d5"
+        accent = self.get_theme_color("accent") if not is_light else "#0078d4"
+        hover_bg = self.get_theme_color("hover_bg") if not is_light else "#e6f2fb"
+        pressed_bg = self.get_theme_color("pressed_bg") if not is_light else "#cfe6f7"
         
-        # Header with severity and icon
-        header_layout = QHBoxLayout()
-        
-        # Severity icon
-        severity_icon = self._get_severity_icon()
-        icon_label = QLabel()
-        icon_label.setPixmap(severity_icon)
-        icon_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        header_layout.addWidget(icon_label)
-        
-        # Title and category
-        title_layout = QVBoxLayout()
-        
-        title_label = QLabel(self.explanation.title)
-        title_label.setFont(QFont("", 14, QFont.Weight.Bold))
-        title_layout.addWidget(title_label)
-        
-        category_text = self.explanation.category.value.replace('_', ' ').title()
-        category_label = QLabel(f"Category: {category_text}")
-        category_label.setFont(QFont("", 10))
-        category_label.setObjectName("categoryLabel")  # For themed styling
-        # Theme will be applied later - don't hard-code color here
-        title_layout.addWidget(category_label)
-        
-        header_layout.addLayout(title_layout)
-        header_layout.addStretch()
-        
-        # Severity badge
-        severity_badge = self._create_severity_badge()
-        header_layout.addWidget(severity_badge)
-        
-        layout.addLayout(header_layout)
-        
-        # Original warning text
-        warning_group = QGroupBox("Original Warning")
-        warning_layout = QVBoxLayout(warning_group)
-        
-        warning_text_widget = QTextEdit()
-        warning_text_widget.setPlainText(self.warning_text)
-        warning_text_widget.setMaximumHeight(80)
-        warning_text_widget.setReadOnly(True)
-        # Theme will be applied later - don't hard-code styles here
-        warning_layout.addWidget(warning_text_widget)
-        layout.addWidget(warning_group)
-        
-        # Scrollable content area
-        scroll_area = QScrollArea()
-        scroll_widget = QWidget()
-        scroll_layout = QVBoxLayout(scroll_widget)
-        
-        # Description
-        desc_group = QGroupBox("What This Means")
-        desc_layout = QVBoxLayout(desc_group)
-        desc_label = QLabel(self.explanation.description)
-        desc_label.setWordWrap(True)
-        desc_layout.addWidget(desc_label)
-        scroll_layout.addWidget(desc_group)
-        
-        # Likely cause
-        cause_group = QGroupBox("Likely Cause")
-        cause_layout = QVBoxLayout(cause_group)
-        cause_label = QLabel(self.explanation.likely_cause)
-        cause_label.setWordWrap(True)
-        cause_layout.addWidget(cause_label)
-        scroll_layout.addWidget(cause_group)
-        
-        # Recommended action
-        action_group = QGroupBox("Recommended Action")
-        action_layout = QVBoxLayout(action_group)
-        action_label = QLabel(self.explanation.recommended_action)
-        action_label.setWordWrap(True)
-        action_layout.addWidget(action_label)
-        scroll_layout.addWidget(action_group)
-        
-        # Remediation steps (if available)
-        if self.explanation.remediation_steps:
-            steps_group = QGroupBox("Step-by-Step Remediation")
-            steps_layout = QVBoxLayout(steps_group)
-            
-            for i, step in enumerate(self.explanation.remediation_steps, 1):
-                step_label = QLabel(f"{i}. {step}")
-                step_label.setWordWrap(True)
-                step_label.setMargin(5)
-                steps_layout.addWidget(step_label)
-            
-            scroll_layout.addWidget(steps_group)
-        
-        # Technical details (if available)
-        if self.explanation.technical_details:
-            tech_group = QGroupBox("Technical Details")
-            tech_layout = QVBoxLayout(tech_group)
-            tech_label = QLabel(self.explanation.technical_details)
-            tech_label.setWordWrap(True)
-            tech_label.setObjectName("techLabel")  # For themed styling
-            # Theme will be applied later - don't hard-code styles here
-            tech_layout.addWidget(tech_label)
-            scroll_layout.addWidget(tech_group)
-        
+        style = f"""
+            QDialog {{
+                background-color: {bg};
+                color: {text};
+            }}
+            QGroupBox {{
+                color: {text};
+                border: 2px solid {border};
+                border-radius: 8px;
+                margin-top: 1em;
+                padding-top: 0.8em;
+                background-color: {secondary_bg};
+                font-weight: 600;
+            }}
+            QGroupBox::title {{
+                subcontrol-origin: margin;
+                left: 14px;
+                padding: 0 10px 0 10px;
+                color: {accent};
+                font-weight: 700;
+                font-size: 14px;
+            }}
+            QLabel {{
+                color: {text};
+                font-weight: 500;
+            }}
+            QTextEdit {{
+                background-color: {tertiary_bg};
+                border: 2px solid {border};
+                border-radius: 6px;
+                color: {text};
+                font-family: monospace;
+                font-size: 10px;
+                selection-background-color: {accent};
+                selection-color: {bg};
+            }}
+            QCheckBox {{
+                color: {text};
+                spacing: 8px;
+            }}
+            QCheckBox::indicator {{
+                width: 18px;
+                height: 18px;
+            }}
+            QCheckBox::indicator:unchecked {{
+                border: 2px solid {border};
+                background-color: {bg};
+                border-radius: 3px;
+            }}
+            QCheckBox::indicator:checked {{
+                border: 2px solid {accent};
+                background-color: {accent};
+                border-radius: 3px;
+            }}
+            QPushButton {{
+                background-color: {secondary_bg};
+                border: 1px solid {border};
+                border-radius: 6px;
+                padding: 8px 16px;
+                color: {text};
+                font-weight: 600;
+                min-width: 80px;
+            }}
+            QPushButton:hover {{
+                background-color: {hover_bg};
+                border-color: {accent};
+            }}
+            QPushButton:pressed {{
+                background-color: {pressed_bg};
+            }}
+            QScrollArea {{
+                border: 1px solid {border};
+                border-radius: 6px;
+                background-color: {secondary_bg};
+            }}
+            QScrollBar:vertical {{
+                background-color: {secondary_bg};
+                width: 12px;
+                border-radius: 6px;
+            }}
+            QScrollBar::handle:vertical {{
+                background-color: {hover_bg};
+                border-radius: 6px;
+                min-height: 20px;
+            }}
+            QScrollBar::handle:vertical:hover {{
+                background-color: {accent};
+            }}
+        """
+        self.setStyleSheet(style)
         # Common issue indicator
         if self.explanation.is_common:
             common_group = QGroupBox("ℹ️ Good to Know")

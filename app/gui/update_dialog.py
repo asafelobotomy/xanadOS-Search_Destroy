@@ -72,6 +72,9 @@ class UpdateDialog(QDialog):
         # Apply theme if parent has one
         if parent and hasattr(parent, 'current_theme'):
             self.apply_theme(parent.current_theme)
+        else:
+            # Default to dark theme if no parent theme attribute
+            self.apply_theme('dark')
             
         self.setup_ui()
         

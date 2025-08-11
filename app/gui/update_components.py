@@ -83,6 +83,32 @@ class UpdateDialog(QDialog):
         
         self.setup_ui()
         self.setup_connections()
+        # Apply parent theme or default
+        if parent and hasattr(parent, 'current_theme'):
+            self.apply_theme(parent.current_theme)
+        else:
+            self.apply_theme('dark')
+
+    def apply_theme(self, theme_name: str):
+        """Apply theme (light & dark)."""
+        is_light = theme_name == 'light'
+        # Fallback colors if parent not providing palette
+        if is_light:
+            bg = '#ffffff'; secondary = '#f4f5f7'; tertiary = '#eceef1'; text = '#222'; border = '#d0d5da'; accent = '#0078d4'; hover = '#e6f2fb'; pressed = '#cfe6f7'
+        else:
+            bg = '#1a1a1a'; secondary = '#2a2a2a'; tertiary = '#333'; text = '#FFCDAA'; border = '#EE8980'; accent = '#F14666'; hover = '#3a3a3a'; pressed = '#2a2a2a'
+        self.setStyleSheet(f"""
+            QDialog {{ background-color: {bg}; color: {text}; }}
+            QLabel {{ color: {text}; }}
+            QGroupBox {{ border:1px solid {border}; border-radius:6px; margin-top:10px; background:{secondary}; font-weight:600; }}
+            QGroupBox::title {{ subcontrol-origin: margin; left: 10px; padding: 2px 6px; color:{accent}; }}
+            QTextEdit {{ background:{tertiary}; border:1px solid {border}; border-radius:6px; color:{text}; font-family:monospace; font-size:11px; }}
+            QPushButton {{ background:{secondary}; border:1px solid {border}; border-radius:6px; padding:8px 14px; color:{text}; font-weight:600; }}
+            QPushButton:hover {{ background:{hover}; border-color:{accent}; }}
+            QPushButton:pressed {{ background:{pressed}; }}
+            QProgressBar {{ border:1px solid {border}; background:{secondary}; text-align:center; color:{text}; }}
+            QProgressBar::chunk {{ background:{accent}; }}
+        """)
     
     def setup_ui(self):
         """Set up the user interface."""

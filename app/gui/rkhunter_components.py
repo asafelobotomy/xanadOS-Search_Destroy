@@ -41,6 +41,8 @@ class RKHunterScanDialog(QDialog):
         # Apply parent theme if available
         if parent and hasattr(parent, "current_theme"):
             self.apply_theme(parent.current_theme)
+        else:
+            self.apply_theme("dark")
 
     def init_ui(self):
         """Initialize the user interface."""
@@ -241,16 +243,27 @@ class RKHunterScanDialog(QDialog):
         return fallback_colors.get(color_type, "#FFCDAA")
 
     def apply_theme(self, theme_name: str):
-        """Apply theme styling to the dialog."""
-        bg = self.get_theme_color("background")
-        secondary_bg = self.get_theme_color("secondary_bg")
-        tertiary_bg = self.get_theme_color("tertiary_bg")
-        text = self.get_theme_color("primary_text")
-        success = self.get_theme_color("success")
-        border = self.get_theme_color("border")
-        hover_bg = self.get_theme_color("hover_bg")
-        pressed_bg = self.get_theme_color("pressed_bg")
-        accent = self.get_theme_color("accent")
+        """Apply theme styling to the dialog (supports light & dark)."""
+        is_light = theme_name == "light"
+        if is_light and not (self.parent_window and hasattr(self.parent_window, 'get_theme_color')):
+            # Provide light palette fallback
+            palette = {
+                'background': '#ffffff', 'secondary_bg': '#f8f9fa', 'tertiary_bg': '#eceef1',
+                'primary_text': '#222222', 'success': '#198754', 'border': '#d0d5da',
+                'hover_bg': '#e6f2fb', 'pressed_bg': '#d0e8f7', 'accent': '#0078d4'
+            }
+            def p(k): return palette[k]
+        else:
+            def p(k): return self.get_theme_color(k)
+        bg = p('background')
+        secondary_bg = p('secondary_bg')
+        tertiary_bg = p('tertiary_bg')
+        text = p('primary_text')
+        success = p('success')
+        border = p('border')
+        hover_bg = p('hover_bg')
+        pressed_bg = p('pressed_bg')
+        accent = p('accent')
 
         style = f"""
             QDialog {{

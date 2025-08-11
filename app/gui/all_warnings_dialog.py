@@ -62,7 +62,7 @@ class AllWarningsDialog(QDialog):
         self.current_warning_index = 0
         self.parent_window = parent
         
-        self.setWindowTitle("⚠️ Scan Warnings - Detailed Explanations")
+    self.setWindowTitle("⚠️ Scan Warnings - Detailed Explanations")
         self.setModal(True)
         self.resize(900, 700)
         
@@ -80,6 +80,8 @@ class AllWarningsDialog(QDialog):
             # Apply parent theme if available
             if parent and hasattr(parent, "current_theme"):
                 self._apply_theme(parent.current_theme)
+            else:
+                self._apply_theme("dark")
             
             # Select first warning if available
             if self.warnings and self.warning_list:
@@ -100,7 +102,7 @@ class AllWarningsDialog(QDialog):
         layout.setSpacing(10)
         
         # Header
-        header_label = QLabel("⚠️ Security Warnings Found")
+    header_label = QLabel("⚠️ Security Warnings Found")
         header_label.setObjectName("headerLabel")  # For themed styling
         layout.addWidget(header_label)
         
@@ -128,56 +130,81 @@ class AllWarningsDialog(QDialog):
         button_layout = QHBoxLayout()
         
         # Mark all as safe button (for advanced users)
-        mark_safe_btn = QPushButton("Mark All as Safe")
-        mark_safe_btn.setStyleSheet("""
-            QPushButton {
-                background-color: #28A745;
-                color: white;
-                border: none;
-                border-radius: 6px;
-                padding: 8px 16px;
-                font-weight: bold;
-            }
-            QPushButton:hover { background-color: #218838; }
-        """)
+    mark_safe_btn = QPushButton("Mark All as Safe")
         mark_safe_btn.clicked.connect(self._mark_all_as_safe)
         button_layout.addWidget(mark_safe_btn)
         
         button_layout.addStretch()
         
         # Export warnings button
-        export_btn = QPushButton("Export Report")
-        export_btn.setStyleSheet("""
-            QPushButton {
-                background-color: #007BFF;
-                color: white;
-                border: none;
-                border-radius: 6px;
-                padding: 8px 16px;
-                font-weight: bold;
-            }
-            QPushButton:hover { background-color: #0056B3; }
-        """)
+    export_btn = QPushButton("Export Report")
         export_btn.clicked.connect(self._export_warnings_report)
         button_layout.addWidget(export_btn)
         
         # Close button
-        close_btn = QPushButton("Close")
-        close_btn.setStyleSheet("""
-            QPushButton {
-                background-color: #6C757D;
-                color: white;
-                border: none;
-                border-radius: 6px;
-                padding: 8px 16px;
-                font-weight: bold;
-            }
-            QPushButton:hover { background-color: #545B62; }
-        """)
+    close_btn = QPushButton("Close")
         close_btn.clicked.connect(self.accept)
         button_layout.addWidget(close_btn)
         
         layout.addLayout(button_layout)
+
+    def _apply_theme(self, theme_name: str):
+        """Apply theme styling (dark + light) consistently."""
+        is_light = theme_name == "light"
+        # Use parent theme color API if available
+        def color(key, default_dark, default_light):
+            if self.parent_window and hasattr(self.parent_window, 'get_theme_color') and not is_light:
+                return self.parent_window.get_theme_color(key)
+            return default_light if is_light else default_dark
+
+        bg = color('background', '#1a1a1a', '#ffffff')
+        secondary_bg = color('secondary_bg', '#2a2a2a', '#f7f7f9')
+        tertiary_bg = color('tertiary_bg', '#333333', '#ececef')
+        text = color('primary_text', '#FFCDAA', '#1f1f23')
+        accent = color('accent', '#F14666', '#0078d4')
+        border = color('border', '#EE8980', '#d0d0d5')
+        success = color('success', '#28a745', '#218838')
+        info = color('hover_bg', '#3a3a3a', '#e6f2fb')
+        neutral = color('pressed_bg', '#2a2a2a', '#d9e7f2')
+
+        self.setStyleSheet(f"""
+            QDialog {{
+                background-color: {bg};
+                color: {text};
+            }}
+            QLabel#headerLabel {{
+                font-size: 18px; font-weight: 700; margin-bottom: 4px; color: {accent};
+            }}
+            QLabel#summaryLabel {{ color: {text}; font-size: 12px; margin-bottom: 8px; }}
+            QGroupBox {{
+                border: 2px solid {border};
+                border-radius: 8px;
+                margin-top: 12px;
+                background-color: {secondary_bg};
+                font-weight: 600;
+            }}
+            QGroupBox::title {{
+                subcontrol-origin: margin; left: 10px; padding: 2px 8px; color: {accent};
+            }}
+            QListWidget {{
+                background-color: {secondary_bg};
+                border: 1px solid {border};
+                border-radius: 6px; color: {text};
+            }}
+            QTextEdit {{
+                background-color: {tertiary_bg};
+                border: 1px solid {border};
+                border-radius: 6px; color: {text};
+                font-family: monospace; font-size: 11px;
+            }}
+            QPushButton {{
+                background-color: {secondary_bg};
+                border: 1px solid {border};
+                border-radius: 6px; padding: 8px 16px; color: {text}; font-weight: 600;
+            }}
+            QPushButton:hover {{ background-color: {info}; border-color: {accent}; }}
+            QPushButton:pressed {{ background-color: {neutral}; }}
+        """)
 
     def _create_warnings_list_panel(self):
         """Create the left panel with warnings list."""
