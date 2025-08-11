@@ -911,3 +911,10 @@ def get_theme_color(color_key: str) -> str:
 def create_themed_message_box(parent: QWidget, msg_type: str, title: str, text: str, buttons=None) -> QMessageBox:
     """Create a themed message box (convenience function)."""
     return get_theme_manager().create_themed_message_box(parent, msg_type, title, text, buttons)
+
+def toggle_theme():
+    """Toggle between light and dark themes (for testing)."""
+    current = get_theme_manager().get_current_theme()
+    new_theme = "light" if current == "dark" else "dark"
+    set_app_theme(new_theme)
+    return new_theme
