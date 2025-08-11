@@ -463,72 +463,129 @@ class AllWarningsDialog(QDialog):
         warning = self.warnings[self.current_warning_index]
         
         # Create investigation dialog
-        QMessageBox.information(
-            self,
-            "🔍 Investigation Guidance",
-            f"To investigate this warning:\n\n"
-            f"1. Review the warning details above\n"
-            f"2. Check system logs around the time of detection\n"
-            f"3. Verify any files or processes mentioned\n"
-            f"4. Consider the system's recent activity\n"
-            f"5. Run additional targeted scans if needed\n\n"
-            f"If you're unsure about the warning's significance,\n"
-            f"consider consulting with a security professional."
-        )
+        if hasattr(self.parent_window, 'show_themed_message_box'):
+            self.parent_window.show_themed_message_box(
+                "information",
+                "🔍 Investigation Guidance",
+                f"To investigate this warning:\n\n"
+                f"1. Review the warning details above\n"
+                f"2. Check system logs around the time of detection\n"
+                f"3. Verify any files or processes mentioned\n"
+                f"4. Consider the system's recent activity\n"
+                f"5. Run additional targeted scans if needed\n\n"
+                f"If you're unsure about the warning's significance,\n"
+                f"consider consulting with a security professional."
+            )
+        else:
+            QMessageBox.information(
+                self,
+                "🔍 Investigation Guidance",
+                f"To investigate this warning:\n\n"
+                f"1. Review the warning details above\n"
+                f"2. Check system logs around the time of detection\n"
+                f"3. Verify any files or processes mentioned\n"
+                f"4. Consider the system's recent activity\n"
+                f"5. Run additional targeted scans if needed\n\n"
+                f"If you're unsure about the warning's significance,\n"
+                f"consider consulting with a security professional."
+            )
 
     def _mark_current_warning_as_safe(self):
         """Mark the current warning as safe."""
         if self.current_warning_index >= len(self.warnings):
             return
             
-        reply = QMessageBox.question(
-            self,
-            "Mark Warning as Safe",
-            "Are you sure this warning represents a false positive?\n\n"
-            "Only mark warnings as safe if you're confident they\n"
-            "don't represent actual security threats.",
-            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
-        )
+        if hasattr(self.parent_window, 'show_themed_message_box'):
+            reply = self.parent_window.show_themed_message_box(
+                "question",
+                "Mark Warning as Safe",
+                "Are you sure this warning represents a false positive?\n\n"
+                "Only mark warnings as safe if you're confident they\n"
+                "don't represent actual security threats."
+            )
+        else:
+            reply = QMessageBox.question(
+                self,
+                "Mark Warning as Safe",
+                "Are you sure this warning represents a false positive?\n\n"
+                "Only mark warnings as safe if you're confident they\n"
+                "don't represent actual security threats.",
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+            )
         
         if reply == QMessageBox.StandardButton.Yes:
-            QMessageBox.information(
-                self,
-                "Warning Marked as Safe",
+            if hasattr(self.parent_window, 'show_themed_message_box'):
+                self.parent_window.show_themed_message_box(
+                    "information",
+                    "Warning Marked as Safe",
                 "This warning has been marked as a false positive.\n"
                 "It will be ignored in future scans."
             )
+            else:
+                QMessageBox.information(
+                    self,
+                    "Warning Marked as Safe",
+                    "This warning has been marked as a false positive.\n"
+                    "It will be ignored in future scans."
+                )
 
     def _mark_all_as_safe(self):
         """Mark all warnings as safe (with strong confirmation)."""
-        reply = QMessageBox.question(
-            self,
-            "Mark All Warnings as Safe",
-            f"⚠️ WARNING: You are about to mark ALL {len(self.warnings)} warnings as safe!\n\n"
-            f"This action should only be taken if you are absolutely certain\n"
-            f"that none of these warnings represent actual security threats.\n\n"
-            f"Are you sure you want to continue?",
-            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-            QMessageBox.StandardButton.No
-        )
-        
-        if reply == QMessageBox.StandardButton.Yes:
-            # Second confirmation
-            reply2 = QMessageBox.question(
+        if hasattr(self.parent_window, 'show_themed_message_box'):
+            reply = self.parent_window.show_themed_message_box(
+                "question",
+                "Mark All Warnings as Safe",
+                f"⚠️ WARNING: You are about to mark ALL {len(self.warnings)} warnings as safe!\n\n"
+                f"This action should only be taken if you are absolutely certain\n"
+                f"that none of these warnings represent actual security threats.\n\n"
+                f"Are you sure you want to continue?"
+            )
+        else:
+            reply = QMessageBox.question(
                 self,
-                "Final Confirmation",
-                "This is your final confirmation.\n\n"
-                "Mark all warnings as false positives?",
+                "Mark All Warnings as Safe",
+                f"⚠️ WARNING: You are about to mark ALL {len(self.warnings)} warnings as safe!\n\n"
+                f"This action should only be taken if you are absolutely certain\n"
+                f"that none of these warnings represent actual security threats.\n\n"
+                f"Are you sure you want to continue?",
                 QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
                 QMessageBox.StandardButton.No
             )
+        
+        if reply == QMessageBox.StandardButton.Yes:
+            # Second confirmation
+            if hasattr(self.parent_window, 'show_themed_message_box'):
+                reply2 = self.parent_window.show_themed_message_box(
+                    "question",
+                    "Final Confirmation",
+                    "This is your final confirmation.\n\n"
+                    "Mark all warnings as false positives?"
+                )
+            else:
+                reply2 = QMessageBox.question(
+                    self,
+                    "Final Confirmation",
+                    "This is your final confirmation.\n\n"
+                    "Mark all warnings as false positives?",
+                    QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                    QMessageBox.StandardButton.No
+                )
             
             if reply2 == QMessageBox.StandardButton.Yes:
-                QMessageBox.information(
-                    self,
-                    "All Warnings Marked as Safe",
-                    f"All {len(self.warnings)} warnings have been marked as false positives.\n"
-                    f"They will be ignored in future scans."
-                )
+                if hasattr(self.parent_window, 'show_themed_message_box'):
+                    self.parent_window.show_themed_message_box(
+                        "information",
+                        "All Warnings Marked as Safe",
+                        f"All {len(self.warnings)} warnings have been marked as false positives.\n"
+                        f"They will be ignored in future scans."
+                    )
+                else:
+                    QMessageBox.information(
+                        self,
+                        "All Warnings Marked as Safe",
+                        f"All {len(self.warnings)} warnings have been marked as false positives.\n"
+                        f"They will be ignored in future scans."
+                    )
 
     def _export_warnings_report(self):
         """Export warnings to a detailed report file."""
@@ -576,15 +633,29 @@ class AllWarningsDialog(QDialog):
             with open(file_path, 'w', encoding='utf-8') as f:
                 f.write("\n".join(report_lines))
             
-            QMessageBox.information(
-                self,
-                "Report Exported",
-                f"Warnings report has been exported to:\n{file_path}"
-            )
+            if hasattr(self.parent_window, 'show_themed_message_box'):
+                self.parent_window.show_themed_message_box(
+                    "information",
+                    "Report Exported",
+                    f"Warnings report has been exported to:\n{file_path}"
+                )
+            else:
+                QMessageBox.information(
+                    self,
+                    "Report Exported",
+                    f"Warnings report has been exported to:\n{file_path}"
+                )
             
         except Exception as e:
-            QMessageBox.critical(
-                self,
-                "Export Error",
-                f"Failed to export report:\n{str(e)}"
-            )
+            if hasattr(self.parent_window, 'show_themed_message_box'):
+                self.parent_window.show_themed_message_box(
+                    "critical",
+                    "Export Error",
+                    f"Failed to export report:\n{str(e)}"
+                )
+            else:
+                QMessageBox.critical(
+                    self,
+                    "Export Error",
+                    f"Failed to export report:\n{str(e)}"
+                )

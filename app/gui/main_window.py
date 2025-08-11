@@ -7071,9 +7071,8 @@ System        {perf_status}"""
         warning = self._current_warnings[warning_index]
         if not warning.explanation:
             # Create a simple message for warnings without detailed explanation
-            from PyQt6.QtWidgets import QMessageBox
-            QMessageBox.information(
-                self,
+            self.show_themed_message_box(
+                "information",
                 "Warning Information", 
                 f"Warning: {warning.description}\n\n"
                 f"This warning indicates a potential security concern that should be investigated. "
@@ -7106,9 +7105,8 @@ System        {perf_status}"""
             
         except ImportError as e:
             # Fallback to simple message box
-            from PyQt6.QtWidgets import QMessageBox
-            QMessageBox.information(
-                self,
+            self.show_themed_message_box(
+                "information",
                 "Warning Explanation",
                 f"Warning: {warning.description}\n\n"
                 f"Category: {warning.explanation.category.value.replace('_', ' ').title()}\n"
@@ -7120,9 +7118,8 @@ System        {perf_status}"""
     
     def _mark_warning_as_safe(self, warning_text: str):
         """Mark a warning as safe (placeholder for future implementation)."""
-        from PyQt6.QtWidgets import QMessageBox
-        QMessageBox.information(
-            self,
+        self.show_themed_message_box(
+            "information",
             "Warning Marked as Safe",
             f"Warning marked as safe:\n{warning_text[:100]}...\n\n"
             f"This warning will be hidden in future scans.\n"
@@ -7131,9 +7128,8 @@ System        {perf_status}"""
     
     def _investigate_warning(self, warning_text: str):
         """Handle investigation request (placeholder for future implementation)."""
-        from PyQt6.QtWidgets import QMessageBox
-        QMessageBox.information(
-            self,
+        self.show_themed_message_box(
+            "information",
             "Investigation Resources",
             f"To investigate this warning:\n\n"
             f"1. Search online for the warning text\n"

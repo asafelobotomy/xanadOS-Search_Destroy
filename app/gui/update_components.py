@@ -327,18 +327,33 @@ class UpdateDialog(QDialog):
                 success = updater.apply_update(Path(self.download_path))
                 
                 if success:
-                    QMessageBox.information(
-                        self,
-                        "Update Installed",
-                        "Update installed successfully! The application will restart now."
-                    )
+                    # Use themed message box if parent has it
+                    if hasattr(self.parent(), 'show_themed_message_box'):
+                        self.parent().show_themed_message_box(
+                            "information",
+                            "Update Installed",
+                            "Update installed successfully! The application will restart now."
+                        )
+                    else:
+                        QMessageBox.information(
+                            self,
+                            "Update Installed",
+                            "Update installed successfully! The application will restart now."
+                        )
                     updater.restart_application()
                 else:
-                    QMessageBox.critical(
-                        self,
-                        "Installation Failed",
-                        "Failed to install the update. Please try again or install manually."
-                    )
+                    if hasattr(self.parent(), 'show_themed_message_box'):
+                        self.parent().show_themed_message_box(
+                            "critical",
+                            "Installation Failed",
+                            "Failed to install the update. Please try again or install manually."
+                        )
+                    else:
+                        QMessageBox.critical(
+                            self,
+                            "Installation Failed",
+                            "Failed to install the update. Please try again or install manually."
+                        )
                     self.install_button.setEnabled(True)
             except Exception as e:
                 QMessageBox.critical(

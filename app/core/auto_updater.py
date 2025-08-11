@@ -530,13 +530,20 @@ class UpdateNotifier:
             if update_info:
                 self.show_update_notification(update_info)
             else:
-                # Show "no updates" message
-                from PyQt6.QtWidgets import QMessageBox
-                QMessageBox.information(
-                    self.main_window,
-                    "No Updates Available",
-                    f"You are running the latest version ({self.updater.current_version})."
-                )
+                # Show "no updates" message using themed dialog
+                if hasattr(self.main_window, 'show_themed_message_box'):
+                    self.main_window.show_themed_message_box(
+                        "information",
+                        "No Updates Available",
+                        f"You are running the latest version ({self.updater.current_version})."
+                    )
+                else:
+                    from PyQt6.QtWidgets import QMessageBox
+                    QMessageBox.information(
+                        self.main_window,
+                        "No Updates Available",
+                        f"You are running the latest version ({self.updater.current_version})."
+                    )
                 
         except Exception as e:
             # Show error message
