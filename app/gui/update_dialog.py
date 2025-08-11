@@ -11,6 +11,7 @@ from PyQt6.QtWidgets import (
 )
 from PyQt6.QtCore import Qt, QThread, pyqtSignal
 from PyQt6.QtGui import QFont, QPixmap, QIcon
+from .themed_widgets import ThemedDialog
 
 
 class UpdateDownloadThread(QThread):
@@ -56,7 +57,7 @@ class UpdateDownloadThread(QThread):
             self.download_completed.emit(False, f"Update failed: {str(e)}")
 
 
-class UpdateDialog(QDialog):
+class UpdateDialog(ThemedDialog):
     """Dialog for displaying update information and managing updates."""
     
     def __init__(self, parent=None, update_info=None, updater=None):

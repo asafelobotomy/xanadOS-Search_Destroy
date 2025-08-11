@@ -20,9 +20,10 @@ from PyQt6.QtWidgets import (
 )
 
 from app.core.rkhunter_analyzer import WarningExplanation, SeverityLevel
+from app.gui.themed_widgets import ThemedDialog
 
 
-class WarningExplanationDialog(QDialog):
+class WarningExplanationDialog(ThemedDialog):
     """Dialog to display detailed warning explanations."""
     
     # Signals

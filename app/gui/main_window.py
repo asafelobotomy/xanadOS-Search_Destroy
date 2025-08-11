@@ -72,6 +72,8 @@ from utils.scan_reports import (
 
 from gui import APP_VERSION
 from gui import settings_pages
+from gui.theme_manager import init_theming, get_theme_manager
+from gui.themed_widgets import ThemedWidgetMixin
 
 
 class NoWheelComboBox(QComboBox):
@@ -103,17 +105,23 @@ class ClickableFrame(QFrame):
         super().mousePressEvent(event)
 
 
-class MainWindow(QMainWindow):
-    """Primary application window."""
+class MainWindow(QMainWindow, ThemedWidgetMixin):
+    """Primary application window with automatic theming."""
 
     def __init__(self):
         super().__init__()
 
-        # 1. Configuration
+        # Initialize theming system first
+        init_theming()
+        
+        # Set initial theme from config
         try:
             self.config = load_config()
         except Exception:
             self.config = {}
+            
+        theme_name = self.config.get("ui_settings", {}).get("theme", "dark")
+        get_theme_manager().set_theme(theme_name)
 
         # 2. Core managers / engines
         self.report_manager = ScanReportManager()
@@ -143,19 +151,13 @@ class MainWindow(QMainWindow):
         # Set up signal handlers for external termination
         self._setup_signal_handlers()
 
-        # 5. Theme
-        try:
-            self.apply_theme(self.config.get("ui_settings", {}).get("theme", "dark"))
-        except Exception:
-            self.apply_theme("dark")
-        
-        # 6. Apply text orientation setting at startup
+        # Apply text orientation setting at startup
         try:
             self.apply_text_orientation_setting()
         except Exception:
             pass  # Will use default center alignment
 
-        # 7. Initialize auto-update system
+        # Initialize auto-update system
         try:
             self._initialize_auto_updater()
         except Exception as e:
@@ -3140,48 +3142,35 @@ System        {perf_status}"""
         if hasattr(self, "status_bar"):
             self.status_bar.setAccessibleName("Application status")
 
-    def apply_theme(self, theme: str | None = None):
-        """Apply the current theme to the application.
-        Args:
-            theme: Optional explicit theme override ('dark','light','system').
-        """
-        if theme:
-            self.current_theme = theme
-        if self.current_theme == "dark":
-            self.apply_dark_theme()
-        elif self.current_theme == "light":
-            self.apply_light_theme()
-        else:  # system
-            self.apply_system_theme()
-
-        # Update the icon for the new theme
-        if hasattr(self, "icon_label"):
-            self.update_icon_for_theme()
-            
-        # Update RKHunter category styling for the new theme
-        self.update_rkhunter_category_styling()
-        
-        # Update any components with dynamic styling
-        self.update_dynamic_component_styling()
-
     def set_theme(self, theme):
         """Set the application theme and save to config."""
-        self.current_theme = theme
+        # Update theme manager
+        get_theme_manager().set_theme(theme)
+        
+        # Save to config
         if "ui_settings" not in self.config:
             self.config["ui_settings"] = {}
         self.config["ui_settings"]["theme"] = theme
         save_config(self.config)
-        self.apply_theme()
+        
+        # Update theme menu
         self.update_theme_menu()
+        
+        # Update any custom components
+        self.update_icon_for_theme()
+        self.update_rkhunter_category_styling()
+        self.update_dynamic_component_styling()
 
     def update_theme_menu(self):
         """Update the theme menu to reflect the current selection."""
-        self.dark_theme_action.setChecked(self.current_theme == "dark")
-        self.light_theme_action.setChecked(self.current_theme == "light")
-        self.system_theme_action.setChecked(self.current_theme == "system")
+        current_theme = get_theme_manager().get_current_theme()
+        self.dark_theme_action.setChecked(current_theme == "dark")
+        self.light_theme_action.setChecked(current_theme == "light")
+        self.system_theme_action.setChecked(current_theme == "system")
 
     def update_icon_for_theme(self):
         """Update the application icon based on the current theme."""
+        current_theme = get_theme_manager().get_current_theme()
         icon_path = (
             Path(__file__).parent.parent.parent
             / "packaging"
@@ -3192,7 +3181,7 @@ System        {perf_status}"""
             pixmap = QPixmap(str(icon_path))
 
             # Convert to black and white in dark mode
-            if self.current_theme == "dark":
+            if current_theme == "dark":
                 pixmap = self.convert_to_black_and_white(pixmap)
 
             scaled_pixmap = pixmap.scaled(
@@ -3204,7 +3193,7 @@ System        {perf_status}"""
             self.icon_label.setPixmap(scaled_pixmap)
         else:
             # Fallback to colored circle if icon not found
-            fallback_color = "#404040" if self.current_theme == "dark" else "#2196F3"
+            fallback_color = "#404040" if current_theme == "dark" else "#2196F3"
             self.icon_label.setStyleSheet(
                 f"background-color: {fallback_color}; border-radius: 64px;"
             )
@@ -3244,85 +3233,6 @@ System        {perf_status}"""
                 image.setPixel(x, y, gray_pixel)
 
         return QPixmap.fromImage(image)
-
-    def show_themed_message_box(self, msg_type, title, text, buttons=None):
-        """Show a message box with proper theming."""
-        msg_box = QMessageBox(self)
-        msg_box.setWindowTitle(title)
-        msg_box.setText(text)
-
-        # Set message type
-        if msg_type == "warning":
-            msg_box.setIcon(QMessageBox.Icon.Warning)
-        elif msg_type == "information":
-            msg_box.setIcon(QMessageBox.Icon.Information)
-        elif msg_type == "critical":
-            msg_box.setIcon(QMessageBox.Icon.Critical)
-        elif msg_type == "question":
-            msg_box.setIcon(QMessageBox.Icon.Question)
-
-        # Set buttons
-        if buttons:
-            msg_box.setStandardButtons(buttons)
-        else:
-            msg_box.setStandardButtons(QMessageBox.StandardButton.Ok)
-
-        # Apply theme-specific styling
-        bg = self.get_theme_color("background")
-        text = self.get_theme_color("primary_text")
-        tertiary_bg = self.get_theme_color("tertiary_bg")
-        border = self.get_theme_color("border")
-        hover_bg = self.get_theme_color("hover_bg")
-        pressed_bg = self.get_theme_color("pressed_bg")
-        accent = self.get_theme_color("accent")
-        success = self.get_theme_color("success")
-
-        style = f"""
-            QMessageBox {{
-                background-color: {bg};
-                color: {text};
-                font-size: 12px;
-                font-weight: 500;
-                border: 2px solid {border};
-                border-radius: 6px;
-            }}
-            QMessageBox QLabel {{
-                color: {text};
-                font-weight: 600;
-                padding: 10px;
-                line-height: 1.4;
-            }}
-            QMessageBox QPushButton {{
-                background-color: {tertiary_bg};
-                border: 2px solid {border};
-                border-radius: 5px;
-                padding: 8px 16px;
-                color: {text};
-                font-weight: 600;
-                min-width: 80px;
-            }}
-            QMessageBox QPushButton:hover {{
-                background-color: {hover_bg};
-                border-color: {accent};
-                color: {text};
-            }}
-            QMessageBox QPushButton:pressed {{
-                background-color: {pressed_bg};
-            }}
-            QMessageBox QPushButton:default {{
-                background-color: {success};
-                border-color: {success};
-                color: {bg};
-                font-weight: 700;
-            }}
-            QMessageBox QPushButton:default:hover {{
-                background-color: {hover_bg};
-                border-color: {hover_bg};
-            }}
-        """
-        msg_box.setStyleSheet(style)
-
-        return msg_box.exec()
 
     def show_themed_file_dialog(
             self,
