@@ -106,7 +106,12 @@ def build_rkhunter_page(host):
 
 def build_interface_page(host):
     page = QWidget(); layout = QVBoxLayout(page)
-    from PyQt6.QtWidgets import QLabel, QComboBox, QFormLayout
+    from PyQt6.QtWidgets import QLabel, QComboBox, QFormLayout, QGroupBox
+    from gui.theme_manager import get_theme_manager
+    
+    # Text Orientation Group
+    orientation_group = QGroupBox("Text Orientation")
+    orientation_layout = QFormLayout(orientation_group)
     
     # Create text orientation setting
     if not hasattr(host, 'text_orientation_combo'):
@@ -116,11 +121,70 @@ def build_interface_page(host):
         # Connect to apply changes immediately (this also triggers auto-save)
         host.text_orientation_combo.currentTextChanged.connect(host.apply_text_orientation_setting)
     
-    # Create form layout for settings
-    form = QFormLayout()
-    form.addRow('Scan Results Text Orientation:', host.text_orientation_combo)
+    orientation_layout.addRow('Scan Results Text Orientation:', host.text_orientation_combo)
     
-    layout.addLayout(form)
+    # Font Size Group
+    font_group = QGroupBox("Font Sizes")
+    font_layout = QFormLayout(font_group)
+    
+    # Create font size spinboxes for different interface elements
+    font_elements = [
+        ('base_font_spin', 'Base Font Size (Buttons, Tabs, Cards):', 'base'),
+        ('scan_results_font_spin', 'Scan Results Text:', 'scan_results'),
+        ('reports_font_spin', 'Reports Text:', 'reports'),
+        ('headers_font_spin', 'Headers & Titles:', 'headers'),
+        ('small_font_spin', 'Small Text & Labels:', 'small')
+    ]
+    
+    for attr_name, label, element_type in font_elements:
+        if not hasattr(host, attr_name):
+            spin = host.NoWheelSpinBox() if hasattr(host, 'NoWheelSpinBox') else QSpinBox()
+            spin.setRange(8, 24)  # Reasonable font size range
+            spin.setValue(get_theme_manager().get_font_size(element_type))
+            spin.setSuffix(' px')
+            
+            # Connect to apply changes immediately and save to config
+            def make_change_handler(element_type):
+                def handle_change(value):
+                    get_theme_manager().set_font_size(element_type, value)
+                    # Save to config
+                    if 'ui_settings' not in host.config:
+                        host.config['ui_settings'] = {}
+                    if 'font_sizes' not in host.config['ui_settings']:
+                        host.config['ui_settings']['font_sizes'] = {}
+                    host.config['ui_settings']['font_sizes'][element_type] = value
+                    host.save_config()
+                return handle_change
+            
+            spin.valueChanged.connect(make_change_handler(element_type))
+            setattr(host, attr_name, spin)
+        
+        font_layout.addRow(label, getattr(host, attr_name))
+    
+    # Reset to defaults button
+    if not hasattr(host, 'reset_fonts_btn'):
+        host.reset_fonts_btn = QPushButton("Reset to Defaults")
+        def reset_fonts():
+            # Default font sizes
+            defaults = {'base': 14, 'scan_results': 14, 'reports': 14, 'headers': 18, 'small': 12}
+            for element_type, default_size in defaults.items():
+                get_theme_manager().set_font_size(element_type, default_size)
+                # Update spinbox values
+                for attr_name, _, elem_type in font_elements:
+                    if elem_type == element_type and hasattr(host, attr_name):
+                        getattr(host, attr_name).setValue(default_size)
+            # Clear config
+            if 'ui_settings' in host.config and 'font_sizes' in host.config['ui_settings']:
+                del host.config['ui_settings']['font_sizes']
+                host.save_config()
+        
+        host.reset_fonts_btn.clicked.connect(reset_fonts)
+    
+    font_layout.addRow('', host.reset_fonts_btn)
+    
+    # Add groups to main layout
+    layout.addWidget(orientation_group)
+    layout.addWidget(font_group)
     layout.addStretch()
     return page
 

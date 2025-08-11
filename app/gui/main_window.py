@@ -122,6 +122,9 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
             
         theme_name = self.config.get("ui_settings", {}).get("theme", "dark")
         get_theme_manager().set_theme(theme_name)
+        
+        # Load custom font sizes from config if they exist
+        self.load_font_settings()
 
         # 2. Core managers / engines
         self.report_manager = ScanReportManager()
@@ -8285,6 +8288,30 @@ System        {perf_status}"""
                 "warning", "Delete Error", f"Error deleting reports: {e}"
             )
 
+    def load_font_settings(self):
+        """Load font size settings from config and apply them to theme manager."""
+        try:
+            ui_settings = self.config.get("ui_settings", {})
+            font_sizes = ui_settings.get("font_sizes", {})
+            
+            if font_sizes:
+                # Apply saved font sizes to theme manager
+                for element_type, size in font_sizes.items():
+                    get_theme_manager().set_font_size(element_type, size)
+                print(f"✅ Loaded custom font sizes: {font_sizes}")
+            else:
+                print("ℹ️  Using default font sizes")
+                
+        except Exception as e:
+            print(f"❌ Error loading font settings: {e}")
+
+    def save_config(self):
+        """Save current configuration to file."""
+        try:
+            save_config(self.config)
+        except Exception as e:
+            print(f"❌ Error saving config: {e}")
+
     def load_current_settings(self):
         """Load current settings from config into the settings UI controls."""
         try:
@@ -8312,6 +8339,27 @@ System        {perf_status}"""
                 self.text_orientation_combo.setCurrentText(text_orientation)
                 # Apply the loaded text orientation setting
                 self.apply_text_orientation_setting(text_orientation)
+
+            # Load font size settings
+            font_sizes = ui_settings.get("font_sizes", {})
+            if font_sizes:
+                from gui.theme_manager import get_theme_manager
+                # Apply saved font sizes to theme manager
+                for element_type, size in font_sizes.items():
+                    get_theme_manager().set_font_size(element_type, size)
+                
+                # Update font size spinboxes if they exist
+                font_spinbox_map = {
+                    'base': 'base_font_spin',
+                    'scan_results': 'scan_results_font_spin', 
+                    'reports': 'reports_font_spin',
+                    'headers': 'headers_font_spin',
+                    'small': 'small_font_spin'
+                }
+                
+                for element_type, spinbox_attr in font_spinbox_map.items():
+                    if hasattr(self, spinbox_attr) and element_type in font_sizes:
+                        getattr(self, spinbox_attr).setValue(font_sizes[element_type])
 
             # Activity log retention setting
             retention = str(ui_settings.get("activity_log_retention", 100))

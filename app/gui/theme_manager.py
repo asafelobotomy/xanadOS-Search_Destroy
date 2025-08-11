@@ -84,9 +84,14 @@ class ThemeManager(QObject):
                     "shadow": "rgba(0, 0, 0, 0.5)",       # Softer shadows
                 },
                 "fonts": {
-                    "base_size": 14,                      # Increased from 11px for better readability
-                    "header_size": 18,                    # Increased from 16px for better hierarchy
-                    "small_size": 12,                     # Increased from 9px - much more readable
+                    "base_size": 14,                      # Default base size for fallback
+                    "button_size": 14,                    # Buttons
+                    "tab_size": 14,                       # Tab headers
+                    "card_size": 14,                      # Dashboard cards
+                    "report_size": 14,                    # Report viewer text
+                    "scan_result_size": 14,               # Scan results text area
+                    "header_size": 18,                    # Headers and titles
+                    "small_size": 12,                     # Small text and labels
                     "monospace_family": "Consolas, 'Courier New', monospace",
                     "ui_family": "Segoe UI, Tahoma, sans-serif",
                 }
@@ -128,9 +133,14 @@ class ThemeManager(QObject):
                     "glow": "#FF572230",
                 },
                 "fonts": {
-                    "base_size": 14,                      # Increased from 11px for better readability
-                    "header_size": 18,                    # Increased from 16px for better hierarchy
-                    "small_size": 12,                     # Increased from 9px - much more readable
+                    "base_size": 14,                      # Default base size for fallback
+                    "button_size": 14,                    # Buttons
+                    "tab_size": 14,                       # Tab headers
+                    "card_size": 14,                      # Dashboard cards
+                    "report_size": 14,                    # Report viewer text
+                    "scan_result_size": 14,               # Scan results text area
+                    "header_size": 18,                    # Headers and titles
+                    "small_size": 12,                     # Small text and labels
                     "monospace_family": "Consolas, 'Courier New', monospace",
                     "ui_family": "Segoe UI, Tahoma, sans-serif",
                 }
@@ -163,6 +173,47 @@ class ThemeManager(QObject):
         theme_data = self._theme_definitions.get(theme_name, self._theme_definitions["dark"])
         return theme_data["fonts"].get(font_key, 11)
     
+    def set_font_size(self, element_type: str, size: int):
+        """Set font size for a specific element type."""
+        font_key_map = {
+            "base": "base_size",
+            "buttons": "button_size", 
+            "tabs": "tab_size",
+            "cards": "card_size",
+            "reports": "report_size",
+            "scan_results": "scan_result_size",
+            "headers": "header_size",
+            "small": "small_size"
+        }
+        
+        font_key = font_key_map.get(element_type)
+        if font_key and font_key in self._theme_definitions[self._current_theme]["fonts"]:
+            self._theme_definitions[self._current_theme]["fonts"][font_key] = size
+            # Also update other themes to maintain consistency
+            for theme_name in self._theme_definitions:
+                if font_key in self._theme_definitions[theme_name]["fonts"]:
+                    self._theme_definitions[theme_name]["fonts"][font_key] = size
+            
+            # Apply the updated theme
+            self._apply_global_theme()
+            self.theme_changed.emit(self._current_theme)
+    
+    def get_font_size(self, element_type: str) -> int:
+        """Get font size for a specific element type."""
+        font_key_map = {
+            "base": "base_size",
+            "buttons": "button_size",
+            "tabs": "tab_size", 
+            "cards": "card_size",
+            "reports": "report_size",
+            "scan_results": "scan_result_size",
+            "headers": "header_size",
+            "small": "small_size"
+        }
+        
+        font_key = font_key_map.get(element_type, "base_size")
+        return self.get_font_property(font_key)
+
     def _detect_system_theme(self) -> str:
         """Detect the system theme preference."""
         try:
@@ -445,7 +496,7 @@ class ThemeManager(QObject):
             padding: 10px 18px;
             color: {c('primary_text')};
             font-weight: 600;
-            font-size: {f('base_size')}px;
+            font-size: {f('button_size')}px;
             min-height: 28px;
             transition: all 0.12s ease-out;
         }}
@@ -532,6 +583,27 @@ class ThemeManager(QObject):
             background-color: {c('pressed_bg')};
             color: {c('muted_text')};
             border-color: {c('border_muted')};
+        }}
+        
+        /* === SPECIFIC ELEMENT FONT SIZES === */
+        QTextEdit#resultsText {{
+            font-size: {f('scan_result_size')}px;
+        }}
+        
+        QTextEdit#reportViewer {{
+            font-size: {f('report_size')}px;
+        }}
+        
+        QLabel#cardTitle {{
+            font-size: {f('card_size')}px;
+        }}
+        
+        QLabel#cardValue {{
+            font-size: {f('card_size')}px;
+        }}
+        
+        QLabel#cardDescription {{
+            font-size: {f('small_size')}px;
         }}
         
         /* === ENHANCED GROUP BOXES === */
@@ -765,7 +837,7 @@ class ThemeManager(QObject):
             color: {c('primary_text')};
             margin-right: 3px;
             font-weight: 600;
-            font-size: {f('base_size')}px;
+            font-size: {f('tab_size')}px;
             transition: all 0.12s ease-out;
         }}
         QTabBar::tab:selected {{
