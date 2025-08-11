@@ -26,25 +26,40 @@ class ThemeManager(QObject):
             "dark": {
                 "name": "Dark",
                 "colors": {
-                    "background": "#1a1a1a",
-                    "secondary_bg": "#2a2a2a", 
-                    "tertiary_bg": "#3a3a3a",
-                    "quaternary_bg": "#4a4a4a",
+                    "background": "#1e1e1e",
+                    "secondary_bg": "#2d2d2d", 
+                    "tertiary_bg": "#404040",
+                    "quaternary_bg": "#4f4f4f",
+                    "card_bg": "#252525",
+                    "elevated_bg": "#323232",
                     "primary_text": "#FFCDAA",
-                    "secondary_text": "#CCCCCC",
-                    "muted_text": "#999999",
-                    "success": "#9CB898",
-                    "error": "#F14666",
-                    "warning": "#EE8980",
-                    "info": "#7BB3F0",
-                    "accent": "#F14666",
-                    "border": "#EE8980",
-                    "hover_bg": "#4a4a4a",
+                    "secondary_text": "#E0E0E0",
+                    "muted_text": "#B0B0B0",
+                    "success": "#4CAF50",
+                    "success_bright": "#66BB6A",
+                    "error": "#F44336",
+                    "error_bright": "#EF5350",
+                    "warning": "#FF9800",
+                    "warning_bright": "#FFA726",
+                    "info": "#2196F3",
+                    "info_bright": "#42A5F5",
+                    "accent": "#FF5722",
+                    "accent_bright": "#FF7043",
+                    "accent_dark": "#D84315",
+                    "border": "#555555",
+                    "border_light": "#777777",
+                    "border_dark": "#333333",
+                    "hover_bg": "#404040",
+                    "hover_accent": "#FF7043",
                     "pressed_bg": "#2a2a2a",
-                    "selection_bg": "#F14666",
+                    "selection_bg": "#FF5722",
                     "selection_text": "#FFFFFF",
-                    "disabled_bg": "#1f1f1f",
+                    "disabled_bg": "#1a1a1a",
                     "disabled_text": "#666666",
+                    "shadow": "#00000080",
+                    "glow": "#FF572240",
+                    "gradient_start": "#2d2d2d",
+                    "gradient_end": "#1e1e1e",
                 },
                 "fonts": {
                     "base_size": 11,
@@ -57,25 +72,40 @@ class ThemeManager(QObject):
             "light": {
                 "name": "Light",
                 "colors": {
-                    "background": "#ffffff",
-                    "secondary_bg": "#f8f9fa",
-                    "tertiary_bg": "#eceef1", 
-                    "quaternary_bg": "#e1e4e8",
-                    "primary_text": "#1f1f23",
-                    "secondary_text": "#444444",
-                    "muted_text": "#666666",
-                    "success": "#198754",
-                    "error": "#dc3545",
-                    "warning": "#fd7e14",
-                    "info": "#0dcaf0",
-                    "accent": "#0078d4",
-                    "border": "#d0d5da",
-                    "hover_bg": "#e6f2fb",
-                    "pressed_bg": "#d0e8f7",
-                    "selection_bg": "#0078d4",
+                    "background": "#fafafa",
+                    "secondary_bg": "#ffffff",
+                    "tertiary_bg": "#f5f5f5", 
+                    "quaternary_bg": "#eeeeee",
+                    "card_bg": "#ffffff",
+                    "elevated_bg": "#ffffff",
+                    "primary_text": "#212121",
+                    "secondary_text": "#424242",
+                    "muted_text": "#757575",
+                    "success": "#4CAF50",
+                    "success_bright": "#66BB6A",
+                    "error": "#F44336",
+                    "error_bright": "#EF5350",
+                    "warning": "#FF9800",
+                    "warning_bright": "#FFA726",
+                    "info": "#2196F3",
+                    "info_bright": "#42A5F5",
+                    "accent": "#FF5722",
+                    "accent_bright": "#FF7043",
+                    "accent_dark": "#D84315",
+                    "border": "#e0e0e0",
+                    "border_light": "#f5f5f5",
+                    "border_dark": "#bdbdbd",
+                    "hover_bg": "#f0f0f0",
+                    "hover_accent": "#FF7043",
+                    "pressed_bg": "#e8e8e8",
+                    "selection_bg": "#FF5722",
                     "selection_text": "#ffffff",
-                    "disabled_bg": "#f5f5f5",
-                    "disabled_text": "#999999",
+                    "disabled_bg": "#f9f9f9",
+                    "disabled_text": "#bdbdbd",
+                    "shadow": "#00000020",
+                    "glow": "#FF572230",
+                    "gradient_start": "#ffffff",
+                    "gradient_end": "#f5f5f5",
                 },
                 "fonts": {
                     "base_size": 11,
@@ -155,88 +185,117 @@ class ThemeManager(QObject):
         
         /* === MAIN WINDOW === */
         QMainWindow {{
-            background-color: {c('background')};
+            background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
+                                        stop: 0 {c('gradient_start')}, 
+                                        stop: 1 {c('gradient_end')});
             color: {c('primary_text')};
         }}
         
         /* === DIALOGS === */
         QDialog {{
-            background-color: {c('background')};
+            background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
+                                        stop: 0 {c('elevated_bg')}, 
+                                        stop: 1 {c('secondary_bg')});
             color: {c('primary_text')};
             border: 2px solid {c('border')};
-            border-radius: 8px;
+            border-radius: 12px;
         }}
         
         /* === MESSAGE BOXES === */
         QMessageBox {{
-            background-color: {c('background')};
+            background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
+                                        stop: 0 {c('elevated_bg')}, 
+                                        stop: 1 {c('card_bg')});
             color: {c('primary_text')};
-            border: 2px solid {c('border')};
-            border-radius: 6px;
+            border: 2px solid {c('border_light')};
+            border-radius: 10px;
             font-size: {f('base_size')}px;
             font-weight: 500;
         }}
         QMessageBox QLabel {{
             color: {c('primary_text')};
             font-weight: 600;
-            padding: 10px;
-            line-height: 1.4;
+            padding: 15px;
+            line-height: 1.5;
+            background: transparent;
         }}
         QMessageBox QPushButton {{
-            background-color: {c('tertiary_bg')};
+            background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
+                                        stop: 0 {c('tertiary_bg')}, 
+                                        stop: 1 {c('secondary_bg')});
             border: 2px solid {c('border')};
-            border-radius: 5px;
-            padding: 8px 16px;
+            border-radius: 8px;
+            padding: 10px 20px;
             color: {c('primary_text')};
             font-weight: 600;
-            min-width: 80px;
+            min-width: 90px;
+            min-height: 32px;
         }}
         QMessageBox QPushButton:hover {{
-            background-color: {c('hover_bg')};
-            border-color: {c('accent')};
+            background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
+                                        stop: 0 {c('hover_accent')}, 
+                                        stop: 1 {c('accent')});
+            border-color: {c('accent_bright')};
+            color: white;
         }}
         QMessageBox QPushButton:pressed {{
-            background-color: {c('pressed_bg')};
+            background: {c('pressed_bg')};
+            border-color: {c('accent_dark')};
         }}
         QMessageBox QPushButton:default {{
-            background-color: {c('success')};
+            background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
+                                        stop: 0 {c('success_bright')}, 
+                                        stop: 1 {c('success')});
             border-color: {c('success')};
-            color: {c('background')};
+            color: white;
             font-weight: 700;
         }}
         
-        /* === BUTTONS === */
+        /* === ENHANCED BUTTONS === */
         QPushButton {{
-            background-color: {c('secondary_bg')};
-            border: 1px solid {c('border')};
-            border-radius: 6px;
-            padding: 8px 16px;
+            background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
+                                        stop: 0 {c('tertiary_bg')}, 
+                                        stop: 1 {c('secondary_bg')});
+            border: 2px solid {c('border')};
+            border-radius: 8px;
+            padding: 10px 18px;
             color: {c('primary_text')};
             font-weight: 600;
-            min-height: 24px;
+            min-height: 28px;
         }}
         QPushButton:hover {{
-            background-color: {c('hover_bg')};
-            border-color: {c('accent')};
+            background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
+                                        stop: 0 {c('hover_accent')}, 
+                                        stop: 1 {c('accent')});
+            border-color: {c('accent_bright')};
+            color: white;
+            transform: translateY(-1px);
         }}
         QPushButton:pressed {{
-            background-color: {c('pressed_bg')};
+            background: {c('pressed_bg')};
+            border-color: {c('accent_dark')};
+            transform: translateY(1px);
         }}
         QPushButton:disabled {{
-            background-color: {c('disabled_bg')};
+            background: {c('disabled_bg')};
             color: {c('disabled_text')};
             border-color: {c('disabled_text')};
         }}
         QPushButton:default {{
-            background-color: {c('accent')};
+            background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
+                                        stop: 0 {c('accent_bright')}, 
+                                        stop: 1 {c('accent')});
             border-color: {c('accent')};
-            color: {c('background')};
+            color: white;
+            font-weight: 700;
         }}
         QPushButton:default:hover {{
-            background-color: {c('hover_bg')};
+            background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
+                                        stop: 0 {c('accent')}, 
+                                        stop: 1 {c('accent_dark')});
         }}
         
-        /* === LABELS === */
+        /* === ENHANCED LABELS === */
         QLabel {{
             color: {c('primary_text')};
             background-color: transparent;
@@ -245,6 +304,7 @@ class ThemeManager(QObject):
             font-size: {f('header_size')}px;
             font-weight: 700;
             color: {c('accent')};
+            text-shadow: 1px 1px 2px {c('shadow')};
         }}
         QLabel[class="secondary"] {{
             color: {c('secondary_text')};
@@ -253,19 +313,28 @@ class ThemeManager(QObject):
         QLabel[class="muted"] {{
             color: {c('muted_text')};
         }}
-        
-        /* === INPUT FIELDS === */
-        QLineEdit, QTextEdit, QPlainTextEdit {{
-            background-color: {c('tertiary_bg')};
-            border: 2px solid {c('border')};
-            border-radius: 6px;
+        QLabel[class="card-title"] {{
+            font-size: {f('base_size') + 2}px;
+            font-weight: 700;
+            color: {c('accent')};
             padding: 8px;
+        }}
+        
+        /* === ENHANCED INPUT FIELDS === */
+        QLineEdit, QTextEdit, QPlainTextEdit {{
+            background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
+                                        stop: 0 {c('card_bg')}, 
+                                        stop: 1 {c('tertiary_bg')});
+            border: 2px solid {c('border')};
+            border-radius: 8px;
+            padding: 10px;
             color: {c('primary_text')};
             selection-background-color: {c('selection_bg')};
             selection-color: {c('selection_text')};
         }}
         QLineEdit:focus, QTextEdit:focus, QPlainTextEdit:focus {{
             border-color: {c('accent')};
+            background: {c('card_bg')};
         }}
         QLineEdit:disabled, QTextEdit:disabled, QPlainTextEdit:disabled {{
             background-color: {c('disabled_bg')};
@@ -273,327 +342,487 @@ class ThemeManager(QObject):
             border-color: {c('disabled_text')};
         }}
         
-        /* === GROUP BOXES === */
+        /* === ENHANCED GROUP BOXES === */
         QGroupBox {{
             color: {c('primary_text')};
             border: 2px solid {c('border')};
-            border-radius: 8px;
-            margin-top: 12px;
-            background-color: {c('secondary_bg')};
+            border-radius: 12px;
+            margin-top: 15px;
+            background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
+                                        stop: 0 {c('card_bg')}, 
+                                        stop: 1 {c('secondary_bg')});
             font-weight: 600;
-            padding-top: 8px;
+            padding-top: 10px;
         }}
         QGroupBox::title {{
             subcontrol-origin: margin;
-            left: 14px;
-            padding: 2px 8px;
+            left: 18px;
+            padding: 4px 12px;
             color: {c('accent')};
             font-weight: 700;
-            font-size: {f('base_size') + 1}px;
+            font-size: {f('base_size') + 2}px;
+            background: {c('card_bg')};
+            border: 1px solid {c('border')};
+            border-radius: 6px;
         }}
         
-        /* === COMBO BOXES === */
+        /* === ENHANCED COMBO BOXES === */
         QComboBox {{
-            background-color: {c('tertiary_bg')};
+            background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
+                                        stop: 0 {c('card_bg')}, 
+                                        stop: 1 {c('tertiary_bg')});
             border: 2px solid {c('border')};
-            border-radius: 6px;
-            padding: 6px 12px;
+            border-radius: 8px;
+            padding: 8px 15px;
             color: {c('primary_text')};
-            min-width: 120px;
+            min-width: 130px;
         }}
         QComboBox:hover {{
             border-color: {c('accent')};
+            background: {c('card_bg')};
         }}
         QComboBox::drop-down {{
             border: none;
-            width: 20px;
+            width: 25px;
         }}
         QComboBox::down-arrow {{
-            border: 2px solid {c('accent')};
-            width: 6px;
-            height: 6px;
+            border: 3px solid {c('accent')};
+            width: 8px;
+            height: 8px;
             border-top: none;
             border-right: none;
-            margin-right: 8px;
+            margin-right: 10px;
         }}
         QComboBox QAbstractItemView {{
-            background-color: {c('secondary_bg')};
+            background: {c('card_bg')};
             border: 2px solid {c('border')};
+            border-radius: 6px;
             selection-background-color: {c('accent')};
-            selection-color: {c('background')};
+            selection-color: white;
         }}
         
-        /* === CHECK BOXES === */
+        /* === ENHANCED CHECK BOXES === */
         QCheckBox {{
             color: {c('primary_text')};
-            spacing: 8px;
+            spacing: 10px;
+            font-weight: 500;
         }}
         QCheckBox::indicator {{
-            width: 18px;
-            height: 18px;
+            width: 20px;
+            height: 20px;
         }}
         QCheckBox::indicator:unchecked {{
             border: 2px solid {c('border')};
-            background-color: {c('background')};
-            border-radius: 3px;
+            background: {c('card_bg')};
+            border-radius: 4px;
         }}
         QCheckBox::indicator:checked {{
             border: 2px solid {c('success')};
-            background-color: {c('success')};
-            border-radius: 3px;
+            background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
+                                        stop: 0 {c('success_bright')}, 
+                                        stop: 1 {c('success')});
+            border-radius: 4px;
         }}
         QCheckBox::indicator:hover {{
             border-color: {c('accent')};
         }}
         
-        /* === RADIO BUTTONS === */
+        /* === ENHANCED RADIO BUTTONS === */
         QRadioButton {{
             color: {c('primary_text')};
-            spacing: 8px;
+            spacing: 10px;
+            font-weight: 500;
         }}
         QRadioButton::indicator {{
-            width: 16px;
-            height: 16px;
+            width: 18px;
+            height: 18px;
         }}
         QRadioButton::indicator:unchecked {{
             border: 2px solid {c('border')};
-            background-color: {c('background')};
-            border-radius: 8px;
+            background: {c('card_bg')};
+            border-radius: 9px;
         }}
         QRadioButton::indicator:checked {{
             border: 2px solid {c('accent')};
-            background-color: {c('accent')};
-            border-radius: 8px;
+            background: qradialGradient(cx: 0.5, cy: 0.5, radius: 1,
+                                        fx: 0.5, fy: 0.5,
+                                        stop: 0 {c('accent')}, 
+                                        stop: 0.7 {c('accent')}, 
+                                        stop: 1 {c('card_bg')});
+            border-radius: 9px;
         }}
         
-        /* === PROGRESS BARS === */
+        /* === ENHANCED PROGRESS BARS === */
         QProgressBar {{
             border: 2px solid {c('border')};
-            border-radius: 6px;
-            background-color: {c('secondary_bg')};
+            border-radius: 8px;
+            background: {c('secondary_bg')};
             text-align: center;
             color: {c('primary_text')};
             font-weight: 600;
+            font-size: {f('base_size') + 1}px;
         }}
         QProgressBar::chunk {{
-            background-color: {c('accent')};
-            border-radius: 4px;
+            background: qlineargradient(x1: 0, y1: 0, x2: 1, y2: 0,
+                                        stop: 0 {c('success')}, 
+                                        stop: 1 {c('success_bright')});
+            border-radius: 6px;
         }}
         
-        /* === LIST WIDGETS === */
+        /* === ENHANCED LIST WIDGETS === */
         QListWidget {{
-            background-color: {c('secondary_bg')};
+            background: {c('card_bg')};
             border: 2px solid {c('border')};
-            border-radius: 6px;
+            border-radius: 10px;
             color: {c('primary_text')};
             selection-background-color: {c('accent')};
-            selection-color: {c('background')};
+            selection-color: white;
+            alternate-background-color: {c('secondary_bg')};
         }}
         QListWidget::item {{
-            padding: 8px;
+            padding: 12px;
             border-bottom: 1px solid {c('border')};
+            border-radius: 4px;
         }}
         QListWidget::item:hover {{
-            background-color: {c('hover_bg')};
+            background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
+                                        stop: 0 {c('hover_bg')}, 
+                                        stop: 1 {c('tertiary_bg')});
         }}
         QListWidget::item:selected {{
-            background-color: {c('accent')};
-            color: {c('background')};
+            background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
+                                        stop: 0 {c('accent_bright')}, 
+                                        stop: 1 {c('accent')});
+            color: white;
+            font-weight: 600;
         }}
         
-        /* === TREE WIDGETS === */
+        /* === ENHANCED TREE WIDGETS === */
         QTreeWidget {{
-            background-color: {c('secondary_bg')};
+            background: {c('card_bg')};
             border: 2px solid {c('border')};
-            border-radius: 6px;
+            border-radius: 10px;
             color: {c('primary_text')};
             selection-background-color: {c('accent')};
-            selection-color: {c('background')};
+            selection-color: white;
+            alternate-background-color: {c('secondary_bg')};
         }}
         QTreeWidget::item {{
-            padding: 4px;
-            border-bottom: 1px solid {c('tertiary_bg')};
+            padding: 8px;
+            border-bottom: 1px solid {c('border_light')};
         }}
         QTreeWidget::item:hover {{
-            background-color: {c('hover_bg')};
+            background: {c('hover_bg')};
         }}
         QTreeWidget::item:selected {{
-            background-color: {c('accent')};
-            color: {c('background')};
+            background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
+                                        stop: 0 {c('accent_bright')}, 
+                                        stop: 1 {c('accent')});
+            color: white;
         }}
         
-        /* === SCROLL BARS === */
+        /* === ENHANCED SCROLL BARS === */
         QScrollBar:vertical {{
-            background-color: {c('secondary_bg')};
-            width: 14px;
-            border-radius: 7px;
+            background: {c('secondary_bg')};
+            width: 16px;
+            border-radius: 8px;
             border: 1px solid {c('border')};
         }}
         QScrollBar::handle:vertical {{
-            background-color: {c('hover_bg')};
-            border-radius: 6px;
-            min-height: 20px;
-            margin: 1px;
+            background: qlineargradient(x1: 0, y1: 0, x2: 1, y2: 0,
+                                        stop: 0 {c('accent')}, 
+                                        stop: 1 {c('accent_bright')});
+            border-radius: 7px;
+            min-height: 25px;
+            margin: 2px;
         }}
         QScrollBar::handle:vertical:hover {{
-            background-color: {c('accent')};
+            background: qlineargradient(x1: 0, y1: 0, x2: 1, y2: 0,
+                                        stop: 0 {c('accent_bright')}, 
+                                        stop: 1 {c('hover_accent')});
         }}
         QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {{
             border: none;
             background: none;
         }}
         QScrollBar:horizontal {{
-            background-color: {c('secondary_bg')};
-            height: 14px;
-            border-radius: 7px;
+            background: {c('secondary_bg')};
+            height: 16px;
+            border-radius: 8px;
             border: 1px solid {c('border')};
         }}
         QScrollBar::handle:horizontal {{
-            background-color: {c('hover_bg')};
-            border-radius: 6px;
-            min-width: 20px;
-            margin: 1px;
+            background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
+                                        stop: 0 {c('accent')}, 
+                                        stop: 1 {c('accent_bright')});
+            border-radius: 7px;
+            min-width: 25px;
+            margin: 2px;
         }}
         QScrollBar::handle:horizontal:hover {{
-            background-color: {c('accent')};
+            background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
+                                        stop: 0 {c('accent_bright')}, 
+                                        stop: 1 {c('hover_accent')});
         }}
         
-        /* === SCROLL AREAS === */
+        /* === ENHANCED SCROLL AREAS === */
         QScrollArea {{
-            border: 1px solid {c('border')};
-            border-radius: 6px;
-            background-color: {c('secondary_bg')};
+            border: 2px solid {c('border')};
+            border-radius: 10px;
+            background: {c('card_bg')};
         }}
         
-        /* === TAB WIDGETS === */
+        /* === ENHANCED TAB WIDGETS === */
         QTabWidget::pane {{
             border: 2px solid {c('border')};
-            border-radius: 6px;
-            background-color: {c('secondary_bg')};
+            border-radius: 10px;
+            background: {c('card_bg')};
+            top: -2px;
         }}
         QTabBar::tab {{
-            background-color: {c('tertiary_bg')};
+            background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
+                                        stop: 0 {c('tertiary_bg')}, 
+                                        stop: 1 {c('secondary_bg')});
             border: 2px solid {c('border')};
             border-bottom: none;
-            border-radius: 6px 6px 0 0;
-            padding: 8px 16px;
+            border-radius: 8px 8px 0 0;
+            padding: 10px 20px;
             color: {c('primary_text')};
-            margin-right: 2px;
+            margin-right: 3px;
+            font-weight: 600;
         }}
         QTabBar::tab:selected {{
-            background-color: {c('accent')};
-            color: {c('background')};
+            background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
+                                        stop: 0 {c('accent_bright')}, 
+                                        stop: 1 {c('accent')});
+            color: white;
+            border-color: {c('accent')};
         }}
         QTabBar::tab:hover {{
-            background-color: {c('hover_bg')};
+            background: {c('hover_bg')};
         }}
         
-        /* === SLIDERS === */
+        /* === ENHANCED SLIDERS === */
         QSlider::groove:horizontal {{
-            border: 1px solid {c('border')};
-            height: 6px;
-            background-color: {c('tertiary_bg')};
-            border-radius: 3px;
+            border: 2px solid {c('border')};
+            height: 8px;
+            background: {c('tertiary_bg')};
+            border-radius: 4px;
         }}
         QSlider::handle:horizontal {{
-            background-color: {c('accent')};
-            border: 2px solid {c('border')};
-            width: 16px;
-            margin: -6px 0;
-            border-radius: 8px;
+            background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
+                                        stop: 0 {c('accent_bright')}, 
+                                        stop: 1 {c('accent')});
+            border: 2px solid {c('accent_dark')};
+            width: 20px;
+            margin: -8px 0;
+            border-radius: 10px;
         }}
         QSlider::handle:horizontal:hover {{
-            background-color: {c('hover_bg')};
+            background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
+                                        stop: 0 {c('hover_accent')}, 
+                                        stop: 1 {c('accent_bright')});
             border-color: {c('accent')};
         }}
         
-        /* === SPIN BOXES === */
+        /* === ENHANCED SPIN BOXES === */
         QSpinBox, QDoubleSpinBox {{
-            background-color: {c('tertiary_bg')};
+            background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
+                                        stop: 0 {c('card_bg')}, 
+                                        stop: 1 {c('tertiary_bg')});
             border: 2px solid {c('border')};
-            border-radius: 6px;
-            padding: 6px;
+            border-radius: 8px;
+            padding: 8px;
             color: {c('primary_text')};
         }}
         QSpinBox:focus, QDoubleSpinBox:focus {{
             border-color: {c('accent')};
+            background: {c('card_bg')};
         }}
         
-        /* === MENU BAR === */
+        /* === ENHANCED MENU BAR === */
         QMenuBar {{
-            background-color: {c('background')};
+            background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
+                                        stop: 0 {c('secondary_bg')}, 
+                                        stop: 1 {c('background')});
             color: {c('primary_text')};
-            border-bottom: 1px solid {c('border')};
+            border-bottom: 2px solid {c('border')};
+            font-weight: 600;
         }}
         QMenuBar::item {{
             background-color: transparent;
-            padding: 6px 12px;
+            padding: 8px 15px;
+            border-radius: 6px;
         }}
         QMenuBar::item:selected {{
-            background-color: {c('hover_bg')};
+            background: {c('hover_bg')};
+            color: {c('accent')};
         }}
         
-        /* === MENUS === */
+        /* === ENHANCED MENUS === */
         QMenu {{
-            background-color: {c('secondary_bg')};
+            background: {c('card_bg')};
             border: 2px solid {c('border')};
-            border-radius: 6px;
+            border-radius: 8px;
             color: {c('primary_text')};
         }}
         QMenu::item {{
-            padding: 8px 20px;
+            padding: 10px 25px;
+            border-radius: 4px;
+            margin: 2px;
         }}
         QMenu::item:selected {{
-            background-color: {c('accent')};
-            color: {c('background')};
+            background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
+                                        stop: 0 {c('accent_bright')}, 
+                                        stop: 1 {c('accent')});
+            color: white;
         }}
         QMenu::separator {{
-            height: 1px;
-            background-color: {c('border')};
-            margin: 4px 0;
+            height: 2px;
+            background: {c('border')};
+            margin: 6px 0;
         }}
         
-        /* === STATUS BAR === */
+        /* === ENHANCED STATUS BAR === */
         QStatusBar {{
-            background-color: {c('secondary_bg')};
+            background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
+                                        stop: 0 {c('secondary_bg')}, 
+                                        stop: 1 {c('background')});
             color: {c('primary_text')};
-            border-top: 1px solid {c('border')};
+            border-top: 2px solid {c('border')};
+            font-weight: 500;
         }}
         
-        /* === TOOL BARS === */
+        /* === ENHANCED TOOL BARS === */
         QToolBar {{
-            background-color: {c('secondary_bg')};
-            border: 1px solid {c('border')};
+            background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
+                                        stop: 0 {c('secondary_bg')}, 
+                                        stop: 1 {c('background')});
+            border: 2px solid {c('border')};
             color: {c('primary_text')};
-            spacing: 2px;
+            spacing: 4px;
+            border-radius: 6px;
         }}
         QToolButton {{
             background-color: transparent;
-            border: 1px solid transparent;
-            border-radius: 4px;
-            padding: 6px;
+            border: 2px solid transparent;
+            border-radius: 6px;
+            padding: 8px;
             color: {c('primary_text')};
         }}
         QToolButton:hover {{
-            background-color: {c('hover_bg')};
-            border-color: {c('border')};
+            background: {c('hover_bg')};
+            border-color: {c('accent')};
         }}
         QToolButton:pressed {{
-            background-color: {c('pressed_bg')};
+            background: {c('pressed_bg')};
         }}
         
-        /* === SPLITTERS === */
+        /* === ENHANCED SPLITTERS === */
         QSplitter::handle {{
-            background-color: {c('border')};
+            background: qlineargradient(x1: 0, y1: 0, x2: 1, y2: 0,
+                                        stop: 0 {c('border')}, 
+                                        stop: 0.5 {c('accent')}, 
+                                        stop: 1 {c('border')});
         }}
         QSplitter::handle:horizontal {{
-            width: 2px;
+            width: 4px;
         }}
         QSplitter::handle:vertical {{
-            height: 2px;
+            height: 4px;
         }}
         QSplitter::handle:hover {{
-            background-color: {c('accent')};
+            background: {c('accent')};
+        }}
+        
+        /* === CUSTOM CARD STYLING === */
+        QFrame[class="card"] {{
+            background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
+                                        stop: 0 {c('card_bg')}, 
+                                        stop: 1 {c('secondary_bg')});
+            border: 2px solid {c('border')};
+            border-radius: 12px;
+            padding: 15px;
+        }}
+        QFrame[class="elevated-card"] {{
+            background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
+                                        stop: 0 {c('elevated_bg')}, 
+                                        stop: 1 {c('card_bg')});
+            border: 2px solid {c('border_light')};
+            border-radius: 12px;
+            padding: 15px;
+        }}
+        
+        /* === STATUS CARDS (Dashboard) === */
+        QFrame#statusCard {{
+            background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
+                                        stop: 0 {c('elevated_bg')}, 
+                                        stop: 1 {c('card_bg')});
+            border: 2px solid {c('border')};
+            border-radius: 15px;
+            padding: 20px;
+            min-height: 120px;
+            min-width: 200px;
+        }}
+        QFrame#statusCard:hover {{
+            background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
+                                        stop: 0 {c('hover_bg')}, 
+                                        stop: 1 {c('elevated_bg')});
+            border-color: {c('accent')};
+            transform: translateY(-2px);
+        }}
+        
+        /* Status Card Components */
+        QLabel#cardTitle {{
+            color: {c('primary_text')};
+            font-size: {f('base_size') + 2}px;
+            font-weight: 700;
+            padding: 5px 0;
+        }}
+        QLabel#cardValue {{
+            font-size: {f('header_size') + 6}px;
+            font-weight: 800;
+            padding: 8px 0;
+            text-shadow: 1px 1px 2px {c('shadow')};
+        }}
+        QLabel#cardDescription {{
+            color: {c('secondary_text')};
+            font-size: {f('small_size') + 1}px;
+            font-weight: 500;
+            line-height: 1.4;
+            padding: 5px 0;
+        }}
+        
+        /* === ACTIVITY REPORT STYLING === */
+        QFrame#activityReport {{
+            background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
+                                        stop: 0 {c('card_bg')}, 
+                                        stop: 1 {c('secondary_bg')});
+            border: 2px solid {c('border')};
+            border-radius: 12px;
+            padding: 20px;
+        }}
+        
+        /* === TAB STYLING ENHANCEMENTS === */
+        QTabWidget {{
+            background: transparent;
+        }}
+        QTabWidget::tab-bar {{
+            alignment: left;
+        }}
+        
+        /* === ENHANCED STATUS COLORS === */
+        .status-active {{
+            color: {c('success_bright')};
+        }}
+        .status-inactive {{
+            color: {c('error_bright')};
+        }}
+        .status-warning {{
+            color: {c('warning_bright')};
+        }}
+        .status-info {{
+            color: {c('info_bright')};
         }}
         """
     
