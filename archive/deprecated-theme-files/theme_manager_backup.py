@@ -27,8 +27,9 @@ class ThemeManager(QObject):
                 "name": "Dark (Professional)",
                 "colors": {
                     # === REFINED PROFESSIONAL THEME (matching Application Updates dialog) ===
-                    # Header colors - solid coral color
-                    "header_bg": "#e57373",               # Coral header background
+                    # Header colors - more muted and sophisticated
+                    "header_gradient_start": "#e57373",   # Softer coral/salmon
+                    "header_gradient_end": "#c62828",     # Deeper but less harsh red
                     "header_text": "#ffffff",             # Pure white header text
                     
                     # Core Application Colors - sophisticated grays like the dialog
@@ -82,6 +83,8 @@ class ThemeManager(QObject):
                     
                     # Visual Depth & Effects - softer and more professional
                     "shadow": "rgba(0, 0, 0, 0.5)",       # Softer shadows
+                    "gradient_bg_start": "#333333",       # Sophisticated gradient start
+                    "gradient_bg_end": "#2b2b2b",         # Refined gradient end
                 },
                 "fonts": {
                     "base_size": 14,                      # Increased from 11px for better readability
@@ -126,6 +129,8 @@ class ThemeManager(QObject):
                     "disabled_text": "#bdbdbd",
                     "shadow": "#00000020",
                     "glow": "#FF572230",
+                    "gradient_start": "#ffffff",
+                    "gradient_end": "#f5f5f5",
                 },
                 "fonts": {
                     "base_size": 14,                      # Increased from 11px for better readability
@@ -900,59 +905,6 @@ class ThemeManager(QObject):
             background-color: {c('accent_hover')};
         }}
         
-        /* === BEAUTIFUL HEADER STYLING === */
-        QFrame#headerFrame {{
-            background-color: {c('strawberry_coral')};
-            border: none;
-            border-radius: 12px;
-            padding: 20px;
-            margin: 10px;
-        }}
-        
-        QLabel#headerTitle {{
-            color: {c('header_text')};
-            font-size: {f('base_size') + 8}px;
-            font-weight: 700;
-            background: transparent;
-        }}
-
-        /* === UPDATE DEFINITIONS SECTION STYLING === */
-        QWidget[objectName="updateDefinitionsContainer"] {{
-            background-color: {c('strawberry_coral')};
-            border: 2px solid {c('strawberry_primary')};
-            border-radius: 12px;
-            padding: 15px;
-            margin: 5px;
-        }}
-        
-        QPushButton[objectName="actionButton"] {{
-            background-color: {c('strawberry_primary')};
-            color: {c('header_text')};
-            border: 2px solid {c('strawberry_primary')};
-            border-radius: 10px;
-            padding: 8px 16px;
-            font-weight: 600;
-            font-size: {f('base_size')}px;
-        }}
-        QPushButton[objectName="actionButton"]:hover {{
-            background-color: {c('strawberry_coral')};
-            border-color: {c('strawberry_coral')};
-        }}
-        QPushButton[objectName="actionButton"]:pressed {{
-            background-color: {c('strawberry_primary')};
-            border-color: {c('strawberry_primary')};
-        }}
-        
-        QLabel[objectName="lastUpdateLabel"], QLabel[objectName="lastCheckedLabel"] {{
-            background-color: rgba(255, 255, 255, 0.1);
-            color: {c('header_text')};
-            padding: 5px 10px;
-            border-radius: 8px;
-            font-weight: 500;
-            font-size: {f('base_size') - 1}px;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-        }}
-
         /* === CUSTOM CARD STYLING === */
         QFrame[class="card"] {{
             background-color: {c('card_bg')};
@@ -1138,18 +1090,3 @@ def apply_button_effects(button: QPushButton):
 def apply_shadow_effect(widget: QWidget):
     """Apply shadow effect to a widget (convenience function)."""
     get_theme_manager().apply_qt_effects(widget, "shadow")
-
-def style_header(widget: QWidget):
-    """Style a widget as a header with gradient background."""
-    widget.setObjectName("headerFrame")
-    widget.style().polish(widget)
-
-def style_status_card(widget: QWidget):
-    """Style a widget as a status card."""
-    widget.setObjectName("statusCard")
-    widget.style().polish(widget)
-
-def style_header_title(widget: QWidget):
-    """Style a label as a header title."""
-    widget.setObjectName("headerTitle")
-    widget.style().polish(widget)

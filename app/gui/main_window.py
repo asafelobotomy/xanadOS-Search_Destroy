@@ -72,7 +72,7 @@ from utils.scan_reports import (
 
 from gui import APP_VERSION
 from gui import settings_pages
-from gui.theme_manager import init_theming, get_theme_manager
+from gui.theme_manager import get_theme_manager
 from gui.themed_widgets import ThemedWidgetMixin
 
 
@@ -111,8 +111,8 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
     def __init__(self):
         super().__init__()
 
-        # Initialize theming system first
-        init_theming()
+        # Initialize optimized theming system
+        # Theme manager is automatically initialized when first accessed
         
         # Set initial theme from config
         try:
@@ -344,6 +344,9 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
         self._initialization_complete = True
         print("✅ Main window initialization complete - scheduler operations now enabled")
         
+        # Setup enhanced Qt effects for all buttons
+        self._setup_enhanced_effects()
+        
         # Add welcome message to results display
         self._show_welcome_message()
         
@@ -394,44 +397,7 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
         except Exception as e:
             print(f"❌ Error bringing window to front: {e}")
 
-    def get_theme_color(self, color_type):
-        """Get theme-appropriate color for any UI element."""
-        if self.current_theme == "dark":
-            colors = {
-                "background": "#1a1a1a",
-                "secondary_bg": "#2a2a2a",
-                "tertiary_bg": "#3a3a3a",
-                "primary_text": "#FFCDAA",
-                "secondary_text": "#666",
-                "success": "#9CB898",
-                "error": "#F14666",
-                "warning": "#EE8980",
-                "accent": "#F14666",
-                "border": "#EE8980",
-                "hover_bg": "#4a4a4a",
-                "pressed_bg": "#2a2a2a",
-                "selection_bg": "#F14666",
-                "disabled_text": "#666",
-            }
-        else:  # light theme
-            colors = {
-                "background": "#fefefe",
-                "secondary_bg": "#ffffff",
-                "tertiary_bg": "#f5f5f5",
-                "primary_text": "#2c2c2c",
-                "secondary_text": "#666",
-                "success": "#75BDE0",
-                "error": "#F89B9B",
-                "warning": "#F8BC9B",
-                "accent": "#75BDE0",
-                "border": "#F8D49B",
-                "hover_bg": "#F8BC9B",
-                "pressed_bg": "#F89B9B",
-                "selection_bg": "#75BDE0",
-                "disabled_text": "#999",
-            }
-        return colors.get(color_type, colors["primary_text"])
-
+    
     def get_status_color(self, status_type):
         """Get theme-appropriate color for status indicators."""
         if self.current_theme == "dark":
@@ -675,6 +641,7 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
         update_container.addWidget(self.last_update_label)
         update_container.addWidget(self.last_checked_label)
         update_container_widget = QWidget()
+        update_container_widget.setObjectName("updateDefinitionsContainer")
         update_container_widget.setLayout(update_container)
 
         about_btn = QPushButton("About")
@@ -7915,6 +7882,26 @@ System        {perf_status}"""
             print(f"DEBUG: Error updating dashboard cards: {e}")
             import traceback
             traceback.print_exc()
+
+    def _setup_enhanced_effects(self):
+        """Setup enhanced Qt effects for all interactive widgets."""
+        try:
+            from .theme_manager import setup_widget_effects, apply_button_effects
+            
+            # Apply effects to all buttons in the main window
+            buttons = self.findChildren(QPushButton)
+            print(f"🎨 Setting up enhanced effects for {len(buttons)} buttons...")
+            
+            for button in buttons:
+                apply_button_effects(button)
+            
+            # Apply general effects to the main window
+            setup_widget_effects(self)
+            
+            print("✅ Enhanced Qt effects setup complete")
+            
+        except Exception as e:
+            print(f"⚠️ Failed to setup enhanced effects: {e}")
 
     def _show_welcome_message(self):
         """Display a welcome message with app information and instructions."""

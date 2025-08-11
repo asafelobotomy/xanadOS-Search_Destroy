@@ -1,6 +1,12 @@
 #!/usr/bin/env python3
 """
-Themed Widget Mixins - Base classes for theme-aware GUI components
+Themed Widget Mixins - Base classes for theme-aware G    # Add theming methods to the widget
+    widget.get_theme_color = lambda color_key: get_theme_manager().get_color(color_key)
+    widget.get_theme_font_property = lambda font_key: get_theme_manager().get_font_property(font_key)
+    widget.show_themed_message_box = lambda msg_type, title, text, buttons=None: get_theme_manager().create_themed_message_box(widget, msg_type, title, text, buttons).exec()
+    
+    # Connect to theme changes
+    theme_manager = get_theme_manager()onents
 Automatically handle theme changes and provide theme utilities.
 """
 
@@ -42,16 +48,15 @@ class ThemedWidgetMixin:
     def get_theme_color(self, color_key: str) -> str:
         """Get a color from the current theme."""
         return get_theme_manager().get_color(color_key)
-    
+
     def get_theme_font_property(self, font_key: str):
         """Get a font property from the current theme."""
         return get_theme_manager().get_font_property(font_key)
-    
-    def show_themed_message_box(self, msg_type: str, title: str, text: str, buttons=None) -> int:
+
+    def show_themed_message_box(self, msg_type: str, title: str, text: str, buttons=None):
         """Show a themed message box."""
         msg_box = get_theme_manager().create_themed_message_box(
-            self if isinstance(self, QWidget) else None,
-            msg_type, title, text, buttons
+            self, msg_type, title, text, buttons
         )
         return msg_box.exec()
 

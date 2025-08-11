@@ -70,12 +70,7 @@ class UpdateDialog(ThemedDialog):
         self.setModal(True)
         self.setFixedSize(600, 500)
         
-        # Apply theme if parent has one
-        if parent and hasattr(parent, 'current_theme'):
-            self.apply_theme(parent.current_theme)
-        else:
-            # Default to dark theme if no parent theme attribute
-            self.apply_theme('dark')
+        # Theme is now handled by global theme manager automatically
             
         self.setup_ui()
         
@@ -167,84 +162,7 @@ class UpdateDialog(ThemedDialog):
         button_layout.addStretch()
         layout.addLayout(button_layout)
         
-    def apply_theme(self, theme):
-        """Apply the application theme to the dialog."""
-        if theme == "dark":
-            self.setStyleSheet("""
-                QDialog {
-                    background-color: #2b2b2b;
-                    color: #ffffff;
-                }
-                QLabel {
-                    color: #ffffff;
-                }
-                QPushButton {
-                    background-color: #404040;
-                    color: #ffffff;
-                    border: 1px solid #555555;
-                    padding: 8px 16px;
-                    border-radius: 4px;
-                }
-                QPushButton:hover {
-                    background-color: #505050;
-                }
-                QPushButton:pressed {
-                    background-color: #353535;
-                }
-                QTextEdit {
-                    background-color: #3c3c3c;
-                    color: #ffffff;
-                    border: 1px solid #555555;
-                }
-                QProgressBar {
-                    border: 1px solid #555555;
-                    background-color: #3c3c3c;
-                    text-align: center;
-                }
-                QProgressBar::chunk {
-                    background-color: #0078d4;
-                }
-                QScrollArea {
-                    border: 1px solid #555555;
-                }
-            """)
-        elif theme == "light":
-            self.setStyleSheet("""
-                QDialog {
-                    background-color: #ffffff;
-                    color: #000000;
-                }
-                QPushButton {
-                    background-color: #f0f0f0;
-                    color: #000000;
-                    border: 1px solid #cccccc;
-                    padding: 8px 16px;
-                    border-radius: 4px;
-                }
-                QPushButton:hover {
-                    background-color: #e0e0e0;
-                }
-                QPushButton:pressed {
-                    background-color: #d0d0d0;
-                }
-                QTextEdit {
-                    background-color: #ffffff;
-                    color: #000000;
-                    border: 1px solid #cccccc;
-                }
-                QProgressBar {
-                    border: 1px solid #cccccc;
-                    background-color: #f0f0f0;
-                    text-align: center;
-                }
-                QProgressBar::chunk {
-                    background-color: #0078d4;
-                }
-                QScrollArea {
-                    border: 1px solid #cccccc;
-                }
-            """)
-            
+    
     def open_github_release(self):
         """Open the GitHub release page in the default browser."""
         if self.update_info and self.update_info.get('html_url'):
