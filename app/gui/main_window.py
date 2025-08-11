@@ -5129,8 +5129,38 @@ System        {perf_status}"""
 
     def check_for_updates_manual(self):
         """Manually check for updates when user clicks Help menu item."""
-        if hasattr(self, 'update_notifier') and self.update_notifier:
-            self.update_notifier.check_for_updates()
+        if hasattr(self, 'auto_updater') and self.auto_updater:
+            try:
+                from PyQt6.QtWidgets import QMessageBox
+                
+                # Check for updates directly
+                update_info = self.auto_updater.check_for_updates(force_check=True)
+                
+                if update_info and update_info.get('available'):
+                    # Show update available dialog
+                    if hasattr(self, 'update_notifier') and self.update_notifier:
+                        self.update_notifier.show_update_notification(update_info)
+                    else:
+                        # Fallback message
+                        QMessageBox.information(
+                            self, "Update Available",
+                            f"Update available: v{update_info.get('latest_version')}\n"
+                            f"Current version: v{update_info.get('current_version')}\n"
+                            f"Release: {update_info.get('release_name', 'Unknown')}"
+                        )
+                else:
+                    # No updates available
+                    QMessageBox.information(
+                        self, "No Updates Available",
+                        f"You are running the latest version (v{self.auto_updater.current_version})."
+                    )
+                    
+            except Exception as e:
+                from PyQt6.QtWidgets import QMessageBox
+                QMessageBox.warning(
+                    self, "Update Check Failed",
+                    f"Failed to check for updates:\n{str(e)}"
+                )
         else:
             from PyQt6.QtWidgets import QMessageBox
             QMessageBox.warning(self, "Update Check", 
