@@ -35,6 +35,26 @@
   
   <url type="homepage">https://github.com/asafelobotomy/xanadOS-Search_Destroy</url>
   <url type="bugtracker">https://github.com/asafelobotomy/xanadOS-Search_Destroy/issues</url>
+  <url type="help">https://github.com/asafelobotomy/xanadOS-Search_Destroy/blob/master/README.md</url>
+  <url type="vcs-browser">https://github.com/asafelobotomy/xanadOS-Search_Destroy</url>
+  <url type="contribute">https://github.com/asafelobotomy/xanadOS-Search_Destroy/blob/master/docs/developer/CONTRIBUTING.md</url>
+  
+  <developer_name>asafelobotomy</developer_name>
+  
+  <screenshots>
+    <screenshot type="default">
+      <caption>Main application interface showing scan options</caption>
+      <image>https://raw.githubusercontent.com/asafelobotomy/xanadOS-Search_Destroy/master/docs/screenshots/main-interface.png</image>
+    </screenshot>
+    <screenshot>
+      <caption>Scanning in progress with real-time updates</caption>
+      <image>https://raw.githubusercontent.com/asafelobotomy/xanadOS-Search_Destroy/master/docs/screenshots/scanning-progress.png</image>
+    </screenshot>
+    <screenshot>
+      <caption>Detailed scan results and threat detection</caption>
+      <image>https://raw.githubusercontent.com/asafelobotomy/xanadOS-Search_Destroy/master/docs/screenshots/scan-results.png</image>
+    </screenshot>
+  </screenshots>
   
   <launchable type="desktop-id">org.xanados.SearchAndDestroy.desktop</launchable>
   
@@ -43,7 +63,19 @@
   </provides>
   
   <releases>
-    <release version="2.4.0" date="2025-08-10">
+    <release version="2.4.1" date="2025-08-12">
+      <description>
+        <p>Flathub Release: Complete Flatpak packaging and distribution preparation</p>
+        <ul>
+          <li>Full Flathub compliance with proper dependency management</li>
+          <li>Enhanced metadata and desktop integration</li>
+          <li>Comprehensive icon set including SVG scalable format</li>
+          <li>Optimized permissions for sandboxed execution</li>
+          <li>Complete repository organization and documentation</li>
+          <li>Professional development workflow with quality assurance</li>
+        </ul>
+      </description>
+    </release>
       <description>
         <p>Infrastructure Enhancement: Complete development workflow modernization with industry standards compliance</p>
         <ul>
