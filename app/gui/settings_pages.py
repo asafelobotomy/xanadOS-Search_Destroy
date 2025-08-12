@@ -1,5 +1,6 @@
 """Modular settings page builders separated from main_window for clarity."""
-from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QFormLayout, QHBoxLayout, QLabel, QCheckBox, QPushButton, QTextEdit, QGroupBox, QSpinBox)
+from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QFormLayout, QHBoxLayout, QLabel, QCheckBox, QPushButton, QTextEdit, QGroupBox, QSpinBox, QGridLayout, QScrollArea)
+from PyQt6.QtCore import Qt
 from PyQt6.QtCore import QTime
 
 # Expect host MainWindow to provide helper widget classes: NoWheelComboBox, NoWheelSpinBox, NoWheelTimeEdit
@@ -73,36 +74,181 @@ def build_security_page(host):
     layout.addWidget(host.settings_auto_update_cb); layout.addStretch(); return page
 
 def build_rkhunter_page(host):
-    page = QWidget(); v = QVBoxLayout(page); row = QHBoxLayout()
-    for attr,label,default in [
-        ('settings_enable_rkhunter_cb','Enable RKHunter Integration',False),
-        ('settings_run_rkhunter_with_full_scan_cb','Full System',False),
-        ('settings_run_rkhunter_with_quick_scan_cb','Quick Scans',False),
-        ('settings_run_rkhunter_with_custom_scan_cb','Custom Scans',False),
-        ('settings_rkhunter_auto_update_cb','Auto-update DB',True),
-    ]:
+    """Build a well-structured RKHunter settings page following UI design best practices."""
+    # Create main page widget
+    page = QWidget()
+    
+    # Create scroll area to handle content overflow
+    scroll_area = QScrollArea(page)
+    scroll_area.setWidgetResizable(True)
+    scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
+    scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
+    
+    # Create scrollable content widget
+    scroll_content = QWidget()
+    main_layout = QVBoxLayout(scroll_content)
+    main_layout.setSpacing(20)  # Better spacing between sections
+    main_layout.setContentsMargins(15, 15, 15, 15)  # Add margins
+    
+    # === SECTION 1: BASIC CONFIGURATION ===
+    basic_group = QGroupBox("Basic Configuration")
+    basic_layout = QVBoxLayout(basic_group)
+    basic_layout.setSpacing(10)
+    
+    # Enable RKHunter - Primary setting at the top
+    if not hasattr(host, 'settings_enable_rkhunter_cb'):
+        host.settings_enable_rkhunter_cb = QCheckBox('Enable RKHunter Integration')
+        host.settings_enable_rkhunter_cb.setChecked(False)
+        host.settings_enable_rkhunter_cb.setStyleSheet("font-weight: bold; font-size: 14px;")
+    basic_layout.addWidget(host.settings_enable_rkhunter_cb)
+    
+    # Auto-update setting
+    if not hasattr(host, 'settings_rkhunter_auto_update_cb'):
+        host.settings_rkhunter_auto_update_cb = QCheckBox('Auto-update Database')
+        host.settings_rkhunter_auto_update_cb.setChecked(True)
+    basic_layout.addWidget(host.settings_rkhunter_auto_update_cb)
+    
+    main_layout.addWidget(basic_group)
+    
+    # === SECTION 2: SCAN INTEGRATION ===
+    scan_group = QGroupBox("Scan Integration")
+    scan_layout = QVBoxLayout(scan_group)
+    scan_layout.setSpacing(8)
+    
+    # Description
+    desc_label = QLabel("Configure when RKHunter should run alongside ClamAV scans:")
+    desc_label.setStyleSheet("color: #666; font-style: italic; margin-bottom: 10px;")
+    scan_layout.addWidget(desc_label)
+    
+    # Scan type checkboxes - vertically arranged for better readability
+    scan_options = [
+        ('settings_run_rkhunter_with_full_scan_cb', 'Run with Full System Scans', False),
+        ('settings_run_rkhunter_with_quick_scan_cb', 'Run with Quick Scans', False),
+        ('settings_run_rkhunter_with_custom_scan_cb', 'Run with Custom Scans', False),
+    ]
+    
+    for attr, label, default in scan_options:
         if not hasattr(host, attr):
-            cb = QCheckBox(label); cb.setChecked(default); setattr(host, attr, cb)
-        row.addWidget(getattr(host, attr))
-    row.addStretch(); v.addLayout(row)
+            cb = QCheckBox(label)
+            cb.setChecked(default)
+            setattr(host, attr, cb)
+        scan_layout.addWidget(getattr(host, attr))
+    
+    main_layout.addWidget(scan_group)
+    
+    # === SECTION 3: SECURITY CATEGORIES ===
+    categories_group = QGroupBox("Security Check Categories")
+    categories_layout = QVBoxLayout(categories_group)
+    categories_layout.setSpacing(15)
+    
+    # Description
+    cat_desc = QLabel("Select which security checks RKHunter should perform:")
+    cat_desc.setStyleSheet("color: #666; font-style: italic; margin-bottom: 10px;")
+    categories_layout.addWidget(cat_desc)
+    
+    # Initialize categories data
     if not hasattr(host, 'settings_rkhunter_test_categories'):
         host.settings_rkhunter_test_categories = {
-            'system_commands': {'name':'System Commands','description':'System command integrity','default':True,'priority':1},
             'rootkits': {'name':'Rootkits & Trojans','description':'Known rootkits signatures','default':True,'priority':1},
-            'system_integrity': {'name':'System Integrity','description':'Filesystem & config verification','default':True,'priority':2},
+            'system_commands': {'name':'System Commands','description':'System command integrity','default':True,'priority':1},
             'network': {'name':'Network Security','description':'Interfaces and ports','default':True,'priority':2},
+            'system_integrity': {'name':'System Integrity','description':'Filesystem & config verification','default':True,'priority':2},
             'applications': {'name':'Applications','description':'Hidden processes & files','default':False,'priority':3},
         }
+    
     if not hasattr(host, 'settings_rkhunter_category_checkboxes'):
         host.settings_rkhunter_category_checkboxes = {}
-    cat_row = QHBoxLayout(); cat_row.addStretch(1)
-    for cid,info in sorted(host.settings_rkhunter_test_categories.items(), key=lambda x:(x[1]['priority'], x[1]['name'])):
-        card = QVBoxLayout(); cb = host.settings_rkhunter_category_checkboxes.get(cid)
+    
+    # Create a grid layout for better organization
+    categories_grid = QGridLayout()
+    categories_grid.setSpacing(15)
+    categories_grid.setColumnStretch(0, 1)
+    categories_grid.setColumnStretch(1, 1)
+    
+    # Sort categories by priority and create cards
+    sorted_categories = sorted(host.settings_rkhunter_test_categories.items(), 
+                             key=lambda x: (x[1]['priority'], x[1]['name']))
+    
+    for index, (cid, info) in enumerate(sorted_categories):
+        # Create card widget
+        card_widget = QWidget()
+        card_widget.setMinimumHeight(100)  # Increased height for better visibility
+        card_widget.setStyleSheet("""
+            QWidget {
+                background-color: rgba(255, 255, 255, 0.05);
+                border: 1px solid rgba(255, 255, 255, 0.1);
+                border-radius: 8px;
+                padding: 10px;
+            }
+        """)
+        
+        card_layout = QVBoxLayout(card_widget)
+        card_layout.setContentsMargins(12, 10, 12, 10)
+        card_layout.setSpacing(6)
+        
+        # Checkbox
+        cb = host.settings_rkhunter_category_checkboxes.get(cid)
         if cb is None:
-            cb = QCheckBox(info['name']); cb.setChecked(info['default']); cb.setToolTip(info['description']); host.settings_rkhunter_category_checkboxes[cid] = cb
-        card.addWidget(cb); from PyQt6.QtWidgets import QLabel; desc = QLabel(info['description']); desc.setWordWrap(True); desc.setStyleSheet('font-size:11px;'); card.addWidget(desc); w = QWidget(); w.setLayout(card); w.setFixedWidth(160); w.setFixedHeight(120); cat_row.addWidget(w)
-    cat_row.addStretch(1); v.addLayout(cat_row)
-    btns = QHBoxLayout(); btns.addStretch(); b1 = QPushButton('Select All'); b1.clicked.connect(host.select_all_rkhunter_categories); btns.addWidget(b1); b2 = QPushButton('Recommended'); b2.clicked.connect(host.select_recommended_rkhunter_categories); btns.addWidget(b2); b3 = QPushButton('Select None'); b3.clicked.connect(host.select_no_rkhunter_categories); btns.addWidget(b3); btns.addStretch(); v.addLayout(btns); v.addStretch(); return page
+            cb = QCheckBox(info['name'])
+            cb.setChecked(info['default'])
+            cb.setStyleSheet("font-weight: bold;")
+            host.settings_rkhunter_category_checkboxes[cid] = cb
+        
+        # Description
+        desc_label = QLabel(info['description'])
+        desc_label.setWordWrap(True)
+        desc_label.setStyleSheet("font-size: 11px; color: #888;")
+        
+        card_layout.addWidget(cb)
+        card_layout.addWidget(desc_label)
+        card_layout.addStretch()
+        
+        # Add to grid (2 columns)
+        row = index // 2
+        col = index % 2
+        categories_grid.addWidget(card_widget, row, col)
+    
+    categories_layout.addLayout(categories_grid)
+    
+    # === SECTION 4: QUICK ACTIONS ===
+    actions_layout = QHBoxLayout()
+    actions_layout.setSpacing(10)
+    actions_layout.addStretch()
+    
+    # Action buttons with better styling
+    select_all_btn = QPushButton('Select All')
+    select_all_btn.setMinimumWidth(100)
+    select_all_btn.clicked.connect(host.select_all_rkhunter_categories)
+    
+    recommended_btn = QPushButton('Recommended')
+    recommended_btn.setMinimumWidth(100)
+    recommended_btn.setStyleSheet("font-weight: bold;")
+    recommended_btn.clicked.connect(host.select_recommended_rkhunter_categories)
+    
+    select_none_btn = QPushButton('Select None')
+    select_none_btn.setMinimumWidth(100)
+    select_none_btn.clicked.connect(host.select_no_rkhunter_categories)
+    
+    actions_layout.addWidget(select_all_btn)
+    actions_layout.addWidget(recommended_btn)
+    actions_layout.addWidget(select_none_btn)
+    actions_layout.addStretch()
+    
+    categories_layout.addLayout(actions_layout)
+    main_layout.addWidget(categories_group)
+    
+    # Add extra spacing at the bottom for better scrolling
+    main_layout.addSpacing(30)
+    
+    # Set up the scroll area
+    scroll_area.setWidget(scroll_content)
+    
+    # Create page layout and add scroll area
+    page_layout = QVBoxLayout(page)
+    page_layout.setContentsMargins(0, 0, 0, 0)
+    page_layout.addWidget(scroll_area)
+    
+    return page
 
 def build_interface_page(host):
     page = QWidget(); layout = QVBoxLayout(page)
@@ -131,9 +277,8 @@ def build_interface_page(host):
     font_elements = [
         ('base_font_spin', 'Base Font Size (Buttons, Tabs, Cards):', 'base'),
         ('scan_results_font_spin', 'Scan Results Text:', 'scan_results'),
-        ('reports_font_spin', 'Reports Text:', 'reports'),
-        ('headers_font_spin', 'Headers & Titles:', 'headers'),
-        ('small_font_spin', 'Small Text & Labels:', 'small')
+        ('reports_font_spin', 'Scan Reports Text:', 'reports'),
+        ('activity_font_spin', 'Activity Report Text:', 'activity')
     ]
     
     for attr_name, label, element_type in font_elements:
@@ -154,6 +299,11 @@ def build_interface_page(host):
                         host.config['ui_settings']['font_sizes'] = {}
                     host.config['ui_settings']['font_sizes'][element_type] = value
                     host.save_config()
+                    
+                    # Special handling for activity font size - refresh activity list styling
+                    if element_type == 'activity' and hasattr(host, 'setup_activity_list_styling'):
+                        host.setup_activity_list_styling()
+                        
                 return handle_change
             
             spin.valueChanged.connect(make_change_handler(element_type))
@@ -166,7 +316,7 @@ def build_interface_page(host):
         host.reset_fonts_btn = QPushButton("Reset to Defaults")
         def reset_fonts():
             # Default font sizes
-            defaults = {'base': 14, 'scan_results': 14, 'reports': 14, 'headers': 18, 'small': 12}
+            defaults = {'base': 14, 'scan_results': 14, 'reports': 14, 'activity': 14}
             for element_type, default_size in defaults.items():
                 get_theme_manager().set_font_size(element_type, default_size)
                 # Update spinbox values
@@ -240,6 +390,20 @@ def build_updates_page(host):
     # Last update check
     if not hasattr(host, 'last_update_check_label'):
         host.last_update_check_label = QLabel("Never")
+        # Try to load initial last check time - use a timer to ensure auto_updater is ready
+        def load_initial_check_time():
+            try:
+                if hasattr(host, 'auto_updater') and host.auto_updater:
+                    last_check = host.auto_updater.get_last_check_time()
+                    if last_check:
+                        host.last_update_check_label.setText(last_check)
+            except Exception as e:
+                print(f"Warning: Could not load initial last check time: {e}")
+        
+        # Delay loading to ensure auto_updater is initialized
+        from PyQt6.QtCore import QTimer
+        QTimer.singleShot(2000, load_initial_check_time)
+        
     version_form.addRow("Last Update Check:", host.last_update_check_label)
     
     layout.addWidget(version_group)

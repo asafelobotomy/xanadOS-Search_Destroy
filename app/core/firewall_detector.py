@@ -618,12 +618,12 @@ class FirewallDetector:
                     diagnosis += f"📦 Compatible kernels available: {', '.join(compatible_kernels)}\n"
                     diagnosis += "💡 Solutions:\n"
                     diagnosis += "   • Reboot to use a newer kernel\n"
-                    diagnosis += "   • Use 'Alternative Firewall Mode' in the app\n"
+                    diagnosis += "   • The main firewall toggle will attempt alternative methods\n"
                     diagnosis += "   • Install kernel modules for current kernel\n"
                 else:
                     diagnosis += "💡 Solutions:\n"
                     diagnosis += "   • Update system and reboot: sudo pacman -Syu && sudo reboot\n"
-                    diagnosis += "   • Use 'Alternative Firewall Mode' for basic protection\n"
+                    diagnosis += "   • The main firewall toggle provides alternative protection\n"
                     diagnosis += "   • Manually install iptables modules\n"
             else:
                 diagnosis += "✅ Kernel modules should be available but may need loading.\n"

@@ -82,6 +82,10 @@ class ThemeManager(QObject):
                     
                     # Visual Depth & Effects - softer and more professional
                     "shadow": "rgba(0, 0, 0, 0.5)",       # Softer shadows
+                    
+                    # Disabled States - theme-appropriate disabled colors
+                    "disabled_bg": "#2b2b2b",             # Darker background for disabled elements
+                    "disabled_text": "#606060",           # Muted gray text for disabled elements
                 },
                 "fonts": {
                     "base_size": 14,                      # Default base size for fallback
@@ -90,6 +94,7 @@ class ThemeManager(QObject):
                     "card_size": 14,                      # Dashboard cards
                     "report_size": 14,                    # Report viewer text
                     "scan_result_size": 14,               # Scan results text area
+                    "activity_size": 14,                  # Activity log text
                     "header_size": 18,                    # Headers and titles
                     "small_size": 12,                     # Small text and labels
                     "monospace_family": "Consolas, 'Courier New', monospace",
@@ -97,50 +102,81 @@ class ThemeManager(QObject):
                 }
             },
             "light": {
-                "name": "Light",
+                "name": "Light (Sunrise)",
                 "colors": {
-                    "background": "#fafafa",
-                    "secondary_bg": "#ffffff",
-                    "tertiary_bg": "#f5f5f5", 
-                    "quaternary_bg": "#eeeeee",
-                    "card_bg": "#ffffff",
-                    "elevated_bg": "#ffffff",
-                    "primary_text": "#212121",
-                    "secondary_text": "#424242",
-                    "muted_text": "#757575",
-                    "success": "#4CAF50",
-                    "success_bright": "#66BB6A",
-                    "error": "#F44336",
-                    "error_bright": "#EF5350",
-                    "warning": "#FF9800",
-                    "warning_bright": "#FFA726",
-                    "info": "#2196F3",
-                    "info_bright": "#42A5F5",
-                    "accent": "#FF5722",
-                    "accent_bright": "#FF7043",
-                    "accent_dark": "#D84315",
-                    "border": "#e0e0e0",
-                    "border_light": "#f5f5f5",
-                    "border_dark": "#bdbdbd",
-                    "hover_bg": "#f0f0f0",
-                    "hover_accent": "#FF7043",
-                    "pressed_bg": "#e8e8e8",
-                    "selection_bg": "#FF5722",
-                    "selection_text": "#ffffff",
-                    "disabled_bg": "#f9f9f9",
-                    "disabled_text": "#bdbdbd",
-                    "shadow": "#00000020",
-                    "glow": "#FF572230",
+                    # === SUNRISE LIGHT THEME (inspired by attached color palette) ===
+                    # Header colors - warm sunrise peach
+                    "header_bg": "#F8BC9B",               # Sunrise peach header background
+                    "header_text": "#2d2d2d",             # Dark text for contrast
+                    
+                    # Core Application Colors - light and airy with warm undertones
+                    "background": "#fefefe",              # Pure white background
+                    "secondary_bg": "#f9f9f9",            # Very light gray for cards
+                    "tertiary_bg": "#f2f2f2",             # Slightly darker for interactive elements
+                    "card_bg": "#ffffff",                 # Pure white cards for elevation
+                    "elevated_bg": "#ffffff",             # White dialogs and modals
+                    
+                    # Sunrise palette integration - warm and inviting
+                    "sunrise_blue": "#75BDE0",            # Sky blue for accents and info
+                    "sunrise_golden": "#F8D49B",          # Golden yellow for highlights
+                    "sunrise_peach": "#F8BC9B",           # Peach for primary actions
+                    "sunrise_pink": "#F89B9B",            # Pink for secondary actions
+                    
+                    # Text Colors - ensuring WCAG compliance
+                    "primary_text": "#212121",            # Dark gray for primary text
+                    "secondary_text": "#424242",          # Medium gray for secondary info
+                    "muted_text": "#757575",              # Light gray for subtle content
+                    "accent_text": "#D2691E",             # Darker orange for emphasis (contrast safe)
+                    "contrast_text": "#ffffff",           # White for dark backgrounds
+                    
+                    # Interactive States - sunrise-inspired but accessible
+                    "accent": "#D2691E",                  # Darker orange for primary actions (accessible)
+                    "accent_hover": "#F8BC9B",            # Sunrise peach on hover
+                    "accent_pressed": "#B8860B",          # Darker golden for pressed state
+                    "focus_ring": "#75BDE0",              # Sky blue focus indicators
+                    "glow": "rgba(117, 189, 224, 0.2)",   # Soft blue glow effect
+                    
+                    # State Colors - semantic meanings with sunrise touch
+                    "success": "#228B22",                 # Forest green for success (contrast safe)
+                    "success_border": "#32CD32",          # Lime green borders
+                    "success_bright": "#90EE90",          # Light green for highlights
+                    "warning": "#FF8C00",                 # Dark orange for warnings
+                    "warning_border": "#FFA500",          # Orange borders
+                    "warning_bright": "#FFD700",          # Gold for highlights
+                    "error": "#DC143C",                   # Crimson for errors (contrast safe)
+                    "error_border": "#FF6347",            # Tomato borders
+                    "error_bright": "#FFB6C1",            # Light pink for highlights
+                    "info": "#1E90FF",                    # Dodger blue for info
+                    "info_border": "#75BDE0",             # Sky blue borders
+                    "info_bright": "#ADD8E6",             # Light blue for highlights
+                    
+                    # Border System - subtle and warm
+                    "border": "#D2691E",                  # Darker orange borders (main)
+                    "border_light": "#F8D49B",            # Golden yellow for light borders
+                    "border_accent": "#F8BC9B",           # Peach accent borders
+                    "border_inner": "#F89B9B",            # Pink for inner borders
+                    "border_muted": "#e8e8e8",            # Very light gray for subtle divisions
+                    "separator": "#F8BC9B",               # Peach section separators
+                    
+                    # Interaction Feedback - warm and inviting
+                    "hover_bg": "#f5f5f5",               # Light gray hover backgrounds
+                    "hover_accent": "#F8D49B",            # Golden hover for accent elements
+                    "pressed_bg": "#eeeeee",             # Pressed backgrounds
+                    "selection_bg": "#75BDE0",            # Sky blue selection
+                    "selection_text": "#ffffff",          # White selection text
+                    
+                    # Visual Depth & Effects - soft and warm
+                    "shadow": "rgba(210, 105, 30, 0.1)",  # Warm orange shadow
+                    
+                    # Disabled States - muted sunrise colors
+                    "disabled_bg": "#f8f8f8",            # Very light background for disabled
+                    "disabled_text": "#bdbdbd",           # Light gray text for disabled elements
                 },
                 "fonts": {
                     "base_size": 14,                      # Default base size for fallback
-                    "button_size": 14,                    # Buttons
-                    "tab_size": 14,                       # Tab headers
-                    "card_size": 14,                      # Dashboard cards
                     "report_size": 14,                    # Report viewer text
                     "scan_result_size": 14,               # Scan results text area
-                    "header_size": 18,                    # Headers and titles
-                    "small_size": 12,                     # Small text and labels
+                    "activity_size": 14,                  # Activity log text
                     "monospace_family": "Consolas, 'Courier New', monospace",
                     "ui_family": "Segoe UI, Tahoma, sans-serif",
                 }
@@ -182,6 +218,7 @@ class ThemeManager(QObject):
             "cards": "card_size",
             "reports": "report_size",
             "scan_results": "scan_result_size",
+            "activity": "activity_size",
             "headers": "header_size",
             "small": "small_size"
         }
@@ -207,6 +244,7 @@ class ThemeManager(QObject):
             "cards": "card_size",
             "reports": "report_size",
             "scan_results": "scan_result_size",
+            "activity": "activity_size",
             "headers": "header_size",
             "small": "small_size"
         }
@@ -874,18 +912,34 @@ class ThemeManager(QObject):
             border-color: {c('accent')};
         }}
         
-        /* === ENHANCED SPIN BOXES === */
+        /* === MINIMAL SPIN BOXES (matching original QTimeEdit style) === */
         QSpinBox, QDoubleSpinBox {{
-            background-color: {c('card_bg')};
-            border: 2px solid {c('border')};
-            border-radius: 8px;
-            padding: 8px;
+            background-color: {c('secondary_bg')};
             color: {c('primary_text')};
+            border: 1px solid {c('border_muted')};
+            padding: 4px;
         }}
         QSpinBox:focus, QDoubleSpinBox:focus {{
-            border-color: {c('focus_ring')};
-            background-color: {c('card_bg')};
-            box-shadow: 0 0 0 2px {c('glow')};
+            border-color: {c('accent')};
+        }}
+        QSpinBox:disabled, QDoubleSpinBox:disabled {{
+            background-color: {c('disabled_bg')};
+            color: {c('disabled_text')};
+        }}
+        
+        /* === MINIMAL TIME EDIT CONTROLS (original simple style) === */
+        QTimeEdit, QDateTimeEdit {{
+            background-color: {c('secondary_bg')};
+            color: {c('primary_text')};
+            border: 1px solid {c('border_muted')};
+            padding: 4px;
+        }}
+        QTimeEdit:focus, QDateTimeEdit:focus {{
+            border-color: {c('accent')};
+        }}
+        QTimeEdit:disabled, QDateTimeEdit:disabled {{
+            background-color: {c('disabled_bg')};
+            color: {c('disabled_text')};
         }}
         
         /* === ENHANCED MENU BAR === */

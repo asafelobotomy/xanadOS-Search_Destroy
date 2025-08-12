@@ -83,7 +83,7 @@ class NoWheelComboBox(QComboBox):
 
 
 class NoWheelSpinBox(QSpinBox):
-    """SpinBox that ignores wheel events."""
+    """SpinBox that ignores wheel events to prevent accidental changes."""
     def wheelEvent(self, event: QWheelEvent):  # type: ignore[override]
         event.ignore()
 
@@ -970,7 +970,7 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
                     detailed_msg += "Diagnostic Information:\n"
                     detailed_msg += diagnosis
                     detailed_msg += "\n\nSuggestions:\n"
-                    detailed_msg += "• Try 'Alternative Firewall Mode' - the app will attempt direct iptables rules\n"
+                    detailed_msg += "• The main firewall toggle will attempt alternative methods automatically\n"
                     detailed_msg += "• Update your system and reboot: sudo pacman -Syu && sudo reboot\n"
                     detailed_msg += "• Load modules manually: sudo modprobe iptable_filter iptable_nat\n"
                     detailed_msg += "• Check if iptables packages are installed"
@@ -1056,7 +1056,7 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
                     self.protection_status_label.setText("🛡️ Active")
                     color = self.get_status_color("success")
                     self.protection_status_label.setStyleSheet(
-                        f"color: {color}; font-weight: bold; font-size: 12px; padding: 5px;")
+                        f"color: {color}; font-weight: bold; font-size: 16px; padding: 5px;")
                     self.protection_toggle_btn.setText("Stop")
                     print("✅ Protection tab UI updated to Active state")
                 else:
@@ -1069,7 +1069,7 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
                     self.protection_status_label.setText("❌ Failed to restore")
                     color = self.get_status_color("error")
                     self.protection_status_label.setStyleSheet(
-                        f"color: {color}; font-weight: bold; font-size: 12px; padding: 5px;")
+                        f"color: {color}; font-weight: bold; font-size: 16px; padding: 5px;")
                     self.protection_toggle_btn.setText("Start")
 
                     # Update config to reflect actual state
@@ -1081,7 +1081,7 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
                 self.protection_status_label.setText("🔴 Inactive")
                 color = self.get_status_color("error")
                 self.protection_status_label.setStyleSheet(
-                    f"color: {color}; font-weight: bold; font-size: 12px; padding: 5px;")
+                    f"color: {color}; font-weight: bold; font-size: 16px; padding: 5px;")
                 self.protection_toggle_btn.setText("Start")
                 print("✅ Protection tab UI updated to Inactive state")
 
@@ -1104,7 +1104,7 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
                 self.protection_status_label.setText("🔴 Inactive")
                 color = self.get_status_color("error")
                 self.protection_status_label.setStyleSheet(
-                    f"color: {color}; font-weight: bold; font-size: 12px; padding: 5px;")
+                    f"color: {color}; font-weight: bold; font-size: 16px; padding: 5px;")
                 if hasattr(self, "protection_toggle_btn"):
                     self.protection_toggle_btn.setText("Start")
                 print("✅ Protection status forced to Inactive state")
@@ -1321,7 +1321,7 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
                         detailed_msg += "Diagnostic Information:\n"
                         detailed_msg += diagnosis
                         detailed_msg += "\n\nSuggestions:\n"
-                        detailed_msg += "• Try 'Alternative Firewall Mode' - the app will attempt direct iptables rules\n"
+                        detailed_msg += "• The main firewall toggle attempts alternative methods automatically\n"
                         detailed_msg += "• Update your system and reboot: sudo pacman -Syu && sudo reboot\n"
                         detailed_msg += "• Load modules manually: sudo modprobe iptable_filter iptable_nat\n"
                         detailed_msg += "• Check if iptables packages are installed"
@@ -1365,100 +1365,6 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
                 )
             except (OSError, subprocess.SubprocessError):
                 self.firewall_toggle_btn.setText("Toggle Firewall")
-
-    def toggle_alternative_firewall(self):
-        """Toggle firewall using alternative methods when standard UFW fails."""
-        print("🔍 DEBUG: toggle_alternative_firewall() called")
-        
-        # Prevent multiple simultaneous operations
-        if hasattr(self, '_alt_firewall_change_from_gui') and self._alt_firewall_change_from_gui:
-            print("🔍 DEBUG: Alternative firewall operation already in progress")
-            return
-        
-        self._alt_firewall_change_from_gui = True
-        self.alt_firewall_btn.setEnabled(False)
-        self.alt_firewall_btn.setText("Working...")
-        
-        try:
-            # Determine current firewall state
-            current_status = get_firewall_status()
-            is_active = current_status.get('is_active', False)
-            
-            # Toggle the opposite state
-            enable_firewall = not is_active
-            action = "enable" if enable_firewall else "disable"
-            
-            self.add_activity_message(f"🔄 Attempting alternative firewall {action}...")
-            
-            # Use the alternative firewall method directly
-            from core.firewall_detector import FirewallDetector
-            detector = FirewallDetector()
-            
-            try:
-                result = detector._try_alternative_firewall_method(enable_firewall)
-                print(f"🔍 DEBUG: Alternative firewall result: {result}")
-            except Exception as e:
-                print(f"❌ DEBUG: Exception in alternative firewall: {e}")
-                import traceback
-                traceback.print_exc()
-                # Reset flag since operation failed
-                self._alt_firewall_change_from_gui = False
-                self.add_activity_message(f"❌ Error during alternative firewall {action}: {str(e)}")
-                self._restore_alt_firewall_button()
-                return
-            
-            if result.get('success', False):
-                # Success - show message and update UI
-                success_msg = str(result.get('message', f'Alternative firewall {action}d successfully'))
-                method = result.get('method', 'unknown')
-                
-                if method.startswith('iptables_direct'):
-                    success_msg += "\n\n✅ Used direct iptables rules for basic protection"
-                elif method.startswith('systemd_'):
-                    service_name = method.split('_')[1] if '_' in method else 'service'
-                    success_msg += f"\n\n✅ Used systemd service management ({service_name})"
-                
-                self.add_activity_message(f"🔥 Alternative firewall {action}d successfully")
-                self.show_themed_message_box(
-                    "information",
-                    "Alternative Firewall",
-                    success_msg
-                )
-                
-                # Force immediate status update
-                self.update_firewall_status()
-            else:
-                # Error - show error message and reset flag
-                self._alt_firewall_change_from_gui = False
-                error_msg = str(result.get('message', 'Unknown error'))
-                
-                self.add_activity_message(f"❌ Alternative firewall {action} failed: {error_msg}")
-                self.show_themed_message_box(
-                    "warning",
-                    "Alternative Firewall Failed",
-                    f"Alternative firewall methods failed:\n{error_msg}\n\n"
-                    f"This may indicate that your system needs a reboot to use newer kernel modules, "
-                    f"or that firewall packages need to be reinstalled."
-                )
-            
-        except Exception as e:
-            # Handle unexpected errors
-            error_msg = f"Unexpected error: {str(e)}"
-            self.add_activity_message(f"❌ Alternative firewall error: {error_msg}")
-            self.show_themed_message_box(
-                "critical",
-                "Alternative Firewall Error",
-                f"An unexpected error occurred:\n{error_msg}"
-            )
-        
-        self._alt_firewall_change_from_gui = False
-        self._restore_alt_firewall_button()
-
-    def _restore_alt_firewall_button(self):
-        """Restore the alternative firewall button to its normal state."""
-        if hasattr(self, 'alt_firewall_btn'):
-            self.alt_firewall_btn.setEnabled(True)
-            self.alt_firewall_btn.setText("Alt Mode")
 
     def create_scan_tab(self):
         # DEBUG: log available rkhunter attributes related to availability/version
@@ -1877,7 +1783,7 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
         self.protection_status_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.protection_status_label.setMinimumHeight(40)
         self.protection_status_label.setStyleSheet(
-            "font-size: 14px; padding: 10px; font-weight: bold;"
+            "font-size: 16px; padding: 10px; font-weight: bold;"
         )
         status_layout.addWidget(self.protection_status_label)
 
@@ -1886,7 +1792,7 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
         self.protection_toggle_btn.clicked.connect(
             self.toggle_real_time_protection)
         self.protection_toggle_btn.setMinimumHeight(40)
-        self.protection_toggle_btn.setMinimumWidth(120)
+        self.protection_toggle_btn.setFixedWidth(120)  # Fixed width for consistent positioning
         self.protection_toggle_btn.setObjectName("primaryButton")
 
         button_layout = QHBoxLayout()
@@ -2009,19 +1915,8 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
         self.firewall_toggle_btn.setToolTip(
             "Click to enable or disable the firewall")
 
-        # Add alternative firewall button for older kernel compatibility
-        self.alt_firewall_btn = QPushButton("Alt Mode")
-        self.alt_firewall_btn.clicked.connect(self.toggle_alternative_firewall)
-        self.alt_firewall_btn.setMinimumHeight(35)
-        self.alt_firewall_btn.setObjectName("secondaryButton")
-        self.alt_firewall_btn.setToolTip(
-            "Alternative firewall mode for older kernels or when UFW fails")
-        self.alt_firewall_btn.setMaximumWidth(80)
-
         firewall_button_layout.addStretch()
         firewall_button_layout.addWidget(self.firewall_toggle_btn)
-        firewall_button_layout.addSpacing(10)
-        firewall_button_layout.addWidget(self.alt_firewall_btn)
         firewall_button_layout.addStretch()
         firewall_layout.addLayout(firewall_button_layout)
 
@@ -2157,7 +2052,7 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
                         self.protection_status_label.setText("🛡️ Active")
                         color = self.get_status_color("success")
                         self.protection_status_label.setStyleSheet(
-                            f"color: {color}; font-weight: bold; font-size: 12px; padding: 5px;")
+                            f"color: {color}; font-weight: bold; font-size: 16px; padding: 5px;")
                         if hasattr(self, "protection_toggle_btn"):
                             self.protection_toggle_btn.setText("Stop")
                         print("✅ Real-time protection restored successfully!")
@@ -2172,7 +2067,7 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
                             "❌ Failed to restore")
                         color = self.get_status_color("error")
                         self.protection_status_label.setStyleSheet(
-                            f"color: {color}; font-weight: bold; font-size: 12px; padding: 5px;")
+                            f"color: {color}; font-weight: bold; font-size: 16px; padding: 5px;")
                         if hasattr(self, "protection_toggle_btn"):
                             self.protection_toggle_btn.setText("Start")
                         self.add_activity_message(
@@ -2624,6 +2519,49 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
             self.settings_scan_frequency_combo.setEnabled(enabled)
             self.settings_scan_time_edit.setEnabled(enabled)
             self.settings_scan_type_combo.setEnabled(enabled)
+            
+            # Apply visual styling to make disabled state more obvious for combo boxes
+            if enabled:
+                # Remove any disabled styling
+                self.settings_scan_frequency_combo.setStyleSheet("")
+                self.settings_scan_type_combo.setStyleSheet("")
+            else:
+                # Apply theme-appropriate disabled styling
+                disabled_bg = self.get_theme_color("disabled_bg")
+                disabled_text = self.get_theme_color("disabled_text") 
+                border_muted = self.get_theme_color("border_muted")
+                secondary_bg = self.get_theme_color("secondary_bg")
+                
+                disabled_style = f"""
+                    QComboBox {{
+                        background-color: {disabled_bg};
+                        color: {disabled_text};
+                        border: 1px solid {border_muted};
+                        border-radius: 4px;
+                        padding: 4px 8px;
+                        font-style: italic;
+                    }}
+                    QComboBox::drop-down {{
+                        background-color: {disabled_bg};
+                        border: none;
+                        border-left: 1px solid {border_muted};
+                        border-radius: 0px 4px 4px 0px;
+                        width: 20px;
+                    }}
+                    QComboBox::down-arrow {{
+                        image: none;
+                        border: none;
+                        width: 0px;
+                        height: 0px;
+                    }}
+                    QComboBox QAbstractItemView {{
+                        background-color: {secondary_bg};
+                        color: {disabled_text};
+                        selection-background-color: {disabled_bg};
+                    }}
+                """
+                self.settings_scan_frequency_combo.setStyleSheet(disabled_style)
+                self.settings_scan_type_combo.setStyleSheet(disabled_style)
             
             # Enable custom directory controls only if custom scan is selected
             if hasattr(self, 'settings_custom_dir_edit'):
@@ -3347,6 +3285,7 @@ System        {perf_status}"""
 
     def setup_activity_list_styling(self):
         """Set up proper styling for the activity list with theme-aware colors."""
+        from gui.theme_manager import get_theme_manager
         bg = self.get_theme_color("background")
         secondary_bg = self.get_theme_color("secondary_bg")
         text = self.get_theme_color("primary_text")
@@ -3354,6 +3293,9 @@ System        {perf_status}"""
         border = self.get_theme_color("border")
         hover_bg = self.get_theme_color("hover_bg")
         selection_bg = self.get_theme_color("selection_bg")
+        
+        # Get the activity font size
+        activity_font_size = get_theme_manager().get_font_size("activity")
 
         activity_style = f"""
             QListWidget {{
@@ -3364,10 +3306,12 @@ System        {perf_status}"""
                 selection-color: {bg};
                 border: 1px solid {border};
                 border-radius: 6px;
+                font-size: {activity_font_size}px;
             }}
             QListWidget::item {{
                 padding: 6px;
                 border-bottom: 1px solid rgba(238, 137, 128, 0.2);
+                font-size: {activity_font_size}px;
             }}
             QListWidget::item:hover {{
                 background-color: {hover_bg};
@@ -3376,6 +3320,7 @@ System        {perf_status}"""
                 background-color: {accent};
                 color: {bg};
                 font-weight: 600;
+                font-size: {activity_font_size}px;
             }}
         """
 
@@ -3480,6 +3425,9 @@ System        {perf_status}"""
                 
             print("✅ Auto-updater initialized successfully")
             
+            # Refresh the update check display in settings
+            QTimer.singleShot(1000, self.refresh_update_check_display)  # Delay to ensure UI is ready
+            
         except Exception as e:
             print(f"❌ Error initializing auto-updater: {e}")
 
@@ -3547,6 +3495,27 @@ System        {perf_status}"""
             from utils.config import get_factory_defaults
             return get_factory_defaults()
 
+    def update_last_check_time(self):
+        """Update the last update check time in the settings page."""
+        try:
+            if hasattr(self, 'auto_updater') and hasattr(self, 'last_update_check_label'):
+                last_check = self.auto_updater.get_last_check_time()
+                if last_check:
+                    self.last_update_check_label.setText(last_check)
+                else:
+                    self.last_update_check_label.setText("Never")
+        except Exception as e:
+            print(f"Warning: Could not update last check time: {e}")
+    
+    def refresh_update_check_display(self):
+        """Refresh the update check display in settings - can be called from anywhere."""
+        try:
+            # This method can be called to refresh the display
+            if hasattr(self, 'last_update_check_label'):
+                self.update_last_check_time()
+        except Exception as e:
+            print(f"Warning: Could not refresh update check display: {e}")
+
     def open_update_dialog(self):
         """Open the update dialog for manual update checking."""
         try:
@@ -3555,7 +3524,10 @@ System        {perf_status}"""
                 # First argument must be the QWidget parent; second is current version string
                 current_version = getattr(self.auto_updater, 'current_version', '0.0.0')
                 dialog = UpdateDialog(self, current_version)
-                dialog.exec()
+                result = dialog.exec()
+                
+                # Update the last check time in settings after dialog closes
+                self.update_last_check_time()
             else:
                 self.show_themed_message_box(
                     "warning", 
@@ -4062,7 +4034,7 @@ System        {perf_status}"""
         self.display_rkhunter_results(rkhunter_result)
 
         # Add separator
-        self.results_text.append("\n" + "=" * 45 + "\n")
+        self.results_text.append("\n" + "=" * 30 + "\n")
 
         # Retrieve the stored scan parameters
         clamav_params = getattr(self, '_pending_clamav_scan', {"quick_scan": False, "scan_options": None})
@@ -4097,9 +4069,9 @@ System        {perf_status}"""
         self.save_rkhunter_report(rkhunter_result)
 
         # Create combined summary
-        self.results_text.append("\n" + "=" * 45)
+        self.results_text.append("\n" + "=" * 30)
         self.results_text.append("\n🔒 COMPREHENSIVE SECURITY SCAN SUMMARY")
-        self.results_text.append("=" * 45)
+        self.results_text.append("=" * 30)
 
         # RKHunter summary (ran first)
         self.results_text.append(f"\n🔍 RKHunter Results (Rootkit Detection):")
@@ -4142,7 +4114,7 @@ System        {perf_status}"""
             self.results_text.append(
                 "   Review findings and take appropriate action.")
 
-        self.results_text.append("\n" + "=" * 45)
+        self.results_text.append("\n" + "=" * 30)
         
         # Add reminder for future combined scans
         self.results_text.append("\n💡 Security Scan Tips:")
@@ -5035,7 +5007,7 @@ System        {perf_status}"""
         """Display comprehensive RKHunter scan results in the results text area."""
         # Create a separator for multiple scans
         if self.results_text.toPlainText().strip():
-            self.results_text.append("\n" + "="*60 + "\n")
+            self.results_text.append("\n" + "="*30 + "\n")
         
         # Header with scan completion status
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -5371,9 +5343,9 @@ System        {perf_status}"""
                 # Build content
                 content = []
                 for i, warning in enumerate(warnings):
-                    content.append(f"{'='*60}")
+                    content.append(f"{'='*30}")
                     content.append(f"WARNING #{i+1}")
-                    content.append(f"{'='*60}")
+                    content.append(f"{'='*30}")
                     
                     if hasattr(warning, 'description'):
                         content.append(f"Description: {warning.description}")
@@ -5589,6 +5561,9 @@ System        {perf_status}"""
             self.firewall_name_label.setStyleSheet(
                 f"font-size: 11px; color: {self.get_theme_color('secondary_text')};"
             )
+        
+        # Update activity list styling to match new theme
+        self.setup_activity_list_styling()
         
         # Update any other components that need theme refresh
         # Note: Most components are handled by the main setStyleSheet() calls
@@ -6385,26 +6360,26 @@ System        {perf_status}"""
     def _show_welcome_message(self):
         """Display a welcome message with app information and instructions."""
         
-        self.results_text.append("🛡️  XANADOS SEARCH & DESTROY")
-        self.results_text.append("=" * 45)
+        self.results_text.append("🛡️  <b>XANADOS SEARCH & DESTROY</b>")
+        self.results_text.append("=" * 35)
         self.results_text.append("Advanced Anti-Malware & Rootkit Detection System")
         self.results_text.append("")
         
-        self.results_text.append(" SCAN TYPES:")
+        self.results_text.append(" <b>SCAN TYPES:</b>")
         self.results_text.append("   • Quick: Common threat locations")
         self.results_text.append("   • Full: Comprehensive system scan")
         self.results_text.append("   • Custom: Specific files/directories")
         self.results_text.append("   • RKHunter: Rootkit detection")
         self.results_text.append("")
         
-        self.results_text.append("💡 QUICK START:")
+        self.results_text.append("💡 <b>QUICK START:</b>")
         self.results_text.append("   1. Choose scan type above")
         self.results_text.append("   2. Click 'Start Scan'")
         self.results_text.append("   3. Results appear here")
         self.results_text.append("")
         
         self.results_text.append("Ready to scan! 🚀")
-        self.results_text.append("=" * 40)
+        self.results_text.append("=" * 30)
 
     def _clear_results_with_header(self):
         """Clear results and show a scan preparation header."""
@@ -6412,7 +6387,7 @@ System        {perf_status}"""
         
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         self.results_text.append("🔄 PREPARING NEW SCAN")
-        self.results_text.append("=" * 45)
+        self.results_text.append("=" * 30)
         self.results_text.append(f"📅 Scan initiated: {timestamp}")
         self.results_text.append("")
         self.results_text.append("⏳ Initializing scan engine...")
@@ -6528,7 +6503,7 @@ System        {perf_status}"""
         """Display comprehensive scan results with detailed information."""
         # Create a separator for multiple scans
         if self.results_text.toPlainText().strip():
-            self.results_text.append("\n" + "="*60 + "\n")
+            self.results_text.append("\n" + "="*30 + "\n")
         
         # Header with scan completion status
         if isinstance(result, dict) and result.get("status") == "error":
@@ -7010,10 +6985,12 @@ System        {perf_status}"""
         self.show_themed_message_box(
             "information",
             "About S&D",
-            f"""<h1>S&D - Search & Destroy</h1>
-                         <p>A modern GUI for ClamAV virus scanning.</p>
-                         <p>Version {APP_VERSION}</p>
-                         <p>© 2025 xanadOS</p>""",
+            f"""<div style="font-size: 12px;">
+                         <p style="font-size: 14px; font-weight: bold; margin: 8px 0;">S&D - Search & Destroy</p>
+                         <p style="margin: 4px 0;">A modern GUI for ClamAV virus scanning.</p>
+                         <p style="margin: 4px 0;">Version {APP_VERSION}</p>
+                         <p style="margin: 4px 0;">© 2025 xanadOS</p>
+                         </div>""",
         )
 
     def update_definition_status(self):
@@ -8447,6 +8424,9 @@ System        {perf_status}"""
             
             self.settings_enable_scheduled_cb.setChecked(enabled)
             
+            # Trigger visual state update for combo boxes based on enabled state
+            self.on_scheduled_scan_toggled(enabled)
+            
             # Load scan frequency
             for i in range(self.settings_scan_frequency_combo.count()):
                 if self.settings_scan_frequency_combo.itemData(i) == frequency:
@@ -8532,7 +8512,8 @@ System        {perf_status}"""
     def auto_save_settings(self):
         """Schedule a debounced settings save to reduce disk writes."""
         # 300ms debounce window groups rapid UI changes
-        self._settings_save_timer.start(300)
+        if hasattr(self, '_settings_save_timer'):
+            self._settings_save_timer.start(300)
     
     def _auto_save_settings_commit(self):
         """Commit the pending settings to disk (invoked after debounce)."""

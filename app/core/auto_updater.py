@@ -171,6 +171,20 @@ class AutoUpdater:
         except Exception as e:
             print(f"Warning: Could not save update check time: {e}")
     
+    def get_last_check_time(self) -> Optional[str]:
+        """Get the last update check time as a formatted string."""
+        try:
+            if not self.update_check_file.exists():
+                return None
+                
+            with open(self.update_check_file, 'r') as f:
+                data = json.load(f)
+            
+            last_check = datetime.fromisoformat(data.get('last_check', ''))
+            return last_check.strftime("%Y-%m-%d %H:%M:%S")
+        except (json.JSONDecodeError, KeyError, ValueError, FileNotFoundError):
+            return None
+    
     def _get_latest_release(self) -> Optional[Dict]:
         """Get the latest release information from GitHub stable branch."""
         # First, get all releases

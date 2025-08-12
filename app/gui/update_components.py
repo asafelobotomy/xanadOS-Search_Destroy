@@ -84,6 +84,7 @@ class UpdateDialog(QDialog):
         
         self.setup_ui()
         self.setup_connections()
+        self.load_last_check_time()
         # Theme is now handled by global theme manager automatically
 
     
@@ -194,6 +195,19 @@ class UpdateDialog(QDialog):
         self.install_button.clicked.connect(self.install_update)
         self.close_button.clicked.connect(self.close)
     
+    def load_last_check_time(self):
+        """Load and display the last update check time."""
+        try:
+            updater = AutoUpdater(self.current_version)
+            last_check = updater.get_last_check_time()
+            if last_check:
+                self.last_check_label.setText(last_check)
+            else:
+                self.last_check_label.setText("Never")
+        except Exception as e:
+            print(f"Warning: Could not load last check time: {e}")
+            self.last_check_label.setText("Never")
+    
     def check_for_updates(self):
         """Start checking for updates."""
         self.status_label.setText("Checking for updates...")
@@ -222,6 +236,9 @@ class UpdateDialog(QDialog):
         
         self.check_button.setEnabled(True)
         self.check_button.setText("Check Again")
+        
+        # Update last check time
+        self.load_last_check_time()
     
     def on_no_update(self):
         """Handle when no update is available."""
@@ -229,12 +246,18 @@ class UpdateDialog(QDialog):
         self.status_label.setStyleSheet(f"color: {get_theme_manager().get_color('success')};")
         self.check_button.setEnabled(True)
         self.check_button.setText("Check Again")
+        
+        # Update last check time
+        self.load_last_check_time()
     
     def on_check_error(self, error_message):
         """Handle errors during update check."""
         self.status_label.setText(f"Error checking for updates: {error_message}")
         self.status_label.setStyleSheet(f"color: {get_theme_manager().get_color('error')};")
         self.check_button.setEnabled(True)
+        
+        # Update last check time even on error (since we did attempt to check)
+        self.load_last_check_time()
     
     def download_update(self):
         """Start downloading the update."""
