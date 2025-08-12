@@ -109,12 +109,12 @@ class ThemeManager(QObject):
                     "header_bg": "#F8BC9B",               # Sunrise peach header background
                     "header_text": "#2d2d2d",             # Dark text for contrast
                     
-                    # Core Application Colors - light and airy with warm undertones
-                    "background": "#fefefe",              # Pure white background
-                    "secondary_bg": "#f9f9f9",            # Very light gray for cards
-                    "tertiary_bg": "#f2f2f2",             # Slightly darker for interactive elements
-                    "card_bg": "#ffffff",                 # Pure white cards for elevation
-                    "elevated_bg": "#ffffff",             # White dialogs and modals
+                    # Core Application Colors - warm sunrise-tinted instead of pure white
+                    "background": "#fefdf8",              # Warm cream background (subtle sunrise tint)
+                    "secondary_bg": "#f9f6f0",            # Warm light background for cards (peach tint)
+                    "tertiary_bg": "#f4f0e8",             # Warm tinted for interactive elements
+                    "card_bg": "#fdfcf6",                 # Warm white cards with sunrise tint
+                    "elevated_bg": "#fefcf5",             # Warm white dialogs and modals
                     
                     # Sunrise palette integration - warm and inviting
                     "sunrise_blue": "#75BDE0",            # Sky blue for accents and info
@@ -122,55 +122,61 @@ class ThemeManager(QObject):
                     "sunrise_peach": "#F8BC9B",           # Peach for primary actions
                     "sunrise_pink": "#F89B9B",            # Pink for secondary actions
                     
-                    # Text Colors - ensuring WCAG compliance
-                    "primary_text": "#212121",            # Dark gray for primary text
-                    "secondary_text": "#424242",          # Medium gray for secondary info
-                    "muted_text": "#757575",              # Light gray for subtle content
+                    # Enhanced strawberry-style naming for consistency with Dark Mode
+                    "strawberry_primary": "#D2691E",       # Main accent (darker orange)
+                    "strawberry_coral": "#F8BC9B",        # Light peach (like Dark's coral)
+                    "strawberry_peach": "#F8D49B",        # Golden yellow highlights
+                    "strawberry_sage": "#75BDE0",         # Sky blue for info/calm states
+                    
+                    # Text Colors - ensuring WCAG compliance with warmer tones
+                    "primary_text": "#1a1a1a",            # Slightly warmer dark gray
+                    "secondary_text": "#3d3d3d",          # Warm medium gray for secondary info
+                    "muted_text": "#6b6b6b",              # Warmer light gray for subtle content
                     "accent_text": "#D2691E",             # Darker orange for emphasis (contrast safe)
                     "contrast_text": "#ffffff",           # White for dark backgrounds
                     
-                    # Interactive States - sunrise-inspired but accessible
-                    "accent": "#D2691E",                  # Darker orange for primary actions (accessible)
+                    # Interactive States - sunrise-inspired and prominent
+                    "accent": "#D2691E",                  # Darker orange for primary actions (prominent like Dark's red)
                     "accent_hover": "#F8BC9B",            # Sunrise peach on hover
                     "accent_pressed": "#B8860B",          # Darker golden for pressed state
                     "focus_ring": "#75BDE0",              # Sky blue focus indicators
-                    "glow": "rgba(117, 189, 224, 0.2)",   # Soft blue glow effect
+                    "glow": "rgba(248, 188, 155, 0.3)",   # Warm peach glow effect
                     
-                    # State Colors - semantic meanings with sunrise touch
-                    "success": "#228B22",                 # Forest green for success (contrast safe)
-                    "success_border": "#32CD32",          # Lime green borders
-                    "success_bright": "#90EE90",          # Light green for highlights
-                    "warning": "#FF8C00",                 # Dark orange for warnings
-                    "warning_border": "#FFA500",          # Orange borders
-                    "warning_bright": "#FFD700",          # Gold for highlights
-                    "error": "#DC143C",                   # Crimson for errors (contrast safe)
-                    "error_border": "#FF6347",            # Tomato borders
-                    "error_bright": "#FFB6C1",            # Light pink for highlights
-                    "info": "#1E90FF",                    # Dodger blue for info
+                    # State Colors - enhanced with sunrise touch
+                    "success": "#2E7D32",                 # Deeper forest green for success
+                    "success_border": "#4CAF50",          # Vibrant green borders
+                    "success_bright": "#81C784",          # Light green for highlights
+                    "warning": "#F57C00",                 # Vibrant orange for warnings
+                    "warning_border": "#FF9800",          # Bright orange borders
+                    "warning_bright": "#FFB74D",          # Light orange for highlights
+                    "error": "#C62828",                   # Deep red for errors
+                    "error_border": "#F44336",            # Bright red borders
+                    "error_bright": "#E57373",            # Light red for highlights
+                    "info": "#1976D2",                    # Deep blue for info
                     "info_border": "#75BDE0",             # Sky blue borders
-                    "info_bright": "#ADD8E6",             # Light blue for highlights
+                    "info_bright": "#90CAF9",             # Light blue for highlights
                     
-                    # Border System - subtle and warm
-                    "border": "#D2691E",                  # Darker orange borders (main)
+                    # Enhanced Border System - more prominent like Dark Mode
+                    "border": "#F8BC9B",                  # Peach borders (main) - prominent like Dark's red
                     "border_light": "#F8D49B",            # Golden yellow for light borders
-                    "border_accent": "#F8BC9B",           # Peach accent borders
+                    "border_accent": "#D2691E",           # Dark orange accent borders
                     "border_inner": "#F89B9B",            # Pink for inner borders
-                    "border_muted": "#e8e8e8",            # Very light gray for subtle divisions
+                    "border_muted": "#f0ede8",            # Warm light gray for subtle divisions
                     "separator": "#F8BC9B",               # Peach section separators
                     
-                    # Interaction Feedback - warm and inviting
-                    "hover_bg": "#f5f5f5",               # Light gray hover backgrounds
+                    # Enhanced Interaction Feedback - more colorful
+                    "hover_bg": "#f7f5f1",               # Warm light gray hover backgrounds
                     "hover_accent": "#F8D49B",            # Golden hover for accent elements
-                    "pressed_bg": "#eeeeee",             # Pressed backgrounds
+                    "pressed_bg": "#f2f0ec",             # Warm pressed backgrounds
                     "selection_bg": "#75BDE0",            # Sky blue selection
                     "selection_text": "#ffffff",          # White selection text
                     
-                    # Visual Depth & Effects - soft and warm
-                    "shadow": "rgba(210, 105, 30, 0.1)",  # Warm orange shadow
+                    # Visual Depth & Effects - enhanced warm effects
+                    "shadow": "rgba(248, 188, 155, 0.15)", # Warm peach shadow
                     
-                    # Disabled States - muted sunrise colors
-                    "disabled_bg": "#f8f8f8",            # Very light background for disabled
-                    "disabled_text": "#bdbdbd",           # Light gray text for disabled elements
+                    # Disabled States - warm-tinted instead of sterile gray
+                    "disabled_bg": "#f8f6f2",            # Warm light background for disabled
+                    "disabled_text": "#a8a8a8",           # Warm gray text for disabled elements
                 },
                 "fonts": {
                     "base_size": 14,                      # Default base size for fallback
