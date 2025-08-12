@@ -63,16 +63,20 @@
   </provides>
   
   <releases>
-    <release version="2.4.1" date="2025-08-12">
+    <release version="2.5.0" date="2025-08-12">
       <description>
-        <p>Flathub Release: Complete Flatpak packaging and distribution preparation</p>
+        <p>Major Update: Complete Theme System Overhaul and Flathub Preparation</p>
         <ul>
+          <li>Complete centralized theming system with Light/Dark mode support</li>
+          <li>Enhanced Sunrise color palette integration for Light Mode</li>
+          <li>Comprehensive repository organization and documentation structure</li>
           <li>Full Flathub compliance with proper dependency management</li>
-          <li>Enhanced metadata and desktop integration</li>
-          <li>Comprehensive icon set including SVG scalable format</li>
-          <li>Optimized permissions for sandboxed execution</li>
-          <li>Complete repository organization and documentation</li>
+          <li>Advanced theme migration tools and Qt effects demonstration</li>
+          <li>Customizable font sizes and text orientation settings</li>
           <li>Professional development workflow with quality assurance</li>
+          <li>Complete icon set including SVG scalable format</li>
+          <li>Optimized permissions for sandboxed execution</li>
+          <li>Unified dialog theming across all application components</li>
         </ul>
       </description>
     </release>

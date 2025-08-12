@@ -5,6 +5,67 @@ All notable changes to the xanadOS-Search_Destroy project will be documented in 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.5.0] - 2025-08-12
+
+### Added
+
+#### 🎨 **Complete Theme System Overhaul**
+- **Centralized Theme Management** - New comprehensive theme manager with Light/Dark mode support
+- **Sunrise Color Palette Integration** - Enhanced Light Mode with warm, professional colors
+- **Customizable Font Sizes** - User-configurable font scaling across the entire interface
+- **Text Orientation Settings** - Advanced typography control for improved readability
+- **Theme Migration Tools** - Professional tools for theme conversion and optimization
+- **Qt Effects Demo** - Interactive demonstration of available visual effects
+
+#### 📦 **Flathub Distribution Support**
+- **Complete Flatpak Manifest** - Full Flathub compliance with proper dependency management
+- **Python Dependencies Manifest** - All packages specified with exact URLs and security hashes
+- **Architecture Configuration** - Support for x86_64 and aarch64 platforms
+- **AppStream Metadata** - Comprehensive application metadata for software centers
+- **Build Testing Tools** - Automated local testing and validation scripts
+
+#### 📁 **Repository Organization & Documentation**
+- **Comprehensive Documentation Structure** - Professional docs organization with clear categories
+- **Development Tools** - Enhanced scripts for repository maintenance and organization
+- **Quality Assurance Integration** - Automated validation and testing workflows
+- **Architecture Documentation** - Detailed project structure and design documentation
+
+### Enhanced
+
+#### 🎨 **User Interface Improvements**
+- **Unified Dialog Theming** - Consistent styling across all application dialogs
+- **Professional Color Schemes** - Refined Dark Mode and enhanced Light Mode palettes
+- **Visual Feedback Systems** - Improved progress indicators and status displays
+- **Icon Integration** - Complete icon set including SVG scalable formats
+
+#### 🔧 **Technical Improvements**
+- **Sandboxed Execution** - Optimized permissions for secure Flatpak operation
+- **Network-Free Building** - Complete compliance with Flathub build requirements
+- **Modular Architecture** - Improved code organization and maintainability
+- **Error Handling** - Enhanced error reporting and recovery mechanisms
+
+### Fixed
+
+#### 🔧 **Theme System Issues**
+- **Dark Mode Font Properties** - Restored missing font size configurations
+- **Light Mode Color Consistency** - Fixed color application across all components  
+- **Theme Application Performance** - Optimized theme loading and switching
+- **Dialog Parent/Child Relationships** - Corrected theme inheritance patterns
+
+#### 📁 **Repository Cleanup**
+- **Removed Legacy Dependencies** - Eliminated 99,984 lines of unnecessary node_modules
+- **File Organization** - Moved files to appropriate directories with proper categorization
+- **Documentation Consolidation** - Unified scattered documentation into coherent structure
+- **Build System Optimization** - Streamlined packaging and distribution processes
+
+### Changed
+
+#### 📁 **File Structure Reorganization** 
+- **Documentation Restructure** - Moved all docs to organized `docs/` directory structure
+- **Archive Management** - Consolidated deprecated and experimental files
+- **Script Organization** - Enhanced utility scripts with better categorization
+- **Configuration Management** - Centralized config files with clear naming
+
 ## [2.4.1] - 2025-08-11
 
 ### Enhanced

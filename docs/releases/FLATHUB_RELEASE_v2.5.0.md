@@ -1,8 +1,8 @@
 # Flathub Release Preparation Summary
 
-## 🎉 S&D - Search & Destroy v2.4.1 - Ready for Flathub!
+## 🎉 S&D - Search & Destroy v2.5.0 - Ready for Flathub!
 
-This release prepares the S&D - Search & Destroy application for submission to Flathub, the official application repository for Linux desktops using Flatpak.
+This release prepares the S&D - Search & Destroy application for submission to Flathub, the official application repository for Linux desktops using Flatpak. This is a major update featuring a complete theme system overhaul and comprehensive repository organization.
 
 ### 📦 Flathub Compliance Achieved
 
@@ -22,8 +22,21 @@ This release prepares the S&D - Search & Destroy application for submission to F
    - Optimized filesystem permissions for security
    - Complete Python dependency specification
 
-2. **Metadata Enhancements (`org.xanados.SearchAndDestroy.metainfo.xml`)**:
-   - Added comprehensive release notes for v2.4.1
+2. **Complete Theme System Overhaul**:
+   - Centralized theme management with Light/Dark mode support
+   - Enhanced Sunrise color palette integration
+   - Customizable font sizes and text orientation
+   - Unified dialog theming across all components
+   - Professional theme migration tools
+
+3. **Repository Organization**:
+   - Comprehensive documentation structure reorganization
+   - Complete removal of unnecessary dependencies (99,984 deletions)
+   - Professional development workflow implementation
+   - Quality assurance integration and validation tools
+
+4. **Metadata Enhancements (`org.xanados.SearchAndDestroy.metainfo.xml`)**:
+   - Added comprehensive release notes for v2.5.0
    - Included developer information and multiple URL types
    - Added placeholder for screenshots (to be added when available)
    - Updated categories and keywords for better discoverability
@@ -69,7 +82,7 @@ This release prepares the S&D - Search & Destroy application for submission to F
 ### 🚀 Next Steps for Flathub Submission
 
 1. **Push to GitHub**: Ensure all changes are committed and pushed
-2. **Tag Release**: Push the v2.4.1 tag to GitHub
+2. **Tag Release**: Push the v2.5.0 tag to GitHub
 3. **Fork Flathub**: Fork the official Flathub repository
 4. **Copy Files**: Copy the 5 required files to the submission
 5. **Test Build**: Validate build in Flathub environment
@@ -105,5 +118,5 @@ The S&D - Search & Destroy application is now fully prepared for Flathub submiss
 
 **Ready for Release** 🚢
 **Release Date**: August 12, 2025
-**Version**: 2.4.1
+**Version**: 2.5.0
 **Target**: Flathub Official Repository

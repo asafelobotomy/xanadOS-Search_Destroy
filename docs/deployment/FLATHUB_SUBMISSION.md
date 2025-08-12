@@ -49,8 +49,8 @@ flatpak run org.xanados.SearchAndDestroy
 
 2. Create and push the release tag:
    ```bash
-   git tag -a v2.4.1 -m "Release version 2.4.1 for Flathub"
-   git push origin v2.4.1
+   git tag -a v2.5.0 -m "Release version 2.5.0 for Flathub"
+   git push origin v2.5.0
    ```
 
 ### Step 3: Fork and Clone Flathub Repository
@@ -90,7 +90,7 @@ Update the commit hash in the manifest:
 
 ```bash
 # Get the actual commit hash from your repository
-COMMIT_HASH=$(cd /path/to/your/project && git rev-parse v2.4.1)
+COMMIT_HASH=$(cd /path/to/your/project && git rev-parse v2.5.0)
 
 # Update the manifest
 sed -i "s/commit: REPLACE_WITH_ACTUAL_COMMIT_HASH/commit: $COMMIT_HASH/" org.xanados.SearchAndDestroy.yml
