@@ -1,297 +1,333 @@
 #!/usr/bin/env python3
 """
-Repository Organization and Cleanup Script for S&D - Search & Destroy
-Organizes files, archives deprecated content, and cleans up the repository.
+Repository Organization Script
+==============================
+Comprehensive cleanup and organization of the xanadOS-Search_Destroy repository.
 """
 
 import os
 import shutil
 import subprocess
+import sys
 from pathlib import Path
-from datetime import datetime
+from typing import List
+
 
 class RepositoryOrganizer:
-    def __init__(self, repo_path):
+    """Organizes and cleans up the repository structure."""
+    
+    def __init__(self, repo_path: str):
         self.repo_path = Path(repo_path)
-        self.timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
+        self.changes_made = []
         
+    def log_change(self, message: str):
+        """Log a change that was made."""
+        self.changes_made.append(message)
+        print(f"✅ {message}")
+    
     def clean_python_cache(self):
-        """Remove Python cache files and directories."""
+        """Remove all __pycache__ directories and .pyc files."""
         print("🧹 Cleaning Python cache files...")
         
-        cache_dirs = []
-        pyc_files = []
+        # Remove __pycache__ directories
+        cache_dirs = list(self.repo_path.rglob("__pycache__"))
+        app_cache_dirs = [d for d in cache_dirs if not str(d).startswith(str(self.repo_path / ".venv"))]
         
-        # Find __pycache__ directories (excluding .venv)
-        for pycache_dir in self.repo_path.rglob("__pycache__"):
-            if ".venv" not in str(pycache_dir):
-                cache_dirs.append(pycache_dir)
-        
-        # Find .pyc files
-        for pyc_file in self.repo_path.rglob("*.pyc"):
-            if ".venv" not in str(pyc_file):
-                pyc_files.append(pyc_file)
-        
-        # Remove cache directories
-        for cache_dir in cache_dirs:
-            try:
+        for cache_dir in app_cache_dirs:
+            if cache_dir.exists():
                 shutil.rmtree(cache_dir)
-                print(f"   ✅ Removed: {cache_dir.relative_to(self.repo_path)}")
-            except Exception as e:
-                print(f"   ❌ Failed to remove {cache_dir}: {e}")
-        
+                
         # Remove .pyc files
-        for pyc_file in pyc_files:
-            try:
+        pyc_files = list(self.repo_path.rglob("*.pyc"))
+        app_pyc_files = [f for f in pyc_files if not str(f).startswith(str(self.repo_path / ".venv"))]
+        
+        for pyc_file in app_pyc_files:
+            if pyc_file.exists():
                 pyc_file.unlink()
-                print(f"   ✅ Removed: {pyc_file.relative_to(self.repo_path)}")
-            except Exception as e:
-                print(f"   ❌ Failed to remove {pyc_file}: {e}")
-        
-        print(f"   📊 Cleaned {len(cache_dirs)} cache directories and {len(pyc_files)} .pyc files")
-
-    def organize_documentation(self):
-        """Organize documentation files into proper directories."""
-        print("📚 Organizing documentation...")
-        
-        # Ensure documentation directories exist
-        docs_impl_features = self.repo_path / "docs" / "implementation" / "features"
-        docs_impl_features.mkdir(parents=True, exist_ok=True)
-        
-        # Files already moved in previous operations - just verify they're in place
-        moved_files = [
-            "docs/implementation/features/MINIMIZE_TO_TRAY_IMPLEMENTATION.md",
-            "docs/implementation/features/SINGLE_INSTANCE_IMPLEMENTATION.md"
-        ]
-        
-        for file_path in moved_files:
-            full_path = self.repo_path / file_path
-            if full_path.exists():
-                print(f"   ✅ {file_path} - correctly placed")
-            else:
-                print(f"   ⚠️  {file_path} - not found")
-
-    def organize_test_files(self):
-        """Check test file organization."""
-        print("🧪 Checking test file organization...")
-        
-        # Test files should now be in archive/test-files
-        test_archive = self.repo_path / "archive" / "test-files"
-        if test_archive.exists():
-            test_files = list(test_archive.glob("test_*.py"))
-            print(f"   ✅ {len(test_files)} test files archived in archive/test-files/")
-            for test_file in test_files:
-                print(f"      - {test_file.name}")
-        else:
-            print("   ⚠️  No test files archive found")
-
-    def archive_temp_docs(self):
-        """Check temp documentation archival."""
-        print("📁 Checking temporary documentation archival...")
-        
-        temp_docs = self.repo_path / "archive" / "temp-docs"
-        if temp_docs.exists():
-            docs = list(temp_docs.glob("*.md"))
-            print(f"   ✅ {len(docs)} temporary docs archived in archive/temp-docs/")
-            for doc in docs:
-                print(f"      - {doc.name}")
-        else:
-            print("   ⚠️  No temp docs archive found")
-
+                
+        self.log_change(f"Removed {len(app_cache_dirs)} __pycache__ directories and {len(app_pyc_files)} .pyc files")
+    
     def update_gitignore(self):
-        """Update .gitignore to exclude cache files and temp files."""
+        """Update .gitignore to ensure proper exclusions."""
         print("📝 Updating .gitignore...")
         
         gitignore_path = self.repo_path / ".gitignore"
         
-        # Patterns to ensure are in .gitignore
-        patterns_to_add = [
-            "# Python cache",
+        # Essential patterns that should be in .gitignore
+        essential_patterns = [
+            "# Python cache and compiled files",
             "__pycache__/",
             "*.py[cod]",
             "*$py.class",
+            "*.so",
             "",
-            "# Temporary files",
-            "*.tmp",
-            "*.temp",
+            "# Virtual environments", 
+            ".venv/",
+            "venv/",
+            "ENV/",
+            "env/",
+            "",
+            "# IDE and editor files",
+            ".vscode/",
+            ".idea/",
+            "*.swp",
+            "*.swo",
             "*~",
             "",
-            "# Test files in root",
-            "/test_*.py",
+            "# OS generated files",
+            ".DS_Store",
+            ".DS_Store?",
+            "._*",
+            ".Spotlight-V100",
+            ".Trashes",
+            "ehthumbs.db",
+            "Thumbs.db",
             "",
-            "# IDE files",
-            ".vscode/settings.json",
-            ".vscode/launch.json",
+            "# Application specific",
+            "*.log",
+            "*.tmp",
+            "config.json",
+            "activity_logs.json",
+            "scan_reports/",
+            "quarantine/",
+            "temp/",
+            "",
+            "# Build and distribution",
+            "build/",
+            "dist/",
+            "*.egg-info/",
+            "",
         ]
         
         if gitignore_path.exists():
             with open(gitignore_path, 'r') as f:
-                existing_content = f.read()
-            
-            # Check which patterns are missing
-            missing_patterns = []
-            for pattern in patterns_to_add:
-                if pattern and pattern not in existing_content:
-                    missing_patterns.append(pattern)
-            
-            if missing_patterns:
-                with open(gitignore_path, 'a') as f:
-                    f.write('\n# Added by repository organizer\n')
-                    for pattern in missing_patterns:
-                        f.write(f'{pattern}\n')
-                
-                print(f"   ✅ Added {len(missing_patterns)} new patterns to .gitignore")
-            else:
-                print("   ✅ .gitignore is up to date")
+                current_content = f.read()
         else:
-            print("   ❌ .gitignore not found")
-
-    def check_unused_files(self):
-        """Check for potentially unused files."""
-        print("🔍 Checking for potentially unused files...")
+            current_content = ""
+            
+        # Add missing patterns
+        missing_patterns = []
+        for pattern in essential_patterns:
+            if pattern.strip() and pattern not in current_content:
+                missing_patterns.append(pattern)
         
-        # Check for common temporary or backup files
-        patterns = [
-            "*.bak",
-            "*.backup",
-            "*.orig",
-            "*.rej",
-            "*~",
-            "*.tmp"
+        if missing_patterns:
+            with open(gitignore_path, 'a') as f:
+                f.write('\n# Added by repository organizer\n')
+                for pattern in missing_patterns:
+                    f.write(f'{pattern}\n')
+            
+            self.log_change(f"Added {len(missing_patterns)} missing patterns to .gitignore")
+        else:
+            print("✅ .gitignore is already comprehensive")
+    
+    def organize_documentation(self):
+        """Organize documentation files."""
+        print("📚 Organizing documentation...")
+        
+        docs_path = self.repo_path / "docs"
+        
+        # Ensure proper documentation structure
+        required_docs = [
+            "user/",
+            "developer/", 
+            "project/",
+            "implementation/",
+            "releases/"
         ]
         
-        found_files = []
-        for pattern in patterns:
-            found_files.extend(self.repo_path.rglob(pattern))
+        created_dirs = []
+        for doc_dir in required_docs:
+            dir_path = docs_path / doc_dir
+            if not dir_path.exists():
+                dir_path.mkdir(parents=True, exist_ok=True)
+                created_dirs.append(doc_dir)
         
-        # Exclude .venv directory
-        found_files = [f for f in found_files if ".venv" not in str(f)]
+        if created_dirs:
+            self.log_change(f"Created documentation directories: {', '.join(created_dirs)}")
+    
+    def clean_development_files(self):
+        """Clean up development and experimental files."""
+        print("🔧 Cleaning development files...")
         
-        if found_files:
-            print(f"   ⚠️  Found {len(found_files)} potentially unused files:")
-            for file in found_files:
-                print(f"      - {file.relative_to(self.repo_path)}")
-        else:
-            print("   ✅ No unused temporary files found")
-
+        dev_path = self.repo_path / "dev"
+        archive_path = self.repo_path / "archive"
+        
+        # Move obviously outdated files to archive
+        outdated_patterns = [
+            "*.bak",
+            "*.backup", 
+            "*.old",
+            "*.tmp",
+            "*.temp",
+        ]
+        
+        moved_files = []
+        for pattern in outdated_patterns:
+            for file_path in self.repo_path.rglob(pattern):
+                if not str(file_path).startswith(str(archive_path)) and not str(file_path).startswith(str(self.repo_path / ".venv")):
+                    # Move to archive
+                    archive_dest = archive_path / "auto-archived" / file_path.name
+                    archive_dest.parent.mkdir(parents=True, exist_ok=True)
+                    if not archive_dest.exists():
+                        shutil.move(str(file_path), str(archive_dest))
+                        moved_files.append(file_path.name)
+        
+        if moved_files:
+            self.log_change(f"Moved {len(moved_files)} outdated files to archive")
+    
+    def organize_app_structure(self):
+        """Ensure proper app module structure."""
+        print("🏗️ Organizing app structure...")
+        
+        app_path = self.repo_path / "app"
+        
+        # Ensure all modules have proper __init__.py files
+        module_dirs = [
+            app_path / "core",
+            app_path / "gui", 
+            app_path / "utils",
+            app_path / "monitoring",
+        ]
+        
+        created_inits = []
+        for module_dir in module_dirs:
+            if module_dir.exists():
+                init_file = module_dir / "__init__.py"
+                if not init_file.exists():
+                    init_file.write_text('"""Module initialization."""\n')
+                    created_inits.append(module_dir.name)
+        
+        if created_inits:
+            self.log_change(f"Created __init__.py files for: {', '.join(created_inits)}")
+    
+    def update_version_consistency(self):
+        """Ensure version consistency across files."""
+        print("🔢 Checking version consistency...")
+        
+        version_file = self.repo_path / "VERSION"
+        if version_file.exists():
+            version = version_file.read_text().strip()
+            
+            # Check app/__init__.py
+            app_init = self.repo_path / "app" / "__init__.py"
+            if app_init.exists():
+                content = app_init.read_text()
+                if "__version__" not in content:
+                    content += f'\n__version__ = "{version}"\n'
+                    app_init.write_text(content)
+                    self.log_change("Added version to app/__init__.py")
+    
     def create_organization_summary(self):
-        """Create a summary of the organization changes."""
+        """Create a summary of organization changes."""
         print("📋 Creating organization summary...")
         
+        summary_path = self.repo_path / "ORGANIZATION_SUMMARY.md"
+        
         summary_content = f"""# Repository Organization Summary
-Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+
+This file documents the organization changes made to the xanadOS-Search_Destroy repository.
 
 ## Changes Made
 
-### 1. Test Files
-- Moved all `test_*.py` files from root to `archive/test-files/`
-- These were temporary test files created during development
-
-### 2. Documentation Organization
-- Moved implementation docs to `docs/implementation/features/`:
-  - `MINIMIZE_TO_TRAY_IMPLEMENTATION.md`
-  - `SINGLE_INSTANCE_IMPLEMENTATION.md`
-- Archived temporary analysis docs to `archive/temp-docs/`:
-  - `THEME_CONSISTENCY_REVIEW.md`
-  - `DROPDOWN_THEME_FIXES.md`
-  - `DROPDOWN_BORDER_ANALYSIS.md`
-
-### 3. Python Cache Cleanup
-- Removed all `__pycache__` directories (excluding .venv)
-- Removed all `.pyc` files (excluding .venv)
-
-### 4. .gitignore Updates
-- Added patterns to exclude Python cache files
-- Added patterns to exclude temporary files
-- Added patterns to exclude test files in root
-
-### 5. Archive Structure
-```
-archive/
-├── test-files/          # Temporary test files
-├── temp-docs/           # Temporary analysis documents
-├── old-versions/        # Previous file versions
-├── experimental/        # Experimental features
-├── cleanup-stubs/       # Cleanup artifacts
-└── unused-components/   # Deprecated components
-```
-
-## Current Organization
-
-### Core Application
-- `app/` - Main application code
-- `config/` - Configuration files
-- `scripts/` - Build and utility scripts
-- `packaging/` - Distribution packaging
-
-### Documentation
-- `docs/` - All documentation
-  - `docs/implementation/` - Implementation details
-  - `docs/implementation/features/` - Feature documentation
-  - `docs/user/` - User documentation
-  - `docs/developer/` - Developer guides
-
-### Development
-- `dev/` - Development tools and scripts
-- `tests/` - Unit and integration tests
-- `archive/` - Archived and deprecated files
-
-### Build System
-- `Makefile` - Build automation
-- `requirements.txt` - Python dependencies
-- `package.json` - Node.js dependencies
-- `.venv/` - Python virtual environment
-
-## Benefits
-1. **Cleaner Repository**: Removed temporary and cache files
-2. **Better Organization**: Logical file structure
-3. **Easier Navigation**: Clear separation of concerns
-4. **Reduced Clutter**: Archived temporary files
-5. **Better Maintenance**: Updated .gitignore prevents future clutter
 """
         
-    # Write dynamic (runtime-generated) organization report into docs/project
-    reports_dir = self.repo_path / "docs" / "project"
-    reports_dir.mkdir(parents=True, exist_ok=True)
-    summary_path = reports_dir / "REPOSITORY_ORGANIZATION_RUNTIME.md"
-        with open(summary_path, 'w') as f:
-            f.write(summary_content)
+        for i, change in enumerate(self.changes_made, 1):
+            summary_content += f"{i}. {change}\n"
         
-        print(f"   ✅ Created organization summary: {summary_path.name}")
+        summary_content += f"""
 
+## Repository Structure
+
+```
+xanadOS-Search_Destroy/
+├── app/                    # Main application code
+│   ├── core/              # Core functionality modules
+│   ├── gui/               # User interface components
+│   ├── monitoring/        # System monitoring modules
+│   └── utils/             # Utility functions
+├── archive/               # Archived and deprecated files
+├── config/                # Configuration files
+├── dev/                   # Development tools and scripts
+├── docs/                  # Documentation
+│   ├── user/              # User documentation
+│   ├── developer/         # Developer documentation
+│   ├── project/           # Project documentation
+│   ├── implementation/    # Implementation details
+│   └── releases/          # Release notes
+├── packaging/             # Package distribution files
+├── scripts/               # Build and utility scripts
+└── tests/                 # Test files
+```
+
+## Maintenance Notes
+
+- Python cache files (__pycache__) are automatically cleaned
+- .gitignore has been updated with comprehensive patterns
+- All modules have proper __init__.py files
+- Development files are properly organized
+
+## Next Steps
+
+1. Review the organized structure
+2. Update any hardcoded paths in configuration
+3. Run tests to ensure functionality is preserved
+4. Update CI/CD scripts if necessary
+
+Generated on: {subprocess.check_output(['date'], text=True).strip()}
+"""
+        
+        summary_path.write_text(summary_content)
+        self.log_change("Created ORGANIZATION_SUMMARY.md")
+    
     def run_organization(self):
         """Run the complete organization process."""
-        print("🚀 Starting Repository Organization")
-        print("=" * 50)
-        
-        self.clean_python_cache()
+        print("🚀 Starting repository organization...")
+        print(f"📁 Repository: {self.repo_path}")
         print()
         
-        self.organize_documentation()
-        print()
-        
-        self.organize_test_files()
-        print()
-        
-        self.archive_temp_docs()
-        print()
-        
-        self.update_gitignore()
-        print()
-        
-        self.check_unused_files()
-        print()
-        
-        self.create_organization_summary()
-        print()
-        
-    print("✅ Repository organization completed successfully!")
-    print("📋 See docs/project/REPOSITORY_ORGANIZATION_RUNTIME.md for detailed summary")
+        try:
+            # Run organization steps
+            self.clean_python_cache()
+            self.update_gitignore()
+            self.organize_documentation()
+            self.clean_development_files()
+            self.organize_app_structure()
+            self.update_version_consistency()
+            self.create_organization_summary()
+            
+            print()
+            print("🎉 Repository organization complete!")
+            print(f"📊 Total changes made: {len(self.changes_made)}")
+            print()
+            print("📋 Summary of changes:")
+            for change in self.changes_made:
+                print(f"  • {change}")
+            
+            print()
+            print("💡 Recommendations:")
+            print("  • Review ORGANIZATION_SUMMARY.md for details")
+            print("  • Run tests to ensure functionality is preserved")
+            print("  • Commit the organized repository structure")
+            print("  • Update documentation if needed")
+            
+        except Exception as e:
+            print(f"❌ Error during organization: {e}")
+            sys.exit(1)
+
+
+def main():
+    """Main entry point."""
+    repo_path = os.getcwd()
+    
+    if not os.path.exists(os.path.join(repo_path, "app", "main.py")):
+        print("❌ This doesn't appear to be the xanadOS-Search_Destroy repository")
+        print("Please run this script from the repository root directory")
+        sys.exit(1)
+    
+    organizer = RepositoryOrganizer(repo_path)
+    organizer.run_organization()
 
 
 if __name__ == "__main__":
-    # Determine repository root dynamically based on script location
-    current_dir = os.path.dirname(os.path.abspath(__file__))
-    repo_path = os.path.abspath(os.path.join(current_dir, ".."))  # parent of scripts/
-    organizer = RepositoryOrganizer(repo_path)
-    organizer.run_organization()
+    main()

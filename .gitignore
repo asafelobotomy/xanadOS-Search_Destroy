@@ -258,3 +258,12 @@ coverage.xml
 *.temp
 
 # Backup files
+
+# Added by repository organizer
+# Python cache and compiled files
+# IDE and editor files
+# OS generated files
+config.json
+activity_logs.json
+scan_reports/
+# Build and distribution
