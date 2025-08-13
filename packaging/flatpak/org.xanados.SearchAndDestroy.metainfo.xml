@@ -43,16 +43,8 @@
   
   <screenshots>
     <screenshot type="default">
-      <caption>Main application interface showing scan options</caption>
-      <image>https://raw.githubusercontent.com/asafelobotomy/xanadOS-Search_Destroy/master/docs/screenshots/main-interface.png</image>
-    </screenshot>
-    <screenshot>
-      <caption>Scanning in progress with real-time updates</caption>
-      <image>https://raw.githubusercontent.com/asafelobotomy/xanadOS-Search_Destroy/master/docs/screenshots/scanning-progress.png</image>
-    </screenshot>
-    <screenshot>
-      <caption>Detailed scan results and threat detection</caption>
-      <image>https://raw.githubusercontent.com/asafelobotomy/xanadOS-Search_Destroy/master/docs/screenshots/scan-results.png</image>
+      <caption>Dashboard interface with real-time protection monitoring and security status</caption>
+      <image>https://raw.githubusercontent.com/asafelobotomy/xanadOS-Search_Destroy/stable/docs/screenshots/dashboard.png</image>
     </screenshot>
   </screenshots>
   
