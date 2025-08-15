@@ -62,7 +62,7 @@ class AllWarningsDialog(QDialog):
         self.current_warning_index = 0
         self.parent_window = parent
         
-    self.setWindowTitle("⚠️ Scan Warnings - Detailed Explanations")
+        self.setWindowTitle("⚠️ Scan Warnings - Detailed Explanations")
         self.setModal(True)
         self.resize(900, 700)
         

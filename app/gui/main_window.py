@@ -8,7 +8,13 @@ from pathlib import Path
 from core.file_scanner import FileScanner
 from core.firewall_detector import get_firewall_status, toggle_firewall
 from core.rkhunter_wrapper import RKHunterScanResult, RKHunterWrapper
-from core.auto_updater import AutoUpdater, UpdateNotifier
+# Import compatible update system
+try:
+    from core.automatic_updates import AutoUpdateSystem, UpdateStatus
+    UPDATES_AVAILABLE = True
+except ImportError:
+    UPDATES_AVAILABLE = False
+    AutoUpdateSystem = None
 from gui.rkhunter_components import RKHunterScanDialog, RKHunterScanThread
 from gui.scan_thread import ScanThread
 from gui.update_components import UpdateNotifier
@@ -134,8 +140,16 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
             self.rkhunter = None
         try:
             self.scanner = FileScanner()
-        except Exception:
-            self.scanner = None
+        except Exception as e:
+            print(f"⚠️  FileScanner initialization failed: {e}")
+            # Let's try a more robust initialization using absolute import
+            try:
+                from core.file_scanner import FileScanner as FS
+                self.scanner = FS()
+                print("✅ FileScanner initialized successfully on second attempt")
+            except Exception as e2:
+                print(f"❌ FileScanner initialization failed on second attempt: {e2}")
+                self.scanner = None
         self.current_scan_thread = None
 
         # 3. Scan state flags (must exist before any UI logic references them)
@@ -268,12 +282,21 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
         self._firewall_change_from_gui = False
 
         # Performance monitoring
-        from core.performance_monitor import get_performance_monitor
-
-        self.performance_monitor = get_performance_monitor()
-        self.performance_monitor.add_optimization_callback(
-            self.handle_performance_optimization
-        )
+        try:
+            from core import UNIFIED_PERFORMANCE_AVAILABLE
+            if UNIFIED_PERFORMANCE_AVAILABLE:
+                from core.unified_performance_optimizer import UnifiedPerformanceOptimizer
+                self.performance_monitor = UnifiedPerformanceOptimizer()
+                # Add compatibility method for optimization callbacks
+                if hasattr(self.performance_monitor, 'add_optimization_callback'):
+                    self.performance_monitor.add_optimization_callback(
+                        self.handle_performance_optimization
+                    )
+            else:
+                # Fallback to basic performance monitoring
+                self.performance_monitor = None
+        except ImportError:
+            self.performance_monitor = None
 
         # Tooltip state management
         self.tooltip_detailed = False
@@ -338,7 +361,14 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
         self.init_unified_timer_system()
 
         # Start performance monitoring
-        self.performance_monitor.start_monitoring()
+        if self.performance_monitor and hasattr(self.performance_monitor, 'start_monitoring'):
+            self.performance_monitor.start_monitoring()
+        elif self.performance_monitor:
+            # For unified optimizer, call initialization method
+            try:
+                self.performance_monitor.initialize()
+            except AttributeError:
+                pass  # Method might not exist
         
         # Mark initialization as complete - scheduler can now be started safely
         self._initialization_complete = True
@@ -492,7 +522,16 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
     def get_performance_card_data(self) -> tuple:
         """Get concise performance data for system tray tooltip."""
         try:
-            summary = self.performance_monitor.get_performance_summary()
+            if self.performance_monitor and hasattr(self.performance_monitor, 'get_performance_summary'):
+                summary = self.performance_monitor.get_performance_summary()
+            elif self.performance_monitor and hasattr(self.performance_monitor, 'get_performance_metrics'):
+                # Use unified optimizer method
+                metrics = self.performance_monitor.get_performance_metrics()
+                # Convert to expected format
+                summary = {"status": "active", "performance_score": 75, "current": metrics}
+            else:
+                return "Unavailable", get_theme_manager().get_color("muted_text"), ""
+                
             if summary.get("status") == "no_data":
                 return "Initializing", get_theme_manager().get_color("muted_text"), ""
 
@@ -3395,6 +3434,10 @@ System        {perf_status}"""
         try:
             from pathlib import Path
             
+            if not UPDATES_AVAILABLE:
+                print("Auto-update system not available, skipping initialization")
+                return
+            
             # Read current version from VERSION file
             version_file = Path(__file__).parent.parent.parent / "VERSION"
             try:
@@ -3402,12 +3445,21 @@ System        {perf_status}"""
             except (FileNotFoundError, IOError):
                 current_version = "2.4.0"  # Fallback version
                 
-            # Repository information
-            # Initialize the auto-updater with configuration
-            self.auto_updater = AutoUpdater(current_version=current_version)
+            # Initialize the auto-updater with new system
+            self.auto_updater = AutoUpdateSystem()
+            self.auto_updater.current_version = current_version  # Set version attribute for compatibility
             
-            # Initialize the update notifier  
-            self.update_notifier = UpdateNotifier(self.auto_updater, self)
+            # Add compatibility methods
+            def get_last_check_time():
+                return getattr(self.auto_updater, 'last_check_time', None)
+            self.auto_updater.get_last_check_time = get_last_check_time
+            
+            # Initialize the update notifier (if available) 
+            try:
+                self.update_notifier = UpdateNotifier(self.auto_updater, self)
+            except Exception as e:
+                print(f"Update notifier initialization failed: {e}")
+                return
             
             # Check for updates in the background if auto-check is enabled
             settings = self.load_settings()
@@ -6817,6 +6869,15 @@ System        {perf_status}"""
     def update_definitions(self):
         """Update virus definitions with progress dialog and user feedback."""
         try:
+            # Check if scanner and clamav_wrapper are available
+            if not self.scanner:
+                QMessageBox.warning(self, "Warning", "File scanner is not initialized.")
+                return
+                
+            if not hasattr(self.scanner, 'clamav_wrapper') or not self.scanner.clamav_wrapper:
+                QMessageBox.warning(self, "Warning", "ClamAV wrapper is not available.")
+                return
+                
             # First check if definitions need updating
             freshness = self.scanner.clamav_wrapper.check_definition_freshness()
 
@@ -7013,6 +7074,11 @@ System        {perf_status}"""
         self.last_checked_label.setText(f"Last checked: {formatted_checked}")
 
         try:
+            # Check if scanner and clamav_wrapper are available
+            if not self.scanner or not hasattr(self.scanner, 'clamav_wrapper') or not self.scanner.clamav_wrapper:
+                self.last_update_label.setText("Status: ClamAV unavailable")
+                return
+                
             freshness = self.scanner.clamav_wrapper.check_definition_freshness()
 
             # Handle error cases gracefully

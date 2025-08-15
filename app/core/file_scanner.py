@@ -80,7 +80,10 @@ class QuarantineManager:
     """Manages quarantined files and actions."""
 
     def __init__(self):
-        from utils.config import load_config, setup_logging
+        try:
+            from utils.config import load_config, setup_logging
+        except ImportError:
+            from app.utils.config import load_config, setup_logging
 
         self.logger = setup_logging()
         self.config = load_config()
@@ -285,10 +288,20 @@ class FileScanner:
     """Enhanced file scanner with quarantine management and scheduling."""
 
     def __init__(self, clamav_wrapper: Optional[ClamAVWrapper] = None):
-        from core.input_validation import FileSizeMonitor, PathValidator
-        from core.rate_limiting import rate_limit_manager, configure_rate_limits
-        from utils.config import load_config, setup_logging
-        from utils.scan_reports import ScanReportManager
+        # Use try-except for different import scenarios
+        try:
+            from .input_validation import FileSizeMonitor, PathValidator
+            from .rate_limiting import rate_limit_manager, configure_rate_limits
+        except ImportError:
+            from app.core.input_validation import FileSizeMonitor, PathValidator
+            from app.core.rate_limiting import rate_limit_manager, configure_rate_limits
+        
+        try:
+            from utils.config import load_config, setup_logging
+            from utils.scan_reports import ScanReportManager
+        except ImportError:
+            from app.utils.config import load_config, setup_logging
+            from app.utils.scan_reports import ScanReportManager
 
         self.logger = setup_logging()
         self.config = load_config()

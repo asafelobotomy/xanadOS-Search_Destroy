@@ -2,23 +2,50 @@
 """
 Core functionality for S&D application.
 Includes scanning engine, security, quarantine management, and performance optimization.
+
+2025 Optimizations:
+- Unified Security Engine with eBPF integration
+- Advanced Performance Optimizer with ML-based resource management
+- Enhanced real-time protection with adaptive scaling
+- Optimized component architecture for better maintainability
 """
 
-# Performance optimization components
-# from .async_scanner import AsyncFileScanner, ScanBatch, ScanProgress, async_scanner  # Temporarily disabled due to import issues
+# Core scanning and security components
 from .clamav_wrapper import ClamAVWrapper, ScanFileResult, ScanResult
-from .database_optimizer import (
-    DatabaseConnectionPool,
-    QueryOptimizer,
-    ScanResultsDB,
-    get_scan_db,
-)
-
-# Scanner and ClamAV integration
 from .file_scanner import FileScanner
-from .memory_optimizer import MemoryOptimizer
-from .rate_limiting import AdaptiveRateLimiter, GlobalRateLimitManager, RateLimiter
 from .rkhunter_wrapper import RKHunterResult, RKHunterScanResult, RKHunterWrapper
+
+# Unified systems (2025 optimizations)
+try:
+    from .unified_security_engine import (
+        UnifiedSecurityEngine,
+        ThreatLevel,
+        ProtectionMode,
+        EventType,
+        SecurityEvent,
+        SystemHealth
+    )
+    UNIFIED_SECURITY_AVAILABLE = True
+except ImportError as e:
+    UNIFIED_SECURITY_AVAILABLE = False
+    import logging
+    logging.getLogger(__name__).warning(f"Unified Security Engine unavailable: {e}")
+
+try:
+    from .unified_performance_optimizer import (
+        UnifiedPerformanceOptimizer,
+        PerformanceMode,
+        PerformanceMetrics,
+        OptimizationResult
+    )
+    UNIFIED_PERFORMANCE_AVAILABLE = True
+except ImportError as e:
+    UNIFIED_PERFORMANCE_AVAILABLE = False
+    import logging
+    logging.getLogger(__name__).warning(f"Unified Performance Optimizer unavailable: {e}")
+
+# Legacy components (maintained for compatibility)
+from .rate_limiting import AdaptiveRateLimiter, GlobalRateLimitManager, RateLimiter
 from .telemetry import PrivacyManager, TelemetryCollector, TelemetryManager
 from .ui_responsiveness import (
     LoadingIndicator,
@@ -29,6 +56,18 @@ from .ui_responsiveness import (
     get_scan_progress,
     initialize_responsive_ui,
 )
+
+# Performance optimization components (legacy fallback)
+try:
+    from .memory_optimizer import MemoryOptimizer
+    from .database_optimizer import (
+        DatabaseConnectionPool,
+        QueryOptimizer,
+        ScanResultsDB,
+        get_scan_db,
+    )
+except ImportError:
+    pass
 
 # Security modules
 try:
@@ -93,6 +132,14 @@ __all__ = [
     "get_responsive_ui",
     "get_scan_progress",
     "get_loading_indicator",
+    # Unified Components (2025 optimizations)
+    "UnifiedSecurityEngine",
+    "UnifiedPerformanceOptimizer",
+    "UNIFIED_SECURITY_AVAILABLE",
+    "UNIFIED_PERFORMANCE_AVAILABLE",
+    "ThreatLevel",
+    "ProtectionMode",
+    "PerformanceMode",
     # Advanced features (if available)
     "AutoUpdateSystem",
     "UpdateType",
