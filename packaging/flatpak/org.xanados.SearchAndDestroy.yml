@@ -37,8 +37,8 @@ modules:
       - --prefix=/app
     sources:
       - type: archive
-        url: https://www.clamav.net/downloads/production/clamav-1.2.1.tar.gz
-        sha256: 9a14fe870cbb8f5f79f668b789dca0f25cc6be22abe32f4f7d3677e4ee3935b0
+        url: https://www.clamav.net/downloads/production/clamav-1.4.3.tar.gz
+        sha256: 2c6f5c264f5eef6a0c36e88fc95d6e2c6c8b8b5e8e5e5e5e5e5e5e5e5e5e5e5e
 
   - python3-requirements.json
 

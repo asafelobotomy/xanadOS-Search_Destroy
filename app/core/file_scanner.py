@@ -286,6 +286,7 @@ class FileScanner:
 
     def __init__(self, clamav_wrapper: Optional[ClamAVWrapper] = None):
         from core.input_validation import FileSizeMonitor, PathValidator
+        from core.rate_limiting import rate_limit_manager, configure_rate_limits
         from utils.config import load_config, setup_logging
         from utils.scan_reports import ScanReportManager
 
@@ -298,6 +299,10 @@ class FileScanner:
         # Security components
         self.path_validator = PathValidator()
         self.size_monitor = FileSizeMonitor()
+
+        # Rate limiting
+        self.rate_limiter = rate_limit_manager
+        configure_rate_limits(self.config)
 
         # Memory optimization: Add file batching and monitoring
         self.memory_monitor = MemoryMonitor()
@@ -364,8 +369,21 @@ class FileScanner:
     def scan_file(
         self, file_path: str, scan_id: Optional[str] = None, **kwargs
     ) -> ScanFileResult:
-        """Scan a single file with security validation."""
+        """Scan a single file with security validation and rate limiting."""
         from .input_validation import SecurityValidationError
+
+        # Apply rate limiting for file scans
+        if not self.rate_limiter.acquire('file_scan'):
+            wait_time = self.rate_limiter.wait_time('file_scan')
+            self.logger.warning(
+                "Rate limit exceeded for file scan. Wait time: %.2f seconds", 
+                wait_time
+            )
+            return ScanFileResult(
+                file_path=file_path,
+                result=ScanResult.ERROR,
+                error_message=f"Rate limit exceeded. Please wait {wait_time:.1f} seconds.",
+            )
 
         if not scan_id:
             scan_id = self.scan_report_manager.generate_scan_id()

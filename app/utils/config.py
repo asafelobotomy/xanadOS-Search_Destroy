@@ -358,6 +358,55 @@ def create_initial_config():
             "log_dir": str(LOG_DIR),
             "temp_dir": str(CACHE_DIR / "temp"),
         },
+        "telemetry": {
+            "enabled": True,
+            "privacy_level": "anonymous",  # anonymous, aggregated, detailed
+            "data_retention_days": 30,
+            "export_enabled": False,
+        },
+        "rate_limits": {
+            "file_scan": {
+                "calls": 100,
+                "period": 60.0,
+                "burst": 20,
+                "adaptive": True
+            },
+            "directory_scan": {
+                "calls": 10,
+                "period": 60.0,
+                "burst": 5,
+                "adaptive": True
+            },
+            "virus_db_update": {
+                "calls": 1,
+                "period": 3600.0,
+                "adaptive": False
+            },
+            "network_request": {
+                "calls": 50,
+                "period": 60.0,
+                "burst": 10,
+                "adaptive": True
+            },
+            "quarantine_action": {
+                "calls": 20,
+                "period": 60.0,
+                "adaptive": False
+            },
+            "system_command": {
+                "calls": 5,
+                "period": 60.0,
+                "adaptive": False
+            }
+        },
+        "performance": {
+            "scan_batch_size": 50,
+            "max_memory_mb": 256,
+            "timer_interval": 1000,
+            "debounce_delay": 0.5,
+            "enable_async_scanning": True,
+            "enable_memory_optimization": True
+        },
     }
 
 

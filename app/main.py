@@ -28,6 +28,13 @@ def main():
         instance_manager.notify_existing_instance()
         sys.exit(0)  # Exit silently, existing instance will be shown
     
+    # Initialize telemetry early
+    from core.telemetry import initialize_telemetry, shutdown_telemetry
+    from utils.config import load_config
+    
+    config = load_config()
+    telemetry = initialize_telemetry(config)
+    
     app = QApplication(sys.argv)
     app.setApplicationName("S&D - Search & Destroy")
     app.setApplicationVersion(APP_VERSION)
@@ -41,10 +48,20 @@ def main():
     
     # Clean up when application exits
     app.aboutToQuit.connect(instance_manager.cleanup)
+    app.aboutToQuit.connect(shutdown_telemetry)
     
     window.show()
 
-    sys.exit(app.exec())
+    try:
+        exit_code = app.exec()
+    except Exception as e:
+        from core.telemetry import record_error
+        record_error("app_crash", "main", str(e))
+        raise
+    finally:
+        shutdown_telemetry()
+
+    sys.exit(exit_code)
 
 
 if __name__ == "__main__":

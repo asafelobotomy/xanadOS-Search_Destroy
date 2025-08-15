@@ -40,8 +40,8 @@ find data/cache/ -type f -not -name ".gitkeep" -delete 2>/dev/null || true
 # Move any test files from root to dev/debug-scripts/
 echo "Organizing test files..."
 if ls test_*.py verify_*.py 2>/dev/null; then
-    mv test_*.py verify_*.py dev/debug-scripts/ 2>/dev/null || true
-    echo "Moved test files to dev/debug-scripts/"
+    mv test_*.py verify_*.py dev/debug/ 2>/dev/null || true
+    echo "Moved test files to dev/debug/"
 fi
 
 # Move any implementation docs from root to docs/implementation/
@@ -59,7 +59,7 @@ echo ""
 echo "📊 Repository Statistics:"
 echo "Python files: $(find . -name "*.py" -not -path "./.venv/*" | wc -l)"
 echo "Documentation files: $(find docs/ -name "*.md" | wc -l)"
-echo "Test files: $(find dev/debug-scripts/ tests/ -name "*.py" | wc -l)"
+echo "Test files: $(find dev/debug/ dev/testing/ tests/ -name "*.py" | wc -l)"
 echo "Cache files remaining: $(find . -name "__pycache__" -not -path "./.venv/*" | wc -l)"
 echo ""
 echo "🎯 Repository is now clean and organized for v2.3.0 release!"

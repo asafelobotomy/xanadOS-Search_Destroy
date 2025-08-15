@@ -5,7 +5,7 @@ Includes scanning engine, security, quarantine management, and performance optim
 """
 
 # Performance optimization components
-from .async_scanner import AsyncFileScanner, ScanBatch, ScanProgress, async_scanner
+# from .async_scanner import AsyncFileScanner, ScanBatch, ScanProgress, async_scanner  # Temporarily disabled due to import issues
 from .clamav_wrapper import ClamAVWrapper, ScanFileResult, ScanResult
 from .database_optimizer import (
     DatabaseConnectionPool,
@@ -17,7 +17,9 @@ from .database_optimizer import (
 # Scanner and ClamAV integration
 from .file_scanner import FileScanner
 from .memory_optimizer import MemoryOptimizer
+from .rate_limiting import AdaptiveRateLimiter, GlobalRateLimitManager, RateLimiter
 from .rkhunter_wrapper import RKHunterResult, RKHunterScanResult, RKHunterWrapper
+from .telemetry import PrivacyManager, TelemetryCollector, TelemetryManager
 from .ui_responsiveness import (
     LoadingIndicator,
     ResponsiveUI,
@@ -67,6 +69,13 @@ __all__ = [
     "FileScanner",
     "ClamAVWrapper",
     "RKHunterWrapper",
+    # Rate limiting and telemetry
+    "RateLimiter",
+    "AdaptiveRateLimiter", 
+    "GlobalRateLimitManager",
+    "TelemetryCollector",
+    "PrivacyManager",
+    "TelemetryManager",
     # Performance optimization
     "AsyncFileScanner",
     "ScanProgress",

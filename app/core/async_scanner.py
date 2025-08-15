@@ -16,7 +16,7 @@ from queue import Empty, Queue
 from typing import AsyncIterator, Callable, Dict, List, Optional, Tuple
 
 import psutil
-from utils.config import load_config
+from ..utils.config import load_config
 
 from .clamav_wrapper import ScanFileResult, ScanResult
 from .file_scanner import FileScanner
