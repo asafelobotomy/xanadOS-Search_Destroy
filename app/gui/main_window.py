@@ -6740,6 +6740,18 @@ System        {perf_status}"""
             path for path in quick_scan_paths 
             if path and os.path.exists(path) and os.path.isdir(path)
         ]
+        
+        # Remove duplicates while preserving order
+        seen = set()
+        unique_paths = []
+        for path in valid_paths:
+            # Resolve to absolute path to catch duplicates like /tmp and /tmp
+            abs_path = os.path.abspath(path)
+            if abs_path not in seen:
+                seen.add(abs_path)
+                unique_paths.append(path)
+        
+        valid_paths = unique_paths
 
         if not valid_paths:
             self.show_themed_message_box(

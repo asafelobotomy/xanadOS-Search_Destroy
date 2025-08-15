@@ -434,7 +434,24 @@ class FileScanner:
             if self.progress_callback:
                 self.progress_callback(0.0, f"Scanning {Path(file_path).name}")
 
-        # Perform scan
+        # Performance optimization: Check if file should be scanned
+        scan_type = kwargs.get('scan_type', 'full')
+        quick_scan = scan_type.lower() in ['quick', 'fast', 'basic']
+        
+        if not self.clamav_wrapper.should_scan_file(file_path, quick_scan=quick_scan):
+            # Return clean result for skipped files
+            result = ScanFileResult(
+                file_path=file_path,
+                result=ScanResult.CLEAN,
+                file_size=Path(file_path).stat().st_size if Path(file_path).exists() else 0,
+                scan_time=0.001,  # Minimal time for skipped file
+            )
+            if self.result_callback:
+                self.result_callback(result)
+            return result
+
+        # Perform scan with optimization flags
+        kwargs['quick_scan'] = quick_scan
         result = self.clamav_wrapper.scan_file(file_path, **kwargs)
 
         # Record processed file for size monitoring
@@ -491,6 +508,7 @@ class FileScanner:
             scan_type=None,
             max_workers: int = 4,
             timeout: Optional[int] = None,
+            save_report: bool = True,
             **kwargs):
         """Scan multiple files with progress tracking and enhanced reporting."""
         from utils.scan_reports import ScanResult as ReportScanResult
@@ -506,7 +524,7 @@ class FileScanner:
         # Memory optimization: Use batched processing for large file sets
         if len(file_paths) > self.batch_size:
             return self._scan_files_batched(
-                file_paths, scan_type, max_workers, **kwargs
+                file_paths, scan_type, max_workers, save_report=save_report, **kwargs
             )
 
         """Scan multiple files with threading support."""
@@ -692,18 +710,24 @@ class FileScanner:
             if hasattr(self, "_files_completed"):
                 delattr(self, "_files_completed")
 
-            # Save scan report
-            print(f"\n💾 === FILESCANNER SAVE REPORT ===")
-            print(f"DEBUG: FileScanner saving scan report: {scan_result.scan_id}")
-            print(f"DEBUG: Scan type: {scan_result.scan_type}")
-            print(f"DEBUG: Files scanned: {scan_result.scanned_files}")
-            print(f"DEBUG: Threats found: {scan_result.threats_found}")
-            try:
-                self.scan_report_manager.save_scan_result(scan_result)
-                print(f"DEBUG: ✅ FileScanner report saved successfully")
-            except Exception as e:
-                print(f"DEBUG: ❌ FileScanner report save failed: {e}")
-                raise
+            # Save scan report (conditional based on save_report parameter)
+            if save_report:
+                print(f"\n💾 === FILESCANNER SAVE REPORT ===")
+                print(f"DEBUG: FileScanner saving scan report: {scan_result.scan_id}")
+                print(f"DEBUG: Scan type: {scan_result.scan_type}")
+                print(f"DEBUG: Files scanned: {scan_result.scanned_files}")
+                print(f"DEBUG: Threats found: {scan_result.threats_found}")
+                try:
+                    self.scan_report_manager.save_scan_result(scan_result)
+                    print(f"DEBUG: ✅ FileScanner report saved successfully")
+                except Exception as e:
+                    print(f"DEBUG: ❌ FileScanner report save failed: {e}")
+                    raise
+            else:
+                print(f"\n💾 === FILESCANNER SKIP REPORT SAVE ===")
+                print(f"DEBUG: Skipping report save for scan: {scan_result.scan_id}")
+                print(f"DEBUG: Files scanned: {scan_result.scanned_files}")
+                print(f"DEBUG: This is part of a multi-directory scan")
 
             self.logger.info(
                 "Scan completed: %s - %d files scanned, %d threats found",
@@ -728,6 +752,7 @@ class FileScanner:
         directory_path: str,
         scan_type=None,
         include_hidden: bool = False,
+        save_report: bool = True,
         **kwargs,
     ):
         """Scan all files in a directory with security validation."""
@@ -939,7 +964,7 @@ class FileScanner:
             "Found %d files in directory: %s", len(file_paths), directory_path
         )
 
-        return self.scan_files(file_paths, scan_type, **kwargs)
+        return self.scan_files(file_paths, scan_type, save_report=save_report, **kwargs)
 
     def _handle_infected_file(
             self,
@@ -1088,7 +1113,7 @@ class FileScanner:
                 self.logger.error("Scheduled scan failed: %s", e)
 
     def _scan_files_batched(
-        self, file_paths: List[str], scan_type, max_workers: int = 4, **kwargs
+        self, file_paths: List[str], scan_type, max_workers: int = 4, save_report: bool = True, **kwargs
     ):
         """Scan files in batches to optimize memory usage."""
         from utils.scan_reports import ScanResult as ReportScanResult
@@ -1241,18 +1266,24 @@ class FileScanner:
         finally:
             self._scan_running = False
 
-            # Save scan report
-            try:
-                print(f"\n💾 === FILESCANNER BATCHED SAVE REPORT ===")
-                print(f"DEBUG: FileScanner saving batched scan report: {combined_result.scan_id}")
-                print(f"DEBUG: Batched scan type: {combined_result.scan_type}")
+            # Save scan report (conditional based on save_report parameter)
+            if save_report:
+                try:
+                    print(f"\n💾 === FILESCANNER BATCHED SAVE REPORT ===")
+                    print(f"DEBUG: FileScanner saving batched scan report: {combined_result.scan_id}")
+                    print(f"DEBUG: Batched scan type: {combined_result.scan_type}")
+                    print(f"DEBUG: Total files scanned: {combined_result.scanned_files}")
+                    print(f"DEBUG: Total threats found: {combined_result.threats_found}")
+                    self.scan_report_manager.save_scan_result(combined_result)
+                    print(f"DEBUG: ✅ FileScanner batched report saved successfully")
+                except Exception as e:
+                    print(f"DEBUG: ❌ FileScanner batched report save failed: {e}")
+                    self.logger.error("Failed to save scan report: %s", e)
+            else:
+                print(f"\n💾 === FILESCANNER BATCHED SKIP REPORT SAVE ===")
+                print(f"DEBUG: Skipping batched report save for scan: {combined_result.scan_id}")
                 print(f"DEBUG: Total files scanned: {combined_result.scanned_files}")
-                print(f"DEBUG: Total threats found: {combined_result.threats_found}")
-                self.scan_report_manager.save_scan_result(combined_result)
-                print(f"DEBUG: ✅ FileScanner batched report saved successfully")
-            except Exception as e:
-                print(f"DEBUG: ❌ FileScanner batched report save failed: {e}")
-                self.logger.error("Failed to save scan report: %s", e)
+                print(f"DEBUG: This is part of a multi-directory scan")
 
         return combined_result
 

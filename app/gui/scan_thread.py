@@ -123,7 +123,8 @@ class ScanThread(QThread, CooperativeCancellationMixin):
                                     scan_type=ScanType.QUICK, 
                                     max_files=max_files,
                                     max_workers=max_workers,
-                                    timeout=180  # 3 minute timeout per directory
+                                    timeout=180,  # 3 minute timeout per directory
+                                    save_report=False  # Don't save individual directory reports
                                 )
                                 
                                 if dir_result and isinstance(dir_result, dict):
@@ -137,6 +138,8 @@ class ScanThread(QThread, CooperativeCancellationMixin):
                         # Combine results from all directories
                         if all_results:
                             result = self._combine_scan_results(all_results)
+                            # Save consolidated report for multi-directory scan
+                            self._save_consolidated_report(result, self.path)
                         else:
                             result = {"status": "completed", "threats": [], "threats_found": 0}
                         
@@ -347,3 +350,43 @@ class ScanThread(QThread, CooperativeCancellationMixin):
         combined["threats_found"] = len(combined["threats"])
         
         return combined
+
+    def _save_consolidated_report(self, combined_result, scan_paths):
+        """Save a consolidated report for multi-directory scans."""
+        try:
+            from utils.scan_reports import ScanResult, ScanType, ThreatInfo
+            from datetime import datetime
+            
+            print(f"\n💾 === SAVING CONSOLIDATED SCAN REPORT ===")
+            print(f"DEBUG: Scan paths: {scan_paths}")
+            print(f"DEBUG: Combined threats found: {combined_result.get('threats_found', 0)}")
+            print(f"DEBUG: Combined files scanned: {combined_result.get('scanned_files', 0)}")
+            
+            # Convert combined result to proper ScanResult format
+            scan_result = ScanResult(
+                scan_id=combined_result.get("scan_id", f"multi_dir_{int(datetime.now().timestamp())}"),
+                scan_type=ScanType.QUICK,
+                start_time=datetime.now().isoformat(),
+                end_time=datetime.now().isoformat(),
+                duration=combined_result.get("duration", 0),
+                scanned_files=combined_result.get("scanned_files", 0),
+                total_files=combined_result.get("total_files", 0),
+                threats_found=combined_result.get("threats_found", 0),
+                threats=[ThreatInfo(**threat) if isinstance(threat, dict) else threat 
+                        for threat in combined_result.get("threats", [])],
+                scanned_paths=scan_paths if isinstance(scan_paths, list) else [scan_paths],
+                success=True,
+                errors=[]
+            )
+            
+            # Use the scanner's report manager to save
+            if hasattr(self.scanner, 'scan_report_manager'):
+                self.scanner.scan_report_manager.save_scan_result(scan_result)
+                print(f"DEBUG: ✅ Consolidated report saved successfully")
+            else:
+                print(f"DEBUG: ❌ No report manager available to save consolidated report")
+                
+        except Exception as e:
+            print(f"DEBUG: ❌ Error saving consolidated report: {e}")
+            # Don't fail the scan if report saving fails
+            pass
