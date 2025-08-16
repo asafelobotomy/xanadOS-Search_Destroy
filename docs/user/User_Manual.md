@@ -1,509 +1,515 @@
-# xanadOS Search & Destroy - User Manual
+# S&D - Search & Destroy User Manual
 
-*Comprehensive user guide for S&D - Search & Destroy v2.5.0*
+*Your comprehensive guide to protecting your Linux system from malware and security threats*
 
-This manual provides comprehensive instructions for using **S&D - Search & Destroy** to protect your system from malware and security threats.
-
----
-
-## 🚀 Getting Started
-
-### First Launch
-
-1. **Launch S&D**: Use the desktop launcher or run `./run.sh` from the terminal
-2. **Single Instance**: The application automatically prevents multiple instances from running
-3. **Interface Overview**: Familiarize yourself with the modern tabbed interface
-4. **Update Definitions**: Ensure virus definitions are up-to-date
-
-### Main Interface Overview
-
-The S&D interface features a modern, professional design with six main tabs:
-
-- **🏠 Dashboard Tab**: System overview, status indicators, and quick actions
-- **🔍 Scan Tab**: Configure and execute comprehensive security scans  
-- **🛡️ Protection Tab**: Real-time monitoring and protection settings
-- **📊 Reports Tab**: Detailed scan results and historical analysis
-- **🗃️ Quarantine Tab**: Manage isolated threats and security items
-- **⚙️ Settings Tab**: Application configuration and preferences
-
-### System Tray Integration
-
-**New in Version 2.5.0**: Enhanced system tray functionality.
-
-- **Minimize to Tray**: Application minimizes to system tray instead of taskbar
-- **Tray Menu**: Right-click for quick actions and status information
-- **Background Operation**: Continue monitoring while minimized
-- **Notification System**: Tray notifications for scan completion and threats
+**Version 2.6.0** | *Updated: January 7, 2025*
 
 ---
 
-## 🔍 Scanning for Threats
+## 🎯 What is S&D - Search & Destroy?
 
-### Scan Types Available
+**S&D (Search & Destroy)** is a powerful, user-friendly security application designed specifically for Linux systems. It combines multiple security tools into one elegant interface to protect your computer from:
 
-#### Quick Scan (🚀)
-For fast threat detection in user areas:
+- **🦠 Viruses & Malware** - Traditional computer viruses and malicious software
+- **🕷️ Rootkits** - Hidden threats that can compromise your entire system  
+- **🔓 Security Vulnerabilities** - Weaknesses that attackers could exploit
+- **📂 Suspicious Files** - Unknown or potentially harmful files
 
-1. **Open the Scan Tab**
-2. **Select "🚀 Quick Scan"** from scan type dropdown
-3. **Default Target**: Scans user home directory and common locations
-4. **Click "Start Scan"** to begin rapid analysis
+### Why Choose S&D?
 
-#### Full System Scan (🔍)
-For comprehensive system-wide analysis:
-
-1. **Select "🔍 Full Scan"** from scan type options
-2. **System Coverage**: Scans entire filesystem including system directories
-3. **Enhanced Detection**: Deep analysis of all file types and locations
-4. **Extended Duration**: Allow adequate time for complete scanning
-
-#### Custom Directory Scan (⚙️)
-For targeted scanning of specific locations:
-
-1. **Choose "⚙️ Custom Scan"** option
-2. **Select Target Directories**: Browse and choose specific folders
-3. **Configure Scan Options**:
-   - File size limits and filters
-   - File type exclusions
-   - Scan depth restrictions
-4. **Execute Custom Analysis**: Run targeted scan on selected areas
-
-### Advanced Scanning Features
-
-#### RKHunter Rootkit Detection
-
-**Enhanced in Version 2.5.0**: Advanced rootkit and system security scanning.
-
-Access specialized rootkit scanning:
-
-1. **Click "🔍 RKHunter Scan" button** in the Scan tab
-2. **Authentication Process**: 
-   - Secure password dialog appears (requires administrator privileges)
-   - Authentication is required for system-level security scanning
-   - Progress tracking begins only after successful authentication
-3. **Comprehensive Analysis Phases**:
-   - System command validation and integrity checking
-   - Shared library analysis and verification
-   - File properties and permission validation
-   - Known rootkit signature detection
-   - Additional security checks and heuristics
-   - Malware scanning integration
-   - Network security analysis
-   - System configuration security review
-
-**Enhanced User Experience**:
-- ✅ **Real-time Progress**: Accurate 0-100% progression tracking
-- ✅ **Visual Feedback**: Color-coded results (🟢 clean, 🔴 threat, 🟡 warning)
-- ✅ **Professional Reporting**: Detailed scan results with emoji indicators
-- ✅ **Stage Tracking**: Clear indication of current scan phase
-
-#### Performance Optimization
-
-**New in Version 2.5.0**: Advanced scanning performance features.
-
-- **Rate Limiting**: Intelligent resource management prevents system overload
-- **Adaptive Performance**: Automatically adjusts scan intensity based on system load
-- **Memory Management**: Optimized memory usage for large file scanning
-- **CPU Throttling**: Configurable CPU usage limits during intensive scans
+✅ **Easy to Use** - Simple, modern interface that anyone can understand  
+✅ **Powerful Protection** - Professional-grade security with ClamAV + RKHunter  
+✅ **Real-time Monitoring** - Continuous protection while you work  
+✅ **No Performance Impact** - Lightweight design that won't slow down your computer  
+✅ **Open Source** - Transparent, community-driven security you can trust  
 
 ---
 
-## 🛡️ Real-time Protection
+## 🚀 Getting Started - Your First 5 Minutes
 
-### Protection Features
+### Step 1: Launch the Application
 
-**Enhanced in Version 2.5.0**: Comprehensive real-time monitoring system.
+**Easy Ways to Start S&D:**
+- 📱 **Desktop**: Click the S&D icon in your applications menu
+- 💻 **Terminal**: Run `./run.sh` from the S&D directory
+- ⌨️ **Command Line**: Execute `python -m app.main`
 
-1. **Navigate to Protection Tab**
-2. **Enable Real-time Monitoring**: Toggle comprehensive file system watching
-3. **Configure Monitored Locations**:
-   - User directories and downloads
-   - System critical paths
-   - External media and network drives
-4. **Automatic Threat Response**:
-   - Immediate quarantine of detected threats
-   - Real-time notifications and alerts
-   - Automatic definition updates
+> 🔒 **Security Note**: S&D automatically prevents multiple instances from running simultaneously for your security.
 
-### Protection Configuration
+### Step 2: Understand the Interface
 
-- **Monitoring Scope**: Select directories and file types to monitor
-- **Response Actions**: Configure automatic threat handling
-- **Update Schedule**: Set automatic virus definition update frequency
-- **Performance Impact**: Adjust monitoring intensity based on system resources
+S&D has a clean, tabbed interface with six main sections:
 
----
+| Tab | Purpose | What You'll Do Here |
+|-----|---------|-------------------|
+| 🏠 **Dashboard** | System overview and status | See your protection status at a glance |
+| 🔍 **Scan** | Run security scans | Check your computer for threats |
+| 🛡️ **Protection** | Real-time monitoring | Enable continuous protection |
+| 📊 **Reports** | View scan results | See what was found and take action |
+| 🗃️ **Quarantine** | Manage isolated threats | Handle suspicious files safely |
+| ⚙️ **Settings** | Configure the app | Customize how S&D works |
 
-## 📊 Managing Scan Results
+### Step 3: Run Your First Scan
 
-### Viewing Scan Results
+**Recommended for new users:**
 
-**Enhanced in Version 2.5.0**: Improved result visualization and management.
+1. **Click the 🔍 Scan tab**
+2. **Select "🚀 Quick Scan"** (fastest, scans your personal files)
+3. **Click "Start Scan"** and wait for results
+4. **Review any findings** in the Reports tab
 
-- **Real-time Progress**: Monitor live scan progress with accurate percentage indicators
-- **Threat Detection**: View detected threats with detailed threat information
-- **Clean File Count**: See total number of clean files processed
-- **Performance Metrics**: Monitor scan speed, memory usage, and system resource consumption
-- **Visual Status Indicators**: Color-coded results for immediate threat assessment
+> 💡 **Tip**: Your first scan helps establish a security baseline for your system.
 
-### Threat Response Actions
+### Step 4: Enable Real-time Protection
 
-When threats are detected, take appropriate action:
-
-1. **🗃️ Quarantine** (Recommended): Safely isolate threats while preserving evidence
-2. **🗑️ Delete**: Permanently remove confirmed threats (use with caution)
-3. **⚠️ Ignore**: Mark as false positive for expert users only
-4. **📋 Details**: View comprehensive threat analysis and recommendations
-
-### Quarantine Management
-
-**Enhanced in Version 2.5.0**: Advanced quarantine system with improved security.
-
-Access and manage quarantined items:
-
-1. **Open Quarantine Tab** from the main interface
-2. **View Quarantined Items** with detailed threat information
-3. **Available Actions**:
-   - **Restore**: Return files to original location (if confirmed safe)
-   - **Delete Permanently**: Remove quarantined items completely
-   - **Export Details**: Save threat information for analysis
-   - **Batch Operations**: Handle multiple items simultaneously
-
-### Enhanced Report Management
-
-**New in Version 2.5.0**: Unified report management for comprehensive scan history.
-
-Comprehensive scan result management:
-
-1. **Access Reports Tab** to view all historical scan results
-2. **Multiple Report Types**:
-   - **ClamAV Virus Scans**: Traditional malware detection reports
-   - **RKHunter Rootkit Scans**: Advanced system security analysis
-   - **Real-time Protection**: Continuous monitoring event logs
-   - **System Health**: Overall security status assessments
-3. **Report Actions**:
-   - **Delete All Reports**: Complete history cleanup with single action
-   - **Export Multiple Formats**: Save reports as PDF, JSON, CSV, or XML
-   - **Archive Important Results**: Preserve critical scan findings
-   - **Share for Analysis**: Export reports for security consultation
-
-**Advanced Report Features**:
-
-- ✅ **Unified Management**: Single interface for all report types
-- ✅ **Complete Cleanup**: One-click removal of all scan history
-- ✅ **Multiple Export Formats**: Professional reporting in various formats
-- ✅ **Detailed Analysis**: Timestamps, threat classifications, and system impact data
-- ✅ **Search and Filter**: Quickly locate specific scan results
-- ✅ **Trend Analysis**: Visual graphs showing threat detection patterns over time
+1. **Go to the 🛡️ Protection tab**
+2. **Toggle "Real-time Monitoring" ON**
+3. **You're now protected!** S&D will watch for threats automatically
 
 ---
 
-## ⚙️ Advanced Features
+## 🔍 Understanding Scan Types
 
-### Scheduled Scanning
+S&D offers three types of scans, each designed for different needs:
 
-**Enhanced in Version 2.5.0**: Intelligent scheduling with system awareness.
+### 🚀 Quick Scan (Recommended for Daily Use)
+**What it does:** Scans your personal files and common threat locations  
+**How long:** 2-10 minutes  
+**Best for:** Daily security checks, new file verification  
 
-Configure automatic security scans:
+**When to use:**
+- After downloading files from the internet
+- Daily security maintenance (set it as a scheduled task)
+- Quick verification after installing new software
 
-1. **Navigate to Scan Tab**
-2. **Expand "Schedule" section** 
-3. **Configure Scan Frequency**:
-   - **Daily Scans**: Quick scans during off-peak hours
-   - **Weekly Deep Scans**: Comprehensive system analysis
-   - **Monthly Full Scans**: Complete security auditing
-   - **Custom Schedules**: User-defined timing and frequency
-4. **System Considerations**:
-   - **Battery Awareness**: Pause scanning on low battery
-   - **Performance Impact**: Automatic resource management during scans
-   - **User Activity**: Defer intensive scans during active usage
+### 🔍 Full System Scan (Weekly Deep Clean)
+**What it does:** Scans your entire computer, including system files  
+**How long:** 30-90 minutes  
+**Best for:** Comprehensive security auditing  
 
-### RKHunter System Security Integration
+**When to use:**
+- Weekly thorough security check
+- After suspected infection or suspicious activity
+- Before important system updates or backups
 
-**Updated in Version 2.5.0**: Professional-grade rootkit detection with enhanced user experience.
+### ⚙️ Custom Directory Scan (Targeted Analysis)
+**What it does:** Scans only the folders you choose  
+**How long:** Varies by selection  
+**Best for:** Checking specific files or directories  
 
-Advanced system security and rootkit scanning capabilities:
-
-1. **Professional Authentication**:
-   - Secure privilege escalation with system-native dialogs
-   - Clear progress indication during authentication process
-   - Enhanced security validation before scan initiation
-2. **Comprehensive Security Analysis Categories**:
-   - **System Commands & Binaries**: Integrity verification of critical executables
-   - **Known Rootkit Detection**: Signature-based rootkit identification  
-   - **Additional Security Checks**: Heuristic analysis and behavioral detection
-   - **Malware Integration**: Combined ClamAV and RKHunter threat detection
-   - **Network Security Analysis**: Port scanning and network threat assessment
-   - **System Configuration Review**: Security policy and configuration validation
-   - **File System Integrity**: Deep filesystem analysis and verification
-3. **Enhanced Visual Experience**:
-   - **14-Stage Progress Tracking**: Detailed progression through distinct scan phases
-   - **Professional Result Presentation**: Color-coded, emoji-enhanced output formatting
-   - **Real-time Status Updates**: Live feedback on current scan activities
-   - **Error Resilience**: Robust handling of authentication and system errors
-
-**Professional Features**:
-
-- ✅ **Authentication Aware**: Progress tracking respects password dialogs and security requirements
-- ✅ **Accurate Progress Tracking**: Real-time updates based on actual scan phases and completion
-- ✅ **Enhanced Visual Output**: Professional color-coding with emoji indicators for immediate clarity
-- ✅ **Enterprise-Grade Error Handling**: Comprehensive error recovery and user feedback systems
-
-### Performance Optimization & Resource Management
-
-**New in Version 2.5.0**: Advanced performance tuning and system resource management.
-
-Optimize application performance for your system:
-
-#### Rate Limiting & Resource Management
-- **Intelligent Throttling**: Automatic scan speed adjustment based on system load
-- **Memory Optimization**: Dynamic memory allocation for large file scanning
-- **CPU Priority Management**: Configurable scan thread priority levels
-- **Network Bandwidth Control**: Limit definition update and cloud communication bandwidth
-
-#### Scan Optimization Settings
-- **File Type Filtering**: Exclude specific file types from scanning (media, archives, etc.)
-- **Directory Depth Limits**: Control filesystem traversal depth for faster scans
-- **Size-based Exclusions**: Skip files above/below specified size thresholds
-- **Cache Management**: Intelligent caching of scan results for improved performance
-
-#### System Integration
-- **Background Processing**: Minimize user interface impact during intensive operations
-- **Power Management**: Battery-aware scanning with automatic pause on low power
-- **Thermal Management**: CPU temperature monitoring with automatic throttling
+**When to use:**
+- Scanning external USB drives or downloads
+- Checking specific project folders
+- Verifying files before sharing them
 
 ---
 
-## 📊 Reports and Analysis
+## 🔬 Advanced Security: RKHunter Rootkit Detection
 
-### Comprehensive Scan Reports
+### What are Rootkits?
 
-**Enhanced in Version 2.5.0**: Professional reporting with advanced analytics.
+**Rootkits** are sophisticated threats that hide deep in your system, often invisible to regular antivirus software. They can:
+- Steal passwords and personal information
+- Control your computer remotely
+- Hide other malware from detection
+- Monitor your activities without your knowledge
 
-Generate detailed security reports:
+### Running a RKHunter Scan
 
-1. **Complete Any Scan Type** (Quick, Full, Custom, or RKHunter)
-2. **Navigate to Reports Tab** for comprehensive analysis
-3. **View Report Summary** with detailed statistics and findings
-4. **Export Professional Reports** in multiple formats:
-   - **PDF Reports**: Professional documentation for sharing and archiving
-   - **JSON Data**: Machine-readable format for integration and analysis
-   - **CSV Spreadsheets**: Excel-compatible format for data manipulation
-   - **XML Documents**: Structured data for enterprise systems
+RKHunter is a specialized tool for detecting these hidden threats:
 
-### Report Contents & Analysis
+1. **Click "🔍 RKHunter Scan"** in the Scan tab
+2. **Enter your password** when prompted (needed for system-level access)
+3. **Watch the progress** - RKHunter performs 14 different security checks
+4. **Review results** with easy-to-understand color coding:
+   - 🟢 **Green** = Clean/Safe
+   - 🟡 **Yellow** = Warning/Suspicious  
+   - 🔴 **Red** = Threat detected
 
-Each comprehensive report includes:
+> 🔐 **Why Password Required?** RKHunter needs administrator access to check system-level security. This is normal and secure.
 
-#### Security Assessment
-- **Threat Summary**: Overview of detected threats with severity classifications
-- **System Health**: Overall security posture and risk assessment
-- **Vulnerability Analysis**: Identified security weaknesses and recommendations
-- **Compliance Status**: Security standard compliance checking
+### Understanding RKHunter Results
 
-#### Technical Details
-- **File Analysis**: Detailed information about scanned files and threat detection
-- **System Information**: Hardware specifications, OS details, and security configuration
-- **Performance Metrics**: Scan duration, throughput, and resource utilization
-- **Error Logging**: Any issues encountered during scanning with resolution guidance
-
-#### Recommendations
-- **Immediate Actions**: Critical security actions requiring prompt attention
-- **System Improvements**: Suggested configuration changes for enhanced security
-- **Maintenance Schedule**: Recommended scanning frequency and maintenance tasks
-- **Update Requirements**: Software and definition update recommendations
-
-### Historical Analysis & Trends
-
-**New in Version 2.5.0**: Advanced trend analysis and security monitoring.
-
-Track security patterns over time:
-
-- **Security Trend Analysis**: Visual graphs showing threat detection patterns
-- **Performance Tracking**: Scan performance trends and system impact analysis
-- **Threat Evolution**: Historical view of threat landscape changes
-- **System Health Monitoring**: Long-term security posture assessment
+**RKHunter checks for:**
+- System file integrity (making sure important files haven't been tampered with)
+- Known rootkit signatures (checking against databases of known threats)
+- Suspicious system behavior (looking for signs of hidden malware)
+- Network security issues (checking for unauthorized network activity)
 
 ---
 
-## ⚙️ Configuration and Settings
+## 🛡️ Real-time Protection - Your Security Shield
 
-### General Application Settings
+### What is Real-time Protection?
 
-**Enhanced in Version 2.5.0**: Comprehensive customization options.
+Real-time protection is like having a security guard for your computer that **never sleeps**. It continuously monitors your system and immediately responds to threats.
 
-#### User Interface Configuration
-- **Theme Selection**: Choose from Light, Dark, or Auto (system-based) themes
-- **Font Size Scaling**: Adjustable font sizes for accessibility and preference
-- **Language Localization**: Multi-language interface support
-- **Window Behavior**: Configure minimize to tray and startup options
+### How to Enable Protection
 
-#### Notification & Alert Settings
-- **Real-time Alerts**: Configure immediate threat notification preferences
-- **Scan Completion**: Customize scan finished notifications and actions
-- **System Tray**: Configure tray icon behavior and notification display
-- **Sound Alerts**: Audio notification options for various events
+1. **Navigate to the 🛡️ Protection tab**
+2. **Toggle "Enable Real-time Monitoring" to ON**
+3. **Configure what to monitor** (recommended: keep default settings)
+4. **Set automatic responses** (recommended: quarantine threats automatically)
 
-#### Privacy & Telemetry Settings
-- **Anonymous Usage Analytics**: Optional privacy-preserving usage statistics
-- **Privacy Level Control**: Choose from Anonymous, Aggregated, or Detailed data sharing
-- **Data Retention**: Configure how long local data is stored
-- **Cloud Integration**: Optional cloud-based threat intelligence participation
+### What Gets Monitored
 
-### Advanced Scan Configuration
+When enabled, S&D watches:
+- **New files** being created or downloaded
+- **USB drives** and external storage when connected
+- **System directories** for unauthorized changes
+- **Network activity** for suspicious behavior
 
-#### Default Scan Behavior
-- **Scan Path Preferences**: Set standard locations for different scan types
-- **File Type Inclusion/Exclusion**: Configure which file types to analyze
-- **Exclusion Lists**: Add specific directories, files, or patterns to ignore
-- **Automatic Actions**: Set default responses for different threat types
+### Automatic Threat Response
 
-#### Performance & Resource Settings
-- **Memory Usage Limits**: Configure maximum memory allocation for scanning
-- **CPU Utilization**: Set scan thread priority and CPU usage limits
-- **Network Settings**: Configure update servers and bandwidth limitations
-- **Temporary File Management**: Control scan cache and temporary file handling
-
-### Security & Access Settings
-
-#### Quarantine Configuration
-- **Quarantine Location**: Set secure directory for isolated threats
-- **Retention Policies**: Configure automatic quarantine cleanup schedules
-- **Access Controls**: Password protection for quarantine and settings access
-- **Backup Integration**: Configure quarantine backup and recovery options
-
-#### Privilege & Authentication Management
-- **Elevated Scanning**: Configure authentication requirements for system scans
-- **Polkit Integration**: Advanced Linux authentication and authorization
-- **User Access Controls**: Configure user-level permissions and restrictions
-- **Security Policies**: Enterprise-grade security policy configuration
+When a threat is detected, S&D can automatically:
+1. **🗃️ Quarantine** the threat (safest option - isolates but preserves for analysis)
+2. **🚨 Alert you** with a notification
+3. **📝 Log the event** for later review
+4. **🔄 Update definitions** to catch similar threats
 
 ---
 
-## 💡 Best Practices
+## 📊 Understanding Scan Results
 
-### Regular Security Maintenance
+### Reading Your Scan Report
 
-#### Recommended Scanning Schedule
-- **Daily Quick Scans**: Routine threat detection during low-usage periods
-- **Weekly Full Scans**: Comprehensive system analysis including system directories
-- **Monthly Deep Security Audits**: Complete RKHunter + ClamAV analysis with system hardening review
-- **Real-time Protection**: Continuous monitoring enabled for immediate threat response
+After any scan, you'll see a summary with key information:
 
-#### Definition & Update Management
-- **Automatic Definition Updates**: Enable daily virus definition updates
-- **Application Updates**: Keep S&D updated to latest version for security patches
-- **System Updates**: Maintain current OS and security updates
-- **Backup Before Updates**: Create system backups before major updates
+| Metric | What It Means | Good/Bad |
+|--------|---------------|----------|
+| **Files Scanned** | Total files checked | More = more thorough |
+| **Threats Found** | Dangerous items detected | 0 = good, >0 = needs attention |
+| **Scan Time** | How long the scan took | Varies by scan type |
+| **System Health** | Overall security rating | Green = good, Red = needs work |
 
-### Effective Threat Response
+### When Threats Are Found
 
-#### Threat Analysis & Verification
-1. **Stay Calm**: False positives do occur, especially with aggressive heuristics
-2. **Research Unknown Threats**: Use online databases (VirusTotal, etc.) for verification
-3. **Quarantine First**: Never delete immediately - isolate for further analysis
-4. **Document Findings**: Keep records of threat encounters for pattern analysis
-5. **Report False Positives**: Contribute to ClamAV accuracy by reporting false detections
+**Don't panic!** Finding threats is normal, especially on new systems or after browsing the internet. Here's what to do:
 
-#### System Recovery & Maintenance
-- **Regular System Backups**: Maintain current backups for critical data and system state
-- **Recovery Planning**: Prepare system recovery procedures for major infections
-- **Log Review**: Periodically analyze scan logs for patterns and trends
-- **Performance Monitoring**: Watch for unusual resource usage that might indicate threats
+1. **🗃️ Quarantine First** (recommended for beginners)
+   - Safely isolates the threat
+   - Prevents damage while allowing investigation
+   - Can be reversed if it's a false alarm
 
-### Security Hardening
+2. **🔍 Research the Threat**
+   - Use threat name in online databases (VirusTotal.com)
+   - Check if it's a known false positive
+   - Look for removal instructions from security experts
 
-#### System Configuration
-- **Enable Real-time Protection**: Continuous monitoring provides immediate threat response
-- **Network Security**: Configure firewall rules and network monitoring
-- **Access Control**: Implement proper user permissions and authentication
-- **Regular Auditing**: Perform periodic security assessments and configuration reviews
+3. **💭 Consider the Context**
+   - Where was the file found?
+   - Do you remember downloading/installing it?
+   - Does it seem legitimate for your use?
 
----
+### Managing False Positives
 
-## 🔧 Troubleshooting
+Sometimes legitimate files are mistakenly flagged as threats. **Signs of a false positive:**
+- File is from a reputable software company
+- You recently installed legitimate software
+- Multiple users report the same false detection online
+- The threat name includes words like "generic" or "heuristic"
 
-### Common Issues & Solutions
-
-#### Performance-Related Issues
-
-**Slow Scan Performance**
-- **Reduce Scan Scope**: Limit directory traversal depth and file type inclusion
-- **Exclude Large Media Files**: Skip video, audio, and image files if not required
-- **Adjust Memory Limits**: Increase available memory for scan operations
-- **Close Unnecessary Applications**: Free up system resources during intensive scans
-- **Enable Rate Limiting**: Use adaptive performance controls to prevent system overload
-
-**High System Resource Usage**
-- **Configure CPU Throttling**: Limit scan thread priority and CPU utilization
-- **Enable Background Processing**: Use low-priority scanning during active system use
-- **Memory Optimization**: Adjust scan cache size and memory allocation limits
-- **Thermal Management**: Enable automatic throttling for temperature control
-
-#### Detection & False Positive Issues
-
-**False Positive Detections**
-- **Research Detections**: Use online threat databases for verification (VirusTotal, Hybrid Analysis)
-- **Add Trusted Exclusions**: Create exclusion rules for confirmed safe files and directories
-- **Report to ClamAV**: Submit false positive reports to improve detection accuracy
-- **Restore from Quarantine**: Safely recover quarantined files after verification
-- **Update Definitions**: Ensure latest virus definitions to reduce false positives
-
-**Missed Threat Detection**
-- **Enable Heuristic Analysis**: Increase detection sensitivity for unknown threats
-- **Update Virus Definitions**: Ensure current threat signatures are installed
-- **Use Multiple Scan Types**: Combine ClamAV and RKHunter for comprehensive detection
-- **Check Exclusion Lists**: Verify that threat locations aren't excluded from scanning
-
-#### System Integration Issues
-
-**Authentication & Permission Errors**
-- **Verify User Permissions**: Ensure proper read access to scan directories
-- **Configure Polkit Policies**: Set up proper authentication for elevated scans
-- **Check sudo Configuration**: Verify sudo access for system-level operations
-- **Use "Skip Inaccessible Files"**: Enable option to continue scanning despite permission issues
-
-**Application Startup & Stability Issues**
-- **Check System Dependencies**: Verify ClamAV and RKHunter installation
-- **Review Log Files**: Examine application logs for startup errors
-- **Reset Configuration**: Restore default settings if configuration becomes corrupted
-- **Single Instance Conflicts**: Ensure only one S&D instance is running
-
-### Getting Additional Help
-
-#### Built-in Support Resources
-- **Interactive Tooltips**: Hover over interface elements for contextual help
-- **Settings Help**: Built-in explanations for configuration options
-- **Error Message Guidance**: Detailed error descriptions with resolution suggestions
-- **Performance Monitoring**: Real-time system impact feedback and optimization tips
-
-#### Community & Professional Support
-- **Documentation Hub**: Complete documentation set in `/docs/` directory
-- **GitHub Community**: Join project discussions and report issues
-- **Professional Consultation**: Enterprise support options for business environments
-- **Bug Reporting**: Submit detailed issue reports with system information and logs
-
-#### Advanced Diagnostics
-- **Log Analysis**: Review detailed application and scan logs for troubleshooting
-- **System Health Check**: Use built-in diagnostics for configuration validation
-- **Performance Profiling**: Analyze scan performance and resource utilization
-- **Configuration Export**: Save and share configuration for support analysis
+**To handle false positives:**
+1. Research the detection online
+2. Add to exclusion list if confirmed safe
+3. Report to ClamAV to improve future detection
 
 ---
 
-## 📚 Additional Resources
+## 🗃️ Quarantine Management Made Simple
 
-### Related Documentation
-- **[Installation Guide](Installation.md)**: Complete setup and installation instructions
-- **[Configuration Guide](Configuration.md)**: Advanced customization and system integration
-- **[Development Guide](../developer/DEVELOPMENT.md)**: Technical documentation for contributors
+### What is Quarantine?
 
-### External Resources
-- **ClamAV Documentation**: Official ClamAV antivirus documentation and resources
-- **RKHunter Manual**: Comprehensive RKHunter rootkit detection documentation
-- **Linux Security**: General Linux security hardening and best practices
+Think of quarantine as a **secure jail** for suspicious files. Files in quarantine:
+- ✅ Can't harm your system
+- ✅ Can be restored if they're actually safe
+- ✅ Can be studied for analysis
+- ✅ Can be permanently deleted when you're sure
+
+### Managing Quarantined Files
+
+**To access quarantine:**
+1. **Click the 🗃️ Quarantine tab**
+2. **Review the list** of isolated files
+3. **For each file, you can:**
+   - **📋 View Details** - See why it was quarantined
+   - **🔄 Restore** - Put it back if it's safe
+   - **🗑️ Delete** - Remove permanently
+   - **📤 Export Info** - Save details for research
+
+### Quarantine Best Practices
+
+**For Beginners:**
+- ❌ Don't restore files unless you're 100% sure they're safe
+- ✅ Do research threat names online before making decisions
+- ✅ Do ask for help if you're unsure
+- ✅ Do keep quarantined items for at least a week before deleting
+
+**Safety Rule:** *When in doubt, leave it in quarantine!*
 
 ---
 
-*Last Updated: August 15, 2025 - Version 2.5.0*  
-*For the latest updates and features, visit the project documentation.*
+## ⚙️ Essential Settings for New Users
+
+### Quick Setup for Maximum Protection
+
+**Recommended settings for new users:**
+
+#### 🎨 Interface Settings
+- **Theme**: Auto (matches your system)
+- **Notifications**: Enable all (stay informed)
+- **System Tray**: Enable (run in background)
+
+#### 🔍 Scan Settings  
+- **Default Scan Type**: Quick Scan
+- **Automatic Updates**: Daily (keep definitions current)
+- **Scheduled Scans**: Enable weekly full scans
+
+#### 🛡️ Protection Settings
+- **Real-time Protection**: ON
+- **Automatic Quarantine**: ON
+- **Threat Notifications**: ON
+
+#### 📊 Privacy Settings
+- **Anonymous Usage Statistics**: Your choice
+- **Cloud Threat Intelligence**: ON (improves detection)
+
+### Advanced Settings (For Experienced Users)
+
+**Performance Tuning:**
+- CPU Usage Limit: 50% (prevents system slowdown)
+- Memory Limit: 2GB (adjust based on your RAM)
+- Rate Limiting: ON (prevents system overload)
+
+**Security Hardening:**
+- Heuristic Analysis: Medium sensitivity
+- Exclusion Lists: Minimize (only add verified safe locations)
+- Update Frequency: Daily definitions, weekly application
+
+---
+
+## 💡 Best Practices - Staying Secure
+
+### Daily Security Habits
+
+**🌅 Morning Routine (2 minutes):**
+1. Check S&D system tray icon (should be green/active)
+2. Review any overnight notifications
+3. Verify real-time protection is enabled
+
+**🌙 Evening Routine (5 minutes):**
+1. Run a quick scan of downloads folder
+2. Check for any quarantined items needing attention
+3. Ensure automatic updates are working
+
+### Weekly Security Maintenance
+
+**🗓️ Weekly Tasks (15 minutes):**
+1. **Run a Full System Scan** (set it running, do other things)
+2. **Review the past week's reports** for patterns
+3. **Update S&D application** if updates available
+4. **Clean up quarantine** (delete items you've researched)
+
+### Monthly Security Audit
+
+**📅 Monthly Tasks (30 minutes):**
+1. **Complete RKHunter scan** for deep security analysis
+2. **Review and update exclusion lists** (remove old entries)
+3. **Check system update status** (OS and security patches)
+4. **Backup important data** (security isn't just about malware!)
+
+### Warning Signs to Watch For
+
+**🚨 Immediate attention needed if you notice:**
+- Frequent threat detections (daily finds)
+- System running slower than usual
+- Unexpected network activity
+- Programs you didn't install appearing
+- S&D protection being disabled unexpectedly
+
+---
+
+## 🔧 Troubleshooting Common Issues
+
+### "Scan is Taking Too Long"
+
+**Quick Fixes:**
+1. **Reduce scan scope** - Use Custom Scan for specific folders
+2. **Exclude large media files** - Skip videos/music if not needed
+3. **Close other programs** - Free up system resources
+4. **Enable rate limiting** - Prevent system overload
+
+### "Too Many False Positives"
+
+**Solutions:**
+1. **Update virus definitions** - Newer definitions are more accurate
+2. **Research detections online** - Check VirusTotal.com
+3. **Add exclusions carefully** - Only for verified safe files
+4. **Adjust sensitivity** - Lower heuristic detection if needed
+
+### "Real-time Protection Disabled"
+
+**Troubleshooting Steps:**
+1. **Check system permissions** - S&D needs file access
+2. **Verify no conflicts** - Other antivirus software can interfere
+3. **Review exclusion lists** - Make sure S&D folders aren't excluded
+4. **Restart S&D** - Close completely and reopen
+
+### "Can't Run RKHunter Scan"
+
+**Common Solutions:**
+1. **Enter correct password** - Must be your user password
+2. **Check sudo access** - Your user needs admin privileges
+3. **Close other security tools** - Avoid conflicts during scanning
+4. **Free up disk space** - RKHunter needs temporary storage
+
+### Getting Help
+
+**When you need assistance:**
+
+1. **📖 Check this manual** - Most answers are here
+2. **🔍 Search online** - Many users have similar questions  
+3. **📝 Check log files** - Often contain helpful error details
+4. **💬 Community forums** - Ask experienced users
+5. **🐛 Report bugs** - Help improve S&D for everyone
+
+**Information to include when asking for help:**
+- Your Linux distribution and version
+- S&D version (shown in About dialog)
+- Exact error message or behavior
+- Steps you tried to fix the issue
+- Recent system changes or installations
+
+---
+
+## 🎓 Understanding Security Concepts
+
+### What Makes a File Dangerous?
+
+**🦠 Viruses** - Code that spreads by infecting other files  
+**🐴 Trojans** - Legitimate-looking programs that hide malicious functions  
+**🕷️ Rootkits** - Deep system infections that hide their presence  
+**🎣 Phishing** - Fake programs that steal passwords and personal info  
+**💣 Ransomware** - Malware that encrypts your files and demands payment  
+
+### How S&D Protects You
+
+**🔍 Signature Detection** - Recognizes known threats by their "fingerprints"  
+**🧠 Heuristic Analysis** - Identifies suspicious behavior patterns  
+**🌐 Cloud Intelligence** - Uses global threat data for latest protections  
+**⚡ Real-time Monitoring** - Catches threats as they appear  
+**🔒 Safe Quarantine** - Isolates threats without damaging evidence  
+
+### Building Security Awareness
+
+**Good Security Habits:**
+- ✅ Keep software updated (OS, browsers, applications)
+- ✅ Download software only from official sources
+- ✅ Be cautious with email attachments and links
+- ✅ Use strong, unique passwords for important accounts
+- ✅ Regular backups of important data
+
+**Warning Signs of Threats:**
+- ❌ Unexpected pop-ups or advertisements
+- ❌ Programs running slowly or crashing frequently
+- ❌ Unknown programs in startup or running processes
+- ❌ High network usage when you're not online
+- ❌ Files or folders appearing or disappearing mysteriously
+
+---
+
+## 📈 Making the Most of S&D
+
+### Power User Tips
+
+**🚀 Efficiency Shortcuts:**
+- **F5** - Refresh current tab
+- **Ctrl+S** - Quick scan shortcut
+- **F1** - Open this User Manual
+- **Ctrl+Q** - Quit application
+
+**⚙️ Advanced Configurations:**
+- Create custom scan profiles for different needs
+- Set up different notification profiles (work vs. home)
+- Use exclusion lists strategically for performance
+- Export/import settings for multiple computers
+
+**📊 Monitoring and Analysis:**
+- Review scan trends to identify security patterns
+- Use exported reports for compliance documentation
+- Monitor system resource usage during scans
+- Track false positive rates to optimize settings
+
+### Integration with System Security
+
+**🔗 Working with Other Security Tools:**
+- S&D complements (doesn't replace) your firewall
+- Can work alongside system update managers
+- Integrates with Linux security frameworks (AppArmor, SELinux)
+- Supports enterprise security policies and compliance
+
+**🛡️ Building a Complete Security Strategy:**
+1. **S&D** for malware protection and system scanning
+2. **Firewall** for network protection  
+3. **Regular Updates** for patch management
+4. **Backups** for data protection and recovery
+5. **User Education** for social engineering protection
+
+---
+
+## 📚 Quick Reference Guide
+
+### Essential Commands Summary
+
+| Action | How To Do It | When to Use |
+|--------|-------------|-------------|
+| **Quick Scan** | Scan tab → Quick Scan → Start | Daily, after downloads |
+| **Full Scan** | Scan tab → Full Scan → Start | Weekly, deep cleaning |
+| **RKHunter Scan** | Scan tab → RKHunter Scan → Enter password | Monthly, after issues |
+| **Enable Protection** | Protection tab → Toggle ON | Always (continuous protection) |
+| **Check Quarantine** | Quarantine tab → Review items | After threats found |
+| **View Reports** | Reports tab → Select report | After any scan |
+| **Update Definitions** | Automatic (daily) or Settings → Update | Keep current |
+| **Open Manual** | Help menu → User Manual or F1 | When you need help |
+
+### Common File Locations
+
+| Item | Location | Purpose |
+|------|----------|---------|
+| **Application** | `/usr/local/bin/search-and-destroy/` | Main program files |
+| **User Config** | `~/.config/search-and-destroy/` | Your personal settings |
+| **Quarantine** | `~/.local/share/search-and-destroy/quarantine/` | Isolated threats |
+| **Scan Reports** | `~/.local/share/search-and-destroy/reports/` | Scan history |
+| **Log Files** | `~/.local/share/search-and-destroy/logs/` | Troubleshooting info |
+
+### Emergency Procedures
+
+**🚨 If You Suspect Active Infection:**
+1. **Disconnect from internet** (prevent data theft)
+2. **Run immediate Full System Scan** 
+3. **Follow scan recommendations** (usually quarantine)
+4. **Do NOT enter passwords** until system is clean
+5. **Contact security expert** if unsure about results
+
+**🔥 If System is Severely Compromised:**
+1. **Boot from external media** (USB Linux rescue disk)
+2. **Backup critical data** to clean external storage
+3. **Run S&D from rescue environment** if possible
+4. **Consider complete system reinstall** for critical systems
+5. **Restore data after verification** on clean system
+
+---
+
+*This manual is your complete guide to protecting your Linux system with S&D - Search & Destroy. Keep it handy for reference, and remember: when in doubt about security, it's always better to be cautious!*
+
+**📞 Need More Help?**  
+- 📖 Additional documentation: `/docs/` folder in your S&D installation  
+- 🌐 Online community: Visit our GitHub page for discussions and updates  
+- 🐛 Bug reports: Help us improve S&D by reporting issues you encounter  
+
+**🔄 Stay Updated:** This manual is updated with each S&D release. Check for updates regularly to stay current with new features and security improvements.
+
+---
+
+*Last Updated: January 7, 2025 - Version 2.6.0*  
+*Thank you for choosing S&D - Search & Destroy for your Linux security needs!*

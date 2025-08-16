@@ -102,7 +102,7 @@ class AllWarningsDialog(QDialog):
         layout.setSpacing(10)
         
         # Header
-    header_label = QLabel("⚠️ Security Warnings Found")
+        header_label = QLabel("⚠️ Security Warnings Found")
         header_label.setObjectName("headerLabel")  # For themed styling
         layout.addWidget(header_label)
         
@@ -130,19 +130,19 @@ class AllWarningsDialog(QDialog):
         button_layout = QHBoxLayout()
         
         # Mark all as safe button (for advanced users)
-    mark_safe_btn = QPushButton("Mark All as Safe")
+        mark_safe_btn = QPushButton("Mark All as Safe")
         mark_safe_btn.clicked.connect(self._mark_all_as_safe)
         button_layout.addWidget(mark_safe_btn)
         
         button_layout.addStretch()
         
         # Export warnings button
-    export_btn = QPushButton("Export Report")
+        export_btn = QPushButton("Export Report")
         export_btn.clicked.connect(self._export_warnings_report)
         button_layout.addWidget(export_btn)
         
         # Close button
-    close_btn = QPushButton("Close")
+        close_btn = QPushButton("Close")
         close_btn.clicked.connect(self.accept)
         button_layout.addWidget(close_btn)
         

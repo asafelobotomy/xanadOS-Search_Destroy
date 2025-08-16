@@ -5,7 +5,7 @@
 ![S&D Logo](packaging/icons/org.xanados.SearchAndDestroy.png)
 
 [![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg)](CHANGELOG.md)
-[![Version](https://img.shields.io/badge/version-2.5.0-blue.svg)](https://github.com/asafelobotomy/xanadOS-Search_Destroy/releases)
+[![Version](https://img.shields.io/badge/version-2.6.0-blue.svg)](https://github.com/asafelobotomy/xanadOS-Search_Destroy/releases)
 [![License](https://img.shields.io/badge/license-GPL--3.0-blue.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/python-3.13.5-blue.svg)](https://python.org)
 [![Tests](https://img.shields.io/badge/tests-182%20cases-brightgreen.svg)](#testing)
@@ -284,7 +284,8 @@ python app/main.py          # Run in development mode
 │   │   ├── 🖥️ main_window.py          # Main application window
 │   │   ├── ⚙️ scan_dialog.py          # Advanced scan configuration
 │   │   ├── 🔄 scan_thread.py          # Threaded scanning operations
-│   │   └── 🛠️ settings_dialog.py      # Application settings
+│   │   ├── 🛠️ settings_dialog.py      # Application settings
+│   │   └── 📖 user_manual_window.py   # User manual interface
 │   ├── 📂 monitoring/   # Real-time file system monitoring
 │   │   ├── 👁️ real_time_monitor.py    # Main monitoring coordinator
 │   │   ├── 📁 file_watcher.py         # inotify-based file watching
@@ -307,22 +308,42 @@ python app/main.py          # Run in development mode
 │   ├── 🔬 unit/         # Unit tests for individual components
 │   └── 🔗 integration/  # Integration and system tests
 ├── 📚 docs/             # Documentation and guides
-│   ├── 📖 DEVELOPMENT.md         # Development setup guide
-│   ├── 🤖 COPILOT_SETUP.md      # GitHub Copilot configuration
-│   ├── 🎨 STRAWBERRY_PALETTE.md # Theme design documentation
-│   ├── 📋 IMPLEMENTATION_SUMMARY.md # Feature implementation summary
-│   ├── 🧹 CLEANUP_SUMMARY.md     # Code cleanup documentation
-│   └── 📋 implementation/       # Technical implementation documentation
-├── 🛠️ dev/              # Development resources (demos, test scripts)
+│   ├── 📖 user/         # User documentation and guides
+│   │   └── 📖 User_Manual.md   # Comprehensive user manual
+│   ├── 🛠️ developer/   # Developer documentation
+│   ├── 📋 implementation/ # Technical implementation docs
+│   ├── 🚀 deployment/  # Deployment and distribution guides
+│   ├── 🔧 maintenance/ # Code citations and link verification
+│   └── 📁 releases/    # Release notes and version history
+├── 🛠️ dev/              # Development tools and resources
+│   ├── 📊 analysis/     # Code analysis and validation tools
+│   │   ├── � component_analysis.py    # Component structure analysis
+│   │   ├── 🔧 fix_imports.py           # Import organization utility
+│   │   ├── ✅ simple_component_validator.py # Component validation
+│   │   └── 🧪 integration_demo.py      # Integration testing demo
+│   ├── 📋 reports/      # Development reports and summaries
+│   │   ├── 🏗️ BUILD_OPTIMIZATION_COMPLETE.md # Build optimization report
+│   │   ├── 🔍 COMPONENT_REVIEW_COMPLETE.md   # Component review summary
+│   │   └── 📊 unified_component_validation_report.txt # Validation results
 │   ├── 🎨 demos/        # Theme demonstration scripts
-│   └── 🧪 test-scripts/ # Development test utilities
+│   ├── 🧪 testing/      # Development test utilities
+│   └── 🐛 debug/        # Debugging tools and utilities
 ├── 🔧 scripts/          # Build and utility scripts
-│   ├── 🚀 prepare-build.sh      # Build environment setup
-│   ├── ✅ verify-build.sh       # Build verification
-│   ├── 🐍 activate.sh           # Virtual environment activation
-│   └── 🔒 setup-security.sh     # Security configuration
-└── ⚙️ config/           # Configuration files and policies
-    └── 🔐 org.xanados.searchanddestroy.policy # System security policy
+│   ├── 🚀 build/        # Build automation scripts
+│   ├── 🛠️ setup/        # Environment setup utilities
+│   ├── 🔒 security/     # Security configuration scripts
+│   └── 🧹 maintenance/  # Maintenance and cleanup utilities
+├── 📁 archive/          # Historical files and backups
+│   ├── 🔧 configs/      # Configuration file backups
+│   ├── �️ development/  # Deprecated development files
+│   └── 📜 old-versions/ # Legacy code and documentation
+├── ⚙️ config/           # Configuration files and policies
+│   ├── 🔐 org.xanados.searchanddestroy.policy # System security policy
+│   ├── 🛡️ security.conf.example               # Security configuration template
+│   └── ⚙️ performance_config_template.json    # Performance tuning template
+└── 🔧 tools/            # External tools and utilities
+    ├── 🐧 flatpak-pip-generator # Flatpak Python dependency generator
+    └── 🔧 setup.sh              # Initial environment setup
 ```
 
 ---

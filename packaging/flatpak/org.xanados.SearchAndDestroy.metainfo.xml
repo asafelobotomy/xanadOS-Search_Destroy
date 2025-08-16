@@ -55,6 +55,23 @@
   </provides>
   
   <releases>
+    <release version="2.6.0" date="2025-01-07">
+      <description>
+        <p>Comprehensive Optimization and Security Enhancement Update</p>
+        <ul>
+          <li>Complete ClamAV performance and security optimizations for 2025</li>
+          <li>Comprehensive system optimization plan implementation</li>
+          <li>Enhanced build process with new automation scripts</li>
+          <li>Advanced security setup script for system configuration</li>
+          <li>Repository organization and cleanup improvements</li>
+          <li>Enhanced Flathub submission automation</li>
+          <li>Improved documentation organization and structure</li>
+          <li>Bug fixes and performance improvements throughout</li>
+          <li>Better integration with modern Linux security frameworks</li>
+          <li>Optimized resource utilization and scanning efficiency</li>
+        </ul>
+      </description>
+    </release>
     <release version="2.5.0" date="2025-08-12">
       <description>
         <p>Major Update: Complete Theme System Overhaul and Flathub Preparation</p>
@@ -69,22 +86,6 @@
           <li>Complete icon set including SVG scalable format</li>
           <li>Optimized permissions for sandboxed execution</li>
           <li>Unified dialog theming across all application components</li>
-        </ul>
-      </description>
-    </release>
-      <description>
-        <p>Infrastructure Enhancement: Complete development workflow modernization with industry standards compliance</p>
-        <ul>
-          <li>Complete Makefile modernization following GNU Make industry standards</li>
-          <li>Enhanced security system with RKHunter --tmpdir validation support</li>
-          <li>Comprehensive repository organization automation with git hooks integration</li>
-          <li>Professional development workflow with quality assurance integration</li>
-          <li>Silent/verbose operation support with V=1 flag for debug output</li>
-          <li>26+ organized Makefile targets with comprehensive help system</li>
-          <li>Enhanced error handling with automatic cleanup on failures</li>
-          <li>Security fixes for RKHunter authentication blocking issues</li>
-          <li>Repository structure validation and automated maintenance</li>
-          <li>Industry-standard documentation with comprehensive guides</li>
         </ul>
       </description>
     </release>

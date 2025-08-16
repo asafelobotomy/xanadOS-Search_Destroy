@@ -18,6 +18,7 @@ except ImportError:
 from gui.rkhunter_components import RKHunterScanDialog, RKHunterScanThread
 from gui.scan_thread import ScanThread
 from gui.update_components import UpdateNotifier
+from gui.user_manual_window import UserManualWindow
 from monitoring import MonitorConfig, MonitorState, RealTimeMonitor
 from PyQt6.QtCore import Qt, QTimer, QTime, pyqtSignal
 from PyQt6.QtGui import (
@@ -2919,6 +2920,16 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
         help_menu = QMenu("Help", self)
         menu_bar.addMenu(help_menu)
 
+        # User Manual menu item
+        user_manual_action = QAction("📚 User Manual", self)
+        user_manual_action.triggered.connect(self.show_user_manual)
+        user_manual_action.setStatusTip("Open the comprehensive user manual")
+        user_manual_action.setShortcut(QKeySequence("F1"))
+        help_menu.addAction(user_manual_action)
+        
+        # Separator
+        help_menu.addSeparator()
+
         # Check for Updates menu item
         update_action = QAction("Check for Updates", self)
         update_action.triggered.connect(self.check_for_updates_manual)
@@ -3061,7 +3072,7 @@ System        {perf_status}"""
 
         # Help shortcut
         self.help_shortcut = QShortcut(QKeySequence("F1"), self)
-        self.help_shortcut.activated.connect(self.show_about)
+        self.help_shortcut.activated.connect(self.show_user_manual)
 
         # Refresh shortcut
         self.refresh_shortcut = QShortcut(QKeySequence("F5"), self)
@@ -3443,7 +3454,7 @@ System        {perf_status}"""
             try:
                 current_version = version_file.read_text().strip()
             except (FileNotFoundError, IOError):
-                current_version = "2.4.0"  # Fallback version
+                current_version = "2.6.0"  # Fallback version
                 
             # Initialize the auto-updater with new system
             self.auto_updater = AutoUpdateSystem()
@@ -7053,6 +7064,26 @@ System        {perf_status}"""
 
         except (OSError, IOError, PermissionError) as e:
             self.status_bar.showMessage(f"Error loading quarantine: {e}", 5000)
+
+    def show_user_manual(self):
+        """Show the comprehensive user manual in a new window."""
+        try:
+            # Create and show the user manual window
+            self.user_manual_window = UserManualWindow(self)
+            self.user_manual_window.show()
+            
+            # Bring the window to front
+            self.user_manual_window.raise_()
+            self.user_manual_window.activateWindow()
+            
+        except Exception as e:
+            print(f"Error opening user manual: {e}")
+            self.show_themed_message_box(
+                "warning",
+                "User Manual Error",
+                f"Could not open the user manual: {str(e)}\n\n"
+                "Please ensure the user manual file is available in the docs/user/ directory."
+            )
 
     def show_about(self):
         self.show_themed_message_box(

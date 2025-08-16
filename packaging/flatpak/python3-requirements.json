@@ -26,7 +26,7 @@
             "name": "python3-dependencies",
             "buildsystem": "simple",
             "build-commands": [
-                "pip3 install --verbose --exists-action=i --no-index --find-links=\"file://${PWD}\" --prefix=${FLATPAK_DEST} pyclamd requests python-dotenv psutil schedule setuptools inotify aiohttp dnspython --no-build-isolation"
+                "pip3 install --verbose --exists-action=i --no-index --find-links=\"file://${PWD}\" --prefix=${FLATPAK_DEST} pyclamd requests python-dotenv psutil schedule setuptools inotify aiohttp dnspython markdown --no-build-isolation"
             ],
             "sources": [
                 {
@@ -73,6 +73,11 @@
                     "type": "file",
                     "url": "https://files.pythonhosted.org/packages/b5/4a/41a0c5c98187094958e942ccb38451692b0e1bf20b5c3dc4ae7b67e7e87a/dnspython-2.6.1-py3-none-any.whl",
                     "sha256": "5ef3b9680161f6fa89daf8ad451b5f1a33b18ae8a1c6778cdf4b43f08c0a6e50"
+                },
+                {
+                    "type": "file",
+                    "url": "https://files.pythonhosted.org/packages/22/02/4785861427848cc51301be4fdc06c5a017c3f94bb3cd47b8df5e6b26b82a8/Markdown-3.4.4-py3-none-any.whl",
+                    "sha256": "a4c1b65c0957b4bd9e7d86ddc7b3c9868fb9670660f6f99f6d1bca8954d5a941"
                 }
             ]
         }

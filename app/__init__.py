@@ -19,10 +19,10 @@ def get_version():
             return version_file.read_text().strip()
         else:
             # Fallback version if VERSION file doesn't exist
-            return "2.2.0"
+            return "2.6.0"
     except (OSError, IOError, FileNotFoundError):
         # Fallback version in case of any file reading errors
-        return "2.2.0"
+        return "2.6.0"
 
 __version__ = get_version()
 __author__ = "xanadOS Team"

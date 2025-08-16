@@ -583,7 +583,8 @@ async def main():
     print(report)
     
     # Save report to file
-    report_file = Path("unified_component_validation_report.txt")
+    report_file = Path("dev/reports/unified_component_validation_report.txt")
+    report_file.parent.mkdir(parents=True, exist_ok=True)
     report_file.write_text(report)
     print(f"\n📋 Full report saved to: {report_file.absolute()}")
     

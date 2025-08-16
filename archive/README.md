@@ -13,8 +13,15 @@ Contains stub files that were created during aggressive cleanup operations. Thes
 
 **Note:** These stubs were created during the comprehensive cleanup that broke the application. They serve as examples of what NOT to do during cleanup operations.
 
-### `/unused-components/`
-For components that are no longer actively used but may contain valuable code or concepts for future reference.
+### `/configs/`
+**New**: Configuration backups and deprecated config files.
+- `config.py.backup-20250808-160451` - Configuration backup from August 2025 cleanup
+
+### `/development/`
+**New**: Development-related archived materials organized by category.
+- `deprecated-components/` - Old component implementations
+- `deprecated-theme-files/` - Previous theme and styling files
+- `experimental/` - Experimental features and proof-of-concepts
 
 ### `/old-versions/`
 Contains backup versions and previous implementations of files.
