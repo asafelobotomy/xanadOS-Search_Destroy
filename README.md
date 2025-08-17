@@ -5,7 +5,7 @@
 ![S&D Logo](packaging/icons/org.xanados.SearchAndDestroy.png)
 
 [![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg)](CHANGELOG.md)
-[![Version](https://img.shields.io/badge/version-2.6.0-blue.svg)](https://github.com/asafelobotomy/xanadOS-Search_Destroy/releases)
+[![Version](https://img.shields.io/badge/version-2.7.0-blue.svg)](https://github.com/asafelobotomy/xanadOS-Search_Destroy/releases)
 [![License](https://img.shields.io/badge/license-GPL--3.0-blue.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/python-3.13.5-blue.svg)](https://python.org)
 [![Tests](https://img.shields.io/badge/tests-182%20cases-brightgreen.svg)](#testing)

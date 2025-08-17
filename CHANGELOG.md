@@ -5,6 +5,54 @@ All notable changes to the xanadOS-Search_Destroy project will be documented in 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.7.0] - 2025-08-17
+
+### Added
+
+#### 🔥 **Firewall Management Integration**
+- **Comprehensive Firewall Settings** - Complete firewall configuration interface in Settings tab
+- **Multi-Platform Support** - UFW, firewalld, iptables, and nftables detection and management
+- **Real-Time Status Monitoring** - Live firewall status detection and display
+- **Advanced Configuration** - Authentication timeout, confirmation dialogs, and debug logging controls
+- **Scroll Area Implementation** - Professional layout with proper scrolling for all screen sizes
+
+#### ⚡ **Startup Performance Optimization**
+- **Deferred Report Loading** - Background loading for 58% faster perceived startup time
+- **Lazy Monitoring Initialization** - On-demand real-time monitoring setup
+- **Progressive Qt Effects** - Deferred UI rendering for immediate interface availability
+
+#### 🔧 **Repository Organization Improvements**
+- **Script Path Resolution** - Fixed all script paths after repository reorganization
+- **Enhanced Development Tools** - New analysis, optimization, and testing scripts
+- **Security Standards Integration** - Standardized security and performance libraries
+
+### Enhanced
+
+#### 🎨 **User Interface Improvements**
+- **Quick Scan Button Fix** - Resolved text truncation with proper sizing and shorter text
+- **Button State Synchronization** - Fixed Quick Scan button state management across UI components
+- **Settings Page Organization** - Improved layout and navigation in configuration interface
+
+#### 🔒 **Security & Performance**
+- **ClamAV Integration** - Enhanced virus scanning performance and reliability
+- **Memory Optimization** - Improved resource utilization during scanning operations
+- **File Watcher Enhancements** - Better real-time monitoring with reduced system impact
+
+### Fixed
+
+#### 🐛 **Critical Bug Fixes**
+- **Script Path Resolution** - Fixed broken scripts after repository reorganization
+- **Quick Scan State Management** - Resolved button state sync issues between header and scan tab
+- **Firewall Settings Layout** - Fixed squished settings display with proper scroll area implementation
+- **Startup Blocking Operations** - Eliminated UI freezing during application initialization
+
+### Technical Improvements
+
+#### 🏗️ **Development Infrastructure**
+- **Performance Benchmarking** - New tools for startup time analysis and optimization tracking
+- **Component Validation** - Enhanced testing and validation frameworks
+- **Documentation Organization** - Comprehensive guides for firewall integration and performance optimization
+
 ## [2.6.0] - 2025-01-07
 
 ### Added

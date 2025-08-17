@@ -30,7 +30,9 @@ from dataclasses import asdict
 from PyQt6.QtCore import QThread, pyqtSignal
 
 # Add the app directory to the path for imports
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+script_dir = os.path.dirname(os.path.abspath(__file__))
+project_root = os.path.dirname(os.path.dirname(script_dir))  # Go up two levels from scripts/security/
+sys.path.append(os.path.join(project_root, 'app'))
 
 
 class ScanThread(QThread):

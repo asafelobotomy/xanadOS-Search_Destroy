@@ -1,7 +1,10 @@
 import json
+import logging
 import os
+import shutil
 import signal
 import subprocess
+import tempfile
 from datetime import datetime
 from pathlib import Path
 
@@ -124,7 +127,8 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
         # Set initial theme from config
         try:
             self.config = load_config()
-        except Exception:
+        except Exception as e:
+            logging.debug("Failed to load config, using defaults: %s", e)
             self.config = {}
             
         theme_name = self.config.get("ui_settings", {}).get("theme", "dark")
@@ -137,7 +141,8 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
         self.report_manager = ScanReportManager()
         try:
             self.rkhunter = RKHunterWrapper()
-        except Exception:
+        except Exception as e:
+            logging.debug("RKHunter initialization failed: %s", e)
             self.rkhunter = None
         try:
             self.scanner = FileScanner()
@@ -159,6 +164,7 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
         self._scan_manually_stopped = False
         self._pending_scan_request = None
         self._stop_scan_user_wants_restart = False
+        self._quick_scan_was_started = False  # Track if Quick Scan button was used
 
         # 4. Initialize model state & UI (handles first-time UI build internally)
         self._initialize_scan_state()
@@ -172,7 +178,8 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
         # Apply text orientation setting at startup
         try:
             self.apply_text_orientation_setting()
-        except Exception:
+        except Exception as e:
+            logging.debug("Text orientation setting failed, using default: %s", e)
             pass  # Will use default center alignment
 
         # Initialize auto-update system
@@ -189,6 +196,13 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
         # 7. Post-start self checks
         QTimer.singleShot(0, self._run_startup_self_check)
 
+    def _get_secure_command_path(self, command: str) -> str:
+        """Get absolute path for a command, with security validation."""
+        cmd_path = shutil.which(command)
+        if not cmd_path:
+            raise FileNotFoundError(f"Command '{command}' not found in PATH")
+        return cmd_path
+
     # --- RKHunter safe availability helper ---
     def _rkhunter_available(self) -> bool:
         rk = getattr(self, 'rkhunter', None)
@@ -197,7 +211,8 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
         if hasattr(rk, 'is_available'):
             try:
                 return bool(rk.is_available())  # type: ignore[attr-defined]
-            except Exception:
+            except Exception as e:
+                logging.debug("RKHunter availability check failed: %s", e)
                 return bool(getattr(rk, 'available', False))
         return bool(getattr(rk, 'available', False))
 
@@ -315,8 +330,8 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
                 try:
                     from PyQt6.QtWidgets import QApplication
                     QApplication.quit()
-                except:
-                    pass
+                except Exception as e:
+                    logging.debug("QApplication quit failed during signal handling: %s", e)
             
             # Set up handlers for SIGINT (Ctrl+C) and SIGTERM (kill command)
             signal.signal(signal.SIGINT, signal_handler)
@@ -342,8 +357,9 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
             self.init_ui()
             self._ui_initialized = True
 
-        # Initialize real-time monitoring (with error handling)
-        self.init_real_time_monitoring_safe()
+        # Defer real-time monitoring initialization for faster startup
+        # It will be initialized when protection is first enabled
+        print("⚡ Deferring real-time monitoring initialization for faster startup")
 
         # Use QTimer to update status after UI is fully initialized
         QTimer.singleShot(100, self.update_definition_status)
@@ -375,8 +391,8 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
         self._initialization_complete = True
         print("✅ Main window initialization complete - scheduler operations now enabled")
         
-        # Setup enhanced Qt effects for all buttons
-        self._setup_enhanced_effects()
+        # Defer enhanced Qt effects setup for faster startup
+        QTimer.singleShot(200, self._setup_enhanced_effects)
         
         # Add welcome message to results display
         self._show_welcome_message()
@@ -643,9 +659,8 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
 
         self.quick_scan_btn = QPushButton("Quick Scan")
         self.quick_scan_btn.setObjectName("actionButton")
-        self.quick_scan_btn.setMinimumSize(
-            120, 40
-        )  # Increased size to prevent text cutoff
+        self.quick_scan_btn.setMinimumSize(150, 40)  # Increased width for longer text
+        self.quick_scan_btn.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed)
         self.quick_scan_btn.setToolTip(
             "Comprehensive Quick Scan of multiple directories\n"
             "• Downloads, Documents, Pictures, Videos, Music\n"
@@ -1670,8 +1685,8 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
 
         self.tab_widget.addTab(reports_widget, "Reports")
 
-        # Initialize reports list
-        self.refresh_reports()
+        # Defer reports loading to background after UI is shown for faster startup
+        QTimer.singleShot(100, self._background_report_refresh)
 
     def create_quarantine_tab(self):
         quarantine_widget = QWidget()
@@ -1733,6 +1748,7 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
             ("Real-Time", settings_pages.build_realtime_page),
             ("Scheduling", settings_pages.build_scheduling_page),
             ("Security", settings_pages.build_security_page),
+            ("Firewall", settings_pages.build_firewall_page),
             ("RKHunter", settings_pages.build_rkhunter_page),
             ("Interface", settings_pages.build_interface_page),
             ("Updates", settings_pages.build_updates_page),
@@ -2015,7 +2031,7 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
                 "watch_paths", [str(Path.home())]
             )  # Just monitor home directory initially
             excluded_paths = self.config.get(
-                "excluded_paths", ["/proc", "/sys", "/dev", "/tmp"]
+                "excluded_paths", ["/proc", "/sys", "/dev", tempfile.gettempdir()]
             )
 
             # Ensure paths are properly formatted and validated
@@ -2155,7 +2171,7 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
         try:
             # Create monitor configuration
             watch_paths = self.config.get(
-                "watch_paths", ["/home", "/opt", "/tmp"])
+                "watch_paths", ["/home", "/opt", tempfile.gettempdir()])
             excluded_paths = self.config.get(
                 "excluded_paths", ["/proc", "/sys", "/dev"]
             )
@@ -3454,7 +3470,7 @@ System        {perf_status}"""
             try:
                 current_version = version_file.read_text().strip()
             except (FileNotFoundError, IOError):
-                current_version = "2.6.0"  # Fallback version
+                current_version = "2.7.0"  # Fallback version
                 
             # Initialize the auto-updater with new system
             self.auto_updater = AutoUpdateSystem()
@@ -3752,6 +3768,10 @@ System        {perf_status}"""
         self.is_quick_scan_running = False  # Reset quick scan flag
         self._pending_scan_request = None  # Clear any pending requests
         
+        # Only clear the Quick Scan button tracking flag if this is NOT a quick scan
+        if not quick_scan:
+            self._quick_scan_was_started = False
+        
         print(f"DEBUG: ✅ Starting new scan, state set to: {self._scan_state}")
         print(f"DEBUG: Reset manual stop flag to: {self._scan_manually_stopped}")
         print(f"DEBUG: Cleared pending request")
@@ -3797,8 +3817,6 @@ System        {perf_status}"""
                     
                     # System temporary
                     tempfile.gettempdir(),
-                    "/tmp" if os.path.exists("/tmp") else None,
-                    "/var/tmp" if os.path.exists("/var/tmp") else None,
                     
                     # User application data
                     os.path.expanduser("~/.local/share"),
@@ -4215,8 +4233,9 @@ System        {perf_status}"""
             if reply == QMessageBox.StandardButton.Yes:
                 # Test if it works with sudo
                 try:
+                    sudo_path = self._get_secure_command_path("sudo")
                     result = subprocess.run(
-                        ["sudo", "-v"],  # Validate sudo access
+                        [sudo_path, "-v"],  # Validate sudo access
                         capture_output=True,
                         timeout=30,
                     )
@@ -4623,11 +4642,9 @@ System        {perf_status}"""
                 pass
         
         # Check for system temp directories
-        if "/tmp" in str(path) or "/var/tmp" in str(path):
-            if "/tmp" in str(path):
-                return "/tmp"
-            else:
-                return "/var/tmp"
+        temp_dir = tempfile.gettempdir()
+        if temp_dir in str(path):
+            return temp_dir
         
         # Default: return the directory as-is if we can't group it
         return directory_path
@@ -6212,10 +6229,12 @@ System        {perf_status}"""
             finally:
                 self.current_scan_thread = None
 
-        # Reset quick scan button if it was a quick scan
-        if hasattr(
-                self,
-                "is_quick_scan_running") and self.is_quick_scan_running:
+        # Reset quick scan button if it was started via Quick Scan button
+        if hasattr(self, "_quick_scan_was_started") and self._quick_scan_was_started:
+            print("DEBUG: 🔄 Resetting Quick Scan button (was started via Quick Scan button)")
+            self.reset_quick_scan_button()
+        elif hasattr(self, "is_quick_scan_running") and self.is_quick_scan_running:
+            print("DEBUG: 🔄 Resetting Quick Scan button (legacy check)")
             self.reset_quick_scan_button()
 
         if "error" in result:
@@ -6790,8 +6809,6 @@ System        {perf_status}"""
             
             # System and temporary directories (medium priority)
             tempfile.gettempdir(),                 # System temporary files
-            "/tmp" if os.path.exists("/tmp") else None,  # Linux temp
-            "/var/tmp" if os.path.exists("/var/tmp") else None,  # Linux var temp
             
             # User application directories (lower priority but still important)
             os.path.expanduser("~/.local/share"),  # User application data
@@ -6836,7 +6853,8 @@ System        {perf_status}"""
 
         # Update button state
         self.is_quick_scan_running = True
-        self.quick_scan_btn.setText("Stop Quick Scan")
+        self._quick_scan_was_started = True  # Track that Quick Scan was initiated
+        self.quick_scan_btn.setText("Stop Scan")
 
         # Start the comprehensive scan
         self.start_scan(quick_scan=True)
@@ -6875,6 +6893,7 @@ System        {perf_status}"""
     def reset_quick_scan_button(self):
         """Reset the quick scan button to its initial state."""
         self.is_quick_scan_running = False
+        self._quick_scan_was_started = False  # Reset the tracking flag
         self.quick_scan_btn.setText("Quick Scan")
 
     def update_definitions(self):
@@ -7159,8 +7178,9 @@ System        {perf_status}"""
             # Try a fallback method using clamscan --version (doesn't require
             # sudo)
             try:
+                clamscan_path = self._get_secure_command_path("clamscan")
                 result = subprocess.run(
-                    ["clamscan", "--version"],
+                    [clamscan_path, "--version"],
                     capture_output=True,
                     text=True,
                     timeout=10,
@@ -7399,6 +7419,16 @@ System        {perf_status}"""
         from PyQt6.QtWidgets import QApplication
 
         QApplication.quit()
+
+    def _background_report_refresh(self):
+        """Background report refresh for faster startup."""
+        try:
+            print("🚀 Loading reports in background for faster startup...")
+            self.refresh_reports()
+        except Exception as e:
+            print(f"Warning: Background report refresh failed: {e}")
+            # Set up empty reports list as fallback
+            self.reports_list.clear()
 
     def refresh_reports(self):
         """Load and display scan reports in the reports list."""
@@ -8575,6 +8605,48 @@ System        {perf_status}"""
                 check_interval = auto_update_settings.get("update_check_interval", 24)
                 self.settings_update_check_interval_spin.setValue(check_interval)
                 
+            # Firewall settings
+            firewall_settings = self.config.get("firewall_settings", {})
+            if hasattr(self, 'settings_firewall_auto_detect_cb'):
+                auto_detect = firewall_settings.get("auto_detect", True)
+                self.settings_firewall_auto_detect_cb.setChecked(auto_detect)
+                
+            if hasattr(self, 'settings_firewall_notify_changes_cb'):
+                notify_changes = firewall_settings.get("notify_changes", True)
+                self.settings_firewall_notify_changes_cb.setChecked(notify_changes)
+                
+            if hasattr(self, 'settings_preferred_firewall_combo'):
+                preferred_firewall = firewall_settings.get("preferred_firewall", "Auto-detect (Recommended)")
+                self.settings_preferred_firewall_combo.setCurrentText(preferred_firewall)
+                
+            if hasattr(self, 'settings_firewall_confirm_enable_cb'):
+                confirm_enable = firewall_settings.get("confirm_enable", True)
+                self.settings_firewall_confirm_enable_cb.setChecked(confirm_enable)
+                
+            if hasattr(self, 'settings_firewall_confirm_disable_cb'):
+                confirm_disable = firewall_settings.get("confirm_disable", True)
+                self.settings_firewall_confirm_disable_cb.setChecked(confirm_disable)
+                
+            if hasattr(self, 'settings_firewall_auth_timeout_spin'):
+                auth_timeout = firewall_settings.get("auth_timeout", 300)
+                self.settings_firewall_auth_timeout_spin.setValue(auth_timeout)
+                
+            if hasattr(self, 'settings_firewall_enable_fallbacks_cb'):
+                enable_fallbacks = firewall_settings.get("enable_fallbacks", True)
+                self.settings_firewall_enable_fallbacks_cb.setChecked(enable_fallbacks)
+                
+            if hasattr(self, 'settings_firewall_auto_load_modules_cb'):
+                auto_load_modules = firewall_settings.get("auto_load_modules", True)
+                self.settings_firewall_auto_load_modules_cb.setChecked(auto_load_modules)
+                
+            if hasattr(self, 'settings_firewall_check_interval_spin'):
+                check_interval = firewall_settings.get("check_interval", 30)
+                self.settings_firewall_check_interval_spin.setValue(check_interval)
+                
+            if hasattr(self, 'settings_firewall_debug_logging_cb'):
+                debug_logging = firewall_settings.get("debug_logging", False)
+                self.settings_firewall_debug_logging_cb.setChecked(debug_logging)
+                
             # Re-enable signals after loading is complete
             self.block_settings_signals(False)
             
@@ -8679,6 +8751,18 @@ System        {perf_status}"""
                     "auto_download_updates": getattr(self, 'settings_auto_download_updates_cb', None) and self.settings_auto_download_updates_cb.isChecked() if hasattr(self, 'settings_auto_download_updates_cb') else False,
                     "update_check_interval": getattr(self, 'settings_update_check_interval_spin', None) and self.settings_update_check_interval_spin.value() if hasattr(self, 'settings_update_check_interval_spin') else 24,
                 },
+                "firewall_settings": {
+                    "auto_detect": getattr(self, 'settings_firewall_auto_detect_cb', None) and self.settings_firewall_auto_detect_cb.isChecked() if hasattr(self, 'settings_firewall_auto_detect_cb') else True,
+                    "notify_changes": getattr(self, 'settings_firewall_notify_changes_cb', None) and self.settings_firewall_notify_changes_cb.isChecked() if hasattr(self, 'settings_firewall_notify_changes_cb') else True,
+                    "preferred_firewall": getattr(self, 'settings_preferred_firewall_combo', None) and self.settings_preferred_firewall_combo.currentText() if hasattr(self, 'settings_preferred_firewall_combo') else "Auto-detect (Recommended)",
+                    "confirm_enable": getattr(self, 'settings_firewall_confirm_enable_cb', None) and self.settings_firewall_confirm_enable_cb.isChecked() if hasattr(self, 'settings_firewall_confirm_enable_cb') else True,
+                    "confirm_disable": getattr(self, 'settings_firewall_confirm_disable_cb', None) and self.settings_firewall_confirm_disable_cb.isChecked() if hasattr(self, 'settings_firewall_confirm_disable_cb') else True,
+                    "auth_timeout": getattr(self, 'settings_firewall_auth_timeout_spin', None) and self.settings_firewall_auth_timeout_spin.value() if hasattr(self, 'settings_firewall_auth_timeout_spin') else 300,
+                    "enable_fallbacks": getattr(self, 'settings_firewall_enable_fallbacks_cb', None) and self.settings_firewall_enable_fallbacks_cb.isChecked() if hasattr(self, 'settings_firewall_enable_fallbacks_cb') else True,
+                    "auto_load_modules": getattr(self, 'settings_firewall_auto_load_modules_cb', None) and self.settings_firewall_auto_load_modules_cb.isChecked() if hasattr(self, 'settings_firewall_auto_load_modules_cb') else True,
+                    "check_interval": getattr(self, 'settings_firewall_check_interval_spin', None) and self.settings_firewall_check_interval_spin.value() if hasattr(self, 'settings_firewall_check_interval_spin') else 30,
+                    "debug_logging": getattr(self, 'settings_firewall_debug_logging_cb', None) and self.settings_firewall_debug_logging_cb.isChecked() if hasattr(self, 'settings_firewall_debug_logging_cb') else False,
+                },
             }
             
             # Add RKHunter categories if available
@@ -8774,7 +8858,18 @@ System        {perf_status}"""
                 'settings_scan_modified_cb',
                 'settings_enable_rkhunter_cb',
                 'settings_run_rkhunter_with_full_scan_cb',
-                'settings_rkhunter_auto_update_cb'
+                'settings_rkhunter_auto_update_cb',
+                # Firewall settings controls
+                'settings_firewall_auto_detect_cb',
+                'settings_firewall_notify_changes_cb',
+                'settings_preferred_firewall_combo',
+                'settings_firewall_confirm_enable_cb',
+                'settings_firewall_confirm_disable_cb',
+                'settings_firewall_auth_timeout_spin',
+                'settings_firewall_enable_fallbacks_cb',
+                'settings_firewall_auto_load_modules_cb',
+                'settings_firewall_check_interval_spin',
+                'settings_firewall_debug_logging_cb',
             ]
             
             for control_name in controls_to_block:
@@ -8951,6 +9046,28 @@ System        {perf_status}"""
                 print(f"✅ Connected {len(self.settings_rkhunter_category_checkboxes)} RKHunter category checkboxes to auto-save")
             else:
                 print("⚠️ RKHunter category checkboxes not found during connection setup")
+            
+            # Firewall settings auto-save connections
+            if hasattr(self, 'settings_firewall_auto_detect_cb'):
+                self.settings_firewall_auto_detect_cb.toggled.connect(self.auto_save_settings)
+            if hasattr(self, 'settings_firewall_notify_changes_cb'):
+                self.settings_firewall_notify_changes_cb.toggled.connect(self.auto_save_settings)
+            if hasattr(self, 'settings_preferred_firewall_combo'):
+                self.settings_preferred_firewall_combo.currentTextChanged.connect(self.auto_save_settings)
+            if hasattr(self, 'settings_firewall_confirm_enable_cb'):
+                self.settings_firewall_confirm_enable_cb.toggled.connect(self.auto_save_settings)
+            if hasattr(self, 'settings_firewall_confirm_disable_cb'):
+                self.settings_firewall_confirm_disable_cb.toggled.connect(self.auto_save_settings)
+            if hasattr(self, 'settings_firewall_auth_timeout_spin'):
+                self.settings_firewall_auth_timeout_spin.valueChanged.connect(self.auto_save_settings)
+            if hasattr(self, 'settings_firewall_enable_fallbacks_cb'):
+                self.settings_firewall_enable_fallbacks_cb.toggled.connect(self.auto_save_settings)
+            if hasattr(self, 'settings_firewall_auto_load_modules_cb'):
+                self.settings_firewall_auto_load_modules_cb.toggled.connect(self.auto_save_settings)
+            if hasattr(self, 'settings_firewall_check_interval_spin'):
+                self.settings_firewall_check_interval_spin.valueChanged.connect(self.auto_save_settings)
+            if hasattr(self, 'settings_firewall_debug_logging_cb'):
+                self.settings_firewall_debug_logging_cb.toggled.connect(self.auto_save_settings)
                     
             print("✅ Auto-save connections set up successfully")
             print("📌 Enhanced RKHunter settings auto-save connections")
@@ -9334,3 +9451,127 @@ System        {perf_status}"""
             """
 
         self.report_viewer.setHtml(styled_output)
+
+    # === FIREWALL SETTINGS SUPPORT METHODS ===
+    
+    def refresh_firewall_info(self):
+        """Refresh firewall status information in settings page."""
+        if not hasattr(self, 'firewall_name_display'):
+            return
+            
+        try:
+            from core.firewall_detector import get_firewall_status
+            status = get_firewall_status()
+            
+            # Update firewall name display
+            fw_name = status.get('firewall_name', 'Unknown')
+            if status.get('firewall_type'):
+                fw_name += f" ({status['firewall_type']})"
+            self.firewall_name_display.setText(fw_name)
+            
+            # Update status display with color coding
+            is_active = status.get('is_active', False)
+            if is_active:
+                self.firewall_status_display.setText("Active")
+                self.firewall_status_display.setStyleSheet("font-weight: bold; color: #27ae60;")
+            else:
+                self.firewall_status_display.setText("Inactive")
+                self.firewall_status_display.setStyleSheet("font-weight: bold; color: #e74c3c;")
+                
+        except Exception as e:
+            self.firewall_name_display.setText("Error")
+            self.firewall_status_display.setText("Failed to detect")
+            self.firewall_status_display.setStyleSheet("font-weight: bold; color: #f39c12;")
+            print(f"Error refreshing firewall info: {e}")
+    
+    def test_firewall_connection(self):
+        """Test firewall connection and control capability."""
+        try:
+            from core.firewall_detector import get_firewall_status, firewall_detector
+            
+            # Test detection
+            status = get_firewall_status()
+            fw_type = status.get('firewall_type')
+            fw_name = status.get('firewall_name')
+            
+            if not fw_type:
+                self.show_themed_message_box(
+                    "warning",
+                    "Firewall Test",
+                    "No supported firewall detected on your system.\n\n"
+                    "Supported firewalls: UFW, firewalld, iptables, nftables"
+                )
+                return
+            
+            # Test admin command availability
+            admin_cmd = firewall_detector._get_admin_cmd_prefix()
+            if not admin_cmd:
+                self.show_themed_message_box(
+                    "critical",
+                    "Firewall Test",
+                    f"Firewall detected: {fw_name} ({fw_type})\n\n"
+                    "❌ Administrative privileges not available\n"
+                    "Neither pkexec nor sudo found on system"
+                )
+                return
+            
+            # Show success message
+            admin_method = admin_cmd[0]
+            self.show_themed_message_box(
+                "information",
+                "Firewall Test",
+                f"✅ Firewall Control Test Successful\n\n"
+                f"Detected Firewall: {fw_name} ({fw_type})\n"
+                f"Administrative Method: {admin_method}\n"
+                f"Status: {'Active' if status.get('is_active') else 'Inactive'}\n\n"
+                "Your firewall can be controlled from this application."
+            )
+            
+        except Exception as e:
+            self.show_themed_message_box(
+                "critical", 
+                "Firewall Test",
+                f"❌ Firewall test failed:\n{str(e)}"
+            )
+    
+    def reset_firewall_settings(self):
+        """Reset firewall settings to defaults."""
+        reply = self.show_themed_message_box(
+            "question",
+            "Reset Firewall Settings",
+            "This will reset all firewall settings to their default values.\n\n"
+            "Continue?",
+            buttons=self.QMessageBox.StandardButton.Yes | self.QMessageBox.StandardButton.No
+        )
+        
+        if reply == self.QMessageBox.StandardButton.Yes:
+            # Reset all firewall-related settings to defaults
+            if hasattr(self, 'settings_firewall_auto_detect_cb'):
+                self.settings_firewall_auto_detect_cb.setChecked(True)
+            if hasattr(self, 'settings_firewall_notify_changes_cb'):
+                self.settings_firewall_notify_changes_cb.setChecked(True)
+            if hasattr(self, 'settings_preferred_firewall_combo'):
+                self.settings_preferred_firewall_combo.setCurrentText("Auto-detect (Recommended)")
+            if hasattr(self, 'settings_firewall_confirm_enable_cb'):
+                self.settings_firewall_confirm_enable_cb.setChecked(True)
+            if hasattr(self, 'settings_firewall_confirm_disable_cb'):
+                self.settings_firewall_confirm_disable_cb.setChecked(True)
+            if hasattr(self, 'settings_firewall_auth_timeout_spin'):
+                self.settings_firewall_auth_timeout_spin.setValue(300)
+            if hasattr(self, 'settings_firewall_enable_fallbacks_cb'):
+                self.settings_firewall_enable_fallbacks_cb.setChecked(True)
+            if hasattr(self, 'settings_firewall_auto_load_modules_cb'):
+                self.settings_firewall_auto_load_modules_cb.setChecked(True)
+            if hasattr(self, 'settings_firewall_check_interval_spin'):
+                self.settings_firewall_check_interval_spin.setValue(30)
+            if hasattr(self, 'settings_firewall_debug_logging_cb'):
+                self.settings_firewall_debug_logging_cb.setChecked(False)
+            
+            # Save the default settings
+            self.save_config()
+            
+            self.show_themed_message_box(
+                "information",
+                "Settings Reset",
+                "Firewall settings have been reset to default values."
+            )

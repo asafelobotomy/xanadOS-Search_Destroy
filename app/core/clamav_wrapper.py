@@ -59,7 +59,6 @@ class ClamAVWrapper:
         except ImportError:
             # Create minimal fallbacks for testing
             import logging
-            import os
 
             def setup_logging():
                 return logging.getLogger(__name__)
@@ -321,6 +320,7 @@ class ClamAVWrapper:
                 text=True,
                 timeout=self.config["advanced_settings"]["scan_timeout"]
                 * 10,  # Longer timeout for directories
+                check=False
             )
 
             # Parse directory scan results
@@ -441,7 +441,7 @@ class ClamAVWrapper:
         try:
             # Get engine version
             result = subprocess.run([self.clamscan_path, '--version'], 
-                                  capture_output=True, text=True, timeout=10)
+                                  capture_output=True, text=True, timeout=10, check=False)
             if result.returncode == 0:
                 version_info['engine_version'] = result.stdout.strip()
                 
@@ -451,7 +451,7 @@ class ClamAVWrapper:
         # Get database info
         try:
             result = subprocess.run([self.clamscan_path, '--database-info'], 
-                                  capture_output=True, text=True, timeout=10)
+                                  capture_output=True, text=True, timeout=10, check=False)
             if result.returncode == 0:
                 lines = result.stdout.strip().split('\n')
                 for line in lines:
@@ -521,7 +521,7 @@ class ClamAVWrapper:
         config_path = Path('/etc/clamav/clamd.conf')
         if config_path.exists():
             try:
-                with open(config_path, 'r') as f:
+                with open(config_path, 'r', encoding='utf-8') as f:
                     config_content = f.read()
                     
                 if 'TCPSocket' in config_content and 'TCPAddr 127.0.0.1' not in config_content:
@@ -541,7 +541,7 @@ class ClamAVWrapper:
             try:
                 import psutil
                 max_threads = min(psutil.cpu_count(logical=False) * 2, 8)
-            except:
+            except (ImportError, AttributeError):
                 max_threads = 4
                 
         optimization_config = {
@@ -755,7 +755,7 @@ class ClamAVWrapper:
         config_path = Path('/etc/clamav/clamd.conf')
         if config_path.exists():
             try:
-                with open(config_path, 'r') as f:
+                with open(config_path, 'r', encoding='utf-8') as f:
                     config = f.read()
                     if any(param in config for param in ['MaxScanSize', 'MaxFileSize', 'MaxRecursion']):
                         hardening_results['memory_limits'] = True
@@ -824,7 +824,7 @@ class ClamAVWrapper:
                 import psutil
                 # Research shows optimal performance with CPU cores * 1.5 for I/O bound tasks
                 max_workers = min(int(psutil.cpu_count(logical=False) * 1.5), 8)
-            except:
+            except (ImportError, AttributeError, TypeError):
                 max_workers = 4
                 
         results = []

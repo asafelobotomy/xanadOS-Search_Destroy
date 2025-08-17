@@ -4,6 +4,7 @@ Real-time monitor that coordinates file watching, event processing, and backgrou
 Main entry point for Phase 3 real-time monitoring system
 """
 import logging
+import tempfile
 import threading
 import time
 from dataclasses import dataclass
@@ -68,7 +69,7 @@ class RealTimeMonitor:
 
         # Configuration
         self.config = config or MonitorConfig(
-            watch_paths=["/home", "/opt", "/usr/local", "/tmp"],
+            watch_paths=["/home", "/opt", "/usr/local", tempfile.gettempdir()],
             excluded_paths=["/proc", "/sys", "/dev"],
         )
 

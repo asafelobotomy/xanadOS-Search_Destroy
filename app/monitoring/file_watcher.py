@@ -7,6 +7,7 @@ import logging
 import os
 import select
 import struct
+import tempfile
 import threading
 import time
 from dataclasses import dataclass
@@ -82,7 +83,7 @@ class FileSystemWatcher:
 
         # Event filtering
         self.excluded_extensions: Set[str] = {".tmp", ".swp", ".log", ".cache"}
-        self.excluded_paths: Set[str] = {"/proc", "/sys", "/dev", "/tmp"}
+        self.excluded_paths: Set[str] = {"/proc", "/sys", "/dev", tempfile.gettempdir()}
         self.max_file_size: int = 100 * 1024 * 1024  # 100MB
 
         # State management

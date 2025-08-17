@@ -58,7 +58,7 @@ Project management, organization, and maintenance documentation.
 Version history and release information.
 
 - **[Changelog](releases/CHANGELOG.md)** - Complete version history
-- **[Latest Release](releases/RELEASE_2.6.0.md)** - Current version release notes (v2.6.0)
+- **[Latest Release](releases/RELEASE_2.7.0.md)** - Current version release notes (v2.7.0)
 - **[Version 2.5.0](releases/FLATHUB_RELEASE_v2.5.0.md)** - Theme system overhaul release
 - **[Version 2.4.0](releases/RELEASE_2.4.0.md)** - Infrastructure enhancement release
 - **[Version 2.3.0](releases/RELEASE_2.3.0.md)** - Previous release documentation

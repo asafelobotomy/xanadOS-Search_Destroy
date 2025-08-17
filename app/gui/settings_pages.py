@@ -1,7 +1,6 @@
 """Modular settings page builders separated from main_window for clarity."""
-from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QFormLayout, QHBoxLayout, QLabel, QCheckBox, QPushButton, QTextEdit, QGroupBox, QSpinBox, QGridLayout, QScrollArea)
-from PyQt6.QtCore import Qt
-from PyQt6.QtCore import QTime
+from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QFormLayout, QHBoxLayout, QLabel, QCheckBox, QPushButton, QTextEdit, QGroupBox, QSpinBox, QGridLayout, QScrollArea, QComboBox)
+from PyQt6.QtCore import Qt, QTime
 
 # Expect host MainWindow to provide helper widget classes: NoWheelComboBox, NoWheelSpinBox, NoWheelTimeEdit
 
@@ -72,6 +71,187 @@ def build_security_page(host):
     if not hasattr(host, 'settings_auto_update_cb'):
         host.settings_auto_update_cb = QCheckBox('Auto-update Virus Definitions'); host.settings_auto_update_cb.setChecked(True)
     layout.addWidget(host.settings_auto_update_cb); layout.addStretch(); return page
+
+def build_firewall_page(host):
+    """Build comprehensive firewall settings page with scroll area."""
+    # Create main page widget
+    page = QWidget()
+    
+    # Create scroll area to handle content overflow
+    scroll_area = QScrollArea(page)
+    scroll_area.setWidgetResizable(True)
+    scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
+    scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
+    
+    # Create scrollable content widget
+    scroll_content = QWidget()
+    layout = QVBoxLayout(scroll_content)
+    layout.setSpacing(20)  # Better spacing between sections
+    layout.setContentsMargins(15, 15, 15, 15)  # Add margins
+    
+    # === SECTION 1: FIREWALL STATUS & BASIC CONTROLS ===
+    status_group = QGroupBox("Firewall Status & Basic Controls")
+    status_layout = QVBoxLayout(status_group)
+    status_layout.setSpacing(10)
+    
+    # Current firewall detection display
+    if not hasattr(host, 'firewall_info_layout'):
+        host.firewall_info_layout = QHBoxLayout()
+        
+        # Status labels
+        host.firewall_name_display = QLabel("Detecting...")
+        host.firewall_name_display.setStyleSheet("font-weight: bold; color: #3498db;")
+        host.firewall_status_display = QLabel("Unknown")
+        host.firewall_status_display.setStyleSheet("font-weight: bold;")
+        
+        host.firewall_info_layout.addWidget(QLabel("Detected Firewall:"))
+        host.firewall_info_layout.addWidget(host.firewall_name_display)
+        host.firewall_info_layout.addStretch()
+        host.firewall_info_layout.addWidget(QLabel("Status:"))
+        host.firewall_info_layout.addWidget(host.firewall_status_display)
+    
+    status_layout.addLayout(host.firewall_info_layout)
+    
+    # Auto-detection checkbox
+    if not hasattr(host, 'settings_firewall_auto_detect_cb'):
+        host.settings_firewall_auto_detect_cb = QCheckBox("Enable automatic firewall detection and monitoring")
+        host.settings_firewall_auto_detect_cb.setChecked(True)
+        host.settings_firewall_auto_detect_cb.setToolTip("Automatically detect and monitor your system's firewall status")
+    status_layout.addWidget(host.settings_firewall_auto_detect_cb)
+    
+    # Notification settings
+    if not hasattr(host, 'settings_firewall_notify_changes_cb'):
+        host.settings_firewall_notify_changes_cb = QCheckBox("Notify when firewall status changes externally")
+        host.settings_firewall_notify_changes_cb.setChecked(True)
+        host.settings_firewall_notify_changes_cb.setToolTip("Show notifications when firewall is enabled/disabled outside the application")
+    status_layout.addWidget(host.settings_firewall_notify_changes_cb)
+    
+    layout.addWidget(status_group)
+    
+    # === SECTION 2: FIREWALL BEHAVIOR SETTINGS ===
+    behavior_group = QGroupBox("Firewall Behavior Settings")
+    behavior_layout = QFormLayout(behavior_group)
+    behavior_layout.setSpacing(10)
+    
+    # Preferred firewall type
+    if not hasattr(host, 'settings_preferred_firewall_combo'):
+        host.settings_preferred_firewall_combo = host.NoWheelComboBox() if hasattr(host, 'NoWheelComboBox') else QComboBox()
+        host.settings_preferred_firewall_combo.addItems([
+            "Auto-detect (Recommended)",
+            "UFW (Uncomplicated Firewall)",
+            "firewalld",
+            "iptables (Direct)",
+            "nftables"
+        ])
+        host.settings_preferred_firewall_combo.setCurrentText("Auto-detect (Recommended)")
+        host.settings_preferred_firewall_combo.setToolTip("Choose which firewall to prefer when multiple are available")
+    behavior_layout.addRow("Preferred Firewall:", host.settings_preferred_firewall_combo)
+    
+    # Confirmation dialogs
+    if not hasattr(host, 'settings_firewall_confirm_enable_cb'):
+        host.settings_firewall_confirm_enable_cb = QCheckBox("Confirm before enabling firewall")
+        host.settings_firewall_confirm_enable_cb.setChecked(True)
+    behavior_layout.addRow(host.settings_firewall_confirm_enable_cb)
+    
+    if not hasattr(host, 'settings_firewall_confirm_disable_cb'):
+        host.settings_firewall_confirm_disable_cb = QCheckBox("Confirm before disabling firewall")
+        host.settings_firewall_confirm_disable_cb.setChecked(True)
+    behavior_layout.addRow(host.settings_firewall_confirm_disable_cb)
+    
+    # Authentication timeout
+    if not hasattr(host, 'settings_firewall_auth_timeout_spin'):
+        host.settings_firewall_auth_timeout_spin = host.NoWheelSpinBox() if hasattr(host, 'NoWheelSpinBox') else QSpinBox()
+        host.settings_firewall_auth_timeout_spin.setRange(30, 600)  # 30 seconds to 10 minutes
+        host.settings_firewall_auth_timeout_spin.setValue(300)  # Default 5 minutes
+        host.settings_firewall_auth_timeout_spin.setSuffix(" seconds")
+        host.settings_firewall_auth_timeout_spin.setToolTip("Timeout for authentication dialogs when controlling firewall")
+    behavior_layout.addRow("Authentication Timeout:", host.settings_firewall_auth_timeout_spin)
+    
+    layout.addWidget(behavior_group)
+    
+    # === SECTION 3: ADVANCED SETTINGS ===
+    advanced_group = QGroupBox("Advanced Settings")
+    advanced_layout = QFormLayout(advanced_group)
+    advanced_layout.setSpacing(10)
+    
+    # Fallback methods
+    if not hasattr(host, 'settings_firewall_enable_fallbacks_cb'):
+        host.settings_firewall_enable_fallbacks_cb = QCheckBox("Enable fallback methods")
+        host.settings_firewall_enable_fallbacks_cb.setChecked(True)
+        host.settings_firewall_enable_fallbacks_cb.setToolTip("Try alternative methods if primary firewall control fails")
+    advanced_layout.addRow(host.settings_firewall_enable_fallbacks_cb)
+    
+    # Kernel module auto-loading
+    if not hasattr(host, 'settings_firewall_auto_load_modules_cb'):
+        host.settings_firewall_auto_load_modules_cb = QCheckBox("Attempt to load missing kernel modules")
+        host.settings_firewall_auto_load_modules_cb.setChecked(True)
+        host.settings_firewall_auto_load_modules_cb.setToolTip("Try to load iptables kernel modules if they're missing")
+    advanced_layout.addRow(host.settings_firewall_auto_load_modules_cb)
+    
+    # Status check interval
+    if not hasattr(host, 'settings_firewall_check_interval_spin'):
+        host.settings_firewall_check_interval_spin = host.NoWheelSpinBox() if hasattr(host, 'NoWheelSpinBox') else QSpinBox()
+        host.settings_firewall_check_interval_spin.setRange(5, 300)  # 5 seconds to 5 minutes
+        host.settings_firewall_check_interval_spin.setValue(30)  # Default 30 seconds
+        host.settings_firewall_check_interval_spin.setSuffix(" seconds")
+        host.settings_firewall_check_interval_spin.setToolTip("How often to check firewall status for changes")
+    advanced_layout.addRow("Status Check Interval:", host.settings_firewall_check_interval_spin)
+    
+    # Debug logging
+    if not hasattr(host, 'settings_firewall_debug_logging_cb'):
+        host.settings_firewall_debug_logging_cb = QCheckBox("Enable debug logging")
+        host.settings_firewall_debug_logging_cb.setChecked(False)
+        host.settings_firewall_debug_logging_cb.setToolTip("Log detailed firewall operation information for troubleshooting")
+    advanced_layout.addRow(host.settings_firewall_debug_logging_cb)
+    
+    layout.addWidget(advanced_group)
+    
+    # === SECTION 4: CONTROL BUTTONS ===
+    controls_group = QGroupBox("Firewall Controls")
+    controls_layout = QHBoxLayout(controls_group)
+    controls_layout.setSpacing(10)
+    
+    # Test connection button
+    if not hasattr(host, 'firewall_test_btn'):
+        host.firewall_test_btn = QPushButton("Test Firewall Connection")
+        host.firewall_test_btn.setMinimumHeight(35)
+        host.firewall_test_btn.setToolTip("Test if firewall can be controlled successfully")
+        host.firewall_test_btn.clicked.connect(host.test_firewall_connection)
+    controls_layout.addWidget(host.firewall_test_btn)
+    
+    # Refresh status button
+    if not hasattr(host, 'firewall_refresh_btn'):
+        host.firewall_refresh_btn = QPushButton("Refresh Status")
+        host.firewall_refresh_btn.setMinimumHeight(35)
+        host.firewall_refresh_btn.setToolTip("Manually refresh firewall status information")
+        host.firewall_refresh_btn.clicked.connect(host.refresh_firewall_info)
+    controls_layout.addWidget(host.firewall_refresh_btn)
+    
+    # Reset to defaults button
+    if not hasattr(host, 'firewall_reset_defaults_btn'):
+        host.firewall_reset_defaults_btn = QPushButton("Reset to Defaults")
+        host.firewall_reset_defaults_btn.setMinimumHeight(35)
+        host.firewall_reset_defaults_btn.setToolTip("Reset all firewall settings to default values")
+        host.firewall_reset_defaults_btn.clicked.connect(host.reset_firewall_settings)
+    controls_layout.addWidget(host.firewall_reset_defaults_btn)
+    
+    layout.addWidget(controls_group)
+    
+    # Initialize firewall info display
+    if hasattr(host, 'refresh_firewall_info'):
+        host.refresh_firewall_info()
+    
+    layout.addStretch()
+    
+    # Set up scroll area
+    scroll_area.setWidget(scroll_content)
+    
+    # Main page layout
+    page_layout = QVBoxLayout(page)
+    page_layout.setContentsMargins(0, 0, 0, 0)  # No margins on main page
+    page_layout.addWidget(scroll_area)
+    
+    return page
 
 def build_rkhunter_page(host):
     """Build a well-structured RKHunter settings page following UI design best practices."""
@@ -252,7 +432,6 @@ def build_rkhunter_page(host):
 
 def build_interface_page(host):
     page = QWidget(); layout = QVBoxLayout(page)
-    from PyQt6.QtWidgets import QLabel, QComboBox, QFormLayout, QGroupBox
     from gui.theme_manager import get_theme_manager
     
     # Text Orientation Group

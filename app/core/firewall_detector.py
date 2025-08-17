@@ -249,12 +249,9 @@ class FirewallDetector:
     def _get_nftables_status(self) -> Dict[str, str | bool]:
         """Get nftables status."""
         try:
-            result = subprocess.run(
+            result = run_secure(
                 ["nft", "list", "tables"],
-                capture_output=True,
-                text=True,
-                timeout=10,
-                check=False,
+                timeout=10
             )
 
             if result.returncode == 0:
@@ -386,13 +383,10 @@ class FirewallDetector:
                 cmd = admin_cmd + ["modprobe", module]
                 
                 try:
-                    result = subprocess.run(
+                    result = run_secure(
                         cmd,
-                        capture_output=True,
-                        text=True,
                         timeout=30,
-                        check=False,
-                        env=env,
+                        allow_root=True
                     )
                     
                     if result.returncode == 0:

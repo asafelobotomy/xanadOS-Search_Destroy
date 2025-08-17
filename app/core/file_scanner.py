@@ -6,6 +6,7 @@ import gc
 import hashlib
 import os
 import shutil
+import tempfile
 import threading
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -1109,7 +1110,7 @@ class FileScanner:
             [
                 os.path.expanduser("~/Downloads"),
                 os.path.expanduser("~/Documents"),
-                "/tmp",
+                tempfile.gettempdir(),
             ],
         )
 

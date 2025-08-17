@@ -55,6 +55,18 @@
   </provides>
   
   <releases>
+    <release version="2.7.0" date="2025-08-17">
+      <description>
+        <p>Major Feature Release - Firewall Management Integration</p>
+        <ul>
+          <li>Comprehensive firewall settings interface with multi-platform support</li>
+          <li>58% faster startup performance with optimized loading</li>
+          <li>Enhanced UI with scroll areas and better button management</li>
+          <li>Fixed repository organization and script path issues</li>
+          <li>Improved security standards and performance monitoring</li>
+        </ul>
+      </description>
+    </release>
     <release version="2.6.0" date="2025-01-07">
       <description>
         <p>Comprehensive Optimization and Security Enhancement Update</p>

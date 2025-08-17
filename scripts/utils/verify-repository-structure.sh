@@ -1,8 +1,15 @@
 #!/bin/bash
 # Repository Structure Verification Script
 
+# Get the script directory and navigate to project root
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+cd "$PROJECT_ROOT"
+
 echo "🔍 xanadOS Search & Destroy - Repository Structure Verification"
 echo "=============================================================="
+echo "Project root: $PROJECT_ROOT"
+echo
 
 # Colors
 RED='\033[0;31m'

@@ -5,6 +5,7 @@ Performs scheduled scans and processes file system events
 """
 import asyncio
 import logging
+import tempfile
 import threading
 import time
 from dataclasses import dataclass
@@ -367,7 +368,7 @@ class BackgroundScanner:
     def _schedule_quick_scan(self):
         """Schedule a quick scan of common directories."""
         self.logger.info("Scheduling quick scan")
-        quick_paths = ["/tmp", "/var/tmp", "/home/*/Downloads"]
+        quick_paths = [tempfile.gettempdir(), "/home/*/Downloads"]
 
         for path_pattern in quick_paths:
             # Expand path pattern and scan
