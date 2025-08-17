@@ -32,6 +32,25 @@ except ImportError:
 
 logger = logging.getLogger(__name__)
 
+class StatusOnlyWorker(QThread):
+    """Lightweight worker for status-only checks without sudo requirements"""
+    
+    status_updated = pyqtSignal(object)  # RKHunterStatus
+    error_occurred = pyqtSignal(str)
+    
+    def __init__(self):
+        super().__init__()
+        self.optimizer = RKHunterOptimizer()
+    
+    def run(self):
+        """Run lightweight RKHunter status check"""
+        try:
+            status = self.optimizer.get_current_status()
+            self.status_updated.emit(status)
+        except Exception as e:
+            logger.error(f"Error in status check: {e}")
+            self.error_occurred.emit(str(e))
+
 class RKHunterOptimizationWorker(QThread):
     """Background worker for RKHunter optimization"""
     
@@ -72,6 +91,8 @@ class RKHunterStatusWidget(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.current_status = None
+        self.status_history = []  # Keep history of status checks
+        self.max_history = 10  # Keep last 10 status checks
         self.setup_ui()
     
     def setup_ui(self):
@@ -90,12 +111,12 @@ class RKHunterStatusWidget(QWidget):
         status_layout = QGridLayout(self.status_frame)
         
         # Status items
-        self.version_label = QLabel("Version: Unknown")
-        self.db_version_label = QLabel("Database: Unknown")
-        self.last_update_label = QLabel("Last Update: Never")
-        self.last_scan_label = QLabel("Last Scan: Never")
-        self.baseline_label = QLabel("Baseline: Unknown")
-        self.mirror_label = QLabel("Mirrors: Unknown")
+        self.version_label = QLabel("Unknown")
+        self.db_version_label = QLabel("Unknown")
+        self.last_update_label = QLabel("Never")
+        self.last_scan_label = QLabel("Never")
+        self.baseline_label = QLabel("Unknown")
+        self.mirror_label = QLabel("Unknown")
         
         status_layout.addWidget(QLabel("Version:"), 0, 0)
         status_layout.addWidget(self.version_label, 0, 1)
@@ -134,8 +155,20 @@ class RKHunterStatusWidget(QWidget):
         layout.addWidget(issues_group)
     
     def update_status(self, status: RKHunterStatus):
-        """Update the status display"""
+        """Update the status display and maintain history"""
         self.current_status = status
+        
+        # Add to history with timestamp
+        from datetime import datetime
+        history_entry = {
+            'timestamp': datetime.now(),
+            'status': status
+        }
+        self.status_history.append(history_entry)
+        
+        # Maintain max history size
+        if len(self.status_history) > self.max_history:
+            self.status_history.pop(0)
         
         # Update labels
         self.version_label.setText(status.version)
@@ -201,6 +234,14 @@ class RKHunterStatusWidget(QWidget):
             item = QListWidgetItem("✅ No issues detected")
             item.setForeground(QColor("green"))
             self.issues_list.addItem(item)
+    
+    def get_status_history(self):
+        """Get the status check history"""
+        return self.status_history.copy()
+        
+    def clear_history(self):
+        """Clear the status history"""
+        self.status_history.clear()
 
 class RKHunterConfigWidget(QWidget):
     """Widget for configuring RKHunter optimization settings"""
@@ -530,29 +571,18 @@ class RKHunterOptimizationTab(QWidget):
         self.optimize_btn.clicked.connect(self.run_optimization)
     
     def refresh_status(self):
-        """Refresh RKHunter status"""
+        """Refresh RKHunter status using a lightweight status check"""
         if self.worker and self.worker.isRunning():
             return
         
         self.refresh_status_btn.setEnabled(False)
         self.progress_label.setText("Checking RKHunter status...")
         
-        # Create worker just for status check
-        self.worker = RKHunterOptimizationWorker(RKHunterConfig())
+        # Create a lightweight status-only worker
+        self.worker = StatusOnlyWorker()
         self.worker.status_updated.connect(self.on_status_updated)
         self.worker.error_occurred.connect(self.on_error)
         self.worker.finished.connect(self.on_status_check_finished)
-        
-        # Override run method to only check status
-        def status_only_run():
-            try:
-                optimizer = RKHunterOptimizer()
-                status = optimizer.get_current_status()
-                self.worker.status_updated.emit(status)
-            except Exception as e:
-                self.worker.error_occurred.emit(str(e))
-        
-        self.worker.run = status_only_run
         self.worker.start()
     
     def run_optimization(self):

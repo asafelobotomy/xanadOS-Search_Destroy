@@ -88,8 +88,8 @@ class SystemHardeningChecker:
         else:
             compliance_level = "Poor"
         
-        # Generate recommendations
-        recommendations = [f.recommendation for f in features if not f.enabled and f.severity in ['high', 'critical']]
+        # Generate recommendations - include medium, high, and critical severity features
+        recommendations = [f.recommendation for f in features if not f.enabled and f.severity in ['medium', 'high', 'critical']]
         critical_issues = [f.name for f in features if not f.enabled and f.severity == 'critical']
         
         from datetime import datetime

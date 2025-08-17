@@ -396,6 +396,9 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
 
         # Load persisted activity logs after UI is created
         QTimer.singleShot(500, self.load_activity_logs)
+        
+        # Update dashboard cards to show latest scan information
+        QTimer.singleShot(600, self.update_dashboard_cards)
 
         # Activity log saving is now handled by unified timer system for better performance
         # (Consolidated with other periodic tasks to reduce timer overhead)

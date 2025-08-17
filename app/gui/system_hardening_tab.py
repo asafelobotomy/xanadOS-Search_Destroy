@@ -11,16 +11,20 @@ from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel,
                              QPushButton, QTextEdit, QProgressBar, QFrame,
                              QScrollArea, QGroupBox, QTabWidget,
                              QTableWidget, QTableWidgetItem, QHeaderView,
-                             QMessageBox, QDialog, QDialogButtonBox)
+                             QMessageBox, QDialog, QDialogButtonBox, QCheckBox)
 from PyQt6.QtCore import Qt, QThread, pyqtSignal
 from PyQt6.QtGui import QColor
 import logging
+import subprocess
 from typing import List
 from datetime import datetime
 
 from core.system_hardening import SystemHardeningChecker, HardeningReport, SecurityFeature
+from core.elevated_runner import elevated_run
 from .themed_widgets import ThemedWidgetMixin
-from .theme_manager import get_theme_manager
+from .theme_manager import get_theme_manager, create_themed_message_box
+
+logger = logging.getLogger(__name__)
 
 logger = logging.getLogger(__name__)
 
@@ -286,10 +290,25 @@ class SystemHardeningTab(ThemedWidgetMixin, QWidget):
         
         header_layout.addStretch()
         
+        # Button container for proper spacing
+        button_layout = QHBoxLayout()
+        button_layout.setSpacing(10)  # Add 10px spacing between buttons
+        
         self.refresh_button = QPushButton("Run Assessment")
         self.refresh_button.setMinimumWidth(150)
+        self.refresh_button.setFixedHeight(32)  # Set consistent button height
         self.refresh_button.setObjectName("primaryButton")  # Use global primary button styling
-        header_layout.addWidget(self.refresh_button)
+        button_layout.addWidget(self.refresh_button)
+        
+        # Add Fix Issues button
+        self.fix_button = QPushButton("Fix Issues")
+        self.fix_button.setMinimumWidth(120)
+        self.fix_button.setFixedHeight(32)  # Set consistent button height
+        self.fix_button.setObjectName("warningButton")  # Use warning styling for fix actions
+        self.fix_button.setEnabled(False)  # Disabled until assessment is run
+        button_layout.addWidget(self.fix_button)
+        
+        header_layout.addLayout(button_layout)
         
         main_layout.addLayout(header_layout)
         
@@ -349,6 +368,7 @@ class SystemHardeningTab(ThemedWidgetMixin, QWidget):
     def setup_connections(self):
         """Set up signal connections"""
         self.refresh_button.clicked.connect(self.run_assessment)
+        self.fix_button.clicked.connect(self.fix_issues)
     
     def run_assessment(self):
         """Start hardening assessment"""
@@ -394,6 +414,14 @@ class SystemHardeningTab(ThemedWidgetMixin, QWidget):
         
         self.recommendations_widget.update_recommendations(all_recommendations)
         
+        # Enable fix button if there are fixable issues
+        fixable_issues = self._get_fixable_issues(report)
+        self.fix_button.setEnabled(len(fixable_issues) > 0)
+        if len(fixable_issues) > 0:
+            self.fix_button.setText(f"Fix {len(fixable_issues)} Issues")
+        else:
+            self.fix_button.setText("No Fixes Available")
+        
         self.progress_label.setText(f"Assessment complete - {report.compliance_level} security level")
     
     def on_error(self, error_message: str):
@@ -413,8 +441,527 @@ class SystemHardeningTab(ThemedWidgetMixin, QWidget):
         if self.worker:
             self.worker.deleteLater()
             self.worker = None
+    
+    def _get_fixable_issues(self, report: HardeningReport) -> List[SecurityFeature]:
+        """Get list of security features that can be automatically fixed"""
+        fixable_issues = []
+        
+        # Detect distribution for platform-specific fixes
+        is_arch = False
+        try:
+            with open('/etc/os-release', 'r') as f:
+                content = f.read().lower()
+                if 'id=arch' in content:
+                    is_arch = True
+        except:
+            pass
+        
+        for feature in report.security_features:
+            if not feature.enabled:
+                # Check if this is a fixable issue
+                feature_name = feature.name.lower()
+                
+                # Always fixable: sysctl parameters, lockdown, apparmor
+                if any(fixable in feature_name for fixable in [
+                    'sysctl', 'kernel.kptr_restrict', 'kernel.modules_disabled', 
+                    'kernel.dmesg_restrict', 'kernel.yama.ptrace_scope',
+                    'net.ipv4', 'lockdown', 'apparmor'
+                ]):
+                    fixable_issues.append(feature)
+                
+                # SELinux: only fixable on non-Arch systems
+                elif 'selinux' in feature_name and not is_arch:
+                    fixable_issues.append(feature)
+        
+        return fixable_issues
+    
+    def fix_issues(self):
+        """Apply automatic fixes for detected security issues"""
+        if not hasattr(self, 'current_report') or not self.current_report:
+            msg_box = create_themed_message_box(self, "warning", "No Assessment", "Please run an assessment first.")
+            msg_box.exec()
+            return
+        
+        fixable_issues = self._get_fixable_issues(self.current_report)
+        if not fixable_issues:
+            msg_box = create_themed_message_box(self, "information", "No Fixes Available", "No automatically fixable issues were found.")
+            msg_box.exec()
+            return
+        
+        # Show fix selection dialog
+        fix_dialog = FixSelectionDialog(fixable_issues, self)
+        
+        if fix_dialog.exec() == QDialog.DialogCode.Accepted:
+            selected_fixes = fix_dialog.get_selected_fixes()
+            
+            if not selected_fixes:
+                msg_box = create_themed_message_box(self, "information", "No Fixes Selected", "No fixes were selected to apply.")
+                msg_box.exec()
+                return
+            
+            # Show final confirmation with selected fixes
+            fix_count = len(selected_fixes)
+            fix_names = [self._get_clean_fix_name(fix) for fix in selected_fixes]
+            fix_list = "\n".join([f"• {name}" for name in fix_names])
+            
+            confirmation_msg = f"""You have selected {fix_count} security fix{'es' if fix_count != 1 else ''} to apply:
 
-class HardeningDetailsDialog(QDialog):
+{fix_list}
+
+These changes will:
+• Require administrator privileges
+• Be applied immediately 
+• Persist after reboot
+
+Do you want to proceed?"""
+            
+            confirm_box = create_themed_message_box(
+                self,
+                "question",
+                f"Apply {fix_count} Fix{'es' if fix_count != 1 else ''}?",
+                confirmation_msg,
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+            )
+            confirm_box.setDefaultButton(QMessageBox.StandardButton.No)
+            
+            if confirm_box.exec() == QMessageBox.StandardButton.Yes:
+                # Apply selected fixes
+                self._apply_security_fixes(selected_fixes)
+    
+    def _get_clean_fix_name(self, issue: SecurityFeature) -> str:
+        """Get a clean display name for confirmation"""
+        name = issue.name
+        if 'sysctl:' in name.lower():
+            name = name.replace('Sysctl: ', '')
+        elif 'Kernel Lockdown Mode' in name:
+            name = 'Kernel Lockdown'
+        return name
+    
+    def _apply_security_fixes(self, fixable_issues: List[SecurityFeature]):
+        """Apply security fixes using elevated privileges"""
+        self.fix_button.setEnabled(False)
+        self.fix_button.setText("Applying Fixes...")
+        self.progress_label.setText("Applying security fixes...")
+        
+        success_count = 0
+        failed_fixes = []
+        
+        for issue in fixable_issues:
+            try:
+                if self._apply_single_fix(issue):
+                    success_count += 1
+                else:
+                    failed_fixes.append(issue.name)
+            except Exception as e:
+                logger.error(f"Failed to apply fix for {issue.name}: {e}")
+                failed_fixes.append(f"{issue.name} ({str(e)})")
+        
+        # Show results with themed dialogs
+        if success_count > 0:
+            result_message = f"Successfully applied {success_count} security fixes."
+            if failed_fixes:
+                result_message += f"\\n\\nFailed to apply {len(failed_fixes)} fixes:\\n" + "\\n".join(failed_fixes)
+                msg_box = create_themed_message_box(self, "warning", "Fixes Partially Applied", result_message)
+                msg_box.exec()
+            else:
+                msg_box = create_themed_message_box(self, "information", "Fixes Applied", result_message)
+                msg_box.exec()
+        else:
+            result_message = f"Failed to apply any fixes:\\n" + "\\n".join(failed_fixes)
+            msg_box = create_themed_message_box(self, "critical", "Fixes Failed", result_message)
+            msg_box.exec()
+        
+        # Reset button state
+        self.fix_button.setText("Fix Issues")
+        self.fix_button.setEnabled(len(self._get_fixable_issues(self.current_report)) > 0)
+        self.progress_label.setText("Fixes completed. Run assessment again to verify changes.")
+    
+    def _apply_single_fix(self, issue: SecurityFeature) -> bool:
+        """Apply a single security fix"""
+        try:
+            # Sysctl parameter fixes
+            if 'sysctl:' in issue.name.lower():
+                return self._fix_sysctl_parameter(issue)
+            
+            # Kernel lockdown fix
+            elif 'lockdown' in issue.name.lower():
+                return self._fix_kernel_lockdown(issue)
+            
+            # SELinux fix
+            elif 'selinux' in issue.name.lower():
+                return self._fix_selinux(issue)
+            
+            # AppArmor fix
+            elif 'apparmor' in issue.name.lower():
+                return self._fix_apparmor(issue)
+            
+            # Other fixes can be added here
+            else:
+                logger.warning(f"No fix implementation for: {issue.name}")
+                return False
+                
+        except Exception as e:
+            logger.error(f"Error applying fix for {issue.name}: {e}")
+            return False
+    
+    def _fix_sysctl_parameter(self, issue: SecurityFeature) -> bool:
+        """Fix sysctl parameter issues"""
+        # Extract parameter name and expected value from recommendation
+        recommendation = issue.recommendation
+        if "Set " in recommendation and " = " in recommendation:
+            # Extract "kernel.kptr_restrict = 2" from "Set kernel.kptr_restrict = 2"
+            param_setting = recommendation.replace("Set ", "").strip()
+            param_name, expected_value = param_setting.split(" = ")
+            
+            # Apply sysctl setting
+            sysctl_cmd = ["sysctl", "-w", f"{param_name}={expected_value}"]
+            result = elevated_run(sysctl_cmd, gui=True)
+            
+            if result.returncode == 0:
+                # Make it persistent by adding to sysctl.conf
+                sysctl_line = f"{param_name} = {expected_value}"
+                echo_cmd = ["tee", "-a", "/etc/sysctl.d/99-xanados-hardening.conf"]
+                
+                # Create the config file with the setting
+                echo_result = elevated_run(
+                    ["sh", "-c", f"echo '{sysctl_line}' >> /etc/sysctl.d/99-xanados-hardening.conf"],
+                    gui=True
+                )
+                
+                return echo_result.returncode == 0
+            
+            return False
+        
+        return False
+    
+    def _fix_kernel_lockdown(self, issue: SecurityFeature) -> bool:
+        """Fix kernel lockdown mode"""
+        # Kernel lockdown usually requires boot parameter changes
+        # For now, we'll provide guidance instead of automatic fix
+        guidance_message = """Kernel lockdown mode requires boot parameter modification.
+
+To enable lockdown mode, add one of these to your kernel command line:
+• lockdown=integrity (basic protection)
+• lockdown=confidentiality (maximum protection)
+
+This typically involves editing /etc/default/grub and running update-grub."""
+        
+        msg_box = create_themed_message_box(self, "information", "Kernel Lockdown Fix", guidance_message)
+        msg_box.exec()
+        return False  # Manual intervention required
+    
+    def _fix_selinux(self, issue: SecurityFeature) -> bool:
+        """Fix SELinux installation and configuration"""
+        try:
+            # Check if we're on a supported distribution
+            distro_info = []
+            try:
+                with open('/etc/os-release', 'r') as f:
+                    for line in f:
+                        if line.startswith('ID=') or line.startswith('ID_LIKE='):
+                            distro_info.append(line.strip().lower())
+            except:
+                pass
+            
+            distro_text = ' '.join(distro_info)
+            
+            # Determine package manager and SELinux packages
+            if 'ubuntu' in distro_text or 'debian' in distro_text:
+                install_cmd = ["apt", "update", "&&", "apt", "install", "-y", "selinux-basics", "selinux-policy-default"]
+                pkg_manager = "apt"
+                return self._install_selinux_debian()
+            elif 'fedora' in distro_text or 'rhel' in distro_text or 'centos' in distro_text:
+                return self._install_selinux_redhat()
+            elif 'arch' in distro_text:
+                return self._install_selinux_arch()
+            else:
+                # Unknown distribution - provide guidance
+                guidance_msg = """SELinux installation varies by distribution.
+                
+Please manually install SELinux using your distribution's package manager:
+• Ubuntu/Debian: sudo apt install selinux-basics selinux-policy-default
+• Fedora/RHEL: sudo dnf install selinux-policy selinux-policy-targeted  
+• Arch: SELinux requires AUR packages and manual configuration
+
+After installation, reboot and configure SELinux mode."""
+                
+                msg_box = create_themed_message_box(self, "information", "SELinux Installation", guidance_msg)
+                msg_box.exec()
+                return False
+                
+        except Exception as e:
+            logger.error(f"Error installing SELinux: {e}")
+            return False
+    
+    def _install_selinux_debian(self) -> bool:
+        """Install SELinux on Debian/Ubuntu systems"""
+        try:
+            # Update package list first
+            update_result = elevated_run(["apt", "update"], gui=True)
+            if update_result.returncode != 0:
+                return False
+            
+            # Install SELinux packages
+            install_result = elevated_run(["apt", "install", "-y", "selinux-basics", "selinux-policy-default"], gui=True)
+            return install_result.returncode == 0
+        except Exception as e:
+            logger.error(f"Error installing SELinux on Debian/Ubuntu: {e}")
+            return False
+    
+    def _install_selinux_redhat(self) -> bool:
+        """Install SELinux on Red Hat/Fedora systems"""
+        try:
+            install_result = elevated_run(["dnf", "install", "-y", "selinux-policy", "selinux-policy-targeted"], gui=True)
+            return install_result.returncode == 0
+        except Exception as e:
+            logger.error(f"Error installing SELinux on Red Hat/Fedora: {e}")
+            return False
+    
+    def _install_selinux_arch(self) -> bool:
+        """Handle SELinux installation on Arch Linux"""
+        try:
+            # SELinux on Arch Linux is complex and requires AUR packages
+            guidance_msg = """SELinux installation on Arch Linux requires manual setup.
+
+SELinux is not officially supported in Arch Linux main repositories. To install:
+
+1. Install from AUR (requires yay or another AUR helper):
+   yay -S selinux-policy
+   yay -S selinux-usr-selinux-policy-arch
+
+2. Or manually compile from AUR:
+   git clone https://aur.archlinux.org/selinux-policy.git
+   cd selinux-policy && makepkg -si
+
+3. Configure kernel parameters and reboot
+
+This requires advanced knowledge and is not recommended for beginners.
+Consider using AppArmor instead, which is better supported on Arch."""
+            
+            msg_box = create_themed_message_box(self, "information", "SELinux on Arch Linux", guidance_msg)
+            msg_box.exec()
+            return False  # Cannot automatically install on Arch
+        except Exception as e:
+            logger.error(f"Error handling SELinux on Arch: {e}")
+            return False
+    
+    def _fix_apparmor(self, issue: SecurityFeature) -> bool:
+        """Fix AppArmor service configuration"""
+        try:
+            # First, check if AppArmor is installed
+            check_result = elevated_run(["which", "apparmor_status"], gui=True)
+            
+            if check_result.returncode != 0:
+                # AppArmor not installed, try to install it
+                distro_info = []
+                try:
+                    with open('/etc/os-release', 'r') as f:
+                        for line in f:
+                            if line.startswith('ID=') or line.startswith('ID_LIKE='):
+                                distro_info.append(line.strip().lower())
+                except:
+                    pass
+                
+                distro_text = ' '.join(distro_info)
+                
+                if 'ubuntu' in distro_text or 'debian' in distro_text:
+                    install_result = elevated_run(["apt", "install", "-y", "apparmor", "apparmor-utils"], gui=True)
+                    if install_result.returncode != 0:
+                        return False
+                elif 'fedora' in distro_text or 'rhel' in distro_text or 'centos' in distro_text:
+                    install_result = elevated_run(["dnf", "install", "-y", "apparmor"], gui=True)
+                    if install_result.returncode != 0:
+                        return False
+                else:
+                    # Unknown distribution or AppArmor not available
+                    guidance_msg = """AppArmor installation varies by distribution.
+                    
+Please manually install AppArmor:
+• Ubuntu/Debian: sudo apt install apparmor apparmor-utils
+• Fedora: sudo dnf install apparmor
+
+Some distributions may not support AppArmor."""
+                    
+                    msg_box = create_themed_message_box(self, "information", "AppArmor Installation", guidance_msg)
+                    msg_box.exec()
+                    return False
+            
+            # Enable and start AppArmor service
+            enable_result = elevated_run(["systemctl", "enable", "apparmor"], gui=True)
+            start_result = elevated_run(["systemctl", "start", "apparmor"], gui=True)
+            
+            return enable_result.returncode == 0 and start_result.returncode == 0
+            
+        except Exception as e:
+            logger.error(f"Error configuring AppArmor: {e}")
+            return False
+
+class FixSelectionDialog(ThemedWidgetMixin, QDialog):
+    """Dialog for selecting which security fixes to apply"""
+    
+    def __init__(self, fixable_issues: List[SecurityFeature], parent=None):
+        super().__init__(parent)
+        self.fixable_issues = fixable_issues
+        self.selected_fixes = []
+        self.checkboxes = []
+        
+        self.setWindowTitle("Select Security Fixes")
+        self.setModal(True)
+        self.resize(600, 500)
+        self._apply_theme()
+        self.setup_ui()
+    
+    def setup_ui(self):
+        """Set up the dialog UI"""
+        layout = QVBoxLayout(self)
+        layout.setSpacing(15)
+        
+        # Title and description
+        title_label = QLabel("Select Security Fixes to Apply")
+        title_label.setStyleSheet("font-size: 16px; font-weight: bold; padding: 10px 0;")
+        layout.addWidget(title_label)
+        
+        description_label = QLabel(
+            "Choose which security fixes you want to apply. "
+            "Each fix will require administrator privileges and will be applied immediately."
+        )
+        description_label.setWordWrap(True)
+        description_label.setStyleSheet("color: #666; margin-bottom: 10px;")
+        layout.addWidget(description_label)
+        
+        # Scroll area for fixes
+        scroll_area = QScrollArea()
+        scroll_area.setWidgetResizable(True)
+        scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        
+        scroll_widget = QWidget()
+        scroll_layout = QVBoxLayout(scroll_widget)
+        scroll_layout.setSpacing(10)
+        
+        # Create checkbox for each fixable issue
+        for i, issue in enumerate(self.fixable_issues):
+            fix_frame = QFrame()
+            fix_frame.setFrameStyle(QFrame.Shape.Box)
+            fix_frame.setStyleSheet("""
+                QFrame {
+                    border: 1px solid #ccc;
+                    border-radius: 8px;
+                    padding: 10px;
+                    background-color: rgba(0, 0, 0, 0.02);
+                }
+                QFrame:hover {
+                    background-color: rgba(0, 120, 204, 0.05);
+                    border-color: #007acc;
+                }
+            """)
+            
+            fix_layout = QVBoxLayout(fix_frame)
+            fix_layout.setSpacing(8)
+            
+            # Checkbox with issue name
+            checkbox = QCheckBox(self._get_clean_name(issue))
+            checkbox.setChecked(True)  # Default to checked
+            checkbox.setStyleSheet("font-weight: bold; font-size: 13px;")
+            self.checkboxes.append(checkbox)
+            fix_layout.addWidget(checkbox)
+            
+            # Issue description
+            desc_label = QLabel(issue.description)
+            desc_label.setWordWrap(True)
+            desc_label.setStyleSheet("color: #555; margin-left: 20px; font-size: 11px;")
+            fix_layout.addWidget(desc_label)
+            
+            # Severity indicator
+            severity_label = QLabel(f"Severity: {issue.severity.upper()}")
+            severity_color = {
+                'low': '#28a745',
+                'medium': '#ffc107', 
+                'high': '#fd7e14',
+                'critical': '#dc3545'
+            }.get(issue.severity, '#6c757d')
+            
+            severity_label.setStyleSheet(f"""
+                color: {severity_color}; 
+                font-weight: bold; 
+                margin-left: 20px; 
+                font-size: 10px;
+            """)
+            fix_layout.addWidget(severity_label)
+            
+            scroll_layout.addWidget(fix_frame)
+        
+        scroll_area.setWidget(scroll_widget)
+        layout.addWidget(scroll_area)
+        
+        # Select All / Deselect All buttons
+        selection_layout = QHBoxLayout()
+        
+        select_all_btn = QPushButton("Select All")
+        select_all_btn.clicked.connect(self.select_all)
+        selection_layout.addWidget(select_all_btn)
+        
+        deselect_all_btn = QPushButton("Deselect All")
+        deselect_all_btn.clicked.connect(self.deselect_all)
+        selection_layout.addWidget(deselect_all_btn)
+        
+        selection_layout.addStretch()
+        layout.addLayout(selection_layout)
+        
+        # Dialog buttons
+        button_box = QDialogButtonBox(
+            QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel
+        )
+        button_box.accepted.connect(self.accept)
+        button_box.rejected.connect(self.reject)
+        
+        # Update OK button text based on selection
+        self.ok_button = button_box.button(QDialogButtonBox.StandardButton.Ok)
+        self.update_ok_button()
+        
+        # Connect checkboxes to update OK button
+        for checkbox in self.checkboxes:
+            checkbox.stateChanged.connect(self.update_ok_button)
+        
+        layout.addWidget(button_box)
+    
+    def _get_clean_name(self, issue: SecurityFeature) -> str:
+        """Get a clean display name for the issue"""
+        name = issue.name
+        if 'sysctl:' in name.lower():
+            name = name.replace('Sysctl: ', '')
+        elif 'Kernel Lockdown Mode' in name:
+            name = 'Kernel Lockdown'
+        return name
+    
+    def select_all(self):
+        """Select all checkboxes"""
+        for checkbox in self.checkboxes:
+            checkbox.setChecked(True)
+    
+    def deselect_all(self):
+        """Deselect all checkboxes"""
+        for checkbox in self.checkboxes:
+            checkbox.setChecked(False)
+    
+    def update_ok_button(self):
+        """Update OK button text based on selection count"""
+        selected_count = sum(1 for checkbox in self.checkboxes if checkbox.isChecked())
+        if selected_count == 0:
+            self.ok_button.setText("Apply 0 Fixes")
+            self.ok_button.setEnabled(False)
+        else:
+            self.ok_button.setText(f"Apply {selected_count} Fix{'es' if selected_count != 1 else ''}")
+            self.ok_button.setEnabled(True)
+    
+    def get_selected_fixes(self) -> List[SecurityFeature]:
+        """Get the list of selected fixes"""
+        selected = []
+        for i, checkbox in enumerate(self.checkboxes):
+            if checkbox.isChecked():
+                selected.append(self.fixable_issues[i])
+        return selected
+
+class HardeningDetailsDialog(ThemedWidgetMixin, QDialog):
     """Dialog for showing detailed hardening information"""
     
     def __init__(self, report: HardeningReport, parent=None):
@@ -423,7 +970,8 @@ class HardeningDetailsDialog(QDialog):
         self.setWindowTitle("Detailed Hardening Report")
         self.setModal(True)
         self.resize(800, 600)
-        # Remove custom styling - let global theme handle dialog appearance
+        # Apply themed styling
+        self.apply_theme()
         self.setup_ui()
     
     def setup_ui(self):

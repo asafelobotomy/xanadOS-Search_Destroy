@@ -710,84 +710,104 @@ class WebProtectionSystem:
         """Analyze SSL certificate for suspicious characteristics."""
         try:
             ssl_info = {}
+            cert = None
 
-            # Create SSL context
-            context = ssl.create_default_context()
-            context.check_hostname = False
-            context.verify_mode = ssl.CERT_NONE
+            # First try with proper certificate verification
+            try:
+                context = ssl.create_default_context()
+                context.check_hostname = True
+                context.verify_mode = ssl.CERT_REQUIRED
+                
+                with socket.create_connection((domain, 443), timeout=10) as sock:
+                    with context.wrap_socket(sock, server_hostname=domain) as ssock:
+                        cert = ssock.getpeercert()
+                        ssl_info["verified"] = True
+            except (ssl.SSLError, ssl.CertificateError, OSError):
+                # If verification fails, try without verification for analysis only
+                # This is for security analysis purposes, not for trusting the connection
+                try:
+                    context = ssl.create_default_context()
+                    context.check_hostname = False
+                    context.verify_mode = ssl.CERT_NONE
+                    
+                    with socket.create_connection((domain, 443), timeout=10) as sock:
+                        with context.wrap_socket(sock, server_hostname=domain) as ssock:
+                            cert = ssock.getpeercert()
+                            ssl_info["verified"] = False
+                            ssl_info["verification_failed"] = True
+                except (ssl.SSLError, OSError):
+                    # If even unverified connection fails, return empty result
+                    return {"ssl_available": False, "suspicious": True, "suspicious_reason": "ssl_connection_failed"}
 
-            # Connect and get certificate
-            with socket.create_connection((domain, 443), timeout=10) as sock:
-                with context.wrap_socket(sock, server_hostname=domain) as ssock:
-                    cert = ssock.getpeercert()
+            # Analyze the certificate if we got one
+            if cert:
+                ssl_info.update({
+                    "ssl_available": True,
+                    "subject": dict(
+                        x[0] for x in cert.get(
+                            "subject",
+                            [])),
+                    "issuer": dict(
+                        x[0] for x in cert.get(
+                            "issuer",
+                            [])),
+                    "version": cert.get("version"),
+                    "serial_number": cert.get("serialNumber"),
+                    "not_before": cert.get("notBefore"),
+                    "not_after": cert.get("notAfter"),
+                    "subject_alt_names": [
+                        x[1] for x in cert.get(
+                            "subjectAltName",
+                            [])],
+                    "suspicious": False,
+                })
 
-                    if cert:
-                        ssl_info = {
-                            "subject": dict(
-                                x[0] for x in cert.get(
-                                    "subject",
-                                    [])),
-                            "issuer": dict(
-                                x[0] for x in cert.get(
-                                    "issuer",
-                                    [])),
-                            "version": cert.get("version"),
-                            "serial_number": cert.get("serialNumber"),
-                            "not_before": cert.get("notBefore"),
-                            "not_after": cert.get("notAfter"),
-                            "subject_alt_names": [
-                                x[1] for x in cert.get(
-                                    "subjectAltName",
-                                    [])],
-                            "suspicious": False,
-                        }
+                # Check for suspicious characteristics
+                issuer_cn = ssl_info.get(
+                    "issuer", {}).get(
+                    "commonName", "")
 
-                        # Check for suspicious characteristics
-                        issuer_cn = ssl_info.get(
-                            "issuer", {}).get(
-                            "commonName", "")
+                # Self-signed certificates
+                if ssl_info.get("subject") == ssl_info.get("issuer"):
+                    ssl_info["suspicious"] = True
+                    ssl_info["suspicious_reason"] = "self_signed"
 
-                        # Self-signed certificates
-                        if ssl_info.get("subject") == ssl_info.get("issuer"):
-                            ssl_info["suspicious"] = True
-                            ssl_info["suspicious_reason"] = "self_signed"
+                # Check for suspicious issuers
+                suspicious_issuers = [
+                    "fake",
+                    "test",
+                    "invalid",
+                    "temporary",
+                    "localhost",
+                    "example",
+                ]
 
-                        # Check for suspicious issuers
-                        suspicious_issuers = [
-                            "fake",
-                            "test",
-                            "invalid",
-                            "temporary",
-                            "localhost",
-                            "example",
-                        ]
+                if any(
+                    suspicious in issuer_cn.lower()
+                    for suspicious in suspicious_issuers
+                ):
+                    ssl_info["suspicious"] = True
+                    ssl_info["suspicious_reason"] = "suspicious_issuer"
 
-                        if any(
-                            suspicious in issuer_cn.lower()
-                            for suspicious in suspicious_issuers
-                        ):
-                            ssl_info["suspicious"] = True
-                            ssl_info["suspicious_reason"] = "suspicious_issuer"
+                # Check certificate validity period
+                try:
+                    from datetime import datetime
 
-                        # Check certificate validity period
-                        try:
-                            from datetime import datetime
+                    not_after = datetime.strptime(
+                        ssl_info["not_after"], "%b %d %H:%M:%S %Y %Z"
+                    )
+                    not_before = datetime.strptime(
+                        ssl_info["not_before"], "%b %d %H:%M:%S %Y %Z"
+                    )
 
-                            not_after = datetime.strptime(
-                                ssl_info["not_after"], "%b %d %H:%M:%S %Y %Z"
-                            )
-                            not_before = datetime.strptime(
-                                ssl_info["not_before"], "%b %d %H:%M:%S %Y %Z"
-                            )
+                    # Very short validity period (less than 30 days)
+                    validity_days = (not_after - not_before).days
+                    if validity_days < 30:
+                        ssl_info["suspicious"] = True
+                        ssl_info["suspicious_reason"] = "short_validity"
 
-                            # Very short validity period (less than 30 days)
-                            validity_days = (not_after - not_before).days
-                            if validity_days < 30:
-                                ssl_info["suspicious"] = True
-                                ssl_info["suspicious_reason"] = "short_validity"
-
-                        except Exception:
-                            pass
+                except Exception:
+                    pass
 
             return ssl_info
 

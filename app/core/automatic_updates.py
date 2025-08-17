@@ -61,7 +61,7 @@ class UpdateInfo:
     size_bytes: int
     download_url: str
     checksum: str
-    checksum_type: str = "sha256"
+    checksum_type: str = "sha256"  # Use SHA256 by default for security (SHA512 also recommended)
     priority: UpdatePriority = UpdatePriority.NORMAL
     release_date: datetime = field(default_factory=datetime.now)
     required_restart: bool = False
@@ -700,22 +700,58 @@ class AutoUpdateSystem:
     async def _verify_checksum(
         self, file_path: Path, expected_checksum: str, checksum_type: str
     ) -> bool:
-        """Verify file checksum."""
+        """Verify file checksum with support for multiple hash algorithms."""
         try:
-            if checksum_type.lower() == "sha256":
+            checksum_type = checksum_type.lower()
+            
+            # Supported hash algorithms in order of security preference
+            if checksum_type == "sha256":
                 hasher = hashlib.sha256()
-            elif checksum_type.lower() == "md5":
+            elif checksum_type == "sha512":
+                hasher = hashlib.sha512()
+            elif checksum_type == "sha1":
+                # SHA1 is deprecated but may be needed for compatibility
+                self.logger.warning(
+                    "SHA1 checksum verification is deprecated and should be avoided. "
+                    "Please use SHA256 or SHA512 for better security."
+                )
+                hasher = hashlib.sha1()
+            elif checksum_type == "md5":
+                # MD5 is cryptographically broken but kept for legacy compatibility
+                self.logger.warning(
+                    "MD5 checksum verification is cryptographically insecure and deprecated. "
+                    "Please upgrade to SHA256 or SHA512 for proper security. "
+                    "This support will be removed in a future version."
+                )
                 hasher = hashlib.md5()
             else:
+                self.logger.error(
+                    "Unsupported checksum type: %s. Supported types: sha256, sha512, sha1 (deprecated), md5 (deprecated)",
+                    checksum_type
+                )
                 return False
 
+            # Calculate hash
             with file_path.open("rb") as f:
                 for chunk in iter(lambda: f.read(4096), b""):
                     hasher.update(chunk)
 
-            return hasher.hexdigest().lower() == expected_checksum.lower()
+            computed_hash = hasher.hexdigest().lower()
+            expected_hash = expected_checksum.lower()
+            
+            if computed_hash == expected_hash:
+                if checksum_type in ["sha256", "sha512"]:
+                    self.logger.debug("Checksum verification successful using secure %s", checksum_type.upper())
+                return True
+            else:
+                self.logger.error(
+                    "Checksum verification failed: expected %s, got %s",
+                    expected_hash, computed_hash
+                )
+                return False
 
-        except Exception:
+        except Exception as e:
+            self.logger.error("Error during checksum verification: %s", e)
             return False
 
     async def _verify_db_file(self, db_path: Path) -> bool:

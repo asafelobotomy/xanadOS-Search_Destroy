@@ -354,9 +354,9 @@ class RKHunterOptimizer:
                     issues_found=["RKHunter is not installed. Run: sudo pacman -S rkhunter"]
                 )
             
-            # Get version
+            # Get version (no sudo needed for version check)
             try:
-                version_result = self._execute_rkhunter_command(['--version'], timeout=30)
+                version_result = self._execute_rkhunter_command(['--version'], timeout=30, use_sudo=False)
                 version = self._parse_version(version_result.stdout) if version_result.returncode == 0 else "Unknown"
             except Exception as e:
                 logger.warning(f"Failed to get RKHunter version: {e}")
@@ -952,7 +952,29 @@ class RKHunterOptimizer:
         return os.path.exists(baseline_file)
     
     def _check_mirror_status(self) -> str:
-        """Check mirror connectivity status"""
+        """Check mirror connectivity status (lightweight check)"""
+        try:
+            # For status checks, just verify config file accessibility
+            # Full mirror checks should be done separately during updates
+            config_file = '/etc/rkhunter.conf'
+            if os.path.exists(config_file):
+                try:
+                    with open(config_file, 'r') as f:
+                        content = f.read()
+                        if 'UPDATE_MIRRORS=' in content:
+                            return "Configured"
+                        else:
+                            return "Not configured"
+                except PermissionError:
+                    return "Config inaccessible"
+            else:
+                return "Config missing"
+        except Exception as e:
+            logger.warning(f"Error checking mirror status: {e}")
+            return "Unknown"
+    
+    def _check_mirror_connectivity(self) -> str:
+        """Check actual mirror connectivity (for optimization tasks)"""
         try:
             result = subprocess.run(
                 ['rkhunter', '--update', '--check'],
@@ -964,7 +986,8 @@ class RKHunterOptimizer:
                 return "OK"
             else:
                 return "Issues detected"
-        except:
+        except Exception as e:
+            logger.warning(f"Error checking mirror connectivity: {e}")
             return "Unknown"
     
     def _collect_performance_metrics(self) -> Dict[str, Any]:
