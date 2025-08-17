@@ -281,3 +281,12 @@ config.json
 activity_logs.json
 scan_reports/
 # Build and distribution
+
+# VS Code workspace state and temporary files
+.vscode/settings.json
+.vscode/launch.json
+.vscode/tasks.json
+.vscode/.ropeproject
+.vscode/extensions.json
+*.code-workspace.bak
+.history/

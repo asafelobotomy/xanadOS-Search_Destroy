@@ -26,7 +26,12 @@
         "python.linting.pylintEnabled": true,
         "python.analysis.extraPaths": [
             "./app"
-        ]
+        ],
+        "files.restoreUndoStack": false,
+        "workbench.editor.restoreViewState": false,
+        "git.autoRepositoryDetection": true,
+        "git.autorefresh": true,
+        "git.enableScmSourceControl": true
     },
     "extensions": {
         "recommendations": [
