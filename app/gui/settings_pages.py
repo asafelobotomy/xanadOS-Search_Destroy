@@ -1,8 +1,139 @@
 """Modular settings page builders separated from main_window for clarity."""
-from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QFormLayout, QHBoxLayout, QLabel, QCheckBox, QPushButton, QTextEdit, QGroupBox, QSpinBox, QGridLayout, QScrollArea, QComboBox)
-from PyQt6.QtCore import Qt, QTime
+from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QFormLayout, QHBoxLayout, QLabel, QCheckBox, QPushButton, QTextEdit, QGroupBox, QSpinBox, QGridLayout, QScrollArea, QComboBox, QTabWidget, QFrame, QProgressBar, QTableWidget, QTableWidgetItem, QHeaderView, QSplitter, QListWidget, QListWidgetItem, QMessageBox, QDialog, QDialogButtonBox, QLineEdit)
+from PyQt6.QtCore import Qt, QTime, QThread, pyqtSignal, QTimer
+from PyQt6.QtGui import QFont, QPalette, QColor
+import logging
+from typing import Dict, List, Optional, Any
+from datetime import datetime, timedelta
+import json
+
+try:
+    from core.rkhunter_optimizer import RKHunterOptimizer, RKHunterConfig, RKHunterStatus, OptimizationReport
+except ImportError:
+    try:
+        from app.core.rkhunter_optimizer import RKHunterOptimizer, RKHunterConfig, RKHunterStatus, OptimizationReport
+    except ImportError:
+        # Graceful fallback if module not available
+        RKHunterOptimizer = None
+        RKHunterConfig = None
+        RKHunterStatus = None
+        OptimizationReport = None
+
+logger = logging.getLogger(__name__)
 
 # Expect host MainWindow to provide helper widget classes: NoWheelComboBox, NoWheelSpinBox, NoWheelTimeEdit
+
+class RKHunterOptimizationWorker(QThread):
+    """Background worker for RKHunter optimization"""
+    
+    optimization_complete = pyqtSignal(object)  # OptimizationReport
+    status_updated = pyqtSignal(object)  # RKHunterStatus
+    progress_updated = pyqtSignal(str)
+    error_occurred = pyqtSignal(str)
+    
+    def __init__(self, config):
+        super().__init__()
+        self.config = config
+        self.optimizer = RKHunterOptimizer() if RKHunterOptimizer else None
+    
+    def run(self):
+        """Run RKHunter optimization in background"""
+        if not self.optimizer:
+            self.error_occurred.emit("RKHunter optimizer not available")
+            return
+            
+        try:
+            self.progress_updated.emit("Initializing RKHunter optimizer...")
+            
+            # Get current status first
+            self.progress_updated.emit("Checking current RKHunter status...")
+            status = self.optimizer.get_current_status()
+            self.status_updated.emit(status)
+            
+            # Run optimization
+            self.progress_updated.emit("Applying configuration optimizations...")
+            report = self.optimizer.optimize_configuration(self.config)
+            
+            self.progress_updated.emit("Optimization complete")
+            self.optimization_complete.emit(report)
+            
+        except Exception as e:
+            logger.error(f"Error in RKHunter optimization: {e}")
+            self.error_occurred.emit(str(e))
+
+class RKHunterStatusWidget(QWidget):
+    """Widget displaying RKHunter status information"""
+    
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.current_status = None
+        self.setup_ui()
+    
+    def setup_ui(self):
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(10, 10, 10, 10)
+        
+        # Title
+        title = QLabel("RKHunter Status")
+        title.setFont(QFont("Arial", 12, QFont.Weight.Bold))
+        title.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        layout.addWidget(title)
+        
+        # Status grid
+        self.status_frame = QFrame()
+        self.status_frame.setFrameStyle(QFrame.Shape.Box)
+        status_layout = QGridLayout(self.status_frame)
+        
+        # Status items
+        self.version_label = QLabel("Unknown")
+        self.db_version_label = QLabel("Unknown")
+        self.last_update_label = QLabel("Never")
+        self.last_scan_label = QLabel("Never")
+        self.baseline_label = QLabel("Unknown")
+        self.mirror_label = QLabel("Unknown")
+        
+        status_layout.addWidget(QLabel("Version:"), 0, 0)
+        status_layout.addWidget(self.version_label, 0, 1)
+        status_layout.addWidget(QLabel("Database:"), 1, 0)
+        status_layout.addWidget(self.db_version_label, 1, 1)
+        status_layout.addWidget(QLabel("Last Update:"), 2, 0)
+        status_layout.addWidget(self.last_update_label, 2, 1)
+        status_layout.addWidget(QLabel("Last Scan:"), 3, 0)
+        status_layout.addWidget(self.last_scan_label, 3, 1)
+        status_layout.addWidget(QLabel("Baseline:"), 4, 0)
+        status_layout.addWidget(self.baseline_label, 4, 1)
+        status_layout.addWidget(QLabel("Mirrors:"), 5, 0)
+        status_layout.addWidget(self.mirror_label, 5, 1)
+        
+        layout.addWidget(self.status_frame)
+        
+        # Refresh button
+        refresh_btn = QPushButton("Refresh Status")
+        refresh_btn.clicked.connect(self.refresh_status)
+        layout.addWidget(refresh_btn)
+    
+    def refresh_status(self):
+        """Refresh RKHunter status"""
+        if RKHunterOptimizer:
+            try:
+                optimizer = RKHunterOptimizer()
+                status = optimizer.get_current_status()
+                self.update_status(status)
+            except Exception as e:
+                logger.error(f"Failed to refresh RKHunter status: {e}")
+    
+    def update_status(self, status):
+        """Update status display"""
+        if not status:
+            return
+            
+        self.current_status = status
+        self.version_label.setText(getattr(status, 'version', 'Unknown'))
+        self.db_version_label.setText(getattr(status, 'database_version', 'Unknown'))
+        self.last_update_label.setText(getattr(status, 'last_update', 'Never'))
+        self.last_scan_label.setText(getattr(status, 'last_scan', 'Never'))
+        self.baseline_label.setText(getattr(status, 'baseline_status', 'Unknown'))
+        self.mirror_label.setText(getattr(status, 'mirror_status', 'Unknown'))
 
 def build_general_page(host):
     page = QWidget(); layout = QVBoxLayout(page)
@@ -254,43 +385,49 @@ def build_firewall_page(host):
     return page
 
 def build_rkhunter_page(host):
-    """Build a well-structured RKHunter settings page following UI design best practices."""
+    """Build a comprehensive RKHunter settings page with optimization features."""
     # Create main page widget
     page = QWidget()
+    main_layout = QVBoxLayout(page)
+    main_layout.setContentsMargins(5, 5, 5, 5)
     
-    # Create scroll area to handle content overflow
-    scroll_area = QScrollArea(page)
-    scroll_area.setWidgetResizable(True)
-    scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
-    scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
+    # Create tab widget for organization
+    tab_widget = QTabWidget()
+    tab_widget.setTabPosition(QTabWidget.TabPosition.North)
     
-    # Create scrollable content widget
-    scroll_content = QWidget()
-    main_layout = QVBoxLayout(scroll_content)
-    main_layout.setSpacing(20)  # Better spacing between sections
-    main_layout.setContentsMargins(15, 15, 15, 15)  # Add margins
+    # === TAB 1: BASIC CONFIGURATION ===
+    basic_tab = QWidget()
+    basic_scroll = QScrollArea(basic_tab)
+    basic_scroll.setWidgetResizable(True)
+    basic_scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
+    basic_scroll.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
     
-    # === SECTION 1: BASIC CONFIGURATION ===
+    basic_content = QWidget()
+    basic_layout = QVBoxLayout(basic_content)
+    basic_layout.setSpacing(20)
+    basic_layout.setContentsMargins(15, 15, 15, 15)
+    
+    # Basic Configuration Group
     basic_group = QGroupBox("Basic Configuration")
-    basic_layout = QVBoxLayout(basic_group)
-    basic_layout.setSpacing(10)
+    basic_group_layout = QVBoxLayout(basic_group)
+    basic_group_layout.setSpacing(10)
     
     # Enable RKHunter - Primary setting at the top
     if not hasattr(host, 'settings_enable_rkhunter_cb'):
         host.settings_enable_rkhunter_cb = QCheckBox('Enable RKHunter Integration')
         host.settings_enable_rkhunter_cb.setChecked(False)
         host.settings_enable_rkhunter_cb.setStyleSheet("font-weight: bold; font-size: 14px;")
-    basic_layout.addWidget(host.settings_enable_rkhunter_cb)
+    basic_group_layout.addWidget(host.settings_enable_rkhunter_cb)
     
     # Auto-update setting
     if not hasattr(host, 'settings_rkhunter_auto_update_cb'):
         host.settings_rkhunter_auto_update_cb = QCheckBox('Auto-update Database')
         host.settings_rkhunter_auto_update_cb.setChecked(True)
-    basic_layout.addWidget(host.settings_rkhunter_auto_update_cb)
+    basic_group_layout.addWidget(host.settings_rkhunter_auto_update_cb)
     
-    main_layout.addWidget(basic_group)
+    basic_layout.addWidget(basic_group)
     
-    # === SECTION 2: SCAN INTEGRATION ===
+    # Scan Integration Group
     scan_group = QGroupBox("Scan Integration")
     scan_layout = QVBoxLayout(scan_group)
     scan_layout.setSpacing(8)
@@ -300,7 +437,7 @@ def build_rkhunter_page(host):
     desc_label.setStyleSheet("color: #666; font-style: italic; margin-bottom: 10px;")
     scan_layout.addWidget(desc_label)
     
-    # Scan type checkboxes - vertically arranged for better readability
+    # Scan type checkboxes
     scan_options = [
         ('settings_run_rkhunter_with_full_scan_cb', 'Run with Full System Scans', False),
         ('settings_run_rkhunter_with_quick_scan_cb', 'Run with Quick Scans', False),
@@ -314,9 +451,9 @@ def build_rkhunter_page(host):
             setattr(host, attr, cb)
         scan_layout.addWidget(getattr(host, attr))
     
-    main_layout.addWidget(scan_group)
+    basic_layout.addWidget(scan_group)
     
-    # === SECTION 3: SECURITY CATEGORIES ===
+    # Security Categories Group
     categories_group = QGroupBox("Security Check Categories")
     categories_layout = QVBoxLayout(categories_group)
     categories_layout.setSpacing(15)
@@ -352,7 +489,7 @@ def build_rkhunter_page(host):
     for index, (cid, info) in enumerate(sorted_categories):
         # Create card widget
         card_widget = QWidget()
-        card_widget.setMinimumHeight(100)  # Increased height for better visibility
+        card_widget.setMinimumHeight(100)
         card_widget.setStyleSheet("""
             QWidget {
                 background-color: rgba(255, 255, 255, 0.05);
@@ -390,12 +527,11 @@ def build_rkhunter_page(host):
     
     categories_layout.addLayout(categories_grid)
     
-    # === SECTION 4: QUICK ACTIONS ===
+    # Quick Actions
     actions_layout = QHBoxLayout()
     actions_layout.setSpacing(10)
     actions_layout.addStretch()
     
-    # Action buttons with better styling
     select_all_btn = QPushButton('Select All')
     select_all_btn.setMinimumWidth(100)
     select_all_btn.clicked.connect(host.select_all_rkhunter_categories)
@@ -415,18 +551,126 @@ def build_rkhunter_page(host):
     actions_layout.addStretch()
     
     categories_layout.addLayout(actions_layout)
-    main_layout.addWidget(categories_group)
+    basic_layout.addWidget(categories_group)
+    
+    basic_layout.addStretch()
+    basic_scroll.setWidget(basic_content)
+    basic_tab_layout = QVBoxLayout(basic_tab)
+    basic_tab_layout.setContentsMargins(0, 0, 0, 0)
+    basic_tab_layout.addWidget(basic_scroll)
+    
+    # === TAB 2: OPTIMIZATION & STATUS ===
+    optimization_tab = QWidget()
+    
+    # Create scroll area for optimization tab
+    opt_scroll = QScrollArea(optimization_tab)
+    opt_scroll.setWidgetResizable(True)
+    opt_scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
+    opt_scroll.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
+    
+    # Create scrollable content widget
+    opt_content = QWidget()
+    opt_layout = QVBoxLayout(opt_content)
+    opt_layout.setSpacing(15)
+    opt_layout.setContentsMargins(15, 15, 15, 15)
+    
+    # Status Section
+    status_group = QGroupBox("Current Status")
+    status_layout = QVBoxLayout(status_group)
+    
+    # Add status widget
+    if not hasattr(host, 'rkhunter_status_widget'):
+        host.rkhunter_status_widget = RKHunterStatusWidget()
+    status_layout.addWidget(host.rkhunter_status_widget)
+    opt_layout.addWidget(status_group)
+    
+    # Optimization Controls
+    opt_controls_group = QGroupBox("Optimization Controls")
+    opt_controls_layout = QVBoxLayout(opt_controls_group)
+    
+    # Performance mode selection
+    perf_layout = QHBoxLayout()
+    perf_layout.addWidget(QLabel("Performance Mode:"))
+    
+    if not hasattr(host, 'rkhunter_perf_mode_combo'):
+        host.rkhunter_perf_mode_combo = QComboBox()
+        host.rkhunter_perf_mode_combo.addItems(['Fast', 'Balanced', 'Thorough'])
+        host.rkhunter_perf_mode_combo.setCurrentText('Balanced')
+    perf_layout.addWidget(host.rkhunter_perf_mode_combo)
+    perf_layout.addStretch()
+    opt_controls_layout.addLayout(perf_layout)
+    
+    # Optimization buttons
+    opt_buttons_layout = QHBoxLayout()
+    
+    if not hasattr(host, 'rkhunter_update_mirrors_btn'):
+        host.rkhunter_update_mirrors_btn = QPushButton("Update Mirrors")
+        host.rkhunter_update_mirrors_btn.clicked.connect(lambda: host.run_rkhunter_optimization('update_mirrors'))
+    
+    if not hasattr(host, 'rkhunter_update_baseline_btn'):
+        host.rkhunter_update_baseline_btn = QPushButton("Update Baseline")
+        host.rkhunter_update_baseline_btn.clicked.connect(lambda: host.run_rkhunter_optimization('update_baseline'))
+    
+    if not hasattr(host, 'rkhunter_optimize_config_btn'):
+        host.rkhunter_optimize_config_btn = QPushButton("Optimize Configuration")
+        host.rkhunter_optimize_config_btn.clicked.connect(lambda: host.run_rkhunter_optimization('optimize_config'))
+        host.rkhunter_optimize_config_btn.setStyleSheet("font-weight: bold;")
+    
+    opt_buttons_layout.addWidget(host.rkhunter_update_mirrors_btn)
+    opt_buttons_layout.addWidget(host.rkhunter_update_baseline_btn)
+    opt_buttons_layout.addWidget(host.rkhunter_optimize_config_btn)
+    opt_buttons_layout.addStretch()
+    
+    opt_controls_layout.addLayout(opt_buttons_layout)
+    
+    # Progress section
+    if not hasattr(host, 'rkhunter_progress_bar'):
+        host.rkhunter_progress_bar = QProgressBar()
+        host.rkhunter_progress_bar.setVisible(False)
+    
+    if not hasattr(host, 'rkhunter_progress_label'):
+        host.rkhunter_progress_label = QLabel("")
+        host.rkhunter_progress_label.setVisible(False)
+    
+    opt_controls_layout.addWidget(host.rkhunter_progress_label)
+    opt_controls_layout.addWidget(host.rkhunter_progress_bar)
+    
+    opt_layout.addWidget(opt_controls_group)
+    
+    # Results section
+    results_group = QGroupBox("Optimization Results")
+    results_layout = QVBoxLayout(results_group)
+    
+    if not hasattr(host, 'rkhunter_results_text'):
+        host.rkhunter_results_text = QTextEdit()
+        host.rkhunter_results_text.setMaximumHeight(200)
+        host.rkhunter_results_text.setPlaceholderText("Optimization results will appear here...")
+    
+    results_layout.addWidget(host.rkhunter_results_text)
+    opt_layout.addWidget(results_group)
     
     # Add extra spacing at the bottom for better scrolling
-    main_layout.addSpacing(30)
+    opt_layout.addSpacing(30)
     
     # Set up the scroll area
-    scroll_area.setWidget(scroll_content)
+    opt_scroll.setWidget(opt_content)
     
-    # Create page layout and add scroll area
-    page_layout = QVBoxLayout(page)
-    page_layout.setContentsMargins(0, 0, 0, 0)
-    page_layout.addWidget(scroll_area)
+    # Create optimization tab layout and add scroll area
+    opt_tab_layout = QVBoxLayout(optimization_tab)
+    opt_tab_layout.setContentsMargins(0, 0, 0, 0)
+    opt_tab_layout.addWidget(opt_scroll)
+    
+    # Add tabs
+    tab_widget.addTab(basic_tab, "⚙️ Configuration")
+    tab_widget.addTab(optimization_tab, "🔧 Optimization")
+    
+    main_layout.addWidget(tab_widget)
+    
+    # Initialize optimization worker if not exists
+    if not hasattr(host, 'rkhunter_optimization_worker'):
+        host.rkhunter_optimization_worker = None
+    
+    return page
     
     return page
 

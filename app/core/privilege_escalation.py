@@ -236,7 +236,7 @@ class PrivilegeEscalationManager:
         try:
             script_path = self._create_secure_wrapper_script(request)
             from .elevated_runner import elevated_run
-            result = elevated_run([script_path], timeout=request.timeout + 30, allow_script=True)
+            result = elevated_run([script_path], timeout=request.timeout + 30, gui=True)
 
             success = result.returncode == 0
             stdout = result.stdout or ""
@@ -379,10 +379,42 @@ class PrivilegeEscalationManager:
         )
 
         try:
-            # Copy policy file with proper permissions
-            from .secure_subprocess import run_secure
-            run_secure(["sudo", "cp", str(self._policy_file), str(policy_dest)], timeout=30, check=True)
-            run_secure(["sudo", "chmod", "644", str(policy_dest)], timeout=10, check=True)
+            # Use unified authentication session manager for policy installation
+            try:
+                from .auth_session_manager import auth_manager
+                
+                # Copy policy file with proper permissions using session management
+                result1 = auth_manager.execute_elevated_command(
+                    ["cp", str(self._policy_file), str(policy_dest)],
+                    timeout=30,
+                    session_type="policy_install",
+                    operation="install_policy_file"
+                )
+                
+                if result1.returncode != 0:
+                    raise subprocess.CalledProcessError(result1.returncode, ["cp"])
+                
+                result2 = auth_manager.execute_elevated_command(
+                    ["chmod", "644", str(policy_dest)],
+                    timeout=10,
+                    session_type="policy_install",
+                    operation="set_policy_permissions"
+                )
+                
+                if result2.returncode != 0:
+                    raise subprocess.CalledProcessError(result2.returncode, ["chmod"])
+                    
+            except ImportError:
+                # Fallback to elevated_run if auth_manager not available (same method as RKHunter)
+                from .elevated_runner import elevated_run
+                
+                result1 = elevated_run(["cp", str(self._policy_file), str(policy_dest)], timeout=30, gui=True)
+                if result1.returncode != 0:
+                    raise subprocess.CalledProcessError(result1.returncode, ["cp"])
+                
+                result2 = elevated_run(["chmod", "644", str(policy_dest)], timeout=10, gui=True)
+                if result2.returncode != 0:
+                    raise subprocess.CalledProcessError(result2.returncode, ["chmod"])
 
             self.logger.info("Policy file installed successfully")
             return True

@@ -5,12 +5,23 @@ import shutil
 import signal
 import subprocess
 import tempfile
+import time
 from datetime import datetime
 from pathlib import Path
 
 from core.file_scanner import FileScanner
 from core.firewall_detector import get_firewall_status, toggle_firewall
 from core.rkhunter_wrapper import RKHunterScanResult, RKHunterWrapper
+# Import RKHunter optimizer for settings integration
+try:
+    from core.rkhunter_optimizer import RKHunterOptimizer, RKHunterConfig, RKHunterStatus, OptimizationReport
+    RKHUNTER_OPTIMIZER_AVAILABLE = True
+except ImportError:
+    RKHUNTER_OPTIMIZER_AVAILABLE = False
+    RKHunterOptimizer = None
+    RKHunterConfig = None
+    RKHunterStatus = None
+    OptimizationReport = None
 # Import compatible update system
 try:
     from core.automatic_updates import AutoUpdateSystem, UpdateStatus
@@ -18,8 +29,21 @@ try:
 except ImportError:
     UPDATES_AVAILABLE = False
     AutoUpdateSystem = None
+
+# Import non-invasive monitoring system for status checks without sudo
+try:
+    from core.non_invasive_monitor import get_system_status, record_activity
+    from core.rkhunter_monitor_non_invasive import get_rkhunter_status_non_invasive
+    NON_INVASIVE_MONITORING_AVAILABLE = True
+except ImportError:
+    NON_INVASIVE_MONITORING_AVAILABLE = False
+    get_system_status = None
+    record_activity = None
+    get_rkhunter_status_non_invasive = None
+
 from gui.rkhunter_components import RKHunterScanDialog, RKHunterScanThread
 from gui.scan_thread import ScanThread
+from gui.system_hardening_tab import SystemHardeningTab
 from gui.update_components import UpdateNotifier
 from gui.user_manual_window import UserManualWindow
 from monitoring import MonitorConfig, MonitorState, RealTimeMonitor
@@ -82,6 +106,7 @@ from utils.scan_reports import (
 
 from gui import APP_VERSION
 from gui import settings_pages
+from gui.settings_pages import RKHunterOptimizationWorker
 from gui.theme_manager import get_theme_manager
 from gui.themed_widgets import ThemedWidgetMixin
 
@@ -362,7 +387,8 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
         print("⚡ Deferring real-time monitoring initialization for faster startup")
 
         # Use QTimer to update status after UI is fully initialized
-        QTimer.singleShot(100, self.update_definition_status)
+        # Use non-invasive status checking to avoid authentication prompts
+        QTimer.singleShot(100, self.update_system_status_non_invasive)
         QTimer.singleShot(200, self.update_protection_ui_after_init)
         # Add a safety net timer to ensure status is never left as
         # "Initializing..."
@@ -483,6 +509,7 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
             self.timer_cycle_count += 1
             self.performance_stats["timer_calls"] += 1
 
+            # Re-enable firewall status updates now that they use non-invasive methods
             # Only update firewall status every 5 cycles (5 seconds)
             if self.timer_cycle_count % 5 == 0:
                 self.update_firewall_status()
@@ -612,6 +639,7 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
         self.create_dashboard_tab()  # Add dashboard as first tab
         self.create_scan_tab()
         self.create_real_time_tab()
+        self.create_hardening_tab()  # System hardening assessment
         self.create_reports_tab()
         self.create_quarantine_tab()
         self.create_settings_tab()
@@ -732,21 +760,19 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
         self.protection_card.clicked.connect(
             self.toggle_protection_from_dashboard)
 
-        # Firewall Status Card - using theme colors
-        firewall_status = get_firewall_status()
-        firewall_active = firewall_status.get("is_active", False)
+        # Firewall Status Card - defer status check to avoid sudo prompt at startup
         self.firewall_card = self.create_clickable_status_card(
             "Firewall Protection",
-            "Active" if firewall_active else "Inactive",
-            get_theme_manager().get_color("success") if firewall_active else get_theme_manager().get_color("error"),
-            (
-                "Firewall is protecting your system"
-                if firewall_active
-                else "Click to enable firewall"
-            ),
+            "Checking...",  # Placeholder status
+            get_theme_manager().get_color("accent"),  # Neutral color while checking
+            "Checking firewall status...",
         )
         # Connect the click signal
         self.firewall_card.clicked.connect(self.toggle_firewall_from_dashboard)
+        
+        # Re-enable firewall status updates now that they use non-invasive methods
+        # Schedule firewall status update after UI is fully loaded
+        QTimer.singleShot(1000, self.update_firewall_status_deferred)
 
         # Last Scan Card - now clickable
         self.last_scan_card = self.create_clickable_status_card(
@@ -990,7 +1016,8 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
                 "Firewall Control",
                 success_msg
             )
-            # Force immediate status update
+            # Force immediate status update by clearing cache first
+            self._clear_firewall_status_cache()
             self.update_firewall_status()
             self.update_firewall_status_card()
         else:
@@ -1077,22 +1104,62 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
     def update_firewall_status_card(self):
         """Update the firewall status card with current state."""
         if hasattr(self, "firewall_card"):
-            # Get current firewall status
-            firewall_status = get_firewall_status()
-            is_active = firewall_status.get("is_active", False)
+            # Only update if we already have status (avoid sudo prompt during initialization)
+            if hasattr(self, '_firewall_status_cache'):
+                firewall_status = self._firewall_status_cache
+                is_active = firewall_status.get("is_active", False)
 
-            # Find the card's value label and update it
-            for child in self.firewall_card.findChildren(QLabel):
-                if child.objectName() == "cardValue":
-                    child.setText("Active" if is_active else "Inactive")
-                    child.setStyleSheet(
-                        f"color: {get_theme_manager().get_color('success') if is_active else get_theme_manager().get_color('error')}; font-size: 20px; font-weight: bold;")
-                elif child.objectName() == "cardDescription":
-                    child.setText(
-                        "Firewall is protecting your system"
-                        if is_active
-                        else "Click to enable firewall"
-                    )
+                # Find the card's value label and update it
+                for child in self.firewall_card.findChildren(QLabel):
+                    if child.objectName() == "cardValue":
+                        child.setText("Active" if is_active else "Inactive")
+                        child.setStyleSheet(
+                            f"color: {get_theme_manager().get_color('success') if is_active else get_theme_manager().get_color('error')}; font-size: 20px; font-weight: bold;")
+                    elif child.objectName() == "cardDescription":
+                        child.setText(
+                            "Firewall is protecting your system"
+                            if is_active
+                            else "Click to enable firewall"
+                        )
+
+    def update_firewall_status_deferred(self):
+        """Update firewall status asynchronously to avoid sudo prompt at startup."""
+        try:
+            # Get firewall status (this may request sudo, but only after UI is loaded)
+            firewall_status = get_firewall_status()
+            self._firewall_status_cache = firewall_status  # Cache for future updates
+            is_active = firewall_status.get("is_active", False)
+            
+            # Update the dashboard firewall card
+            if hasattr(self, "firewall_card"):
+                # Find the card's value label and update it
+                for child in self.firewall_card.findChildren(QLabel):
+                    if child.objectName() == "cardValue":
+                        child.setText("Active" if is_active else "Inactive")
+                        child.setStyleSheet(
+                            f"color: {get_theme_manager().get_color('success') if is_active else get_theme_manager().get_color('error')}; font-size: 20px; font-weight: bold;")
+                    elif child.objectName() == "cardDescription":
+                        child.setText(
+                            "Firewall is protecting your system"
+                            if is_active
+                            else "Click to enable firewall"
+                        )
+            
+            # Also update other firewall status displays if they exist
+            if hasattr(self, "update_firewall_status"):
+                self.update_firewall_status()
+                
+        except Exception as e:
+            print(f"⚠️ Failed to update firewall status: {e}")
+            # Update card to show error state
+            if hasattr(self, "firewall_card"):
+                for child in self.firewall_card.findChildren(QLabel):
+                    if child.objectName() == "cardValue":
+                        child.setText("Error")
+                        child.setStyleSheet(
+                            f"color: {get_theme_manager().get_color('error')}; font-size: 20px; font-weight: bold;")
+                    elif child.objectName() == "cardDescription":
+                        child.setText("Unable to check firewall status")
 
     def update_protection_ui_after_init(self):
         """Update Protection tab UI after full initialization to ensure state consistency."""
@@ -1175,7 +1242,19 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
             return
 
         try:
-            status = get_firewall_status()
+            # Use cached status with time-based refresh to balance responsiveness and avoid frequent sudo prompts
+            current_time = time.time()
+            cache_max_age = 30  # Refresh cache every 30 seconds at most
+            
+            if (hasattr(self, '_firewall_status_cache') and 
+                hasattr(self, '_firewall_status_cache_time') and
+                current_time - self._firewall_status_cache_time < cache_max_age):
+                status = self._firewall_status_cache
+            else:
+                # Cache expired or first time - get fresh status
+                status = get_firewall_status()
+                self._firewall_status_cache = status
+                self._firewall_status_cache_time = current_time
 
             # Check if status has changed from previous check
             current_active_state = status.get("is_active", False)
@@ -1265,6 +1344,14 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
                 f"font-size: 20px; color: {get_theme_manager().get_color('muted_text')};")
             if hasattr(self, "firewall_name_label"):
                 self.firewall_name_label.setText("Unable to detect")
+
+    def _clear_firewall_status_cache(self):
+        """Clear the firewall status cache to force immediate refresh."""
+        if hasattr(self, '_firewall_status_cache'):
+            delattr(self, '_firewall_status_cache')
+        if hasattr(self, '_firewall_status_cache_time'):
+            delattr(self, '_firewall_status_cache_time')
+        print("🔄 Firewall status cache cleared")
 
     def toggle_firewall_status(self):
         """Toggle the firewall on/off based on current status."""
@@ -2014,6 +2101,7 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
 
         self.tab_widget.addTab(real_time_widget, "Protection")
 
+        # Re-enable firewall status initialization now that it uses non-invasive methods
         # Initialize firewall status display
         QTimer.singleShot(
             1000, self.update_firewall_status
@@ -2021,6 +2109,27 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
 
         # Firewall monitoring is now handled by unified timer system
         # (Reduces timer overhead by consolidating updates)
+
+    def create_hardening_tab(self):
+        """Create the system hardening assessment tab."""
+        try:
+            hardening_widget = SystemHardeningTab(self)
+            self.tab_widget.addTab(hardening_widget, "Hardening")
+            
+            # Store reference for potential future use
+            self.hardening_tab = hardening_widget
+            
+            logging.info("System hardening tab created successfully")
+        except Exception as e:
+            logging.error(f"Failed to create hardening tab: {e}")
+            # Create a simple error widget as fallback
+            error_widget = QWidget()
+            error_layout = QVBoxLayout(error_widget)
+            error_label = QLabel(f"⚠️ System Hardening tab failed to load:\n{str(e)}")
+            error_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            error_label.setStyleSheet("color: red; padding: 20px;")
+            error_layout.addWidget(error_label)
+            self.tab_widget.addTab(error_widget, "Hardening")
 
     def init_real_time_monitoring_safe(self):
         """Safely initialize the real-time monitoring system with better error handling."""
@@ -2790,6 +2899,7 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
         self._firewall_update_counter += 1
         if self._firewall_update_counter >= 6:
             self._firewall_update_counter = 0
+            # Re-enable firewall status update now that it uses non-invasive methods
             self.update_firewall_status()
 
         if self.real_time_monitor:
@@ -3708,6 +3818,21 @@ System        {perf_status}"""
         self.scan_toggle_btn.style().unpolish(self.scan_toggle_btn)
         self.scan_toggle_btn.style().polish(self.scan_toggle_btn)
 
+    def reset_all_scan_buttons(self):
+        """Reset all scan buttons to their default state when scans are stopped."""
+        print("🔄 Resetting all scan buttons to default state")
+        
+        # Reset main scan button
+        self.update_scan_button_state(False)
+        self.scan_toggle_btn.setEnabled(True)
+        
+        # Reset RKHunter scan button
+        if hasattr(self, 'rkhunter_scan_btn'):
+            self.rkhunter_scan_btn.setEnabled(True)
+            self.rkhunter_scan_btn.setText("🔍 RKHunter Scan")
+        
+        print("✅ All scan buttons reset successfully")
+
     def start_scan(self, quick_scan=False):
         print(f"\n🔄 === START_SCAN CALLED ===")
         print(f"DEBUG: start_scan() called with quick_scan={quick_scan}")
@@ -4319,6 +4444,78 @@ System        {perf_status}"""
             self.rkhunter_scan_btn.setText("📦 Install RKHunter")
             self.rkhunter_scan_btn.setEnabled(True)
 
+    def install_rkhunter_with_callback(self, callback=None):
+        """Install RKHunter with optional callback after successful installation."""
+        # Show installation confirmation dialog
+        reply = self.show_themed_message_box(
+            "question",
+            "Install RKHunter",
+            "RKHunter will be installed to provide rootkit detection capabilities.\n\n"
+            "This requires administrator privileges. Continue?",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+        )
+
+        if reply != QMessageBox.StandardButton.Yes:
+            return
+
+        try:
+            # Create a progress dialog for installation
+            progress = self.show_themed_progress_dialog(
+                "Installing RKHunter",
+                "Installing RKHunter, please wait...",
+                0, 0  # Indeterminate progress
+            )
+            progress.setCancelButton(None)  # No cancel button
+            progress.show()
+            
+            # Process events to show the dialog
+            QApplication.processEvents()
+
+            success, message = self.rkhunter.install_rkhunter()
+            
+            progress.close()
+
+            if success:
+                self.show_themed_message_box(
+                    "information",
+                    "Success",
+                    f"RKHunter installed successfully!\n{message}",
+                )
+                
+                # Reinitialize RKHunter wrapper to pick up the new installation
+                try:
+                    self.rkhunter = RKHunterWrapper()
+                    print("✅ RKHunter wrapper reinitialized after installation")
+                except Exception as e:
+                    print(f"⚠️ Failed to reinitialize RKHunter wrapper: {e}")
+
+                # Update scan button if it exists
+                if hasattr(self, 'rkhunter_scan_btn'):
+                    self.rkhunter_scan_btn.setText("🔍 RKHunter Scan")
+                    self.rkhunter_scan_btn.setToolTip(
+                        "Run RKHunter rootkit detection scan")
+                    self.rkhunter_scan_btn.clicked.disconnect()
+                    self.rkhunter_scan_btn.clicked.connect(self.start_rkhunter_scan)
+                    self.rkhunter_scan_btn.setEnabled(True)
+                
+                # Execute callback if provided
+                if callback:
+                    QTimer.singleShot(500, callback)  # Small delay to ensure UI updates
+                    
+            else:
+                self.show_themed_message_box(
+                    "critical",
+                    "Installation Failed",
+                    f"Failed to install RKHunter:\n{message}",
+                )
+
+        except Exception as e:
+            self.show_themed_message_box(
+                "critical",
+                "Installation Error",
+                f"Error during installation:\n{str(e)}",
+            )
+
     def start_rkhunter_scan(self):
         """Start an RKHunter rootkit scan."""
         # Check if already running
@@ -4331,8 +4528,8 @@ System        {perf_status}"""
                 "RKHunter scan is already running.")
             return
 
-        # Check if RKHunter is functional (this may prompt for permissions)
-        if not self.rkhunter.is_functional():
+        # Check if RKHunter is available (without authentication)
+        if not self.rkhunter.available or self.rkhunter.rkhunter_path is None:
             # Check authentication method available
             pkexec_available = self.rkhunter._find_executable("pkexec")
 
@@ -4420,13 +4617,81 @@ System        {perf_status}"""
         # Show final confirmation with password warning
         reply = self.show_themed_message_box(
             "question",
-            "Authentication Required - Ready to Start RKHunter Scan",
+            "Ready to Start RKHunter Scan",
             auth_message,
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
         )
 
         if reply != QMessageBox.StandardButton.Yes:
             return
+
+        # Pre-authenticate to establish session for the scan
+        print("🔐 Authenticating for RKHunter scan...")
+        try:
+            auth_session_valid = self.rkhunter._ensure_auth_session()
+            if not auth_session_valid:
+                # Check what authentication methods are available
+                from core.elevated_runner import _which
+                pkexec_available = bool(_which("pkexec"))
+                sudo_available = bool(_which("sudo"))
+                display_available = bool(os.environ.get("DISPLAY"))
+                
+                if pkexec_available and display_available:
+                    error_msg = (
+                        "Authentication failed or was cancelled.\n\n"
+                        "A secure password dialog should have appeared. "
+                        "If you didn't see it, please try again.\n\n"
+                        "Alternative: The scan will prompt for authentication when it starts."
+                    )
+                elif sudo_available:
+                    error_msg = (
+                        "Pre-authentication failed.\n\n"
+                        "The scan will prompt for administrator credentials "
+                        "when it starts.\n\n"
+                        "Continue with the scan?"
+                    )
+                else:
+                    error_msg = (
+                        "No authentication method available.\n\n"
+                        "Please ensure 'sudo' or 'pkexec' is installed on your system.\n\n"
+                        "The scan has been cancelled."
+                    )
+                
+                # For pkexec/sudo available cases, ask if user wants to continue anyway
+                if pkexec_available or sudo_available:
+                    reply = self.show_themed_message_box(
+                        "question",
+                        "Pre-authentication Failed",
+                        error_msg,
+                        QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+                    )
+                    if reply != QMessageBox.StandardButton.Yes:
+                        return
+                    print("🔄 Continuing with scan - authentication will be requested during scan...")
+                else:
+                    # No authentication methods available
+                    self.show_themed_message_box(
+                        "error",
+                        "Authentication Not Available",
+                        error_msg
+                    )
+                    return
+            else:
+                print("✅ Pre-authentication successful")
+                
+        except Exception as e:
+            logging.error("Exception during pre-authentication: %s", e)
+            # Continue anyway and let scan handle authentication
+            reply = self.show_themed_message_box(
+                "question",
+                "Authentication Error",
+                f"An error occurred during pre-authentication:\n\n{str(e)}\n\n"
+                "Continue anyway? The scan will prompt for authentication when it starts.",
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+            )
+            if reply != QMessageBox.StandardButton.Yes:
+                return
+            print("🔄 Continuing with scan despite pre-authentication error...")
 
         # Start RKHunter scan in thread
         self.rkhunter_scan_btn.setEnabled(False)
@@ -5634,6 +5899,153 @@ System        {perf_status}"""
             for widget in self.settings_rkhunter_category_widgets.values():
                 self.apply_rkhunter_category_styling(widget)
     
+    def run_rkhunter_optimization(self, optimization_type):
+        """Run RKHunter optimization based on type"""
+        # First check if RKHunter optimizer is available
+        if not RKHUNTER_OPTIMIZER_AVAILABLE:
+            self.show_themed_message_box(
+                "warning", 
+                "RKHunter Optimizer", 
+                "RKHunter optimizer is not available.\n\n"
+                "This feature requires the RKHunter optimization module to be installed."
+            )
+            return
+        
+        # Then check if RKHunter itself is available
+        if not self._rkhunter_available():
+            # Show installation dialog
+            reply = self.show_themed_message_box(
+                "question",
+                "RKHunter Not Available",
+                "RKHunter is not installed on your system.\n\n"
+                "RKHunter optimization requires RKHunter to be installed first.\n\n"
+                "Would you like to install RKHunter now?",
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+            )
+            
+            if reply == QMessageBox.StandardButton.Yes:
+                # Launch installation helper
+                self.install_rkhunter_with_callback(lambda: self.run_rkhunter_optimization(optimization_type))
+            return
+        
+        try:
+            # Show progress
+            if hasattr(self, 'rkhunter_progress_bar'):
+                self.rkhunter_progress_bar.setVisible(True)
+                self.rkhunter_progress_bar.setRange(0, 0)  # Indeterminate
+            if hasattr(self, 'rkhunter_progress_label'):
+                self.rkhunter_progress_label.setVisible(True)
+                self.rkhunter_progress_label.setText(f"Running {optimization_type}...")
+            
+            # Create config based on current settings
+            config = RKHunterConfig()
+            
+            # Set performance mode if available
+            if hasattr(self, 'rkhunter_perf_mode_combo'):
+                mode = self.rkhunter_perf_mode_combo.currentText().lower()
+                config.performance_mode = mode
+            
+            # Handle different optimization types
+            if optimization_type == 'update_mirrors':
+                config.update_mirrors = True
+                config.mirror_mode = 'auto'
+            elif optimization_type == 'update_baseline':
+                config.update_baseline = True
+            elif optimization_type == 'optimize_config':
+                config.optimize_performance = True
+                config.update_mirrors = True
+                config.update_baseline = True
+            
+            # Start optimization worker
+            if hasattr(self, 'rkhunter_optimization_worker') and self.rkhunter_optimization_worker:
+                if self.rkhunter_optimization_worker.isRunning():
+                    return  # Already running
+            
+            self.rkhunter_optimization_worker = RKHunterOptimizationWorker(config)
+            self.rkhunter_optimization_worker.optimization_complete.connect(self.on_rkhunter_optimization_complete)
+            self.rkhunter_optimization_worker.status_updated.connect(self.on_rkhunter_status_updated)
+            self.rkhunter_optimization_worker.progress_updated.connect(self.on_rkhunter_progress_updated)
+            self.rkhunter_optimization_worker.error_occurred.connect(self.on_rkhunter_optimization_error)
+            self.rkhunter_optimization_worker.start()
+            
+        except Exception as e:
+            logging.error(f"Failed to start RKHunter optimization: {e}")
+            self.show_themed_message_box("critical", "Error", f"Failed to start optimization: {str(e)}")
+    
+    def on_rkhunter_optimization_complete(self, report):
+        """Handle completion of RKHunter optimization"""
+        try:
+            # Hide progress
+            if hasattr(self, 'rkhunter_progress_bar'):
+                self.rkhunter_progress_bar.setVisible(False)
+            if hasattr(self, 'rkhunter_progress_label'):
+                self.rkhunter_progress_label.setVisible(False)
+            
+            # Display results
+            if hasattr(self, 'rkhunter_results_text') and report:
+                results = []
+                results.append(f"Optimization completed at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+                
+                if hasattr(report, 'mirrors_updated') and report.mirrors_updated:
+                    results.append("✅ Mirrors updated successfully")
+                if hasattr(report, 'baseline_updated') and report.baseline_updated:
+                    results.append("✅ Baseline updated successfully")
+                if hasattr(report, 'config_optimized') and report.config_optimized:
+                    results.append("✅ Configuration optimized")
+                if hasattr(report, 'warnings') and report.warnings:
+                    results.append("⚠️ Warnings:")
+                    for warning in report.warnings:
+                        results.append(f"  • {warning}")
+                if hasattr(report, 'errors') and report.errors:
+                    results.append("❌ Errors:")
+                    for error in report.errors:
+                        results.append(f"  • {error}")
+                
+                self.rkhunter_results_text.setText('\n'.join(results))
+            
+            # Refresh status
+            if hasattr(self, 'rkhunter_status_widget'):
+                self.rkhunter_status_widget.refresh_status()
+                
+        except Exception as e:
+            logging.error(f"Error handling optimization completion: {e}")
+    
+    def on_rkhunter_status_updated(self, status):
+        """Handle RKHunter status update"""
+        try:
+            if hasattr(self, 'rkhunter_status_widget'):
+                self.rkhunter_status_widget.update_status(status)
+        except Exception as e:
+            logging.error(f"Error updating RKHunter status: {e}")
+    
+    def on_rkhunter_progress_updated(self, message):
+        """Handle RKHunter progress update"""
+        try:
+            if hasattr(self, 'rkhunter_progress_label'):
+                self.rkhunter_progress_label.setText(message)
+        except Exception as e:
+            logging.error(f"Error updating RKHunter progress: {e}")
+    
+    def on_rkhunter_optimization_error(self, error_message):
+        """Handle RKHunter optimization error"""
+        try:
+            # Hide progress
+            if hasattr(self, 'rkhunter_progress_bar'):
+                self.rkhunter_progress_bar.setVisible(False)
+            if hasattr(self, 'rkhunter_progress_label'):
+                self.rkhunter_progress_label.setVisible(False)
+            
+            # Show error message
+            QMessageBox.critical(self, "RKHunter Optimization Error", error_message)
+            
+            # Display error in results
+            if hasattr(self, 'rkhunter_results_text'):
+                error_text = f"❌ Optimization failed at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\nError: {error_message}"
+                self.rkhunter_results_text.setText(error_text)
+                
+        except Exception as e:
+            logging.error(f"Error handling optimization error: {e}")
+    
     def update_dynamic_component_styling(self):
         """Update styling for components that use dynamic colors based on theme."""
         # Update firewall name label if it exists
@@ -5910,8 +6322,7 @@ System        {perf_status}"""
             self._stop_scan_user_wants_restart = True
             
             # Reset UI
-            self.update_scan_button_state(False)  # Reset to "Start Scan" mode
-            self.scan_toggle_btn.setEnabled(True)  # Re-enable the button
+            self.reset_all_scan_buttons()  # Reset all scan buttons to default state
             self.progress_bar.setValue(0)
             
             # Show appropriate completion message
@@ -5949,8 +6360,7 @@ System        {perf_status}"""
             print(f"DEBUG: 🔄 Reset _scan_manually_stopped flag to: {self._scan_manually_stopped}")
             
             # Reset UI to ready state
-            self.update_scan_button_state(False)  # Reset to "Start Scan" mode
-            self.scan_toggle_btn.setEnabled(True)  # Re-enable the button
+            self.reset_all_scan_buttons()  # Reset all scan buttons to default state
             self.progress_bar.setValue(0)
             self.status_label.setText("Ready to scan")
             self.status_bar.showMessage("🔴 Ready to scan")
@@ -7199,6 +7609,59 @@ System        {perf_status}"""
             ):
                 self.last_update_label.setText("Status: ClamAV not available")
 
+    def update_system_status_non_invasive(self):
+        """Update all system status displays using non-invasive methods"""
+        print("🔄 Updating system status using non-invasive methods...")
+        
+        # Set the "Last Checked" timestamp to now
+        current_time = datetime.now()
+        formatted_checked = current_time.strftime("%Y-%m-%d %H:%M")
+        
+        try:
+            if not NON_INVASIVE_MONITORING_AVAILABLE:
+                print("⚠️ Non-invasive monitoring not available, falling back to basic update")
+                if hasattr(self, 'last_checked_label'):
+                    self.last_checked_label.setText(f"Last checked: {formatted_checked}")
+                if hasattr(self, 'last_update_label'):
+                    self.last_update_label.setText("Status: Non-invasive monitoring unavailable")
+                return
+            
+            # Update last checked timestamp
+            if hasattr(self, 'last_checked_label'):
+                self.last_checked_label.setText(f"Last checked: {formatted_checked}")
+            
+            # Get comprehensive system status without sudo requirements
+            system_status = get_system_status()
+            
+            # Update virus definitions display
+            if hasattr(self, 'last_update_label'):
+                if system_status.virus_definitions_age >= 0:
+                    if system_status.virus_definitions_age == 0:
+                        self.last_update_label.setText("Status: Up to date")
+                    elif system_status.virus_definitions_age <= 3:
+                        self.last_update_label.setText(f"Status: {system_status.virus_definitions_age} days old (good)")
+                    elif system_status.virus_definitions_age <= 7:
+                        self.last_update_label.setText(f"Status: {system_status.virus_definitions_age} days old (update recommended)")
+                    else:
+                        self.last_update_label.setText(f"Status: {system_status.virus_definitions_age} days old (update needed)")
+                else:
+                    if system_status.clamav_available:
+                        self.last_update_label.setText("Status: Definitions age unknown")
+                    else:
+                        self.last_update_label.setText("Status: ClamAV not available")
+            
+            # Update any other system status displays
+            print(f"✅ System status updated non-invasively:")
+            print(f"   - ClamAV: {'Available' if system_status.clamav_available else 'Not available'}")
+            print(f"   - Virus definitions: {system_status.virus_definitions_age} days old")
+            print(f"   - Firewall: {system_status.firewall_status}")
+            print(f"   - Active services: {len([s for s in system_status.system_services.values() if s == 'active'])}")
+            
+        except Exception as e:
+            print(f"⚠️ Error updating system status non-invasively: {e}")
+            if hasattr(self, 'last_update_label'):
+                self.last_update_label.setText("Status: Error checking (non-invasive)")
+
     def tray_icon_activated(self, reason):
         # ActivationReason.Trigger is a single click, DoubleClick is double
         # click
@@ -7411,6 +7874,14 @@ System        {perf_status}"""
             self.save_activity_logs()
         except Exception as e:
             print(f"Warning: Failed to save activity logs on close: {e}")
+
+        # Clean up authentication session
+        try:
+            from core.elevated_runner import cleanup_auth_session
+            cleanup_auth_session()
+            print("🔐 Authentication session cleaned up")
+        except Exception as e:
+            print(f"Warning: Failed to cleanup authentication session: {e}")
 
         # Accept the close event (actually close the application)
         event.accept()

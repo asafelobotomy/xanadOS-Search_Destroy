@@ -387,6 +387,33 @@ class RKHunterWrapper:
         
         return within_extended_period
 
+    def _ensure_auth_session(self) -> bool:
+        """
+        Ensure authentication session is active to minimize prompts.
+        
+        Returns:
+            True if session is active, False if authentication failed
+        """
+        try:
+            self.logger.info("Attempting to ensure authentication session...")
+            from .elevated_runner import validate_auth_session
+            self.logger.info("validate_auth_session imported successfully")
+            
+            result = validate_auth_session()
+            self.logger.info("validate_auth_session returned: %s", result)
+            return result
+            
+        except ImportError as e:
+            # Fallback if validate_auth_session is not available
+            self.logger.warning("validate_auth_session not available: %s, authentication may prompt multiple times", e)
+            return True
+        except Exception as e:
+            self.logger.error("Authentication session validation failed: %s", e)
+            # Log the full traceback for debugging
+            import traceback
+            self.logger.error("Full traceback: %s", traceback.format_exc())
+            return False
+
     def _update_auth_session(self):
         """
         Update the authentication session timestamp.
@@ -468,11 +495,15 @@ class RKHunterWrapper:
         if not is_valid:
             return subprocess.CompletedProcess(args=cmd_args, returncode=1, stdout="", stderr=f"Security validation failed: {error_message}")
         self.logger.info(f"Security validation passed for command: {' '.join(cmd_args[:2])}")
-        result = elevated_run(cmd_args, timeout=timeout, capture_output=capture_output)
+        # elevated_run with GUI authentication for consistent user experience
+        result = elevated_run(cmd_args, timeout=timeout, capture_output=capture_output, gui=True)
         # Apply success heuristic abstraction
         try:
             if _is_successful_scan(result.returncode, getattr(result, 'stdout', '')):
-                self._update_auth_session()
+                # Mark sudo session as active after successful privileged operation
+                from .elevated_runner import _set_sudo_session_active
+                _set_sudo_session_active(True)
+                self.logger.debug("Sudo session marked active after successful elevated_run")
         except Exception:  # pragma: no cover - defensive
             pass
         return result
@@ -537,10 +568,11 @@ class RKHunterWrapper:
         is_valid, error_message = self.security_validator.validate_command_args(cmd_args)
         if not is_valid:
             return subprocess.CompletedProcess(args=cmd_args, returncode=1, stdout="", stderr=f"Security validation failed: {error_message}")
+        
+        # elevated_popen with GUI authentication for consistent user experience
         # Launch process
-        process = elevated_popen(cmd_args)
+        process = elevated_popen(cmd_args, gui=True)
         self._current_process = process
-        self._update_auth_session()
         stdout_lines: list[str] = []
         try:
             if process.stdout:
@@ -559,7 +591,10 @@ class RKHunterWrapper:
             self._current_process = None
         result = subprocess.CompletedProcess(args=cmd_args, returncode=process.returncode, stdout='\n'.join(stdout_lines), stderr='')
         if result.returncode in (0,1) and ("Info: End date is" in result.stdout or "System checks summary" in result.stdout or result.returncode==0):
-            self._update_auth_session()
+            # Mark sudo session as active after successful privileged operation
+            from .elevated_runner import _set_sudo_session_active
+            _set_sudo_session_active(True)
+            self.logger.debug("Sudo session marked active after successful RKHunter operation")
         return result
 
     def _initialize_config(self):
@@ -580,7 +615,7 @@ class RKHunterWrapper:
                     "COPY_LOG_ON_ERROR=1",
                     "",
                     "# Scan behavior",
-                    "SCANROOTKITMODE=1",
+                    "SCANROOTKITMODE=THOROUGH",
                     "UNHIDETCPUDP=1",
                     "ALLOW_SSH_ROOT_USER=no",
                     "ALLOW_SSH_PROT_V1=0",
@@ -661,9 +696,12 @@ class RKHunterWrapper:
             return False
 
         # If direct execution failed, try with privilege escalation
+        # elevated_run now automatically prefers sudo when session is active
         try:
             result = self._run_with_privilege_escalation(
-                [self.rkhunter_path, "--version"], capture_output=True, timeout=10
+                [self.rkhunter_path, "--version"], 
+                capture_output=True, 
+                timeout=10
             )
             return result.returncode == 0
         except Exception:
@@ -676,8 +714,11 @@ class RKHunterWrapper:
             return False
         try:
             self.logger.info("Updating RKHunter database...")
+            # elevated_run now automatically prefers sudo when session is active
             result = self._run_with_privilege_escalation(
-                [self.rkhunter_path, "--update"], capture_output=True, timeout=300
+                [self.rkhunter_path, "--update"], 
+                capture_output=True, 
+                timeout=300
             )
             if result.returncode == 0:
                 self.logger.info("RKHunter database updated successfully")

@@ -448,6 +448,20 @@ class RKHunterScanThread(QThread, CooperativeCancellationMixin):
                     if self._scan_cancelled:
                         self.logger.info("Scan cancelled before starting")
                         return
+                    
+                    # Simple authentication check
+                    self.logger.info("Checking authentication for scan thread...")
+                    try:
+                        from core.elevated_runner import validate_auth_session
+                        session_valid = validate_auth_session()
+                        if session_valid:
+                            self.logger.info("Authentication validated for scan thread")
+                        else:
+                            self.logger.warning("Authentication validation failed in scan thread")
+                            self.signals.message.emit("Authentication failed")
+                            return
+                    except Exception as e:
+                        self.logger.warning("Could not check auth session in scan thread: %s", e)
                         
                     result = self.rkhunter.scan_system_with_output_callback(
                         test_categories=self.test_categories,

@@ -22,6 +22,9 @@ Contains stub files that were created during aggressive cleanup operations. Thes
 - `deprecated-components/` - Old component implementations
 - `deprecated-theme-files/` - Previous theme and styling files
 - `experimental/` - Experimental features and proof-of-concepts
+- `test-files/` - Temporary test files from development phases (archived 2025-08-17)
+- `integration-tests/` - Integration testing scripts and patches (archived 2025-08-17)
+- `documentation-drafts/` - Temporary documentation from development (archived 2025-08-17)
 
 ### `/old-versions/`
 Contains backup versions and previous implementations of files.

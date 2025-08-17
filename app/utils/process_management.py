@@ -400,16 +400,32 @@ def execute_secure(command: Union[str, List[str]],
     return PROCESS_MANAGER.execute_command(command, config)
 
 def execute_with_privilege(command: Union[str, List[str]], 
-                          method: str = "pkexec",
+                          method: str = "elevated_run",
                           timeout: int = 300) -> ProcessResult:
-    """Execute command with elevated privileges"""
-    if method == "pkexec":
+    """Execute command with elevated privileges using standardized GUI sudo method"""
+    if method == "elevated_run":
+        # Use the standardized elevated_run method (same as RKHunter)
+        from app.core.elevated_runner import elevated_run
+        
+        cmd_list = command if isinstance(command, list) else [command]
+        result = elevated_run(cmd_list, timeout=timeout, gui=True)
+        
+        # Convert to ProcessResult format
+        return ProcessResult(
+            success=(result.returncode == 0),
+            returncode=result.returncode,
+            stdout=result.stdout or "",
+            stderr=result.stderr or "",
+            command=cmd_list
+        )
+    elif method == "pkexec":
         elevated_command = ["pkexec"] + (command if isinstance(command, list) else [command])
     elif method == "sudo":
         elevated_command = ["sudo"] + (command if isinstance(command, list) else [command])
     else:
         raise ValueError(f"Unknown privilege escalation method: {method}")
     
+    # Fallback for legacy pkexec/sudo methods
     config = ProcessConfig(timeout=timeout)
     return PROCESS_MANAGER.execute_command(elevated_command, config)
 

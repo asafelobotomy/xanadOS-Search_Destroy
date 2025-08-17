@@ -48,7 +48,8 @@ class SecureRKHunterValidator:
             "--summary",      # Summary only
             "--append-log",   # Append to log
             "--configfile",   # Config file (with path validation)
-            "--tmpdir"        # Temporary directory (with path validation)
+            "--tmpdir",       # Temporary directory (with path validation)
+            "--configcheck"   # Configuration validation check
         }
         
         # Allowed test categories for --enable/--disable

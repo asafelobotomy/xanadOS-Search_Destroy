@@ -74,7 +74,7 @@ def safe_kill(pid: int, sig: int = signal.SIGTERM, *, escalate: bool = False, ti
         # escalate using elevated_run
         try:
             from .elevated_runner import elevated_run
-            cp = elevated_run(["kill", f"-{sig_name}", str(pid)], timeout=15, capture_output=True)
+            cp = elevated_run(["kill", f"-{sig_name}", str(pid)], timeout=15, capture_output=True, gui=True)
             attempts.append(f"elevated_run:{sig_name}:rc={cp.returncode}")
             if cp.returncode == 0 or cp.returncode == 126:  # 126=user cancelled auth; treat as soft-success
                 return KillResult(cp.returncode == 0, True, attempts, None if cp.returncode == 0 else "auth_cancelled")

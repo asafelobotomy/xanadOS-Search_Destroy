@@ -1,200 +1,236 @@
-"""Unified privileged command execution helper.
-
-Provides a single abstraction for running commands with elevated privileges
-preferring pkexec (GUI-friendly) and falling back to sudo variants.
-
-Goals:
- - Centralize environment sanitization & allowlist style validation
- - Enforce timeouts
- - Provide consistent logging & optional JSON output compatibility
- - Minimize authentication prompts (reuse pkexec when available)
-
-NOTE: This does NOT replace run_secure (non-privileged). Use run_secure for
-regular commands. Use elevated_run only when privilege escalation is required.
+#!/usr/bin/env python3
 """
-from __future__ import annotations
-import os
-import shlex
-import subprocess
+Simple privilege escalation for xanadOS Search & Destroy.
+Simplified version without complex session management.
+"""
+
 import logging
-from pathlib import Path
-from typing import Sequence, Mapping, Optional
+import os
+import subprocess
+from typing import Sequence, Optional, Mapping
 
 logger = logging.getLogger(__name__)
 
-SAFE_ENV_KEYS = {"LANG", "LC_ALL", "PATH", "DISPLAY", "XAUTHORITY"}
-SAFE_PATH = "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
 
-def _which(cmd: str) -> Optional[str]:
-    from shutil import which
-    return which(cmd)
+def _which(name: str) -> Optional[str]:
+    """Find executable in PATH."""
+    try:
+        result = subprocess.run(['which', name], capture_output=True, text=True, timeout=5)
+        return result.stdout.strip() if result.returncode == 0 else None
+    except Exception:
+        return None
 
-def _sanitize_env(extra: Optional[Mapping[str, str]] = None, gui: bool = True) -> dict:
+
+def _sanitize_env(gui: bool = True) -> dict:
+    """Create sanitized environment for privilege escalation."""
     env = {
-        "PATH": SAFE_PATH,
-        "LANG": "C.UTF-8",
-        "LC_ALL": "C.UTF-8",
+        'PATH': os.environ.get('PATH', '/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin'),
+        'USER': os.environ.get('USER', 'root'),
+        'HOME': '/root',
+        'SHELL': '/bin/bash',
     }
-    if gui:
-        # Pass through DISPLAY / XAUTHORITY if present and minimal
-        d = os.environ.get("DISPLAY")
-        if d and len(d) < 16 and d.startswith(":"):
-            env["DISPLAY"] = d
-        xa = os.environ.get("XAUTHORITY")
-        if xa and xa.startswith(str(Path.home())):
-            env["XAUTHORITY"] = xa
-    if extra:
-        for k, v in extra.items():
-            if k in SAFE_ENV_KEYS and isinstance(v, str) and len(v) < 512:
-                env[k] = v
+    
+    if gui and os.environ.get('DISPLAY'):
+        env['DISPLAY'] = os.environ['DISPLAY']
+        if os.environ.get('XAUTHORITY'):
+            env['XAUTHORITY'] = os.environ['XAUTHORITY']
+    
     return env
 
-def _validate_args(argv: Sequence[str]) -> None:
-    if not argv:
-        raise ValueError("Empty command")
-    for a in argv:
-        if any(ch in a for ch in [';','&&','||','`','$','>','<','|']):
-            raise ValueError(f"Unsafe token in argument: {a}")
-
-def _format_cmd(argv: Sequence[str]) -> str:
-    return " ".join(shlex.quote(a) for a in argv)
 
 def elevated_run(argv: Sequence[str], *, timeout: int = 300, capture_output: bool = True,
-                 text: bool = True, gui: bool = True, allow_script: bool = False,
-                 env: Optional[Mapping[str, str]] = None) -> subprocess.CompletedProcess:
-    """Execute a command with privileges.
-
-    argv: base command (without pkexec/sudo). First element may be a script if allow_script True.
-    gui: attempt GUI auth (pkexec) else fallback to sudo passwordless / terminal.
-    allow_script: permit executing an absolute owner-only 0700 script outside allowlist.
+                text: bool = True, gui: bool = True) -> subprocess.CompletedProcess:
     """
-    _validate_args(argv)
-
-    prog = argv[0]
-    prog_path = Path(prog)
-    if prog_path.is_absolute():
-        if not prog_path.exists():
-            raise FileNotFoundError(prog)
-        if allow_script:
-            st = prog_path.stat()
-            if st.st_mode & 0o077:
-                raise PermissionError("Script has unsafe permissions")
-            if st.st_uid != os.getuid():
-                # We only allow running user-owned temp scripts through this path
-                raise PermissionError("Script not owned by current user")
-        else:
-            # For absolute paths without allow_script, require binary in safe dirs
-            if not any(str(prog_path).startswith(p) for p in ("/usr/bin/","/usr/sbin/","/bin/","/usr/local/bin/")):
-                raise PermissionError("Absolute path outside trusted prefixes")
-
+    Run command with elevated privileges using the simplest available method.
+    
+    Args:
+        argv: Command to run (without sudo/pkexec prefix)
+        timeout: Command timeout in seconds
+        capture_output: Whether to capture stdout/stderr
+        text: Whether to use text mode
+        gui: Whether to prefer GUI authentication
+    
+    Returns:
+        subprocess.CompletedProcess result
+    """
+    if not argv:
+        return subprocess.CompletedProcess([], 1, "", "No command provided")
+    
+    # Find available privilege escalation tools
     pkexec = _which("pkexec") if gui else None
     sudo = _which("sudo")
-
-    base_env = _sanitize_env(env, gui=gui)
-
-    attempted = []
-    errors = []
-
-    methods: list[tuple[str,list[str],dict]] = []
-    if pkexec:
-        # Use env wrapper so sanitized env applied
-        env_wrap = [pkexec, "env"] + [f"{k}={v}" for k,v in base_env.items()]
-        methods.append(("pkexec", env_wrap + list(argv), base_env))
-    # passwordless sudo
+    
+    if not (pkexec or sudo):
+        return subprocess.CompletedProcess(argv, 1, "", "No privilege escalation tool available")
+    
+    # Prepare environment
+    env = _sanitize_env(gui=gui)
+    
+    # Try methods in order of preference (new priority order)
+    methods = []
+    
     if sudo:
-        methods.append(("sudo -n", [sudo, "-n"] + list(argv), base_env))
-    # sudo askpass (GUI) if DISPLAY present
+        # 1. Passwordless sudo (first priority - fastest and most secure)
+        methods.append(("sudo-nopass", [sudo, "-n"] + list(argv), env))
+    
     if sudo and gui and os.environ.get("DISPLAY"):
+        # 2. GUI sudo with askpass helper (second priority - good user experience)
         askpass_helpers = [
-            "/usr/bin/ssh-askpass","/usr/bin/x11-ssh-askpass","/usr/bin/ksshaskpass","/usr/bin/lxqt-openssh-askpass"
+            "/usr/bin/ksshaskpass",
+            "/usr/bin/ssh-askpass", 
+            "/usr/bin/x11-ssh-askpass",
+            "/usr/bin/lxqt-openssh-askpass"
         ]
+        
         for helper in askpass_helpers:
-            if os.path.exists(helper):
-                e = dict(base_env)
-                e["SUDO_ASKPASS"] = helper
-                methods.append(("sudo -A", [sudo, "-A"] + list(argv), e))
+            if _which(helper.split('/')[-1]):  # Check if helper exists
+                logger.info(f"Using GUI sudo with {helper}")
+                env_with_askpass = env.copy()
+                env_with_askpass["SUDO_ASKPASS"] = helper
+                methods.append(("sudo-gui", [sudo, "-A"] + list(argv), env_with_askpass))
                 break
-    # plain sudo (may prompt in terminal)
+    
+    if gui and pkexec:
+        # 3. pkexec (third priority - alternative GUI method)
+        env_wrap = [pkexec, "env"] + [f"{k}={v}" for k, v in env.items()]
+        methods.append(("pkexec", env_wrap + list(argv), env))
+    
     if sudo:
-        methods.append(("sudo", [sudo] + list(argv), base_env))
-
-    last_cp: Optional[subprocess.CompletedProcess] = None
-    for name, full_cmd, env_used in methods:
+        # 4. Terminal sudo (last resort)
+        methods.append(("sudo-terminal", [sudo] + list(argv), env))
+    
+    # Try each method
+    for method_name, cmd, method_env in methods:
         try:
-            logger.debug("elevated_run attempting %s: %s", name, _format_cmd(full_cmd[:3] + ['...'] if len(full_cmd)>6 else full_cmd))
-            cp = subprocess.run(full_cmd, timeout=timeout, capture_output=capture_output, text=text, env=env_used, check=False)
-            attempted.append(name)
-            last_cp = cp
-            if cp.returncode == 0:
-                logger.info("elevated_run success via %s", name)
-                return cp
-            if name.startswith("pkexec") and cp.returncode in (126,):
-                logger.info("pkexec cancelled by user")
-                return cp
-            errors.append(f"{name} rc={cp.returncode}")
+            logger.info(f"Trying {method_name}: {' '.join(cmd[:3])}...")
+            result = subprocess.run(
+                cmd,
+                timeout=timeout,
+                capture_output=capture_output,
+                text=text,
+                env=method_env
+            )
+            
+            if result.returncode == 0:
+                logger.info(f"Success with {method_name}")
+                return result
+            else:
+                logger.debug(f"{method_name} failed with return code {result.returncode}")
+                
         except subprocess.TimeoutExpired:
-            errors.append(f"{name} timeout")
-        except Exception as e:  # pragma: no cover - defensive
-            errors.append(f"{name} error:{e}")
+            logger.warning(f"{method_name} timed out")
+        except Exception as e:
+            logger.debug(f"{method_name} error: {e}")
+    
+    # If all methods failed, return the last result or create a failure result
+    return subprocess.CompletedProcess(argv, 1, "", "All privilege escalation methods failed")
 
-    if last_cp is not None:
-        if capture_output:
-            combined_err = (last_cp.stderr or "") + f"\nAttempts: {', '.join(attempted)}; errors: {'; '.join(errors)}"
-            last_cp.stderr = combined_err  # type: ignore[attr-defined]
-        return last_cp
-    return subprocess.CompletedProcess(argv, 1, stdout="", stderr="elevated_run failed: " + "; ".join(errors))
 
-__all__ = ["elevated_run"]
-
-def elevated_popen(argv: Sequence[str], *, gui: bool = True, allow_script: bool = False,
-                   text: bool = True, env: Optional[Mapping[str, str]] = None,
-                   stdout=subprocess.PIPE, stderr=subprocess.PIPE, bufsize: int = 1) -> subprocess.Popen:
-    """Start a privileged process returning Popen for streaming.
-
-    Attempts pkexec first (GUI), then sudo -n, then sudo -A (if DISPLAY) then sudo.
-    Caller handles reading output and waiting.
+def validate_auth_session() -> bool:
     """
-    _validate_args(argv)
-    prog_path = Path(argv[0])
-    if prog_path.is_absolute():
-        if not prog_path.exists():
-            raise FileNotFoundError(argv[0])
-        if allow_script:
-            st = prog_path.stat()
-            if st.st_mode & 0o077:
-                raise PermissionError("Script has unsafe permissions")
-        else:
-            if not any(str(prog_path).startswith(p) for p in ("/usr/bin/","/usr/sbin/","/bin/","/usr/local/bin/")):
-                raise PermissionError("Absolute path outside trusted prefixes")
+    Simple authentication validation - just try a basic command.
+    
+    Returns:
+        True if authentication works, False otherwise
+    """
+    try:
+        result = elevated_run(["true"], timeout=30)
+        return result.returncode == 0
+    except Exception as e:
+        logger.error(f"Authentication validation failed: {e}")
+        return False
 
+
+def elevated_popen(argv: Sequence[str], *, gui: bool = True, text: bool = True,
+                   stdout=subprocess.PIPE, stderr=subprocess.PIPE, bufsize: int = 1) -> subprocess.Popen:
+    """
+    Start a privileged process returning Popen for streaming.
+    Simplified version - tries pkexec first, then sudo.
+    
+    Args:
+        argv: Command to run (without sudo/pkexec prefix)
+        gui: Whether to prefer GUI authentication
+        text: Whether to use text mode
+        stdout, stderr: Pipe configuration
+        bufsize: Buffer size
+    
+    Returns:
+        subprocess.Popen object
+    """
+    if not argv:
+        raise ValueError("No command provided")
+    
+    # Find available privilege escalation tools
     pkexec = _which("pkexec") if gui else None
     sudo = _which("sudo")
-    base_env = _sanitize_env(env, gui=gui)
-    attempts: list[tuple[str,list[str],dict]] = []
-    if pkexec:
-        env_wrap = [pkexec, "env"] + [f"{k}={v}" for k,v in base_env.items()]
-        attempts.append(("pkexec", env_wrap + list(argv), base_env))
+    
+    if not (pkexec or sudo):
+        raise RuntimeError("No privilege escalation tool available")
+    
+    # Prepare environment
+    env = _sanitize_env(gui=gui)
+    
+    # Try methods in order of preference (new priority order)
+    methods = []
+    
     if sudo:
-        attempts.append(("sudo -n", [sudo, "-n"] + list(argv), base_env))
+        # 1. Passwordless sudo (first priority - fastest and most secure)
+        methods.append(("sudo-nopass", [sudo, "-n"] + list(argv), env))
+    
     if sudo and gui and os.environ.get("DISPLAY"):
-        for helper in ["/usr/bin/ssh-askpass","/usr/bin/x11-ssh-askpass","/usr/bin/ksshaskpass","/usr/bin/lxqt-openssh-askpass"]:
-            if os.path.exists(helper):
-                e = dict(base_env); e["SUDO_ASKPASS"] = helper
-                attempts.append(("sudo -A", [sudo, "-A"] + list(argv), e))
+        # 2. GUI sudo with askpass helper (second priority - good user experience)
+        askpass_helpers = [
+            "/usr/bin/ksshaskpass",
+            "/usr/bin/ssh-askpass", 
+            "/usr/bin/x11-ssh-askpass",
+            "/usr/bin/lxqt-openssh-askpass"
+        ]
+        
+        for helper in askpass_helpers:
+            if _which(helper.split('/')[-1]):  # Check if helper exists
+                logger.info(f"Using GUI sudo with {helper}")
+                env_with_askpass = env.copy()
+                env_with_askpass["SUDO_ASKPASS"] = helper
+                methods.append(("sudo-gui", [sudo, "-A"] + list(argv), env_with_askpass))
                 break
+    
+    if gui and pkexec:
+        # 3. pkexec (third priority - alternative GUI method)
+        env_wrap = [pkexec, "env"] + [f"{k}={v}" for k, v in env.items()]
+        methods.append(("pkexec", env_wrap + list(argv), env))
+    
     if sudo:
-        attempts.append(("sudo", [sudo] + list(argv), base_env))
-
-    last_err: Exception | None = None
-    for name, full_cmd, env_used in attempts:
+        # 4. Terminal sudo (last resort)
+        methods.append(("sudo-terminal", [sudo] + list(argv), env))
+    
+    # Try each method until one works
+    last_error = None
+    for method_name, cmd, method_env in methods:
         try:
-            logger.debug("elevated_popen attempting %s: %s", name, _format_cmd(full_cmd[:3] + ['...'] if len(full_cmd)>6 else full_cmd))
-            return subprocess.Popen(full_cmd, text=text, stdout=stdout, stderr=stderr, bufsize=bufsize, env=env_used)
-        except Exception as e:  # pragma: no cover
-            last_err = e
-            continue
-    if last_err:
-        raise last_err
-    raise RuntimeError("elevated_popen: no execution path available")
+            logger.info(f"Starting {method_name} process: {' '.join(cmd[:3])}...")
+            process = subprocess.Popen(
+                cmd,
+                stdout=stdout,
+                stderr=stderr,
+                text=text,
+                bufsize=bufsize,
+                env=method_env
+            )
+            logger.info(f"Process started with {method_name}, PID: {process.pid}")
+            return process
+            
+        except Exception as e:
+            logger.debug(f"{method_name} popen error: {e}")
+            last_error = e
+    
+    # If all methods failed, raise the last error
+    raise RuntimeError(f"All privilege escalation methods failed. Last error: {last_error}")
 
-__all__.append("elevated_popen")
+
+def cleanup_auth_session() -> None:
+    """
+    Clean up authentication session.
+    Simplified version - no persistent sessions to clean up.
+    """
+    logger.debug("Authentication session cleanup (simplified - no persistent sessions)")
+    pass

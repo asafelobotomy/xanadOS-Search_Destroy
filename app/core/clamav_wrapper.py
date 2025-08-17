@@ -112,9 +112,9 @@ class ClamAVWrapper:
         if not self.available:
             self.logger.error("ClamAV not found or not properly installed")
         else:
-            # Try to start daemon for better performance if configured
-            if self.config.get("performance", {}).get("enable_clamav_daemon", True):
-                self._try_start_daemon_if_needed()
+            self.logger.debug("ClamAV initialized successfully")
+            # Note: Daemon startup is now deferred until first scan operation
+            # to avoid requesting sudo privileges during app initialization
 
     def _try_start_daemon_if_needed(self):
         """Try to start ClamAV daemon if it's not running and configured for use."""
@@ -222,11 +222,20 @@ class ClamAVWrapper:
         start_time = datetime.now()
 
         # Try clamdscan first if requested and available
-        if use_daemon and self.clamdscan_path and self._is_clamd_running():
-            try:
-                return self._scan_file_with_daemon(file_path, file_size, start_time, **kwargs)
-            except Exception as e:
-                self.logger.warning(f"Daemon scan failed, falling back to clamscan: {e}")
+        if use_daemon and self.clamdscan_path:
+            # Check if daemon is running, try to start it if configured but not running
+            if not self._is_clamd_running():
+                # Only try to start daemon if configured to do so
+                if self.config.get("performance", {}).get("enable_clamav_daemon", True):
+                    self.logger.debug("Daemon not running, attempting to start for scan operation")
+                    self._try_start_daemon_if_needed()
+            
+            # Use daemon if it's now running
+            if self._is_clamd_running():
+                try:
+                    return self._scan_file_with_daemon(file_path, file_size, start_time, **kwargs)
+                except Exception as e:
+                    self.logger.warning(f"Daemon scan failed, falling back to clamscan: {e}")
 
         # Fallback to regular clamscan
         try:
@@ -1014,7 +1023,7 @@ class ClamAVWrapper:
 
         # Try different approaches to update definitions
         update_commands = [
-            # First try without sudo (in case user has permissions or custom
+            # First try without privileges (in case user has permissions or custom
             # database directory)
             [self.freshclam_path, "--verbose"],
             # Try with user database directory if system directory fails
@@ -1022,17 +1031,11 @@ class ClamAVWrapper:
                 "--datadir", str(self.custom_db_path)],
         ]
 
-        # Add GUI-friendly privilege escalation methods
-        pkexec_path = self._find_executable("pkexec")
-        if pkexec_path:
-            # pkexec provides GUI password prompts
-            update_commands.append(
-                ["pkexec", self.freshclam_path, "--verbose"])
-
-        # Fallback to sudo (terminal-based)
-        sudo_path = self._find_executable("sudo")
-        if sudo_path:
-            update_commands.append(["sudo", self.freshclam_path, "--verbose"])
+        # Use elevated_run for consistent GUI sudo experience (same as RKHunter)
+        from .elevated_runner import elevated_run
+        
+        # Add elevated command using the same method as RKHunter
+        update_commands.append([self.freshclam_path, "--verbose"])
 
         for i, cmd in enumerate(update_commands):
             try:
@@ -1042,80 +1045,48 @@ class ClamAVWrapper:
                         1}: Running command: {
                         ' '.join(cmd)}")
 
-                # Skip sudo command if we're already running as root
-                if cmd[0] == "sudo" and os.getuid() == 0:
+                # Skip privileged commands if we're already running as root
+                if os.getuid() == 0 and i >= 2:  # Skip elevated attempts if root
                     self.logger.debug(
-                        "Already running as root, skipping sudo command")
+                        "Already running as root, skipping elevated command")
                     continue
 
-                # Special handling for privilege escalation commands
-                if cmd[0] in ["sudo", "pkexec"]:
-                    if cmd[0] == "pkexec":
+                # Use elevated_run for the last attempt (consistent with RKHunter)
+                if i == len(update_commands) - 1:
+                    self.logger.info("Using elevated privileges with GUI authentication (same as RKHunter)")
+                    result = elevated_run(
+                        cmd,
+                        capture_output=True,
+                        timeout=300,  # 5 minutes timeout
+                        gui=True  # Use GUI authentication like RKHunter
+                    )
+                    
+                    self.logger.debug(f"Return code: {result.returncode}")
+                    self.logger.debug(f"STDOUT: {result.stdout}")
+                    self.logger.debug(f"STDERR: {result.stderr}")
+
+                    if result.returncode == 0:
                         self.logger.info(
-                            "Using pkexec for GUI password prompt")
-                        # pkexec shows GUI password dialog, can capture output
-                        result = subprocess.run(
-                            cmd,
-                            capture_output=True,
-                            text=True,
-                            timeout=300,
-                            check=False,
+                            "Virus definitions updated successfully with GUI authentication"
                         )
+                        return True
 
-                        self.logger.debug(f"Return code: {result.returncode}")
-                        self.logger.debug(f"STDOUT: {result.stdout}")
-                        self.logger.debug(f"STDERR: {result.stderr}")
-
-                        if result.returncode == 0:
-                            self.logger.info(
-                                "Virus definitions updated successfully with pkexec"
-                            )
-                            return True
-
-                        # Check if definitions are already up to date
-                        output_text = result.stdout + result.stderr
-                        if (
-                            "is up to date" in output_text.lower()
-                            or "database is up-to-date" in output_text.lower()
-                        ):
-                            self.logger.info(
-                                "Virus definitions already up to date")
-                            return True
-
-                        self.logger.warning(
-                            f"pkexec update attempt {
-                                i +
-                                1} failed (code {
-                                result.returncode}): {
-                                result.stderr}")
-                        continue
-
-                    else:  # sudo
+                    # Check if definitions are already up to date
+                    output_text = result.stdout + result.stderr
+                    if (
+                        "is up to date" in output_text.lower()
+                        or "database is up-to-date" in output_text.lower()
+                    ):
                         self.logger.info(
-                            "Running with sudo - you may be prompted for your password"
-                        )
-                        # Run sudo command without capturing output so user can
-                        # interact
-                        result = subprocess.run(
-                            cmd, text=True, timeout=300, check=False
-                        )
+                            "Virus definitions already up to date")
+                        return True
 
-                        # Since we can't capture output with interactive sudo,
-                        # check return code and log appropriately
-                        if result.returncode == 0:
-                            self.logger.info(
-                                "Virus definitions updated successfully with sudo"
-                            )
-                            return True
-                        else:
-                            self.logger.warning(
-                                f"Sudo update attempt {
-                                    i +
-                                    1} failed (code {
-                                    result.returncode})")
-                            continue
+                    self.logger.warning(
+                        f"Elevated update failed (code {result.returncode}): {result.stderr}")
+                    continue
+                
                 else:
-                    # Non-sudo commands can capture output normally
+                    # Non-privileged commands can capture output normally
                     result = subprocess.run(
                         cmd,
                         capture_output=True,
@@ -1153,12 +1124,10 @@ class ClamAVWrapper:
                                 i + 1}, trying next method...")
                         continue
 
-                    # If this was the last attempt, log the failure
-                    if i == len(update_commands) - 1:
-                        self.logger.error(
-                            f"Failed to update virus definitions (code {
-                                result.returncode}): {
-                                result.stderr}")
+                    # If this was not the last attempt, log the failure
+                    if i < len(update_commands) - 1:
+                        self.logger.warning(
+                            f"Update attempt {i + 1} failed, trying next method")
 
             except subprocess.TimeoutExpired:
                 self.logger.error(
@@ -1166,15 +1135,10 @@ class ClamAVWrapper:
                         i + 1} timed out after 5 minutes")
                 continue
             except FileNotFoundError as e:
-                if "sudo" in str(e) and cmd[0] == "sudo":
-                    self.logger.warning(
-                        "sudo not available, skipping sudo method")
-                    continue
-                else:
-                    self.logger.error(
-                        f"Command not found in attempt {
-                            i + 1}: {e}")
-                    continue
+                self.logger.error(
+                    f"Command not found in attempt {
+                        i + 1}: {e}")
+                continue
             except Exception as e:
                 self.logger.error(f"Error in update attempt {i + 1}: {str(e)}")
                 continue
@@ -1184,7 +1148,7 @@ class ClamAVWrapper:
         self.logger.error("Please ensure either:")
         self.logger.error(
             "1. You have write permissions to /var/lib/clamav/, or")
-        self.logger.error("2. sudo is available and configured, or")
+        self.logger.error("2. GUI authentication is working properly, or")
         self.logger.error(
             "3. Set up a custom database directory with proper permissions"
         )

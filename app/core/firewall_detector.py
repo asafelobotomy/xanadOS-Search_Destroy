@@ -8,14 +8,91 @@ Detects and monitors various Linux firewall systems and their status.
 import os
 import shutil
 import subprocess
+import json
+import time
+from pathlib import Path
 from .secure_subprocess import run_secure
+from .elevated_runner import elevated_run
 from typing import Any, Dict, Optional, Tuple
+
+
+class FirewallActivityTracker:
+    """Tracks firewall state changes through activity monitoring."""
+    
+    def __init__(self):
+        self.activity_file = Path.home() / ".local/share/search-and-destroy/firewall_activity.json"
+        self.activity_file.parent.mkdir(parents=True, exist_ok=True)
+        self._last_known_state = None
+    
+    def get_cached_status(self) -> Optional[Dict[str, Any]]:
+        """Get last known firewall status from activity cache."""
+        try:
+            if self.activity_file.exists():
+                with open(self.activity_file, 'r') as f:
+                    data = json.load(f)
+                    # Return cached status if it's less than 5 minutes old
+                    if time.time() - data.get('timestamp', 0) < 300:  # 5 minutes
+                        return data.get('status')
+        except (json.JSONDecodeError, IOError):
+            pass
+        return None
+    
+    def update_status(self, status: Dict[str, Any]):
+        """Update cached firewall status."""
+        try:
+            data = {
+                'status': status,
+                'timestamp': time.time()
+            }
+            with open(self.activity_file, 'w') as f:
+                json.dump(data, f)
+        except IOError:
+            pass
+    
+    def record_activity(self, action: str, firewall_type: str, success: bool = True):
+        """Record firewall activity for tracking."""
+        try:
+            activity_data = {
+                'action': action,
+                'firewall_type': firewall_type,
+                'success': success,
+                'timestamp': time.time()
+            }
+            
+            # Also update the main activity tracking
+            try:
+                from utils.config import DATA_DIR
+                activity_log_file = DATA_DIR / "activity_log.json"
+                
+                if activity_log_file.exists():
+                    with open(activity_log_file, 'r') as f:
+                        activity_log = json.load(f)
+                else:
+                    activity_log = []
+                
+                activity_log.append({
+                    'timestamp': time.time(),
+                    'message': f"🔥 Firewall {action} via S&D application",
+                    'type': 'firewall_activity'
+                })
+                
+                # Keep only last 100 entries
+                activity_log = activity_log[-100:]
+                
+                with open(activity_log_file, 'w') as f:
+                    json.dump(activity_log, f)
+            except (ImportError, IOError):
+                pass
+                
+        except IOError:
+            pass
 
 
 class FirewallDetector:
     """Detects and monitors firewall status on Linux systems."""
 
     def __init__(self):
+        self.activity_tracker = FirewallActivityTracker()
         self.supported_firewalls = {
             "ufw": {
                 "name": "UFW (Uncomplicated Firewall)",
@@ -81,7 +158,10 @@ class FirewallDetector:
 
     def get_firewall_status(self) -> Dict[str, str | bool | None]:
         """
-        Get comprehensive firewall status information.
+        Get comprehensive firewall status information using non-invasive methods.
+        
+        This method prioritizes cached activity data and system service status
+        over privileged commands to avoid authentication prompts.
 
         Returns:
             Dictionary with status information including:
@@ -90,7 +170,14 @@ class FirewallDetector:
             - firewall_type: str
             - status_text: str
             - error: str (if any)
+            - method: str (how status was determined)
         """
+        # First, check if we have recent cached status from activity tracking
+        cached_status = self.activity_tracker.get_cached_status()
+        if cached_status:
+            cached_status["method"] = "activity_cache"
+            return cached_status
+        
         fw_type, fw_name = self.detect_firewall()
 
         status_info = {
@@ -99,14 +186,16 @@ class FirewallDetector:
             "firewall_type": fw_type,
             "status_text": "Inactive",
             "error": None,
+            "method": "system_check",
         }
 
         if not fw_type:
             status_info["status_text"] = "Not detected"
+            status_info["method"] = "not_detected"
             return status_info
 
         try:
-            # Get status based on firewall type
+            # Get status based on firewall type using non-invasive methods only
             if fw_type == "ufw":
                 status_info.update(self._get_ufw_status())
             elif fw_type == "firewalld":
@@ -116,38 +205,87 @@ class FirewallDetector:
             elif fw_type == "nftables":
                 status_info.update(self._get_nftables_status())
 
+            # Cache the result for future use
+            self.activity_tracker.update_status(status_info)
+
         except (OSError, subprocess.SubprocessError) as e:
             status_info["error"] = str(e)
             status_info["status_text"] = "Error checking status"
+            status_info["method"] = "error"
 
         return status_info
 
     def _get_ufw_status(self) -> Dict[str, str | bool]:
-        """Get UFW firewall status."""
+        """Get UFW firewall status using non-invasive methods."""
         try:
-            # First try without sudo (some systems allow status check without
-            # root)
-            result = run_secure(["ufw", "status"], timeout=10, capture_output=True, text=True)
-
-            # If that fails, try with sudo
-            if result.returncode != 0:
-                result = run_secure(["sudo", "-n", "ufw", "status"], timeout=10, capture_output=True, text=True)
-
-            if result.returncode == 0:
-                output = result.stdout.lower()
-                is_active = "status: active" in output
-                return {
-                    "is_active": is_active,
-                    "status_text": "Active" if is_active else "Inactive",
-                }
-            else:
-                # If sudo also fails, try to detect from service status
-                return self._get_ufw_service_status()
+            # Use enhanced non-invasive status checking
+            return self._get_ufw_status_non_invasive()
 
         except subprocess.TimeoutExpired:
             return {"error": "Command timed out"}
         except (OSError, FileNotFoundError) as e:
             return {"error": f"Failed to check UFW: {str(e)}"}
+
+    def _get_ufw_status_non_invasive(self) -> Dict[str, str | bool]:
+        """Get UFW firewall status without requiring elevated privileges."""
+        
+        # Method 1: Check systemctl service status (most reliable, no sudo needed)
+        try:
+            result = run_secure(["systemctl", "is-active", "ufw"], timeout=5, capture_output=True, text=True)
+            if result.returncode == 0 and result.stdout.strip() == "active":
+                return {"is_active": True, "status_text": "Active"}
+        except (subprocess.SubprocessError, OSError):
+            pass
+
+        # Method 2: Check if UFW is enabled via systemctl is-enabled
+        try:
+            result = run_secure(["systemctl", "is-enabled", "ufw"], timeout=5, capture_output=True, text=True)
+            enabled_states = ["enabled", "static", "enabled-runtime"]
+            if result.returncode == 0 and result.stdout.strip() in enabled_states:
+                return {"is_active": True, "status_text": "Active"}
+        except (subprocess.SubprocessError, OSError):
+            pass
+
+        # Method 3: Check UFW configuration files (read-only, no sudo needed for most systems)
+        ufw_config_paths = ["/etc/ufw/ufw.conf", "/etc/default/ufw"]
+        for config_path in ufw_config_paths:
+            try:
+                if os.path.exists(config_path):
+                    with open(config_path, "r", encoding="utf-8") as f:
+                        content = f.read()
+                    # Look for ENABLED=yes in the config
+                    if "ENABLED=yes" in content:
+                        return {"is_active": True, "status_text": "Active"}
+            except (PermissionError, IOError):
+                continue
+
+        # Method 4: Check for UFW rule files (indicates UFW has been configured)
+        ufw_rule_paths = [
+            "/var/lib/ufw/user.rules",
+            "/var/lib/ufw/user6.rules",
+            "/etc/ufw/user.rules",
+            "/etc/ufw/user6.rules"
+        ]
+        for rule_path in ufw_rule_paths:
+            try:
+                if os.path.exists(rule_path) and os.path.getsize(rule_path) > 100:  # Non-empty rules file
+                    return {"is_active": True, "status_text": "Active"}
+            except (PermissionError, IOError):
+                continue
+
+        # Method 5: Check netfilter/iptables rules indirectly via /proc (last resort)
+        try:
+            if os.path.exists("/proc/net/ip_tables_names"):
+                with open("/proc/net/ip_tables_names", "r") as f:
+                    tables = f.read()
+                if "filter" in tables:
+                    # This suggests iptables/netfilter is active, which UFW uses
+                    return {"is_active": True, "status_text": "Possibly Active"}
+        except (PermissionError, IOError):
+            pass
+
+        # If all methods fail, assume inactive
+        return {"is_active": False, "status_text": "Inactive"}
 
         return {"is_active": False, "status_text": "Inactive"}
 
@@ -196,28 +334,40 @@ class FirewallDetector:
             return {"is_active": False, "status_text": "Inactive"}
 
     def _get_firewalld_status(self) -> Dict[str, str | bool]:
-        """Get firewalld status."""
+        """Get firewalld status using non-invasive methods."""
         try:
-            result = run_secure(["firewall-cmd", "--state"], timeout=10, capture_output=True, text=True)
+            # Method 1: Check systemctl service status (most reliable, no sudo needed)
+            result = run_secure(["systemctl", "is-active", "firewalld"], timeout=5, capture_output=True, text=True)
+            if result.returncode == 0 and result.stdout.strip() == "active":
+                return {"is_active": True, "status_text": "Active"}
 
+            # Method 2: Try the original firewall-cmd --state (may work without sudo on some systems)
+            result = run_secure(["firewall-cmd", "--state"], timeout=10, capture_output=True, text=True)
             if result.returncode == 0:
                 is_active = "running" in result.stdout.lower()
                 return {
                     "is_active": is_active,
                     "status_text": "Active" if is_active else "Inactive",
                 }
+            
+            # Method 3: Fallback - assume inactive if service check failed
+            return {"is_active": False, "status_text": "Inactive"}
+            
         except subprocess.TimeoutExpired:
             return {"error": "Command timed out"}
         except (OSError, FileNotFoundError) as e:
             return {"error": f"Failed to check firewalld: {str(e)}"}
 
-        return {"is_active": False, "status_text": "Inactive"}
-
     def _get_iptables_status(self) -> Dict[str, str | bool]:
-        """Get iptables status."""
+        """Get iptables status using non-invasive methods."""
         try:
-            result = run_secure(["iptables", "-L", "-n"], timeout=10, capture_output=True, text=True)
+            # Method 1: Check if iptables service is active via systemctl
+            result = run_secure(["systemctl", "is-active", "iptables"], timeout=5, capture_output=True, text=True)
+            if result.returncode == 0 and result.stdout.strip() == "active":
+                return {"is_active": True, "status_text": "Active"}
 
+            # Method 2: Try iptables -L (may work without sudo on some systems)
+            result = run_secure(["iptables", "-L", "-n"], timeout=10, capture_output=True, text=True)
             if result.returncode == 0:
                 # Check if there are any rules beyond the default chains
                 lines = result.stdout.strip().split("\n")
@@ -239,21 +389,34 @@ class FirewallDetector:
                     "is_active": is_active,
                     "status_text": "Active" if is_active else "Inactive",
                 }
+            
+            # Method 3: Check /proc/net/ip_tables_names for loaded modules
+            try:
+                if os.path.exists("/proc/net/ip_tables_names"):
+                    with open("/proc/net/ip_tables_names", "r") as f:
+                        tables = f.read()
+                    if "filter" in tables or "nat" in tables:
+                        return {"is_active": True, "status_text": "Active"}
+            except (PermissionError, IOError):
+                pass
+                
+            return {"is_active": False, "status_text": "Inactive"}
+            
         except subprocess.TimeoutExpired:
             return {"error": "Command timed out"}
         except (OSError, FileNotFoundError) as e:
             return {"error": f"Failed to check iptables: {str(e)}"}
 
-        return {"is_active": False, "status_text": "Inactive"}
-
     def _get_nftables_status(self) -> Dict[str, str | bool]:
-        """Get nftables status."""
+        """Get nftables status using non-invasive methods."""
         try:
-            result = run_secure(
-                ["nft", "list", "tables"],
-                timeout=10
-            )
+            # Method 1: Check systemctl service status
+            result = run_secure(["systemctl", "is-active", "nftables"], timeout=5, capture_output=True, text=True)
+            if result.returncode == 0 and result.stdout.strip() == "active":
+                return {"is_active": True, "status_text": "Active"}
 
+            # Method 2: Try nft list tables (may work without sudo on some systems)
+            result = run_secure(["nft", "list", "tables"], timeout=10, capture_output=True, text=True)
             if result.returncode == 0:
                 # If there are any tables, nftables is considered active
                 is_active = bool(result.stdout.strip())
@@ -261,12 +424,13 @@ class FirewallDetector:
                     "is_active": is_active,
                     "status_text": "Active" if is_active else "Inactive",
                 }
+            
+            return {"is_active": False, "status_text": "Inactive"}
+            
         except subprocess.TimeoutExpired:
             return {"error": "Command timed out"}
         except (OSError, FileNotFoundError) as e:
             return {"error": f"Failed to check nftables: {str(e)}"}
-
-        return {"is_active": False, "status_text": "Inactive"}
 
     def _has_systemd(self) -> bool:
         """Check if the system uses systemd."""
@@ -295,6 +459,7 @@ class FirewallDetector:
             }
 
         try:
+            result = None
             if fw_type == "ufw":
                 result = self._toggle_ufw(enable)
                 
@@ -313,20 +478,40 @@ class FirewallDetector:
                         if diagnosis["success"]:
                             result["diagnosis"] = diagnosis["diagnosis"]
                             result["message"] += " - Kernel module issue detected"
-                
-                return result
             elif fw_type == "firewalld":
-                return self._toggle_firewalld(enable)
+                result = self._toggle_firewalld(enable)
             elif fw_type == "iptables":
-                return self._toggle_iptables(enable)
+                result = self._toggle_iptables(enable)
             elif fw_type == "nftables":
-                return self._toggle_nftables(enable)
+                result = self._toggle_nftables(enable)
             else:
-                return {
+                result = {
                     "success": False,
                     "message": f"Firewall control not implemented for {fw_name}",
                     "error": f"No control method available for {fw_type}",
                 }
+
+            # Record activity for successful operations
+            if result and result.get("success"):
+                action = "enabled" if enable else "disabled"
+                self.activity_tracker.record_activity(action, fw_type, True)
+                
+                # Update cached status immediately
+                updated_status = {
+                    "is_active": enable,
+                    "firewall_name": fw_name,
+                    "firewall_type": fw_type,
+                    "status_text": "Active" if enable else "Inactive",
+                    "error": None,
+                    "method": "user_action",
+                }
+                self.activity_tracker.update_status(updated_status)
+            else:
+                # Record failed attempt
+                action = "enable" if enable else "disable"
+                self.activity_tracker.record_activity(f"failed_to_{action}", fw_type, False)
+
+            return result
 
         except (OSError, subprocess.SubprocessError, PermissionError) as e:
             return {
@@ -337,22 +522,17 @@ class FirewallDetector:
             }
 
     def _get_admin_cmd_prefix(self) -> list:
-        """Get the appropriate command prefix for admin privileges."""
-        # Try pkexec first (better for GUI apps), then fall back to sudo
-        if shutil.which("pkexec"):
-            # Check if we're in a GUI environment
-            display = os.environ.get("DISPLAY")
-            if display:
-                # We're in a GUI environment - pkexec should work
-                return ["pkexec"]
-            else:
-                # No GUI environment, use sudo if available
-                if shutil.which("sudo"):
-                    return ["sudo"]
-                else:
-                    return ["pkexec"]  # Try anyway
-        elif shutil.which("sudo"):
+        """Get the appropriate command prefix for admin privileges.
+        
+        Note: This method is deprecated. Use elevated_run() instead for better
+        privilege escalation with GUI sudo priority order.
+        """
+        # Legacy method - kept for compatibility with module loading code
+        # New firewall toggle methods should use elevated_run() directly
+        if shutil.which("sudo"):
             return ["sudo"]
+        elif shutil.which("pkexec"):
+            return ["pkexec"]
         else:
             return []
 
@@ -808,57 +988,27 @@ class FirewallDetector:
         """Toggle UFW firewall with enhanced error handling for kernel module issues."""
         print(f"🔍 DEBUG: _toggle_ufw called with enable={enable}")
         try:
-            admin_cmd = self._get_admin_cmd_prefix()
-            print(f"🔍 DEBUG: Admin command: {admin_cmd}")
-            if not admin_cmd:
-                return {
-                    "success": False,
-                    "message": "Administrative privileges not available",
-                    "error": "Neither pkexec nor sudo found on system",
-                }
-
-            # UFW requires admin privileges
-            cmd = admin_cmd + ["ufw", "--force",
-                               "enable" if enable else "disable"]
+            # Use elevated_run for consistent privilege escalation with GUI sudo priority
+            cmd_args = ["ufw", "--force", "enable" if enable else "disable"]
             
             # Debug: Print the command being executed
-            print(f"DEBUG: Executing firewall command: {' '.join(cmd)}")
+            print(f"DEBUG: Executing firewall command: ufw {' '.join(cmd_args[1:])}")
             
-            # Prepare environment for GUI authentication
-            env = os.environ.copy()  # Keep all current environment variables
-            print(f"🔍 DEBUG: Original environment DISPLAY: {env.get('DISPLAY', 'Not set')}")
-            print(f"🔍 DEBUG: Original environment XAUTHORITY: {env.get('XAUTHORITY', 'Not set')}")
-            
-            # Ensure GUI environment variables are set for pkexec authentication
-            if admin_cmd[0] == "pkexec":
-                print("🔍 DEBUG: Using pkexec, setting up GUI environment...")
-                # Make sure DISPLAY and XAUTHORITY are available for pkexec GUI
-                if "DISPLAY" not in env and "DISPLAY" in os.environ:
-                    env["DISPLAY"] = os.environ["DISPLAY"]
-                if "XAUTHORITY" not in env and "XAUTHORITY" in os.environ:
-                    env["XAUTHORITY"] = os.environ["XAUTHORITY"]
-                # Also ensure other common GUI environment variables
-                for var in ["WAYLAND_DISPLAY", "XDG_SESSION_TYPE", "XDG_RUNTIME_DIR"]:
-                    if var not in env and var in os.environ:
-                        env[var] = os.environ[var]
-                        print(f"🔍 DEBUG: Set {var} = {env[var]}")
-            
-            print("🔍 DEBUG: About to run subprocess...")
-            # Use the same approach as update_virus_definitions for better GUI compatibility
-            result = subprocess.run(
-                cmd,
+            print("🔍 DEBUG: About to run elevated_run...")
+            # Use elevated_run with GUI preference (same as RKHunter and ClamAV)
+            result = elevated_run(
+                cmd_args,
+                timeout=300,  # Longer timeout for firewall operations
                 capture_output=True,
                 text=True,
-                timeout=300,  # Longer timeout like update_definitions (was 60)
-                check=False,
-                env=env,  # Use the prepared environment
+                gui=True  # Enable GUI sudo preference
             )
             
             # Debug: Print result details
             print(f"DEBUG: Command exit code: {result.returncode}")
             print(f"DEBUG: Command stdout: {result.stdout}")
             print(f"DEBUG: Command stderr: {result.stderr}")
-            print(f"🔍 DEBUG: Subprocess completed")
+            print(f"🔍 DEBUG: elevated_run completed")
 
             if result.returncode == 0:
                 action = "enabled" if enable else "disabled"
@@ -888,18 +1038,17 @@ class FirewallDetector:
                     or "unable to initialize table" in error_output.lower()
                     or "problem running ufw-init" in error_output.lower()
                 ):
-                    # Try to load required kernel modules
+                    # Try to load required kernel modules using old method (for compatibility)
                     module_load_result = self._attempt_module_load()
                     if module_load_result["success"]:
                         # Retry UFW command after loading modules
                         print("🔍 DEBUG: Retrying UFW command after loading kernel modules...")
-                        retry_result = subprocess.run(
-                            cmd,
+                        retry_result = elevated_run(
+                            cmd_args,
+                            timeout=300,
                             capture_output=True,
                             text=True,
-                            timeout=300,
-                            check=False,
-                            env=env,
+                            gui=True
                         )
                         
                         if retry_result.returncode == 0:
@@ -939,41 +1088,16 @@ class FirewallDetector:
     def _toggle_firewalld(self, enable: bool) -> Dict[str, str | bool]:
         """Toggle firewalld."""
         try:
-            admin_cmd = self._get_admin_cmd_prefix()
-            if not admin_cmd:
-                return {
-                    "success": False,
-                    "message": "Administrative privileges not available",
-                    "error": "Neither pkexec nor sudo found on system",
-                }
-
-            # Prepare environment for GUI authentication
-            env = os.environ.copy()
-            if admin_cmd[0] == "pkexec":
-                for var in ["DISPLAY", "XAUTHORITY", "WAYLAND_DISPLAY", "XDG_SESSION_TYPE", "XDG_RUNTIME_DIR"]:
-                    if var not in env and var in os.environ:
-                        env[var] = os.environ[var]
-
-            if enable:
-                # Start firewalld service
-                result = subprocess.run(
-                    admin_cmd + ["systemctl", "start", "firewalld"],
-                    capture_output=True,
-                    text=True,
-                    timeout=60,
-                    check=False,
-                    env=env,
-                )
-            else:
-                # Stop firewalld service
-                result = subprocess.run(
-                    admin_cmd + ["systemctl", "stop", "firewalld"],
-                    capture_output=True,
-                    text=True,
-                    timeout=60,
-                    check=False,
-                    env=env,
-                )
+            # Use elevated_run for consistent privilege escalation
+            cmd_args = ["systemctl", "start" if enable else "stop", "firewalld"]
+            
+            result = elevated_run(
+                cmd_args,
+                timeout=60,
+                capture_output=True,
+                text=True,
+                gui=True
+            )
 
             if result.returncode == 0:
                 action = "started" if enable else "stopped"

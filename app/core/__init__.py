@@ -98,6 +98,22 @@ try:
     # Its functionality has been integrated into enhanced_real_time_protection.py
     from .system_service import ServiceConfig, ServiceState, SystemServiceManager
     from .web_protection import ThreatCategory, URLReputation, WebProtectionSystem
+    
+    # Non-invasive monitoring system - eliminates sudo requirements for status checks
+    from .non_invasive_monitor import (
+        NonInvasiveSystemMonitor,
+        SystemStatus,
+        get_system_status,
+        record_activity,
+        system_monitor
+    )
+    from .rkhunter_monitor_non_invasive import (
+        RKHunterMonitorNonInvasive,
+        RKHunterStatusNonInvasive,
+        get_rkhunter_status_non_invasive,
+        record_rkhunter_activity,
+        rkhunter_monitor
+    )
 except ImportError as e:
     # Advanced modules may not be available due to missing dependencies
     import logging
@@ -161,4 +177,15 @@ __all__ = [
     "CloudIntegrationSystem",
     "CloudProvider",
     "ThreatIntelSource",
+    # Non-invasive monitoring system
+    "NonInvasiveSystemMonitor",
+    "SystemStatus", 
+    "get_system_status",
+    "record_activity",
+    "system_monitor",
+    "RKHunterMonitorNonInvasive",
+    "RKHunterStatusNonInvasive",
+    "get_rkhunter_status_non_invasive",
+    "record_rkhunter_activity",
+    "rkhunter_monitor",
 ]
