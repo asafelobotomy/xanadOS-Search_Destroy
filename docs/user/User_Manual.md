@@ -2,7 +2,7 @@
 
 *Your comprehensive guide to protecting your Linux system from malware and security threats*
 
-**Version 2.6.0** | *Updated: January 7, 2025*
+**Version 2.7.0** | *Updated: August 19, 2025*
 
 ---
 

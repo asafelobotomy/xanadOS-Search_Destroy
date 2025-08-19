@@ -9,10 +9,10 @@ cd "$PROJECT_ROOT"
 # First check if we're in a venv
 if [ -z "$VIRTUAL_ENV" ]; then
     echo "Activating virtual environment..."
-    if [ -d "venv" ]; then
-        source venv/bin/activate
-    elif [ -d ".venv" ]; then
+    if [ -d ".venv" ]; then
         source .venv/bin/activate
+    elif [ -d "venv" ]; then
+        source venv/bin/activate
     else
         echo "No virtual environment found. Please run 'make install' first."
         exit 1

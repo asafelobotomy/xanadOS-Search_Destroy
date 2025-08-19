@@ -109,10 +109,11 @@ class AutoUpdateSystem:
     threat intelligence, and software components.
     """
 
-    def __init__(self, clamav_wrapper=None, config: UpdateConfig = None):
+    def __init__(self, current_version=None, clamav_wrapper=None, config: UpdateConfig = None):
         self.logger = logging.getLogger(__name__)
         self.clamav = clamav_wrapper
         self.config = config or UpdateConfig()
+        self.current_version = current_version  # Store current version for compatibility
 
         # State management
         self.status = UpdateStatus.IDLE
@@ -181,7 +182,7 @@ class AutoUpdateSystem:
 
             # Perform initial update check
             self.check_updates_task = asyncio.create_task(
-                self.check_for_updates())
+                self.check_for_updates_async())
 
             self.logger.info("Auto-update system started")
             return True
@@ -242,7 +243,7 @@ class AutoUpdateSystem:
     def _schedule_update_check(self):
         """Schedule update check (called by scheduler)."""
         if self.is_running:
-            asyncio.create_task(self.check_for_updates())
+            asyncio.create_task(self.check_for_updates_async())
 
     def _schedule_update_installation(self):
         """Schedule update installation (called by scheduler)."""
@@ -254,8 +255,8 @@ class AutoUpdateSystem:
         if self.is_running:
             asyncio.create_task(self.update_threat_intelligence())
 
-    async def check_for_updates(self) -> Dict[UpdateType, UpdateInfo]:
-        """Check for available updates."""
+    async def check_for_updates_async(self, force_check: bool = False) -> Dict[UpdateType, UpdateInfo]:
+        """Check for available updates (async version)."""
         with self.status_lock:
             if self.status != UpdateStatus.IDLE:
                 self.logger.warning("Update check already in progress")
@@ -995,7 +996,7 @@ class AutoUpdateSystem:
     async def force_update_check(self) -> Dict[UpdateType, UpdateInfo]:
         """Force immediate update check."""
         self.logger.info("Forcing update check...")
-        return await self.check_for_updates()
+        return await self.check_for_updates_async()
 
     async def update_threat_intelligence(self):
         """Update threat intelligence specifically."""
@@ -1004,6 +1005,55 @@ class AutoUpdateSystem:
             result = await self.install_update(update_info)
             if self.update_completed_callback:
                 self.update_completed_callback(result)
+
+    # Synchronous wrapper methods for GUI compatibility
+    def check_for_updates_sync(self, force_check: bool = False) -> Optional[Dict]:
+        """
+        Synchronous wrapper for check_for_updates to maintain GUI compatibility.
+        Returns update info in the format expected by the GUI.
+        """
+        try:
+            import asyncio
+            
+            # Create event loop if none exists
+            try:
+                loop = asyncio.get_event_loop()
+            except RuntimeError:
+                loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(loop)
+            
+            # Run the async check_for_updates method
+            updates = loop.run_until_complete(self.check_for_updates_async())
+            
+            # Convert to GUI-compatible format
+            if UpdateType.SOFTWARE in updates:
+                software_update = updates[UpdateType.SOFTWARE]
+                return {
+                    'available': True,
+                    'current_version': self.current_version or "2.7.0",
+                    'latest_version': software_update.version,
+                    'release_name': f'Version {software_update.version}',
+                    'release_notes': '\n'.join(software_update.changelog) if hasattr(software_update, 'changelog') and software_update.changelog else software_update.description,
+                    'download_url': software_update.download_url,
+                    'published_at': datetime.now().isoformat(),
+                    'prerelease': False
+                }
+            else:
+                return {
+                    'available': False,
+                    'current_version': self.current_version or "2.7.0"
+                }
+                
+        except Exception as e:
+            self.logger.error("Error in synchronous update check: %s", e)
+            raise e
+
+    def check_for_updates(self, force_check: bool = False) -> Optional[Dict]:
+        """
+        GUI-compatible synchronous method that maintains the expected interface.
+        This method is called by the GUI and delegates to check_for_updates_sync.
+        """
+        return self.check_for_updates_sync(force_check)
 
 
 # Add missing import for aiohttp

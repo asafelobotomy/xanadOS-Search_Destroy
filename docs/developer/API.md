@@ -1,49 +1,76 @@
-# # API Documentation
+# API Documentation
 
-This document provides API documentation for the xanadOS-Search_Destroy application.
+This document provides comprehensive API documentation for the xanadOS-Search_Destroy application (S&D - Search & Destroy).
+
+**Version**: 2.7.0  
+**Updated**: August 19, 2025
 
 ## Core Modules
-
-### app.core.file_scanner
-
-#### FileScanner Class
-
-The main scanning engine for file-based threat detection.
-
-```python
-class FileScanner:
-    def __init__(self, config: Dict[str, Any])
-    def scan_file(self, file_path: str) -> ScanResult
-    def scan_directory(self, directory_path: str) -> List[ScanResult]
-```
-
-**Methods:**
-- `scan_file(file_path)`: Scan a single file for threats
-- `scan_directory(directory_path)`: Recursively scan a directory
-
-### app.core.async_scanner
-
-#### AsyncScanner Class
-
-Asynchronous scanning implementation for improved performance.
-
-```python
-class AsyncScanner:
-    async def scan_async(self, paths: List[str]) -> AsyncGenerator[ScanResult]
-    async def batch_scan(self, paths: List[str], batch_size: int = 10)
-```
 
 ### app.core.clamav_wrapper
 
 #### ClamAVWrapper Class
 
-Integration with ClamAV antivirus engine.
+Enhanced ClamAV integration with full feature support and performance optimizations.
 
 ```python
 class ClamAVWrapper:
-    def is_available(self) -> bool
+    def __init__(self, config: Optional[Dict[str, Any]] = None)
+    def scan_file(self, file_path: str, use_daemon: bool = True, **kwargs) -> ScanFileResult
+    def scan_directory(self, directory_path: str, **kwargs) -> List[ScanFileResult]
+    def should_scan_file(self, file_path: str, quick_scan: bool = False) -> bool
+    def update_virus_definitions(self) -> bool
+    def start_daemon(self) -> bool
+    def apply_2025_security_hardening(self) -> Dict[str, bool]
+    def get_2025_performance_settings(self) -> Dict[str, Any]
+    def implement_multithreaded_scanning(self, file_list: List[str], max_workers: int = None) -> List[Dict[str, Any]]
+```
+
+**Key Features:**
+
+- Daemon-based scanning for 3-10x performance improvement
+- Smart file filtering with risk-based analysis
+- Security hardening with 2025 best practices
+- Multi-threaded parallel scanning support
+
+### app.core.file_scanner
+
+#### FileScanner Class
+
+The main scanning engine with quarantine management and scheduling.
+
+```python
+class FileScanner:
+    def __init__(self, clamav_wrapper: Optional[ClamAVWrapper] = None)
+    def scan_file(self, file_path: str, scan_id: Optional[str] = None, **kwargs) -> ScanFileResult
+    def scan_directory(self, directory_path: str, **kwargs) -> List[ScanFileResult]
+    def validate_scan_directory(self, directory_path: str) -> dict
+    def update_virus_definitions(self) -> bool
+    def set_progress_callback(self, callback: Callable[[float, str], None]) -> None
+    def set_detailed_progress_callback(self, callback: Callable[[dict], None]) -> None
+    def set_result_callback(self, callback: Callable[[ScanFileResult], None]) -> None
+```
+
+**Advanced Features:**
+
+- Rate limiting and memory optimization
+- Quarantine management with secure isolation
+- Scheduled scanning capabilities
+- Real-time progress tracking
+
+### app.core.rkhunter_wrapper
+
+#### RKHunterWrapper Class
+
+RKHunter rootkit detection integration with optimization support.
+
+```python
+class RKHunterWrapper:
+    def __init__(self, config: Optional[Dict[str, Any]] = None)
+    def run_scan(self, categories: List[str] = None, **kwargs) -> RKHunterScanResult
     def update_database(self) -> bool
-    def scan_file_with_clamav(self, file_path: str) -> ScanResult
+    def get_available_tests(self) -> List[str]
+    def check_system_integrity(self) -> Dict[str, Any]
 ```
 
 ## GUI Modules
@@ -52,7 +79,7 @@ class ClamAVWrapper:
 
 #### MainWindow Class
 
-Main application window and user interface controller.
+Main application window and user interface controller with modern PyQt6 interface.
 
 ```python
 class MainWindow(QMainWindow):
@@ -60,45 +87,45 @@ class MainWindow(QMainWindow):
     def start_scan(self)
     def stop_scan(self)
     def update_progress(self, progress: int)
+    def switch_theme(self, theme_name: str)
+    def show_scan_results(self, results: List[ScanFileResult])
 ```
 
 ### app.gui.scan_dialog
 
 #### ScanDialog Class
 
-Dialog for configuring scan parameters.
+Dialog for configuring advanced scan parameters.
 
 ```python
 class ScanDialog(QDialog):
     def get_scan_settings(self) -> Dict[str, Any]
     def set_default_settings(self, settings: Dict[str, Any])
+    def configure_scan_options(self) -> ScanConfiguration
 ```
 
-## Monitoring Modules
+### app.gui.rkhunter_components
 
-### app.monitoring.real_time_monitor
+#### RKHunterScanDialog Class
 
-#### RealTimeMonitor Class
-
-Real-time file system monitoring for threat detection.
+Specialized dialog for RKHunter rootkit scan configuration.
 
 ```python
-class RealTimeMonitor:
-    def start_monitoring(self, paths: List[str])
-    def stop_monitoring(self)
-    def add_exclusion(self, path: str)
+class RKHunterScanDialog(QDialog):
+    def __init__(self, parent=None)
+    def get_selected_categories(self) -> List[str]
+    def apply_theme(self, theme_name: str)
 ```
 
-### app.monitoring.file_watcher
+#### RKHunterScanThread Class
 
-#### FileWatcher Class
-
-File system event watcher implementation.
+Non-blocking thread for RKHunter scan execution.
 
 ```python
-class FileWatcher:
-    def watch_directory(self, path: str, callback: Callable)
-    def stop_watching(self)
+class RKHunterScanThread(QThread):
+    progress_updated = pyqtSignal(str, int)
+    scan_completed = pyqtSignal(object)
+    error_occurred = pyqtSignal(str)
 ```
 
 ## Utility Modules
@@ -107,189 +134,125 @@ class FileWatcher:
 
 #### Configuration Management
 
+Centralized configuration system with validation and defaults.
+
 ```python
 def load_config() -> Dict[str, Any]
 def save_config(config: Dict[str, Any]) -> bool
 def get_default_config() -> Dict[str, Any]
+def validate_config(config: Dict[str, Any]) -> bool
+def setup_logging() -> logging.Logger
 ```
 
 ### app.utils.scan_reports
 
-#### Report Generation
+#### ScanReportManager Class
+
+Advanced report generation and export system.
 
 ```python
-class ScanReportGenerator:
-    def generate_report(self, results: List[ScanResult]) -> str
-    def save_report(self, report: str, filename: str) -> bool
-    def export_json(self, results: List[ScanResult]) -> str
+class ScanReportManager:
+    def __init__(self, config: Dict[str, Any])
+    def generate_report(self, results: List[ScanResult], format: str = "json") -> str
+    def save_report(self, report_data: Dict[str, Any], filename: str) -> bool
+    def export_to_html(self, results: List[ScanResult]) -> str
+    def export_to_csv(self, results: List[ScanResult]) -> str
+    def get_recent_reports(self, days: int = 7) -> List[Dict[str, Any]]
 ```
 
-## Data Models
+## Data Types and Enums
 
-### ScanResult
+### Core Data Types
 
 ```python
 @dataclass
-class ScanResult:
+class ScanFileResult:
     file_path: str
-    threat_detected: bool
-    threat_type: Optional[str]
-    confidence: float
-    scan_time: datetime
-    engine_used: str
-    metadata: Dict[str, Any]
+    result: ScanResult
+    threat_name: Optional[str] = None
+    threat_type: Optional[str] = None
+    file_size: int = 0
+    scan_time: float = 0.0
+    error_message: Optional[str] = None
+
+class ScanResult(Enum):
+    CLEAN = "clean"
+    INFECTED = "infected"
+    SUSPICIOUS = "suspicious"
+    ERROR = "error"
+    SKIPPED = "skipped"
+
+class ScanType(Enum):
+    QUICK = "quick"
+    FULL = "full"
+    CUSTOM = "custom"
+    RKHUNTER = "rkhunter"
+
+@dataclass
+class MonitorConfig:
+    paths_to_watch: List[str]
+    excluded_paths: List[str]
+    excluded_extensions: List[str]
+    scan_new_files: bool = True
+    scan_modified_files: bool = True
+    max_file_size: int = 100 * 1024 * 1024  # 100MB
 ```
 
-### ScanSettings
+### Event Types
 
 ```python
-@dataclass  
-class ScanSettings:
-    scan_type: ScanType
-    target_paths: List[str]
-    exclude_paths: List[str]
-    deep_scan: bool
-    follow_symlinks: bool
-    max_file_size: int
+class WatchEventType(Enum):
+    FILE_CREATED = "file_created"
+    FILE_MODIFIED = "file_modified"
+    FILE_DELETED = "file_deleted"
+    FILE_MOVED = "file_moved"
+    DIRECTORY_CREATED = "directory_created"
+    DIRECTORY_DELETED = "directory_deleted"
+
+@dataclass
+class WatchEvent:
+    event_type: WatchEventType
+    file_path: str
+    timestamp: float
+    size: int = 0
+    is_directory: bool = False
 ```
 
-## Events and Callbacks
+## Security and Performance Features
 
-### Scan Events
+### Security Enhancements
 
-The scanning system emits various events that can be handled by the GUI:
+- **Input Validation**: All paths and parameters validated through `PathValidator`
+- **Privilege Management**: Secure elevation using `pkexec` and modern authentication
+- **Sandboxing**: Full Flatpak compatibility with restricted permissions
+- **Rate Limiting**: Protection against resource exhaustion attacks
 
-```python
-# Progress callback
-def on_scan_progress(progress: int, current_file: str):
-    pass
+### Performance Optimizations
 
-# Result callback  
-def on_scan_result(result: ScanResult):
-    pass
+- **ClamAV Daemon**: 3-10x faster scanning with memory-resident database
+- **Smart Filtering**: Risk-based file selection reduces scanning overhead by 50-80%
+- **Async Operations**: Non-blocking UI with background processing
+- **Memory Management**: Intelligent garbage collection and resource monitoring
 
-# Completion callback
-def on_scan_complete(results: List[ScanResult]):
-    pass
+### Modern Python Features
 
-# Error callback
-def on_scan_error(error: Exception):
-    pass
-```
+- **Type Hints**: Comprehensive type annotations throughout
+- **Dataclasses**: Modern data structures with automatic methods
+- **Async/Await**: Asynchronous operations where beneficial
+- **Context Managers**: Proper resource management and cleanup
+- **Pathlib**: Modern path handling with `Path` objects
 
-### Real-time Monitoring Events
+---
 
-```python
-# Threat detection callback
-def on_threat_detected(file_path: str, threat_info: Dict[str, Any]):
-    pass
+**Note**: This API documentation covers the core public interfaces. For detailed implementation examples and usage patterns, see the comprehensive implementation documentation in the `docs/implementation/` directory.
 
-# File system event callback
-def on_file_event(event_type: str, file_path: str):
-    pass
-```
+## Additional Resources
 
-## Security Features
+- **User Manual**: See `docs/user/User_Manual.md` for end-user documentation
+- **Development Guide**: See `docs/developer/DEVELOPMENT.md` for setup instructions
+- **Implementation Docs**: See `docs/implementation/` for detailed technical documentation
+- **ClamAV Integration**: See `docs/developer/ClamAV_Implementation_Summary.md` for ClamAV-specific details
 
-### Privilege Escalation
+---
 
-```python
-def run_with_privileges(command: List[str]) -> subprocess.CompletedProcess
-def check_privileges() -> bool
-def request_privileges() -> bool
-```
-
-### Network Security
-
-```python
-class NetworkSecurityManager:
-    def enable_firewall(self) -> bool
-    def disable_firewall(self) -> bool
-    def get_firewall_status(self) -> Dict[str, Any]
-    def block_ip(self, ip_address: str) -> bool
-```
-
-## Error Handling
-
-All API functions use custom exception types:
-
-```python
-class ScannerError(Exception):
-    pass
-
-class ConfigurationError(Exception):
-    pass
-
-class PermissionError(Exception):
-    pass
-
-class NetworkError(Exception):
-    pass
-```
-
-## Usage Examples
-
-### Basic File Scanning
-
-```python
-from app.core.file_scanner import FileScanner
-
-scanner = FileScanner(config)
-result = scanner.scan_file("/path/to/file")
-
-if result.threat_detected:
-    print(f"Threat detected: {result.threat_type}")
-```
-
-### Asynchronous Directory Scanning
-
-```python
-import asyncio
-from app.core.async_scanner import AsyncScanner
-
-async def scan_directory():
-    scanner = AsyncScanner()
-    async for result in scanner.scan_async(["/path/to/dir"]):
-        print(f"Scanned: {result.file_path}")
-
-asyncio.run(scan_directory())
-```
-
-### Real-time Monitoring
-
-```python
-from app.monitoring.real_time_monitor import RealTimeMonitor
-
-def threat_callback(file_path, threat_info):
-    print(f"Threat detected in {file_path}")
-
-monitor = RealTimeMonitor()
-monitor.set_threat_callback(threat_callback)
-monitor.start_monitoring(["/home", "/tmp"])
-```
-
-## Configuration
-
-### Default Configuration Structure
-
-```json
-{
-  "scanning": {
-    "engines": ["clamav", "custom"],
-    "max_file_size": 104857600,
-    "follow_symlinks": false,
-    "scan_archives": true
-  },
-  "monitoring": {
-    "enabled": true,
-    "watch_paths": ["/home"],
-    "exclude_paths": ["/proc", "/sys"]
-  },
-  "security": {
-    "require_privileges": true,
-    "firewall_integration": true
-  }
-}
-```
-
-For more detailed information, see the source code and inline documentation.
+**Last updated:** August 19, 2025 | **Version:** 2.7.0

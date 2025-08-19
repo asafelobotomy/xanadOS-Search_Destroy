@@ -260,33 +260,32 @@ class FirewallDetector:
                 continue
 
         # Method 4: Check for UFW rule files (indicates UFW has been configured)
+        # NOTE: This method has been improved to avoid false positives.
+        # Simply having rule files doesn't mean UFW is active - UFW can be
+        # disabled even with rule files present. Only check /var/lib/ paths
+        # as they're more likely to indicate actual active configuration.
         ufw_rule_paths = [
             "/var/lib/ufw/user.rules",
-            "/var/lib/ufw/user6.rules",
-            "/etc/ufw/user.rules",
-            "/etc/ufw/user6.rules"
+            "/var/lib/ufw/user6.rules"
         ]
         for rule_path in ufw_rule_paths:
             try:
-                if os.path.exists(rule_path) and os.path.getsize(rule_path) > 100:  # Non-empty rules file
-                    return {"is_active": True, "status_text": "Active"}
+                if os.path.exists(rule_path) and os.path.getsize(rule_path) > 500:  # Significantly larger rule file
+                    # Additional check: look for actual user rules, not just template
+                    with open(rule_path, 'r', encoding='utf-8') as f:
+                        content = f.read()
+                    # Only consider active if there are actual user-defined rules
+                    if "### tuple ###" in content or "-A ufw-user-" in content and "allow" in content.lower():
+                        return {"is_active": True, "status_text": "Active"}
             except (PermissionError, IOError):
                 continue
 
         # Method 5: Check netfilter/iptables rules indirectly via /proc (last resort)
-        try:
-            if os.path.exists("/proc/net/ip_tables_names"):
-                with open("/proc/net/ip_tables_names", "r") as f:
-                    tables = f.read()
-                if "filter" in tables:
-                    # This suggests iptables/netfilter is active, which UFW uses
-                    return {"is_active": True, "status_text": "Possibly Active"}
-        except (PermissionError, IOError):
-            pass
-
+        # NOTE: Removed this method as it was incorrectly detecting UFW as active
+        # just because iptables modules are loaded. The presence of "filter" table
+        # only means kernel modules are available, not that UFW is configured/active.
+        
         # If all methods fail, assume inactive
-        return {"is_active": False, "status_text": "Inactive"}
-
         return {"is_active": False, "status_text": "Inactive"}
 
     def _get_ufw_service_status(self) -> Dict[str, str | bool]:
