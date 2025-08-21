@@ -337,9 +337,13 @@ python scripts/organize-repo.py            # Apply changes
 │   ├── 🔒 quarantine/   # Quarantined threat files
 │   ├── 📋 reports/      # Generated scan reports
 │   └── 💾 cache/        # Temporary cache files
-├── 🧪 tests/            # Comprehensive test suite
-│   ├── 🔬 unit/         # Unit tests for individual components
-│   └── 🔗 integration/  # Integration and system tests
+├── 🧪 tests/            # Comprehensive test suite (organized by category)
+│   ├── 🔬 hardening/    # System hardening and security tests
+│   ├── 🎨 ui/           # User interface and GUI tests
+│   ├── 🎯 demos/        # Feature demonstration scripts
+│   ├── test_gui.py      # Main GUI component tests
+│   ├── test_implementation.py # Core implementation tests
+│   └── test_monitoring.py     # System monitoring tests
 ├── 📚 docs/             # Documentation and guides
 │   ├── 📖 user/         # User documentation and guides
 │   │   └── 📖 User_Manual.md   # Comprehensive user manual
@@ -347,7 +351,10 @@ python scripts/organize-repo.py            # Apply changes
 │   ├── 📋 implementation/ # Technical implementation docs
 │   ├── 🚀 deployment/  # Deployment and distribution guides
 │   ├── 🔧 maintenance/ # Code citations and link verification
-│   └── 📁 releases/    # Release notes and version history
+│   ├── 📁 releases/    # Release notes and version history
+│   └── 💻 development/ # Development reports and updates
+│       ├── 📊 reports/ # Technical analysis reports
+│       └── 📝 updates/ # Feature updates and progress docs
 ├── 🛠️ dev/              # Development tools and resources
 │   ├── 📊 analysis/     # Code analysis and validation tools
 │   │   ├── � component_analysis.py    # Component structure analysis
@@ -373,7 +380,9 @@ python scripts/organize-repo.py            # Apply changes
 ├── ⚙️ config/           # Configuration files and policies
 │   ├── 🔐 org.xanados.searchanddestroy.policy # System security policy
 │   ├── 🛡️ security.conf.example               # Security configuration template
-│   └── ⚙️ performance_config_template.json    # Performance tuning template
+│   ├── ⚙️ performance_config_template.json    # Performance tuning template
+│   ├── pytest.ini      # Test configuration
+│   └── mypy.ini         # Type checking configuration
 └── 🔧 tools/            # External tools and utilities
     ├── 🐧 flatpak-pip-generator # Flatpak Python dependency generator
     └── 🔧 setup.sh              # Initial environment setup

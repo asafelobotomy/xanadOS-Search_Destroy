@@ -104,10 +104,20 @@ class UpdateDialog(QDialog):
         # Icon (if available)
         try:
             icon_label = QLabel()
-            icon_label.setPixmap(QPixmap(":/icons/update.png").scaled(48, 48, Qt.AspectRatioMode.KeepAspectRatio))
+            pixmap = QPixmap(":/icons/update.png")
+            if not pixmap.isNull():
+                icon_label.setPixmap(pixmap.scaled(48, 48, Qt.AspectRatioMode.KeepAspectRatio))
+                header_layout.addWidget(icon_label)
+            else:
+                # Use text icon as fallback
+                icon_label.setText("🔄")
+                icon_label.setFont(QFont("Arial", 24))
+                header_layout.addWidget(icon_label)
+        except Exception:
+            # Fallback to text icon
+            icon_label = QLabel("🔄")
+            icon_label.setFont(QFont("Arial", 24))
             header_layout.addWidget(icon_label)
-        except:
-            pass
         
         # Title
         title_label = QLabel("Application Updates")
@@ -207,7 +217,9 @@ class UpdateDialog(QDialog):
             updater = AutoUpdateSystem(self.current_version)
             last_check = updater.get_last_check_time()
             if last_check:
-                self.last_check_label.setText(last_check)
+                # Format the datetime as a readable string
+                formatted_time = last_check.strftime("%Y-%m-%d %H:%M:%S")
+                self.last_check_label.setText(formatted_time)
             else:
                 self.last_check_label.setText("Never")
         except Exception as e:
@@ -453,10 +465,39 @@ class UpdateNotifier:
         self.timer.start(6 * 60 * 60 * 1000)  # 6 hours in milliseconds
     
     def check_for_updates_background(self):
-        """Check for updates in the background."""
-        # Temporarily disabled to avoid async issues
-        # TODO: Implement proper async handling for background updates
-        return
+        """Check for updates in the background using QThread."""
+        try:
+            # Create background worker thread
+            from PyQt6.QtCore import QThread, pyqtSignal
+            
+            class BackgroundUpdateChecker(QThread):
+                update_found = pyqtSignal(dict)
+                error_occurred = pyqtSignal(str)
+                
+                def __init__(self, main_window):
+                    super().__init__()
+                    self.main_window = main_window
+                
+                def run(self):
+                    try:
+                        # Check for updates using the auto-updater
+                        if hasattr(self.main_window, 'auto_updater') and self.main_window.auto_updater:
+                            update_info = self.main_window.auto_updater.check_for_updates_sync()
+                            if update_info and update_info.get('available', False):
+                                self.update_found.emit(update_info)
+                    except Exception as e:
+                        self.error_occurred.emit(str(e))
+            
+            # Create and start the worker thread
+            self.background_checker = BackgroundUpdateChecker(self.main_window)
+            self.background_checker.update_found.connect(self.notify_update_available)
+            self.background_checker.error_occurred.connect(lambda err: self.logger.error(f"Background update check failed: {err}"))
+            self.background_checker.start()
+            
+        except Exception as e:
+            self.logger.error(f"Failed to start background update check: {e}")
+            # Fallback to no-op if threading fails
+            return
     
     def notify_update_available(self, update_info):
         """Notify user that an update is available."""

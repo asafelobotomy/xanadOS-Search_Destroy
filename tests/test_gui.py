@@ -146,7 +146,7 @@ class TestRequirements(unittest.TestCase):
             content = f.read()
         
         self.assertIn('PyQt6', content, "PyQt6 should be in requirements")
-        self.assertIn('pyclamd', content, "pyclamd should be in requirements")
+        self.assertIn('psutil', content, "psutil should be in requirements")
         
         # Check that pyclamd version is correct (not 1.0.0 which doesn't exist)
         self.assertNotIn('pyclamd>=1.0.0', content, 

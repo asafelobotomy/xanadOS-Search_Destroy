@@ -577,16 +577,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-
-- Placeholder for future features
+- Feature development in progress
 
 ### Changed
-
-- Placeholder for future changes
+- Improvements under development
 
 ### Fixed
-
-- Placeholder for future fixes
+- Bug fixes in development
 
 ## [2.2.0] - 2025-08-08
 

@@ -500,10 +500,8 @@ class RKHunterWrapper:
         # Apply success heuristic abstraction
         try:
             if _is_successful_scan(result.returncode, getattr(result, 'stdout', '')):
-                # Mark sudo session as active after successful privileged operation
-                from .elevated_runner import _set_sudo_session_active
-                _set_sudo_session_active(True)
-                self.logger.debug("Sudo session marked active after successful elevated_run")
+                # Note: Simplified elevated runner doesn't need session tracking
+                self.logger.debug("Elevated operation completed successfully")
         except Exception:  # pragma: no cover - defensive
             pass
         return result
@@ -591,10 +589,8 @@ class RKHunterWrapper:
             self._current_process = None
         result = subprocess.CompletedProcess(args=cmd_args, returncode=process.returncode, stdout='\n'.join(stdout_lines), stderr='')
         if result.returncode in (0,1) and ("Info: End date is" in result.stdout or "System checks summary" in result.stdout or result.returncode==0):
-            # Mark sudo session as active after successful privileged operation
-            from .elevated_runner import _set_sudo_session_active
-            _set_sudo_session_active(True)
-            self.logger.debug("Sudo session marked active after successful RKHunter operation")
+            # Note: Simplified elevated runner doesn't need session tracking  
+            self.logger.debug("RKHunter operation completed successfully")
         return result
 
     def _initialize_config(self):

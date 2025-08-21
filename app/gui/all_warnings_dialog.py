@@ -400,7 +400,35 @@ class AllWarningsDialog(QDialog):
         if hasattr(warning, 'explanation') and warning.explanation:
             details.append("📖 DETAILED EXPLANATION")
             details.append("=" * 50)
-            details.append(warning.explanation)
+            
+            # Handle WarningExplanation object properly
+            try:
+                if hasattr(warning.explanation, 'description'):
+                    # It's a WarningExplanation object
+                    explanation_obj = warning.explanation
+                    details.append(f"Category: {explanation_obj.category.value if hasattr(explanation_obj.category, 'value') else str(explanation_obj.category)}")
+                    details.append(f"Severity: {explanation_obj.severity.value if hasattr(explanation_obj.severity, 'value') else str(explanation_obj.severity)}")
+                    details.append(f"Title: {explanation_obj.title}")
+                    details.append("")
+                    details.append(f"Description: {explanation_obj.description}")
+                    details.append("")
+                    details.append(f"Likely Cause: {explanation_obj.likely_cause}")
+                    details.append("")
+                    if hasattr(explanation_obj, 'technical_details') and explanation_obj.technical_details:
+                        details.append(f"Technical Details: {explanation_obj.technical_details}")
+                        details.append("")
+                    if hasattr(explanation_obj, 'remediation_steps') and explanation_obj.remediation_steps:
+                        details.append("Remediation Steps:")
+                        for step in explanation_obj.remediation_steps:
+                            details.append(f"  • {str(step)}")
+                        details.append("")
+                else:
+                    # It's a string explanation or other type
+                    details.append(str(warning.explanation))
+            except Exception as e:
+                # Fallback to string conversion if anything goes wrong
+                details.append(f"Explanation: {str(warning.explanation)}")
+                details.append(f"(Note: Error processing explanation details: {e})")
             details.append("")
         else:
             details.append("📖 GENERAL GUIDANCE")
@@ -433,27 +461,48 @@ class AllWarningsDialog(QDialog):
 
     def _get_warning_recommendations(self, warning):
         """Get recommendations for addressing the warning."""
-        recommendations = [
-            "Review the warning details carefully",
-            "Check recent system changes and installations",
-            "Verify the legitimacy of any flagged files or processes",
-            "Consult system logs for related events",
-            "Consider running additional security scans",
-            "If confirmed safe, mark the warning as a false positive",
-            "If suspicious, take appropriate security measures"
-        ]
+        recommendations = []
+        
+        # First, try to get specific recommendations from WarningExplanation
+        try:
+            if hasattr(warning, 'explanation') and warning.explanation:
+                if hasattr(warning.explanation, 'recommended_action') and warning.explanation.recommended_action:
+                    recommendations.append(str(warning.explanation.recommended_action))
+                if hasattr(warning.explanation, 'remediation_steps') and warning.explanation.remediation_steps:
+                    for step in warning.explanation.remediation_steps:
+                        recommendations.append(str(step))
+        except Exception as e:
+            # Log error but continue with fallback recommendations
+            print(f"Warning: Error extracting specific recommendations: {e}")
+        
+        # Add generic recommendations if none were found or to supplement specific ones
+        if not recommendations:
+            recommendations = [
+                "Review the warning details carefully",
+                "Check recent system changes and installations",
+                "Verify the legitimacy of any flagged files or processes",
+                "Consult system logs for related events",
+                "Consider running additional security scans",
+                "If confirmed safe, mark the warning as a false positive",
+                "If suspicious, take appropriate security measures"
+            ]
         
         # Add specific recommendations based on warning type
-        if hasattr(warning, 'check_name'):
-            check_name = warning.check_name.lower()
-            if 'file' in check_name:
-                recommendations.insert(2, "Verify file integrity and source")
-            elif 'process' in check_name:
-                recommendations.insert(2, "Check process origin and behavior")
-            elif 'network' in check_name:
-                recommendations.insert(2, "Monitor network connections and traffic")
+        try:
+            if hasattr(warning, 'check_name') and warning.check_name:
+                check_name = str(warning.check_name).lower()
+                if 'file' in check_name:
+                    recommendations.insert(-2, "Verify file integrity and source")
+                elif 'process' in check_name:
+                    recommendations.insert(-2, "Check process origin and behavior")
+                elif 'network' in check_name:
+                    recommendations.insert(-2, "Monitor network connections and traffic")
+        except Exception as e:
+            # Continue without type-specific recommendations if there's an error
+            print(f"Warning: Error adding type-specific recommendations: {e}")
         
-        return recommendations
+        # Ensure all recommendations are strings
+        return [str(rec) for rec in recommendations]
 
     def _investigate_current_warning(self):
         """Provide investigation guidance for current warning."""

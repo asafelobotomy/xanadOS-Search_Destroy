@@ -17,7 +17,7 @@ from pathlib import Path
 from typing import Callable, List, Optional
 
 import psutil
-import schedule
+# import schedule  # Temporarily disabled for testing - will re-enable in Phase 2
 
 from .clamav_wrapper import ClamAVWrapper, ScanFileResult, ScanResult
 

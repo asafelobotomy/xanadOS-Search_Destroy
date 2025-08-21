@@ -95,94 +95,185 @@ class ThemeManager(QObject):
                     "report_size": 14,                    # Report viewer text
                     "scan_result_size": 14,               # Scan results text area
                     "activity_size": 14,                  # Activity log text
-                    "header_size": 18,                    # Headers and titles
+                    "header_size": 28,                    # Headers and titles - MUCH BIGGER!
                     "small_size": 12,                     # Small text and labels
                     "monospace_family": "Consolas, 'Courier New', monospace",
                     "ui_family": "Segoe UI, Tahoma, sans-serif",
                 }
             },
             "light": {
-                "name": "Light (Sunrise)",
+                "name": "Light (Summer Breeze)",
                 "colors": {
-                    # === SUNRISE LIGHT THEME (inspired by attached color palette) ===
-                    # Header colors - warm sunrise peach
-                    "header_bg": "#F8BC9B",               # Sunrise peach header background
-                    "header_text": "#2d2d2d",             # Dark text for contrast
+                    # === REFRESHING SUMMER BREEZE THEME ===
+                    # Beautiful summer colors: Sky Blue, Seafoam Green, Peach, Pale Yellow
+                    "header_bg": "qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #87CEEB, stop:0.33 #93E9BE, stop:0.66 #FFE5B4, stop:1 #FDFD96)", # Summer: Sky Blue → Seafoam → Peach → Yellow
+                    "header_text": "#2d3748",             # Rich dark text for contrast
                     
-                    # Core Application Colors - warm sunrise-tinted instead of pure white
-                    "background": "#fefdf8",              # Warm cream background (subtle sunrise tint)
-                    "secondary_bg": "#f9f6f0",            # Warm light background for cards (peach tint)
-                    "tertiary_bg": "#f4f0e8",             # Warm tinted for interactive elements
-                    "card_bg": "#fdfcf6",                 # Warm white cards with sunrise tint
-                    "elevated_bg": "#fefcf5",             # Warm white dialogs and modals
+                    # Refreshing Base Colors - creating a breezy summer feel
+                    "background": "#fefefe",              # Clean white base
+                    "secondary_bg": "qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #f0fbff, stop:1 #e6f9ff)", # Light sky blue gradient
+                    "tertiary_bg": "qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #f0fff4, stop:1 #e6fffa)", # Subtle seafoam gradient
+                    "card_bg": "qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #ffffff, stop:1 #f9fcff)", # Clean white to light blue
+                    "elevated_bg": "qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #ffffff, stop:1 #fffef0)", # White to light yellow
                     
-                    # Sunrise palette integration - warm and inviting
-                    "sunrise_blue": "#75BDE0",            # Sky blue for accents and info
-                    "sunrise_golden": "#F8D49B",          # Golden yellow for highlights
-                    "sunrise_peach": "#F8BC9B",           # Peach for primary actions
-                    "sunrise_pink": "#F89B9B",            # Pink for secondary actions
+                    # Summer Breeze Color Palette - vibrant and refreshing
+                    "sky_blue": "#87CEEB",                # Primary sky blue
+                    "seafoam_green": "#93E9BE",           # Fresh seafoam green
+                    "peach": "#FFE5B4",                   # Warm peach
+                    "pale_yellow": "#FDFD96",             # Bright pale yellow
+                    "summer_mint": "#7ce3b0",             # Deeper seafoam for accents
                     
-                    # Enhanced strawberry-style naming for consistency with Dark Mode
-                    "strawberry_primary": "#D2691E",       # Main accent (darker orange)
-                    "strawberry_coral": "#F8BC9B",        # Light peach (like Dark's coral)
-                    "strawberry_peach": "#F8D49B",        # Golden yellow highlights
-                    "strawberry_sage": "#75BDE0",         # Sky blue for info/calm states
+                    # Enhanced color naming for consistency with Dark Mode
+                    "strawberry_primary": "#87CEEB",       # Sky blue (matching Dark's red position)
+                    "strawberry_coral": "#93E9BE",        # Seafoam green (like Dark's coral)
+                    "strawberry_peach": "#FFE5B4",        # Peach highlights
+                    "strawberry_sage": "#7ce3b0",         # Deeper seafoam for success states
                     
-                    # Text Colors - ensuring WCAG compliance with warmer tones
-                    "primary_text": "#1a1a1a",            # Slightly warmer dark gray
-                    "secondary_text": "#3d3d3d",          # Warm medium gray for secondary info
-                    "muted_text": "#6b6b6b",              # Warmer light gray for subtle content
-                    "accent_text": "#D2691E",             # Darker orange for emphasis (contrast safe)
-                    "contrast_text": "#ffffff",           # White for dark backgrounds
+                    # Text Colors - fresh and readable with summer vibes
+                    "primary_text": "#2d3748",            # Rich dark blue-gray
+                    "secondary_text": "#4a5568",          # Medium slate for secondary info
+                    "muted_text": "#64748b",              # Sophisticated gray-blue for subtle content
+                    "accent_text": "#87CEEB",             # Sky blue for emphasis
+                    "contrast_text": "#ffffff",           # Pure white for dark backgrounds
                     
-                    # Interactive States - sunrise-inspired and prominent
-                    "accent": "#D2691E",                  # Darker orange for primary actions (prominent like Dark's red)
-                    "accent_hover": "#F8BC9B",            # Sunrise peach on hover
-                    "accent_pressed": "#B8860B",          # Darker golden for pressed state
-                    "focus_ring": "#75BDE0",              # Sky blue focus indicators
-                    "glow": "rgba(248, 188, 155, 0.3)",   # Warm peach glow effect
+                    # Interactive States - refreshing and responsive
+                    "accent": "#87CEEB",                  # Sky blue for primary actions
+                    "accent_hover": "#5fb3d4",            # Deeper sky blue on hover
+                    "accent_pressed": "#4a9dc7",          # Rich blue when pressed
+                    "focus_ring": "#93E9BE",              # Seafoam green focus indicators
+                    "glow": "rgba(135, 206, 235, 0.25)",  # Sky blue glow
                     
-                    # State Colors - enhanced with sunrise touch
-                    "success": "#2E7D32",                 # Deeper forest green for success
-                    "success_border": "#4CAF50",          # Vibrant green borders
-                    "success_bright": "#81C784",          # Light green for highlights
-                    "warning": "#F57C00",                 # Vibrant orange for warnings
-                    "warning_border": "#FF9800",          # Bright orange borders
-                    "warning_bright": "#FFB74D",          # Light orange for highlights
-                    "error": "#C62828",                   # Deep red for errors
-                    "error_border": "#F44336",            # Bright red borders
-                    "error_bright": "#E57373",            # Light red for highlights
-                    "info": "#1976D2",                    # Deep blue for info
-                    "info_border": "#75BDE0",             # Sky blue borders
-                    "info_bright": "#90CAF9",             # Light blue for highlights
+                    # State Colors - vibrant summer meanings
+                    "success": "#93E9BE",                 # Seafoam green for success
+                    "success_border": "#7ce3b0",          # Deeper seafoam borders
+                    "success_bright": "#a8f0c8",          # Bright seafoam highlights
+                    "warning": "#FFE5B4",                 # Peach for warnings
+                    "warning_border": "#fdd99b",          # Rich peach borders
+                    "warning_bright": "#fff0c7",          # Bright peach highlights
+                    "error": "#ff6b6b",                   # Coral red for errors
+                    "error_border": "#ff5252",            # Deep coral borders
+                    "error_bright": "#ff8a80",            # Bright coral highlights
+                    "info": "#87CEEB",                    # Sky blue for info
+                    "info_border": "#5fb3d4",             # Deep sky blue borders
+                    "info_bright": "#a8dfef",             # Light sky blue highlights
                     
-                    # Enhanced Border System - more prominent like Dark Mode
-                    "border": "#F8BC9B",                  # Peach borders (main) - prominent like Dark's red
-                    "border_light": "#F8D49B",            # Golden yellow for light borders
-                    "border_accent": "#D2691E",           # Dark orange accent borders
-                    "border_inner": "#F89B9B",            # Pink for inner borders
-                    "border_muted": "#f0ede8",            # Warm light gray for subtle divisions
-                    "separator": "#F8BC9B",               # Peach section separators
+                    # Beautiful Border System - creating summer magic
+                    "border": "qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #87CEEB, stop:1 #93E9BE)", # Sky blue to seafoam gradient borders
+                    "border_light": "#e2f4fd",            # Light sky blue borders
+                    "border_accent": "#87CEEB",           # Sky blue accent borders
+                    "border_inner": "#f0fff4",            # Very light seafoam inner borders
+                    "border_muted": "#f9fcff",            # Minimal borders
+                    "separator": "qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #93E9BE, stop:1 #FFE5B4)", # Seafoam to peach separators
                     
-                    # Enhanced Interaction Feedback - more colorful
-                    "hover_bg": "#f7f5f1",               # Warm light gray hover backgrounds
-                    "hover_accent": "#F8D49B",            # Golden hover for accent elements
-                    "pressed_bg": "#f2f0ec",             # Warm pressed backgrounds
-                    "selection_bg": "#75BDE0",            # Sky blue selection
+                    # Refreshing Interaction Feedback
+                    "hover_bg": "qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #f0fbff, stop:1 #e6f9ff)", # Sky blue hover
+                    "hover_accent": "qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #f0fff4, stop:1 #e6fffa)", # Seafoam hover
+                    "pressed_bg": "qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #e6f9ff, stop:1 #d1f2ff)", # Deeper sky blue pressed
+                    "selection_bg": "#87CEEB",            # Sky blue selection
                     "selection_text": "#ffffff",          # White selection text
                     
-                    # Visual Depth & Effects - enhanced warm effects
-                    "shadow": "rgba(248, 188, 155, 0.15)", # Warm peach shadow
+                    # Summer Breeze Visual Effects
+                    "shadow": "rgba(135, 206, 235, 0.15)",  # Sky blue-tinted shadows
                     
-                    # Disabled States - warm-tinted instead of sterile gray
-                    "disabled_bg": "#f8f6f2",            # Warm light background for disabled
-                    "disabled_text": "#a8a8a8",           # Warm gray text for disabled elements
+                    # Disabled States - maintaining the magical feel
+                    "disabled_bg": "#f8fafc",             # Light background for disabled
+                    "disabled_text": "#94a3b8",           # Muted but not boring gray
                 },
                 "fonts": {
                     "base_size": 14,                      # Default base size for fallback
+                    "button_size": 14,                    # Buttons
+                    "tab_size": 14,                       # Tab headers
+                    "card_size": 14,                      # Dashboard cards
                     "report_size": 14,                    # Report viewer text
                     "scan_result_size": 14,               # Scan results text area
                     "activity_size": 14,                  # Activity log text
+                    "header_size": 28,                    # Headers and titles - MUCH BIGGER!
+                    "small_size": 12,                     # Small text and labels
+                    "monospace_family": "Consolas, 'Courier New', monospace",
+                    "ui_family": "Segoe UI, Tahoma, sans-serif",
+                }
+            },
+            "high_contrast": {
+                "name": "High Contrast (Accessibility)",
+                "colors": {
+                    # === HIGH CONTRAST ACCESSIBILITY THEME ===
+                    # Maximum contrast and accessibility compliance
+                    "header_bg": "#000000",               # Pure black header
+                    "header_text": "#ffffff",             # Pure white text
+                    
+                    # High Contrast Base Colors - maximum accessibility
+                    "background": "#ffffff",              # Pure white background
+                    "secondary_bg": "#ffffff",            # Pure white for all backgrounds
+                    "tertiary_bg": "#f0f0f0",             # Very light gray only for distinction
+                    "card_bg": "#ffffff",                 # Pure white cards
+                    "elevated_bg": "#ffffff",             # Pure white modals
+                    
+                    # Accessibility Color Palette - WCAG AAA extreme compliance
+                    "strawberry_primary": "#000000",       # Pure black primary
+                    "strawberry_coral": "#000000",        # Pure black secondary
+                    "strawberry_peach": "#0066cc",        # High contrast blue highlights
+                    "strawberry_sage": "#006600",         # High contrast green for success
+                    
+                    # Text Colors - Maximum contrast ratios (21:1)
+                    "primary_text": "#000000",            # Pure black text (21:1 contrast)
+                    "secondary_text": "#000000",          # Pure black for all text
+                    "muted_text": "#333333",              # Very dark gray (minimum contrast)
+                    "accent_text": "#0066cc",             # High contrast blue for links
+                    "contrast_text": "#ffffff",           # Pure white on black
+                    
+                    # Interactive States - Maximum contrast
+                    "accent": "#0066cc",                  # High contrast blue for actions
+                    "accent_hover": "#004499",            # Darker blue on hover
+                    "accent_pressed": "#003366",          # Very dark blue when pressed
+                    "focus_ring": "#ffff00",              # High contrast yellow focus
+                    "glow": "rgba(255, 255, 0, 0.5)",     # High contrast yellow glow
+                    
+                    # State Colors - Maximum contrast and clarity
+                    "success": "#006600",                 # High contrast green
+                    "success_border": "#004400",          # Very dark green borders
+                    "success_bright": "#008800",          # Bright green highlights
+                    "warning": "#cc6600",                 # High contrast orange
+                    "warning_border": "#994400",          # Dark orange borders
+                    "warning_bright": "#ff8800",          # Bright orange highlights
+                    "error": "#cc0000",                   # High contrast red
+                    "error_border": "#990000",            # Dark red borders
+                    "error_bright": "#ff0000",            # Bright red highlights
+                    "info": "#0066cc",                    # High contrast blue
+                    "info_border": "#004499",             # Dark blue borders
+                    "info_bright": "#0088ff",             # Bright blue highlights
+                    
+                    # High Contrast Border System
+                    "border": "#000000",                  # Pure black borders for maximum contrast
+                    "border_light": "#666666",            # Dark gray for subtle borders
+                    "border_accent": "#0066cc",           # High contrast blue borders
+                    "border_inner": "#cccccc",            # Light gray for inner borders
+                    "border_muted": "#e0e0e0",            # Light gray for minimal borders
+                    "separator": "#000000",               # Pure black separators
+                    
+                    # High Contrast Interaction Feedback
+                    "hover_bg": "#f0f0f0",               # Light gray hover
+                    "hover_accent": "#e6f3ff",            # Light blue hover
+                    "pressed_bg": "#e0e0e0",             # Medium gray pressed
+                    "selection_bg": "#0066cc",            # High contrast blue selection
+                    "selection_text": "#ffffff",          # Pure white selection text
+                    
+                    # High Contrast Visual Effects
+                    "shadow": "rgba(0, 0, 0, 0.8)",       # Strong black shadows
+                    
+                    # High Contrast Disabled States
+                    "disabled_bg": "#f0f0f0",            # Light gray for disabled
+                    "disabled_text": "#666666",           # Dark gray for disabled text
+                },
+                "fonts": {
+                    "base_size": 16,                      # Larger base size for accessibility
+                    "button_size": 16,                    # Larger buttons for accessibility
+                    "tab_size": 16,                       # Larger tab headers
+                    "card_size": 16,                      # Larger dashboard cards
+                    "report_size": 16,                    # Larger report text
+                    "scan_result_size": 16,               # Larger scan results
+                    "activity_size": 16,                  # Larger activity log
+                    "header_size": 32,                    # Extra large headers for accessibility
+                    "small_size": 14,                     # Larger "small" text for accessibility
                     "monospace_family": "Consolas, 'Courier New', monospace",
                     "ui_family": "Segoe UI, Tahoma, sans-serif",
                 }
@@ -202,6 +293,13 @@ class ThemeManager(QObject):
             theme_id: theme_data["name"] 
             for theme_id, theme_data in self._theme_definitions.items()
         }
+    
+    def get_theme_display_name(self, theme_id: str) -> str:
+        """Get the display name for a theme."""
+        theme_data = self._theme_definitions.get(theme_id)
+        if theme_data:
+            return theme_data["name"]
+        return theme_id.title()  # Fallback to capitalized theme ID
     
     def get_color(self, color_key: str, theme: Optional[str] = None) -> str:
         """Get a color value from the current or specified theme."""
@@ -1043,7 +1141,14 @@ class ThemeManager(QObject):
         
         QLabel#headerTitle {{
             color: {c('header_text')};
-            font-size: {f('base_size') + 8}px;
+            font-size: {f('header_size')}px;
+            font-weight: 700;
+            background: transparent;
+        }}
+        
+        QLabel#appTitle {{
+            color: {c('header_text')};
+            font-size: {f('header_size')}px;
             font-weight: 700;
             background: transparent;
         }}
@@ -1253,9 +1358,16 @@ def create_themed_message_box(parent: QWidget, msg_type: str, title: str, text: 
     return get_theme_manager().create_themed_message_box(parent, msg_type, title, text, buttons)
 
 def toggle_theme():
-    """Toggle between light and dark themes (for testing)."""
+    """Cycle between all available themes: Dark → Light (Aurora) → High Contrast → Dark..."""
     current = get_theme_manager().get_current_theme()
-    new_theme = "light" if current == "dark" else "dark"
+    # Cycle through: dark → light → high_contrast → dark
+    if current == "dark":
+        new_theme = "light"
+    elif current == "light":
+        new_theme = "high_contrast"
+    else:  # high_contrast or any other theme
+        new_theme = "dark"
+    
     set_app_theme(new_theme)
     return new_theme
 

@@ -148,6 +148,13 @@ class AutoUpdateSystem:
         )
         self.db_dir.mkdir(parents=True, exist_ok=True)
 
+        # Config file for persistent state
+        self.config_file = Path.home() / ".config" / "search-and-destroy" / "update_state.json"
+        self.config_file.parent.mkdir(parents=True, exist_ok=True)
+        
+        # Load persisted state
+        self._load_persistent_state()
+
         # Scheduler
         self.scheduler = schedule.Scheduler()
         self.scheduler_thread: Optional[threading.Thread] = None
@@ -157,6 +164,35 @@ class AutoUpdateSystem:
         self.check_updates_task: Optional[asyncio.Task] = None
 
         self.logger.info("Auto-update system initialized")
+
+    def _load_persistent_state(self):
+        """Load persistent state from config file."""
+        try:
+            if self.config_file.exists():
+                with open(self.config_file, 'r') as f:
+                    state = json.load(f)
+                
+                # Load last check time
+                if 'last_check_time' in state:
+                    self.last_check_time = datetime.fromisoformat(state['last_check_time'])
+                    
+        except Exception as e:
+            self.logger.debug(f"Could not load persistent state: {e}")
+
+    def _save_persistent_state(self):
+        """Save persistent state to config file."""
+        try:
+            state = {}
+            
+            # Save last check time
+            if self.last_check_time:
+                state['last_check_time'] = self.last_check_time.isoformat()
+                
+            with open(self.config_file, 'w') as f:
+                json.dump(state, f, indent=2)
+                
+        except Exception as e:
+            self.logger.debug(f"Could not save persistent state: {e}")
 
     async def start_update_system(self) -> bool:
         """Start the automatic update system."""
@@ -285,6 +321,9 @@ class AutoUpdateSystem:
             # Update state
             self.available_updates = available_updates
             self.last_check_time = datetime.now()
+            
+            # Save persistent state
+            self._save_persistent_state()
 
             # Notify about available updates
             for update_info in available_updates.values():
@@ -825,6 +864,17 @@ class AutoUpdateSystem:
 
             return await loop.run_in_executor(None, sync_request)
 
+        except requests.exceptions.HTTPError as e:
+            if e.response.status_code == 403:
+                # Rate limiting is expected for ClamAV database
+                self.logger.debug("Rate limited by %s (403 Forbidden) - this is normal", url)
+            elif e.response.status_code in (429, 503):
+                # Temporary server issues
+                self.logger.warning("Server temporarily unavailable for %s: %s", url, e.response.status_code)
+            else:
+                # Other HTTP errors
+                self.logger.error("HTTP request failed %s %s: %s", method, url, e)
+            return None
         except Exception as e:
             self.logger.error("HTTP request failed %s %s: %s", method, url, e)
             return None
@@ -972,6 +1022,10 @@ class AutoUpdateSystem:
             }
             for update in recent_updates
         ]
+
+    def get_last_check_time(self) -> Optional[datetime]:
+        """Get the last time updates were checked."""
+        return self.last_check_time
 
     # Callback setters
     def set_update_available_callback(

@@ -819,7 +819,9 @@ def build_updates_page(host):
                 if hasattr(host, 'auto_updater') and host.auto_updater:
                     last_check = host.auto_updater.get_last_check_time()
                     if last_check:
-                        host.last_update_check_label.setText(last_check)
+                        # Format the datetime as a readable string
+                        formatted_time = last_check.strftime("%Y-%m-%d %H:%M:%S")
+                        host.last_update_check_label.setText(formatted_time)
             except Exception as e:
                 print(f"Warning: Could not load initial last check time: {e}")
         

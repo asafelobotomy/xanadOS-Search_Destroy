@@ -106,8 +106,8 @@ find scripts/ -name "*.sh" | while read script; do
 done
 
 echo -e "\n🎯 Configuration Files:"
-check_file "pytest.ini"
-check_file "mypy.ini"
+check_file "config/pytest.ini"
+check_file "config/mypy.ini"
 check_file ".gitignore"
 
 echo -e "\n📋 Summary:"

@@ -89,7 +89,13 @@ class SystemHardeningChecker:
             compliance_level = "Poor"
         
         # Generate recommendations - include medium, high, and critical severity features
-        recommendations = [f.recommendation for f in features if not f.enabled and f.severity in ['medium', 'high', 'critical']]
+        recommendations_raw = [f.recommendation for f in features if not f.enabled and f.severity in ['medium', 'high', 'critical']]
+        # Remove duplicates while preserving order
+        recommendations = []
+        for rec in recommendations_raw:
+            if rec not in recommendations:
+                recommendations.append(rec)
+        
         critical_issues = [f.name for f in features if not f.enabled and f.severity == 'critical']
         
         from datetime import datetime
@@ -201,17 +207,7 @@ class SystemHardeningChecker:
             name="AppArmor (Application Armor)",
             enabled=apparmor_status['enabled'],
             status=apparmor_status['status'],
-            description="Mandatory access control security architecture - easier than SELinux",
-            recommendation=apparmor_status['recommendation'],
-            severity="medium",
-            score_impact=15
-        ))
-        apparmor_status = self._check_apparmor()
-        features.append(SecurityFeature(
-            name="AppArmor",
-            enabled=apparmor_status['enabled'],
-            status=apparmor_status['status'],
-            description="Application security profiles and mandatory access control",
+            description="Mandatory access control security architecture providing application security profiles",
             recommendation=apparmor_status['recommendation'],
             severity="medium",
             score_impact=15

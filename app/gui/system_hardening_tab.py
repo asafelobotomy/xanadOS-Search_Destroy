@@ -18,6 +18,7 @@ import logging
 import subprocess
 import shutil
 import os
+from typing import List, Tuple
 from typing import List
 from datetime import datetime
 
@@ -107,12 +108,14 @@ class SecurityScoreWidget(ThemedWidgetMixin, QWidget):
         self.score = score
         self.max_score = max_score
         
-        # Update labels
-        self.score_label.setText(f"{score}/{max_score}")
+        # Calculate percentage for standardized 0-100 display
+        percentage = int((score / max_score) * 100) if max_score > 0 else 0
+        
+        # Update labels with standardized 0-100 scale
+        self.score_label.setText(f"{percentage}/100")
         self.compliance_label.setText(compliance_level)
         
         # Update progress bar with animation
-        percentage = int((score / max_score) * 100) if max_score > 0 else 0
         self.progress_bar.setValue(percentage)
         
         # Use theme colors for compliance level styling
@@ -145,8 +148,8 @@ class SecurityFeatureTable(QTableWidget):
         self.setup_table()
     
     def setup_table(self):
-        # Set up columns
-        headers = ["Feature", "Status", "Severity", "Score Impact", "Description"]
+        # Set up optimized columns for maximum space efficiency
+        headers = ["Security Feature", "Status", "Impact", "Description & Recommendation"]
         self.setColumnCount(len(headers))
         self.setHorizontalHeaderLabels(headers)
         
@@ -155,84 +158,249 @@ class SecurityFeatureTable(QTableWidget):
         self.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
         self.setSortingEnabled(True)
         
-        # Set column widths
+        # Optimal column widths for space efficiency and readability
         header = self.horizontalHeader()
-        header.setSectionResizeMode(0, QHeaderView.ResizeMode.ResizeToContents)  # Feature
-        header.setSectionResizeMode(1, QHeaderView.ResizeMode.ResizeToContents)  # Status
-        header.setSectionResizeMode(2, QHeaderView.ResizeMode.ResizeToContents)  # Severity
-        header.setSectionResizeMode(3, QHeaderView.ResizeMode.ResizeToContents)  # Score
-        header.setSectionResizeMode(4, QHeaderView.ResizeMode.Stretch)  # Description
+        header.setSectionResizeMode(0, QHeaderView.ResizeMode.Interactive)  # Security Feature - flexible
+        header.setSectionResizeMode(1, QHeaderView.ResizeMode.Fixed)        # Status - compact fixed width
+        header.setSectionResizeMode(2, QHeaderView.ResizeMode.Fixed)        # Impact - compact fixed width  
+        header.setSectionResizeMode(3, QHeaderView.ResizeMode.Stretch)      # Description & Recommendation - use remaining space
+        
+        # Set optimal fixed widths for compact columns (based on content analysis)
+        header.resizeSection(1, 90)   # Status: compact for ✅❌⚠️ + text
+        header.resizeSection(2, 75)   # Impact: compact for emoji + level text
+        header.resizeSection(0, 250)  # Feature: reasonable width for names
+        
+        # Enable word wrapping for better text utilization
+        self.setWordWrap(True)
+        
+        # Set minimum section sizes to prevent over-compression
+        header.setMinimumSectionSize(60)
         
         # Remove custom styling - let global theme handle it
     
     def populate_features(self, features: List[SecurityFeature]):
-        """Populate table with security features"""
+        """Populate table with security features using optimized space-efficient presentation"""
         self.setRowCount(len(features))
         theme = get_theme_manager()
         
         for row, feature in enumerate(features):
-            # Feature name
-            name_item = QTableWidgetItem(feature.name)
+            # Security Feature name (simplified and user-friendly)
+            name_item = QTableWidgetItem(self._get_friendly_feature_name(feature.name))
             name_item.setFlags(name_item.flags() & ~Qt.ItemFlag.ItemIsEditable)
             self.setItem(row, 0, name_item)
             
-            # Status with better theming and contrast
-            status_item = QTableWidgetItem("Enabled" if feature.enabled else "Disabled")
+            # Status - compact with clear visual indicators
+            status_text, status_color, status_bg = self._get_compact_status(feature)
+            status_item = QTableWidgetItem(status_text)
             status_item.setFlags(status_item.flags() & ~Qt.ItemFlag.ItemIsEditable)
             
-            # Use text color approach instead of background for better readability
-            if feature.enabled:
-                # Success state - use theme success color with subtle background
-                status_item.setForeground(QColor(theme.get_color('success')))
-                status_item.setBackground(QColor(theme.get_color('success')).lighter(230))  # Very light background
-            else:
-                # Error state - use theme error color with subtle background  
-                status_item.setForeground(QColor(theme.get_color('error')))
-                status_item.setBackground(QColor(theme.get_color('error')).lighter(230))  # Very light background
+            # Apply clear visual styling
+            status_item.setForeground(QColor(status_color))
+            status_item.setBackground(QColor(status_bg))
             
-            # Set font weight for better visibility
+            # Make status text bold for better visibility
             font = status_item.font()
             font.setBold(True)
             status_item.setFont(font)
             
             self.setItem(row, 1, status_item)
             
-            # Severity with enhanced theme-aware styling
-            severity_item = QTableWidgetItem(feature.severity.upper())
-            severity_item.setFlags(severity_item.flags() & ~Qt.ItemFlag.ItemIsEditable)
+            # Impact - compact display
+            impact_text, impact_color = self._get_compact_impact(feature.severity)
+            impact_item = QTableWidgetItem(impact_text)
+            impact_item.setFlags(impact_item.flags() & ~Qt.ItemFlag.ItemIsEditable)
+            impact_item.setForeground(QColor(impact_color))
             
-            # Use theme colors for severity with consistent styling
-            severity_colors = {
-                'critical': theme.get_color('error'),
-                'high': theme.get_color('warning'), 
-                'medium': theme.get_color('accent'),
-                'low': theme.get_color('success')
-            }
+            # Make impact text bold
+            font = impact_item.font()
+            font.setBold(True)
+            impact_item.setFont(font)
             
-            if feature.severity in severity_colors:
-                color = QColor(severity_colors[feature.severity])
-                severity_item.setForeground(color)
-                # Add subtle background tint for better visual distinction
-                severity_item.setBackground(color.lighter(240))
-                
-                # Make severity text bold for better readability
-                font = severity_item.font()
+            self.setItem(row, 2, impact_item)
+            
+            # Combined Description & Recommendation - maximum information density
+            combined_text = self._get_combined_description_recommendation(feature)
+            combined_item = QTableWidgetItem(combined_text)
+            combined_item.setFlags(combined_item.flags() & ~Qt.ItemFlag.ItemIsEditable)
+            
+            # Color-code based on urgency for quick scanning
+            if not feature.enabled and feature.severity in ['high', 'critical']:
+                # High priority items get error coloring
+                font = combined_item.font()
                 font.setBold(True)
-                severity_item.setFont(font)
+                combined_item.setFont(font)
+                combined_item.setForeground(QColor(theme.get_color('error')))
+            elif not feature.enabled and feature.severity == 'medium':
+                combined_item.setForeground(QColor(theme.get_color('warning')))
             
-            self.setItem(row, 2, severity_item)
+            self.setItem(row, 3, combined_item)
             
-            # Score impact
-            score_item = QTableWidgetItem(str(feature.score_impact))
-            score_item.setFlags(score_item.flags() & ~Qt.ItemFlag.ItemIsEditable)
-            score_item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
-            self.setItem(row, 3, score_item)
-            
-            # Description
-            desc_item = QTableWidgetItem(feature.description)
-            desc_item.setFlags(desc_item.flags() & ~Qt.ItemFlag.ItemIsEditable)
-            desc_item.setToolTip(feature.recommendation)  # Show recommendation on hover
-            self.setItem(row, 4, desc_item)
+        # Set optimal row height for density while maintaining readability
+        self.verticalHeader().setDefaultSectionSize(45)  # Slightly more compact
+        
+        # Enable text wrapping and auto-resize rows to fit content efficiently
+        self.resizeRowsToContents()
+        
+        # Set maximum row height to prevent excessive expansion
+        for row in range(self.rowCount()):
+            current_height = self.rowHeight(row)
+            if current_height > 80:  # Limit maximum row height
+                self.setRowHeight(row, 80)
+    
+    def _get_friendly_feature_name(self, technical_name: str) -> str:
+        """Convert technical feature names to compact, user-friendly versions"""
+        name_mapping = {
+            "KASLR (Kernel Address Space Layout Randomization)": "Memory Protection",
+            "SMEP/SMAP (Supervisor Mode Execution/Access Prevention)": "Kernel Protection",
+            "Kernel Stack Guard Pages": "Stack Protection",
+            "KASAN (Kernel Address Sanitizer)": "Memory Sanitizer",
+            "Kernel Lockdown Mode": "Kernel Lockdown",
+            "AppArmor (Application Armor)": "App Security",
+            "Sysctl: kernel.dmesg_restrict": "Log Access Control",
+            "Sysctl: kernel.kptr_restrict": "Pointer Protection",
+            "Sysctl: kernel.yama.ptrace_scope": "Debug Control",
+            "Sysctl: net.ipv4.conf.all.send_redirects": "Redirect Prevention",
+            "Sysctl: net.ipv4.conf.all.accept_redirects": "Redirect Blocking",
+            "Sysctl: net.ipv4.ip_forward": "IP Forwarding",
+            "ASLR (Address Space Layout Randomization)": "Address Randomization",
+            "NX Bit / DEP (Data Execution Prevention)": "Code Protection"
+        }
+        return name_mapping.get(technical_name, technical_name)
+    
+    def _get_compact_status(self, feature: SecurityFeature) -> Tuple[str, str, str]:
+        """Get compact status display with visual indicators"""
+        if feature.enabled:
+            return "✅ Protected", "#2d5016", "#e8f5e8"  # Green text, light green bg
+        else:
+            # Use severity to determine urgency level
+            if feature.severity in ['critical', 'high']:
+                return "❌ Vulnerable", "#721c24", "#f8d7da" # Red text, light red bg
+            else:
+                return "⚠️ At Risk", "#8b4513", "#fff3cd"    # Brown text, light yellow bg
+    
+    def _get_compact_impact(self, severity: str) -> Tuple[str, str]:
+        """Get compact impact level display"""
+        severity_colors = {
+            'critical': ("#721c24", "🔴 Critical"),  # Dark red
+            'high': ("#8b4513", "🟠 High"),         # Brown/orange
+            'medium': ("#856404", "🟡 Medium"),     # Dark yellow
+            'low': ("#155724", "🟢 Low")            # Dark green
+        }
+        
+        color, display = severity_colors.get(severity.lower(), ("#6c757d", "❓ Unknown"))
+        return display, color
+    
+    def _get_combined_description_recommendation(self, feature: SecurityFeature) -> str:
+        """Combine description and recommendation for maximum space efficiency with subtext styling"""
+        # Get the explanation
+        explanation = self._get_plain_language_explanation(feature)
+        
+        # Get the recommendation
+        recommendation = self._get_actionable_recommendation(feature)
+        
+        # Use dense formatting with visual hierarchy
+        if feature.enabled:
+            return f"✅ {explanation}"
+        else:
+            # Use compact formatting with clear action indication
+            return f"{explanation}\n\n🔧 {recommendation}"
+    
+    def _get_user_friendly_status(self, feature: SecurityFeature) -> tuple:
+        """Get user-friendly status with visual indicators"""
+        if feature.enabled:
+            return "✅ Protected", "#2e7d32", "#e8f5e8"  # Green
+        else:
+            if feature.severity == 'critical':
+                return "❌ Vulnerable", "#d32f2f", "#ffebee"  # Red
+            elif feature.severity == 'high':
+                return "⚠️ At Risk", "#f57c00", "#fff3e0"  # Orange
+            elif feature.severity == 'medium':
+                return "⚠️ Needs Attention", "#f9a825", "#fffde7"  # Yellow
+            else:
+                return "ℹ️ Optional", "#1976d2", "#e3f2fd"  # Blue
+    
+    def _get_impact_level_display(self, severity: str) -> tuple:
+        """Convert technical severity to user-friendly impact level"""
+        impact_mapping = {
+            'critical': ("🔴 Critical", "#d32f2f"),
+            'high': ("🟠 High", "#f57c00"),
+            'medium': ("🟡 Medium", "#f9a825"),
+            'low': ("🟢 Low", "#2e7d32")
+        }
+        return impact_mapping.get(severity, ("Unknown", "#666666"))
+    
+    def _get_plain_language_explanation(self, feature: SecurityFeature) -> str:
+        """Provide clear explanation of what the feature status means"""
+        explanations = {
+            "KASLR (Kernel Address Space Layout Randomization)": 
+                "Your system memory layout is randomized, making it much harder for attackers to exploit vulnerabilities.",
+            "SMEP/SMAP (Supervisor Mode Execution/Access Prevention)": 
+                "Your kernel is protected from executing malicious user code, preventing privilege escalation attacks.",
+            "Kernel Stack Guard Pages": 
+                "Stack overflow attacks are blocked by guard pages that detect and prevent buffer overruns.",
+            "KASAN (Kernel Address Sanitizer)": 
+                "Memory corruption detection is available for development environments (not needed in production).",
+            "Kernel Lockdown Mode": 
+                "Your kernel is protected from unauthorized modifications and debugging access.",
+            "AppArmor (Application Armor)": 
+                "Application security profiles control what programs can access on your system." if feature.enabled 
+                else "Applications are running without security profiles, allowing broader system access.",
+            "Sysctl: kernel.dmesg_restrict": 
+                "System diagnostic messages are protected from unauthorized access.",
+            "Sysctl: kernel.kptr_restrict": 
+                "Kernel memory addresses are hidden from potential attackers.",
+            "Sysctl: kernel.yama.ptrace_scope": 
+                "Debug access to running processes is restricted to authorized users only.",
+            "Sysctl: net.ipv4.conf.all.send_redirects": 
+                "Your system won't send network redirects that could be used for attacks.",
+            "Sysctl: net.ipv4.conf.all.accept_redirects": 
+                "Your system ignores network redirects that could redirect traffic maliciously.",
+            "Sysctl: net.ipv4.ip_forward": 
+                "IP forwarding is configured appropriately for your system's role.",
+            "ASLR (Address Space Layout Randomization)": 
+                "Program memory layouts are randomized, making exploitation much more difficult.",
+            "NX Bit / DEP (Data Execution Prevention)": 
+                "Data areas in memory cannot be executed as code, preventing many types of attacks."
+        }
+        
+        base_explanation = explanations.get(feature.name, feature.description)
+        
+        if feature.enabled:
+            return f"✅ {base_explanation}"
+        else:
+            return f"⚠️ This protection is not active. {base_explanation.replace('Your system', 'Your system would')}"
+    
+    def _get_actionable_recommendation(self, feature: SecurityFeature) -> str:
+        """Provide clear, actionable recommendations"""
+        if feature.enabled:
+            if "properly configured" in feature.recommendation:
+                return "✅ No action needed - this security feature is working correctly."
+            else:
+                return f"✅ Active and protecting your system. {feature.recommendation}"
+        
+        # For disabled features, provide clear actions
+        action_recommendations = {
+            "AppArmor (Application Armor)": 
+                "🔧 Install and enable AppArmor service to add application security profiles.",
+            "KASAN (Kernel Address Sanitizer)": 
+                "ℹ️ This is primarily for developers. Production systems typically don't need KASAN.",
+            "Kernel Lockdown Mode": 
+                "🔧 Consider upgrading to 'confidentiality' mode for maximum security in the kernel configuration."
+        }
+        
+        specific_action = action_recommendations.get(feature.name)
+        if specific_action:
+            return specific_action
+        
+        # Generic recommendations based on severity
+        if feature.severity == 'critical':
+            return f"🚨 HIGH PRIORITY: {feature.recommendation}"
+        elif feature.severity == 'high':
+            return f"⚠️ RECOMMENDED: {feature.recommendation}"
+        elif feature.severity == 'medium':
+            return f"💡 SUGGESTED: {feature.recommendation}"
+        else:
+            return f"ℹ️ OPTIONAL: {feature.recommendation}"
 
 class HardeningRecommendationsWidget(ThemedWidgetMixin, QWidget):
     """Widget for displaying hardening recommendations"""
@@ -294,17 +462,18 @@ class SystemHardeningTab(ThemedWidgetMixin, QWidget):
         
         # Button container for proper spacing
         button_layout = QHBoxLayout()
-        button_layout.setSpacing(10)  # Add 10px spacing between buttons
+        button_layout.setSpacing(15)  # Increased spacing between buttons to prevent overlap
+        button_layout.setContentsMargins(0, 0, 10, 0)  # Add right margin for safety
         
         self.refresh_button = QPushButton("Run Assessment")
-        self.refresh_button.setMinimumWidth(150)
+        self.refresh_button.setFixedWidth(150)  # Fixed width prevents overlap
         self.refresh_button.setFixedHeight(32)  # Set consistent button height
         self.refresh_button.setObjectName("primaryButton")  # Use global primary button styling
         button_layout.addWidget(self.refresh_button)
         
         # Add Fix Issues button
         self.fix_button = QPushButton("Fix Issues")
-        self.fix_button.setMinimumWidth(120)
+        self.fix_button.setFixedWidth(120)  # Fixed width prevents overlap
         self.fix_button.setFixedHeight(32)  # Set consistent button height
         self.fix_button.setObjectName("warningButton")  # Use warning styling for fix actions
         self.fix_button.setEnabled(False)  # Disabled until assessment is run
