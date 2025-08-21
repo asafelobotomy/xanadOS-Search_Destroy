@@ -55,6 +55,29 @@
   </provides>
   
   <releases>
+    <release version="2.8.0" date="2025-08-20">
+      <description>
+        <p>Major feature release with comprehensive setup wizard implementation.</p>
+        <ul>
+          <li>Complete first-time setup system with distribution detection</li>
+          <li>Automated installation for ClamAV, UFW, and RKHunter</li>
+          <li>Enhanced GUI integration with themed widgets and progress tracking</li>
+          <li>Repository organization with comprehensive archival system</li>
+        </ul>
+      </description>
+    </release>
+    <release version="2.7.1" date="2025-08-20">
+      <description>
+        <p>Authentication and Infrastructure Enhancement Update</p>
+        <ul>
+          <li>Unified authentication session management eliminates repetitive password prompts</li>
+          <li>Enhanced system hardening tab with comprehensive security analysis</li>
+          <li>Improved firewall detection logic for multi-platform support</li>
+          <li>VS Code integration improvements and file restoration prevention</li>
+          <li>Fixed virtual environment handling and script path resolution</li>
+        </ul>
+      </description>
+    </release>
     <release version="2.7.0" date="2025-08-17">
       <description>
         <p>Major Feature Release - Firewall Management Integration</p>

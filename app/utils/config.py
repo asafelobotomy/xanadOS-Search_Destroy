@@ -407,6 +407,16 @@ def create_initial_config():
             "enable_async_scanning": True,
             "enable_memory_optimization": True
         },
+        "setup": {
+            "first_time_setup_completed": False,
+            "setup_version": "2.8.0",
+            "packages_installed": {
+                "clamav": False,
+                "ufw": False,
+                "rkhunter": False
+            },
+            "last_setup_check": None
+        },
     }
 
 

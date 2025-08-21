@@ -74,7 +74,7 @@ Move these to `archive/deprecated-components/`:
 - Use bpftool for runtime eBPF program monitoring
 
 **Linux Security Enhancements**:
-- Add SELinux/AppArmor policy support
+- Enhanced AppArmor policy support
 - Implement UEFI Secure Boot verification
 - Add fail2ban integration for brute-force protection
 

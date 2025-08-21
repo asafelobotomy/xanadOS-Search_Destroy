@@ -2,7 +2,7 @@
 
 *Your comprehensive guide to protecting your Linux system from malware and security threats*
 
-**Version 2.7.0** | *Updated: August 19, 2025*
+**Version 2.8.0** | *Updated: August 21, 2025*
 
 ---
 
@@ -445,7 +445,7 @@ Think of quarantine as a **secure jail** for suspicious files. Files in quaranti
 **🔗 Working with Other Security Tools:**
 - S&D complements (doesn't replace) your firewall
 - Can work alongside system update managers
-- Integrates with Linux security frameworks (AppArmor, SELinux)
+- Integrates with Linux security frameworks (AppArmor)
 - Supports enterprise security policies and compliance
 
 **🛡️ Building a Complete Security Strategy:**
@@ -511,5 +511,5 @@ Think of quarantine as a **secure jail** for suspicious files. Files in quaranti
 
 ---
 
-*Last Updated: January 7, 2025 - Version 2.6.0*  
+*Last Updated: August 21, 2025 - Version 2.8.0*  
 *Thank you for choosing S&D - Search & Destroy for your Linux security needs!*

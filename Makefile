@@ -3,13 +3,15 @@
 
 # Project metadata
 PROJECT_NAME := xanadOS-Search-Destroy
-VERSION := $(shell cat VERSION 2>/dev/null || echo "2.6.0")
+VERSION := $(shell cat VERSION 2>/dev/null || echo "2.7.1")
 PYTHON := python3
 PIP := $(PYTHON) -m pip
 VENV_DIR := .venv
 SRC_DIR := app
 TEST_DIR := tests
+DEV_DIR := dev
 DOCS_DIR := docs
+SCRIPTS_DIR := scripts
 DIST_DIR := dist
 BUILD_DIR := build
 
@@ -117,6 +119,22 @@ security: ## Run security checks
 type-check: ## Run type checking
 	@echo "$(BLUE)Running type checks...$(NC)"
 	$(PYTHON) -m mypy $(SRC_DIR) --ignore-missing-imports
+
+# Organization and structure
+.PHONY: check-org
+check-org: ## Check repository organization
+	@echo "$(BLUE)Checking repository organization...$(NC)"
+	$(PYTHON) $(SCRIPTS_DIR)/check-organization.py
+
+.PHONY: dev-tools
+dev-tools: ## Run development tools and reports
+	@echo "$(BLUE)Running development reports...$(NC)"
+	@echo "$(YELLOW)Security tools:$(NC)"
+	@ls -la $(DEV_DIR)/security-tools/
+	@echo "$(YELLOW)Demo scripts:$(NC)"
+	@ls -la $(DEV_DIR)/demos/
+	@echo "$(YELLOW)Testing tools:$(NC)"
+	@ls -la $(DEV_DIR)/testing/
 
 # Application execution
 .PHONY: run

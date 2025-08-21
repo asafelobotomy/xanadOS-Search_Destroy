@@ -6,7 +6,7 @@ xanadOS Search & Destroy - Enhanced Security Checks
 This module implements comprehensive system hardening detection including:
 - Kernel security features (KASLR, SMEP/SMAP)
 - Lockdown mode status
-- Mandatory Access Control (SELinux/AppArmor)
+- Mandatory Access Control (AppArmor - easier than SELinux)
 - Critical sysctl security parameters
 - Security compliance scoring
 """
@@ -192,22 +192,20 @@ class SystemHardeningChecker:
         return features
     
     def _check_mandatory_access_control(self) -> List[SecurityFeature]:
-        """Check SELinux/AppArmor status"""
+        """Check AppArmor status - SELinux removed for simplicity"""
         features = []
         
-        # Check SELinux
-        selinux_status = self._check_selinux()
+        # Check AppArmor (SELinux removed - AppArmor is easier and more suitable)
+        apparmor_status = self._check_apparmor()
         features.append(SecurityFeature(
-            name="SELinux (Security-Enhanced Linux)",
-            enabled=selinux_status['enabled'],
-            status=selinux_status['status'],
-            description="Mandatory access control security architecture",
-            recommendation=selinux_status['recommendation'],
+            name="AppArmor (Application Armor)",
+            enabled=apparmor_status['enabled'],
+            status=apparmor_status['status'],
+            description="Mandatory access control security architecture - easier than SELinux",
+            recommendation=apparmor_status['recommendation'],
             severity="medium",
             score_impact=15
         ))
-        
-        # Check AppArmor
         apparmor_status = self._check_apparmor()
         features.append(SecurityFeature(
             name="AppArmor",
@@ -261,12 +259,6 @@ class SystemHardeningChecker:
                 'description': 'Disables IP forwarding unless needed',
                 'severity': 'low',
                 'score': 3
-            },
-            'kernel.modules_disabled': {
-                'expected': '1',
-                'description': 'Prevents loading additional kernel modules',
-                'severity': 'high',
-                'score': 15
             }
         }
         
@@ -446,44 +438,6 @@ class SystemHardeningChecker:
         except Exception as e:
             logger.warning(f"Error checking lockdown status: {e}")
             return 'unknown'
-    
-    def _check_selinux(self) -> Dict[str, Any]:
-        """Check SELinux status"""
-        try:
-            result = subprocess.run(['getenforce'], capture_output=True, text=True, timeout=5)
-            if result.returncode == 0:
-                status = result.stdout.strip()
-                enabled = status.lower() in ['enforcing', 'permissive']
-                if status.lower() == 'enforcing':
-                    recommendation = "SELinux is properly enforcing policies"
-                elif status.lower() == 'permissive':
-                    recommendation = "Consider setting SELinux to enforcing mode"
-                else:
-                    recommendation = "Enable and configure SELinux"
-                
-                return {
-                    'enabled': enabled,
-                    'status': f"SELinux: {status}",
-                    'recommendation': recommendation
-                }
-            else:
-                return {
-                    'enabled': False,
-                    'status': 'SELinux not installed',
-                    'recommendation': 'Install and configure SELinux for enhanced security'
-                }
-        except FileNotFoundError:
-            return {
-                'enabled': False,
-                'status': 'SELinux not available',
-                'recommendation': 'Install SELinux if supported by distribution'
-            }
-        except Exception as e:
-            return {
-                'enabled': False,
-                'status': f'Error checking SELinux: {e}',
-                'recommendation': 'Investigate SELinux configuration'
-            }
     
     def _check_apparmor(self) -> Dict[str, Any]:
         """Check AppArmor status"""

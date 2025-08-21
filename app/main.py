@@ -8,6 +8,7 @@ app_dir = Path(__file__).parent
 sys.path.insert(0, str(app_dir))
 
 from gui.main_window import MainWindow
+from gui.setup_wizard import show_setup_wizard
 from PyQt6.QtWidgets import QApplication
 from core.single_instance import SingleInstanceManager
 from gui import APP_VERSION
@@ -40,6 +41,13 @@ def main():
     app.setApplicationVersion(APP_VERSION)
     app.setOrganizationName("xanadOS")
     app.setOrganizationDomain("xanados.org")
+
+    # Show setup wizard if needed (first time setup)
+    setup_completed = show_setup_wizard()
+    if not setup_completed:
+        # User cancelled setup, exit gracefully
+        print("Setup cancelled by user")
+        sys.exit(0)
 
     window = MainWindow()
     

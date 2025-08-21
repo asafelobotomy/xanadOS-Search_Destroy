@@ -5,7 +5,7 @@
 ![S&D Logo](packaging/icons/org.xanados.SearchAndDestroy.png)
 
 [![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg)](CHANGELOG.md)
-[![Version](https://img.shields.io/badge/version-2.7.0-blue.svg)](https://github.com/asafelobotomy/xanadOS-Search_Destroy/releases)
+[![Version](https://img.shields.io/badge/version-2.8.0-blue.svg)](https://github.com/asafelobotomy/xanadOS-Search_Destroy/releases)
 [![License](https://img.shields.io/badge/license-GPL--3.0-blue.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/python-3.13.5-blue.svg)](https://python.org)
 [![Tests](https://img.shields.io/badge/tests-182%20cases-brightgreen.svg)](#testing)
@@ -259,9 +259,42 @@ python app/main.py          # Run in development mode
 | **[Development Guide](docs/developer/DEVELOPMENT.md)**     | Development setup and contribution guide      |
 | **[API Documentation](docs/developer/API.md)**            | Complete API reference for all modules        |
 | **[Implementation Details](docs/implementation/)**        | Technical implementation summaries and guides |
+| **[Project Structure](docs/PROJECT_STRUCTURE.md)**        | Repository organization and file structure    |
 | **[Changelog](CHANGELOG.md)**                             | Version history and recent changes             |
 
 </div>
+
+---
+
+## 🗂️ Repository Organization
+
+This project follows a **clean, organized structure** for better maintainability and development experience:
+
+### 🎯 **Organization Principles**
+- **Production code** in `app/` only
+- **Development tools** organized in `dev/` by type  
+- **Documentation** centralized in `docs/`
+- **No temporary files** in root directory
+- **Clear separation** between production and development assets
+
+### 🔧 **Organization Tools**
+```bash
+# Check repository organization
+make check-org
+python scripts/check-organization.py
+
+# Auto-organize misplaced files  
+python scripts/organize-repo.py --dry-run  # Preview changes
+python scripts/organize-repo.py            # Apply changes
+```
+
+### 📁 **Key Directories**
+- `app/` - Production application code
+- `dev/` - Development tools (demos, reports, security tools, testing)
+- `docs/` - All documentation and reports
+- `config/` - Configuration files and templates
+- `scripts/` - Build and utility scripts
+- `tests/` - Formal unit and integration tests
 
 ---
 

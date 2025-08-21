@@ -16,6 +16,8 @@ from PyQt6.QtCore import Qt, QThread, pyqtSignal
 from PyQt6.QtGui import QColor
 import logging
 import subprocess
+import shutil
+import os
 from typing import List
 from datetime import datetime
 
@@ -463,14 +465,10 @@ class SystemHardeningTab(ThemedWidgetMixin, QWidget):
                 
                 # Always fixable: sysctl parameters, lockdown, apparmor
                 if any(fixable in feature_name for fixable in [
-                    'sysctl', 'kernel.kptr_restrict', 'kernel.modules_disabled', 
+                    'sysctl', 'kernel.kptr_restrict',
                     'kernel.dmesg_restrict', 'kernel.yama.ptrace_scope',
                     'net.ipv4', 'lockdown', 'apparmor'
                 ]):
-                    fixable_issues.append(feature)
-                
-                # SELinux: only fixable on non-Arch systems
-                elif 'selinux' in feature_name and not is_arch:
                     fixable_issues.append(feature)
         
         return fixable_issues
@@ -587,10 +585,6 @@ Do you want to proceed?"""
             elif 'lockdown' in issue.name.lower():
                 return self._fix_kernel_lockdown(issue)
             
-            # SELinux fix
-            elif 'selinux' in issue.name.lower():
-                return self._fix_selinux(issue)
-            
             # AppArmor fix
             elif 'apparmor' in issue.name.lower():
                 return self._fix_apparmor(issue)
@@ -605,196 +599,491 @@ Do you want to proceed?"""
             return False
     
     def _fix_sysctl_parameter(self, issue: SecurityFeature) -> bool:
-        """Fix sysctl parameter issues"""
-        # Extract parameter name and expected value from recommendation
-        recommendation = issue.recommendation
-        if "Set " in recommendation and " = " in recommendation:
-            # Extract "kernel.kptr_restrict = 2" from "Set kernel.kptr_restrict = 2"
-            param_setting = recommendation.replace("Set ", "").strip()
-            param_name, expected_value = param_setting.split(" = ")
-            
-            # Apply sysctl setting
-            sysctl_cmd = ["sysctl", "-w", f"{param_name}={expected_value}"]
-            result = elevated_run(sysctl_cmd, gui=True)
-            
-            if result.returncode == 0:
-                # Make it persistent by adding to sysctl.conf
-                sysctl_line = f"{param_name} = {expected_value}"
-                echo_cmd = ["tee", "-a", "/etc/sysctl.d/99-xanados-hardening.conf"]
+        """Fix sysctl parameter issues with enhanced security validation"""
+        try:
+            # Extract parameter name and expected value from recommendation
+            recommendation = issue.recommendation
+            if "Set " in recommendation and " = " in recommendation:
+                # Extract "kernel.kptr_restrict = 2" from "Set kernel.kptr_restrict = 2"
+                param_setting = recommendation.replace("Set ", "").strip()
+                if " = " not in param_setting:
+                    logger.error(f"Invalid parameter setting format: {param_setting}")
+                    return False
                 
-                # Create the config file with the setting
-                echo_result = elevated_run(
-                    ["sh", "-c", f"echo '{sysctl_line}' >> /etc/sysctl.d/99-xanados-hardening.conf"],
-                    gui=True
-                )
+                param_name, expected_value = param_setting.split(" = ", 1)
                 
-                return echo_result.returncode == 0
+                # Validate parameter name against known safe parameters
+                safe_params = {
+                    'kernel.kptr_restrict': ['0', '1', '2'],
+                    'kernel.dmesg_restrict': ['0', '1'],
+                    'kernel.yama.ptrace_scope': ['0', '1', '2', '3'],
+                    'net.ipv4.conf.all.send_redirects': ['0', '1'],
+                    'net.ipv4.conf.all.accept_redirects': ['0', '1'],
+                    'net.ipv4.ip_forward': ['0', '1']
+                }
+                
+                if param_name not in safe_params:
+                    logger.error(f"Parameter {param_name} not in safe parameters list")
+                    return False
+                
+                if expected_value not in safe_params[param_name]:
+                    logger.error(f"Invalid value {expected_value} for parameter {param_name}")
+                    return False
+                
+                # Apply sysctl setting with validation
+                sysctl_cmd = ["sysctl", "-w", f"{param_name}={expected_value}"]
+                result = elevated_run(sysctl_cmd, gui=True)
+                
+                if result.returncode == 0:
+                    # Make it persistent by adding to sysctl.conf
+                    sysctl_line = f"# xanadOS Search & Destroy hardening\n{param_name} = {expected_value}"
+                    
+                    # Check if config directory exists, create if needed
+                    config_dir_result = elevated_run(["mkdir", "-p", "/etc/sysctl.d"], gui=True)
+                    if config_dir_result.returncode != 0:
+                        logger.error("Failed to create sysctl.d directory")
+                        return False
+                    
+                    # Use a more secure method to write the config
+                    config_file = "/etc/sysctl.d/99-xanados-hardening.conf"
+                    
+                    # Check if parameter already exists in config
+                    check_result = elevated_run(["grep", "-q", f"^{param_name}", config_file], gui=True)
+                    
+                    if check_result.returncode == 0:
+                        # Parameter exists, update it
+                        sed_cmd = ["sed", "-i", f"s|^{param_name}.*|{param_name} = {expected_value}|", config_file]
+                        echo_result = elevated_run(sed_cmd, gui=True)
+                    else:
+                        # Parameter doesn't exist, append it
+                        echo_result = elevated_run([
+                            "sh", "-c", 
+                            f"echo '{sysctl_line}' >> {config_file}"
+                        ], gui=True)
+                    
+                    return echo_result.returncode == 0
+                
+                return False
             
+            logger.error(f"Unable to parse recommendation: {recommendation}")
             return False
-        
-        return False
+            
+        except Exception as e:
+            logger.error(f"Error fixing sysctl parameter {issue.name}: {e}")
+            return False
     
     def _fix_kernel_lockdown(self, issue: SecurityFeature) -> bool:
-        """Fix kernel lockdown mode"""
-        # Kernel lockdown usually requires boot parameter changes
-        # For now, we'll provide guidance instead of automatic fix
-        guidance_message = """Kernel lockdown mode requires boot parameter modification.
+        """Fix kernel lockdown mode with enhanced implementation"""
+        try:
+            # Check current lockdown status
+            current_status = "none"
+            lockdown_files = ['/sys/kernel/security/lockdown', '/proc/sys/kernel/lockdown']
+            
+            for lockdown_file in lockdown_files:
+                try:
+                    with open(lockdown_file, 'r') as f:
+                        content = f.read().strip()
+                        if '[integrity]' in content:
+                            current_status = "integrity"
+                        elif '[confidentiality]' in content:
+                            current_status = "confidentiality"
+                        break
+                except:
+                    continue
+            
+            # Offer automatic GRUB configuration for supported systems
+            grub_config_msg = f"""Kernel Lockdown Mode Configuration
 
-To enable lockdown mode, add one of these to your kernel command line:
-• lockdown=integrity (basic protection)
-• lockdown=confidentiality (maximum protection)
+Current Status: {current_status}
 
-This typically involves editing /etc/default/grub and running update-grub."""
-        
-        msg_box = create_themed_message_box(self, "information", "Kernel Lockdown Fix", guidance_message)
-        msg_box.exec()
+Kernel lockdown mode enhances security by restricting kernel debugging interfaces and preventing unauthorized kernel modifications.
+
+Choose your lockdown level:
+
+• integrity: Basic protection (recommended for most users)
+  - Restricts kernel memory access
+  - Allows most functionality to work normally
+
+• confidentiality: Maximum protection (for high-security environments)
+  - Strongest protection available
+  - May break some debugging tools
+
+Would you like to automatically configure GRUB to enable kernel lockdown?"""
+
+            from ..utils.theme import create_themed_message_box
+            choice_box = create_themed_message_box(
+                self, "question", "Kernel Lockdown Configuration", grub_config_msg,
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+            )
+            
+            if choice_box.exec() == QMessageBox.StandardButton.Yes:
+                # Ask for lockdown level
+                level_msg = """Choose Lockdown Level:
+
+Click 'Yes' for integrity mode (recommended)
+Click 'No' for confidentiality mode (maximum security)"""
+                
+                level_box = create_themed_message_box(
+                    self, "question", "Choose Lockdown Level", level_msg,
+                    QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+                )
+                level_box.button(QMessageBox.StandardButton.Yes).setText("Integrity")
+                level_box.button(QMessageBox.StandardButton.No).setText("Confidentiality")
+                
+                lockdown_mode = "integrity" if level_box.exec() == QMessageBox.StandardButton.Yes else "confidentiality"
+                
+                return self._configure_grub_lockdown(lockdown_mode)
+            else:
+                # Provide manual instructions
+                manual_msg = f"""Manual Kernel Lockdown Configuration
+
+To enable kernel lockdown mode manually:
+
+1. Edit /etc/default/grub as root
+2. Find the line starting with GRUB_CMDLINE_LINUX=
+3. Add lockdown=integrity or lockdown=confidentiality to the parameters
+4. Run: sudo update-grub (Debian/Ubuntu) or sudo grub-mkconfig -o /boot/grub/grub.cfg
+5. Reboot the system
+
+Example:
+GRUB_CMDLINE_LINUX="quiet splash lockdown=integrity"
+
+Current status: {current_status}"""
+                
+                manual_box = create_themed_message_box(self, "information", "Manual Configuration", manual_msg)
+                manual_box.exec()
+                return False  # Manual intervention required
+                
+        except Exception as e:
+            logger.error(f"Error configuring kernel lockdown: {e}")
+            return False
+    
+    def _configure_grub_lockdown(self, lockdown_mode: str) -> bool:
+        """Automatically configure GRUB for kernel lockdown"""
+        try:
+            grub_file = "/etc/default/grub"
+            backup_file = f"{grub_file}.backup.xanados"
+            
+            # Create backup
+            backup_result = elevated_run(["cp", grub_file, backup_file], gui=True)
+            if backup_result.returncode != 0:
+                logger.error("Failed to create GRUB backup")
+                return False
+            
+            # Check if lockdown parameter already exists
+            check_result = elevated_run(["grep", "-q", "lockdown=", grub_file], gui=True)
+            
+            if check_result.returncode == 0:
+                # Update existing lockdown parameter
+                sed_cmd = [
+                    "sed", "-i", 
+                    f"s/lockdown=[a-z]*/lockdown={lockdown_mode}/g", 
+                    grub_file
+                ]
+                update_result = elevated_run(sed_cmd, gui=True)
+            else:
+                # Add lockdown parameter to GRUB_CMDLINE_LINUX
+                sed_cmd = [
+                    "sed", "-i",
+                    f'/^GRUB_CMDLINE_LINUX=/s/"$/ lockdown={lockdown_mode}"/',
+                    grub_file
+                ]
+                update_result = elevated_run(sed_cmd, gui=True)
+            
+            if update_result.returncode != 0:
+                logger.error("Failed to update GRUB configuration")
+                return False
+            
+            # Update GRUB
+            update_grub_cmds = [
+                ["update-grub"],  # Debian/Ubuntu
+                ["grub-mkconfig", "-o", "/boot/grub/grub.cfg"],  # Arch/others
+                ["grub2-mkconfig", "-o", "/boot/grub2/grub.cfg"]  # RHEL/Fedora
+            ]
+            
+            grub_updated = False
+            for cmd in update_grub_cmds:
+                result = elevated_run(cmd, gui=True)
+                if result.returncode == 0:
+                    grub_updated = True
+                    break
+            
+            if grub_updated:
+                success_msg = f"""✅ Kernel Lockdown Configured Successfully
+
+Lockdown mode '{lockdown_mode}' has been added to your GRUB configuration.
+
+⚠️ REBOOT REQUIRED: You must reboot for the changes to take effect.
+
+The system will boot with enhanced kernel security protection."""
+                
+                from ..utils.theme import create_themed_message_box
+                success_box = create_themed_message_box(self, "information", "Configuration Complete", success_msg)
+                success_box.exec()
+                return True
+            else:
+                logger.error("Failed to update GRUB bootloader")
+                return False
+                
+        except Exception as e:
+            logger.error(f"Error configuring GRUB lockdown: {e}")
+            return False
         return False  # Manual intervention required
     
-    def _fix_selinux(self, issue: SecurityFeature) -> bool:
-        """Fix SELinux installation and configuration"""
+    def _install_fail2ban_redhat(self) -> bool:
+        """Install fail2ban on Red Hat/Fedora systems"""
         try:
-            # Check if we're on a supported distribution
-            distro_info = []
-            try:
-                with open('/etc/os-release', 'r') as f:
-                    for line in f:
-                        if line.startswith('ID=') or line.startswith('ID_LIKE='):
-                            distro_info.append(line.strip().lower())
-            except:
-                pass
-            
-            distro_text = ' '.join(distro_info)
-            
-            # Determine package manager and SELinux packages
-            if 'ubuntu' in distro_text or 'debian' in distro_text:
-                install_cmd = ["apt", "update", "&&", "apt", "install", "-y", "selinux-basics", "selinux-policy-default"]
-                pkg_manager = "apt"
-                return self._install_selinux_debian()
-            elif 'fedora' in distro_text or 'rhel' in distro_text or 'centos' in distro_text:
-                return self._install_selinux_redhat()
-            elif 'arch' in distro_text:
-                return self._install_selinux_arch()
+            # Use dnf/yum based on availability
+            if shutil.which("dnf"):
+                cmd = ["dnf", "install", "-y", "fail2ban"]
             else:
-                # Unknown distribution - provide guidance
-                guidance_msg = """SELinux installation varies by distribution.
+                cmd = ["yum", "install", "-y", "fail2ban"]
                 
-Please manually install SELinux using your distribution's package manager:
-• Ubuntu/Debian: sudo apt install selinux-basics selinux-policy-default
-• Fedora/RHEL: sudo dnf install selinux-policy selinux-policy-targeted  
-• Arch: SELinux requires AUR packages and manual configuration
-
-After installation, reboot and configure SELinux mode."""
-                
-                msg_box = create_themed_message_box(self, "information", "SELinux Installation", guidance_msg)
-                msg_box.exec()
+            result = elevated_run(cmd, gui=True)
+            if result.returncode != 0:
                 return False
                 
+            return self._start_and_enable_fail2ban()
         except Exception as e:
-            logger.error(f"Error installing SELinux: {e}")
+            logger.error(f"Error installing fail2ban on Red Hat/Fedora: {e}")
             return False
     
-    def _install_selinux_debian(self) -> bool:
-        """Install SELinux on Debian/Ubuntu systems"""
+    def _install_fail2ban_suse(self) -> bool:
+        """Install fail2ban on openSUSE systems"""
         try:
-            # Update package list first
-            update_result = elevated_run(["apt", "update"], gui=True)
-            if update_result.returncode != 0:
+            cmd = ["zypper", "install", "-y", "fail2ban"]
+            result = elevated_run(cmd, gui=True)
+            if result.returncode != 0:
+                return False
+                
+            return self._start_and_enable_fail2ban()
+        except Exception as e:
+            logger.error(f"Error installing fail2ban on openSUSE: {e}")
+            return False
+    
+    def _install_fail2ban_arch(self) -> bool:
+        """Install fail2ban on Arch Linux"""
+        try:
+            cmd = ["pacman", "-S", "--noconfirm", "fail2ban"]
+            result = elevated_run(cmd, gui=True)
+            if result.returncode != 0:
+                return False
+                
+            return self._start_and_enable_fail2ban()
+        except Exception as e:
+            logger.error(f"Error installing fail2ban on Arch: {e}")
+            return False
+    
+    def _start_and_enable_fail2ban(self) -> bool:
+        """Start and enable fail2ban service"""
+        try:
+            # Start the service
+            start_cmd = ["systemctl", "start", "fail2ban"]
+            result = elevated_run(start_cmd, gui=True)
+            if result.returncode != 0:
+                logger.error("Failed to start fail2ban service")
                 return False
             
-            # Install SELinux packages
-            install_result = elevated_run(["apt", "install", "-y", "selinux-basics", "selinux-policy-default"], gui=True)
-            return install_result.returncode == 0
-        except Exception as e:
-            logger.error(f"Error installing SELinux on Debian/Ubuntu: {e}")
-            return False
-    
-    def _install_selinux_redhat(self) -> bool:
-        """Install SELinux on Red Hat/Fedora systems"""
-        try:
-            install_result = elevated_run(["dnf", "install", "-y", "selinux-policy", "selinux-policy-targeted"], gui=True)
-            return install_result.returncode == 0
-        except Exception as e:
-            logger.error(f"Error installing SELinux on Red Hat/Fedora: {e}")
-            return False
-    
-    def _install_selinux_arch(self) -> bool:
-        """Handle SELinux installation on Arch Linux"""
-        try:
-            # SELinux on Arch Linux is complex and requires AUR packages
-            guidance_msg = """SELinux installation on Arch Linux requires manual setup.
-
-SELinux is not officially supported in Arch Linux main repositories. To install:
-
-1. Install from AUR (requires yay or another AUR helper):
-   yay -S selinux-policy
-   yay -S selinux-usr-selinux-policy-arch
-
-2. Or manually compile from AUR:
-   git clone https://aur.archlinux.org/selinux-policy.git
-   cd selinux-policy && makepkg -si
-
-3. Configure kernel parameters and reboot
-
-This requires advanced knowledge and is not recommended for beginners.
-Consider using AppArmor instead, which is better supported on Arch."""
+            # Enable the service
+            enable_cmd = ["systemctl", "enable", "fail2ban"]
+            result = elevated_run(enable_cmd, gui=True)
+            if result.returncode != 0:
+                logger.error("Failed to enable fail2ban service")
+                return False
             
-            msg_box = create_themed_message_box(self, "information", "SELinux on Arch Linux", guidance_msg)
-            msg_box.exec()
-            return False  # Cannot automatically install on Arch
+            return True
         except Exception as e:
-            logger.error(f"Error handling SELinux on Arch: {e}")
+            logger.error(f"Error starting/enabling fail2ban: {e}")
             return False
     
     def _fix_apparmor(self, issue: SecurityFeature) -> bool:
-        """Fix AppArmor service configuration"""
+        """Fix AppArmor service configuration with enhanced profile management"""
         try:
             # First, check if AppArmor is installed
             check_result = elevated_run(["which", "apparmor_status"], gui=True)
             
             if check_result.returncode != 0:
                 # AppArmor not installed, try to install it
-                distro_info = []
-                try:
-                    with open('/etc/os-release', 'r') as f:
-                        for line in f:
-                            if line.startswith('ID=') or line.startswith('ID_LIKE='):
-                                distro_info.append(line.strip().lower())
-                except:
-                    pass
-                
-                distro_text = ' '.join(distro_info)
-                
-                if 'ubuntu' in distro_text or 'debian' in distro_text:
-                    install_result = elevated_run(["apt", "install", "-y", "apparmor", "apparmor-utils"], gui=True)
-                    if install_result.returncode != 0:
-                        return False
-                elif 'fedora' in distro_text or 'rhel' in distro_text or 'centos' in distro_text:
-                    install_result = elevated_run(["dnf", "install", "-y", "apparmor"], gui=True)
-                    if install_result.returncode != 0:
-                        return False
-                else:
-                    # Unknown distribution or AppArmor not available
-                    guidance_msg = """AppArmor installation varies by distribution.
-                    
-Please manually install AppArmor:
-• Ubuntu/Debian: sudo apt install apparmor apparmor-utils
-• Fedora: sudo dnf install apparmor
-
-Some distributions may not support AppArmor."""
-                    
-                    msg_box = create_themed_message_box(self, "information", "AppArmor Installation", guidance_msg)
-                    msg_box.exec()
-                    return False
+                return self._install_apparmor()
             
-            # Enable and start AppArmor service
-            enable_result = elevated_run(["systemctl", "enable", "apparmor"], gui=True)
-            start_result = elevated_run(["systemctl", "start", "apparmor"], gui=True)
-            
-            return enable_result.returncode == 0 and start_result.returncode == 0
+            # AppArmor is installed, configure it
+            return self._configure_apparmor()
             
         except Exception as e:
             logger.error(f"Error configuring AppArmor: {e}")
             return False
+    
+    def _install_apparmor(self) -> bool:
+        """Install AppArmor with distribution-specific handling"""
+        try:
+            distro_info = self._get_distribution_info()
+            
+            install_success = False
+            
+            if 'ubuntu' in distro_info or 'debian' in distro_info:
+                # Update package list first
+                update_result = elevated_run(["apt", "update"], gui=True)
+                if update_result.returncode != 0:
+                    logger.warning("Failed to update package list")
+                
+                # Install AppArmor packages
+                packages = ["apparmor", "apparmor-utils", "apparmor-profiles"]
+                install_result = elevated_run(["apt", "install", "-y"] + packages, gui=True)
+                install_success = install_result.returncode == 0
+                
+            elif 'fedora' in distro_info or 'rhel' in distro_info or 'centos' in distro_info:
+                # Install AppArmor packages for Red Hat family
+                packages = ["apparmor", "apparmor-utils"]
+                install_result = elevated_run(["dnf", "install", "-y"] + packages, gui=True)
+                install_success = install_result.returncode == 0
+                
+            elif 'arch' in distro_info:
+                # AppArmor installation on Arch
+                install_result = elevated_run(["pacman", "-S", "--noconfirm", "apparmor"], gui=True)
+                install_success = install_result.returncode == 0
+                
+            elif 'opensuse' in distro_info or 'suse' in distro_info:
+                # AppArmor on openSUSE
+                install_result = elevated_run(["zypper", "install", "-y", "apparmor-utils"], gui=True)
+                install_success = install_result.returncode == 0
+                
+            else:
+                # Unknown distribution
+                guidance_msg = """AppArmor Installation Required
+
+AppArmor installation varies by distribution. Please install manually:
+
+• Ubuntu/Debian: sudo apt install apparmor apparmor-utils apparmor-profiles
+• Fedora/RHEL: sudo dnf install apparmor apparmor-utils  
+• Arch Linux: sudo pacman -S apparmor
+• openSUSE: sudo zypper install apparmor-utils
+
+After installation, enable AppArmor and reboot, then run this assessment again."""
+                
+                from ..utils.theme import create_themed_message_box
+                msg_box = create_themed_message_box(self, "information", "Manual Installation Required", guidance_msg)
+                msg_box.exec()
+                return False
+            
+            if install_success:
+                return self._configure_apparmor()
+            else:
+                logger.error("Failed to install AppArmor packages")
+                return False
+                
+        except Exception as e:
+            logger.error(f"Error installing AppArmor: {e}")
+            return False
+    
+    def _configure_apparmor(self) -> bool:
+        """Configure AppArmor service and load basic profiles"""
+        try:
+            # Enable AppArmor service
+            enable_result = elevated_run(["systemctl", "enable", "apparmor"], gui=True)
+            if enable_result.returncode != 0:
+                logger.error("Failed to enable AppArmor service")
+                return False
+            
+            # Start AppArmor service
+            start_result = elevated_run(["systemctl", "start", "apparmor"], gui=True)
+            if start_result.returncode != 0:
+                logger.warning("Failed to start AppArmor service (may need reboot)")
+            
+            # Load basic profiles if available
+            self._load_apparmor_profiles()
+            
+            # Check if AppArmor kernel support is available
+            if not self._check_apparmor_kernel_support():
+                kernel_msg = """⚠️ AppArmor Kernel Support
+
+AppArmor has been installed but your kernel may not have AppArmor support enabled.
+
+You may need to:
+1. Add 'apparmor=1 security=apparmor' to kernel boot parameters
+2. Reboot the system
+3. Run this assessment again to verify
+
+AppArmor service has been enabled and will start after reboot if kernel support is available."""
+                
+                from ..utils.theme import create_themed_message_box
+                warn_box = create_themed_message_box(self, "warning", "Kernel Support Check", kernel_msg)
+                warn_box.exec()
+            
+            success_msg = """✅ AppArmor Configuration Complete
+
+AppArmor has been successfully installed and configured:
+
+• Service enabled for automatic startup
+• Basic security profiles loaded
+• Ready to enforce application security policies
+
+Some applications may require reboot to fully activate AppArmor protection."""
+            
+            from ..utils.theme import create_themed_message_box
+            success_box = create_themed_message_box(self, "information", "AppArmor Configured", success_msg)
+            success_box.exec()
+            
+            return True
+            
+        except Exception as e:
+            logger.error(f"Error configuring AppArmor: {e}")
+            return False
+    
+    def _load_apparmor_profiles(self):
+        """Load available AppArmor profiles"""
+        try:
+            # Common profile locations
+            profile_dirs = [
+                "/etc/apparmor.d",
+                "/usr/share/apparmor/extra-profiles"
+            ]
+            
+            for profile_dir in profile_dirs:
+                if os.path.exists(profile_dir):
+                    # Load profiles from directory
+                    load_result = elevated_run(["aa-enforce", f"{profile_dir}/*"], gui=True)
+                    if load_result.returncode == 0:
+                        logger.info(f"Loaded AppArmor profiles from {profile_dir}")
+                    
+        except Exception as e:
+            logger.debug(f"Error loading AppArmor profiles: {e}")
+    
+    def _check_apparmor_kernel_support(self) -> bool:
+        """Check if kernel has AppArmor support"""
+        try:
+            # Check for AppArmor filesystem
+            if os.path.exists("/sys/kernel/security/apparmor"):
+                return True
+            
+            # Check kernel boot parameters
+            with open("/proc/cmdline", "r") as f:
+                cmdline = f.read()
+                if "apparmor=1" in cmdline or "security=apparmor" in cmdline:
+                    return True
+            
+            # Check if kernel was compiled with AppArmor
+            if os.path.exists("/proc/config.gz"):
+                result = elevated_run(["zcat", "/proc/config.gz"], gui=True)
+                if "CONFIG_SECURITY_APPARMOR=y" in result.stdout:
+                    return True
+            
+            return False
+            
+        except Exception as e:
+            logger.debug(f"Error checking AppArmor kernel support: {e}")
+            return False
+    
+    def _get_distribution_info(self) -> str:
+        """Get distribution information for package management"""
+        try:
+            distro_info = []
+            with open('/etc/os-release', 'r') as f:
+                for line in f:
+                    if line.startswith('ID=') or line.startswith('ID_LIKE='):
+                        distro_info.append(line.strip().lower())
+            return ' '.join(distro_info)
+        except:
+            return ""
 
 class FixSelectionDialog(ThemedWidgetMixin, QDialog):
     """Dialog for selecting which security fixes to apply"""

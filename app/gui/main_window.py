@@ -43,6 +43,7 @@ except ImportError:
 
 from gui.rkhunter_components import RKHunterScanDialog, RKHunterScanThread
 from gui.scan_thread import ScanThread
+from gui.setup_wizard import SetupWizard
 from gui.system_hardening_tab import SystemHardeningTab
 from gui.update_components import UpdateNotifier
 from gui.user_manual_window import UserManualWindow
@@ -3045,6 +3046,16 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
         # Set initial theme state
         self.update_theme_menu()
 
+        # Tools menu
+        tools_menu = QMenu("Tools", self)
+        menu_bar.addMenu(tools_menu)
+
+        # Setup Wizard menu item
+        setup_wizard_action = QAction("🔧 Setup Wizard", self)
+        setup_wizard_action.triggered.connect(self.show_setup_wizard)
+        setup_wizard_action.setStatusTip("Run the first-time setup wizard to install and configure security components")
+        tools_menu.addAction(setup_wizard_action)
+
         # Help menu
         help_menu = QMenu("Help", self)
         menu_bar.addMenu(help_menu)
@@ -3583,7 +3594,7 @@ System        {perf_status}"""
             try:
                 current_version = version_file.read_text().strip()
             except (FileNotFoundError, IOError):
-                current_version = "2.7.0"  # Fallback version
+                current_version = "2.8.0"  # Fallback version
                 
             # Initialize the auto-updater with new system
             self.auto_updater = AutoUpdateSystem()
@@ -7516,6 +7527,67 @@ System        {perf_status}"""
                 f"Could not open the user manual: {str(e)}\n\n"
                 "Please ensure the user manual file is available in the docs/user/ directory."
             )
+
+    def show_setup_wizard(self):
+        """Show the setup wizard for installing security components."""
+        try:
+            wizard = SetupWizard(self)
+            result = wizard.exec()
+            
+            if result == QDialog.DialogCode.Accepted:
+                # Setup completed, refresh status indicators
+                self.update_security_status()
+                self.show_themed_message_box(
+                    "information",
+                    "Setup Complete",
+                    "Security components have been configured. "
+                    "The application will now refresh to reflect the changes."
+                )
+                # Optionally refresh the main window components
+                self.refresh_components()
+            
+        except Exception as e:
+            print(f"Error opening setup wizard: {e}")
+            self.show_themed_message_box(
+                "warning",
+                "Setup Wizard Error",
+                f"Could not open the setup wizard: {str(e)}"
+            )
+
+    def update_security_status(self):
+        """Update all security status indicators after setup changes."""
+        try:
+            # Update protection status (ClamAV)
+            self.update_protection_status_card()
+            
+            # Update firewall status
+            self.update_firewall_status_card()
+            
+            # Clear firewall cache to force refresh
+            self._clear_firewall_status_cache()
+            
+            # Update firewall status with fresh data
+            QTimer.singleShot(1000, self.update_firewall_status_deferred)
+            
+        except Exception as e:
+            print(f"Error updating security status: {e}")
+
+    def refresh_components(self):
+        """Refresh all main window components after setup."""
+        try:
+            # Update definition status
+            self.update_definition_status()
+            
+            # Refresh quarantine view if it exists
+            if hasattr(self, 'refresh_quarantine'):
+                self.refresh_quarantine()
+                
+            # Update status bar
+            if hasattr(self, 'status_bar'):
+                self.status_bar.showMessage("Security components refreshed", 3000)
+                
+        except Exception as e:
+            print(f"Error refreshing components: {e}")
 
     def show_about(self):
         self.show_themed_message_box(

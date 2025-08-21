@@ -62,14 +62,14 @@ The auto-updater is configured via `/config/update_config.json`:
 
 3. **Create and push tag**:
    ```bash
-   git tag -a v2.5.0 -m "Release version 2.5.0"
+   git tag -a v2.7.2 -m "Release version 2.7.2"
    git push origin stable
-   git push origin v2.5.0
+   git push origin v2.7.2
    ```
 
 4. **Create GitHub Release**:
    - Go to GitHub repository
-   - Create new release from the `v2.5.0` tag
+   - Create new release from the `v2.7.2` tag
    - Target the `stable` branch
    - Add release notes
 
@@ -80,9 +80,9 @@ git checkout stable
 # Make minimal fix
 git add .
 git commit -m "Hotfix: Critical security update"
-git tag -a v2.4.1 -m "Hotfix release 2.4.1" 
+git tag -a v2.7.3 -m "Hotfix release 2.7.3" 
 git push origin stable
-git push origin v2.4.1
+git push origin v2.7.3
 # Create GitHub release
 ```
 
@@ -217,7 +217,7 @@ git tag -l --sort=-version:refname | head -5
 git tag --merged stable
 
 # Create release tag
-git tag -a v2.5.0 -m "Release 2.5.0"
+git tag -a v2.7.2 -m "Release 2.7.2"
 
 # Push everything
 git push origin stable --tags

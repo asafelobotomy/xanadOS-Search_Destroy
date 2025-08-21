@@ -389,7 +389,7 @@ class ComprehensiveBuildReviewer:
         plan.append("")
         
         plan.append("**Linux Security Enhancements**:")
-        plan.append("- Add SELinux/AppArmor policy support")
+        plan.append("- Enhanced AppArmor policy support")
         plan.append("- Implement UEFI Secure Boot verification")
         plan.append("- Add fail2ban integration for brute-force protection")
         plan.append("")

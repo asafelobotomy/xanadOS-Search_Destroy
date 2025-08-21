@@ -122,7 +122,7 @@ git pull origin branch-name
    echo "2.1.0" > VERSION
    # Update CHANGELOG.md with release notes
    git add VERSION CHANGELOG.md
-   git commit -m "chore(release): bump version to 2.1.0"
+   git commit -m "chore(release): bump version to 2.8.0"
    ```
 
 3. **Merge to Master and Tag**
@@ -130,7 +130,7 @@ git pull origin branch-name
    ```bash
    git checkout master
    git merge release/2.1.0
-   git tag -a v2.1.0 -m "Release version 2.1.0"
+   git tag -a v2.8.0 -m "Release version 2.8.0"
    git push origin master --tags
    ```
 
@@ -164,15 +164,15 @@ git pull origin branch-name
 
 ### Version Tags
 
-- Use semantic versioning: `v2.1.0`
+- Use semantic versioning: `v2.8.0`
 - Tag stable releases on master branch
 - Include release notes in tag description
 
 ### Pre-release Tags
 
-- Alpha: `v2.1.0-alpha.1`
-- Beta: `v2.1.0-beta.1`
-- Release Candidate: `v2.1.0-rc.1`
+- Alpha: `v2.8.0-alpha.1`
+- Beta: `v2.8.0-beta.1`
+- Release Candidate: `v2.8.0-rc.1`
 
 ## Git Configuration
 
@@ -259,7 +259,7 @@ git log --stat --oneline
 
 ### 3. **Version Management**
 
-- Semantic versioning (2.3.0)
+- Semantic versioning (2.8.0)
 - VERSION file tracking
 - Comprehensive CHANGELOG.md
 - Automated release process

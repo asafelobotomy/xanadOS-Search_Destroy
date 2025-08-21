@@ -48,17 +48,13 @@ Project management, organization, and maintenance documentation.
 - **[Version Control Guidelines](project/VERSION_CONTROL.md)** - Git workflow and branching strategy
 - **[Performance Optimizations](project/PERFORMANCE_OPTIMIZATIONS.md)** - System performance improvements
 - **[Architecture Documentation](project/ARCHITECTURE.md)** - System architecture overview
-- **[Project Summaries](project/summaries/)** - Completion reports and analysis
-  - [Organization Complete](project/summaries/ORGANIZATION_COMPLETE.md)
-  - [Script Organization](project/summaries/SCRIPT_ORGANIZATION_COMPLETE.md)
-  - [Documentation Organization](project/summaries/DOCUMENTATION_ORGANIZATION_SUMMARY.md)
 
 ### 📦 Release Documentation
 
 Version history and release information.
 
 - **[Changelog](releases/CHANGELOG.md)** - Complete version history
-- **[Latest Release](releases/RELEASE_2.7.0.md)** - Current version release notes (v2.7.0)
+- **[Latest Release](releases/RELEASE_2.7.0.md)** - Current version release notes (v2.7.1)
 - **[Version 2.5.0](releases/FLATHUB_RELEASE_v2.5.0.md)** - Theme system overhaul release
 - **[Version 2.4.0](releases/RELEASE_2.4.0.md)** - Infrastructure enhancement release
 - **[Version 2.3.0](releases/RELEASE_2.3.0.md)** - Previous release documentation
@@ -91,7 +87,13 @@ Code references, citations, and verification reports.
 
 ## 🔄 Documentation Maintenance
 
-This documentation is actively maintained and updated. Last major reorganization: **August 15, 2025**.
+This documentation is actively maintained and updated. Last major review and cleanup: **August 21, 2025**.
+
+### 🗄️ Archived Documentation
+
+Historical project documentation has been moved to preserve development history while maintaining clean active documentation:
+
+- **[Archived Documentation](../archive/docs/)** - Project summaries, completed organizational work, and version-specific updates
 
 All future documentation should be placed in the appropriate `/docs/` subdirectory according to this structure:
 

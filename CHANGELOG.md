@@ -5,6 +5,112 @@ All notable changes to the xanadOS-Search_Destroy project will be documented in 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.8.0] - 2025-08-20
+
+### Added
+
+#### 🆕 **Major Feature: Setup Wizard Implementation**
+
+- **Complete First-Time Setup System** - Added comprehensive setup wizard (`app/gui/setup_wizard.py`)
+  - **Distribution Detection**: Automatic detection for Arch, Ubuntu, Debian, Fedora, openSUSE
+  - **Package Installation**: Streamlined installation of ClamAV, UFW, and RKHunter
+  - **GUI Integration**: Themed widgets with progress tracking and user feedback
+  - **Post-Installation Configuration**: Automatic service management and configuration
+  - **Error Handling**: Comprehensive error detection and user guidance
+  - **Security Component Management**: One-click setup for all security dependencies
+
+#### 🎨 **User Experience Enhancements**
+
+- **Integrated Menu Items**: Added first-time setup options to main window menu
+- **Onboarding Experience**: Enhanced user guidance for new installations
+- **Progress Feedback**: Real-time installation progress and status updates
+
+### Changed
+
+#### 📁 **Repository Organization & Maintenance**
+
+- **Deprecated Testing Scripts Archive** - Moved 7 obsolete test scripts to `archive/deprecated-testing/`
+  - Scripts for removed SELinux functionality (replaced with AppArmor-only approach)
+  - Dangerous parameter testing scripts (functionality intentionally removed for safety)
+  - Fixed security issue verification scripts (work completed and integrated)
+  - One-time security fix and validation reports (documentation moved to proper structure)
+
+- **Historical Documentation Archive** - Moved 12+ completed project documents to `archive/docs/`
+  - Project completion summaries and organizational documentation
+  - Version-specific update summaries (v2.3.0, v2.4.0 implementation docs)
+  - Development workflow documentation (work completed and integrated)
+  - Cleanup analysis and repository structure verification documents
+
+#### 📚 **Archive Documentation Enhancement**
+
+- **Comprehensive Archive README** - Created detailed documentation explaining archival rationale
+- **Archive Category Organization** - Structured archives into logical subdirectories
+- **Development Tool Documentation** - Updated `dev/README.md` reflecting cleaned structure
+- **Preservation Strategy** - Historical development artifacts preserved without cluttering active workspace
+
+### Fixed
+
+#### 🧹 **Repository Maintenance**
+
+- **Development Workspace Clarity** - Removed completed and obsolete scripts from active development area
+- **Documentation Organization** - Consolidated historical summaries into archive structure
+- **Project Navigation** - Improved developer experience with cleaner directory structure
+- **Archive System** - Enhanced system for managing deprecated files and historical documentation
+
+## [2.7.1] - 2025-08-20
+
+### Added
+
+#### 🔐 **Unified Authentication Session Management**
+
+- **Global Authentication Caching** - Single password prompt per session reduces repeated authentication requests
+- **Session Timeout Management** - Configurable 5-minute session timeout for security
+- **Thread-Safe Authentication** - Concurrent authentication requests handled safely
+- **Smart Passwordless Detection** - Automatic detection and use of passwordless sudo when available
+- **Comprehensive Error Handling** - Robust fallback mechanisms and session cleanup
+
+#### 🛡️ **Enhanced Security Components**
+
+- **System Hardening Tab** - New GUI component for system security analysis
+- **RKHunter Optimization** - Enhanced rootkit detection with improved performance
+- **Non-Invasive Monitoring** - New monitoring capabilities without authentication loops
+- **Advanced Privilege Management** - Improved privilege escalation with session management
+
+### Enhanced
+
+#### 🔧 **Development Infrastructure**
+
+- **VS Code Integration** - Added file restoration prevention measures for better development experience
+- **Virtual Environment Handling** - Improved directory detection and path resolution
+- **Repository Organization** - Enhanced archival system with comprehensive documentation
+- **Build Process** - Updated Makefile and script path handling
+
+#### 🖥️ **User Interface Enhancements**
+
+- **Firewall Detection Logic** - Enhanced multi-platform firewall status detection
+- **Settings Organization** - Improved layout and navigation in system hardening settings
+- **Authentication Flow** - Streamlined user experience with reduced password prompts
+- **Documentation Updates** - Enhanced API documentation and development guides
+
+### Fixed
+
+#### 🐛 **Bug Fixes**
+
+- **Virtual Environment Detection** - Fixed directory handling in development scripts
+- **Firewall Status Display** - Improved reliability of firewall status detection
+- **Authentication Loops** - Eliminated repetitive password prompts through session management
+- **File Restoration Issues** - Prevented VS Code from automatically restoring deleted files
+- **Script Path Resolution** - Fixed path issues in build and utility scripts
+
+### Technical Improvements
+
+#### 🏗️ **Architecture Enhancements**
+
+- **Session Management Architecture** - Singleton pattern with thread-safe implementation
+- **Component Integration** - Unified authentication across all privilege-requiring components
+- **Documentation Structure** - Organized archived materials with comprehensive indexing
+- **Testing Framework** - Enhanced integration tests and privilege escalation auditing
+
 ## [2.7.0] - 2025-08-17
 
 ### Added
