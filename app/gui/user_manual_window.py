@@ -124,7 +124,7 @@ class UserManualWindow(ThemedDialog):
         footer_layout = QHBoxLayout(footer_frame)
         footer_layout.setContentsMargins(10, 2, 10, 2)
         
-        version_label = QLabel("User Manual v2.8.0 - Last Updated: August 21, 2025")
+        version_label = QLabel("User Manual v2.9.0 - Last Updated: August 22, 2025")
         version_label.setStyleSheet("color: gray; font-size: 9px;")
         footer_layout.addWidget(version_label)
         

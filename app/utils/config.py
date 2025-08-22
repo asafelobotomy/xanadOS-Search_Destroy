@@ -409,7 +409,7 @@ def create_initial_config():
         },
         "setup": {
             "first_time_setup_completed": False,
-            "setup_version": "2.8.0",
+            "setup_version": "2.9.0",
             "packages_installed": {
                 "clamav": False,
                 "ufw": False,

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Enhanced Security Hardening Demonstration
-xanadOS Search & Destroy v2.8.0
+xanadOS Search & Destroy v2.9.0
 
 This script demonstrates the enhanced security hardening capabilities
 with comprehensive safety validation and user guidance.
@@ -10,7 +10,7 @@ with comprehensive safety validation and user guidance.
 def demonstrate_enhanced_features():
     """Demonstrate all enhanced security hardening features"""
     
-    print("🔒 Enhanced Security Hardening System - xanadOS Search & Destroy v2.7.1")
+    print("🔒 Enhanced Security Hardening System - xanadOS Search & Destroy v2.9.0")
     print("=" * 75)
     print()
     

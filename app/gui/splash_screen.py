@@ -83,7 +83,7 @@ class ModernSplashScreen(QSplashScreen):
         painter.setFont(version_font)
         painter.setPen(QColor(229, 115, 115))  # Coral accent
         painter.drawText(0, 130, width, 20, Qt.AlignmentFlag.AlignCenter, 
-                        "Version 2.8.0 - Professional Edition")
+                        "Version 2.9.0 - Professional Edition")
         
         # Draw accent line
         painter.setPen(QPen(QColor(229, 115, 115), 2))

@@ -2,7 +2,7 @@
 
 *Your comprehensive guide to protecting your Linux system from malware and security threats*
 
-**Version 2.8.0** | *Updated: August 21, 2025*
+**Version 2.9.0** | *Updated: August 22, 2025*
 
 ---
 
@@ -511,5 +511,5 @@ Think of quarantine as a **secure jail** for suspicious files. Files in quaranti
 
 ---
 
-*Last Updated: August 21, 2025 - Version 2.8.0*  
+*Last Updated: August 22, 2025 - Version 2.9.0*  
 *Thank you for choosing S&D - Search & Destroy for your Linux security needs!*

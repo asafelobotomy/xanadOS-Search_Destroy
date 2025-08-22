@@ -409,7 +409,7 @@ class AutoUpdateSystem:
                     else "2.1.0"
                 )
             except (OSError, IOError, FileNotFoundError):
-                current_version = "2.8.0"  # Fallback version
+                current_version = "2.9.0"  # Fallback version
 
             response = await self._async_http_request(
                 "GET",
@@ -1084,7 +1084,7 @@ class AutoUpdateSystem:
                 software_update = updates[UpdateType.SOFTWARE]
                 return {
                     'available': True,
-                    'current_version': self.current_version or "2.8.0",
+                    'current_version': self.current_version or "2.9.0",
                     'latest_version': software_update.version,
                     'release_name': f'Version {software_update.version}',
                     'release_notes': '\n'.join(software_update.changelog) if hasattr(software_update, 'changelog') and software_update.changelog else software_update.description,
@@ -1095,7 +1095,7 @@ class AutoUpdateSystem:
             else:
                 return {
                     'available': False,
-                    'current_version': self.current_version or "2.8.0"
+                    'current_version': self.current_version or "2.9.0"
                 }
                 
         except Exception as e:

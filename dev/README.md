@@ -1,4 +1,4 @@
-# Development Tools - xanadOS Search & Destroy v2.8.0
+# Development Tools - xanadOS Search & Destroy v2.9.0
 
 ## Overview
 This directory contains active development, testing, and analysis tools for the xanadOS Search & Destroy antivirus project.
@@ -111,6 +111,6 @@ When adding new development tools:
 4. Ensure tool is tested and working before committing
 
 ---
-**Project**: xanadOS Search & Destroy v2.8.0  
+**Project**: xanadOS Search & Destroy v2.9.0  
 **Last Updated**: Development tools cleanup and organization  
 **Status**: Professional development environment with clean, organized tooling

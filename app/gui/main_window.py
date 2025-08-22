@@ -3785,7 +3785,7 @@ System        {perf_status}"""
             try:
                 current_version = version_file.read_text().strip()
             except (FileNotFoundError, IOError):
-                current_version = "2.8.0"  # Fallback version
+                current_version = "2.9.0"  # Fallback version
                 
             # Initialize the auto-updater with new system
             self.auto_updater = AutoUpdateSystem()

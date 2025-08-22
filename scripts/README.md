@@ -11,6 +11,8 @@ scripts/
 │   ├── verify-build.sh
 │   ├── release.sh
 │   └── test-flatpak-build.sh
+├── releases/           # Release management scripts
+│   └── (release automation scripts)
 ├── setup/              # Installation and configuration
 │   ├── install-hooks.sh
 │   ├── install-security-hardening.sh
