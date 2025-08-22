@@ -11,6 +11,7 @@ from pathlib import Path
 
 from core.file_scanner import FileScanner
 from core.firewall_detector import get_firewall_status, toggle_firewall
+from core.gui_auth_manager import GUIAuthManager
 from core.rkhunter_wrapper import RKHunterScanResult, RKHunterWrapper
 from core.scan_results_formatter import ModernScanResultsFormatter
 # Import RKHunter optimizer for settings integration
@@ -3785,7 +3786,7 @@ System        {perf_status}"""
             try:
                 current_version = version_file.read_text().strip()
             except (FileNotFoundError, IOError):
-                current_version = "2.9.0"  # Fallback version
+                current_version = "2.10.0"  # Fallback version
                 
             # Initialize the auto-updater with new system
             self.auto_updater = AutoUpdateSystem()
@@ -4480,6 +4481,72 @@ System        {perf_status}"""
 
         # Save both reports
         self.save_rkhunter_report(rkhunter_result)
+        
+        # Ensure ClamAV report is saved - backup in case FileScanner didn't save it
+        print(f"\n💾 === BACKUP CLAMAV REPORT SAVE ===")
+        try:
+            # Create a proper ScanResult from the ClamAV result for saving
+            if isinstance(clamav_result, dict):
+                # Extract data from dictionary format
+                scan_id = clamav_result.get('scan_id', datetime.now().strftime("%Y%m%d_%H%M%S_%f")[:-3])
+                start_time = clamav_result.get('start_time', datetime.now().isoformat())
+                total_files = clamav_result.get("total_files", clamav_result.get("files_scanned", 0))
+                scanned_files = clamav_result.get("scanned_files", clamav_result.get("files_scanned", 0))
+                threats_found = clamav_result.get("threats_found", len(clamav_result.get("threats", [])))
+                duration = clamav_result.get("duration", clamav_result.get("scan_time", 0))
+                threats_data = clamav_result.get("threats", [])
+                
+                # Convert threat data to ThreatInfo objects
+                threats = []
+                for threat_data in threats_data:
+                    if isinstance(threat_data, dict):
+                        threat = ThreatInfo(
+                            file_path=threat_data.get("file_path", threat_data.get("file", "")),
+                            threat_name=threat_data.get("threat_name", threat_data.get("threat", "")),
+                            threat_type=threat_data.get("threat_type", threat_data.get("type", "virus")),
+                            threat_level=ThreatLevel.INFECTED if threats_found > 0 else ThreatLevel.CLEAN
+                        )
+                        threats.append(threat)
+                
+                # Create backup ScanResult
+                backup_scan_result = ScanResult(
+                    scan_id=scan_id,
+                    scan_type=ScanType.CUSTOM,  # Default for ClamAV scans
+                    start_time=start_time,
+                    end_time=datetime.now().isoformat(),
+                    duration=duration,
+                    scanned_paths=[],
+                    total_files=total_files,
+                    scanned_files=scanned_files,
+                    threats_found=threats_found,
+                    threats=threats,
+                    errors=[],
+                    scan_settings={},
+                    engine_version="ClamAV",
+                    signature_version="Unknown",
+                    success=True
+                )
+                
+                # Save using report manager
+                saved_path = self.report_manager.save_scan_result(backup_scan_result)
+                print(f"DEBUG: ✅ Backup ClamAV report saved to: {saved_path}")
+                
+        except Exception as e:
+            print(f"DEBUG: ❌ Backup ClamAV report save failed: {e}")
+            import traceback
+            traceback.print_exc()
+        
+        # Debug: Check if ClamAV report directories exist and list files
+        print(f"\n🔍 === COMBINED SCAN DEBUG: CHECKING CLAMAV REPORTS ===")
+        clamav_reports_dir = self.report_manager.daily_reports
+        print(f"DEBUG: ClamAV reports directory: {clamav_reports_dir}")
+        print(f"DEBUG: Directory exists: {clamav_reports_dir.exists()}")
+        if clamav_reports_dir.exists():
+            clamav_files = list(clamav_reports_dir.glob("scan_*.json"))
+            print(f"DEBUG: Found {len(clamav_files)} ClamAV report files:")
+            for f in clamav_files:
+                print(f"  - {f.name} (modified: {f.stat().st_mtime})")
+        print(f"DEBUG: Current timestamp: {datetime.now().timestamp()}")
 
         # Create combined summary using modern formatter
         formatter = ModernScanResultsFormatter()
@@ -4749,13 +4816,14 @@ System        {perf_status}"""
         # Check if RKHunter is available (without authentication)
         if not self.rkhunter.available or self.rkhunter.rkhunter_path is None:
             # Check authentication method available
-            pkexec_available = self.rkhunter._find_executable("pkexec")
+            gui_auth = GUIAuthManager()
+            gui_auth_available = gui_auth.is_gui_available()
 
-            if pkexec_available:
+            if gui_auth_available:
                 auth_method_text = (
                     "RKHunter requires elevated privileges to perform rootkit scans.\n\n"
                     "This is normal security behavior for rootkit detection tools.\n"
-                    "A secure GUI password dialog will appear during the scan (same as Update Definitions).\n\n"
+                    "A secure GUI password dialog will appear during the scan and create a persistent session.\n\n"
                     "Would you like to:\n\n"
                     "• Continue and start the scan (GUI password dialog will appear)\n"
                     "• Configure RKHunter setup first")
@@ -4793,7 +4861,8 @@ System        {perf_status}"""
         test_categories = self.get_selected_rkhunter_categories()
 
         # Check if GUI authentication is available
-        pkexec_available = self.rkhunter._find_executable("pkexec")
+        gui_auth = GUIAuthManager()
+        gui_auth_available = gui_auth.is_gui_available()
 
         # Build scan categories description for user
         category_names = {
@@ -4815,12 +4884,12 @@ System        {perf_status}"""
             else "Default categories"
         )
 
-        if pkexec_available:
+        if gui_auth_available:
             auth_message = (
                 f"RKHunter will now scan your system for rootkits and malware.\n\n"
                 f"Scan categories: {categories_text}\n\n"
                 "🔐 A secure password dialog will appear to authorize the scan. "
-                "This uses the same authentication method as 'Update Definitions'.\n\n"
+                "This creates a persistent session for multiple operations.\n\n"
                 "The scan may take several minutes to complete."
             )
         else:
@@ -4848,52 +4917,59 @@ System        {perf_status}"""
         try:
             auth_session_valid = self.rkhunter._ensure_auth_session()
             if not auth_session_valid:
-                # Check what authentication methods are available
-                from core.elevated_runner import _which
-                pkexec_available = bool(_which("pkexec"))
-                sudo_available = bool(_which("sudo"))
-                display_available = bool(os.environ.get("DISPLAY"))
+                # Try the new GUI authentication manager
+                gui_auth = GUIAuthManager()
+                auth_success = gui_auth.ensure_authenticated()
                 
-                if pkexec_available and display_available:
-                    error_msg = (
-                        "Authentication failed or was cancelled.\n\n"
-                        "A secure password dialog should have appeared. "
-                        "If you didn't see it, please try again.\n\n"
-                        "Alternative: The scan will prompt for authentication when it starts."
-                    )
-                elif sudo_available:
-                    error_msg = (
-                        "Pre-authentication failed.\n\n"
-                        "The scan will prompt for administrator credentials "
-                        "when it starts.\n\n"
-                        "Continue with the scan?"
-                    )
-                else:
-                    error_msg = (
-                        "No authentication method available.\n\n"
-                        "Please ensure 'sudo' or 'pkexec' is installed on your system.\n\n"
-                        "The scan has been cancelled."
-                    )
-                
-                # For pkexec/sudo available cases, ask if user wants to continue anyway
-                if pkexec_available or sudo_available:
-                    reply = self.show_themed_message_box(
-                        "question",
-                        "Pre-authentication Failed",
-                        error_msg,
-                        QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
-                    )
-                    if reply != QMessageBox.StandardButton.Yes:
+                if not auth_success:
+                    # Check what authentication methods are available as fallback
+                    from core.elevated_runner import _which
+                    pkexec_available = bool(_which("pkexec"))
+                    sudo_available = bool(_which("sudo"))
+                    display_available = bool(os.environ.get("DISPLAY"))
+                    
+                    if gui_auth.is_gui_available() and display_available:
+                        error_msg = (
+                            "Authentication failed or was cancelled.\n\n"
+                            "A secure password dialog should have appeared. "
+                            "If you didn't see it, please try again.\n\n"
+                            "Alternative: The scan will prompt for authentication when it starts."
+                        )
+                    elif sudo_available:
+                        error_msg = (
+                            "Pre-authentication failed.\n\n"
+                            "The scan will prompt for administrator credentials "
+                            "when it starts.\n\n"
+                            "Continue with the scan?"
+                        )
+                    else:
+                        error_msg = (
+                            "No authentication method available.\n\n"
+                            "Please ensure 'sudo' with GUI support is installed on your system.\n\n"
+                            "The scan has been cancelled."
+                        )
+                    
+                    # For GUI/sudo available cases, ask if user wants to continue anyway
+                    if gui_auth.is_gui_available() or sudo_available:
+                        reply = self.show_themed_message_box(
+                            "question",
+                            "Pre-authentication Failed",
+                            error_msg,
+                            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+                        )
+                        if reply != QMessageBox.StandardButton.Yes:
+                            return
+                        print("🔄 Continuing with scan - authentication will be requested during scan...")
+                    else:
+                        # No authentication methods available
+                        self.show_themed_message_box(
+                            "error",
+                            "Authentication Not Available",
+                            error_msg
+                        )
                         return
-                    print("🔄 Continuing with scan - authentication will be requested during scan...")
                 else:
-                    # No authentication methods available
-                    self.show_themed_message_box(
-                        "error",
-                        "Authentication Not Available",
-                        error_msg
-                    )
-                    return
+                    print("✅ GUI authentication successful - session established")
             else:
                 print("✅ Pre-authentication successful")
                 
@@ -7119,10 +7195,21 @@ Common False Positives:
                     print("DEBUG: About to call update_dashboard_cards() after scan completion")
                     self.update_dashboard_cards()
                     print("DEBUG: About to refresh reports")
+                    
+                    # Debug: Check report files before refresh
+                    clamav_reports_dir = self.report_manager.daily_reports
+                    if clamav_reports_dir.exists():
+                        clamav_files = list(clamav_reports_dir.glob("scan_*.json"))
+                        print(f"DEBUG: Before refresh - Found {len(clamav_files)} ClamAV report files")
+                    else:
+                        print(f"DEBUG: Before refresh - ClamAV reports directory doesn't exist")
+                    
                     self.refresh_reports()
                     print("DEBUG: Reports refreshed after scan completion")
                 except Exception as e:
                     print(f"DEBUG: Error refreshing reports: {e}")
+                    import traceback
+                    traceback.print_exc()
 
             from PyQt6.QtCore import QTimer
 
@@ -10487,7 +10574,7 @@ Common False Positives:
                     "Firewall Test",
                     f"Firewall detected: {fw_name} ({fw_type})\n\n"
                     "❌ Administrative privileges not available\n"
-                    "Neither pkexec nor sudo found on system"
+                    "No GUI authentication helpers (ksshaskpass/zenity/kdialog) or sudo found on system"
                 )
                 return
             

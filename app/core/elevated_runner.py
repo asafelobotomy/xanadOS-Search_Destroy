@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-Simple privilege escalation for xanadOS Search & Destroy.
-Simplified version without complex session management.
+Enhanced privilege escalation for xanadOS Search & Destroy.
+Prioritizes persistent GUI sudo over pkexec for better user experience.
 """
 
 import logging
@@ -41,7 +41,7 @@ def _sanitize_env(gui: bool = True) -> dict:
 def elevated_run(argv: Sequence[str], *, timeout: int = 300, capture_output: bool = True,
                 text: bool = True, gui: bool = True) -> subprocess.CompletedProcess:
     """
-    Run command with elevated privileges using the simplest available method.
+    Run command with elevated privileges using persistent GUI authentication.
     
     Args:
         argv: Command to run (without sudo/pkexec prefix)
@@ -55,18 +55,38 @@ def elevated_run(argv: Sequence[str], *, timeout: int = 300, capture_output: boo
     """
     if not argv:
         return subprocess.CompletedProcess([], 1, "", "No command provided")
-    
+
+    # Try the new GUI authentication manager first (highest priority)
+    if gui and os.environ.get('DISPLAY'):
+        try:
+            from .gui_auth_manager import elevated_run_gui
+            logger.info("Using persistent GUI authentication manager")
+            return elevated_run_gui(argv, timeout=timeout, capture_output=capture_output, text=text)
+        except ImportError:
+            logger.warning("GUI authentication manager not available, falling back to legacy methods")
+        except Exception as e:
+            logger.warning(f"GUI authentication manager failed: {e}, falling back to legacy methods")
+
+    # Fallback to legacy methods
+    return _legacy_elevated_run(argv, timeout=timeout, capture_output=capture_output, text=text, gui=gui)
+
+
+def _legacy_elevated_run(argv: Sequence[str], *, timeout: int = 300, capture_output: bool = True,
+                        text: bool = True, gui: bool = True) -> subprocess.CompletedProcess:
+    """
+    Legacy privilege escalation fallback method.
+    """
     # Find available privilege escalation tools
-    pkexec = _which("pkexec") if gui else None
     sudo = _which("sudo")
+    pkexec = _which("pkexec") if gui else None
     
-    if not (pkexec or sudo):
+    if not (sudo or pkexec):
         return subprocess.CompletedProcess(argv, 1, "", "No privilege escalation tool available")
-    
+
     # Prepare environment
     env = _sanitize_env(gui=gui)
     
-    # Try methods in order of preference (new priority order)
+    # Try methods in priority order
     methods = []
     
     if sudo:
@@ -90,14 +110,41 @@ def elevated_run(argv: Sequence[str], *, timeout: int = 300, capture_output: boo
                 methods.append(("sudo-gui", [sudo, "-A"] + list(argv), env_with_askpass))
                 break
     
+    # pkexec moved to lower priority (only as fallback)
     if gui and pkexec:
-        # 3. pkexec (third priority - alternative GUI method)
+        # 3. pkexec (fallback GUI method - less persistent than sudo)
         env_wrap = [pkexec, "env"] + [f"{k}={v}" for k, v in env.items()]
-        methods.append(("pkexec", env_wrap + list(argv), env))
+        methods.append(("pkexec-fallback", env_wrap + list(argv), env))
     
     if sudo:
         # 4. Terminal sudo (last resort)
         methods.append(("sudo-terminal", [sudo] + list(argv), env))
+
+    # Try each method
+    for method_name, cmd, method_env in methods:
+        try:
+            logger.info(f"Trying {method_name}: {' '.join(cmd[:3])}...")
+            result = subprocess.run(
+                cmd,
+                timeout=timeout,
+                capture_output=capture_output,
+                text=text,
+                env=method_env
+            )
+            
+            if result.returncode == 0:
+                logger.info(f"Success with {method_name}")
+                return result
+            else:
+                logger.debug(f"{method_name} failed with return code {result.returncode}")
+                
+        except subprocess.TimeoutExpired:
+            logger.warning(f"{method_name} timed out")
+        except Exception as e:
+            logger.debug(f"{method_name} error: {e}")
+    
+    # If all methods failed, return the last result or create a failure result
+    return subprocess.CompletedProcess(argv, 1, "", "All privilege escalation methods failed")
     
     # Try each method
     for method_name, cmd, method_env in methods:
@@ -144,8 +191,7 @@ def validate_auth_session() -> bool:
 def elevated_popen(argv: Sequence[str], *, gui: bool = True, text: bool = True,
                    stdout=subprocess.PIPE, stderr=subprocess.PIPE, bufsize: int = 1) -> subprocess.Popen:
     """
-    Start a privileged process returning Popen for streaming.
-    Simplified version - tries pkexec first, then sudo.
+    Start a privileged process using persistent GUI authentication, returning Popen for streaming.
     
     Args:
         argv: Command to run (without sudo/pkexec prefix)
@@ -159,18 +205,38 @@ def elevated_popen(argv: Sequence[str], *, gui: bool = True, text: bool = True,
     """
     if not argv:
         raise ValueError("No command provided")
-    
+
+    # Try the new GUI authentication manager first (highest priority)
+    if gui and os.environ.get('DISPLAY'):
+        try:
+            from .gui_auth_manager import elevated_popen_gui
+            logger.info("Using persistent GUI authentication manager for Popen")
+            return elevated_popen_gui(argv, text=text, stdout=stdout, stderr=stderr)
+        except ImportError:
+            logger.warning("GUI authentication manager not available for Popen, falling back to legacy methods")
+        except Exception as e:
+            logger.warning(f"GUI authentication manager Popen failed: {e}, falling back to legacy methods")
+
+    # Fallback to legacy methods
+    return _legacy_elevated_popen(argv, gui=gui, text=text, stdout=stdout, stderr=stderr, bufsize=bufsize)
+
+
+def _legacy_elevated_popen(argv: Sequence[str], *, gui: bool = True, text: bool = True,
+                          stdout=subprocess.PIPE, stderr=subprocess.PIPE, bufsize: int = 1) -> subprocess.Popen:
+    """
+    Legacy privileged process startup fallback method.
+    """
     # Find available privilege escalation tools
-    pkexec = _which("pkexec") if gui else None
     sudo = _which("sudo")
+    pkexec = _which("pkexec") if gui else None
     
-    if not (pkexec or sudo):
+    if not (sudo or pkexec):
         raise RuntimeError("No privilege escalation tool available")
     
     # Prepare environment
     env = _sanitize_env(gui=gui)
     
-    # Try methods in order of preference (new priority order)
+    # Try methods in priority order
     methods = []
     
     if sudo:
@@ -194,10 +260,11 @@ def elevated_popen(argv: Sequence[str], *, gui: bool = True, text: bool = True,
                 methods.append(("sudo-gui", [sudo, "-A"] + list(argv), env_with_askpass))
                 break
     
+    # pkexec moved to lower priority (only as fallback)
     if gui and pkexec:
-        # 3. pkexec (third priority - alternative GUI method)
+        # 3. pkexec (fallback GUI method - less persistent than sudo)
         env_wrap = [pkexec, "env"] + [f"{k}={v}" for k, v in env.items()]
-        methods.append(("pkexec", env_wrap + list(argv), env))
+        methods.append(("pkexec-fallback", env_wrap + list(argv), env))
     
     if sudo:
         # 4. Terminal sudo (last resort)
@@ -229,8 +296,42 @@ def elevated_popen(argv: Sequence[str], *, gui: bool = True, text: bool = True,
 
 def cleanup_auth_session() -> None:
     """
-    Clean up authentication session.
-    Simplified version - no persistent sessions to clean up.
+    Clean up authentication session using GUI authentication manager.
     """
-    logger.debug("Authentication session cleanup (simplified - no persistent sessions)")
-    pass
+    try:
+        from .gui_auth_manager import get_gui_auth_manager
+        manager = get_gui_auth_manager()
+        manager.cleanup_session()
+        logger.info("GUI authentication session cleaned up")
+    except ImportError:
+        logger.debug("GUI authentication manager not available for cleanup")
+    except Exception as e:
+        logger.debug(f"Error cleaning up GUI authentication session: {e}")
+
+
+def validate_auth_session() -> bool:
+    """
+    Validate authentication session using GUI authentication manager.
+    
+    Returns:
+        True if authentication works, False otherwise
+    """
+    try:
+        from .gui_auth_manager import get_gui_auth_manager
+        manager = get_gui_auth_manager()
+        session_info = manager.get_session_info()
+        if session_info["active"]:
+            logger.debug("GUI authentication session is active")
+            return True
+    except ImportError:
+        logger.debug("GUI authentication manager not available for validation")
+    except Exception as e:
+        logger.debug(f"Error validating GUI authentication session: {e}")
+    
+    # Fallback to simple test
+    try:
+        result = elevated_run(["true"], timeout=30)
+        return result.returncode == 0
+    except Exception as e:
+        logger.error(f"Authentication validation failed: {e}")
+        return False

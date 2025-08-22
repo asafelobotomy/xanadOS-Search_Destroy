@@ -409,7 +409,7 @@ class AutoUpdateSystem:
                     else "2.1.0"
                 )
             except (OSError, IOError, FileNotFoundError):
-                current_version = "2.9.0"  # Fallback version
+                current_version = "2.10.0"  # Fallback version
 
             response = await self._async_http_request(
                 "GET",

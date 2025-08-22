@@ -530,8 +530,6 @@ class FirewallDetector:
         # New firewall toggle methods should use elevated_run() directly
         if shutil.which("sudo"):
             return ["sudo"]
-        elif shutil.which("pkexec"):
-            return ["pkexec"]
         else:
             return []
 
@@ -1136,79 +1134,41 @@ class FirewallDetector:
             }
 
     def _toggle_iptables(self, enable: bool) -> Dict[str, str | bool]:
-        """Toggle iptables (basic implementation)."""
+        """Toggle iptables using enhanced GUI authentication."""
         try:
-            admin_cmd = self._get_admin_cmd_prefix()
-            if not admin_cmd:
-                return {
-                    "success": False,
-                    "message": "Administrative privileges not available",
-                    "error": "Neither pkexec nor sudo found on system",
-                }
-
-            # Prepare environment for GUI authentication
-            env = os.environ.copy()
-            if admin_cmd[0] == "pkexec":
-                for var in ["DISPLAY", "XAUTHORITY", "WAYLAND_DISPLAY", "XDG_SESSION_TYPE", "XDG_RUNTIME_DIR"]:
-                    if var not in env and var in os.environ:
-                        env[var] = os.environ[var]
-
             if enable:
-                # Enable basic iptables rules - drop all incoming except
-                # established
-                commands = [admin_cmd + ["iptables",
-                                         "-P",
-                                         "INPUT",
-                                         "DROP"],
-                            admin_cmd + ["iptables",
-                                         "-P",
-                                         "FORWARD",
-                                         "DROP"],
-                            admin_cmd + ["iptables",
-                                         "-P",
-                                         "OUTPUT",
-                                         "ACCEPT"],
-                            admin_cmd + ["iptables",
-                                         "-A",
-                                         "INPUT",
-                                         "-i",
-                                         "lo",
-                                         "-j",
-                                         "ACCEPT"],
-                            admin_cmd + ["iptables",
-                                         "-A",
-                                         "INPUT",
-                                         "-m",
-                                         "conntrack",
-                                         "--ctstate",
-                                         "ESTABLISHED,RELATED",
-                                         "-j",
-                                         "ACCEPT",
-                                         ],
-                            ]
+                # Enable basic iptables rules - drop all incoming except established
+                commands = [
+                    ["iptables", "-P", "INPUT", "DROP"],
+                    ["iptables", "-P", "FORWARD", "DROP"],
+                    ["iptables", "-P", "OUTPUT", "ACCEPT"],
+                    ["iptables", "-A", "INPUT", "-i", "lo", "-j", "ACCEPT"],
+                    ["iptables", "-A", "INPUT", "-m", "conntrack", "--ctstate", "ESTABLISHED,RELATED", "-j", "ACCEPT"],
+                ]
             else:
                 # Disable iptables - set all policies to ACCEPT and flush rules
                 commands = [
-                    admin_cmd + ["iptables", "-P", "INPUT", "ACCEPT"],
-                    admin_cmd + ["iptables", "-P", "FORWARD", "ACCEPT"],
-                    admin_cmd + ["iptables", "-P", "OUTPUT", "ACCEPT"],
-                    admin_cmd + ["iptables", "-F"],  # Flush all rules
-                    # Delete user-defined chains
-                    admin_cmd + ["iptables", "-X"],
+                    ["iptables", "-P", "INPUT", "ACCEPT"],
+                    ["iptables", "-P", "FORWARD", "ACCEPT"],
+                    ["iptables", "-P", "OUTPUT", "ACCEPT"],
+                    ["iptables", "-F"],  # Flush all rules
+                    ["iptables", "-X"],  # Delete user-defined chains
                 ]
 
-            # Execute commands
+            # Execute commands using elevated_run with GUI authentication
             for cmd in commands:
-                result = subprocess.run(
+                result = elevated_run(
                     cmd,
+                    timeout=60,
                     capture_output=True,
                     text=True,
-                    timeout=30,
-                    check=False,
-                    env=env,
+                    gui=True
                 )
+
                 if result.returncode != 0:
                     error_output = result.stderr.strip() or result.stdout.strip()
+                    
+                    # Check for authentication cancellation
                     if (
                         "request dismissed" in error_output.lower()
                         or "cancelled" in error_output.lower()
@@ -1218,24 +1178,25 @@ class FirewallDetector:
                             "message": "Authentication cancelled by user",
                             "error": "User cancelled the authentication dialog",
                         }
+                    
                     return {
                         "success": False,
-                        "message": f'iptables command failed: {" ".join(cmd[len(admin_cmd):])}',
-                        "error": error_output
-                        or f"Command exited with code {result.returncode}",
+                        "message": f'Failed to {
+                            "enable" if enable else "disable"} iptables',
+                        "error": error_output or f"iptables command failed: {' '.join(cmd)}",
                     }
 
             action = "enabled" if enable else "disabled"
             return {
                 "success": True,
-                "message": f"iptables firewall {action} successfully",
+                "message": f"iptables {action} successfully"
             }
 
         except subprocess.TimeoutExpired:
             return {
                 "success": False,
                 "message": "Authentication timed out",
-                "error": "Authentication dialog timed out",
+                "error": "Authentication dialog timed out after 60 seconds",
             }
         except (OSError, FileNotFoundError) as e:
             return {
@@ -1245,25 +1206,10 @@ class FirewallDetector:
             }
 
     def _toggle_nftables(self, enable: bool) -> Dict[str, str | bool]:
-        """Toggle nftables (basic implementation)."""
+        """Toggle nftables using enhanced GUI authentication."""
         try:
-            admin_cmd = self._get_admin_cmd_prefix()
-            if not admin_cmd:
-                return {
-                    "success": False,
-                    "message": "Administrative privileges not available",
-                    "error": "Neither pkexec nor sudo found on system",
-                }
-
-            # Prepare environment for GUI authentication
-            env = os.environ.copy()
-            if admin_cmd[0] == "pkexec":
-                for var in ["DISPLAY", "XAUTHORITY", "WAYLAND_DISPLAY", "XDG_SESSION_TYPE", "XDG_RUNTIME_DIR"]:
-                    if var not in env and var in os.environ:
-                        env[var] = os.environ[var]
-
             if enable:
-                # Enable basic nftables rules
+                # Enable basic nftables rules using elevated_run
                 nft_rules = """
                 table inet filter {
                     chain input {
@@ -1279,24 +1225,36 @@ class FirewallDetector:
                     }
                 }
                 """
-                result = subprocess.run(
-                    admin_cmd + ["nft", "-f", "-"],
-                    input=nft_rules,
-                    capture_output=True,
-                    text=True,
-                    timeout=60,
-                    check=False,
-                    env=env,
-                )
+                # Note: For stdin input, we need to use a different approach with elevated_run
+                # We'll create a temporary file or use a different method
+                import tempfile
+                with tempfile.NamedTemporaryFile(mode='w', suffix='.nft', delete=False) as f:
+                    f.write(nft_rules)
+                    temp_file = f.name
+                
+                try:
+                    result = elevated_run(
+                        ["nft", "-f", temp_file],
+                        timeout=60,
+                        capture_output=True,
+                        text=True,
+                        gui=True
+                    )
+                finally:
+                    # Clean up temp file
+                    import os
+                    try:
+                        os.unlink(temp_file)
+                    except:
+                        pass
             else:
-                # Disable nftables - flush all rules
-                result = subprocess.run(
-                    admin_cmd + ["nft", "flush", "ruleset"],
+                # Disable nftables - flush all rules using elevated_run
+                result = elevated_run(
+                    ["nft", "flush", "ruleset"],
+                    timeout=60,
                     capture_output=True,
                     text=True,
-                    timeout=60,
-                    check=False,
-                    env=env,
+                    gui=True
                 )
 
             if result.returncode == 0:
@@ -1307,6 +1265,8 @@ class FirewallDetector:
                 }
             else:
                 error_output = result.stderr.strip() or result.stdout.strip()
+                
+                # Check for authentication cancellation
                 if (
                     "request dismissed" in error_output.lower()
                     or "cancelled" in error_output.lower()
@@ -1316,6 +1276,7 @@ class FirewallDetector:
                         "message": "Authentication cancelled by user",
                         "error": "User cancelled the authentication dialog",
                     }
+                
                 return {
                     "success": False,
                     "message": f'Failed to {

@@ -731,11 +731,14 @@ class FileScanner:
                 print(f"DEBUG: Scan type: {scan_result.scan_type}")
                 print(f"DEBUG: Files scanned: {scan_result.scanned_files}")
                 print(f"DEBUG: Threats found: {scan_result.threats_found}")
+                print(f"DEBUG: Report will be saved to: {self.scan_report_manager.daily_reports}/scan_{scan_result.scan_id}.json")
                 try:
-                    self.scan_report_manager.save_scan_result(scan_result)
-                    print(f"DEBUG: ✅ FileScanner report saved successfully")
+                    saved_path = self.scan_report_manager.save_scan_result(scan_result)
+                    print(f"DEBUG: ✅ FileScanner report saved successfully to: {saved_path}")
                 except Exception as e:
                     print(f"DEBUG: ❌ FileScanner report save failed: {e}")
+                    import traceback
+                    traceback.print_exc()
                     raise
             else:
                 print(f"\n💾 === FILESCANNER SKIP REPORT SAVE ===")

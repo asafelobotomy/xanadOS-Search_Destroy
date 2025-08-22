@@ -5,6 +5,55 @@ All notable changes to the xanadOS-Search_Destroy project will be documented in 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.10.0] - 2025-08-22
+
+### Added
+
+#### 🔐 **Major Feature: Persistent GUI Authentication System**
+
+- **GUI Authentication Manager** - Complete replacement of pkexec with persistent GUI sudo sessions
+  - **Persistent Sessions**: 15-minute authentication sessions eliminate multiple password prompts
+  - **GUI Helper Detection**: Automatic detection of KDE (ksshaskpass), GNOME (zenity), and other GUI authentication helpers
+  - **Session Management**: Intelligent session tracking, refresh, and automatic cleanup
+  - **Cross-Desktop Compatibility**: Works seamlessly across KDE, GNOME, XFCE, and other desktop environments
+  - **Security Integration**: Maintains system sudo timeout policies and security standards
+
+- **Enhanced Privilege Escalation System** - Comprehensive authentication architecture overhaul
+  - **Priority-Based Authentication**: New priority system favoring persistent GUI sudo over pkexec
+  - **Fallback Support**: Graceful fallback to pkexec and terminal sudo for maximum compatibility  
+  - **Centralized Authentication**: Single authentication manager for all privileged operations
+  - **Improved Error Handling**: Better error messages and authentication failure recovery
+
+### Changed
+
+#### 🚀 **Authentication System Modernization**
+
+- **Elevated Runner Updates** - Completely redesigned privilege escalation system
+  - **New Priority Order**: 1) GUI Auth Manager, 2) Passwordless sudo, 3) GUI sudo with askpass, 4) pkexec fallback, 5) Terminal sudo
+  - **Better Integration**: Seamless integration with existing elevated_run infrastructure
+  - **Performance Improvements**: Reduced authentication overhead through session persistence
+
+- **Component Updates** - Updated all core components to use new authentication system
+  - **Firewall Operations**: All firewall detection and management now uses persistent authentication
+  - **Setup Wizard**: Package installation processes updated for consistent GUI authentication
+  - **Main Window**: Pre-authentication logic modernized with GUI Authentication Manager
+  - **Error Messages**: Updated authentication error messages for better user guidance
+
+### Fixed
+
+#### 🐛 **User Experience Improvements**
+
+- **Multiple Password Prompts**: Eliminated repetitive password requests during scans and updates
+- **Authentication Consistency**: Standardized authentication flow across all application components
+- **Session Interruptions**: Reduced workflow interruptions through persistent authentication sessions
+
+### Technical Details
+
+- **New Components**: `app/core/gui_auth_manager.py` - Comprehensive GUI authentication management
+- **Updated Components**: `elevated_runner.py`, `firewall_detector.py`, `setup_wizard.py`, `main_window.py`
+- **Backward Compatibility**: Full compatibility maintained with systems lacking GUI authentication helpers
+- **Testing**: Comprehensive integration testing validates authentication system reliability
+
 ## [2.9.0] - 2025-08-22
 
 ### Added

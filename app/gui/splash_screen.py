@@ -2,6 +2,13 @@
 """
 Modern Splash Screen for xanadOS Search & Destroy
 Progressive loading with real-time progress tracking (2025)
+
+Features:
+- Official xanadOS Search & Destroy logo display
+- Progressive loading phases with visual feedback
+- Modern dark theme with coral accent colors
+- Smooth animations and professional appearance
+- Fallback handling for missing logo files
 """
 
 import os
@@ -10,6 +17,7 @@ from typing import Optional, Callable
 from PyQt6.QtWidgets import QSplashScreen, QProgressBar, QLabel, QVBoxLayout, QWidget
 from PyQt6.QtCore import Qt, QTimer, pyqtSignal, QThread
 from PyQt6.QtGui import QPixmap, QPainter, QFont, QColor, QPen, QBrush
+from pathlib import Path
 
 class ModernSplashScreen(QSplashScreen):
     """
@@ -52,42 +60,73 @@ class ModernSplashScreen(QSplashScreen):
         self.update_timer.start(16)  # 60 FPS for smooth updates
         
     def create_modern_pixmap(self, width: int, height: int) -> QPixmap:
-        """Create a modern, professional splash screen pixmap."""
+        """Create a modern, professional splash screen pixmap with logo."""
         pixmap = QPixmap(width, height)
         pixmap.fill(QColor(43, 43, 43))  # Dark professional background
         
         painter = QPainter(pixmap)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
         
-        # Draw header with gradient effect
-        header_rect = painter.fontMetrics().boundingRect(0, 0, width, 100, 
-                                                       Qt.AlignmentFlag.AlignCenter, 
-                                                       "xanadOS Search & Destroy")
+        # Load and draw the logo
+        try:
+            # Get the project root directory
+            current_dir = Path(__file__).parent.parent.parent
+            logo_path = current_dir / "packaging" / "icons" / "org.xanados.SearchAndDestroy.png"
+            
+            if logo_path.exists():
+                logo_pixmap = QPixmap(str(logo_path))
+                if not logo_pixmap.isNull():
+                    # Scale logo to appropriate size (64x64 for splash screen)
+                    logo_size = 64
+                    scaled_logo = logo_pixmap.scaled(
+                        logo_size, logo_size, 
+                        Qt.AspectRatioMode.KeepAspectRatio, 
+                        Qt.TransformationMode.SmoothTransformation
+                    )
+                    
+                    # Center the logo horizontally, place it at the top
+                    logo_x = (width - logo_size) // 2
+                    logo_y = 20
+                    painter.drawPixmap(logo_x, logo_y, scaled_logo)
+                    
+                    # Adjust text positions to accommodate logo
+                    title_y_offset = logo_y + logo_size + 20
+                else:
+                    # Fallback if logo can't be loaded
+                    title_y_offset = 50
+            else:
+                # Fallback if logo file doesn't exist
+                title_y_offset = 50
+                
+        except Exception as e:
+            # Fallback if there's any error loading the logo
+            title_y_offset = 50
         
-        # Main title
+        # Main title (adjusted position)
         title_font = QFont("Arial", 24, QFont.Weight.Bold)
         painter.setFont(title_font)
         painter.setPen(QColor(255, 255, 255))  # White text
-        painter.drawText(0, 50, width, 50, Qt.AlignmentFlag.AlignCenter, 
+        painter.drawText(0, title_y_offset, width, 50, Qt.AlignmentFlag.AlignCenter, 
                         "xanadOS Search & Destroy")
         
-        # Subtitle
+        # Subtitle (adjusted position)
         subtitle_font = QFont("Arial", 12)
         painter.setFont(subtitle_font)
         painter.setPen(QColor(224, 224, 224))  # Light gray
-        painter.drawText(0, 100, width, 30, Qt.AlignmentFlag.AlignCenter, 
+        painter.drawText(0, title_y_offset + 50, width, 30, Qt.AlignmentFlag.AlignCenter, 
                         "Advanced Malware Detection & System Protection")
         
-        # Version info
+        # Version info (adjusted position)
         version_font = QFont("Arial", 10)
         painter.setFont(version_font)
         painter.setPen(QColor(229, 115, 115))  # Coral accent
-        painter.drawText(0, 130, width, 20, Qt.AlignmentFlag.AlignCenter, 
+        painter.drawText(0, title_y_offset + 80, width, 20, Qt.AlignmentFlag.AlignCenter, 
                         "Version 2.9.0 - Professional Edition")
         
-        # Draw accent line
+        # Draw accent line (adjusted position)
+        accent_line_y = title_y_offset + 110
         painter.setPen(QPen(QColor(229, 115, 115), 2))
-        painter.drawLine(100, 160, width - 100, 160)
+        painter.drawLine(100, accent_line_y, width - 100, accent_line_y)
         
         painter.end()
         return pixmap

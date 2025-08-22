@@ -78,23 +78,34 @@ class InstallationWorker(QThread):
             success = False
             
             try:
-                # Parse the command properly for shell execution
-                if install_cmd.startswith('pkexec sh -c'):
-                    # Handle shell commands wrapped in pkexec
-                    cmd_parts = ['pkexec', 'sh', '-c']
-                    shell_cmd = install_cmd.split('"')[1]  # Extract the command between quotes
-                    cmd_parts.append(shell_cmd)
-                else:
-                    # Handle simple commands
-                    cmd_parts = install_cmd.split()
+                # Use elevated_run for package installation with GUI authentication
+                from core.elevated_runner import elevated_run
                 
-                # Run command and capture output
-                result = subprocess.run(
-                    cmd_parts,
-                    capture_output=True,
-                    text=True,
-                    timeout=600  # 10 minute timeout for package installation
-                )
+                # Parse the command properly for elevated execution
+                if install_cmd.startswith('pkexec sh -c'):
+                    # Extract shell command from pkexec wrapper
+                    shell_cmd = install_cmd.split('"')[1]  # Extract the command between quotes
+                    # Execute using shell with elevated_run
+                    result = elevated_run(
+                        ["sh", "-c", shell_cmd],
+                        timeout=600,  # 10 minute timeout for package installation
+                        capture_output=True,
+                        text=True,
+                        gui=True
+                    )
+                else:
+                    # Handle simple commands - remove any pkexec prefix
+                    cmd_parts = install_cmd.split()
+                    if cmd_parts[0] == 'pkexec':
+                        cmd_parts = cmd_parts[1:]  # Remove pkexec prefix
+                    
+                    result = elevated_run(
+                        cmd_parts,
+                        timeout=600,
+                        capture_output=True,
+                        text=True,
+                        gui=True
+                    )
                 
                 # Output both stdout and stderr
                 if result.stdout:
@@ -135,8 +146,14 @@ class InstallationWorker(QThread):
                 # Start service if specified
                 if self.package_info.service_name:
                     try:
-                        service_cmd = ["pkexec", "systemctl", "enable", "--now", self.package_info.service_name]
-                        service_result = subprocess.run(service_cmd, capture_output=True, text=True)
+                        self.output_updated.emit(f"Starting service: {self.package_info.service_name}")
+                        service_result = elevated_run(
+                            ["systemctl", "enable", "--now", self.package_info.service_name],
+                            timeout=60,
+                            capture_output=True,
+                            text=True,
+                            gui=True
+                        )
                         if service_result.returncode == 0:
                             self.output_updated.emit(f"Started {self.package_info.service_name} service")
                         else:
@@ -254,15 +271,15 @@ class SetupWizard(QDialog):
                 description='Open-source antivirus engine for detecting trojans, viruses, malware & other malicious threats.',
                 purpose='Core virus scanning and real-time protection capabilities',
                 install_commands={
-                    'arch': 'pkexec sh -c "rm -f /var/lib/pacman/db.lck && pacman -S --noconfirm clamav"',
-                    'ubuntu': 'pkexec sh -c "apt update && apt install -y clamav clamav-daemon"',
-                    'debian': 'pkexec sh -c "apt update && apt install -y clamav clamav-daemon"',
-                    'fedora': 'pkexec dnf install -y clamav clamav-update',
-                    'opensuse': 'pkexec zypper install -y clamav'
+                    'arch': 'sh -c "rm -f /var/lib/pacman/db.lck && pacman -S --noconfirm clamav"',
+                    'ubuntu': 'sh -c "apt update && apt install -y clamav clamav-daemon"',
+                    'debian': 'sh -c "apt update && apt install -y clamav clamav-daemon"',
+                    'fedora': 'dnf install -y clamav clamav-update',
+                    'opensuse': 'zypper install -y clamav'
                 },
                 check_command='clamscan --version',
                 service_name='clamav-daemon',
-                post_install_commands=['pkexec freshclam'],
+                post_install_commands=['freshclam'],
                 is_critical=True
             ),
             'ufw': PackageInfo(
@@ -271,15 +288,15 @@ class SetupWizard(QDialog):
                 description='Uncomplicated Firewall (UFW) provides a user-friendly interface for managing iptables firewall rules.',
                 purpose='Network security and firewall management',
                 install_commands={
-                    'arch': 'pkexec sh -c "rm -f /var/lib/pacman/db.lck && pacman -S --noconfirm ufw"',
-                    'ubuntu': 'pkexec sh -c "apt update && apt install -y ufw"',
-                    'debian': 'pkexec sh -c "apt update && apt install -y ufw"',
-                    'fedora': 'pkexec dnf install -y ufw',
-                    'opensuse': 'pkexec zypper install -y ufw'
+                    'arch': 'sh -c "rm -f /var/lib/pacman/db.lck && pacman -S --noconfirm ufw"',
+                    'ubuntu': 'sh -c "apt update && apt install -y ufw"',
+                    'debian': 'sh -c "apt update && apt install -y ufw"',
+                    'fedora': 'dnf install -y ufw',
+                    'opensuse': 'zypper install -y ufw'
                 },
                 check_command='ufw --version',
                 service_name='ufw',
-                post_install_commands=['pkexec ufw --force enable'],
+                post_install_commands=['ufw --force enable'],
                 is_critical=False
             ),
             'rkhunter': PackageInfo(
@@ -288,17 +305,17 @@ class SetupWizard(QDialog):
                 description='Rootkit Hunter scans for rootkits, backdoors, and possible local exploits on your system.',
                 purpose='Advanced rootkit detection and system integrity checking',
                 install_commands={
-                    'arch': 'pkexec sh -c "rm -f /var/lib/pacman/db.lck && pacman -S --noconfirm rkhunter"',
-                    'ubuntu': 'pkexec sh -c "apt update && apt install -y rkhunter"',
-                    'debian': 'pkexec sh -c "apt update && apt install -y rkhunter"',
-                    'fedora': 'pkexec dnf install -y rkhunter',
-                    'opensuse': 'pkexec zypper install -y rkhunter'
+                    'arch': 'sh -c "rm -f /var/lib/pacman/db.lck && pacman -S --noconfirm rkhunter"',
+                    'ubuntu': 'sh -c "apt update && apt install -y rkhunter"',
+                    'debian': 'sh -c "apt update && apt install -y rkhunter"',
+                    'fedora': 'dnf install -y rkhunter',
+                    'opensuse': 'zypper install -y rkhunter'
                 },
                 check_command='rkhunter --version',
                 post_install_commands=[
-                    'pkexec sh -c "chmod 755 /usr/bin/rkhunter"',
-                    'pkexec /usr/bin/rkhunter --update', 
-                    'pkexec /usr/bin/rkhunter --propupd'
+                    'sh -c "chmod 755 /usr/bin/rkhunter"',
+                    '/usr/bin/rkhunter --update', 
+                    '/usr/bin/rkhunter --propupd'
                 ],
                 is_critical=False
             )
