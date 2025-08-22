@@ -1,0 +1,41 @@
+# Modern Test Suite Requirements
+# Additional dependencies for comprehensive testing
+
+# Core testing framework
+pytest>=8.0.0
+pytest-asyncio>=0.23.0
+pytest-timeout>=2.3.0
+pytest-mock>=3.12.0
+pytest-cov>=4.1.0
+
+# Performance testing
+pytest-benchmark>=4.0.0
+pytest-xdist>=3.5.0  # For parallel test execution
+memory-profiler>=0.61.0
+
+# Security testing
+bandit>=1.7.5  # Security linter
+safety>=3.0.0  # Security vulnerability scanner
+
+# System monitoring
+psutil>=5.9.0
+
+# Development and quality
+black>=23.0.0
+flake8>=6.0.0
+mypy>=1.8.0
+pre-commit>=3.6.0
+
+# GUI testing (for when GUI components are available)
+pytest-qt>=4.2.0
+
+# Async testing
+aiofiles>=23.2.1
+
+# Data handling for tests
+faker>=22.0.0  # For generating test data
+factory-boy>=3.3.0  # For test object factories
+
+# Reporting
+pytest-html>=4.1.1  # HTML test reports
+pytest-json-report>=1.5.0  # JSON test reports

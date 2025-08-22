@@ -29,6 +29,9 @@
         ],
         "files.restoreUndoStack": false,
         "workbench.editor.restoreViewState": false,
+        "workbench.startupEditor": "none",
+        "workbench.editor.enablePreview": false,
+        "files.hotExit": "off",
         "git.autoRepositoryDetection": true,
         "git.autorefresh": true,
         "git.enableScmSourceControl": true
