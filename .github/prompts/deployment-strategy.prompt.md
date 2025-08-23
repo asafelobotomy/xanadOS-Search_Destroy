@@ -426,7 +426,6 @@ jobs:
         run: |
           pip install safety
           safety check --json --output safety-report.json || true
-|---|
 
       - name: Upload security artifacts
         uses: actions/upload-artifact@v3
@@ -493,7 +492,6 @@ jobs:
     runs-on: ubuntu-latest
     needs: build
     if: github.ref == 'refs/heads/develop' || startsWith(github.ref, 'refs/heads/feature/')
-|---|
     environment: development
 
     steps:
@@ -540,7 +538,6 @@ jobs:
     runs-on: ubuntu-latest
     needs: build
     if: github.ref == 'refs/heads/develop' || startsWith(github.ref, 'refs/heads/release/')
-|---|
     environment: staging
 
     steps:
@@ -675,7 +672,6 @@ jobs:
 
           # Remove old blue deployment
           helm uninstall myapp-blue -n myapp-production || true
-|---|
 
           # Rename green to blue for next deployment
           kubectl patch deployment myapp-green \
@@ -1403,7 +1399,6 @@ spec:
 
         successCondition: result[0] >= 0.95 && result[1] <= 500
         failureCondition: result[0] < 0.90 || result[1] > 1000
-|---|
 
   selector:
     matchLabels:

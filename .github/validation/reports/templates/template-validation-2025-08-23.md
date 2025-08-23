@@ -1,6 +1,6 @@
 # Template Validation Report
 
-**Generated**: 2025-08-23T16:21:16.350Z
+**Generated**: 2025-08-23T16:35:21.944Z
 
 ## Executive Summary
 
@@ -19,10 +19,10 @@
 
 ## Performance Metrics
 
-- **Total Validation Time**: 9ms
-- **Average Processing Time**: 0.12ms
+- **Total Validation Time**: 12ms
+- **Average Processing Time**: 0.42ms
 - **Files Processed**: 26
-- **Throughput**: 2888.89 files/second
+- **Throughput**: 2166.67 files/second
 
 ## Recommendations
 
