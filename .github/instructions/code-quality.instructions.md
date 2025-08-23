@@ -602,6 +602,75 @@ if command -v code >/dev/null 2>&1; then
 fi
 
 echo "✅ Code quality tools installation complete!"
+```
+
+## Version Control Integration
+
+### Mandatory Implementation
+
+All GitHub Copilot agents MUST implement comprehensive version control standards as part of code quality requirements. This includes:
+
+#### Git Configuration Standards
+- Conventional commit message templates (`.gitmessage`)
+- Standardized Git aliases for productivity
+- Semantic versioning with `VERSION` file and `CHANGELOG.md`
+- Comprehensive `.gitignore` with project-appropriate patterns
+
+#### CI/CD Quality Gates
+- Automated code quality validation in CI pipeline
+- Security scanning with Trivy and dependency review
+- Markdown linting and link checking integration
+- Automated formatting validation with Prettier
+
+#### Required Workflows
+```bash
+# Implement version control before any code work
+./.github/instructions/version-control.instructions.md
+
+# Validate implementation
+./scripts/validation/validate-version-control.sh
+
+# Use conventional commits
+git commit -m "feat: implement code quality standards
+
+- Add ShellCheck, markdownlint, and Prettier configuration
+- Set up CI/CD workflows with quality gates
+- Configure VS Code workspace for consistent formatting
+- Implement pre-commit hooks for quality validation"
+```
+
+#### Quality Integration Commands
+```bash
+# Combined quality and version control validation
+./scripts/validation/validate-code-quality.sh
+./scripts/validation/validate-version-control.sh
+
+# Git workflow with quality checks
+./scripts/utils/git-workflow.sh feature code-quality-improvements
+```
+
+See `.github/instructions/version-control.instructions.md` for complete implementation details.
+
+## Related Policies
+
+- **Version Control Policy**: `.github/instructions/version-control.instructions.md` - MANDATORY
+- Documentation Policy: `.github/instructions/docs-policy.instructions.md`
+- Archive Management Policy: `.github/instructions/archive-policy.instructions.md`
+- Security Guidelines: `.github/instructions/security.instructions.md`
+- Testing Standards: `.github/instructions/testing.instructions.md`
+
+## Policy Metadata
+
+- **Created**: Current implementation date
+- **Last Updated**: Current date
+- **Version**: 1.1
+- **Next Review**: Quarterly
+- **Enforcement**: Mandatory for all GitHub Copilot agents
+- **Compliance Tracking**: Required in all repository assessments
+
+---
+
+**ENFORCEMENT NOTICE**: This policy is MANDATORY for all GitHub Copilot agents. Non-compliance will result in repository quality issues and additional oversight procedures. All code work must follow these standards without exception. **Version control implementation is a prerequisite for all development work.**
 ```markdown
 
 ## Related Policies

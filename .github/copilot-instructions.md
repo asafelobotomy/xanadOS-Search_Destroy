@@ -86,6 +86,36 @@ cp -r repo-template/* /path/to/your/project/
 3. **Setup Coding Agent**: Deploy `copilot-setup-steps.yml` for automated environment setup
 4. **Validate Installation**: Run validation tests to ensure proper configuration
 
+## 🎯 **MANDATORY: Version Control Implementation**
+
+**ALL GitHub Copilot agents MUST implement industry-standard version control before beginning any development work.** This is a prerequisite for professional development standards.
+
+### Required Implementation Steps:
+
+```bash
+# 1. Implement comprehensive version control system
+# See: .github/instructions/version-control.instructions.md
+
+# 2. Validate 100% compliance
+./scripts/validation/validate-version-control.sh
+
+# 3. Configure git with productivity tools
+git config commit.template .gitmessage
+git config alias.lg "log --color --graph --oneline"
+
+# 4. Use conventional commits for all changes
+git commit -m "feat: implement version control standards"
+```
+
+### Core Requirements:
+- **Git Configuration**: Commit templates, aliases, and pull strategies
+- **Semantic Versioning**: VERSION file and CHANGELOG.md management
+- **CI/CD Workflows**: Automated testing, security scanning, and releases
+- **GitHub Templates**: Pull request and issue templates for collaboration
+- **Quality Gates**: Markdown linting, code formatting, and validation
+
+**Reference**: See `.github/instructions/version-control.instructions.md` for complete implementation guide.
+
 ## 💡 Advanced Prompt Engineering & Best Practices
 
 ### Writing Effective Instructions
