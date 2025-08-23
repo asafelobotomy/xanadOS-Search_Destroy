@@ -1,0 +1,41 @@
+{
+  "chat.promptFiles": true,
+  "chat.commandCenter.enabled": true,
+  "chat.experimental.directModelSelection": true,
+  "files.associations": {
+    "*.chatmode.md": "markdown",
+    "*.prompt.md": "markdown",
+    "*.instructions.md": "markdown"
+  },
+  "markdown.validate.enabled": true,
+  "markdown.validate.fileLinks.enabled": true,
+  "markdown.preview.fontFamily": "-apple-system, BlinkMacSystemFont, 'Segoe WPC', 'Segoe UI', system-ui, 'Ubuntu', 'Droid Sans', sans-serif",
+  "markdown.preview.fontSize": 14,
+  "markdown.preview.lineHeight": 1.6,
+  "github.copilot.enable": {
+    "*": true,
+    "plaintext": true,
+    "markdown": true,
+    "yaml": true,
+    "json": true,
+    "javascript": true,
+    "scminput": false
+  },
+  "github.copilot.chat.localeOverride": "en",
+  "github.copilot.chat.welcomeMessage": "never",
+  "github.copilot.chat.insertionIndicator": true,
+  "workbench.editorAssociations": {
+    "*.chatmode.md": "vscode.markdown.preview.editor",
+    "*.prompt.md": "vscode.markdown.preview.editor",
+    "*.instructions.md": "vscode.markdown.preview.editor"
+  },
+  "files.defaultLanguage": "markdown",
+  "editor.wordWrap": "on",
+  "editor.lineNumbers": "on",
+  "editor.minimap.enabled": false,
+  "editor.rulers": [80, 120],
+  "editor.formatOnSave": true,
+  "files.trimTrailingWhitespace": true,
+  "files.insertFinalNewline": true,
+  "files.trimFinalNewlines": true
+}

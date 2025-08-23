@@ -1,0 +1,35 @@
+{
+  "name": "github-copilot-enhancement-framework",
+  "version": "1.0.0",
+  "description": "Comprehensive GitHub Copilot enhancement framework with validation systems and VS Code integration",
+  "main": "scripts/update-readme.js",
+  "scripts": {
+    "update-readme": "node scripts/update-readme.js",
+    "generate-install-links": "./scripts/generate-install-links.sh",
+    "validate": "node .github/validation/templates/template-validation-system.js",
+    "test": "npm run validate",
+    "lint": "npx markdownlint **/*.md --ignore node_modules",
+    "lint:fix": "npx markdownlint **/*.md --ignore node_modules --fix"
+  },
+  "keywords": [
+    "github-copilot",
+    "vs-code",
+    "ai-assistance",
+    "prompt-engineering",
+    "chat-modes",
+    "instructions",
+    "validation"
+  ],
+  "author": "Your Organization",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/YOUR_ORG/YOUR_REPO.git"
+  },
+  "devDependencies": {
+    "markdownlint-cli": "^0.37.0"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  }
+}

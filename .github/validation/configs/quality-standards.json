@@ -1,0 +1,273 @@
+{
+  "version": "1.0.0",
+  "lastUpdated": "2025-08-22",
+  "description": "Quality standards and scoring criteria for GitHub Copilot instructions",
+  
+  "qualityMetrics": {
+    "overall": {
+      "minimumPassingScore": 0.7,
+      "warningThreshold": 0.8,
+      "excellentThreshold": 0.95,
+      "scoringMethod": "weighted"
+    },
+    
+    "categories": {
+      "structural": {
+        "weight": 0.3,
+        "minimumScore": 0.8,
+        "description": "File organization, naming, and template compliance"
+      },
+      "content": {
+        "weight": 0.4,
+        "minimumScore": 0.7,
+        "description": "Content quality, clarity, and documentation standards"
+      },
+      "integration": {
+        "weight": 0.2,
+        "minimumScore": 0.6,
+        "description": "System integration and compatibility"
+      },
+      "performance": {
+        "weight": 0.1,
+        "minimumScore": 0.8,
+        "description": "Resource efficiency and performance considerations"
+      }
+    }
+  },
+  
+  "scoringCriteria": {
+    "instructionClarity": {
+      "excellent": {
+        "score": 1.0,
+        "criteria": [
+          "Clear, concise language",
+          "Comprehensive examples",
+          "Well-structured sections",
+          "Actionable steps",
+          "Proper code formatting"
+        ]
+      },
+      "good": {
+        "score": 0.8,
+        "criteria": [
+          "Generally clear language",
+          "Some examples provided",
+          "Basic structure present",
+          "Most steps actionable"
+        ]
+      },
+      "fair": {
+        "score": 0.6,
+        "criteria": [
+          "Understandable but could be clearer",
+          "Limited examples",
+          "Basic organization",
+          "Some ambiguous instructions"
+        ]
+      },
+      "poor": {
+        "score": 0.3,
+        "criteria": [
+          "Unclear or confusing language",
+          "No examples",
+          "Poor organization",
+          "Vague instructions"
+        ]
+      }
+    },
+    
+    "codeQuality": {
+      "excellent": {
+        "score": 1.0,
+        "criteria": [
+          "Comprehensive error handling",
+          "Proper documentation",
+          "Clean, readable code",
+          "Appropriate abstractions",
+          "Following best practices"
+        ]
+      },
+      "good": {
+        "score": 0.8,
+        "criteria": [
+          "Basic error handling",
+          "Some documentation",
+          "Generally clean code",
+          "Good structure"
+        ]
+      },
+      "fair": {
+        "score": 0.6,
+        "criteria": [
+          "Minimal error handling",
+          "Limited documentation",
+          "Code works but could be cleaner",
+          "Basic structure"
+        ]
+      },
+      "poor": {
+        "score": 0.3,
+        "criteria": [
+          "No error handling",
+          "No documentation",
+          "Hard to read/understand",
+          "Poor structure"
+        ]
+      }
+    },
+    
+    "mcpCompatibility": {
+      "excellent": {
+        "score": 1.0,
+        "criteria": [
+          "Full MCP protocol implementation",
+          "All required handlers present",
+          "Proper resource management",
+          "Comprehensive tool support",
+          "Error handling and validation"
+        ]
+      },
+      "good": {
+        "score": 0.8,
+        "criteria": [
+          "Basic MCP implementation",
+          "Core handlers present",
+          "Basic resource management",
+          "Some tool support"
+        ]
+      },
+      "fair": {
+        "score": 0.6,
+        "criteria": [
+          "Minimal MCP implementation",
+          "Required handlers only",
+          "Limited functionality"
+        ]
+      },
+      "poor": {
+        "score": 0.3,
+        "criteria": [
+          "Incomplete MCP implementation",
+          "Missing required handlers",
+          "Non-functional"
+        ]
+      }
+    }
+  },
+  
+  "benchmarks": {
+    "responseTime": {
+      "excellent": "< 100ms",
+      "good": "< 500ms",
+      "fair": "< 1000ms",
+      "poor": "> 1000ms"
+    },
+    
+    "fileSize": {
+      "markdown": {
+        "optimal": "< 50KB",
+        "acceptable": "< 100KB",
+        "warning": "< 150KB",
+        "excessive": "> 150KB"
+      },
+      "javascript": {
+        "optimal": "< 100KB",
+        "acceptable": "< 200KB",
+        "warning": "< 300KB",
+        "excessive": "> 300KB"
+      },
+      "json": {
+        "optimal": "< 25KB",
+        "acceptable": "< 50KB",
+        "warning": "< 75KB",
+        "excessive": "> 75KB"
+      }
+    },
+    
+    "complexity": {
+      "cyclomaticComplexity": {
+        "low": "< 10",
+        "moderate": "< 20",
+        "high": "< 30",
+        "extreme": "> 30"
+      },
+      "functionCount": {
+        "optimal": "< 20",
+        "acceptable": "< 40",
+        "warning": "< 60",
+        "excessive": "> 60"
+      }
+    }
+  },
+  
+  "qualityGates": {
+    "development": {
+      "blockingErrors": false,
+      "requiredScore": 0.5,
+      "allowWarnings": true,
+      "maxWarnings": 50
+    },
+    
+    "staging": {
+      "blockingErrors": true,
+      "requiredScore": 0.7,
+      "allowWarnings": true,
+      "maxWarnings": 10
+    },
+    
+    "production": {
+      "blockingErrors": true,
+      "requiredScore": 0.85,
+      "allowWarnings": true,
+      "maxWarnings": 3
+    }
+  },
+  
+  "improvementRecommendations": {
+    "automated": {
+      "enabled": true,
+      "categories": [
+        "structural",
+        "content",
+        "integration",
+        "performance"
+      ],
+      "prioritization": "impact",
+      "maxRecommendations": 10
+    },
+    
+    "templates": {
+      "lowClarity": "Consider breaking down complex sentences and adding more examples to improve clarity.",
+      "missingExamples": "Add practical code examples to demonstrate usage and implementation.",
+      "poorStructure": "Reorganize content with clear headings and logical flow.",
+      "missingDocumentation": "Add comprehensive documentation including purpose, usage, and limitations.",
+      "performanceIssues": "Optimize for better performance by implementing caching and rate limiting.",
+      "integrationProblems": "Ensure proper MCP protocol implementation and error handling."
+    }
+  },
+  
+  "reporting": {
+    "includeScores": true,
+    "includeRecommendations": true,
+    "includeTrends": true,
+    "includeComparisons": false,
+    
+    "formats": {
+      "json": {
+        "enabled": true,
+        "detailed": true,
+        "includeRawData": false
+      },
+      "markdown": {
+        "enabled": true,
+        "includeCharts": false,
+        "includeDetails": true
+      },
+      "html": {
+        "enabled": false,
+        "interactive": true,
+        "includeCharts": true
+      }
+    }
+  }
+}

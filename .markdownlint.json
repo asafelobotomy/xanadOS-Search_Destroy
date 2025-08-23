@@ -1,0 +1,101 @@
+{
+  "default": true,
+  "MD001": true,
+  "MD003": {
+    "style": "atx"
+  },
+  "MD004": {
+    "style": "dash"
+  },
+  "MD007": {
+    "indent": 2
+  },
+  "MD009": {
+    "br_spaces": 2,
+    "list_item_empty_lines": false,
+    "strict": false
+  },
+  "MD010": {
+    "spaces_per_tab": 2
+  },
+  "MD012": {
+    "maximum": 1
+  },
+  "MD013": {
+    "line_length": 100,
+    "heading_line_length": 100,
+    "code_block_line_length": 100,
+    "code_blocks": true,
+    "tables": false,
+    "headings": true,
+    "strict": false,
+    "stern": false
+  },
+  "MD022": {
+    "lines_above": 1,
+    "lines_below": 1
+  },
+  "MD024": {
+    "allow_different_nesting": true
+  },
+  "MD025": {
+    "front_matter_title": "^\\s*title\\s*[:=]"
+  },
+  "MD026": {
+    "punctuation": ".,;:!。，；：！"
+  },
+  "MD029": {
+    "style": "ordered"
+  },
+  "MD030": {
+    "ul_single": 1,
+    "ol_single": 1,
+    "ul_multi": 1,
+    "ol_multi": 1
+  },
+  "MD031": true,
+  "MD032": true,
+  "MD033": {
+    "allowed_elements": ["br", "sub", "sup", "kbd", "details", "summary"]
+  },
+  "MD034": true,
+  "MD035": {
+    "style": "---"
+  },
+  "MD036": {
+    "punctuation": ".,;:!?。，；：！？"
+  },
+  "MD037": true,
+  "MD038": {
+    "code_block_style": "fenced"
+  },
+  "MD039": true,
+  "MD040": true,
+  "MD041": {
+    "front_matter_title": "^\\s*title\\s*[:=]"
+  },
+  "MD042": true,
+  "MD043": false,
+  "MD044": {
+    "names": ["JavaScript", "TypeScript", "GitHub", "VS Code", "Docker", "Node.js"],
+    "code_blocks": false,
+    "html_elements": false
+  },
+  "MD045": true,
+  "MD046": {
+    "style": "fenced"
+  },
+  "MD047": true,
+  "MD048": {
+    "style": "backtick"
+  },
+  "MD049": {
+    "style": "underscore"
+  },
+  "MD050": {
+    "style": "asterisk"
+  },
+  "MD051": true,
+  "MD052": true,
+  "MD053": true
+}

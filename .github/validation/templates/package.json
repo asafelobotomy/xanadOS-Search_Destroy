@@ -1,0 +1,38 @@
+{
+  "name": "template-validation-system",
+  "version": "1.0.0",
+  "description": "Comprehensive template validation system for GitHub Copilot instruction enhancements",
+  "type": "module",
+  "main": "template-validation-system.js",
+  "scripts": {
+    "validate": "node template-validation-system.js",
+    "test": "node --test test/",
+    "lint": "eslint *.js",
+    "format": "prettier --write *.js"
+  },
+  "keywords": [
+    "github-copilot",
+    "template-validation",
+    "content-standards",
+    "integration-testing",
+    "quality-assurance"
+  ],
+  "author": "GitHub Copilot Enhancement Team",
+  "license": "MIT",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.0"
+  },
+  "devDependencies": {
+    "eslint": "^8.50.0",
+    "prettier": "^3.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "files": [
+    "template-validation-system.js",
+    "schemas/",
+    "test/",
+    "README.md"
+  ]
+}

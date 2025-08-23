@@ -1,0 +1,213 @@
+{
+  "mcpServers": {
+    "documentation": {
+      "confluence-mcp": {
+        "command": "node",
+        "args": ["./servers/confluence-mcp/index.js"],
+        "env": {
+          "CONFLUENCE_URL": "${CONFLUENCE_URL}",
+          "CONFLUENCE_USERNAME": "${CONFLUENCE_USERNAME}",
+          "CONFLUENCE_API_TOKEN": "${CONFLUENCE_API_TOKEN}"
+        },
+        "capabilities": [
+          "resources",
+          "tools"
+        ],
+        "description": "Real-time access to Confluence documentation and pages",
+        "version": "1.0.0",
+        "enabled": true,
+        "rateLimit": {
+          "requests": 100,
+          "window": "1h"
+        }
+      },
+      "github-docs-mcp": {
+        "command": "node",
+        "args": ["./servers/github-docs-mcp/index.js"],
+        "env": {
+          "GITHUB_TOKEN": "${GITHUB_TOKEN}",
+          "GITHUB_ORG": "${GITHUB_ORG}"
+        },
+        "capabilities": [
+          "resources",
+          "tools"
+        ],
+        "description": "Access to GitHub repository documentation and READMEs",
+        "version": "1.0.0",
+        "enabled": true,
+        "rateLimit": {
+          "requests": 200,
+          "window": "1h"
+        }
+      },
+      "api-docs-mcp": {
+        "command": "node",
+        "args": ["./servers/api-docs-mcp/index.js"],
+        "env": {
+          "SWAGGER_URLS": "${SWAGGER_URLS}",
+          "POSTMAN_API_KEY": "${POSTMAN_API_KEY}"
+        },
+        "capabilities": [
+          "resources",
+          "tools"
+        ],
+        "description": "OpenAPI/Swagger documentation and API specification access",
+        "version": "1.0.0",
+        "enabled": true,
+        "rateLimit": {
+          "requests": 150,
+          "window": "1h"
+        }
+      }
+    },
+    "development": {
+      "github-status-mcp": {
+        "command": "node",
+        "args": ["./servers/github-status-mcp/index.js"],
+        "env": {
+          "GITHUB_TOKEN": "${GITHUB_TOKEN}",
+          "GITHUB_ORG": "${GITHUB_ORG}",
+          "WEBHOOK_SECRET": "${GITHUB_WEBHOOK_SECRET}"
+        },
+        "capabilities": [
+          "resources",
+          "tools",
+          "notifications"
+        ],
+        "description": "Real-time GitHub Actions, PR status, and repository information",
+        "version": "1.0.0",
+        "enabled": true,
+        "rateLimit": {
+          "requests": 300,
+          "window": "1h"
+        }
+      },
+      "jira-mcp": {
+        "command": "node",
+        "args": ["./servers/jira-mcp/index.js"],
+        "env": {
+          "JIRA_URL": "${JIRA_URL}",
+          "JIRA_USERNAME": "${JIRA_USERNAME}",
+          "JIRA_API_TOKEN": "${JIRA_API_TOKEN}",
+          "JIRA_PROJECT_KEY": "${JIRA_PROJECT_KEY}"
+        },
+        "capabilities": [
+          "resources",
+          "tools"
+        ],
+        "description": "JIRA ticket information and project management data",
+        "version": "1.0.0",
+        "enabled": true,
+        "rateLimit": {
+          "requests": 200,
+          "window": "1h"
+        }
+      },
+      "monitoring-mcp": {
+        "command": "node",
+        "args": ["./servers/monitoring-mcp/index.js"],
+        "env": {
+          "PROMETHEUS_URL": "${PROMETHEUS_URL}",
+          "GRAFANA_URL": "${GRAFANA_URL}",
+          "GRAFANA_API_KEY": "${GRAFANA_API_KEY}",
+          "DATADOG_API_KEY": "${DATADOG_API_KEY}",
+          "DATADOG_APP_KEY": "${DATADOG_APP_KEY}"
+        },
+        "capabilities": [
+          "resources",
+          "tools"
+        ],
+        "description": "Real-time application and infrastructure monitoring data",
+        "version": "1.0.0",
+        "enabled": true,
+        "rateLimit": {
+          "requests": 500,
+          "window": "1h"
+        }
+      }
+    },
+    "knowledge": {
+      "stackoverflow-mcp": {
+        "command": "node",
+        "args": ["./servers/stackoverflow-mcp/index.js"],
+        "env": {
+          "STACKOVERFLOW_API_KEY": "${STACKOVERFLOW_API_KEY}",
+          "STACKOVERFLOW_TAGS": "${STACKOVERFLOW_TAGS}"
+        },
+        "capabilities": [
+          "resources",
+          "tools"
+        ],
+        "description": "Stack Overflow answers and programming solutions",
+        "version": "1.0.0",
+        "enabled": true,
+        "rateLimit": {
+          "requests": 100,
+          "window": "1h"
+        }
+      },
+      "code-search-mcp": {
+        "command": "node",
+        "args": ["./servers/code-search-mcp/index.js"],
+        "env": {
+          "GITHUB_TOKEN": "${GITHUB_TOKEN}",
+          "SOURCEGRAPH_URL": "${SOURCEGRAPH_URL}",
+          "SOURCEGRAPH_TOKEN": "${SOURCEGRAPH_TOKEN}"
+        },
+        "capabilities": [
+          "resources",
+          "tools"
+        ],
+        "description": "Code search across repositories and codebases",
+        "version": "1.0.0",
+        "enabled": true,
+        "rateLimit": {
+          "requests": 200,
+          "window": "1h"
+        }
+      },
+      "dependency-mcp": {
+        "command": "node",
+        "args": ["./servers/dependency-mcp/index.js"],
+        "env": {
+          "NPM_REGISTRY_URL": "${NPM_REGISTRY_URL}",
+          "PYPI_API_URL": "${PYPI_API_URL}",
+          "SNYK_TOKEN": "${SNYK_TOKEN}"
+        },
+        "capabilities": [
+          "resources",
+          "tools"
+        ],
+        "description": "Package dependency information and security advisories",
+        "version": "1.0.0",
+        "enabled": true,
+        "rateLimit": {
+          "requests": 250,
+          "window": "1h"
+        }
+      }
+    }
+  },
+  "globalConfig": {
+    "timeout": 30000,
+    "retryAttempts": 3,
+    "retryDelay": 1000,
+    "enableLogging": true,
+    "logLevel": "info",
+    "cacheEnabled": true,
+    "cacheTTL": 300,
+    "healthCheckInterval": 60000,
+    "maxConcurrentRequests": 10
+  },
+  "security": {
+    "enableAuthentication": true,
+    "requireHttps": true,
+    "allowedOrigins": [
+      "https://github.com",
+      "https://*.github.com",
+      "https://copilot.github.com"
+    ],
+    "rateLimitingEnabled": true,
+    "auditLogging": true
+  }
+}

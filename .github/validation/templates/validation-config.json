@@ -1,0 +1,250 @@
+{
+  "$schema": "./validation-config.schema.json",
+  "validation": {
+    "enabled": true,
+    "strictMode": false,
+    "reportFormat": "both",
+    "outputDirectory": ".github/validation/reports/templates"
+  },
+  "templates": {
+    "searchPaths": [
+      ".github/chatmodes",
+      ".github/prompts",
+      ".github/mcp",
+      ".github/validation"
+    ],
+    "fileExtensions": [".md", ".json"],
+    "excludePatterns": [
+      "**/node_modules/**",
+      "**/reports/**",
+      "**/.git/**",
+      "**/test/**"
+    ]
+  },
+  "schemas": {
+    "chatMode": {
+      "requiredSections": [
+        "title",
+        "description",
+        "role",
+        "responseStyle",
+        "examples",
+        "constraints"
+      ],
+      "optionalSections": [
+        "context",
+        "limitations",
+        "usage",
+        "variables"
+      ],
+      "structure": {
+        "title": {
+          "pattern": "^# .+",
+          "required": true,
+          "description": "Main title of the chat mode"
+        },
+        "description": {
+          "pattern": "## (?:Description|Overview)",
+          "required": true,
+          "description": "Overview of the chat mode purpose"
+        },
+        "role": {
+          "pattern": "## (?:Role|Character|Persona)",
+          "required": true,
+          "description": "Definition of the assistant's role"
+        },
+        "responseStyle": {
+          "pattern": "## (?:Response Style|Communication)",
+          "required": true,
+          "description": "How the assistant should communicate"
+        },
+        "examples": {
+          "pattern": "## (?:Examples?|Sample)",
+          "required": true,
+          "description": "Sample interactions"
+        },
+        "constraints": {
+          "pattern": "## (?:Constraints|Limitations|Guidelines)",
+          "required": true,
+          "description": "Boundaries and limitations"
+        }
+      }
+    },
+    "prompt": {
+      "requiredSections": [
+        "title",
+        "description",
+        "usage",
+        "parameters",
+        "examples",
+        "output"
+      ],
+      "optionalSections": [
+        "prerequisites",
+        "limitations",
+        "variations",
+        "related"
+      ],
+      "structure": {
+        "title": {
+          "pattern": "^# .+",
+          "required": true,
+          "description": "Main title of the prompt"
+        },
+        "description": {
+          "pattern": "## (?:Description|Overview|Purpose)",
+          "required": true,
+          "description": "Purpose and overview of the prompt"
+        },
+        "usage": {
+          "pattern": "## (?:Usage|How to Use)",
+          "required": true,
+          "description": "Instructions for using the prompt"
+        },
+        "parameters": {
+          "pattern": "## (?:Parameters|Arguments|Variables)",
+          "required": true,
+          "description": "Input parameters and variables"
+        },
+        "examples": {
+          "pattern": "## (?:Examples?|Sample)",
+          "required": true,
+          "description": "Usage examples"
+        },
+        "output": {
+          "pattern": "## (?:Output|Result|Response)",
+          "required": true,
+          "description": "Expected output format"
+        }
+      }
+    },
+    "mcpServer": {
+      "requiredSections": [
+        "title",
+        "description",
+        "installation",
+        "configuration",
+        "usage",
+        "api"
+      ],
+      "optionalSections": [
+        "examples",
+        "troubleshooting",
+        "development",
+        "testing"
+      ],
+      "structure": {
+        "title": {
+          "pattern": "^# .+",
+          "required": true,
+          "description": "MCP server name and title"
+        },
+        "description": {
+          "pattern": "## (?:Description|Overview)",
+          "required": true,
+          "description": "Server purpose and capabilities"
+        },
+        "installation": {
+          "pattern": "## (?:Installation|Setup)",
+          "required": true,
+          "description": "Installation instructions"
+        },
+        "configuration": {
+          "pattern": "## (?:Configuration|Config)",
+          "required": true,
+          "description": "Configuration options"
+        },
+        "usage": {
+          "pattern": "## (?:Usage|Getting Started)",
+          "required": true,
+          "description": "How to use the server"
+        },
+        "api": {
+          "pattern": "## (?:API|Interface|Methods)",
+          "required": true,
+          "description": "API methods and interface"
+        }
+      }
+    },
+    "documentation": {
+      "requiredSections": [
+        "title",
+        "overview",
+        "content"
+      ],
+      "optionalSections": [
+        "tableOfContents",
+        "prerequisites",
+        "examples",
+        "references"
+      ],
+      "structure": {
+        "title": {
+          "pattern": "^# .+",
+          "required": true,
+          "description": "Document title"
+        },
+        "overview": {
+          "pattern": "## (?:Overview|Introduction)",
+          "required": true,
+          "description": "Document overview"
+        },
+        "content": {
+          "pattern": "## .+",
+          "required": true,
+          "multiple": true,
+          "description": "Main content sections"
+        }
+      }
+    }
+  },
+  "contentStandards": {
+    "accessibility": {
+      "enabled": true,
+      "minimumScore": 0.8,
+      "checkAltText": true,
+      "checkHeadingHierarchy": true,
+      "checkLinkText": true
+    },
+    "formatting": {
+      "enabled": true,
+      "minimumScore": 0.8,
+      "checkCodeBlocks": true,
+      "checkLists": true,
+      "checkTables": true
+    },
+    "style": {
+      "enabled": true,
+      "minimumScore": 0.7,
+      "maxSentenceLength": 25,
+      "maxPassiveVoiceRatio": 0.3,
+      "checkTerminology": true
+    },
+    "internationalization": {
+      "enabled": true,
+      "minimumScore": 0.8,
+      "checkDateFormats": true,
+      "checkCurrencySymbols": true,
+      "checkUnits": true
+    }
+  },
+  "integration": {
+    "enabled": true,
+    "testMCPServers": true,
+    "testChatModes": true,
+    "testTemplateGeneration": true,
+    "testEndToEndWorkflows": true,
+    "timeout": 30000
+  },
+  "performance": {
+    "enabled": true,
+    "maxProcessingTime": 100,
+    "minThroughput": 5
+  },
+  "reporting": {
+    "includeDetails": true,
+    "includeRecommendations": true,
+    "includePerformanceMetrics": true,
+    "generateSummary": true
+  }
+}
