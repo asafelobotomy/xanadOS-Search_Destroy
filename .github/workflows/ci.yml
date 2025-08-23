@@ -19,7 +19,7 @@ jobs:
     strategy:
       matrix:
         node-version: [18, 20]
-        
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -174,22 +174,22 @@ jobs:
           script: |
             const { owner, repo } = context.repo;
             const pr_number = context.payload.pull_request.number;
-            
+
             const comment = `## 🔍 CI/CD Results
-            
+
             ✅ Template validation completed
-            ✅ Security scan completed  
+            ✅ Security scan completed
             ✅ Markdown lint completed
             ✅ Link validation completed
-            
+
             Your pull request has passed all automated checks!
-            
+
             **Next Steps:**
             - Ensure all required approvals are obtained
             - Verify manual testing is complete
             - Check that documentation is updated
             `;
-            
+
             github.rest.issues.createComment({
               owner,
               repo,

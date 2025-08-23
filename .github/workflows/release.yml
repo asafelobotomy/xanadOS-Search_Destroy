@@ -37,9 +37,9 @@ jobs:
           else
             VERSION="${{ github.ref_name }}"
           fi
-          
+
           echo "version=${VERSION}" >> $GITHUB_OUTPUT
-          
+
           if [[ $VERSION =~ -[a-zA-Z] ]]; then
             echo "is_prerelease=true" >> $GITHUB_OUTPUT
           else
@@ -118,7 +118,7 @@ jobs:
           # Extract changelog section for this version
           VERSION=${{ needs.validate-version.outputs.version }}
           sed -n "/## \[${VERSION#v}\]/,/## \[/p" CHANGELOG.md | head -n -1 > release_notes.md
-          
+
           if [ ! -s release_notes.md ]; then
             echo "## Changes in $VERSION" > release_notes.md
             echo "" >> release_notes.md
