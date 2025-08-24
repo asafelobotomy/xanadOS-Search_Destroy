@@ -420,6 +420,80 @@ def get_gpu_memory_percent():
     return None
 ```markdown
 
+## 🛠️ Automated Debugging Tools Integration
+
+### Pre-Built Debugging and Monitoring Tools
+
+Before creating custom debugging scripts, GitHub Copilot agents MUST use the
+comprehensive debugging and monitoring tools available in the toolshed:
+
+#### Performance Monitoring and Profiling
+
+```bash
+# Comprehensive performance monitoring and profiling
+./scripts/tools/monitoring/performance-monitor.sh --duration 300
+./scripts/tools/monitoring/performance-monitor.sh --benchmark --report-only
+./scripts/tools/monitoring/performance-monitor.sh --help  # View all options
+```
+
+#### Security and Vulnerability Analysis
+
+```bash
+# Security scanning for debugging security-related issues
+./scripts/tools/security/security-scan.sh --all
+./scripts/tools/security/security-scan.sh --secrets-only  # Credential leak detection
+```
+
+#### Container Debugging
+
+```bash
+# Docker container debugging and optimization
+./scripts/tools/containers/docker-manager.sh --health-check
+./scripts/tools/containers/docker-manager.sh --logs --container app
+```
+
+#### Database Health and Debugging
+
+```bash
+# Database debugging and health monitoring
+./scripts/tools/database/database-manager.sh --health-check --type postgresql
+./scripts/tools/database/database-manager.sh --performance-analysis --type mysql
+```
+
+#### Dependency Analysis
+
+```bash
+# Dependency conflict and vulnerability debugging
+./scripts/tools/dependencies/dependency-manager.sh --audit
+./scripts/tools/dependencies/dependency-manager.sh --conflict-analysis
+```
+
+#### Repository Structure Validation
+
+```bash
+# Repository structure and quality debugging
+./scripts/tools/validation/validate-structure.sh --verbose
+./scripts/tools/quality/check-quality.sh --debug --fix
+```
+
+### Tool Benefits for Debugging
+
+- **Comprehensive Coverage**: Multi-system monitoring and analysis
+- **Automated Detection**: Proactive issue identification before they become problems
+- **Performance Profiling**: Resource usage analysis and optimization recommendations
+- **Security Analysis**: Vulnerability detection and credential leak prevention
+- **Health Monitoring**: Real-time system health assessment and alerting
+
+### Integration with Debugging Workflow
+
+1. **System Health Check**: Start with `performance-monitor.sh` and `validate-structure.sh`
+2. **Security Analysis**: Use `security-scan.sh` for security-related debugging
+3. **Dependency Issues**: Run `dependency-manager.sh --audit` for package conflicts
+4. **Container Problems**: Use `docker-manager.sh --health-check` for containerized apps
+5. **Database Issues**: Apply `database-manager.sh --health-check` for data problems
+
+**Reference**: See `scripts/tools/README.md` for complete debugging tool catalog.
+
 ## 🎯 Best Practices Summary
 
 ### Development Workflow Integration

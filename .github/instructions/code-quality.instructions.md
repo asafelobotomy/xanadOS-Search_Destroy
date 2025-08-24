@@ -604,25 +604,78 @@ fi
 echo "✅ Code quality tools installation complete!"
 ```
 
+## Automated Quality Tools Integration
+
+### Pre-Built Quality Automation
+
+GitHub Copilot agents MUST use the comprehensive quality tools available in the
+toolshed before creating custom quality scripts:
+
+#### Quality Management Tool
+
+```bash
+# Comprehensive quality checking with auto-fix capabilities
+./scripts/tools/quality/check-quality.sh --check markdown --fix
+./scripts/tools/quality/check-quality.sh --format json --report quality.json
+./scripts/tools/quality/check-quality.sh --help  # View all options
+```
+
+#### Pre-Commit Quality Gates
+
+```bash
+# Setup comprehensive pre-commit hooks with quality validation
+./scripts/tools/hooks/setup-pre-commit.sh --languages python,javascript
+./scripts/tools/hooks/setup-pre-commit.sh --security-scanning --dry-run
+```
+
+#### Integration with Repository Management
+
+```bash
+# Repository structure validation with quality checks
+./scripts/tools/validation/validate-structure.sh --category quality
+./scripts/tools/validation/validate-structure.sh --json --output results.json
+```
+
+### Tool Benefits
+
+- **Consistent Standards**: All quality tools follow the same interface patterns
+- **Multi-Language Support**: Automated detection and validation for various languages
+- **Auto-Fix Capabilities**: Automatic correction of common quality issues
+- **Comprehensive Reporting**: JSON and human-readable output formats
+- **CI/CD Integration**: Ready for automated pipeline integration
+
+### Usage Priority
+
+1. **First**: Use existing quality tools from `scripts/tools/quality/`
+2. **Second**: Extend existing tools with new language support
+3. **Third**: Create new tools following established patterns
+4. **Never**: Recreate functionality that exists in the toolshed
+
+**Reference**: See `scripts/tools/README.md` for complete quality tool documentation.
+
 ## Version Control Integration
 
 ### Mandatory Implementation
 
-All GitHub Copilot agents MUST implement comprehensive version control standards as part of code quality requirements. This includes:
+All GitHub Copilot agents MUST implement comprehensive version control standards
+as part of code quality requirements. This includes:
 
 #### Git Configuration Standards
+
 - Conventional commit message templates (`.gitmessage`)
 - Standardized Git aliases for productivity
 - Semantic versioning with `VERSION` file and `CHANGELOG.md`
 - Comprehensive `.gitignore` with project-appropriate patterns
 
 #### CI/CD Quality Gates
+
 - Automated code quality validation in CI pipeline
 - Security scanning with Trivy and dependency review
 - Markdown linting and link checking integration
 - Automated formatting validation with Prettier
 
 #### Required Workflows
+
 ```bash
 # Implement version control before any code work
 ./.github/instructions/version-control.instructions.md
@@ -640,6 +693,7 @@ git commit -m "feat: implement code quality standards
 ```
 
 #### Quality Integration Commands
+
 ```bash
 # Combined quality and version control validation
 ./scripts/validation/validate-code-quality.sh
@@ -670,7 +724,10 @@ See `.github/instructions/version-control.instructions.md` for complete implemen
 
 ---
 
-**ENFORCEMENT NOTICE**: This policy is MANDATORY for all GitHub Copilot agents. Non-compliance will result in repository quality issues and additional oversight procedures. All code work must follow these standards without exception. **Version control implementation is a prerequisite for all development work.**
+**ENFORCEMENT NOTICE**: This policy is MANDATORY for all GitHub Copilot agents.
+Non-compliance will result in repository quality issues and additional oversight
+procedures. All code work must follow these standards without exception.
+**Version control implementation is a prerequisite for all development work.**
 ```markdown
 
 ## Related Policies
@@ -691,4 +748,6 @@ See `.github/instructions/version-control.instructions.md` for complete implemen
 
 ---
 
-**ENFORCEMENT NOTICE**: This policy is MANDATORY for all GitHub Copilot agents. Non-compliance will result in repository quality issues and additional oversight procedures. All code work must follow these standards without exception.
+**ENFORCEMENT NOTICE**: This policy is MANDATORY for all GitHub Copilot agents.
+Non-compliance will result in repository quality issues and additional oversight
+procedures. All code work must follow these standards without exception.

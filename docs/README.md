@@ -20,7 +20,9 @@ enterprise-grade system for AI-assisted development.
 - 🏢 [**Organization Setup**](guides/organization-custom-instructions.md) -
   Enterprise deployment
 - 🔗 [**VS Code Integration**](guides/INSTALL_LINKS.md) - Extension installation
-- �️ [**Project Structure**](guides/PROJECT_STRUCTURE.md) - Repository organization
+- 🏗️ [**Project Structure**](guides/PROJECT_STRUCTURE.md) - Repository organization
+- 🛠️ [**Toolshed Reference**](guides/TOOLSHED-REFERENCE.md) - Quick tool lookup
+- 📚 [**Documentation Reference**](guides/DOCUMENTATION-REFERENCE.md) - Documentation awareness guide
 
 ## � Framework Components
 

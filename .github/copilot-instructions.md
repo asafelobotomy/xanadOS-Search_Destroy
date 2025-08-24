@@ -2,9 +2,72 @@
 
 *A comprehensive, enterprise-grade GitHub Copilot instruction system for organizations*
 
+## � **CRITICAL: Mandatory Agent Workflow - READ FIRST**
+
+**🛑 STOP! Before taking ANY action, ALL GitHub Copilot agents MUST follow the systematic workflow defined in `.github/instructions/agent-workflow.instructions.md`**
+
+### **⚡ MANDATORY Pre-Action Workflow:**
+
+1. **📚 DISCOVERY PHASE** - Read ALL relevant instructions first
+2. **🔍 ANALYSIS PHASE** - Understand requirements and constraints
+3. **✅ VALIDATION PHASE** - Verify planned actions against policies
+4. **🎯 EXECUTION PHASE** - Execute with full compliance
+5. **🔄 VERIFICATION PHASE** - Confirm successful completion
+
+**Key Principle**: **Quality over Speed - Check First, Act Second**
+
+```bash
+# MANDATORY: Run before ANY action
+find .github/instructions/ -name "*.instructions.md" | sort
+cat .github/instructions/file-organization.instructions.md  # File placement policy
+cat .github/instructions/agent-workflow.instructions.md    # Systematic workflow
+```
+
+**📋 Complete Workflow Guide**: `.github/instructions/agent-workflow.instructions.md`
+
+---
+
+## �🛠️ **IMPORTANT: Pre-Built Toolshed Available**
+
+**🚨 BEFORE CREATING ANY SCRIPTS OR TOOLS, CHECK THE TOOLSHED FIRST! 🚨**
+
+This repository includes a **comprehensive toolshed** of pre-built, tested scripts in `scripts/tools/`. **Always use these existing tools instead of recreating functionality.**
+
+### ⚡ Essential Tools Ready for Immediate Use:
+
+- **`scripts/tools/git/setup-repository.sh`** - Complete Git repository setup with industry standards
+- **`scripts/tools/validation/validate-structure.sh`** - Repository structure validation (97% compliance)
+- **`scripts/tools/quality/check-quality.sh`** - Code quality checking with auto-fix capabilities
+- **`scripts/tools/implement-toolshed.sh`** - Deploy complete toolshed to new repositories
+
+**📖 Full Tool Catalog**: See `scripts/tools/README.md` for complete list of 20+ available tools
+
+**🎯 Usage Pattern**: `./scripts/tools/[category]/[tool-name].sh --help`
+
+---
+
+## 📚 **IMPORTANT: Comprehensive Documentation Repository Available**
+
+**🚨 BEFORE CREATING ANY DOCUMENTATION, CHECK THE DOCS REPOSITORY FIRST! 🚨**
+
+This repository includes a **comprehensive documentation system** in `/docs/` with enterprise-grade organization. **Always use existing documentation instead of creating redundant content.**
+
+### 📖 Essential Documentation Ready for Immediate Use:
+
+- **`/docs/guides/ENHANCEMENTS.md`** - Complete framework features and capabilities overview
+- **`/docs/guides/PROJECT_STRUCTURE.md`** - Repository organization and structure guide
+- **`/docs/guides/organization-custom-instructions.md`** - Enterprise deployment and setup
+- **`/docs/guides/model-targeting-guide.md`** - Advanced AI model targeting (GPT-5, Claude, Gemini)
+
+**📚 Full Documentation Index**: See `/docs/README.md` for complete documentation catalog
+
+**🎯 Usage Pattern**: `cat /docs/guides/[topic-guide].md` or `ls /docs/guides/`
+
+---
+
 ## 🎯 Project Mission
 
-This repository provides a **comprehensive GitHub Copilot enhancement framework** that enables organizations to create, validate, and deploy custom Copilot instructions at scale. The framework includes advanced chat modes, reusable prompts, comprehensive validation systems, and enterprise automation tools designed to maximize GitHub Copilot's effectiveness across development teams.
+This repository provides a **comprehensive GitHub Copilot enhancement framework** that enables organizations to create, validate, and deploy custom Copilot instructions at scale. The framework includes advanced chat modes, reusable prompts, comprehensive validation systems, enterprise automation tools, and a **complete toolshed of reusable scripts** designed to maximize GitHub Copilot's effectiveness across development teams.
 
 **Key Benefits:**
 - 📈 **55% faster coding** with optimized prompt engineering
@@ -85,6 +148,65 @@ cp -r repo-template/* /path/to/your/project/
 2. **Configure Chat Modes**: Copy relevant `.chatmode.md` files to your project
 3. **Setup Coding Agent**: Deploy `copilot-setup-steps.yml` for automated environment setup
 4. **Validate Installation**: Run validation tests to ensure proper configuration
+
+## 🧰 **GitHub Copilot Agent Toolshed**
+
+### **⚠️ CRITICAL: Always Check Toolshed Before Creating Scripts**
+
+The `scripts/tools/` directory contains a comprehensive collection of **pre-built, battle-tested tools** that GitHub Copilot agents should use instead of recreating functionality. This "handyman's toolshed" approach ensures consistency, reliability, and efficiency.
+
+### **🔧 Core Tool Categories**
+
+1. **Git Automation** (`scripts/tools/git/`)
+   - Repository setup and configuration
+   - Branch management and workflows
+   - Release automation and tagging
+
+2. **Validation & Quality** (`scripts/tools/validation/`, `scripts/tools/quality/`)
+   - Repository structure validation
+   - Code quality checking and auto-fixing
+   - Instruction file validation
+
+3. **Repository Management** (`scripts/tools/repository/`)
+   - Backup and archiving systems
+   - File organization and cleanup
+   - Migration utilities
+
+4. **Documentation** (`scripts/tools/documentation/`)
+   - Automated documentation generation
+   - README and changelog maintenance
+   - API documentation tools
+
+### **🎯 Agent Usage Guidelines**
+
+**DO:**
+- ✅ Check `scripts/tools/README.md` for available tools
+- ✅ Use existing tools: `./scripts/tools/[category]/[tool].sh --help`
+- ✅ Extend existing tools when needed
+- ✅ Follow established patterns for new tools
+
+**DON'T:**
+- ❌ Recreate functionality that exists in the toolshed
+- ❌ Write custom scripts without checking for existing solutions
+- ❌ Ignore the standardized tool interfaces and patterns
+
+### **🚀 Quick Tool Reference**
+
+```bash
+# Repository setup (instead of manual Git configuration)
+./scripts/tools/git/setup-repository.sh
+
+# Validation (instead of writing custom checks)
+./scripts/tools/validation/validate-structure.sh
+
+# Quality assurance (instead of manual code review)
+./scripts/tools/quality/check-quality.sh --fix
+
+# Deploy toolshed to new repositories
+./scripts/tools/implement-toolshed.sh
+```
+
+**📚 Complete Documentation**: `scripts/tools/README.md`
 
 ## 🎯 **MANDATORY: Version Control Implementation**
 

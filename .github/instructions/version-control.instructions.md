@@ -210,7 +210,7 @@ jobs:
     strategy:
       matrix:
         node-version: [18, 20]
-        
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -322,9 +322,9 @@ jobs:
           else
             VERSION="${{ github.ref_name }}"
           fi
-          
+
           echo "version=${VERSION}" >> $GITHUB_OUTPUT
-          
+
           if [[ $VERSION =~ -[a-zA-Z] ]]; then
             echo "is_prerelease=true" >> $GITHUB_OUTPUT
           else
@@ -345,7 +345,7 @@ jobs:
         run: |
           VERSION=${{ needs.validate-version.outputs.version }}
           sed -n "/## \[${VERSION#v}\]/,/## \[/p" CHANGELOG.md | head -n -1 > release_notes.md
-          
+
           if [ ! -s release_notes.md ]; then
             echo "## Changes in $VERSION" > release_notes.md
             echo "" >> release_notes.md
@@ -547,25 +547,25 @@ print_error() {
 # Create feature branch
 create_feature_branch() {
     local feature_name="$1"
-    
+
     if [ -z "$feature_name" ]; then
         print_error "Feature name is required"
         echo "Usage: $0 feature <feature-name>"
         exit 1
     fi
-    
+
     local branch_name="feature/$feature_name"
-    
+
     print_status "Creating feature branch: $branch_name"
-    
+
     # Ensure we're on main and it's up to date
     git checkout "$DEFAULT_BRANCH"
     git pull origin "$DEFAULT_BRANCH"
-    
+
     # Create and switch to feature branch
     git checkout -b "$branch_name"
     print_success "Created and switched to $branch_name"
-    
+
     # Set up tracking
     git push -u origin "$branch_name" || true
 }
@@ -649,14 +649,14 @@ print_status() {
 # Check required files
 check_required_files() {
     print_status "Checking required version control files..."
-    
+
     local required_files=(
         ".gitignore"
         ".gitmessage"
         "CHANGELOG.md"
         "VERSION"
     )
-    
+
     for file in "${required_files[@]}"; do
         if [ -f "$file" ]; then
             print_success "Required file exists: $file"
@@ -669,13 +669,13 @@ check_required_files() {
 # Check GitHub workflows
 check_github_workflows() {
     print_status "Checking GitHub Actions workflows..."
-    
+
     if [ -f ".github/workflows/ci.yml" ]; then
         print_success "CI workflow exists"
     else
         print_failure "CI workflow missing"
     fi
-    
+
     if [ -f ".github/workflows/release.yml" ]; then
         print_success "Release workflow exists"
     else
@@ -694,10 +694,10 @@ generate_report() {
     echo -e "Passed: ${GREEN}$CHECKS_PASSED${NC}"
     echo -e "Failed: ${RED}$CHECKS_FAILED${NC}"
     echo ""
-    
+
     local pass_percentage=$((CHECKS_PASSED * 100 / TOTAL_CHECKS))
     echo "Pass Rate: $pass_percentage%"
-    
+
     if [ $CHECKS_FAILED -eq 0 ]; then
         echo -e "${GREEN}✓ All version control standards met!${NC}"
     else
@@ -709,10 +709,10 @@ generate_report() {
 main() {
     echo "Version Control Standards Validator"
     echo ""
-    
+
     check_required_files
     check_github_workflows
-    
+
     generate_report
 }
 
@@ -724,19 +724,34 @@ chmod +x scripts/validation/validate-version-control.sh
 
 ## 🔄 **Implementation Workflow**
 
-### **Step 1: Initialize Version Control**
+### **Step 1: Use Automated Git Setup Tools**
+
+Before manual configuration, check for existing automated setup tools:
+
+```bash
+# Use pre-built Git automation tools from toolshed
+./scripts/tools/git/setup-repository.sh --help
+./scripts/tools/git/setup-repository.sh --dry-run
+./scripts/tools/git/workflow-helper.sh --help
+```
+
+### **Step 2: Initialize Version Control**
+
 ```bash
 # Run this command to implement all version control standards
 ./scripts/utils/implement-version-control.sh
 ```
 
-### **Step 2: Validate Implementation**
+### **Step 3: Validate Implementation**
+
 ```bash
-# Verify all standards are met
+# Verify all standards are met using automated validation
 ./scripts/validation/validate-version-control.sh
+./scripts/tools/validation/validate-structure.sh --category git
 ```
 
-### **Step 3: Initial Commit**
+### **Step 4: Initial Commit**
+
 ```bash
 # Stage all version control files
 git add .
@@ -771,7 +786,7 @@ All commits MUST follow this format:
 
 ### **Commit Types:**
 - `feat`: New features
-- `fix`: Bug fixes  
+- `fix`: Bug fixes
 - `docs`: Documentation changes
 - `style`: Code formatting (no logic changes)
 - `refactor`: Code restructuring (no new features or fixes)

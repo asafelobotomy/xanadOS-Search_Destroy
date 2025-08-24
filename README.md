@@ -4,6 +4,58 @@
 
 *Quality Score: **98.9%** | Enterprise Excellence Level | Production Ready*
 
+## 🛠️ **IMPORTANT: Ready-to-Use Toolshed Available**
+
+**⚡ This repository includes a complete toolshed of pre-built scripts that GitHub Copilot agents should ALWAYS use instead of recreating functionality.**
+
+### 🔧 **Essential Tools for Immediate Use:**
+
+```bash
+# Repository setup with industry standards (instead of manual setup)
+./scripts/tools/git/setup-repository.sh
+
+# Comprehensive validation (instead of custom checks)
+./scripts/tools/validation/validate-structure.sh
+
+# Code quality with auto-fix (instead of manual review)
+./scripts/tools/quality/check-quality.sh --fix
+
+# Deploy complete toolshed to any repository
+./scripts/tools/implement-toolshed.sh
+```
+
+**📖 Complete Tool Catalog**: `scripts/tools/README.md` (20+ tools across 6 categories)
+
+**🎯 Always check the toolshed first!** Avoid recreating existing functionality.
+
+## 📚 **IMPORTANT: Comprehensive Documentation Repository**
+
+**📖 This repository includes a complete documentation system in `/docs/` that
+GitHub Copilot agents should ALWAYS use instead of creating redundant
+documentation.**
+
+### 📖 **Essential Documentation for Immediate Use:**
+
+```bash
+# Framework overview and capabilities (instead of creating new guides)
+cat /docs/guides/ENHANCEMENTS.md
+
+# Repository structure documentation (instead of custom structure docs)
+cat /docs/guides/PROJECT_STRUCTURE.md
+
+# Enterprise deployment guide (instead of setup instructions)
+cat /docs/guides/organization-custom-instructions.md
+
+# AI model targeting guide (instead of model-specific docs)
+cat /docs/guides/model-targeting-guide.md
+```
+
+**📚 Complete Documentation Index**: `/docs/README.md` (6+ guides, templates, reports)
+
+**🎯 Always check existing documentation first!** Avoid recreating content.
+
+---
+
 ## 🎯 What This Repository Does
 
 This framework transforms your GitHub Copilot experience by providing:
@@ -12,6 +64,7 @@ This framework transforms your GitHub Copilot experience by providing:
 - **7 Professional Prompt Templates** - Reusable, battle-tested prompts for common scenarios
 - **Path-Specific Instructions** - Advanced targeting with `applyTo` frontmatter for file-specific guidance
 - **Enterprise Validation System** - Comprehensive quality assurance with automated testing
+- **Complete Script Toolshed** - 20+ pre-built tools for common development tasks
 - **Advanced Model Support** - Optimized for GitHub Copilot 2025, GPT-5, Claude Sonnet 4, and Gemini Pro
 
 ## 🏗️ Repository Structure
