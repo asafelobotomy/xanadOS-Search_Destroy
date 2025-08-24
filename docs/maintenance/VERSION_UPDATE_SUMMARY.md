@@ -25,7 +25,7 @@ The version has been updated from **2.9.0** to **2.10.0** following [Semantic Ve
 #### Version References
 - ✅ `VERSION` file: `2.9.0` → `2.10.0`
 - ✅ `app/__init__.py`: Fallback version updated
-- ✅ `app/core/automatic_updates.py`: Fallback version updated  
+- ✅ `app/core/automatic_updates.py`: Fallback version updated
 - ✅ `app/gui/main_window.py`: Fallback version updated
 
 #### Documentation

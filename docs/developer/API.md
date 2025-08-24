@@ -2,7 +2,7 @@
 
 This document provides comprehensive API documentation for the xanadOS-Search_Destroy application (S&D - Search & Destroy).
 
-**Version**: 2.7.0  
+**Version**: 2.7.0
 **Updated**: August 19, 2025
 
 ## Core Modules

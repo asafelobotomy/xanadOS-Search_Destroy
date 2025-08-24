@@ -13,13 +13,13 @@ class MyDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
         self._apply_theme()  # Manual call required
-    
+
     def _apply_theme(self):
         # 50+ lines of color definitions and styling
-        bg = "#1a1a1a" if theme == "dark" else "#ffffff" 
+        bg = "#1a1a1a" if theme == "dark" else "#ffffff"
         # ... hundreds of lines of manual styling
         self.setStyleSheet(f"background-color: {bg}; ...")
-        
+
     def show_message(self):
         # Manual message box theming
         msg = QMessageBox(self)
@@ -33,7 +33,7 @@ class MyDialog(ThemedDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
         # That's it! Theme automatically applied
-        
+
     def show_message(self):
         # Themed message box with one line
         self.show_themed_message_box("information", "Title", "Message")
@@ -65,7 +65,7 @@ class MyDialog(ThemedDialog):
 "dark": {
     "colors": {
         "background": "#1a1a1a",
-        "primary_text": "#FFCDAA", 
+        "primary_text": "#FFCDAA",
         "accent": "#F14666",
         "success": "#9CB898",
         # ... comprehensive color palette
@@ -140,7 +140,7 @@ class MyDialog(ThemedDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
         # Automatically themed!
-        
+
         # Get theme colors for custom styling
         accent = self.get_theme_color("accent")
         self.special_widget.setStyleSheet(f"border: 2px solid {accent};")
@@ -163,7 +163,7 @@ class MyCustomWidget(ThemedWidget):
     def _apply_theme(self):
         """Override for custom theme logic."""
         super()._apply_theme()
-        
+
         # Custom theming that responds to theme changes
         bg = self.get_theme_color("secondary_bg")
         border = self.get_theme_color("border")
@@ -191,8 +191,8 @@ For converting existing dialogs:
    ```python
    # Before
    class MyDialog(QDialog):
-   
-   # After  
+
+   # After
    class MyDialog(ThemedDialog):
    ```
 
@@ -208,7 +208,7 @@ For converting existing dialogs:
    ```python
    # Before
    QMessageBox.information(self, "Title", "Message")
-   
+
    # After
    self.show_themed_message_box("information", "Title", "Message")
    ```
@@ -280,7 +280,7 @@ color = "#F14666"  # Hardcoded
 # Good
 class MyDialog(ThemedDialog):
 
-# Avoid  
+# Avoid
 class MyDialog(QDialog):
 ```
 
@@ -298,7 +298,7 @@ QMessageBox.warning(self, "Title", "Message")
 def _apply_theme(self):
     """Custom theme application."""
     super()._apply_theme()  # Always call super first
-    
+
     # Your custom logic here
     self.update_custom_styling()
 ```
@@ -308,7 +308,7 @@ def _apply_theme(self):
 The centralized theming system transforms theme management from a manual, error-prone process into an automatic, consistent system. This architectural improvement provides:
 
 - **85% reduction** in theme-related code
-- **Zero manual intervention** for new components  
+- **Zero manual intervention** for new components
 - **Consistent appearance** across all dialogs
 - **Easy maintenance** and theme customization
 - **Better developer experience** and productivity

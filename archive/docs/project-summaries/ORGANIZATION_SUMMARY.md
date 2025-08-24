@@ -17,7 +17,7 @@ This file documents the organization changes made to the xanadOS-Search_Destroy 
 ### High-Priority Features Implemented
 1. **✅ Dependencies Updated** - CVE-2025-20128 addressed
 2. **✅ CI/CD Pipeline** - GitHub Actions workflows
-3. **✅ Rate Limiting** - Comprehensive throttling system  
+3. **✅ Rate Limiting** - Comprehensive throttling system
 4. **✅ Telemetry System** - Privacy-focused analytics
 5. **✅ Configuration Updates** - Extended config system
 6. **✅ Makefile** - Complete development workflow
@@ -29,7 +29,7 @@ xanadOS-Search_Destroy/
 ├── .github/               # GitHub workflows (CI/CD automation)
 ├── app/                   # Main application code
 │   ├── core/             # Core functionality modules
-│   ├── gui/              # User interface components  
+│   ├── gui/              # User interface components
 │   ├── monitoring/       # System monitoring modules
 │   └── utils/            # Utility functions
 ├── archive/              # Archived and deprecated files

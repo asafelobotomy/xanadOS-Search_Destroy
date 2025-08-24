@@ -6,7 +6,7 @@ Based on comprehensive review of Flathub requirements and common rejection reaso
 
 ### ✅ **Fixed Critical Issues:**
 
-1. **Application ID Domain Control** 
+1. **Application ID Domain Control**
    - Changed from `org.xanados.SearchAndDestroy` to `io.github.asafelobotomy.SearchAndDestroy`
    - Uses GitHub-based ID which is verifiable and follows Flathub requirements
 
@@ -35,7 +35,7 @@ Based on comprehensive review of Flathub requirements and common rejection reaso
 ### ✅ **Previously Fixed Issues (from first review):**
 
 - Runtime version updated to 24.08
-- Using PyQt BaseApp for dependencies  
+- Using PyQt BaseApp for dependencies
 - Added portal support for file access
 - Updated screenshot URLs to use specific tags
 - Removed unnecessary flathub.json file
@@ -46,7 +46,7 @@ Based on comprehensive review of Flathub requirements and common rejection reaso
 ```
 io.github.asafelobotomy.SearchAndDestroy/
 ├── io.github.asafelobotomy.SearchAndDestroy.yml        # Main manifest
-├── io.github.asafelobotomy.SearchAndDestroy.metainfo.xml  # AppStream metadata  
+├── io.github.asafelobotomy.SearchAndDestroy.metainfo.xml  # AppStream metadata
 └── io.github.asafelobotomy.SearchAndDestroy.desktop     # Desktop entry
 ```
 

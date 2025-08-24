@@ -33,7 +33,7 @@ This document summarizes all changes made for the xanadOS-Search_Destroy v2.3.0 
 - **Impact**: Unified report management across all scan types
 - **User Benefit**: Single action clears all scan history
 
-### 2. Advanced RKHunter Progress Tracking System  
+### 2. Advanced RKHunter Progress Tracking System
 **Files Modified**: `app/gui/main_window.py`, `app/gui/rkhunter_components.py`
 - **Enhancement**: Real-time progress tracking based on actual scan output parsing
 - **Features**:
@@ -153,7 +153,7 @@ This document summarizes all changes made for the xanadOS-Search_Destroy v2.3.0 
 Version 2.3.0 represents a significant enhancement to the xanadOS-Search_Destroy project, focusing on:
 
 1. **Professional User Experience**: Enhanced visual feedback and progress tracking
-2. **Robust Architecture**: Improved state management and conflict resolution  
+2. **Robust Architecture**: Improved state management and conflict resolution
 3. **Unified Functionality**: Streamlined report management across all scan types
 4. **Technical Excellence**: Better coordination between components and error handling
 

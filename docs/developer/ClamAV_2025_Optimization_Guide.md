@@ -72,7 +72,7 @@ ExitOnOOM yes
 ### 4. Smart File Filtering (2025 Research-Based)
 ```python
 # High-Priority File Types (Always Scan)
-HIGH_RISK = ['.exe', '.scr', '.bat', '.cmd', '.com', '.pif', '.vbs', 
+HIGH_RISK = ['.exe', '.scr', '.bat', '.cmd', '.com', '.pif', '.vbs',
              '.js', '.jar', '.zip', '.rar', '.7z', '.doc', '.pdf']
 
 # Skip in Quick Scan (Low Risk)
@@ -81,7 +81,7 @@ SKIP_QUICK = ['.png', '.jpg', '.mp3', '.mp4', '.txt', '.md', '.json']
 # Size Limits (2025 Standards)
 LIMITS = {
     'media_files': '200MB',
-    'archive_files': '500MB', 
+    'archive_files': '500MB',
     'quick_scan': '50MB'
 }
 ```
@@ -211,7 +211,7 @@ security_status = wrapper.apply_2025_security_hardening()
 
 ### Performance Gains
 - **Quick Scans**: 80-90% faster
-- **Full System Scans**: 50-70% faster  
+- **Full System Scans**: 50-70% faster
 - **Memory Usage**: 25-40% reduction
 - **CPU Efficiency**: 60% better utilization
 

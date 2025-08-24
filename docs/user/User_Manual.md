@@ -11,17 +11,17 @@
 **S&D (Search & Destroy)** is a powerful, user-friendly security application designed specifically for Linux systems. It combines multiple security tools into one elegant interface to protect your computer from:
 
 - **🦠 Viruses & Malware** - Traditional computer viruses and malicious software
-- **🕷️ Rootkits** - Hidden threats that can compromise your entire system  
+- **🕷️ Rootkits** - Hidden threats that can compromise your entire system
 - **🔓 Security Vulnerabilities** - Weaknesses that attackers could exploit
 - **📂 Suspicious Files** - Unknown or potentially harmful files
 
 ### Why Choose S&D?
 
-✅ **Easy to Use** - Simple, modern interface that anyone can understand  
-✅ **Powerful Protection** - Professional-grade security with ClamAV + RKHunter  
-✅ **Real-time Monitoring** - Continuous protection while you work  
-✅ **No Performance Impact** - Lightweight design that won't slow down your computer  
-✅ **Open Source** - Transparent, community-driven security you can trust  
+✅ **Easy to Use** - Simple, modern interface that anyone can understand
+✅ **Powerful Protection** - Professional-grade security with ClamAV + RKHunter
+✅ **Real-time Monitoring** - Continuous protection while you work
+✅ **No Performance Impact** - Lightweight design that won't slow down your computer
+✅ **Open Source** - Transparent, community-driven security you can trust
 
 ---
 
@@ -73,9 +73,9 @@ S&D has a clean, tabbed interface with six main sections:
 S&D offers three types of scans, each designed for different needs:
 
 ### 🚀 Quick Scan (Recommended for Daily Use)
-**What it does:** Scans your personal files and common threat locations  
-**How long:** 2-10 minutes  
-**Best for:** Daily security checks, new file verification  
+**What it does:** Scans your personal files and common threat locations
+**How long:** 2-10 minutes
+**Best for:** Daily security checks, new file verification
 
 **When to use:**
 - After downloading files from the internet
@@ -83,9 +83,9 @@ S&D offers three types of scans, each designed for different needs:
 - Quick verification after installing new software
 
 ### 🔍 Full System Scan (Weekly Deep Clean)
-**What it does:** Scans your entire computer, including system files  
-**How long:** 30-90 minutes  
-**Best for:** Comprehensive security auditing  
+**What it does:** Scans your entire computer, including system files
+**How long:** 30-90 minutes
+**Best for:** Comprehensive security auditing
 
 **When to use:**
 - Weekly thorough security check
@@ -93,9 +93,9 @@ S&D offers three types of scans, each designed for different needs:
 - Before important system updates or backups
 
 ### ⚙️ Custom Directory Scan (Targeted Analysis)
-**What it does:** Scans only the folders you choose  
-**How long:** Varies by selection  
-**Best for:** Checking specific files or directories  
+**What it does:** Scans only the folders you choose
+**How long:** Varies by selection
+**Best for:** Checking specific files or directories
 
 **When to use:**
 - Scanning external USB drives or downloads
@@ -123,7 +123,7 @@ RKHunter is a specialized tool for detecting these hidden threats:
 3. **Watch the progress** - RKHunter performs 14 different security checks
 4. **Review results** with easy-to-understand color coding:
    - 🟢 **Green** = Clean/Safe
-   - 🟡 **Yellow** = Warning/Suspicious  
+   - 🟡 **Yellow** = Warning/Suspicious
    - 🔴 **Red** = Threat detected
 
 > 🔐 **Why Password Required?** RKHunter needs administrator access to check system-level security. This is normal and secure.
@@ -260,7 +260,7 @@ Think of quarantine as a **secure jail** for suspicious files. Files in quaranti
 - **Notifications**: Enable all (stay informed)
 - **System Tray**: Enable (run in background)
 
-#### 🔍 Scan Settings  
+#### 🔍 Scan Settings
 - **Default Scan Type**: Quick Scan
 - **Automatic Updates**: Daily (keep definitions current)
 - **Scheduled Scans**: Enable weekly full scans
@@ -368,7 +368,7 @@ Think of quarantine as a **secure jail** for suspicious files. Files in quaranti
 **When you need assistance:**
 
 1. **📖 Check this manual** - Most answers are here
-2. **🔍 Search online** - Many users have similar questions  
+2. **🔍 Search online** - Many users have similar questions
 3. **📝 Check log files** - Often contain helpful error details
 4. **💬 Community forums** - Ask experienced users
 5. **🐛 Report bugs** - Help improve S&D for everyone
@@ -386,19 +386,19 @@ Think of quarantine as a **secure jail** for suspicious files. Files in quaranti
 
 ### What Makes a File Dangerous?
 
-**🦠 Viruses** - Code that spreads by infecting other files  
-**🐴 Trojans** - Legitimate-looking programs that hide malicious functions  
-**🕷️ Rootkits** - Deep system infections that hide their presence  
-**🎣 Phishing** - Fake programs that steal passwords and personal info  
-**💣 Ransomware** - Malware that encrypts your files and demands payment  
+**🦠 Viruses** - Code that spreads by infecting other files
+**🐴 Trojans** - Legitimate-looking programs that hide malicious functions
+**🕷️ Rootkits** - Deep system infections that hide their presence
+**🎣 Phishing** - Fake programs that steal passwords and personal info
+**💣 Ransomware** - Malware that encrypts your files and demands payment
 
 ### How S&D Protects You
 
-**🔍 Signature Detection** - Recognizes known threats by their "fingerprints"  
-**🧠 Heuristic Analysis** - Identifies suspicious behavior patterns  
-**🌐 Cloud Intelligence** - Uses global threat data for latest protections  
-**⚡ Real-time Monitoring** - Catches threats as they appear  
-**🔒 Safe Quarantine** - Isolates threats without damaging evidence  
+**🔍 Signature Detection** - Recognizes known threats by their "fingerprints"
+**🧠 Heuristic Analysis** - Identifies suspicious behavior patterns
+**🌐 Cloud Intelligence** - Uses global threat data for latest protections
+**⚡ Real-time Monitoring** - Catches threats as they appear
+**🔒 Safe Quarantine** - Isolates threats without damaging evidence
 
 ### Building Security Awareness
 
@@ -450,7 +450,7 @@ Think of quarantine as a **secure jail** for suspicious files. Files in quaranti
 
 **🛡️ Building a Complete Security Strategy:**
 1. **S&D** for malware protection and system scanning
-2. **Firewall** for network protection  
+2. **Firewall** for network protection
 3. **Regular Updates** for patch management
 4. **Backups** for data protection and recovery
 5. **User Education** for social engineering protection
@@ -486,7 +486,7 @@ Think of quarantine as a **secure jail** for suspicious files. Files in quaranti
 
 **🚨 If You Suspect Active Infection:**
 1. **Disconnect from internet** (prevent data theft)
-2. **Run immediate Full System Scan** 
+2. **Run immediate Full System Scan**
 3. **Follow scan recommendations** (usually quarantine)
 4. **Do NOT enter passwords** until system is clean
 5. **Contact security expert** if unsure about results
@@ -502,14 +502,14 @@ Think of quarantine as a **secure jail** for suspicious files. Files in quaranti
 
 *This manual is your complete guide to protecting your Linux system with S&D - Search & Destroy. Keep it handy for reference, and remember: when in doubt about security, it's always better to be cautious!*
 
-**📞 Need More Help?**  
-- 📖 Additional documentation: `/docs/` folder in your S&D installation  
-- 🌐 Online community: Visit our GitHub page for discussions and updates  
-- 🐛 Bug reports: Help us improve S&D by reporting issues you encounter  
+**📞 Need More Help?**
+- 📖 Additional documentation: `/docs/` folder in your S&D installation
+- 🌐 Online community: Visit our GitHub page for discussions and updates
+- 🐛 Bug reports: Help us improve S&D by reporting issues you encounter
 
 **🔄 Stay Updated:** This manual is updated with each S&D release. Check for updates regularly to stay current with new features and security improvements.
 
 ---
 
-*Last Updated: August 22, 2025 - Version 2.9.0*  
+*Last Updated: August 22, 2025 - Version 2.9.0*
 *Thank you for choosing S&D - Search & Destroy for your Linux security needs!*

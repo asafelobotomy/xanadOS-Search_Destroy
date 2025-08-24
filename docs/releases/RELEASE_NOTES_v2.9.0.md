@@ -237,6 +237,6 @@ This comprehensive testing framework represents a significant investment in the 
 
 **Full Changelog**: https://github.com/asafelobotomy/xanadOS-Search_Destroy/compare/v2.8.0...v2.9.0
 
-**Release Date**: August 22, 2025  
-**Version**: 2.9.0  
+**Release Date**: August 22, 2025
+**Version**: 2.9.0
 **Type**: Major Feature Release

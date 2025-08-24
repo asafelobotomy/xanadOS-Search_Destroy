@@ -20,7 +20,7 @@ This release introduces a comprehensive first-time setup system that significant
 
 - **Security Component Installation**: One-click installation of essential tools
   - **ClamAV**: Antivirus scanning and real-time protection
-  - **UFW**: Uncomplicated Firewall for network security  
+  - **UFW**: Uncomplicated Firewall for network security
   - **RKHunter**: Rootkit detection and system integrity checking
 
 - **GUI Integration**: Seamlessly integrated into the main application
@@ -63,7 +63,7 @@ class SetupWizard(QDialog):
     # Main wizard class with distribution detection
     # Package installation management
     # GUI integration with themed widgets
-    
+
 class InstallationWorker(QThread):
     # Background thread for package installation
     # Real-time progress reporting
@@ -138,7 +138,7 @@ This release contains significant local development that needs to be pushed to G
 
 ---
 
-**Release Engineer**: GitHub Copilot  
-**Release Date**: August 20, 2025  
-**Build Status**: Local development (pending GitHub sync)  
+**Release Engineer**: GitHub Copilot
+**Release Date**: August 20, 2025
+**Build Status**: Local development (pending GitHub sync)
 **Semantic Version**: 2.8.0 (MINOR increment for new features)

@@ -5,7 +5,7 @@
 You were absolutely right! I had updated the theme manager's font definitions, but the main application header was using **hardcoded font sizing** instead of the global theme styling.
 
 ### 🚫 **The Problem:**
-- **Main Window**: Used hardcoded `title_font.setPointSize(18)` 
+- **Main Window**: Used hardcoded `title_font.setPointSize(18)`
 - **Theme Showcase**: Used hardcoded `font-size: 28px` in inline styles
 - **Result**: Theme manager's larger `header_size` was ignored
 
@@ -33,7 +33,7 @@ QLabel#appTitle {
 ### 📏 **Font Sizes Now Applied Globally:**
 
 - **🌙 Dark Theme**: `appTitle` and `headerTitle` = **28px** (was 18px)
-- **🌞 Light Theme**: `appTitle` and `headerTitle` = **28px** (was 18px)  
+- **🌞 Light Theme**: `appTitle` and `headerTitle` = **28px** (was 18px)
 - **🔍 High Contrast**: `appTitle` and `headerTitle` = **32px** (was 18px)
 
 ### 🔄 **How the Global System Works:**
@@ -56,7 +56,7 @@ QLabel#appTitle {
 ### ✨ **Benefits of Global Styling:**
 
 - ✅ **Consistent**: All headers use the same sizing system
-- ✅ **Theme-Aware**: Different sizes for different themes  
+- ✅ **Theme-Aware**: Different sizes for different themes
 - ✅ **Maintainable**: Change once in theme manager, applies everywhere
 - ✅ **Accessible**: High contrast theme gets larger text automatically
 

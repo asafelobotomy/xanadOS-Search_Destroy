@@ -77,6 +77,25 @@ temp/
 .envrc
 .direnv/
 
+# Secrets and keys (security)
+*.pem
+*.key
+*.keystore
+*.p12
+*.pfx
+secrets/
+secrets.*
+config.json
+credentials.json
+id_rsa
+id_dsa
+id_ecdsa
+id_ed25519
+ssh_config
+*_secret*
+*secret*
+*.asc
+
 # Backup files
 *.backup
 *.bak
@@ -105,3 +124,20 @@ archive/*.staging
 # Test output
 test-results/
 test-output/
+
+# Python virtual environments
+.venv/
+venv/
+ENV/
+env/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Python build artifacts
+build/
+dist/
+*.egg-info/
+pip-wheel-metadata/
+*.egg

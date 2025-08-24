@@ -4,7 +4,7 @@
 A new setting has been added to the Settings > Interface section that allows users to customize the text alignment in scan results. Users can now choose between three alignment options:
 
 - **Left Aligned**: Text aligns to the left side
-- **Centered**: Text is centered (default behavior) 
+- **Centered**: Text is centered (default behavior)
 - **Right Aligned**: Text aligns to the right side
 
 ## Implementation Details

@@ -77,7 +77,7 @@ The application could run multiple instances simultaneously, which could lead to
 ## Testing Results
 
 ✅ **First Instance**: Starts normally and acquires lock
-✅ **Second Instance**: Detects existing instance and exits gracefully  
+✅ **Second Instance**: Detects existing instance and exits gracefully
 ✅ **Window Restoration**: Successfully brings existing window to front
 ✅ **Cleanup**: Properly releases locks when application exits
 ✅ **Restart**: Can start new instance after previous one exits

@@ -25,7 +25,7 @@ The issue was in `app/gui/main_window.py` in the `handle_detailed_scan_progress(
    # This check only prevented adding to tracking list
    if current_file not in self._scan_directories_info[current_dir]["clean_files"]:
        self._scan_directories_info[current_dir]["clean_files"].append(current_file)
-   
+
    # But this display always happened, causing duplicates
    if scan_result == "clean":
        self._append_with_autoscroll(f"    ✅ {current_file}")
@@ -63,7 +63,7 @@ if not file_already_displayed:
 ```
 
 ## Files Modified
-- **app/gui/main_window.py**: 
+- **app/gui/main_window.py**:
   - Enhanced `handle_detailed_scan_progress()` method
   - Added duplicate detection logic for file display
   - Modified file display to be conditional based on duplicate status

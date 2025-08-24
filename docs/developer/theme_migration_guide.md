@@ -11,28 +11,28 @@ from pathlib import Path
 
 def migrate_dialog_files():
     """Convert all dialog files to use the new theming system."""
-    
+
     gui_dir = Path(__file__).parent
-    
+
     # Files to update
     dialog_files = [
         "all_warnings_dialog.py",
-        "rkhunter_components.py", 
+        "rkhunter_components.py",
         "update_components.py",
         # Add other dialog files as needed
     ]
-    
+
     for file_name in dialog_files:
         file_path = gui_dir / file_name
         if not file_path.exists():
             continue
-            
+
         print(f"Migrating {file_name}...")
-        
+
         # Read file content
         with open(file_path, 'r', encoding='utf-8') as f:
             content = f.read()
-        
+
         # Add import for ThemedDialog
         if "from .themed_widgets import" not in content:
             # Find the last PyQt6 import
@@ -40,17 +40,17 @@ def migrate_dialog_files():
             match = re.search(import_pattern, content, re.DOTALL)
             if match:
                 insertion_point = match.end()
-                content = (content[:insertion_point] + 
+                content = (content[:insertion_point] +
                           '\nfrom .themed_widgets import ThemedDialog, ThemedWidget' +
                           content[insertion_point:])
-        
+
         # Replace QDialog inheritance with ThemedDialog
         content = re.sub(
             r'class (\w+)\(QDialog\):',
             r'class \1(ThemedDialog):',
             content
         )
-        
+
         # Remove manual theme application methods
         content = re.sub(
             r'def _apply_theme\(self.*?\n(?:.*?\n)*?.*?(?=\n    def|\nclass|\Z)',
@@ -58,24 +58,24 @@ def migrate_dialog_files():
             content,
             flags=re.DOTALL
         )
-        
+
         # Replace QMessageBox calls with themed versions
         content = re.sub(
             r'QMessageBox\.(information|warning|critical|question)\(',
             r'self.show_themed_message_box("\1", ',
             content
         )
-        
+
         # Write back the modified content
         with open(file_path, 'w', encoding='utf-8') as f:
             f.write(content)
-        
+
         print(f"✓ Migrated {file_name}")
 
 
 def create_theme_usage_guide():
     """Create a guide for developers on using the new theming system."""
-    
+
     guide_content = """# Theme System Usage Guide
 
 ## Overview
@@ -158,7 +158,7 @@ from .theme_manager import set_app_theme
 # Change to light theme
 set_app_theme("light")
 
-# Change to dark theme  
+# Change to dark theme
 set_app_theme("dark")
 ```
 
@@ -170,7 +170,7 @@ class MyThemedWidget(ThemedWidget):
     def _apply_theme(self):
         """Override this method for custom theme application."""
         super()._apply_theme()
-        
+
         # Your custom theming logic here
         custom_color = self.get_theme_color("accent")
         self.setStyleSheet(f"border: 2px solid {custom_color};")
@@ -185,18 +185,18 @@ class MyThemedWidget(ThemedWidget):
 
 ## Migration from Old System
 1. Replace `QDialog` with `ThemedDialog`
-2. Replace `QWidget` with `ThemedWidget` 
+2. Replace `QWidget` with `ThemedWidget`
 3. Remove manual `_apply_theme()` methods
 4. Replace `QMessageBox` calls with `show_themed_message_box()`
 5. Use `get_theme_color()` instead of hardcoded colors
 
 The new system handles everything automatically!
 """
-    
+
     guide_path = Path(__file__).parent / "THEME_SYSTEM_GUIDE.md"
     with open(guide_path, 'w', encoding='utf-8') as f:
         f.write(guide_content)
-    
+
     print(f"✓ Created theme usage guide: {guide_path}")
 
 

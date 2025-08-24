@@ -95,7 +95,7 @@ def _configure_combo_box_styling(self, combo_box):
         # Configure view properties
         view.setProperty("showDropIndicator", False)
         view.setAlternatingRowColors(False)
-        
+
         # Remove native frame styling
         frame = view.parent()
         if frame and hasattr(frame, 'setFrameStyle'):

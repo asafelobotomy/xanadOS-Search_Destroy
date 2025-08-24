@@ -15,7 +15,7 @@
 
 ### Code Locations:
 - **Header Quick Scan Button**: `app/gui/main_window.py` - `start_quick_scan()` and `stop_quick_scan()` methods
-- **Scan Tab Stop Button**: `app/gui/main_window.py` - `stop_scan()` method  
+- **Scan Tab Stop Button**: `app/gui/main_window.py` - `stop_scan()` method
 - **Scan Completion Handler**: `app/gui/main_window.py` - `scan_completed()` method
 - **Button Reset Logic**: `app/gui/main_window.py` - `reset_quick_scan_button()` method
 
@@ -50,7 +50,7 @@ def scan_completed(self, scan_type, results=None):
     # ... rest of method unchanged
 ```
 
-#### 4. Flag Cleanup (`reset_quick_scan_button` method)  
+#### 4. Flag Cleanup (`reset_quick_scan_button` method)
 ```python
 def reset_quick_scan_button(self):
     self.is_quick_scan_running = False

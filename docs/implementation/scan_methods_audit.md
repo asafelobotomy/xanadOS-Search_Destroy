@@ -33,13 +33,13 @@
 - **✅ STATUS**: **CORRECT** - Proper data mapping
 
 #### **4. Path Selection Buttons**
-- **Home Folder Button** (`self.home_scan_btn`): 
+- **Home Folder Button** (`self.home_scan_btn`):
   - Label: "🏠 Home Folder"
   - Connection: `lambda: self.set_scan_path(str(Path.home()))`
   - **✅ STATUS**: **CORRECT** - Sets path only, doesn't trigger scan
 
 - **Downloads Button** (`self.downloads_scan_btn`):
-  - Label: "📥 Downloads" 
+  - Label: "📥 Downloads"
   - Connection: `lambda: self.set_scan_path(str(Path.home() / "Downloads"))`
   - **✅ STATUS**: **CORRECT** - Sets path only, doesn't trigger scan
 
@@ -50,7 +50,7 @@
 
 #### **5. RKHunter Scan Button** (`self.rkhunter_scan_btn`)
 - **GUI Label**: "🔍 RKHunter Scan" (or "📦 Setup RKHunter" if not installed)
-- **Connection**: 
+- **Connection**:
   - Available: `self.start_rkhunter_scan`
   - Not Available: `self.install_rkhunter`
 - **Method**: Direct RKHunter scan (independent of ClamAV)
@@ -69,10 +69,10 @@
 
 1. **First Priority**: `quick_scan` parameter
    - If `quick_scan=True` → `effective_scan_type = "QUICK"`
-   
+
 2. **Second Priority**: `scan_type_combo.currentData()`
    - If combo has data → `effective_scan_type = scan_type_data`
-   
+
 3. **Default**: Fall back to FULL
    - If no parameter or combo data → `effective_scan_type = "FULL"`
 
@@ -90,7 +90,7 @@
 ```python
 quick_scan_paths = [
     "~/Downloads",     # Primary target
-    "~/Desktop",       # Secondary  
+    "~/Desktop",       # Secondary
     "~/Documents",     # Tertiary
     tempfile.gettempdir(),  # System temp
     "/tmp"             # Linux temp
@@ -120,7 +120,7 @@ self.scan_path = os.path.expanduser("~")  # Entire home directory
 - **Condition**: `is_full_system_scan AND rkhunter_enabled AND run_with_full_scan`
 - **✅ STATUS**: **CORRECT**
 
-### **Quick Scan Integration**: 
+### **Quick Scan Integration**:
 - **Condition**: `(quick_scan OR effective_scan_type=="QUICK") AND rkhunter_enabled AND run_with_quick_scan`
 - **✅ STATUS**: **CORRECT** - Recently fixed to handle both trigger methods
 
@@ -135,7 +135,7 @@ self.scan_path = os.path.expanduser("~")  # Entire home directory
 
 ### **RKHunter Settings**:
 - **General Enable**: `rkhunter_settings.enabled`
-- **Full Scan Integration**: `rkhunter_settings.run_with_full_scan` 
+- **Full Scan Integration**: `rkhunter_settings.run_with_full_scan`
 - **Quick Scan Integration**: `rkhunter_settings.run_with_quick_scan`
 - **Auto Update**: `rkhunter_settings.auto_update`
 - **Categories**: `rkhunter_settings.categories` (rootkits, network, etc.)

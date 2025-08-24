@@ -228,7 +228,7 @@ config = get_app_config(ConfigurationLevel.STANDARD)
 ### Configuration Hierarchy
 ```
 ConfigurationLevel.MINIMAL    -> Basic security, minimal resources
-ConfigurationLevel.STANDARD   -> Balanced security and performance  
+ConfigurationLevel.STANDARD   -> Balanced security and performance
 ConfigurationLevel.ADVANCED   -> Enhanced security, optimized performance
 ConfigurationLevel.EXPERT     -> Maximum security, full performance
 ```

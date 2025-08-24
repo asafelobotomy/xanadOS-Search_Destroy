@@ -16,7 +16,7 @@
 ### 3. Resource Limits
 - **Problem**: Unlimited file scanning causing resource exhaustion
 - **Fix**: Reduced default limits and added dynamic adjustment
-- **Changes**: 
+- **Changes**:
   - Quick scan: max 50 files, 2 workers
   - Full scan: max 1000-2000 files, 3-4 workers
   - Memory limit: 512MB

@@ -10,7 +10,7 @@ When the "Minimize to System Tray" setting was enabled, clicking the [X] button 
 - If enabled and tray is available → hide window and show notification
 - If disabled → proceed with normal close behavior including real-time protection checks
 
-#### 2. Modified `quit_application()` method  
+#### 2. Modified `quit_application()` method
 - Added same minimize to tray logic for File > Exit menu
 - Ensures consistent behavior between [X] button and menu option
 
@@ -31,7 +31,7 @@ When the "Minimize to System Tray" setting was enabled, clicking the [X] button 
 
 #### When "Minimize to System Tray" is ENABLED (default):
 - ✅ [X] button → Minimizes to tray
-- ✅ File > Exit → Minimizes to tray  
+- ✅ File > Exit → Minimizes to tray
 - ✅ File > Force Exit (Ctrl+Shift+Q) → Actually exits
 - ✅ System tray "Quit" → Minimizes to tray
 - ✅ System tray "Force Quit" → Actually exits
@@ -40,7 +40,7 @@ When the "Minimize to System Tray" setting was enabled, clicking the [X] button 
 - ✅ [X] button → Actually exits (with protection checks)
 - ✅ File > Exit → Actually exits (with protection checks)
 - ✅ File > Force Exit → Actually exits
-- ✅ System tray "Quit" → Actually exits  
+- ✅ System tray "Quit" → Actually exits
 - ✅ System tray "Force Quit" → Actually exits
 
 ### Code Changes Made
@@ -65,7 +65,7 @@ When the "Minimize to System Tray" setting was enabled, clicking the [X] button 
 
 ### User Experience Improvements
 - Clear distinction between Exit and Force Exit
-- Helpful tooltips explaining behavior  
+- Helpful tooltips explaining behavior
 - Keyboard shortcut for power users
 - Consistent behavior across all exit methods
 - Preserves existing real-time protection logic

@@ -55,7 +55,7 @@ The `elevated_run` function (used by RKHunter and now all other operations) prio
 
 ### After Changes
 - **RKHunter scans:** Uses GUI sudo (ksshaskpass) - ✅ Consistent
-- **Update Definitions:** Uses GUI sudo (ksshaskpass) - ✅ Consistent  
+- **Update Definitions:** Uses GUI sudo (ksshaskpass) - ✅ Consistent
 - **Other operations:** Uses GUI sudo (ksshaskpass) - ✅ Consistent
 
 ## Technical Implementation

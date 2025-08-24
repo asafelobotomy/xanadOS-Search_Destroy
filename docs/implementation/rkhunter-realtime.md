@@ -41,7 +41,7 @@ def scan_system_with_output_callback(self,
 def _run_with_privilege_escalation_streaming(self, cmd_args, output_callback, timeout):
     """Runs RKHunter with real-time line-by-line output capture."""
     process = subprocess.Popen(cmd_args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, bufsize=1)
-    
+
     while True:
         line = process.stdout.readline()
         if not line:
@@ -55,7 +55,7 @@ def _run_with_privilege_escalation_streaming(self, cmd_args, output_callback, ti
 def update_rkhunter_output(self, output_line):
     """Format and display real-time RKHunter output."""
     formatted_line = output_line.strip()
-    
+
     # Add icons based on content
     if "WARNING" in formatted_line.upper():
         formatted_line = f"⚠️  {formatted_line}"
@@ -67,7 +67,7 @@ def update_rkhunter_output(self, output_line):
         formatted_line = f"ℹ️  {formatted_line}"
     elif formatted_line.startswith("Checking"):
         formatted_line = f"🔍 {formatted_line}"
-    
+
     self.results_text.append(formatted_line)
     # Auto-scroll to bottom
 ```

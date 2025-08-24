@@ -48,7 +48,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 #### 🔧 **Theme System Issues**
 - **Dark Mode Font Properties** - Restored missing font size configurations
-- **Light Mode Color Consistency** - Fixed color application across all components  
+- **Light Mode Color Consistency** - Fixed color application across all components
 - **Theme Application Performance** - Optimized theme loading and switching
 - **Dialog Parent/Child Relationships** - Corrected theme inheritance patterns
 
@@ -60,7 +60,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-#### 📁 **File Structure Reorganization** 
+#### 📁 **File Structure Reorganization**
 - **Documentation Restructure** - Moved all docs to organized `docs/` directory structure
 - **Archive Management** - Consolidated deprecated and experimental files
 - **Script Organization** - Enhanced utility scripts with better categorization
@@ -287,7 +287,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- **Enhanced Delete All Reports Functionality**: 
+- **Enhanced Delete All Reports Functionality**:
   - Reports tab "Delete All Reports" now removes both ClamAV and RKHunter reports
   - Unified report management across all scan types
   - Proper cleanup of both `~/.local/share/search-and-destroy/scan_reports/` and `~/.local/share/search-and-destroy/rkhunter_reports/`

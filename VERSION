@@ -1,6 +1,6 @@
 # Semantic Versioning
-VERSION_MAJOR=1
-VERSION_MINOR=0
+VERSION_MAJOR=2
+VERSION_MINOR=11
 VERSION_PATCH=0
 VERSION_BUILD=$(git rev-list --count HEAD 2>/dev/null || echo "0")
 

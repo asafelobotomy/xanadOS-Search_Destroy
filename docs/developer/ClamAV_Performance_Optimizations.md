@@ -11,7 +11,7 @@ These optimizations significantly improve ClamAV scanning speed while maintainin
 - **Why**: Daemon keeps virus database in memory, eliminating database loading time per scan
 - **Auto-start**: Automatically attempts to start daemon on application launch
 
-### 2. 🎯 Smart File Filtering  
+### 2. 🎯 Smart File Filtering
 - **Quick Scan Mode**: Skips low-risk files (images, media, text files)
 - **File Size Limits**: Configurable size limits for different file types
 - **Executable Detection**: Always scans executable files regardless of mode
@@ -20,7 +20,7 @@ These optimizations significantly improve ClamAV scanning speed while maintainin
 ### 3. ⚡ Optimized Scan Parameters
 - **Quick Scan**: Reduced limits for faster processing
   - Max file size: 25MB (vs 100MB default)
-  - Max recursion: 8 (vs 16 default)  
+  - Max recursion: 8 (vs 16 default)
   - Max files per archive: 5,000 (vs 10,000 default)
 - **Full Scan**: Maintains comprehensive security coverage
 - **Broken Executable Detection**: Skips obviously corrupted files

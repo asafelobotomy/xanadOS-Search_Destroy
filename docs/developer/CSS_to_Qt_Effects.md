@@ -116,10 +116,10 @@ class MyCustomWidget(QWidget):
     def __init__(self):
         super().__init__()
         self.setup_ui()
-        
+
         # Automatically apply effects based on widget types
         setup_widget_effects(self)
-        
+
         # Or apply to specific child widgets
         for button in self.findChildren(QPushButton):
             setup_widget_effects(button)
@@ -196,7 +196,7 @@ python dev/qt_effects_demo.py
 ### Functions
 
 - `apply_button_effects(button)` - Add hover/press animations to buttons
-- `apply_shadow_effect(widget)` - Add drop shadow to any widget  
+- `apply_shadow_effect(widget)` - Add drop shadow to any widget
 - `setup_widget_effects(widget)` - Auto-apply effects based on widget type
 
 ### Theme Manager Methods

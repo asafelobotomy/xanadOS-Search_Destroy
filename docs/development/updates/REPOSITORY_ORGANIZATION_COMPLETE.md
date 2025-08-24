@@ -77,7 +77,7 @@ Root Directory: 20+ miscellaneous files
 ```
 Root Directory: Clean, essential files only
 - docs/development/ (organized by type)
-- tests/ (organized by category)  
+- tests/ (organized by category)
 - config/ (centralized configuration)
 ```
 

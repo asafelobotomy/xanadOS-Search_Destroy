@@ -152,6 +152,6 @@ The version update to **2.7.2** has been **completed successfully** with:
 
 ---
 
-*Version Update Completed: August 20, 2025*  
-*Previous Version: 2.7.1 → New Version: 2.7.2*  
+*Version Update Completed: August 20, 2025*
+*Previous Version: 2.7.1 → New Version: 2.7.2*
 *Update Type: Patch Release (Repository Organization & Maintenance)*

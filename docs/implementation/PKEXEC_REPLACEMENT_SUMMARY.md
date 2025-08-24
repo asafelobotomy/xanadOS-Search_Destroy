@@ -7,7 +7,7 @@ Successfully migrated xanadOS Search & Destroy from pkexec-based authentication 
 
 ### 1. New GUI Authentication Manager (`app/core/gui_auth_manager.py`)
 - **Created**: Comprehensive authentication manager with persistent session support
-- **Features**: 
+- **Features**:
   - Detects GUI authentication helpers (ksshaskpass, zenity, kdialog)
   - Maintains 15-minute persistent sudo sessions
   - Automatic session refresh and cleanup
@@ -75,7 +75,7 @@ Successfully migrated xanadOS Search & Destroy from pkexec-based authentication 
 
 ### GUI Helper Priority
 1. `/usr/bin/ksshaskpass` (KDE SSH askpass)
-2. `/usr/bin/ssh-askpass` (Generic SSH askpass) 
+2. `/usr/bin/ssh-askpass` (Generic SSH askpass)
 3. `/usr/bin/x11-ssh-askpass` (X11 SSH askpass)
 4. `/usr/bin/lxqt-openssh-askpass` (LXQt SSH askpass)
 5. `/usr/bin/zenity` (GNOME zenity)
@@ -97,7 +97,7 @@ The system maintains full backward compatibility:
 ## Migration Status
 
 - ✅ GUI Authentication Manager created and tested
-- ✅ Elevated runners updated with new priority system  
+- ✅ Elevated runners updated with new priority system
 - ✅ Firewall operations migrated to elevated_run
 - ✅ Setup wizard installation commands updated
 - ✅ Main window authentication logic updated

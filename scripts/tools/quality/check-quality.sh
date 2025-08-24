@@ -116,7 +116,12 @@ check_markdown_quality() {
     log_info "Checking Markdown file quality..."
 
     local markdown_files
-    mapfile -t markdown_files < <(find . -name "*.md" -not -path "./.git/*" -not -path "./node_modules/*")
+    mapfile -t markdown_files < <(find . -type f -name "*.md" \
+        -not -path "./.git/*" \
+        -not -path "./node_modules/*" \
+        -not -path "./.venv/*" \
+        -not -path "./vendor/*" \
+        -not -path "./packaging/flatpak/vendor/*")
 
     if [[ ${#markdown_files[@]} -eq 0 ]]; then
         log_warning "No Markdown files found"
@@ -142,7 +147,8 @@ check_markdown_quality() {
             local line_num="${line_info%%:*}"
             local prev_line=$((line_num - 1))
             if [[ $prev_line -gt 0 ]]; then
-                local prev_content=$(sed -n "${prev_line}p" "$file")
+                local prev_content
+                prev_content=$(sed -n "${prev_line}p" "$file")
                 if [[ -n "$prev_content" ]]; then
                     echo "$file:$line_num: Missing empty line before heading"
                 fi
@@ -205,12 +211,18 @@ check_naming_conventions() {
     local naming_issues=0
 
     # Check for spaces in filenames
-    find . -name "* *" -not -path "./.git/*" | while read -r file; do
+    find . -type f -name "* *" \
+        -not -path "./.git/*" \
+        -not -path "./node_modules/*" \
+        -not -path "./.venv/*" \
+        -not -path "./vendor/*" \
+        -not -path "./packaging/flatpak/vendor/*" | while read -r file; do
         log_error "Filename contains spaces: $file"
         naming_issues=$((naming_issues + 1))
 
         if [[ "$FIX_ISSUES" == "true" ]]; then
-            local new_name=$(echo "$file" | tr ' ' '-')
+            local new_name
+            new_name=$(echo "$file" | tr ' ' '-')
             mv "$file" "$new_name"
             log_fix "Renamed: $file -> $new_name"
         fi
@@ -222,7 +234,8 @@ check_naming_conventions() {
         naming_issues=$((naming_issues + 1))
 
         if [[ "$FIX_ISSUES" == "true" ]]; then
-            local new_name=$(echo "$file" | tr '[:upper:]' '[:lower:]')
+            local new_name
+            new_name=$(echo "$file" | tr '[:upper:]' '[:lower:]')
             mv "$file" "$new_name"
             log_fix "Renamed to lowercase: $file -> $new_name"
         fi
@@ -231,7 +244,8 @@ check_naming_conventions() {
     # Check for consistent tool naming in scripts/tools/
     if [[ -d "scripts/tools" ]]; then
         find scripts/tools -name "*.sh" | while read -r script; do
-            local basename=$(basename "$script" .sh)
+            local basename
+            basename=$(basename "$script" .sh)
             if [[ ! "$basename" =~ ^[a-z-]+$ ]]; then
                 log_warning "Script name not following kebab-case: $script"
                 naming_issues=$((naming_issues + 1))
@@ -316,7 +330,12 @@ check_shell_scripts() {
     log_info "Checking shell script quality..."
 
     local shell_scripts
-    mapfile -t shell_scripts < <(find . -name "*.sh" -not -path "./.git/*")
+    mapfile -t shell_scripts < <(find . -type f -name "*.sh" \
+        -not -path "./.git/*" \
+        -not -path "./node_modules/*" \
+        -not -path "./.venv/*" \
+        -not -path "./vendor/*" \
+        -not -path "./packaging/flatpak/vendor/*")
 
     if [[ ${#shell_scripts[@]} -eq 0 ]]; then
         log_info "No shell scripts found"
@@ -355,8 +374,10 @@ check_shell_scripts() {
         fi
 
         # Check for function documentation
-        local functions=$(grep -c "^[a-zA-Z_][a-zA-Z0-9_]*() {" "$script" || echo "0")
-        local documented_functions=$(grep -c "^# Function:" "$script" || echo "0")
+    local functions
+    functions=$(grep -c "^[a-zA-Z_][a-zA-Z0-9_]*() {" "$script" 2>/dev/null || echo "0")
+    local documented_functions
+    documented_functions=$(grep -c "^# Function:" "$script" 2>/dev/null || echo "0")
 
         if [[ $functions -gt 0 ]] && [[ $documented_functions -eq 0 ]]; then
             log_warning "$script: Functions not documented"
@@ -388,7 +409,12 @@ check_syntax_validation() {
     local syntax_issues=0
 
     # Check JSON files
-    find . -name "*.json" -not -path "./.git/*" -not -path "./node_modules/*" | while read -r json_file; do
+    find . -type f -name "*.json" \
+        -not -path "./.git/*" \
+        -not -path "./node_modules/*" \
+        -not -path "./.venv/*" \
+        -not -path "./vendor/*" \
+        -not -path "./packaging/flatpak/vendor/*" | while read -r json_file; do
         if ! python3 -m json.tool "$json_file" >/dev/null 2>&1; then
             log_error "$json_file: Invalid JSON syntax"
             syntax_issues=$((syntax_issues + 1))
@@ -398,7 +424,12 @@ check_syntax_validation() {
     done
 
     # Check YAML files
-    find . -name "*.yml" -o -name "*.yaml" -not -path "./.git/*" -not -path "./node_modules/*" | while read -r yaml_file; do
+    find . -type f \( -name "*.yml" -o -name "*.yaml" \) \
+        -not -path "./.git/*" \
+        -not -path "./node_modules/*" \
+        -not -path "./.venv/*" \
+        -not -path "./vendor/*" \
+        -not -path "./packaging/flatpak/vendor/*" | while read -r yaml_file; do
         if command -v yamllint >/dev/null 2>&1; then
             if ! yamllint -d relaxed "$yaml_file" >/dev/null 2>&1; then
                 log_error "$yaml_file: YAML syntax issues"
@@ -431,22 +462,34 @@ check_security_practices() {
 
     # Check for potential secrets in files
     local secret_patterns=(
-        "password.*=.*['\"][^'\"]{8,}"
-        "api_key.*=.*['\"][^'\"]{20,}"
-        "secret.*=.*['\"][^'\"]{16,}"
-        "token.*=.*['\"][^'\"]{20,}"
-        "-----BEGIN.*PRIVATE KEY-----"
+        "password[[:space:]]*=[[:space:]]*['\"][^'\"]{8,}"
+        "api_key[[:space:]]*=[[:space:]]*['\"][^'\"]{20,}"
+        "secret[[:space:]]*=[[:space:]]*['\"][^'\"]{16,}"
+        "token[[:space:]]*=[[:space:]]*['\"][^'\"]{20,}"
+        "-----BEGIN[[:space:]].*PRIVATE KEY-----"
     )
 
     for pattern in "${secret_patterns[@]}"; do
-        if grep -r -i "$pattern" . --exclude-dir=.git --exclude-dir=node_modules | grep -v "scripts/tools/quality/check-quality.sh"; then
+        if grep -R -I -i \
+            --exclude-dir=.git \
+            --exclude-dir=node_modules \
+            --exclude-dir=.venv \
+            --exclude-dir=vendor \
+            --exclude-dir=packaging/flatpak/vendor \
+            --exclude-dir=examples \
+            . -e "$pattern" | grep -v "scripts/tools/quality/check-quality.sh"; then
             log_error "Potential secret found matching pattern: $pattern"
             security_issues=$((security_issues + 1))
         fi
     done
 
     # Check file permissions
-    find . -type f -perm -o+w -not -path "./.git/*" | while read -r world_writable; do
+    find . -type f -perm -o+w \
+        -not -path "./.git/*" \
+        -not -path "./node_modules/*" \
+        -not -path "./.venv/*" \
+        -not -path "./vendor/*" \
+        -not -path "./packaging/flatpak/vendor/*" | while read -r world_writable; do
         log_warning "World-writable file: $world_writable"
         security_issues=$((security_issues + 1))
 
@@ -544,26 +587,40 @@ generate_quality_report() {
 }
 
 generate_json_quality_report() {
-    local json_report="{
-  \"quality_assessment\": {
-    \"timestamp\": \"$(date -Iseconds)\",
-    \"files_analyzed\": $TOTAL_FILES,
-    \"issues_found\": $ISSUES_FOUND,
-    \"issues_fixed\": $ISSUES_FIXED,
-    \"quality_score\": $QUALITY_SCORE,
-    \"grade\": \"$(if [[ $QUALITY_SCORE -ge 90 ]]; then echo "A"; elif [[ $QUALITY_SCORE -ge 80 ]]; then echo "B"; elif [[ $QUALITY_SCORE -ge 70 ]]; then echo "C"; else echo "D"; fi)\"
-  },
-  \"results\": []
-}"
+        local json_report
+        json_report=$(cat <<'JSON'
+{
+    "quality_assessment": {
+        "timestamp": "__TIMESTAMP__",
+        "files_analyzed": __FILES__ ,
+        "issues_found": __FOUND__ ,
+        "issues_fixed": __FIXED__ ,
+        "quality_score": __SCORE__ ,
+        "grade": "__GRADE__"
+    },
+    "results": []
+}
+JSON
+)
 
-    if [[ -n "$REPORT_FILE" ]]; then
-        echo "$json_report" > "$REPORT_FILE"
-        log_info "JSON report written to: $REPORT_FILE"
-    else
-        echo ""
-        echo "JSON Quality Report:"
-        echo "$json_report"
-    fi
+        # Fill dynamic fields
+        json_report=${json_report/__TIMESTAMP__/$(date -Iseconds)}
+        json_report=${json_report/__FILES__/$TOTAL_FILES}
+        json_report=${json_report/__FOUND__/$ISSUES_FOUND}
+        json_report=${json_report/__FIXED__/$ISSUES_FIXED}
+        json_report=${json_report/__SCORE__/$QUALITY_SCORE}
+        local grade
+        if [[ $QUALITY_SCORE -ge 90 ]]; then grade="A"; elif [[ $QUALITY_SCORE -ge 80 ]]; then grade="B"; elif [[ $QUALITY_SCORE -ge 70 ]]; then grade="C"; else grade="D"; fi
+        json_report=${json_report/__GRADE__/$grade}
+
+        if [[ -n "$REPORT_FILE" ]]; then
+                echo "$json_report" > "$REPORT_FILE"
+                log_info "JSON report written to: $REPORT_FILE"
+        else
+                echo ""
+                echo "JSON Quality Report:"
+                echo "$json_report"
+        fi
 }
 
 # Main execution function

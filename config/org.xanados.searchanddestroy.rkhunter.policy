@@ -1,3 +1,10 @@
+<!--
+DEPRECATED: This PolicyKit file is superseded by io.github.asafelobotomy.* policies
+as of 2025-08-24. Do not install or use this file from config/.
+Canonical replacements:
+- config/io.github.asafelobotomy.searchanddestroy.rkhunter.policy
+- archive/superseded/2025-08-24/config/org.xanados.searchanddestroy.rkhunter.policy
+-->
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE policyconfig PUBLIC
  "-//freedesktop//DTD PolicyKit Policy Configuration 1.0//EN"

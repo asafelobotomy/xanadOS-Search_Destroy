@@ -2,9 +2,9 @@
 
 🔥 **Major Feature Release - Firewall Management Integration**
 
-**Version**: 2.7.0  
-**Release Date**: August 17, 2025  
-**Release Type**: Minor Version (Feature Release)  
+**Version**: 2.7.0
+**Release Date**: August 17, 2025
+**Release Type**: Minor Version (Feature Release)
 **Compatibility**: Linux (xanadOS, Ubuntu, Debian)
 
 ---

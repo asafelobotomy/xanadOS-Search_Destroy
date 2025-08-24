@@ -36,7 +36,7 @@ Added a comprehensive Firewall Settings page to the Settings tab that allows use
 
 ### Files Modified
 1. **`/app/gui/settings_pages.py`**: Added `build_firewall_page()` function
-2. **`/app/gui/main_window.py`**: 
+2. **`/app/gui/main_window.py`**:
    - Added firewall page to settings builders list
    - Added firewall settings support methods
    - Integrated with configuration system
@@ -52,7 +52,7 @@ Added a comprehensive Firewall Settings page to the Settings tab that allows use
 
 #### Auto-Saved Settings:
 - `firewall_settings.auto_detect` (default: True)
-- `firewall_settings.notify_changes` (default: True)  
+- `firewall_settings.notify_changes` (default: True)
 - `firewall_settings.preferred_firewall` (default: "Auto-detect (Recommended)")
 - `firewall_settings.confirm_enable` (default: True)
 - `firewall_settings.confirm_disable` (default: True)

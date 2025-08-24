@@ -98,7 +98,7 @@ modes = {
 ```python
 # Smart filtering reduces processing by 80%
 - High-risk files: .exe, .dll, .py, .sh -> Immediate processing
-- Medium-risk files: .zip, .pdf, .doc -> Batched processing  
+- Medium-risk files: .zip, .pdf, .doc -> Batched processing
 - Low-risk files: .txt, .jpg, .mp3 -> Background processing
 - Excluded paths: /proc, /sys, /tmp -> No processing
 ```
@@ -244,7 +244,7 @@ print(f"Filter efficiency: {status['file_watcher']['filter_efficiency']}%")
 The Enhanced Real-Time Protection System represents a quantum leap in antivirus performance optimization, incorporating the latest 2025 research findings to deliver:
 
 - **75-90% reduction in resource usage**
-- **85% reduction in false positives**  
+- **85% reduction in false positives**
 - **90% improvement in detection latency**
 - **80% reduction in processed events through intelligent filtering**
 

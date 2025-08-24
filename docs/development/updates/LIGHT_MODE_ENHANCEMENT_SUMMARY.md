@@ -27,7 +27,7 @@ Results: ✅ WCAG AAA compliance, ✅ Professional appearance, ✅ Security-focu
 
 ### Specific Improvements
 - Primary text: `#0f172a` (21:1 contrast ratio)
-- Secondary text: `#334155` (12:1 contrast ratio) 
+- Secondary text: `#334155` (12:1 contrast ratio)
 - Muted text: `#64748b` (7:1 contrast ratio)
 - All state colors meet WCAG AA minimum standards
 

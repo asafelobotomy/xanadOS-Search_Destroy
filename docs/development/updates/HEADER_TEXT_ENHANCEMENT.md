@@ -8,7 +8,7 @@ I've significantly increased the header text size across all three themes for be
 
 #### **Before vs After:**
 - **Previous Header Size**: 18px (small and hard to read)
-- **New Header Size**: 
+- **New Header Size**:
   - **Dark & Light Themes**: 28px (56% larger!)
   - **High Contrast Theme**: 32px (78% larger for accessibility!)
 
@@ -19,7 +19,7 @@ I've significantly increased the header text size across all three themes for be
 - Color: Pure white on strawberry gradient background
 - **Result**: Bold, prominent header that stands out
 
-#### **🌞 Light (Summer Breeze) Theme**  
+#### **🌞 Light (Summer Breeze) Theme**
 - Header text: `28px` (was 18px)
 - Color: Rich dark text on summer gradient background
 - **Result**: Clear, readable header with excellent contrast
@@ -50,7 +50,7 @@ I've significantly increased the header text size across all three themes for be
 ### 📈 Impact Summary
 
 - **Visibility**: Headers are now 56-78% larger and much more prominent
-- **Readability**: Easier to read from a distance or for users with vision needs  
+- **Readability**: Easier to read from a distance or for users with vision needs
 - **Visual Hierarchy**: Better separation between header and content
 - **Accessibility**: High contrast theme has extra-large headers (32px)
 - **Consistency**: All themes now have properly sized headers

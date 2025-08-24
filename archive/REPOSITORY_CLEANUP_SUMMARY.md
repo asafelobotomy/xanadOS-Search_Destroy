@@ -49,15 +49,16 @@ These directories contained the initial Flathub submission attempts that were re
 ### 4. Files Retained
 
 **Original Icons**: Kept `org.xanados.SearchAndDestroy.*` icon files for backwards compatibility
-**Config Files**: Kept `org.xanados.searchanddestroy.*.policy` files as they may be referenced by the application
+**Config Files**: Moved `org.xanados.searchanddestroy.*.policy` files to
+`archive/superseded/2025-08-24/config/` and removed from active `config/`
 **All Other Files**: Preserved application source code, documentation, and build scripts
 
 ## Current Repository Structure
 
-```
+```text
 packaging/flatpak/
 ├── io.github.asafelobotomy.SearchAndDestroy.yml        # ✅ Ready for Flathub
-├── io.github.asafelobotomy.SearchAndDestroy.metainfo.xml # ✅ Ready for Flathub  
+├── io.github.asafelobotomy.SearchAndDestroy.metainfo.xml # ✅ Ready for Flathub
 ├── io.github.asafelobotomy.SearchAndDestroy.desktop     # ✅ Ready for Flathub
 └── search-and-destroy.sh                               # Launcher script
 
@@ -73,22 +74,27 @@ archive/flathub-submissions/
 
 ## Ready for Submission
 
-The repository is now organized with correct file naming and the main packaging files are ready for Flathub submission. All critical issues from the previous rejections have been addressed:
+The repository is now organized with correct file naming and the main packaging
+files are ready for Flathub submission. All critical issues from the previous
+rejections have been addressed:
 
-✅ Valid GitHub-based application ID  
-✅ Complete license information  
-✅ All Python dependencies with verified hashes  
-✅ Minimal, justified permissions  
-✅ Portal-based file access  
-✅ Version consistency  
+✅ Valid GitHub-based application ID
+✅ Complete license information
+✅ All Python dependencies with verified hashes
+✅ Minimal, justified permissions
+✅ Portal-based file access
+✅ Version consistency
 ✅ Proper file naming conventions
 
 ## Next Steps
 
 1. Test the Flatpak build locally:
-   ```bash
-   flatpak-builder build-dir packaging/flatpak/io.github.asafelobotomy.SearchAndDestroy.yml --install --user --force-clean
-   ```
+
+    ```bash
+    flatpak-builder build-dir \
+       packaging/flatpak/io.github.asafelobotomy.SearchAndDestroy.yml \
+       --install --user --force-clean
+    ```
 
 2. Submit to Flathub:
    - Fork flathub/flathub repository

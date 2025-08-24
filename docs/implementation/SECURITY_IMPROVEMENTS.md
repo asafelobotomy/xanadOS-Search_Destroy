@@ -9,7 +9,7 @@
 #### 1. **Command Injection Prevention**
 - **File**: `app/core/privilege_escalation.py`
 - **Issue**: Shell command construction vulnerable to injection
-- **Fix**: 
+- **Fix**:
   - Added `shlex.quote()` for proper shell escaping
   - Implemented `_validate_command_security()` method
   - Added validation for dangerous shell metacharacters: `;`, `&&`, `||`, `\``, `$`, `|`, `>`, `<`, `&`, `\n`, `\r`
@@ -18,7 +18,7 @@
 #### 2. **Hardcoded Path Vulnerability**
 - **File**: `app/core/rkhunter_wrapper.py`
 - **Issue**: Absolute hardcoded paths reduce portability and could fail
-- **Fix**: 
+- **Fix**:
   - Replaced hardcoded paths with relative path calculation using `Path(__file__).parent.parent.parent`
   - Updated all script references to use dynamic path resolution
 - **Impact**: Improved portability and reduced attack surface
@@ -32,7 +32,7 @@
 #### 4. **Resource Management Improvements**
 - **File**: `app/core/web_protection.py`
 - **Issue**: Database connections not properly managed with context managers
-- **Fix**: 
+- **Fix**:
   - Converted manual connection handling to `with sqlite3.connect()` context managers
   - Fixed methods: `_init_database()`, `_load_cached_threat_lists()`, `_store_analysis_result()`
 - **Impact**: Prevents resource leaks and database corruption
@@ -49,7 +49,7 @@
 #### 6. **Secure Error Logging**
 - **File**: `app/core/privilege_escalation.py`
 - **Issue**: Detailed error messages could expose sensitive information
-- **Fix**: 
+- **Fix**:
   - Added `_safe_log_error()` method to sanitize error messages
   - Updated error handling to log only error types, not full error details
 - **Impact**: Prevents information disclosure through logs
@@ -112,7 +112,7 @@
 ### Security Test Results
 ```
 test_command_injection_prevention ... ok
-test_safe_commands_allowed ... ok  
+test_safe_commands_allowed ... ok
 test_path_traversal_prevention ... ok
 test_input_sanitization ... ok
 test_scan_request_validation ... ok
@@ -171,7 +171,7 @@ Ran 10 tests in 30.155s - ALL PASSED ✅
 The implemented fixes address:
 - ✅ **OWASP Top 10** injection vulnerabilities
 - ✅ **CWE-78** (Command Injection)
-- ✅ **CWE-22** (Path Traversal) 
+- ✅ **CWE-22** (Path Traversal)
 - ✅ **CWE-200** (Information Disclosure)
 - ✅ **CWE-404** (Resource Management)
 

@@ -72,7 +72,7 @@ class SecureRKHunterValidator:
 ### **Multi-Layer Security Model**
 
 1. **Application Layer**: Python security validator
-2. **System Layer**: Hardened PolicyKit configuration  
+2. **System Layer**: Hardened PolicyKit configuration
 3. **Process Layer**: Restricted privilege escalation
 4. **Logging Layer**: Comprehensive security event logging
 
@@ -93,7 +93,7 @@ Authentication Required → [30-second Grace Period] → Re-authentication Requi
 ### **Prevented Attack Vectors:**
 
 1. **Command Injection**: `rkhunter --check; rm -rf /` → ❌ Blocked by validator
-2. **Path Traversal**: `--enable ../../../../etc/passwd` → ❌ Blocked by validator  
+2. **Path Traversal**: `--enable ../../../../etc/passwd` → ❌ Blocked by validator
 3. **Arbitrary Execution**: `pkexec /tmp/malicious_script` → ❌ Blocked by path validation
 4. **Configuration Manipulation**: `--configfile /tmp/evil.conf` → ❌ Blocked by config validation
 5. **Privilege Persistence**: Grace period abuse → ❌ No privilege expansion possible
@@ -138,7 +138,7 @@ Authentication Required → [30-second Grace Period] → Re-authentication Requi
 
 The implemented security measures provide **comprehensive protection** against:
 - Command injection attacks
-- Privilege escalation abuse  
+- Privilege escalation abuse
 - Configuration manipulation
 - Arbitrary code execution
 

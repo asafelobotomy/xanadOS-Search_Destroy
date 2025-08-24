@@ -18,7 +18,7 @@ The auto-updater is configured via `/config/update_config.json`:
 ```json
 {
     "update_branch": "stable",
-    "repo_owner": "asafelobotomy", 
+    "repo_owner": "asafelobotomy",
     "repo_name": "xanadOS-Search_Destroy",
     "check_interval_hours": 24,
     "auto_download": false,
@@ -30,7 +30,7 @@ The auto-updater is configured via `/config/update_config.json`:
 ### 2. Release Process
 
 1. **Development**: Work happens on `master` branch
-2. **Testing**: Thoroughly test features on `master` 
+2. **Testing**: Thoroughly test features on `master`
 3. **Stable Release**: When ready, merge tested code to `stable` branch
 4. **Tag Release**: Create a Git tag on the `stable` branch
 5. **User Updates**: Users automatically receive updates from `stable` branch only
@@ -80,7 +80,7 @@ git checkout stable
 # Make minimal fix
 git add .
 git commit -m "Hotfix: Critical security update"
-git tag -a v2.7.3 -m "Hotfix release 2.7.3" 
+git tag -a v2.7.3 -m "Hotfix release 2.7.3"
 git push origin stable
 git push origin v2.7.3
 # Create GitHub release
@@ -179,7 +179,7 @@ Users can modify `/config/update_config.json` to:
 ## Future Enhancements
 
 - **Digital signature verification** for updates
-- **Delta updates** for smaller downloads  
+- **Delta updates** for smaller downloads
 - **Rollback functionality** if update fails
 - **Update scheduling** for specific times
 - **Multiple update channels** (stable/beta/alpha)

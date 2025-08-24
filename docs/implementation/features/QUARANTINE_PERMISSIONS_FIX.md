@@ -93,7 +93,7 @@ if name in ("config", "quarantine") and mode not in (0o700, 0o750):
 - **Added OS detection**: Only applies secure permissions on POSIX systems
 - **Added error handling**: Graceful handling of permission change failures
 
-### app/gui/main_window.py  
+### app/gui/main_window.py
 - **Enhanced startup self-check**: Added automatic permission fix attempt
 - **Improved feedback**: Clear success/failure messages for permission fixes
 - **Fallback behavior**: Still warns if automatic fix fails
@@ -112,7 +112,7 @@ drwxr-xr-x 1 vm vm  26 Aug  5 11:49 quarantine
 
 ### After Fix
 ```bash
-$ ls -la ~/.local/share/search-and-destroy/ | grep quarantine  
+$ ls -la ~/.local/share/search-and-destroy/ | grep quarantine
 drwx------ 1 vm vm  26 Aug  5 11:49 quarantine
 
 # App startup shows no permission warnings
@@ -122,7 +122,7 @@ drwx------ 1 vm vm  26 Aug  5 11:49 quarantine
 
 ### Platform Support
 - ✅ **Linux**: Full support with chmod() functionality
-- ✅ **macOS**: Full support with chmod() functionality  
+- ✅ **macOS**: Full support with chmod() functionality
 - ✅ **Windows**: Graceful fallback (permissions concept differs)
 - ✅ **Other POSIX**: Full support on Unix-like systems
 

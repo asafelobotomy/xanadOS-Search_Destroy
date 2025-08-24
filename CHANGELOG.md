@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.11.0] - 2025-08-24
+
 ### Added
 
 - Enterprise-grade repository organization and structure
@@ -18,6 +20,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Comprehensive validation system with 20+ quality checks
 - Automated quality assurance and compliance checking
 - Professional documentation and README structure
+- Complete Flathub compliance verification and submission readiness
+- Repository cleanup and organization tools
+- YAML validation support (yamllint + PyYAML)
+
+### Changed
+
+- Migrated App ID from org.xanados.* to io.GitHub.asafelobotomy.SearchAndDestroy
+- Improved file organization following strict directory policies
+- Enhanced quality assessment pipeline with comprehensive validation
+- Archived legacy PolicyKit policies with proper metadata
+
+### Fixed
+
+- Root directory policy compliance violations
+- Markdown formatting inconsistencies across documentation
+- YAML validation warnings in quality checker
+- File placement violations in repository structure
 - Enterprise deployment and automation scripts
 
 ### Changed

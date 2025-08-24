@@ -87,7 +87,7 @@ auth_session_valid = self.rkhunter._ensure_auth_session()
 ```
 📊 Results: 4/4 tests passed
 ✅ PASS: Sudo Session State Tracking
-✅ PASS: Automatic Sudo Preference  
+✅ PASS: Automatic Sudo Preference
 ✅ PASS: RKHunter Integration
 ✅ PASS: Session Consistency
 ```
@@ -120,7 +120,7 @@ auth_session_valid = self.rkhunter._ensure_auth_session()
 
 ### Before Fix:
 1. 🔴 **First prompt**: sudo for `is_functional()` check
-2. 🔴 **Second prompt**: pkexec GUI dialog for actual scan  
+2. 🔴 **Second prompt**: pkexec GUI dialog for actual scan
 3. 🔴 **Possible third prompt**: Additional operations during scan
 
 ### After Fix:

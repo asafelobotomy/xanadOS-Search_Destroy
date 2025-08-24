@@ -56,7 +56,7 @@ self._auth_session_timeout = 300  # 5 minutes in seconds
 ### Before (6+ Password Prompts)
 1. 🔐 Password prompt for first config read
 2. 🔐 Password prompt for RKHunter command
-3. 🔐 Password prompt for config write  
+3. 🔐 Password prompt for config write
 4. 🔐 Password prompt for another RKHunter command
 5. 🔐 Password prompt for baseline update
 6. 🔐 Password prompt for final config write
@@ -109,7 +109,7 @@ self._auth_session_timeout = 300  # 5 minutes in seconds
 
 ✅ **Session Management Tests**: All passed
 - Initial session state validation
-- Session start/end functionality  
+- Session start/end functionality
 - Passwordless operation success/failure
 - Timeout handling
 - Cleanup verification

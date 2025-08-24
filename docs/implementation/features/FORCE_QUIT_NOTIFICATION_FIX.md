@@ -53,7 +53,7 @@ def _setup_signal_handlers(self):
             QApplication.quit()
         except:
             pass
-    
+
     # Handle SIGINT (Ctrl+C), SIGTERM (kill), SIGHUP (terminal close)
     signal.signal(signal.SIGINT, signal_handler)
     signal.signal(signal.SIGTERM, signal_handler)
@@ -68,15 +68,15 @@ Refactored `closeEvent()` to check force quit flag:
 def closeEvent(self, event):
     ui_settings = self.config.get("ui_settings", {})
     minimize_to_tray = ui_settings.get("minimize_to_tray", True)
-    
+
     # If we're force quitting, don't minimize to tray or show notification
     if hasattr(self, '_force_quitting') and self._force_quitting:
         # Skip minimize to tray behavior during force quit
         self._cleanup_before_exit(event)
         return
-    
+
     # Normal minimize to tray logic only for regular window close
-    if (minimize_to_tray and hasattr(self, "tray_icon") and 
+    if (minimize_to_tray and hasattr(self, "tray_icon") and
         self.tray_icon and self.tray_icon.isVisible()):
         self.hide()
         self.tray_icon.showMessage(

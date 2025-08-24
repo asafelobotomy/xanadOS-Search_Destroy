@@ -11,7 +11,7 @@ Performed comprehensive deprecated code cleanup to improve code maintainability 
 - **Removed**: Connection from tooltip timer to the deprecated method
 - **Impact**: No functional impact - method was already a no-op placeholder
 
-### 2. Legacy Security Settings Comments  
+### 2. Legacy Security Settings Comments
 **Location**: `app/gui/main_window.py` (lines ~1804-1823)
 - **Removed**: Large block of commented-out legacy security settings code
 - **Reason**: Code was superseded by modular settings pages
@@ -49,7 +49,7 @@ Performed comprehensive deprecated code cleanup to improve code maintainability 
 
 ### Application Functionality
 ✅ **Application starts successfully** after cleanup
-✅ **All modules import correctly** 
+✅ **All modules import correctly**
 ✅ **No syntax errors** introduced
 ✅ **Real-time monitoring initializes** properly
 ✅ **GUI components function** as expected

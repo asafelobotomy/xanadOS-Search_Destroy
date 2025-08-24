@@ -1,3 +1,10 @@
+<!--
+DEPRECATED: This hardened PolicyKit file is superseded by io.github.asafelobotomy.*
+policies as of 2025-08-24. Do not install or use this file from config/.
+Canonical replacements:
+- config/io.github.asafelobotomy.searchanddestroy.hardened.policy
+- archive/superseded/2025-08-24/config/org.xanados.searchanddestroy.hardened.policy
+-->
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE policyconfig PUBLIC
 "-//freedesktop//DTD PolicyKit Policy Configuration 1.0//EN"
@@ -7,7 +14,7 @@
   <!-- Hardened Security Policy for xanadOS Search & Destroy -->
   <vendor>xanadOS</vendor>
   <vendor_url>https://github.com/asafelobotomy/xanadOS-Search_Destroy</vendor_url>
-  
+
   <!-- RKHunter Scan Operation - Highly Restricted -->
   <action id="org.xanados.searchanddestroy.rkhunter.scan">
     <description>Run RKHunter rootkit scanner with scan operation only</description>

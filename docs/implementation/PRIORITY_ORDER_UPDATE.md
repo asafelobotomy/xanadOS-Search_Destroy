@@ -7,7 +7,7 @@ Updated the priority order for privilege escalation methods in the `elevated_run
 
 ### Before (Previous Priority Order)
 1. **GUI sudo with askpass helper** (ksshaskpass) - First priority
-2. **Passwordless sudo** (sudo -n) - Second priority  
+2. **Passwordless sudo** (sudo -n) - Second priority
 3. **Terminal sudo** - Third priority
 4. **pkexec** - Final fallback
 

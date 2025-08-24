@@ -28,24 +28,24 @@ def build_firewall_page(host):
 def build_firewall_page(host):
     # Create main page widget
     page = QWidget()
-    
+
     # Create scroll area to handle content overflow
     scroll_area = QScrollArea(page)
     scroll_area.setWidgetResizable(True)
     scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
     scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
-    
+
     # Create scrollable content widget
     scroll_content = QWidget()
     layout = QVBoxLayout(scroll_content)
     layout.setSpacing(20)  # Better spacing between sections
     layout.setContentsMargins(15, 15, 15, 15)  # Add margins
-    
+
     # ... all content added to layout ...
-    
+
     # Set up scroll area
     scroll_area.setWidget(scroll_content)
-    
+
     # Main page layout with no margins for better space usage
     page_layout = QVBoxLayout(page)
     page_layout.setContentsMargins(0, 0, 0, 0)
@@ -89,7 +89,7 @@ def build_firewall_page(host):
 
 ### 4. **Firewall Controls**
 - Test Firewall Connection button
-- Refresh Status button  
+- Refresh Status button
 - Reset to Defaults button
 
 ## Technical Benefits
@@ -131,7 +131,7 @@ def build_firewall_page(host):
 - ❌ Unprofessional appearance
 - ❌ Potential for hidden content
 
-### After:  
+### After:
 - ✅ Proper spacing and organization
 - ✅ Excellent readability
 - ✅ Professional, polished appearance

@@ -13,7 +13,7 @@
 #### Before Optimization:
 ```
 ❌ Multiple theme systems running in parallel
-❌ ~1000 line stylesheet generated every theme change  
+❌ ~1000 line stylesheet generated every theme change
 ❌ Redundant setStyleSheet() calls in multiple files
 ❌ No caching - repeated expensive operations
 ❌ Manual theme application in every dialog
@@ -37,11 +37,11 @@
 @lru_cache(maxsize=128)
 def get_color(self, color_key: str) -> str:
     # Color lookups cached to avoid repeated dictionary access
-    
-@lru_cache(maxsize=8) 
+
+@lru_cache(maxsize=8)
 def _generate_optimized_stylesheet(self, theme_name: str) -> str:
     # Stylesheet generation cached per theme
-    
+
 @lru_cache(maxsize=8)
 def _create_palette_for_theme(self, theme_name: str) -> QPalette:
     # Palette creation cached per theme
@@ -73,7 +73,7 @@ def set_theme(self, theme_name: str):
 
 #### Cleaned Files:
 - `app/gui/update_dialog.py` - Removed redundant theme code
-- `app/gui/warning_explanation_dialog.py` - Removed redundant theme code  
+- `app/gui/warning_explanation_dialog.py` - Removed redundant theme code
 - `app/gui/update_components.py` - Removed redundant theme code
 
 ### 📈 Performance Metrics
@@ -101,7 +101,7 @@ from gui.theme_manager import get_theme_manager
 get_theme_manager().set_theme("dark")
 
 # New optimized system
-from gui.optimized_theme_manager import get_optimized_theme_manager  
+from gui.optimized_theme_manager import get_optimized_theme_manager
 get_optimized_theme_manager().set_theme("dark")
 ```
 

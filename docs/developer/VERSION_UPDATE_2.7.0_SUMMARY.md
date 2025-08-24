@@ -80,7 +80,7 @@ Release documentation:          2.7.0 ✅
 
 All version references have been successfully updated and are consistent across:
 - Core application files
-- Documentation and release notes  
+- Documentation and release notes
 - Packaging and metadata files
 - Fallback version strings
 - User interface elements

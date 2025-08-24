@@ -90,7 +90,7 @@ This comprehensive audit evaluated all 8 test scripts found in the project to as
 **File**: `app/gui/all_warnings_dialog.py`
 **Issues Fixed**:
 - Line 105: Corrected indentation for `header_label` assignment
-- Line 133: Fixed `mark_safe_btn` variable declaration indentation  
+- Line 133: Fixed `mark_safe_btn` variable declaration indentation
 - Line 145: Corrected `close_btn` variable indentation
 
 **Impact**: These fixes resolved GUI test failures and restored full functionality to the syntax checking test suite.
@@ -102,7 +102,7 @@ This comprehensive audit evaluated all 8 test scripts found in the project to as
 2. **`dev/testing/final_integration_test.py`**: ✅ Full integration validation passes
 3. **`dev/testing/visual_test_enhancements.py`**: ✅ GUI launches and demonstrates features
 
-### ❌ Failing Tests  
+### ❌ Failing Tests
 1. **`tests/test_implementation.py`**: Missing pytest dependency
 2. **`tests/test_monitoring.py`**: Missing monitoring module dependencies
 3. **`dev/demos/theme_performance_test.py`**: Missing archived theme manager

@@ -13,7 +13,7 @@ Comprehensive review and fixes applied to ensure all GUI components properly res
   - Removed hard-coded `#666`, `#555`, `#28a745` colors
   - Added proper theme color integration with parent window
   - Added `get_theme_color()` and `_apply_theme()` methods
-  
+
 - `app/gui/main_window.py`
   - Fixed hard-coded `#999` in firewall name label
   - Fixed hard-coded `#FF6B35` in warning headers
@@ -77,7 +77,7 @@ Comprehensive review and fixes applied to ensure all GUI components properly res
 - Text: `#FFCDAA` (Primary), `#666` (Secondary)
 - Accents: `#F14666` (Primary), `#EE8980` (Border), `#9CB898` (Success)
 
-#### Light Theme  
+#### Light Theme
 - Background: `#fefefe` (Main), `#ffffff` (Secondary), `#f5f5f5` (Tertiary)
 - Text: `#2c2c2c` (Primary), `#666` (Secondary)
 - Accents: `#75BDE0` (Primary), `#F8D49B` (Border), `#75BDE0` (Success)

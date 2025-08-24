@@ -113,7 +113,7 @@ SHELL := /bin/bash
 
 **Implementation:**
 ```makefile
-debug-%: 
+debug-%:
 	$(Q)echo "Debug info for $*:"
 	$(Q)echo "PROJECT_NAME = $(PROJECT_NAME)"
 	$(Q)echo "VENV_DIR = $(VENV_DIR)"

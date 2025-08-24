@@ -43,17 +43,17 @@ I've successfully implemented a comprehensive auto-update feature for the S&D - 
 class AutoUpdater:
     def __init__(self, current_version, repo_owner, repo_name):
         # Initializes with current version and repository info
-        
+
     def check_for_updates(self):
         # Checks GitHub API for latest release
         # Returns update info if newer version available
-        
+
     def download_update(self, update_info, progress_callback=None):
         # Downloads update files with progress tracking
-        
+
     def apply_update(self):
         # Applies downloaded update files
-        
+
     def restart_application(self):
         # Restarts app to complete update
 ```
@@ -63,10 +63,10 @@ class AutoUpdater:
 class UpdateNotifier:
     def check_for_updates_background(self):
         # Background update checking using QThread
-        
+
     def show_update_notification(self, update_info):
         # Shows update dialog to user
-        
+
     def check_for_updates_manual(self):
         # Manual update check triggered by user
 ```
@@ -76,10 +76,10 @@ class UpdateNotifier:
 class UpdateDialog(QDialog):
     def __init__(self, parent, update_info, updater):
         # Rich update dialog with progress tracking
-        
+
     def start_download(self):
         # Initiates update download with progress
-        
+
     def restart_application(self):
         # Restarts app after successful update
 ```
@@ -130,7 +130,7 @@ app/
 
 ### Settings Management
 1. **Settings Access**: Settings → Updates tab
-2. **Configurable Options**: 
+2. **Configurable Options**:
    - Auto-check enabled/disabled
    - Check on startup
    - Check frequency (daily/weekly/monthly)

@@ -4,7 +4,7 @@
 ### Files Removed
 #### Root Directory Cleanup
 - `dangerous_parameter_removal_report.py` (empty file)
-- `enhanced_hardening_demo.py` (empty file) 
+- `enhanced_hardening_demo.py` (empty file)
 - `fix_security_issues.py` (empty file)
 - `security_fix_summary.py` (empty file)
 - `simple_security_fix.py` (empty file)

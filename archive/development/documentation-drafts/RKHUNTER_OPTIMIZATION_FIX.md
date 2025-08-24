@@ -18,13 +18,13 @@ Added comprehensive availability checking methods:
 ```python
 def _check_rkhunter_availability(self) -> bool:
     """Check if RKHunter is available and executable."""
-    
+
 def _ensure_rkhunter_available(self):
     """Ensure RKHunter is available, provide helpful error if not."""
-    
+
 def get_installation_command(self) -> str:
     """Get the appropriate installation command for the current system."""
-    
+
 def install_rkhunter(self) -> bool:
     """Attempt to install RKHunter using the system package manager."""
 ```
@@ -51,7 +51,7 @@ def run_rkhunter_optimization(self, optimization_type):
     if not RKHUNTER_OPTIMIZER_AVAILABLE:
         self.show_themed_message_box("warning", ...)
         return
-    
+
     # Check if RKHunter itself is available
     if not self._rkhunter_available():
         # Show installation dialog with callback support

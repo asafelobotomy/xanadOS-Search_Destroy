@@ -46,7 +46,7 @@ Sky Blue → Seafoam Green → Peach → Pale Yellow
 
 ### 🌟 Visual Transformation Summary
 
-**Before (Aurora)**: Purple/pink magical theme with lots of white  
+**Before (Aurora)**: Purple/pink magical theme with lots of white
 **After (Summer Breeze)**: Vibrant summer colors - sky blue, seafoam, peach, yellow
 
 The new Summer Breeze theme provides:

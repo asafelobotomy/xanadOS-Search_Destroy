@@ -55,7 +55,7 @@ detector.activity_tracker.update_status(new_status)
 ```python
 def _get_ufw_status_non_invasive(self):
     # Method 1: systemctl service status
-    # Method 2: systemctl enabled check  
+    # Method 2: systemctl enabled check
     # Method 3: Configuration file reading
     # Method 4: Rule file analysis
     # Method 5: Netfilter module detection
@@ -79,7 +79,7 @@ def _get_firewalld_status(self):
 - Zero sudo requests during normal operation
 - No risk of authentication loops or account lockouts
 
-### ✅ **Faster Performance** 
+### ✅ **Faster Performance**
 - Cached status provides instant results
 - No waiting for privileged command execution
 
@@ -103,7 +103,7 @@ The enhanced system provides comprehensive status information:
 {
     "is_active": true,
     "firewall_name": "UFW (Uncomplicated Firewall)",
-    "firewall_type": "ufw", 
+    "firewall_type": "ufw",
     "status_text": "Active",
     "error": null,
     "method": "activity_cache"  // How status was determined

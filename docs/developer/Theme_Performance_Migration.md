@@ -69,7 +69,7 @@ The optimized theme manager is a drop-in replacement:
 from gui.theme_manager import get_theme_manager
 get_theme_manager().set_theme("dark")
 
-# New optimized way  
+# New optimized way
 from gui.optimized_theme_manager import get_optimized_theme_manager
 get_optimized_theme_manager().set_theme("dark")
 ```

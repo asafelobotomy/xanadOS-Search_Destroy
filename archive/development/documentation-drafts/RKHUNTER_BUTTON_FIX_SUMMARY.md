@@ -25,16 +25,16 @@ Added `reset_all_scan_buttons()` method to ensure consistent button state manage
 def reset_all_scan_buttons(self):
     """Reset all scan buttons to their default state when scans are stopped."""
     print("🔄 Resetting all scan buttons to default state")
-    
+
     # Reset main scan button
     self.update_scan_button_state(False)
     self.scan_toggle_btn.setEnabled(True)
-    
+
     # Reset RKHunter scan button
     if hasattr(self, 'rkhunter_scan_btn'):
         self.rkhunter_scan_btn.setEnabled(True)
         self.rkhunter_scan_btn.setText("🔍 RKHunter Scan")
-    
+
     print("✅ All scan buttons reset successfully")
 ```
 
@@ -62,7 +62,7 @@ self.progress_bar.setValue(0)
 ### Automated Test Results:
 ```
 ✅ RKHunter scan start state: PASS
-✅ RKHunter scan reset state: PASS  
+✅ RKHunter scan reset state: PASS
 ✅ Helper method functionality: PASS
 ✅ Implementation verification: PASS
 ```
@@ -77,7 +77,7 @@ self.progress_bar.setValue(0)
 
 - **`app/gui/main_window.py`**:
   - Added `reset_all_scan_buttons()` helper method
-  - Updated `_check_stop_completion()` method 
+  - Updated `_check_stop_completion()` method
   - Updated forced cleanup logic
   - Improved scan button state management consistency
 
@@ -96,7 +96,7 @@ self.progress_bar.setValue(0)
 - RKHunter button: ❌ Stuck showing "🔄 RKHunter scanning..."
 
 ### After Fix:
-- Main scan button: ✅ Properly reset to "🚀 Start Scan"  
+- Main scan button: ✅ Properly reset to "🚀 Start Scan"
 - RKHunter button: ✅ Properly reset to "🔍 RKHunter Scan"
 
 ## 🚀 **DEPLOYMENT STATUS**

@@ -399,7 +399,7 @@ validate_security() {
     local found_secrets=0
 
     for pattern in "${secret_files[@]}"; do
-        if find . -name "$pattern" -not -path "./.git/*" | grep -q .; then
+        if find . -name "$pattern" -not -path "./.git/*" -not -path "./.venv/*" -not -path "./node_modules/*" -not -path "./examples/*" | grep -q .; then
             found_secrets=$((found_secrets + 1))
             log_failure "Potential secret file found: $pattern"
         fi

@@ -1,6 +1,6 @@
 # xanadOS Search & Destroy v2.7.2 Release Notes
 
-**Release Date**: August 20, 2025  
+**Release Date**: August 20, 2025
 **Release Type**: Patch Release (Repository Maintenance)
 
 ---
@@ -18,7 +18,7 @@ Version 2.7.2 is a maintenance release focused on repository organization and im
 We've moved 7 obsolete test scripts to `archive/deprecated-testing/` including:
 
 - **SELinux-related scripts** - No longer needed after transition to AppArmor-only approach
-- **Dangerous parameter testing** - Scripts for functionality intentionally removed for user safety  
+- **Dangerous parameter testing** - Scripts for functionality intentionally removed for user safety
 - **Fixed security issue verification** - Diagnostic scripts no longer needed after successful integration
 - **One-time security reports** - Historical documentation moved to proper structure
 

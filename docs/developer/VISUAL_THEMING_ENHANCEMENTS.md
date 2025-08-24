@@ -17,7 +17,7 @@ accent: #F14666;
 **After:** Rich, layered color system with visual depth
 ```css
 background: #1e1e1e;
-secondary_bg: #2d2d2d; 
+secondary_bg: #2d2d2d;
 card_bg: #252525;
 elevated_bg: #323232;
 accent: #FF5722;
@@ -39,7 +39,7 @@ QDialog {
 ```css
 QDialog {
     background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
-                                stop: 0 #323232, 
+                                stop: 0 #323232,
                                 stop: 1 #252525);
 }
 ```
@@ -70,7 +70,7 @@ QPushButton:hover {
 ```css
 QPushButton:hover {
     background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
-                                stop: 0 #FF7043, 
+                                stop: 0 #FF7043,
                                 stop: 1 #FF5722);
     border-color: #FF7043;
     color: white;
@@ -100,7 +100,7 @@ QPushButton:hover {
 ```css
 QFrame#statusCard {
     background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
-                                stop: 0 #323232, 
+                                stop: 0 #323232,
                                 stop: 1 #252525);
     border: 2px solid #555555;
     border-radius: 15px;
@@ -109,7 +109,7 @@ QFrame#statusCard {
 
 QFrame#statusCard:hover {
     background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
-                                stop: 0 #404040, 
+                                stop: 0 #404040,
                                 stop: 1 #323232);
     border-color: #FF5722;
     transform: translateY(-2px);
@@ -159,7 +159,7 @@ QFrame#statusCard:hover {
 ```css
 /* Depth through gradients */
 background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
-                            stop: 0 {elevated_color}, 
+                            stop: 0 {elevated_color},
                             stop: 1 {base_color});
 ```
 

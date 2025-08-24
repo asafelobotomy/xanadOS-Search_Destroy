@@ -14,7 +14,7 @@ After implementing the comprehensive state management system, users experienced:
 **Impact**: Next scan attempt would fail with "already in progress" message
 
 ### Issue 2: Permanent Manual Stop Flag
-**Location**: `_check_stop_completion()` method in `main_window.py`  
+**Location**: `_check_stop_completion()` method in `main_window.py`
 **Problem**: `_scan_manually_stopped` flag was set to `True` on stop but never reset to `False`
 **Impact**: All subsequent scan completions were ignored, causing fake results
 

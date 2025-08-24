@@ -8,7 +8,7 @@ Fixed multiple critical inconsistencies in the scan reporting system that were c
 ### 1. **Files Scanned Count Showing 0**
 **Problem**: Scan completed with files listed as scanned, but final report showed "Files scanned: 0"
 **Root Cause**: ScanThread was not passing scan_options to FileScanner
-**Fix**: 
+**Fix**:
 - Added `**self.scan_options` to both scan_directory calls in ScanThread
 - Added progress tracking in detailed_scan_progress to track actual files processed
 - Added fallback logic in display_scan_results to use progress tracking count if FileScanner result is incorrect
@@ -27,7 +27,7 @@ Fixed multiple critical inconsistencies in the scan reporting system that were c
 **Fix**:
 - Implemented file filtering logic in `scan_directory()` method:
   - `file_filter='executables'` - Only scan executable files
-  - `file_filter='documents'` - Only scan document files  
+  - `file_filter='documents'` - Only scan document files
   - `file_filter='archives'` - Only scan archive files
 - Added helper methods: `_is_executable_file()`, `_is_document_file()`, `_is_archive_file()`
 - Added exclusion pattern support with `_is_excluded_file()`
@@ -40,7 +40,7 @@ Fixed multiple critical inconsistencies in the scan reporting system that were c
 - Use depth-limited iteration instead of `rglob("*")` when depth is specified
 
 ### 5. **Inconsistent Directory Progress**
-**Problem**: "Directories scanned: 1 | Remaining: 2" then "Directories scanned: 2 | Remaining: 0" 
+**Problem**: "Directories scanned: 1 | Remaining: 2" then "Directories scanned: 2 | Remaining: 0"
 **Fix**:
 - Enhanced directory progress calculation in `_calculate_remaining_directories()`
 - Improved main directory detection logic
@@ -65,7 +65,7 @@ if 'file_filter' in kwargs:
             continue
     # ... other filters
 
-# Added depth limiting  
+# Added depth limiting
 if max_depth is not None:
     for file_path in self._scan_directory_with_depth(directory_obj, max_depth):
         # ... process with depth limit
@@ -75,7 +75,7 @@ if max_depth is not None:
 ```python
 # Now properly passes scan options
 result = self.scanner.scan_directory(
-    self.path, 
+    self.path,
     scan_type=scan_type,
     **self.scan_options    # FIXED: Pass scan options
 )
@@ -121,7 +121,7 @@ DEBUG: Using progress tracking count: 45 files
 - Extensions: .exe, .bat, .cmd, .sh, .py, .jar, .bin, etc.
 - Unix execute permissions check
 
-### Document Files  
+### Document Files
 - Extensions: .pdf, .doc, .docx, .txt, .md, .html, etc.
 
 ### Archive Files
@@ -138,7 +138,7 @@ DEBUG: Using progress tracking count: 45 files
 ## Expected Behavior After Fixes
 
 1. **Accurate File Counts**: "Files scanned: 45" will show actual count
-2. **Correct Duration**: "Duration: 3m 7.3s" will show real scan time  
+2. **Correct Duration**: "Duration: 3m 7.3s" will show real scan time
 3. **Applied Filters**: "Executable files only" will actually filter files
 4. **Consistent Progress**: Directory counts will be accurate and logical
 5. **Proper Statistics**: All scan metrics will reflect actual scan behavior

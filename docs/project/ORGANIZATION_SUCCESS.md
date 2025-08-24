@@ -110,7 +110,7 @@ xanadOS-Search_Destroy/
 ### Makefile Commands
 ```bash
 make check-organization    # Check repository organization
-make fix-organization     # Fix organization issues  
+make fix-organization     # Fix organization issues
 make install-hooks        # Install git hooks (one-time)
 ```
 
