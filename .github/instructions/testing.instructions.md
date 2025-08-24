@@ -4,21 +4,42 @@ applyTo: "**/{test,tests,spec,__tests__}/**/*"
 
 # Testing Excellence Standards
 
+## Copilot usage quick cues
+
+- Ask: scaffolding test cases, edge-case brainstorming, quick fixture ideas.
+- Edit: convert a failing spec to passing; request minimal diff + rationale.
+- Agent: create/organize tests across folders and wire CI; require a run summary.
+
+### Model routing
+
+- Reasoning model: test strategy, partitioning, flaky diagnostics.
+- Claude Sonnet class: TDD, refactors with safety nets, code review of tests.
+- Gemini Pro class: large cross-language refactors or summarizing long logs.
+- Fast general model: small spec additions and assertion tweaks.
+
+### Token economy tips
+
+- Share only the function under test and a short signature of dependencies.
+- Prefer table outputs for coverage deltas and flaky-test stats.
+
 ## Comprehensive Testing Requirements
 
 ### Test Coverage Standards
+
 - **Minimum 80% code coverage** for all new code
 - **100% coverage** for security-critical functions
 - **Branch coverage**: Test all code paths and edge cases
 - **Integration coverage**: Test component interactions
 
 ### Test Quality Standards
+
 - **Descriptive test names**: Use clear, specific test descriptions
 - **AAA Pattern**: Arrange, Act, Assert structure
 - **Independent tests**: Each test should be isolated and repeatable
 - **Fast execution**: Tests should complete in <5 seconds
 
 ### Testing Types Required
+
 - **Unit tests**: Test individual functions and methods
 - **Integration tests**: Test component interactions
 - **E2E tests**: Test complete user workflows
@@ -26,12 +47,14 @@ applyTo: "**/{test,tests,spec,__tests__}/**/*"
 - **Security tests**: Validate authentication and authorization
 
 ### Test Data Management
+
 - **Test fixtures**: Use consistent, realistic test data
 - **Data isolation**: Clean up test data after each test
 - **Mock external services**: Use mocks for external dependencies
 - **Environment consistency**: Tests should work in all environments
 
 ### Continuous Testing
+
 - **Pre-commit hooks**: Run tests before code commits
 - **CI/CD integration**: Automated test execution in pipelines
 - **Parallel execution**: Optimize test runtime with parallelization

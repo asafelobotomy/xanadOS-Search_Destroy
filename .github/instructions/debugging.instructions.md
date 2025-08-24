@@ -1,5 +1,23 @@
 # Bug Fixing & Error Resolution Instructions
 
+## Copilot usage quick cues
+
+- Ask: clarify the exact error and expected behavior; request minimal repro steps.
+- Edit: add logging, guards, or small fixes; keep diffs tight and reversible.
+- Agent: multi-file/root-cause hunts; require clear hypotheses and checkpoints.
+
+### Model routing
+
+- Reasoning model: intermittent bugs, concurrency, complex state flows.
+- Claude Sonnet class: structured reviews of logs, stack traces, and diffs.
+- Gemini Pro class: summarize long logs or correlate failures across files.
+- Fast general model: quick log/print instrumentation and small patches.
+
+### Token economy tips
+
+- Share only the failing snippet, stack trace, and minimal repro, not full files.
+- Prefer short checkpoints: what changed, what we tested, next hypothesis.
+
 ## 🎯 Purpose
 
 This instruction set provides comprehensive guidance for systematically diagnosing,

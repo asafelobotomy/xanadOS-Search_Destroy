@@ -1,10 +1,33 @@
 ---
-applyTo: "**/*"
+applyTo: ".github/**"
 priority: "high"
 enforcement: "mandatory"
 ---
 
 # Version Control Implementation Instructions - MANDATORY
+
+<!-- markdownlint-disable MD013 MD036 MD031 MD022 MD032 MD040 -->
+
+## Copilot usage quick cues
+
+- Ask: confirm if version-control setup or policy edits are in scope; if not,
+  skip heavy content and proceed.
+- Edit: small CI or template tweaks; keep diffs minimal and reference
+  existing scripts.
+- Agent: full VC bootstrap or workflow overhaul; require validation output
+  and a short summary of changes.
+
+### Model routing
+
+- Reasoning model: branching strategy, policy design, or complex migrations.
+- Claude Sonnet class: review CI, templates, and policy diffs for quality.
+- Gemini Pro class: summarize long logs or compare workflows across files.
+- Fast general model: simple config edits and small fixes.
+
+### Token economy tips
+
+- Link to this file instead of inlining long sections in PRs or comments.
+- Prefer running validation scripts and paste only the summary output.
 
 ## Policy Classification
 
@@ -193,9 +216,9 @@ name: Continuous Integration
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [ main ]
   pull_request:
-    branches: [ main, develop ]
+    branches: [ main ]
   workflow_dispatch:
 
 permissions:

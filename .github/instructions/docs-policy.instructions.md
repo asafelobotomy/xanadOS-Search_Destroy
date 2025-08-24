@@ -1,4 +1,26 @@
+---
+applyTo: "docs/**"
+---
+
 # Documentation Directory Policy (/docs/) - MANDATORY
+
+## Copilot usage quick cues
+
+- Ask: where to put a doc, how to structure a guide, or how to link existing docs.
+- Edit: improve a single doc file; request a minimal diff and lint-friendly fixes.
+- Agent: reorganize docs, update indexes, and validate links; require a run summary.
+
+### Model routing
+
+- Reasoning model: information architecture decisions and cross-doc restructuring.
+- Claude Sonnet class: editing, rewriting for clarity, and TDD-style doc updates.
+- Gemini Pro class: large doc sweeps or cross-language/code+doc synthesis.
+- Fast general model: small copyedits and link fixes.
+
+### Token economy tips
+
+- Link to `docs/` paths instead of pasting long content; include only changed lines.
+- Ask for a short table of affected files and a checklist of updates.
 
 ## Policy Classification
 
@@ -9,7 +31,10 @@
 
 ## Executive Summary
 
-This policy establishes comprehensive standards for `/docs/` directory organization based on GitHub best practices, Microsoft documentation architecture, and modern documentation platform standards. All GitHub Copilot agents MUST implement and maintain these standards in any repository containing documentation.
+This policy establishes comprehensive standards for `/docs/` directory organization
+based on GitHub best practices, Microsoft documentation architecture, and modern
+documentation platform standards. All GitHub Copilot agents MUST implement and
+maintain these standards in any repository containing documentation.
 
 ## Directory Structure Standards
 
@@ -157,4 +182,7 @@ This policy establishes comprehensive standards for `/docs/` directory organizat
 
 ---
 
-**ENFORCEMENT NOTICE**: This policy is MANDATORY for all GitHub Copilot agents. Non-compliance will result in repository standardization requirements and additional oversight procedures. All documentation work must follow these standards without exception.
+**ENFORCEMENT NOTICE**: This policy is MANDATORY for all GitHub Copilot agents.
+Non-compliance will result in repository standardization requirements and
+additional oversight procedures. All documentation work must follow these
+standards without exception.

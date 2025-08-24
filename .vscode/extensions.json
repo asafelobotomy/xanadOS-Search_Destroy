@@ -1,14 +1,25 @@
 {
+  // Workspace recommendations tailored for this repo (GitHub Flow, Markdown, YAML, scripts)
   "recommendations": [
     "github.copilot",
     "github.copilot-chat",
+    "github.vscode-github-actions",
     "yzhang.markdown-all-in-one",
     "davidanson.vscode-markdownlint",
-    "ms-vscode.vscode-json",
     "redhat.vscode-yaml",
     "esbenp.prettier-vscode",
-    "ms-vscode.test-adapter-converter",
-    "ms-vscode.extension-test-runner"
+    "eamodio.gitlens",
+    "EditorConfig.EditorConfig",
+    "timonwong.shellcheck",
+    "foxundermoon.shell-format",
+    "streetsidesoftware.code-spell-checker",
+    "bierner.markdown-mermaid"
   ],
-  "unwantedRecommendations": []
+  "unwantedRecommendations": [
+    // Not relevant to this repo’s scope
+    "rangav.vscode-thunder-client",
+    "ms-vscode.makefile-tools",
+    "ms-vscode.extension-test-runner",
+    "ms-vscode.test-adapter-converter"
+  ]
 }

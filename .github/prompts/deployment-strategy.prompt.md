@@ -1,6 +1,8 @@
 # Deployment Strategy Prompt
 
-You are designing and implementing comprehensive deployment strategies for modern applications. Create robust, automated deployment pipelines with proper testing, monitoring, and rollback capabilities across different environments and infrastructure types.
+Design and implement deployment strategies for modern applications.
+Create automated pipelines with testing, monitoring, and rollbacks.
+Support multiple environments and infrastructure types.
 
 ## Deployment Strategy Framework
 
@@ -17,7 +19,7 @@ environments:
     infrastructure:
       type: "local_docker"
       auto_deploy: true
-      branch_triggers: ["feature/*", "develop"]
+  branch_triggers: ["feature/*"]
     resources:
       cpu_limit: "2 cores"
       memory_limit: "4GB"
@@ -35,7 +37,7 @@ environments:
       cluster: "staging-cluster"
       namespace: "myapp-staging"
       auto_deploy: true
-      branch_triggers: ["develop", "release/*"]
+  branch_triggers: ["release/*"]
     resources:
       replicas: 2
       cpu_request: "500m"
@@ -81,7 +83,7 @@ environments:
       performance_monitoring: true
       error_tracking: true
       alerting: true
-```markdown
+```
 
 ## Infrastructure as Code (Terraform)
 
@@ -276,7 +278,7 @@ locals {
     Owner       = var.team_name
   }
 }
-```markdown
+```
 
 ## 2. CI/CD Pipeline Implementation
 
@@ -291,13 +293,11 @@ on:
   push:
     branches:
       - main
-      - develop
       - 'release/*'
       - 'feature/*'
   pull_request:
     branches:
       - main
-      - develop
 
 env:
   DOCKER_REGISTRY: ghcr.io
@@ -347,17 +347,17 @@ jobs:
         with:
           path: ~/.cache/pip
           key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
-          restore-keys: |
+          restore-keys: >-
             ${{ runner.os }}-pip-
 
       - name: Install dependencies
-        run: |
+  run: >-
           python -m pip install --upgrade pip
           pip install -r requirements.txt
           pip install -r requirements-dev.txt
 
       - name: Run linting
-        run: |
+  run: >-
           flake8 src/
           black --check src/
           isort --check-only src/
@@ -366,7 +366,7 @@ jobs:
         run: mypy src/
 
       - name: Run unit tests
-        run: |
+  run: >-
           pytest tests/unit/ \
             --cov=src \
             --cov-report=xml \
@@ -377,7 +377,7 @@ jobs:
           REDIS_URL: redis://localhost:6379/0
 
       - name: Run integration tests
-        run: |
+  run: >-
           pytest tests/integration/ \
             --cov=src \
             --cov-append \
@@ -423,7 +423,7 @@ jobs:
           generateSarif: true
 
       - name: Run dependency check
-        run: |
+  run: >-
           pip install safety
           safety check --json --output safety-report.json || true
 
@@ -431,7 +431,7 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: security-reports
-          path: |
+          path: >-
             trivy-results.sarif
             safety-report.json
 
@@ -464,7 +464,7 @@ jobs:
         uses: docker/metadata-action@v5
         with:
           images: ${{ env.DOCKER_REGISTRY }}/${{ env.IMAGE_NAME }}
-          tags: |
+          tags: >-
             type=ref,event=branch
             type=ref,event=pr
             type=sha,prefix=sha-
@@ -491,7 +491,7 @@ jobs:
     name: Deploy to Development
     runs-on: ubuntu-latest
     needs: build
-    if: github.ref == 'refs/heads/develop' || startsWith(github.ref, 'refs/heads/feature/')
+  if: startsWith(github.ref, 'refs/heads/feature/')
     environment: development
 
     steps:
@@ -505,7 +505,7 @@ jobs:
           kubeconfig: ${{ secrets.DEV_KUBECONFIG }}
 
       - name: Deploy to development
-        run: |
+  run: >-
           # Update image tag in deployment
           kubectl set image deployment/myapp-deployment \
             myapp=${{ needs.build.outputs.image-tag }} \
@@ -517,7 +517,7 @@ jobs:
             --timeout=300s
 
       - name: Run smoke tests
-        run: |
+  run: >-
           # Wait for service to be ready
           kubectl wait --for=condition=ready pod \
             -l app=myapp \
@@ -537,7 +537,7 @@ jobs:
     name: Deploy to Staging
     runs-on: ubuntu-latest
     needs: build
-    if: github.ref == 'refs/heads/develop' || startsWith(github.ref, 'refs/heads/release/')
+  if: startsWith(github.ref, 'refs/heads/release/')
     environment: staging
 
     steps:
@@ -551,7 +551,7 @@ jobs:
           kubeconfig: ${{ secrets.STAGING_KUBECONFIG }}
 
       - name: Deploy to staging
-        run: |
+  run: >-
           helm upgrade --install myapp ./helm/myapp \
             --namespace myapp-staging \
             --create-namespace \
@@ -563,7 +563,7 @@ jobs:
             --timeout=10m
 
       - name: Run comprehensive tests
-        run: |
+  run: >-
           # Wait for deployment
           kubectl wait --for=condition=available deployment/myapp \
             -n myapp-staging \
@@ -605,7 +605,7 @@ jobs:
           kubeconfig: ${{ secrets.PROD_KUBECONFIG }}
 
       - name: Pre-deployment checks
-        run: |
+  run: >-
           # Check cluster health
           kubectl get nodes
           kubectl top nodes
@@ -619,7 +619,7 @@ jobs:
             -- pg_isready -h ${{ secrets.PROD_DATABASE_HOST }}
 
       - name: Blue-Green Deployment
-        run: |
+  run: >-
           # Deploy to green environment
           helm upgrade --install myapp-green ./helm/myapp \
             --namespace myapp-production \
@@ -645,7 +645,7 @@ jobs:
           pytest tests/smoke/ --url=http://$GREEN_SERVICE_IP:8000
 
       - name: Switch Traffic to Green
-        run: |
+  run: >-
           # Update ingress to point to green service
           kubectl patch ingress myapp-ingress \
             -n myapp-production \
@@ -666,7 +666,7 @@ jobs:
           pytest tests/smoke/ --url=https://$PROD_URL
 
       - name: Cleanup Old Blue Deployment
-        run: |
+  run: >-
           # Wait before cleanup (allow for quick rollback if needed)
           sleep 300  # 5 minutes
 
@@ -685,7 +685,7 @@ jobs:
             -p='[{"op": "replace", "path": "/metadata/name", "value": "myapp"}]'
 
       - name: Post-deployment monitoring
-        run: |
+  run: >-
           # Send deployment notification
           curl -X POST ${{ secrets.SLACK_WEBHOOK_URL }} \
             -H 'Content-type: application/json' \
@@ -693,7 +693,7 @@ jobs:
 
           # Update deployment tracking
           echo "Deployment completed at $(date)" >> deployment-log.txt
-```markdown
+```
 
 ## 3. Container Orchestration with Kubernetes
 
@@ -1039,7 +1039,7 @@ spec:
       port: 80
     - protocol: UDP
       port: 53
-```markdown
+```
 
 ## 4. Advanced Deployment Strategies
 
@@ -1346,7 +1346,7 @@ def main():
 
 if __name__ == "__main__":
     main()
-```markdown
+```
 
 ### Canary Deployment with Istio
 
@@ -1443,7 +1443,7 @@ spec:
     provider:
       prometheus:
         address: http://prometheus.monitoring.svc.cluster.local:9090
-        query: |
+  query: >-
           sum(rate(http_requests_total{service="{{args.service-name}}",namespace="{{args.namespace}}",code!~"5.."}[1m])) /
           sum(rate(http_requests_total{service="{{args.service-name}}",namespace="{{args.namespace}}"}[1m]))
 
@@ -1465,7 +1465,7 @@ spec:
     provider:
       prometheus:
         address: http://prometheus.monitoring.svc.cluster.local:9090
-        query: |
+  query: >-
           histogram_quantile(0.95,
             sum(rate(http_request_duration_seconds_bucket{service="{{args.service-name}}",namespace="{{args.namespace}}"}[1m]))
             by (le)
@@ -1525,7 +1525,7 @@ spec:
   - name: canary
     labels:
       version: canary
-```markdown
+```
 
 ## 5. Monitoring and Observability
 
@@ -1540,7 +1540,7 @@ metadata:
   name: prometheus-config
   namespace: monitoring
 data:
-  prometheus.yml: |
+  prometheus.yml: >-
     global:
       scrape_interval: 15s
       evaluation_interval: 15s
@@ -1695,7 +1695,7 @@ data:
     "refresh": "5s"
   }
 }
-```markdown
+```
 
 ## Alerting Configuration
 
@@ -1714,7 +1714,7 @@ spec:
 
     # High Error Rate Alert
     - alert: HighErrorRate
-      expr: |
+  expr: >-
         (
           sum(rate(http_requests_total{service="myapp",status_code=~"5.."}[5m])) /
           sum(rate(http_requests_total{service="myapp"}[5m]))
@@ -1730,7 +1730,7 @@ spec:
 
     # High Response Time Alert
     - alert: HighResponseTime
-      expr: |
+  expr: >-
         histogram_quantile(0.95,
           sum(rate(http_request_duration_seconds_bucket{service="myapp"}[5m])) by (le)
         ) > 1.0
@@ -1744,7 +1744,7 @@ spec:
 
     # Pod Down Alert
     - alert: PodDown
-      expr: |
+  expr: >-
         up{job="myapp"} == 0
       for: 1m
       labels:
@@ -1756,7 +1756,7 @@ spec:
 
     # High CPU Usage Alert
     - alert: HighCPUUsage
-      expr: |
+  expr: >-
         sum(rate(container_cpu_usage_seconds_total{pod=~"myapp-.*"}[5m])) by (pod) > 0.8
       for: 10m
       labels:
@@ -1768,7 +1768,7 @@ spec:
 
     # High Memory Usage Alert
     - alert: HighMemoryUsage
-      expr: |
+  expr: >-
         (
           container_memory_usage_bytes{pod=~"myapp-.*"} /
           container_spec_memory_limit_bytes{pod=~"myapp-.*"}
@@ -1783,7 +1783,7 @@ spec:
 
     # Database Connection Alert
     - alert: DatabaseConnectionHigh
-      expr: |
+  expr: >-
         sum(database_connections_active{service="myapp"}) > 80
       for: 5m
       labels:
@@ -1795,7 +1795,7 @@ spec:
 
     # Deployment Failed Alert
     - alert: DeploymentFailed
-      expr: |
+  expr: >-
         kube_deployment_status_replicas_unavailable{deployment="myapp"} > 0
       for: 5m
       labels:
@@ -1815,7 +1815,7 @@ metadata:
   name: alertmanager-config
   namespace: monitoring
 data:
-  alertmanager.yml: |
+  alertmanager.yml: >-
     global:
       smtp_smarthost: 'smtp.company.com:587'
       smtp_from: 'alerts@company.com'
@@ -1864,7 +1864,7 @@ data:
       - to: 'team@company.com'
         subject: 'Warning Alert: {{ .GroupLabels.alertname }}'
         body: '{{ range .Alerts }}{{ .Annotations.description }}{{ end }}'
-```markdown
+```
 
 ## 6. Deployment Checklist
 
@@ -1921,4 +1921,7 @@ data:
   - [ ] Post-mortem scheduled (if issues occurred)
   - [ ] Lessons learned documented
 
-Remember: Deployment strategy should match your application's requirements, risk tolerance, and operational capabilities. Start with simpler strategies and evolve to more sophisticated approaches as your infrastructure and processes mature.
+Remember: Deployment strategy should match your application's requirements,
+risk tolerance, and operational capabilities. Start with simpler strategies
+and evolve to more sophisticated approaches as your infrastructure and
+processes mature.

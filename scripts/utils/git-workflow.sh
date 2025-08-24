@@ -7,7 +7,6 @@ set -e
 
 # Configuration
 DEFAULT_BRANCH="main"
-DEVELOP_BRANCH="develop"
 VERSION_FILE="VERSION"
 
 # Colors for output
@@ -129,9 +128,9 @@ create_release_branch() {
 
     print_status "Creating release branch: $branch_name"
 
-    # Ensure we're on develop or main
+    # Ensure we're on main
     local current_branch=$(get_current_branch)
-    if [[ "$current_branch" != "$DEFAULT_BRANCH" && "$current_branch" != "$DEVELOP_BRANCH" ]]; then
+    if [[ "$current_branch" != "$DEFAULT_BRANCH" ]]; then
         print_warning "Switching to $DEFAULT_BRANCH for release"
         git checkout "$DEFAULT_BRANCH"
         git pull origin "$DEFAULT_BRANCH"

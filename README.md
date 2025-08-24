@@ -1,12 +1,18 @@
 # 🚀 GitHub Copilot Enhancement Framework
 
-**A comprehensive enterprise-grade system for AI-assisted development with specialized chatmodes, prompt templates, and advanced instructions.**
+[![CI](https://github.com/asafelobotomy/agent-instructions-co-pilot/actions/workflows/ci.yml/badge.svg)](https://github.com/asafelobotomy/agent-instructions-co-pilot/actions/workflows/ci.yml)
+[![Spellcheck](https://github.com/asafelobotomy/agent-instructions-co-pilot/actions/workflows/spellcheck.yml/badge.svg)](https://github.com/asafelobotomy/agent-instructions-co-pilot/actions/workflows/spellcheck.yml)
+[![Link Check](https://github.com/asafelobotomy/agent-instructions-co-pilot/actions/workflows/link-check.yml/badge.svg)](https://github.com/asafelobotomy/agent-instructions-co-pilot/actions/workflows/link-check.yml)
 
-*Quality Score: **98.9%** | Enterprise Excellence Level | Production Ready*
+**A comprehensive enterprise-grade system for AI-assisted development with specialized
+chatmodes, prompt templates, and advanced instructions.**
+
+_Quality Score: **98.9%** | Enterprise Excellence Level | Production Ready_
 
 ## 🛠️ **IMPORTANT: Ready-to-Use Toolshed Available**
 
-**⚡ This repository includes a complete toolshed of pre-built scripts that GitHub Copilot agents should ALWAYS use instead of recreating functionality.**
+**⚡ This repository includes a complete toolshed of pre-built scripts that GitHub
+Copilot agents should ALWAYS use instead of recreating functionality.**
 
 ### 🔧 **Essential Tools for Immediate Use:**
 
@@ -60,12 +66,15 @@ cat /docs/guides/model-targeting-guide.md
 
 This framework transforms your GitHub Copilot experience by providing:
 
-- **11 Specialized Chatmodes** - From architect to security specialist, each optimized for specific development tasks
+- **11 Specialized Chatmodes** - From architect to security specialist,
+  each optimized for specific development tasks
+
 - **7 Professional Prompt Templates** - Reusable, battle-tested prompts for common scenarios
 - **Path-Specific Instructions** - Advanced targeting with `applyTo` frontmatter for file-specific guidance
 - **Enterprise Validation System** - Comprehensive quality assurance with automated testing
 - **Complete Script Toolshed** - 20+ pre-built tools for common development tasks
-- **Advanced Model Support** - Optimized for GitHub Copilot 2025, GPT-5, Claude Sonnet 4, and Gemini Pro
+- **Advanced Model Support** - Optimized for GitHub Copilot 2025, GPT-5, Claude Sonnet 4,
+  and Gemini Pro
 
 ## 🏗️ Repository Structure
 
@@ -130,9 +139,8 @@ This framework transforms your GitHub Copilot experience by providing:
 ├── security.instructions.md       # Security-first development (all code files)
 ├── testing.instructions.md        # Testing excellence (test files)
 └── debugging.instructions.md      # Comprehensive debugging guidance
-```
 └── 3 more instruction sets...
-```markdown
+```
 
 ## 🚀 Quick Start
 
@@ -162,19 +170,19 @@ This framework transforms your GitHub Copilot experience by providing:
 
 ```text
 Perfect for: API design, database schema, microservices planning
-```markdown
+```
 
 #### Security Analysis (security.chatmode.md)
 
 ```text
 Perfect for: Vulnerability assessment, secure coding, compliance
-```markdown
+```
 
 #### Code Optimization (elite-engineer.chatmode.md)
 
 ```text
 Perfect for: Performance tuning, refactoring, advanced algorithms
-```markdown
+```
 
 ## 📚 Documentation
 

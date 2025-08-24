@@ -1,5 +1,5 @@
 ---
-applyTo: "**/*"
+applyTo: "docs/**"
 priority: "critical"
 enforcement: "mandatory"
 ---

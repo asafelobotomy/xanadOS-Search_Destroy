@@ -444,10 +444,10 @@ create_github_files() {
 name: Continuous Integration
 
 on:
-  push:
-    branches: [ main, develop ]
-  pull_request:
-    branches: [ main, develop ]
+    push:
+        branches: [ main ]
+    pull_request:
+        branches: [ main ]
   workflow_dispatch:
 
 permissions:

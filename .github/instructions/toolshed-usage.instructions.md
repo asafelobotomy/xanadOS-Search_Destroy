@@ -1,5 +1,5 @@
 ---
-applyTo: "**/*"
+applyTo: "scripts/**"
 priority: "critical"
 enforcement: "mandatory"
 ---
@@ -15,7 +15,9 @@ enforcement: "mandatory"
 
 ## Executive Summary
 
-All GitHub Copilot agents MUST check and utilize the existing toolshed in `scripts/tools/` before creating any scripts, automation, or development tools. This prevents redundant work, ensures consistency, and maintains quality standards across all projects.
+All GitHub Copilot agents MUST check and utilize the existing toolshed in `scripts/tools/`
+before creating any scripts, automation, or development tools. This prevents redundant
+work, ensures consistency, and maintains quality standards across all projects.
 
 ## 🚨 **CRITICAL DIRECTIVE: Check Toolshed First**
 
@@ -30,13 +32,16 @@ Before writing ANY script or automation tool, agents MUST:
 ## 📁 **Available Tool Categories**
 
 ### **Git Tools** (`scripts/tools/git/`)
+
 **Purpose**: Repository setup, workflow automation, release management
 
 **Available Tools**:
+
 - `setup-repository.sh` - Complete repository initialization with industry standards
 - `workflow-helper.sh` - Advanced Git workflow automation (feature/release branches)
 
 **Usage Example**:
+
 ```bash
 # Instead of writing custom Git setup
 ./scripts/tools/git/setup-repository.sh --help
@@ -44,13 +49,16 @@ Before writing ANY script or automation tool, agents MUST:
 ```
 
 ### **Validation Tools** (`scripts/tools/validation/`)
+
 **Purpose**: Repository structure validation, compliance checking
 
 **Available Tools**:
+
 - `validate-structure.sh` - Comprehensive repository validation (97% compliance checking)
 - `validate-instructions.sh` - GitHub Copilot instruction file validation
 
 **Usage Example**:
+
 ```bash
 # Instead of writing custom validation
 ./scripts/tools/validation/validate-structure.sh --category git
@@ -58,12 +66,15 @@ Before writing ANY script or automation tool, agents MUST:
 ```
 
 ### **Quality Tools** (`scripts/tools/quality/`)
+
 **Purpose**: Code quality checking, automated fixes, standards enforcement
 
 **Available Tools**:
+
 - `check-quality.sh` - Comprehensive quality validation with auto-fix capabilities
 
 **Usage Example**:
+
 ```bash
 # Instead of writing custom quality checks
 ./scripts/tools/quality/check-quality.sh --check markdown --fix
@@ -71,36 +82,45 @@ Before writing ANY script or automation tool, agents MUST:
 ```
 
 ### **Repository Tools** (`scripts/tools/repository/`)
+
 **Purpose**: Repository management, backup, organization
 
 **Available Tools**:
+
 - `backup-repository.sh` - Comprehensive repository backup and archiving
 
 **Usage Example**:
+
 ```bash
 # Instead of writing custom backup scripts
 ./scripts/tools/repository/backup-repository.sh
 ```
 
 ### **Documentation Tools** (`scripts/tools/documentation/`)
+
 **Purpose**: Documentation generation, maintenance, automation
 
 **Available Tools**:
+
 - `generate-docs.sh` - Automated documentation generation system
 
 **Usage Example**:
+
 ```bash
 # Instead of writing custom documentation generators
 ./scripts/tools/documentation/generate-docs.sh
 ```
 
 ### **Deployment Tools** (`scripts/tools/deployment/`)
+
 **Purpose**: Complete toolshed deployment to new repositories
 
 **Available Tools**:
+
 - `implement-toolshed.sh` - Deploy complete toolshed to any repository
 
 **Usage Example**:
+
 ```bash
 # Instead of manually copying tools
 ./scripts/tools/deployment/implement-toolshed.sh --category git
@@ -108,12 +128,15 @@ Before writing ANY script or automation tool, agents MUST:
 ```
 
 ### **Hooks & Automation Tools** (`scripts/tools/hooks/`)
+
 **Purpose**: Pre-commit automation, quality gates, workflow automation
 
 **Available Tools**:
+
 - `setup-pre-commit.sh` - Comprehensive pre-commit hook configuration with multi-language support
 
 **Usage Example**:
+
 ```bash
 # Instead of writing custom pre-commit setups
 ./scripts/tools/hooks/setup-pre-commit.sh --languages python,javascript
@@ -121,12 +144,15 @@ Before writing ANY script or automation tool, agents MUST:
 ```
 
 ### **Security Tools** (`scripts/tools/security/`)
+
 **Purpose**: Vulnerability scanning, security analysis, compliance checking
 
 **Available Tools**:
+
 - `security-scan.sh` - Comprehensive security scanning (SAST, dependency scanning, container security)
 
 **Usage Example**:
+
 ```bash
 # Instead of writing custom security scanners
 ./scripts/tools/security/security-scan.sh --sast-only
@@ -134,12 +160,15 @@ Before writing ANY script or automation tool, agents MUST:
 ```
 
 ### **Dependency Management Tools** (`scripts/tools/dependencies/`)
+
 **Purpose**: Package management, vulnerability monitoring, automated updates
 
 **Available Tools**:
+
 - `dependency-manager.sh` - Multi-language dependency management with security scanning
 
 **Usage Example**:
+
 ```bash
 # Instead of writing custom dependency tools
 ./scripts/tools/dependencies/dependency-manager.sh --update --strategy minor
@@ -147,12 +176,15 @@ Before writing ANY script or automation tool, agents MUST:
 ```
 
 ### **Performance Monitoring Tools** (`scripts/tools/monitoring/`)
+
 **Purpose**: Application performance monitoring, system resource analysis
 
 **Available Tools**:
+
 - `performance-monitor.sh` - Comprehensive performance monitoring and profiling
 
 **Usage Example**:
+
 ```bash
 # Instead of writing custom monitoring scripts
 ./scripts/tools/monitoring/performance-monitor.sh --duration 300
@@ -160,12 +192,15 @@ Before writing ANY script or automation tool, agents MUST:
 ```
 
 ### **Container Management Tools** (`scripts/tools/containers/`)
+
 **Purpose**: Docker container management, optimization, security
 
 **Available Tools**:
+
 - `docker-manager.sh` - Complete Docker lifecycle management and optimization
 
 **Usage Example**:
+
 ```bash
 # Instead of writing custom Docker scripts
 ./scripts/tools/containers/docker-manager.sh --build --security-scan
@@ -173,6 +208,7 @@ Before writing ANY script or automation tool, agents MUST:
 ```
 
 ### **Database Tools** (`scripts/tools/database/`)
+
 **Purpose**: Database backup, optimization, health monitoring
 
 **Available Tools**:
@@ -184,9 +220,11 @@ Before writing ANY script or automation tool, agents MUST:
 ./scripts/tools/database/database-manager.sh --backup --type mysql
 ./scripts/tools/database/database-manager.sh --health-check --type postgresql
 ```
+
 - `implement-toolshed.sh` - Deploy complete toolshed to any repository
 
 **Usage Example**:
+
 ```bash
 # Instead of manually copying tools
 ./scripts/tools/implement-toolshed.sh --category git
@@ -196,6 +234,7 @@ Before writing ANY script or automation tool, agents MUST:
 ## 🎯 **Mandatory Usage Workflow**
 
 ### **Step 1: Always Check First**
+
 ```bash
 # Before ANY script creation, check:
 ls scripts/tools/
@@ -204,6 +243,7 @@ find scripts/tools/ -name "*.sh" -exec basename {} \;
 ```
 
 ### **Step 2: Use Existing Tools**
+
 ```bash
 # Example: Repository setup
 ./scripts/tools/git/setup-repository.sh
@@ -216,6 +256,7 @@ find scripts/tools/ -name "*.sh" -exec basename {} \;
 ```
 
 ### **Step 3: Get Help for Any Tool**
+
 ```bash
 # Every tool has comprehensive help
 ./scripts/tools/[category]/[tool-name].sh --help
@@ -223,7 +264,9 @@ find scripts/tools/ -name "*.sh" -exec basename {} \;
 ```
 
 ### **Step 4: Extend, Don't Duplicate**
+
 If existing tools don't meet requirements:
+
 - **Extend existing tools** with new options
 - **Follow established patterns** for new tools
 - **Document new functionality** in the tool itself
@@ -247,14 +290,16 @@ done
 
 ## 📋 **Quality Standards for Tool Usage**
 
-### **Required Checks Before Script Creation**:
+### **Required Checks Before Script Creation**
+
 1. ✅ Checked `scripts/tools/README.md`
 2. ✅ Searched existing tools with `find scripts/tools/ -name "*keyword*"`
 3. ✅ Tested relevant tools with `--help` and `--dry-run`
 4. ✅ Confirmed no existing tool meets the requirement
 5. ✅ Planned to extend existing tool or follow patterns
 
-### **Validation Commands**:
+### **Validation Commands**
+
 ```bash
 # Verify toolshed is available
 test -d scripts/tools && echo "✅ Toolshed available" || echo "❌ Toolshed missing"
@@ -268,7 +313,7 @@ find scripts/tools/ -name "*.sh" | wc -l
 
 ## 🚨 **Enforcement Policy**
 
-### **MANDATORY Requirements**:
+### **MANDATORY Requirements**
 
 1. **Pre-Creation Check**: Always check toolshed before writing scripts
 2. **Use Existing Tools**: Utilize available tools when applicable
@@ -276,7 +321,7 @@ find scripts/tools/ -name "*.sh" | wc -l
 4. **Documentation**: Update README when extending or adding tools
 5. **Quality Gates**: All tools must pass validation checks
 
-### **Compliance Validation**:
+### **Compliance Validation**
 
 ```bash
 # Check if toolshed is being used properly
@@ -290,13 +335,15 @@ grep -r "validate.*structure" scripts/ --exclude-dir=tools
 
 ## 💡 **Best Practices for Agents**
 
-### **Tool Selection Priority**:
+### **Tool Selection Priority**
+
 1. **First**: Use exact matching tool from toolshed
 2. **Second**: Extend existing tool with new options
 3. **Third**: Create new tool following established patterns
 4. **Never**: Recreate functionality that exists in toolshed
 
-### **Integration Patterns**:
+### **Integration Patterns**
+
 ```bash
 # Standard tool integration approach
 if [[ -f "scripts/tools/git/setup-repository.sh" ]]; then
@@ -310,13 +357,15 @@ fi
 
 ## 📊 **Success Metrics**
 
-### **Compliance Indicators**:
+### **Compliance Indicators**
+
 - ✅ 100% toolshed awareness before script creation
 - ✅ 90%+ reuse rate of existing tools
 - ✅ Zero duplicate functionality across projects
 - ✅ Consistent tool interfaces and quality
 
-### **Quality Assurance**:
+### **Quality Assurance**
+
 - All agents check toolshed first
 - Existing tools are extended rather than duplicated
 - New tools follow established patterns
@@ -324,7 +373,8 @@ fi
 
 ## 🆘 **Quick Reference Card**
 
-### **Essential Commands**:
+### **Essential Commands**
+
 ```bash
 # ALWAYS RUN THESE FIRST:
 ls scripts/tools/                           # See available categories
@@ -337,7 +387,8 @@ cat scripts/tools/README.md                 # Read full tool catalog
 ./scripts/tools/quality/check-quality.sh    # Quality checks
 ```
 
-### **When in Doubt**:
+### **When in Doubt**
+
 1. Check `scripts/tools/README.md`
 2. Run `find scripts/tools/ -name "*.sh"`
 3. Test with `--help` flag
@@ -345,4 +396,5 @@ cat scripts/tools/README.md                 # Read full tool catalog
 
 ---
 
-**This toolshed usage is MANDATORY for all GitHub Copilot agents to ensure efficient, consistent, and high-quality automation across all projects.**
+**This toolshed usage is MANDATORY for all GitHub Copilot agents to ensure efficient,
+consistent, and high-quality automation across all projects.**

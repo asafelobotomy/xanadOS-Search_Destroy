@@ -1,0 +1,15 @@
+{
+  "ignorePatterns": [
+    { "pattern": "^https://github.com/.+/(compare|commit|pull)/" },
+    { "pattern": "^https://img.shields.io/" },
+    { "pattern": "^mailto:" }
+  ],
+  "httpHeaders": [
+    { "urls": ["https://*"], "headers": { "User-Agent": "Mozilla/5.0" } }
+  ],
+  "retryOn429": true,
+  "checkModifiedFilesOnly": false,
+  "replacementPatterns": [
+    { "pattern": "^#", "replacement": "" }
+  ]
+}

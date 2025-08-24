@@ -2,18 +2,19 @@
 
 ## Branch Structure
 
-This repository follows the **GitHub Flow** branching strategy, optimized for continuous integration and deployment.
+This repository follows the **GitHub Flow** branching strategy, optimized for
+continuous integration and deployment. There is no long‑lived `develop` branch.
 
-### Main Branches
+### Main Branch
 
 - **main**: Production-ready code. All releases are tagged from this branch.
-- **develop**: Integration branch for features (optional for smaller projects)
 
-### Supporting Branches
+### Supporting Branches (short‑lived)
 
 - **feature/**: New features (`feature/enhancement-name`)
 - **hotfix/**: Critical production fixes (`hotfix/issue-description`)
-- **release/**: Release preparation (`release/v1.2.0`)
+- **release/**: Release preparation (`release/v1.2.0`) — optional; keep
+    short‑lived and merge back to `main`
 - **docs/**: Documentation improvements (`docs/topic-name`)
 
 ## Commit Convention
@@ -22,7 +23,7 @@ This project uses [Conventional Commits](https://conventionalcommits.org/) speci
 
 ### Format
 
-```
+```text
 <type>[optional scope]: <description>
 
 [optional body]
@@ -63,11 +64,11 @@ This project follows [Semantic Versioning](https://semver.org/) (SemVer):
 
 ### Version Format
 
-```
+```text
 MAJOR.MINOR.PATCH[-PRERELEASE][+BUILD]
 ```
 
-### Examples
+### Examples (version strings)
 
 - `1.0.0` - Initial release
 - `1.1.0` - New feature added
@@ -160,7 +161,10 @@ git config alias.st status
 git config alias.unstage 'reset HEAD --'
 git config alias.last 'log -1 HEAD'
 git config alias.visual '!gitk'
-git config alias.lg "log --color --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit"
+git config alias.lg \
+        "log --color --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s \
+        %Cgreen(%cr) %C(bold blue)<%an>%Creset' \
+    --abbrev-commit"
 ```
 
 ## Pull Request Guidelines
@@ -254,4 +258,5 @@ fi
 
 ---
 
-*This document should be reviewed and updated regularly to reflect evolving best practices and project needs.*
+_This document should be reviewed and updated regularly to reflect evolving best
+practices and project needs._

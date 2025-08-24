@@ -1,4 +1,26 @@
+---
+applyTo: "**/*.{js,ts,tsx,jsx,py,rb,go,java,php,cs,rs,kt,swift,sh,md}"
+---
+
 # Code Quality and Formatting Standards - MANDATORY
+
+## Copilot usage quick cues
+
+- Ask: style/lint rule clarifications, quick fixes suggestions, or config diffs.
+- Edit: apply auto-fixes to a single file; request minimal diff and keep rules intact.
+- Agent: repo-wide formatting/linting with toolshed usage and a PASS/FAIL summary.
+
+### Model routing
+
+- Reasoning model: non-trivial rule design and conflicting-rule mediation.
+- Claude Sonnet class: code review + targeted refactors guided by tests.
+- Gemini Pro class: large doc/code sweeps or summarizing linter logs.
+- Fast general model: quick formatting and small rule tweaks.
+
+### Token economy tips
+
+- Link to the exact script under scripts/tools rather than pasting long output.
+- Ask for patches or staged diffs instead of full-file reprints.
 
 ## Policy Classification
 
@@ -9,7 +31,11 @@
 
 ## Executive Summary
 
-This policy establishes comprehensive standards for code quality, linting, and formatting based on industry best practices from ShellCheck, markdownlint, Prettier, and EditorConfig standards. All GitHub Copilot agents MUST implement and maintain these standards to ensure consistent, high-quality code across all repositories.
+This policy establishes comprehensive standards for code quality, linting, and
+formatting based on industry best practices from ShellCheck, markdownlint,
+Prettier, and EditorConfig standards. All GitHub Copilot agents MUST implement
+and maintain these standards to ensure consistent, high-quality code across all
+repositories.
 
 ## Shell Script Standards (ShellCheck)
 
@@ -722,32 +748,7 @@ See `.github/instructions/version-control.instructions.md` for complete implemen
 - **Enforcement**: Mandatory for all GitHub Copilot agents
 - **Compliance Tracking**: Required in all repository assessments
 
----
-
 **ENFORCEMENT NOTICE**: This policy is MANDATORY for all GitHub Copilot agents.
 Non-compliance will result in repository quality issues and additional oversight
 procedures. All code work must follow these standards without exception.
 **Version control implementation is a prerequisite for all development work.**
-```markdown
-
-## Related Policies
-
-- Documentation Policy: `.github/instructions/docs-policy.instructions.md`
-- Archive Management Policy: `.github/instructions/archive-policy.instructions.md`
-- Security Guidelines: `.github/instructions/security.instructions.md`
-- Testing Standards: `.github/instructions/testing.instructions.md`
-
-## Policy Metadata
-
-- **Created**: Current implementation date
-- **Last Updated**: Current date
-- **Version**: 1.0
-- **Next Review**: Quarterly
-- **Enforcement**: Mandatory for all GitHub Copilot agents
-- **Compliance Tracking**: Required in all repository assessments
-
----
-
-**ENFORCEMENT NOTICE**: This policy is MANDATORY for all GitHub Copilot agents.
-Non-compliance will result in repository quality issues and additional oversight
-procedures. All code work must follow these standards without exception.

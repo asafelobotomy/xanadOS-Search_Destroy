@@ -568,10 +568,11 @@ class TemplateValidationSystem {
       }
     }
 
-    // Check for proper table formatting
-    const tables = content.match(/\|.*\|/g) || [];
+    // Check for proper table formatting (ignore fenced code blocks)
+    const textNoCode = content.replace(/```[\s\S]*?```/g, '');
+    const tables = textNoCode.match(/\|.*\|/g) || [];
     if (tables.length > 0) {
-      const tableBlocks = content.split('\n\n').filter(block => block.includes('|'));
+      const tableBlocks = textNoCode.split('\n\n').filter(block => block.includes('|'));
       for (const table of tableBlocks) {
         const tableLines = table.split('\n').filter(line => line.includes('|'));
         if (tableLines.length < 3) {
@@ -588,8 +589,9 @@ class TemplateValidationSystem {
     const issues = [];
     let score = 1.0;
 
-    // Check sentence length
-    const sentences = content.split(/[.!?]+/).filter(s => s.trim().length > 0);
+  // Check sentence length (ignore fenced code blocks)
+  const textNoCode = content.replace(/```[\s\S]*?```/g, '');
+  const sentences = textNoCode.split(/[.!?]+/).filter(s => s.trim().length > 0);
     const longSentences = sentences.filter(s => s.split(/\s+/).length > 25);
 
     if (longSentences.length > 0) {
@@ -643,15 +645,16 @@ class TemplateValidationSystem {
       }
     }
 
-    // Check for currency symbols
-    if (/[$£€¥]/.test(content)) {
+  // Check for currency symbols (ignore fenced code blocks)
+  const textNoCode = content.replace(/```[\s\S]*?```/g, '');
+  if (/[$£€¥]/.test(textNoCode)) {
       issues.push('Hardcoded currency symbols');
       score -= 0.1;
     }
 
-    // Check for units without international alternatives
-    const imperialUnits = /\b\d+\s*(feet|ft|inches|in|pounds|lbs|fahrenheit|°f)\b/gi;
-    if (imperialUnits.test(content)) {
+  // Check for units without international alternatives (ignore fenced code blocks)
+  const imperialUnits = /\b\d+\s*(feet|ft|inches|in|pounds|lbs|fahrenheit|°f)\b/gi;
+  if (imperialUnits.test(textNoCode)) {
       issues.push('Imperial units without metric alternatives');
       score -= 0.1;
     }

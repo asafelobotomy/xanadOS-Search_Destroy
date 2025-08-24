@@ -1,464 +1,59 @@
-# GitHub Copilot Enhancement Framework
-
-*A comprehensive, enterprise-grade GitHub Copilot instruction system for organizations*
-
-## � **CRITICAL: Mandatory Agent Workflow - READ FIRST**
-
-**🛑 STOP! Before taking ANY action, ALL GitHub Copilot agents MUST follow the systematic workflow defined in `.github/instructions/agent-workflow.instructions.md`**
-
-### **⚡ MANDATORY Pre-Action Workflow:**
-
-1. **📚 DISCOVERY PHASE** - Read ALL relevant instructions first
-2. **🔍 ANALYSIS PHASE** - Understand requirements and constraints
-3. **✅ VALIDATION PHASE** - Verify planned actions against policies
-4. **🎯 EXECUTION PHASE** - Execute with full compliance
-5. **🔄 VERIFICATION PHASE** - Confirm successful completion
-
-**Key Principle**: **Quality over Speed - Check First, Act Second**
-
-```bash
-# MANDATORY: Run before ANY action
-find .github/instructions/ -name "*.instructions.md" | sort
-cat .github/instructions/file-organization.instructions.md  # File placement policy
-cat .github/instructions/agent-workflow.instructions.md    # Systematic workflow
-```
-
-**📋 Complete Workflow Guide**: `.github/instructions/agent-workflow.instructions.md`
-
+---
+applyTo: "**/*"
 ---
 
-## �🛠️ **IMPORTANT: Pre-Built Toolshed Available**
+# Repository custom instructions (lean)
 
-**🚨 BEFORE CREATING ANY SCRIPTS OR TOOLS, CHECK THE TOOLSHED FIRST! 🚨**
+Purpose: give Copilot only what it needs to build, test, lint, and open mergeable PRs here.
+Keep details in `/docs`; keep this file short and operational.
 
-This repository includes a **comprehensive toolshed** of pre-built, tested scripts in `scripts/tools/`. **Always use these existing tools instead of recreating functionality.**
+## Build, test, lint
 
-### ⚡ Essential Tools Ready for Immediate Use:
+- Build/validate: see scripts under `scripts/tools/` and package scripts.
+- Lint markdown: `npm run lint` (uses markdownlint)
+- Validate templates: `npm run validate`
 
-- **`scripts/tools/git/setup-repository.sh`** - Complete Git repository setup with industry standards
-- **`scripts/tools/validation/validate-structure.sh`** - Repository structure validation (97% compliance)
-- **`scripts/tools/quality/check-quality.sh`** - Code quality checking with auto-fix capabilities
-- **`scripts/tools/implement-toolshed.sh`** - Deploy complete toolshed to new repositories
+## Minimal repo map
 
-**📖 Full Tool Catalog**: See `scripts/tools/README.md` for complete list of 20+ available tools
+- `.github/instructions/`: scoped rules for Copilot (read when relevant)
+- `.github/chatmodes/` and `.github/prompts/`: chat modes and prompt files
+- `docs/`: human-facing guides and references
+- `scripts/tools/`: toolshed; prefer these over writing new scripts
 
-**🎯 Usage Pattern**: `./scripts/tools/[category]/[tool-name].sh --help`
+See full guide: `docs/guides/COPILOT-INSTRUCTIONS-GUIDE.md`.
 
----
+## Coding standards (imperative, short)
 
-## 📚 **IMPORTANT: Comprehensive Documentation Repository Available**
+- Prefer small, focused changes with tests or validation output.
+- Don’t duplicate tools or docs; search `scripts/tools/` and `docs/` first.
+- Follow security and testing instructions when files match their scope.
+- Update `CHANGELOG.md` for notable changes; use conventional commits.
 
-**🚨 BEFORE CREATING ANY DOCUMENTATION, CHECK THE DOCS REPOSITORY FIRST! 🚨**
+## PR merge criteria
 
-This repository includes a **comprehensive documentation system** in `/docs/` with enterprise-grade organization. **Always use existing documentation instead of creating redundant content.**
+- Lint and validation pass (markdownlint + template validation).
+- Changes are scoped, documented (if needed), and follow file placement rules.
+- No secrets or sensitive data added.
 
-### 📖 Essential Documentation Ready for Immediate Use:
+## Ask, Edit, Agent (when to use)
 
-- **`/docs/guides/ENHANCEMENTS.md`** - Complete framework features and capabilities overview
-- **`/docs/guides/PROJECT_STRUCTURE.md`** - Repository organization and structure guide
-- **`/docs/guides/organization-custom-instructions.md`** - Enterprise deployment and setup
-- **`/docs/guides/model-targeting-guide.md`** - Advanced AI model targeting (GPT-5, Claude, Gemini)
+- Ask: plan, summarize, route tasks, or find related files.
+- Edit: targeted code/doc edits in one or two files.
+- Agent: multi-step changes that can run linters/tests and iterate.
 
-**📚 Full Documentation Index**: See `/docs/README.md` for complete documentation catalog
+## Model routing (practical default)
 
-**🎯 Usage Pattern**: `cat /docs/guides/[topic-guide].md` or `ls /docs/guides/`
+- Complex refactors/algorithms: reasoning model (OpenAI o1/o3 or similar).
+- Code review, TDD, rewriting docs/tests: Claude Sonnet class.
+- Multimodal/cross-language or large-context summarization: Gemini Pro class.
+- Boilerplate scaffolding or quick edits: fast general model.
 
----
+Always pick the smallest capable model; switch up for harder reasoning.
 
-## 🎯 Project Mission
+## References
 
-This repository provides a **comprehensive GitHub Copilot enhancement framework** that enables organizations to create, validate, and deploy custom Copilot instructions at scale. The framework includes advanced chat modes, reusable prompts, comprehensive validation systems, enterprise automation tools, and a **complete toolshed of reusable scripts** designed to maximize GitHub Copilot's effectiveness across development teams.
-
-**Key Benefits:**
-- 📈 **55% faster coding** with optimized prompt engineering
-- 🎯 **Reduced PR rejection rates** through comprehensive instruction guidance
-- 🚀 **Enterprise-ready** with validation, testing, and automation
-- 🔧 **Customizable** for any tech stack or development workflow
-- 📊 **Quality-assured** with 20+ validation checks and standards
-
-## 🏗️ Architecture & Repository Structure
-
-### Core Framework Components
-
-```markdown
-.github/
-├── chatmodes/           # Chat mode templates (.chatmode.md)
-│   ├── debugging.chatmode.md
-│   ├── testing.chatmode.md
-│   └── architecture.chatmode.md
-├── prompts/            # Reusable prompt templates (.prompt.md)
-│   ├── code-review.prompt.md
-│   ├── documentation.prompt.md
-│   └── refactoring.prompt.md
-├── instructions/       # File-specific instructions (.instructions.md)
-│   ├── security.instructions.md
-│   ├── testing.instructions.md
-│   └── debugging.instructions.md
-├── validation/         # Comprehensive validation framework
-│   ├── templates/      # Validation engine & reporting
-│   ├── configs/        # Quality standards & configurations
-│   └── tests/          # Integration testing suite
-└── workflows/          # GitHub Actions automation
-    └── copilot-setup-steps.yml
-```markdown
-
-### Advanced Configuration Files
-
-- **`validation-config.json`** - Core validation settings with 20+ checks
-- **`quality-standards.json`** - Enterprise quality requirements & metrics
-- **`orchestrator-config.json`** - Automated testing & deployment configuration
-- **`template-validation-system.js`** - Main validation engine (1,239 lines)
-
-## 🚀 Quick Start & Setup
-
-### Prerequisites
-
-- **Node.js 18+** for validation systems
-- **Python 3.8+** for advanced validation scripts
-- **Bash shell** for automation scripts
-- **Git** for repository operations
-- **GitHub Copilot** enabled in your environment
-
-### Enterprise Installation
-
-```bash
-# Clone the framework
-
-git clone <repository-url>
-cd agent-instructions-co-pilot
-
-# Install dependencies
-
-npm install
-pip install -r requirements.txt
-
-# Run comprehensive validation
-
-./scripts/verify-structure.sh
-node .github/validation/templates/template-validation-system.js
-
-# Deploy to your organization
-
-cp -r repo-template/* /path/to/your/project/
-```markdown
-
-### GitHub Copilot Integration Setup
-
-1. **Enable Repository Instructions**: Ensure "Use Instruction Files" is enabled in Copilot settings
-2. **Configure Chat Modes**: Copy relevant `.chatmode.md` files to your project
-3. **Setup Coding Agent**: Deploy `copilot-setup-steps.yml` for automated environment setup
-4. **Validate Installation**: Run validation tests to ensure proper configuration
-
-## 🧰 **GitHub Copilot Agent Toolshed**
-
-### **⚠️ CRITICAL: Always Check Toolshed Before Creating Scripts**
-
-The `scripts/tools/` directory contains a comprehensive collection of **pre-built, battle-tested tools** that GitHub Copilot agents should use instead of recreating functionality. This "handyman's toolshed" approach ensures consistency, reliability, and efficiency.
-
-### **🔧 Core Tool Categories**
-
-1. **Git Automation** (`scripts/tools/git/`)
-   - Repository setup and configuration
-   - Branch management and workflows
-   - Release automation and tagging
-
-2. **Validation & Quality** (`scripts/tools/validation/`, `scripts/tools/quality/`)
-   - Repository structure validation
-   - Code quality checking and auto-fixing
-   - Instruction file validation
-
-3. **Repository Management** (`scripts/tools/repository/`)
-   - Backup and archiving systems
-   - File organization and cleanup
-   - Migration utilities
-
-4. **Documentation** (`scripts/tools/documentation/`)
-   - Automated documentation generation
-   - README and changelog maintenance
-   - API documentation tools
-
-### **🎯 Agent Usage Guidelines**
-
-**DO:**
-- ✅ Check `scripts/tools/README.md` for available tools
-- ✅ Use existing tools: `./scripts/tools/[category]/[tool].sh --help`
-- ✅ Extend existing tools when needed
-- ✅ Follow established patterns for new tools
-
-**DON'T:**
-- ❌ Recreate functionality that exists in the toolshed
-- ❌ Write custom scripts without checking for existing solutions
-- ❌ Ignore the standardized tool interfaces and patterns
-
-### **🚀 Quick Tool Reference**
-
-```bash
-# Repository setup (instead of manual Git configuration)
-./scripts/tools/git/setup-repository.sh
-
-# Validation (instead of writing custom checks)
-./scripts/tools/validation/validate-structure.sh
-
-# Quality assurance (instead of manual code review)
-./scripts/tools/quality/check-quality.sh --fix
-
-# Deploy toolshed to new repositories
-./scripts/tools/implement-toolshed.sh
-```
-
-**📚 Complete Documentation**: `scripts/tools/README.md`
-
-## 🎯 **MANDATORY: Version Control Implementation**
-
-**ALL GitHub Copilot agents MUST implement industry-standard version control before beginning any development work.** This is a prerequisite for professional development standards.
-
-### Required Implementation Steps:
-
-```bash
-# 1. Implement comprehensive version control system
-# See: .github/instructions/version-control.instructions.md
-
-# 2. Validate 100% compliance
-./scripts/validation/validate-version-control.sh
-
-# 3. Configure git with productivity tools
-git config commit.template .gitmessage
-git config alias.lg "log --color --graph --oneline"
-
-# 4. Use conventional commits for all changes
-git commit -m "feat: implement version control standards"
-```
-
-### Core Requirements:
-- **Git Configuration**: Commit templates, aliases, and pull strategies
-- **Semantic Versioning**: VERSION file and CHANGELOG.md management
-- **CI/CD Workflows**: Automated testing, security scanning, and releases
-- **GitHub Templates**: Pull request and issue templates for collaboration
-- **Quality Gates**: Markdown linting, code formatting, and validation
-
-**Reference**: See `.github/instructions/version-control.instructions.md` for complete implementation guide.
-
-## 💡 Advanced Prompt Engineering & Best Practices
-
-### Writing Effective Instructions
-
-Based on the latest GitHub Copilot research and best practices:
-
-#### 🎯 Context-Rich Instructions
-
-- **Provide specific context**: Include project structure, tech stack, and coding standards
-- **Use examples**: Show desired code patterns and output formats
-- **Set clear boundaries**: Define what should and shouldn't be done
-- **Include error patterns**: Specify common mistakes to avoid
-
-#### 🔧 Language-Specific Targeting
-
-Use `applyTo` frontmatter for file-specific instructions:
-```markdown
----
-applyTo: "**/*.{js,ts}"
----
-
-# JavaScript/TypeScript specific instructions
-
-```markdown
-
-#### 📊 Performance Optimization
-
-- **Reduce exploration time**: Provide comprehensive project documentation
-- **Minimize CI failures**: Include build, test, and deployment requirements
-- **Enhance accuracy**: Use specific terminology and examples from your codebase
-
-### Prompt Engineering Techniques
-
-1. **Progressive Disclosure**: Start with high-level goals, then provide specific details
-2. **Contextual Examples**: Include code snippets that demonstrate desired patterns
-3. **Error Prevention**: Specify common pitfalls and how to avoid them
-4. **Testing Integration**: Include unit test patterns and validation requirements
-
-## 🏢 Enterprise Features & Deployment
-
-### Multi-Environment Support
-
-- **Development**: Local validation and testing
-- **Staging**: Integration testing with CI/CD
-- **Production**: Enterprise deployment with monitoring
-- **Team Sharing**: Consistent instructions across organizations
-
-### Advanced Configuration
-
-#### Copilot Coding Agent Setup
-
-Deploy automated development environment with `copilot-setup-steps.yml`:
-```yaml
-name: "Copilot Setup Steps"
-on:
-  workflow_dispatch:
-  push:
-    paths: ['.github/workflows/copilot-setup-steps.yml']
-jobs:
-  copilot-setup-steps:
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-    steps:
-      - uses: actions/checkout@v4
-      - name: Setup Environment
-        # Your project-specific setup steps
-```markdown
-
-#### Environment Variables & Secrets
-
-- **Security**: Use GitHub Actions secrets for sensitive data
-- **Configuration**: Set environment variables in the `copilot` environment
-- **Authentication**: Configure API keys and service credentials
-
-### Quality Assurance Framework
-
-- **20+ Validation Checks**: Comprehensive template validation
-- **Integration Testing**: Automated testing pipeline
-- **Quality Metrics**: Performance and effectiveness tracking
-- **Compliance**: Enterprise security and policy enforcement
-
-## 🔧 Development Workflow & Best Practices
-
-### Contributing to the Framework
-
-1. **Create Feature Branch**: `git checkout -b feature/enhancement-name`
-2. **Add/Modify Templates**: Follow naming conventions and structure
-3. **Run Validation**: `node .github/validation/templates/template-validation-system.js`
-4. **Test Integration**: Ensure all validation checks pass
-5. **Submit PR**: Include validation results and testing evidence
-
-### Template Development Standards
-
-- **Naming Convention**: `feature-purpose.{chatmode|prompt|instructions}.md`
-- **Markdown Standards**: Consistent formatting and structure
-- **Metadata Requirements**: Include proper frontmatter and descriptions
-- **Usage Examples**: Provide clear implementation guidance
-- **Backward Compatibility**: Maintain framework stability
-
-### Advanced Customization
-
-- **Chat Modes**: Create domain-specific conversation patterns
-- **Reusable Prompts**: Build template libraries for common tasks
-- **File-Specific Instructions**: Target particular file types or directories
-- **Validation Rules**: Extend quality checks for your organization
-
-## 🎯 Use Cases & Implementation Examples
-
-### Code Review Enhancement
-
-```markdown
-# Code Review Assistant
-
-- Focus on security vulnerabilities and performance issues
-- Suggest improvements following team coding standards
-- Generate comprehensive test coverage recommendations
-- Identify architectural concerns and design patterns
-```markdown
-
-### Testing & Quality Assurance
-
-```markdown
-# Testing Specialist
-
-- Generate comprehensive unit and integration tests
-- Focus on edge cases and error handling
-- Follow TDD/BDD practices
-- Ensure test maintainability and readability
-```markdown
-
-### Documentation & Architecture
-
-```markdown
-# Documentation Expert
-
-- Create comprehensive API documentation
-- Generate architectural decision records (ADRs)
-- Focus on developer experience and onboarding
-- Maintain consistency with team documentation standards
-```markdown
-
-## 🐛 Debugging & Error Resolution
-
-### Advanced Troubleshooting
-
-For comprehensive debugging support, see `instructions/debugging.instructions.md`:
-- **Systematic Debugging**: Step-by-step problem resolution
-- **Hugging Face Integration**: CUDA, model configuration, and ML debugging
-- **Git Conflict Resolution**: Advanced merge strategies and conflict handling
-- **Modern Error Patterns**: Circuit breakers, retry mechanisms, observability
-- **CI/CD Debugging**: Pipeline failures and deployment issues
-
-### Common Issues & Solutions
-
-- **Template Discovery**: Verify file extensions and directory structure
-- **Validation Failures**: Check against quality standards and run individual validators
-- **Integration Problems**: Review JSON configurations and schema compliance
-- **Performance Issues**: Optimize instruction context and reduce exploration overhead
-
-### Monitoring & Observability
-
-- **Validation Reports**: Comprehensive quality and compliance tracking
-- **Performance Metrics**: Instruction effectiveness and usage analytics
-- **Error Tracking**: Systematic issue identification and resolution
-- **Team Analytics**: Adoption rates and productivity improvements
-
-## 🚀 Advanced Features & Integration
-
-### GitHub Copilot Chat Modes
-
-- **Ask Mode**: Understanding code and planning
-- **Edit Mode**: Targeted code modifications
-- **Agent Mode**: Autonomous code generation and problem solving
-
-### Extensions & Customization
-
-- **MCP Server Integration**: Model Context Protocol for enhanced capabilities
-- **Vision Support**: UI mockup interpretation and code generation
-- **GitHub Spaces**: Contextual knowledge sharing and collaboration
-- **Custom Chat Modes**: Domain-specific conversation patterns
-
-### Enterprise Integration
-
-- **License Management**: Self-service license provisioning
-- **Policy Control**: Feature availability and compliance management
-- **Network Configuration**: Proxy, firewall, and SSL certificate setup
-- **Training & Adoption**: Best practices and team enablement
-
-## 📊 Metrics & Success Tracking
-
-### Key Performance Indicators
-
-- **Developer Productivity**: Code generation speed and accuracy
-- **Quality Metrics**: PR acceptance rates and CI/CD success
-- **Adoption Rates**: Team usage and engagement levels
-- **Error Reduction**: Debugging time and issue resolution speed
-
-### Validation & Compliance
-
-- **20/20 Mandatory Checks**: Comprehensive template validation
-- **Quality Standards**: Enterprise-grade requirements enforcement
-- **Security Compliance**: Policy adherence and vulnerability scanning
-- **Documentation Coverage**: Instruction completeness and accuracy
-
-## 🆘 Support & Resources
-
-### Getting Help
-
-- **Documentation**: Comprehensive guides and examples in `/docs`
-- **Validation Reports**: Detailed error analysis and resolution steps
-- **Community Support**: GitHub Discussions and issue tracking
-- **Enterprise Support**: Professional services and custom implementation
-
-### Additional Resources
-
-- **GitHub Copilot Documentation**: https://docs.github.com/copilot
-- **Best Practices Guide**: https://aka.ms/Bestpractices-GitHubCopilot
-- **Tips & Tricks**: https://aka.ms/Tipsandtricks-Copilot-VSCode
-- **Enterprise Setup**: GitHub Copilot for Enterprise documentation
-
----
-
-*This framework is designed to maximize GitHub Copilot's potential in enterprise environments through comprehensive instruction management, quality assurance, and team collaboration features.*
+- Agent workflow: `.github/instructions/agent-workflow.instructions.md`
+- Toolshed usage: `.github/instructions/toolshed-usage.instructions.md`
+- Docs awareness: `.github/instructions/documentation-awareness.instructions.md`
+- Security/testing: `.github/instructions/security.instructions.md`, `testing.instructions.md`
+- Full framework guide: `docs/guides/COPILOT-INSTRUCTIONS-GUIDE.md`

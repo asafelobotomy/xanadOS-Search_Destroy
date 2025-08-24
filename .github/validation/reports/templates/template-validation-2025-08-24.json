@@ -1,0 +1,694 @@
+{
+  "timestamp": "2025-08-24T14:19:50.551Z",
+  "summary": {
+    "templatesValidated": 45,
+    "schemasValidated": 0,
+    "integrationTestsPassed": 23,
+    "complianceChecksPassed": 29,
+    "errors": 0,
+    "warnings": 0
+  },
+  "qualityMetrics": {
+    "overallScore": 1,
+    "validationCoverage": 1,
+    "complianceRate": 1,
+    "integrationSuccess": 1
+  },
+  "performanceMetrics": {
+    "totalValidationTime": 13,
+    "averageFileProcessingTime": 0.41379310344827586,
+    "filesProcessed": 29,
+    "throughput": 2230.769230769231
+  },
+  "complianceStatus": {
+    "score": 1,
+    "checks": {
+      "templateStructureCompliance": true,
+      "contentStandardsCompliance": true,
+      "integrationTestsCompliance": true,
+      "performanceCompliance": true
+    },
+    "isCompliant": true
+  },
+  "validationResults": [
+    {
+      "type": "template-structure",
+      "file": ".github/chatmodes/INDEX.md",
+      "status": "passed",
+      "templateType": "chat-mode",
+      "message": "Template structure is valid"
+    },
+    {
+      "type": "template-structure",
+      "file": ".github/chatmodes/advanced-task-planner.chatmode.md",
+      "status": "passed",
+      "templateType": "chat-mode",
+      "message": "Template structure is valid"
+    },
+    {
+      "type": "template-structure",
+      "file": ".github/chatmodes/architect.chatmode.md",
+      "status": "passed",
+      "templateType": "chat-mode",
+      "message": "Template structure is valid"
+    },
+    {
+      "type": "template-structure",
+      "file": ".github/chatmodes/claude-sonnet4-architect.chatmode.md",
+      "status": "passed",
+      "templateType": "chat-mode",
+      "message": "Template structure is valid"
+    },
+    {
+      "type": "template-structure",
+      "file": ".github/chatmodes/documentation.chatmode.md",
+      "status": "passed",
+      "templateType": "chat-mode",
+      "message": "Template structure is valid"
+    },
+    {
+      "type": "template-structure",
+      "file": ".github/chatmodes/elite-engineer.chatmode.md",
+      "status": "passed",
+      "templateType": "chat-mode",
+      "message": "Template structure is valid"
+    },
+    {
+      "type": "template-structure",
+      "file": ".github/chatmodes/gemini-pro-specialist.chatmode.md",
+      "status": "passed",
+      "templateType": "chat-mode",
+      "message": "Template structure is valid"
+    },
+    {
+      "type": "template-structure",
+      "file": ".github/chatmodes/gpt5-elite-developer.chatmode.md",
+      "status": "passed",
+      "templateType": "chat-mode",
+      "message": "Template structure is valid"
+    },
+    {
+      "type": "template-structure",
+      "file": ".github/chatmodes/o1-preview-reasoning.chatmode.md",
+      "status": "passed",
+      "templateType": "chat-mode",
+      "message": "Template structure is valid"
+    },
+    {
+      "type": "template-structure",
+      "file": ".github/chatmodes/performance.chatmode.md",
+      "status": "passed",
+      "templateType": "chat-mode",
+      "message": "Template structure is valid"
+    },
+    {
+      "type": "template-structure",
+      "file": ".github/chatmodes/security.chatmode.md",
+      "status": "passed",
+      "templateType": "chat-mode",
+      "message": "Template structure is valid"
+    },
+    {
+      "type": "template-structure",
+      "file": ".github/chatmodes/testing.chatmode.md",
+      "status": "passed",
+      "templateType": "chat-mode",
+      "message": "Template structure is valid"
+    },
+    {
+      "type": "template-structure",
+      "file": ".github/prompts/INDEX.md",
+      "status": "passed",
+      "templateType": "prompt",
+      "message": "Template structure is valid"
+    },
+    {
+      "type": "template-structure",
+      "file": ".github/prompts/api-design.prompt.md",
+      "status": "passed",
+      "templateType": "prompt",
+      "message": "Template structure is valid"
+    },
+    {
+      "type": "template-structure",
+      "file": ".github/prompts/code-refactoring.prompt.md",
+      "status": "passed",
+      "templateType": "prompt",
+      "message": "Template structure is valid"
+    },
+    {
+      "type": "template-structure",
+      "file": ".github/prompts/database-optimization.prompt.md",
+      "status": "passed",
+      "templateType": "prompt",
+      "message": "Template structure is valid"
+    },
+    {
+      "type": "template-structure",
+      "file": ".github/prompts/deployment-strategy.prompt.md",
+      "status": "passed",
+      "templateType": "prompt",
+      "message": "Template structure is valid"
+    },
+    {
+      "type": "template-structure",
+      "file": ".github/prompts/performance-optimization.prompt.md",
+      "status": "passed",
+      "templateType": "prompt",
+      "message": "Template structure is valid"
+    },
+    {
+      "type": "template-structure",
+      "file": ".github/prompts/security-review.prompt.md",
+      "status": "passed",
+      "templateType": "prompt",
+      "message": "Template structure is valid"
+    },
+    {
+      "type": "template-structure",
+      "file": ".github/prompts/tdd-implementation.prompt.md",
+      "status": "passed",
+      "templateType": "prompt",
+      "message": "Template structure is valid"
+    },
+    {
+      "type": "template-structure",
+      "file": ".github/mcp/IMPLEMENTATION_SUMMARY.md",
+      "status": "passed",
+      "templateType": "mcp-server",
+      "message": "Template structure is valid"
+    },
+    {
+      "type": "template-structure",
+      "file": ".github/mcp/README.md",
+      "status": "passed",
+      "templateType": "mcp-server",
+      "message": "Template structure is valid"
+    },
+    {
+      "type": "template-structure",
+      "file": ".github/mcp/advanced-mcp-config.json",
+      "status": "passed",
+      "templateType": "config-file",
+      "message": "Template structure is valid"
+    },
+    {
+      "type": "template-structure",
+      "file": ".github/mcp/mcp-servers.json",
+      "status": "passed",
+      "templateType": "json-file",
+      "message": "Template structure is valid"
+    },
+    {
+      "type": "template-structure",
+      "file": ".github/mcp/servers/github-docs-mcp/package.json",
+      "status": "passed",
+      "templateType": "package-file",
+      "message": "Template structure is valid"
+    },
+    {
+      "type": "template-structure",
+      "file": ".github/mcp/servers/github-status-mcp/package.json",
+      "status": "passed",
+      "templateType": "package-file",
+      "message": "Template structure is valid"
+    },
+    {
+      "type": "template-structure",
+      "file": ".github/mcp/servers/monitoring-mcp/package.json",
+      "status": "passed",
+      "templateType": "package-file",
+      "message": "Template structure is valid"
+    },
+    {
+      "type": "template-structure",
+      "file": ".github/mcp/servers/stackoverflow-mcp/package.json",
+      "status": "passed",
+      "templateType": "package-file",
+      "message": "Template structure is valid"
+    },
+    {
+      "type": "template-structure",
+      "file": ".github/validation/IMPLEMENTATION_SUMMARY.md",
+      "status": "passed",
+      "templateType": "documentation",
+      "message": "Template structure is valid"
+    },
+    {
+      "type": "template-structure",
+      "file": ".github/validation/README.md",
+      "status": "passed",
+      "templateType": "documentation",
+      "message": "Template structure is valid"
+    },
+    {
+      "type": "template-structure",
+      "file": ".github/validation/configs/README.md",
+      "status": "passed",
+      "templateType": "documentation",
+      "message": "Template structure is valid"
+    },
+    {
+      "type": "template-structure",
+      "file": ".github/validation/configs/quality-standards.json",
+      "status": "passed",
+      "templateType": "config-file",
+      "message": "Template structure is valid"
+    },
+    {
+      "type": "template-structure",
+      "file": ".github/validation/configs/validation-rules.json",
+      "status": "passed",
+      "templateType": "config-file",
+      "message": "Template structure is valid"
+    },
+    {
+      "type": "template-structure",
+      "file": ".github/validation/reports/templates/template-validation-2025-08-22.json",
+      "status": "passed",
+      "templateType": "config-file",
+      "message": "Template structure is valid"
+    },
+    {
+      "type": "template-structure",
+      "file": ".github/validation/reports/templates/template-validation-2025-08-22.md",
+      "status": "passed",
+      "templateType": "documentation",
+      "message": "Template structure is valid"
+    },
+    {
+      "type": "template-structure",
+      "file": ".github/validation/reports/templates/template-validation-2025-08-23.json",
+      "status": "passed",
+      "templateType": "config-file",
+      "message": "Template structure is valid"
+    },
+    {
+      "type": "template-structure",
+      "file": ".github/validation/reports/templates/template-validation-2025-08-23.md",
+      "status": "passed",
+      "templateType": "documentation",
+      "message": "Template structure is valid"
+    },
+    {
+      "type": "template-structure",
+      "file": ".github/validation/reports/templates/template-validation-2025-08-24.json",
+      "status": "passed",
+      "templateType": "config-file",
+      "message": "Template structure is valid"
+    },
+    {
+      "type": "template-structure",
+      "file": ".github/validation/reports/templates/template-validation-2025-08-24.md",
+      "status": "passed",
+      "templateType": "documentation",
+      "message": "Template structure is valid"
+    },
+    {
+      "type": "template-structure",
+      "file": ".github/validation/templates/README.md",
+      "status": "passed",
+      "templateType": "documentation",
+      "message": "Template structure is valid"
+    },
+    {
+      "type": "template-structure",
+      "file": ".github/validation/templates/orchestrator-config.json",
+      "status": "passed",
+      "templateType": "config-file",
+      "message": "Template structure is valid"
+    },
+    {
+      "type": "template-structure",
+      "file": ".github/validation/templates/package.json",
+      "status": "passed",
+      "templateType": "package-file",
+      "message": "Template structure is valid"
+    },
+    {
+      "type": "template-structure",
+      "file": ".github/validation/templates/schemas/validation-config.schema.json",
+      "status": "passed",
+      "templateType": "config-file",
+      "message": "Template structure is valid"
+    },
+    {
+      "type": "template-structure",
+      "file": ".github/validation/templates/validation-config.json",
+      "status": "passed",
+      "templateType": "config-file",
+      "message": "Template structure is valid"
+    },
+    {
+      "type": "template-structure",
+      "file": ".github/validation/validators/package.json",
+      "status": "passed",
+      "templateType": "package-file",
+      "message": "Template structure is valid"
+    },
+    {
+      "type": "content-standards",
+      "file": ".github/chatmodes/INDEX.md",
+      "status": "passed",
+      "score": 1,
+      "message": "Content meets quality standards"
+    },
+    {
+      "type": "content-standards",
+      "file": ".github/chatmodes/advanced-task-planner.chatmode.md",
+      "status": "passed",
+      "score": 0.9761363636363636,
+      "message": "Content meets quality standards"
+    },
+    {
+      "type": "content-standards",
+      "file": ".github/chatmodes/architect.chatmode.md",
+      "status": "passed",
+      "score": 0.9138888888888889,
+      "message": "Content meets quality standards"
+    },
+    {
+      "type": "content-standards",
+      "file": ".github/chatmodes/claude-sonnet4-architect.chatmode.md",
+      "status": "passed",
+      "score": 0.9886363636363636,
+      "message": "Content meets quality standards"
+    },
+    {
+      "type": "content-standards",
+      "file": ".github/chatmodes/documentation.chatmode.md",
+      "status": "passed",
+      "score": 0.8449612403100775,
+      "message": "Content meets quality standards"
+    },
+    {
+      "type": "content-standards",
+      "file": ".github/chatmodes/elite-engineer.chatmode.md",
+      "status": "passed",
+      "score": 0.995,
+      "message": "Content meets quality standards"
+    },
+    {
+      "type": "content-standards",
+      "file": ".github/chatmodes/gemini-pro-specialist.chatmode.md",
+      "status": "passed",
+      "score": 0.990625,
+      "message": "Content meets quality standards"
+    },
+    {
+      "type": "content-standards",
+      "file": ".github/chatmodes/gpt5-elite-developer.chatmode.md",
+      "status": "passed",
+      "score": 0.940625,
+      "message": "Content meets quality standards"
+    },
+    {
+      "type": "content-standards",
+      "file": ".github/chatmodes/o1-preview-reasoning.chatmode.md",
+      "status": "passed",
+      "score": 0.9308333333333334,
+      "message": "Content meets quality standards"
+    },
+    {
+      "type": "content-standards",
+      "file": ".github/chatmodes/performance.chatmode.md",
+      "status": "passed",
+      "score": 0.8687499999999999,
+      "message": "Content meets quality standards"
+    },
+    {
+      "type": "content-standards",
+      "file": ".github/chatmodes/security.chatmode.md",
+      "status": "passed",
+      "score": 0.9181818181818182,
+      "message": "Content meets quality standards"
+    },
+    {
+      "type": "content-standards",
+      "file": ".github/chatmodes/testing.chatmode.md",
+      "status": "passed",
+      "score": 0.9298913043478261,
+      "message": "Content meets quality standards"
+    },
+    {
+      "type": "content-standards",
+      "file": ".github/prompts/INDEX.md",
+      "status": "passed",
+      "score": 0.9986842105263158,
+      "message": "Content meets quality standards"
+    },
+    {
+      "type": "content-standards",
+      "file": ".github/prompts/api-design.prompt.md",
+      "status": "passed",
+      "score": 0.9464285714285714,
+      "message": "Content meets quality standards"
+    },
+    {
+      "type": "content-standards",
+      "file": ".github/prompts/code-refactoring.prompt.md",
+      "status": "passed",
+      "score": 0.9425,
+      "message": "Content meets quality standards"
+    },
+    {
+      "type": "content-standards",
+      "file": ".github/prompts/database-optimization.prompt.md",
+      "status": "passed",
+      "score": 0.9979166666666667,
+      "message": "Content meets quality standards"
+    },
+    {
+      "type": "content-standards",
+      "file": ".github/prompts/deployment-strategy.prompt.md",
+      "status": "passed",
+      "score": 0.9977272727272728,
+      "message": "Content meets quality standards"
+    },
+    {
+      "type": "content-standards",
+      "file": ".github/prompts/performance-optimization.prompt.md",
+      "status": "passed",
+      "score": 0.9069444444444444,
+      "message": "Content meets quality standards"
+    },
+    {
+      "type": "content-standards",
+      "file": ".github/prompts/security-review.prompt.md",
+      "status": "passed",
+      "score": 0.9302083333333333,
+      "message": "Content meets quality standards"
+    },
+    {
+      "type": "content-standards",
+      "file": ".github/prompts/tdd-implementation.prompt.md",
+      "status": "passed",
+      "score": 0.9204545454545454,
+      "message": "Content meets quality standards"
+    },
+    {
+      "type": "content-standards",
+      "file": ".github/mcp/IMPLEMENTATION_SUMMARY.md",
+      "status": "passed",
+      "score": 0.9419117647058823,
+      "message": "Content meets quality standards"
+    },
+    {
+      "type": "content-standards",
+      "file": ".github/mcp/README.md",
+      "status": "passed",
+      "score": 0.9921875,
+      "message": "Content meets quality standards"
+    },
+    {
+      "type": "content-standards",
+      "file": ".github/validation/IMPLEMENTATION_SUMMARY.md",
+      "status": "passed",
+      "score": 0.985,
+      "message": "Content meets quality standards"
+    },
+    {
+      "type": "content-standards",
+      "file": ".github/validation/README.md",
+      "status": "passed",
+      "score": 0.9791666666666666,
+      "message": "Content meets quality standards"
+    },
+    {
+      "type": "content-standards",
+      "file": ".github/validation/configs/README.md",
+      "status": "passed",
+      "score": 0.9916666666666667,
+      "message": "Content meets quality standards"
+    },
+    {
+      "type": "content-standards",
+      "file": ".github/validation/reports/templates/template-validation-2025-08-22.md",
+      "status": "passed",
+      "score": 0.9977272727272728,
+      "message": "Content meets quality standards"
+    },
+    {
+      "type": "content-standards",
+      "file": ".github/validation/reports/templates/template-validation-2025-08-23.md",
+      "status": "passed",
+      "score": 0.9972222222222222,
+      "message": "Content meets quality standards"
+    },
+    {
+      "type": "content-standards",
+      "file": ".github/validation/reports/templates/template-validation-2025-08-24.md",
+      "status": "passed",
+      "score": 0.996875,
+      "message": "Content meets quality standards"
+    },
+    {
+      "type": "content-standards",
+      "file": ".github/validation/templates/README.md",
+      "status": "passed",
+      "score": 0.93046875,
+      "message": "Content meets quality standards"
+    }
+  ],
+  "integrationTests": [
+    {
+      "type": "mcp-server",
+      "name": "github-docs-mcp",
+      "status": "passed",
+      "message": "MCP server integration tests passed"
+    },
+    {
+      "type": "mcp-server",
+      "name": "github-status-mcp",
+      "status": "passed",
+      "message": "MCP server integration tests passed"
+    },
+    {
+      "type": "mcp-server",
+      "name": "monitoring-mcp",
+      "status": "passed",
+      "message": "MCP server integration tests passed"
+    },
+    {
+      "type": "mcp-server",
+      "name": "stackoverflow-mcp",
+      "status": "passed",
+      "message": "MCP server integration tests passed"
+    },
+    {
+      "type": "chat-mode",
+      "name": "INDEX",
+      "status": "passed",
+      "message": "Chat mode integration tests passed"
+    },
+    {
+      "type": "chat-mode",
+      "name": "advanced-task-planner.chatmode",
+      "status": "passed",
+      "message": "Chat mode integration tests passed"
+    },
+    {
+      "type": "chat-mode",
+      "name": "architect.chatmode",
+      "status": "passed",
+      "message": "Chat mode integration tests passed"
+    },
+    {
+      "type": "chat-mode",
+      "name": "claude-sonnet4-architect.chatmode",
+      "status": "passed",
+      "message": "Chat mode integration tests passed"
+    },
+    {
+      "type": "chat-mode",
+      "name": "documentation.chatmode",
+      "status": "passed",
+      "message": "Chat mode integration tests passed"
+    },
+    {
+      "type": "chat-mode",
+      "name": "elite-engineer.chatmode",
+      "status": "passed",
+      "message": "Chat mode integration tests passed"
+    },
+    {
+      "type": "chat-mode",
+      "name": "gemini-pro-specialist.chatmode",
+      "status": "passed",
+      "message": "Chat mode integration tests passed"
+    },
+    {
+      "type": "chat-mode",
+      "name": "gpt5-elite-developer.chatmode",
+      "status": "passed",
+      "message": "Chat mode integration tests passed"
+    },
+    {
+      "type": "chat-mode",
+      "name": "o1-preview-reasoning.chatmode",
+      "status": "passed",
+      "message": "Chat mode integration tests passed"
+    },
+    {
+      "type": "chat-mode",
+      "name": "performance.chatmode",
+      "status": "passed",
+      "message": "Chat mode integration tests passed"
+    },
+    {
+      "type": "chat-mode",
+      "name": "security.chatmode",
+      "status": "passed",
+      "message": "Chat mode integration tests passed"
+    },
+    {
+      "type": "chat-mode",
+      "name": "testing.chatmode",
+      "status": "passed",
+      "message": "Chat mode integration tests passed"
+    },
+    {
+      "type": "template-generation",
+      "file": ".github/validation/reports/templates/template-validation-2025-08-22.md",
+      "status": "passed",
+      "message": "Template instantiation test passed"
+    },
+    {
+      "type": "template-generation",
+      "file": ".github/validation/reports/templates/template-validation-2025-08-23.md",
+      "status": "passed",
+      "message": "Template instantiation test passed"
+    },
+    {
+      "type": "template-generation",
+      "file": ".github/validation/reports/templates/template-validation-2025-08-24.md",
+      "status": "passed",
+      "message": "Template instantiation test passed"
+    },
+    {
+      "type": "template-generation",
+      "file": ".github/validation/templates/README.md",
+      "status": "passed",
+      "message": "Template instantiation test passed"
+    },
+    {
+      "type": "end-to-end",
+      "workflow": "chat-mode",
+      "status": "passed",
+      "message": "chat-mode workflow test passed"
+    },
+    {
+      "type": "end-to-end",
+      "workflow": "prompt",
+      "status": "passed",
+      "message": "prompt workflow test passed"
+    },
+    {
+      "type": "end-to-end",
+      "workflow": "mcp",
+      "status": "passed",
+      "message": "mcp workflow test passed"
+    }
+  ],
+  "recommendations": []
+}

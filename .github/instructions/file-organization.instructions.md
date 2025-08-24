@@ -1,8 +1,28 @@
 # File Organization and Directory Structure Policy
 
+## Copilot usage quick cues
+
+- Ask: correct location for a new file or category; request a brief placement rationale.
+- Edit: fix misplacements and update indexes; ask for minimal diffs only.
+- Agent: multi-folder moves and archival; require a compliance checklist and summary.
+
+### Model routing
+
+- Reasoning model: ambiguous placement, policy exceptions, reorg planning.
+- Claude Sonnet class: review diffs for accidental moves or missing updates.
+- Gemini Pro class: summarize large trees or cross-reference docs and code.
+- Fast general model: quick moves and index touch-ups.
+
+### Token economy tips
+
+- Reference `archive/` and `docs/` policies instead of pasting long sections.
+- Ask for a file move plan table: source → target → reason.
+
 ## 🎯 **Mandatory File Placement Rules**
 
-All GitHub Copilot agents **MUST** follow these directory placement rules to maintain a clean, organized repository structure. **NO FILES** should be created in the root directory unless explicitly specified in this policy.
+All GitHub Copilot agents **MUST** follow these directory placement rules to
+maintain a clean, organized repository structure. **NO FILES** should be
+created in the root directory unless explicitly specified in this policy.
 
 ## 📁 **Directory Structure and File Placement**
 
@@ -176,4 +196,6 @@ Add to `.vscode/settings.json`:
 
 ---
 
-**This policy is MANDATORY for all GitHub Copilot agents working on this repository to maintain professional organization and prevent directory clutter.**
+**This policy is MANDATORY for all GitHub Copilot agents working on this
+repository to maintain professional organization and prevent directory
+clutter.**

@@ -2,7 +2,8 @@
 
 ## Overview
 
-This document provides a comprehensive index of all archived content in the repository, organized by category and chronology for easy discovery and reference.
+This document provides a comprehensive index of all archived content in the repository,
+organized by category and chronology for easy discovery and reference.
 
 ## 📊 Archive Statistics
 
