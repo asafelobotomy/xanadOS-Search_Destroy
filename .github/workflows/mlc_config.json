@@ -1,6 +1,7 @@
 {
   "ignorePatterns": [
     { "pattern": "^https://github.com/.+/(compare|commit|pull)/" },
+  { "pattern": "^https://github.com/.+/actions/workflows/.*" },
     { "pattern": "^https://img.shields.io/" },
   { "pattern": "^mailto:" },
   { "pattern": "^vscode://" }

@@ -37,6 +37,19 @@ Prettier, and EditorConfig standards. All GitHub Copilot agents MUST implement
 and maintain these standards to ensure consistent, high-quality code across all
 repositories.
 
+## Placeholders, TODOs, and Stubs Policy (MANDATORY)
+
+- Avoid unnecessary placeholders/stubs. Prefer delivering minimal, working
+  implementations or omitting features until ready.
+- When a placeholder/TODO is unavoidable, you MUST:
+  - Use a clear marker in code or docs: `TODO(scope): description` or
+    `PLACEHOLDER(scope): description` with an expected resolution date.
+  - Open a tracking issue and reference it inline (e.g., `(#123)`), or add it
+    to the repository placeholder log (see below).
+  - Minimize surface area: keep the stub small, isolated, and non-breaking.
+- The repository SHOULD have little to no placeholders. Clean them as a priority
+  during refactors or when touching nearby code.
+
 ## Shell Script Standards (ShellCheck)
 
 ### Core Requirements

@@ -58,7 +58,7 @@
       },
       {
         "name": "Run Quality Checks",
-        "type": "node-terminal", 
+        "type": "node-terminal",
         "request": "launch",
         "command": "./scripts/tools/quality/check-quality.sh",
         "cwd": "${workspaceFolder}",
@@ -84,7 +84,7 @@
       },
       {
         "label": "Lint Markdown",
-        "type": "shell", 
+        "type": "shell",
         "command": "npm",
         "args": ["run", "lint"],
         "group": "test",

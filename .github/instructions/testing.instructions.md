@@ -24,6 +24,17 @@ applyTo: "**/{test,tests,spec,__tests__}/**/*"
 
 ## Comprehensive Testing Requirements
 
+### Test modification policy (MANDATORY)
+
+- Do not alter tests just to make them pass. Fix the underlying issue in the
+	implementation or configuration instead.
+- If a test is actually broken or deprecated, repair or update the test first
+	(minimal diff, clear rationale), then address any newly reported failures.
+- Avoid skipping or xfail-ing tests. If unavoidable, add a temporary quarantine
+	tag with a linked issue and an explicit removal date.
+- When a product bug is found via a failing test, add or keep a regression test
+	that proves the fix.
+
 ### Test Coverage Standards
 
 - **Minimum 80% code coverage** for all new code

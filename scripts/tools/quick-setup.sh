@@ -75,15 +75,15 @@ done
 # Main setup function
 setup_copilot_enhancement() {
     log_info "Setting up GitHub Copilot Enhancement Framework..."
-    
+
     if [[ "$ESSENTIAL_ONLY" == "true" ]]; then
         setup_essential_files
     else
         setup_full_repository
     fi
-    
+
     setup_vscode_integration
-    
+
     log_success "Setup complete!"
     log_info "Next steps:"
     echo "  1. Open VS Code in the directory"
@@ -95,41 +95,41 @@ setup_copilot_enhancement() {
 # Setup essential files only
 setup_essential_files() {
     log_info "Copying essential GitHub Copilot files..."
-    
+
     # Create essential directories
     mkdir -p .github/{chatmodes,prompts,instructions}
     mkdir -p scripts/validation
-    
+
     # Download essential chatmodes
     local chatmodes=("architect" "elite-engineer" "security" "testing" "documentation")
     for mode in "${chatmodes[@]}"; do
         curl -sSL "$REPO_URL/raw/main/.github/chatmodes/${mode}.chatmode.md" \
             -o ".github/chatmodes/${mode}.chatmode.md" 2>/dev/null || log_warning "Could not download ${mode}.chatmode.md"
     done
-    
+
     # Download essential prompts
     local prompts=("security-review" "code-refactoring" "api-design")
     for prompt in "${prompts[@]}"; do
         curl -sSL "$REPO_URL/raw/main/.github/prompts/${prompt}.prompt.md" \
             -o ".github/prompts/${prompt}.prompt.md" 2>/dev/null || log_warning "Could not download ${prompt}.prompt.md"
     done
-    
+
     # Download essential instructions
     curl -sSL "$REPO_URL/raw/main/.github/instructions/security.instructions.md" \
         -o ".github/instructions/security.instructions.md" 2>/dev/null || log_warning "Could not download security instructions"
-    
+
     # Download validation script
     curl -sSL "$REPO_URL/raw/main/scripts/validation/validate-structure.sh" \
         -o "scripts/validation/validate-structure.sh" 2>/dev/null || log_warning "Could not download validation script"
     chmod +x scripts/validation/validate-structure.sh 2>/dev/null || true
-    
+
     log_success "Essential files copied"
 }
 
 # Setup full repository
 setup_full_repository() {
     log_info "Cloning full repository to $TARGET_DIR..."
-    
+
     if command -v git >/dev/null 2>&1; then
         git clone "$REPO_URL" "$TARGET_DIR"
         cd "$TARGET_DIR"
@@ -143,18 +143,18 @@ setup_full_repository() {
 # Setup VS Code integration
 setup_vscode_integration() {
     log_info "Setting up VS Code integration..."
-    
+
     # Download workspace file
     curl -sSL "$REPO_URL/raw/main/github-copilot-enhancement.code-workspace" \
         -o "github-copilot-enhancement.code-workspace" 2>/dev/null || log_warning "Could not download workspace file"
-    
+
     # Download VS Code settings if .vscode directory doesn't exist
     if [[ ! -d ".vscode" ]]; then
         mkdir -p .vscode
         curl -sSL "$REPO_URL/raw/main/.vscode/extensions.json" \
             -o ".vscode/extensions.json" 2>/dev/null || log_warning "Could not download extensions.json"
     fi
-    
+
     log_success "VS Code integration configured"
 }
 
@@ -171,13 +171,13 @@ check_vscode_environment() {
 main() {
     log_info "GitHub Copilot Enhancement Framework Quick Setup"
     echo
-    
+
     if check_vscode_environment; then
         log_info "VS Code detected - setting up with enhanced integration"
     fi
-    
+
     setup_copilot_enhancement
-    
+
     if check_vscode_environment; then
         log_info "VS Code integration complete!"
         log_info "Reload the window to see the new workspace configuration"

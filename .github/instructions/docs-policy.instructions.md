@@ -170,6 +170,7 @@ maintain these standards in any repository containing documentation.
 - Archive Management Policy: `.github/instructions/archive-policy.instructions.md`
 - Security Guidelines: `.github/instructions/security.instructions.md`
 - Testing Standards: `.github/instructions/testing.instructions.md`
+- Placeholder/Stub Tracking: `docs/reports/PLACEHOLDERS.md`
 
 ## Policy Metadata
 

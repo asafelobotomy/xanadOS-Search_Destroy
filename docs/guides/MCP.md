@@ -22,52 +22,56 @@ Examples
 
 1. Remote GitHub MCP server (preferred when available)
 
-```json
-{
-  "servers": {
-    "github": {
-      "url": "https://api.githubcopilot.com/mcp/",
-      "requestInit": {
-        "headers": {
-          "Authorization": "Bearer YOUR_PAT_HERE"
+    ```json
+    {
+      "servers": {
+        "github": {
+          "url": "https://api.githubcopilot.com/mcp/",
+          "requestInit": {
+            "headers": {
+              "Authorization": "Bearer YOUR_PAT_HERE"
+            }
+          }
         }
       }
     }
-  }
-}
-```markdown
-Notes: Prefer OAuth in VS Code when possible; otherwise keep PAT local and never commit with tokens.
+    ```
 
-1. Hugging Face MCP server (placeholder)
+    Note: Prefer OAuth in VS Code when possible; otherwise keep PAT local and never
+    commit with tokens.
 
-```json
-{
-  "servers": {
-    "huggingface": {
-      "url": "https://<your-hf-mcp-server-domain>/",
-      "requestInit": {
-        "headers": {
-          "Authorization": "Bearer YOUR_HF_TOKEN"
+2. Hugging Face MCP server (example)
+
+    ```json
+    {
+      "servers": {
+        "huggingface": {
+          "url": "https://<your-hf-mcp-server-domain>/",
+          "requestInit": {
+            "headers": {
+              "Authorization": "Bearer YOUR_HF_TOKEN"
+            }
+          }
         }
       }
     }
-  }
-}
-```markdown
-Notes: Use the current Hugging Face MCP server URL and required scopes from HF documentation. Keep tokens local.
+    ```
 
-1. Local server example (no secrets committed)
+    Note: Use the current Hugging Face MCP server URL and required scopes from HF
+    documentation. Keep tokens local.
 
-```json
-{
-  "servers": {
-    "memory": {
-      "command": "npx",
-      "args": ["-y", "@modelcontextprotocol/server-memory"]
+3. Local server example (no secrets committed)
+
+    ```json
+    {
+      "servers": {
+        "memory": {
+          "command": "npx",
+          "args": ["-y", "@modelcontextprotocol/server-memory"]
+        }
+      }
     }
-  }
-}
-```markdown
+    ```
 
 Recommended practices
 
