@@ -152,75 +152,18 @@ This framework transforms your GitHub Copilot experience by providing:
 
 ## 🚀 Quick Start
 
-### 🎯 **One-Click VS Code Setup**
+### One-Click Setup
 
-**⚡ Choose your preferred setup method:**
+[![Open in VS Code](https://img.shields.io/static/v1?logo=visualstudiocode&label=&message=Open%20in%20Visual%20Studio%20Code&labelColor=2c2c32&color=007acc&logoColor=007acc)](https://open.vscode.dev/asafelobotomy/agent-instructions-co-pilot)
 
-#### 🌐 **VS Code Web** (Works in any browser)
+[![Open in Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/asafelobotomy/agent-instructions-co-pilot)
 
-Open repository directly in browser-based VS Code:
-**[→ Open in VS Code Web](https://vscode.dev/github/asafelobotomy/agent-instructions-co-pilot)**
-
-#### 📱 **VS Code Desktop** (Requires VS Code installed)
-
-Clone repository directly to your VS Code desktop app:
-
-**Option A:** Copy this URL and paste in VS Code (Command Palette → Git: Clone):
-
-```text
-https://github.com/asafelobotomy/agent-instructions-co-pilot.git
-```
-
-**Option B:** Manual steps:
-
-1. Open VS Code
-2. Press `Ctrl+Shift+P` (Windows/Linux) or `Cmd+Shift+P` (Mac)
-3. Type "Git: Clone" and select it
-4. Paste: `https://github.com/asafelobotomy/agent-instructions-co-pilot.git`
-5. Choose your workspace folder
-
-#### ☁️ **GitHub Codespaces** (Cloud development)
-
-Launch a complete cloud development environment:
-**[→ Open in Codespaces](https://codespaces.new/asafelobotomy/agent-instructions-co-pilot)**
-
-#### 📦 **Essential Files Only** (Add to existing project)
-
-See command in the next section ⬇️
-
-### 📦 **Essential Files Quick Deploy**
-
-**Add GitHub Copilot enhancement files to your existing project:**
+**For existing projects (copy essential files only):**
 
 ```bash
 # Copy essential files to current directory
-REPO_URL="https://raw.githubusercontent.com/asafelobotomy/agent-instructions-co-pilot"
-curl -sSL "$REPO_URL/main/scripts/tools/quick-setup.sh" | bash -s -- --essential-only
+curl -sSL https://git.io/copilot-setup | bash -s -- --essential-only
 ```
-
-### Installation Options
-
-#### Option 1: **VS Code Integration** (Recommended)
-
-   1. **Click the "Clone in VS Code Desktop" button above** ⬆️
-   2. VS Code will open and prompt you to clone the repository
-   3. Choose your workspace location
-   4. The essential files will be available immediately
-
-#### Option 2: **Manual Clone**
-
-   ```bash
-   git clone https://github.com/asafelobotomy/agent-instructions-co-pilot.git
-   cd agent-instructions-co-pilot
-   ```
-
-#### Option 3: **Essential Files Only**
-
-   ```bash
-   # Alternative: Use full URL (copy and paste this entire block)
-   REPO_URL="https://raw.githubusercontent.com/asafelobotomy/agent-instructions-co-pilot"
-   curl -sSL "$REPO_URL/main/scripts/tools/quick-setup.sh" | bash -s -- --essential-only
-   ```
 
 ### ✅ **Validate Setup**
 
@@ -231,6 +174,11 @@ npm run quick:validate
 # Or run structure validator directly
 ./scripts/validation/validate-structure.sh
 ```
+
+Tip:
+
+- In VS Code, run "Tasks: Run Task" → quick:validate
+- In Codespaces, validations run fast on the prebuilt container
 
 Tip:
 
