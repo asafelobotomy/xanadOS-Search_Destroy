@@ -9,6 +9,14 @@ chatmodes, prompt templates, and advanced instructions.**
 
 _Quality Score: **98.9%** | Enterprise Excellence Level | Production Ready_
 
+## Start here
+
+- Read first: `.github/instructions/agent-workflow.instructions.md`
+- Instruction map: `.github/instructions/INDEX.md`
+- Toolshed overview: `scripts/tools/README.md`
+- Validate quickly: `npm run quick:validate`
+- Placeholder log: `docs/reports/PLACEHOLDERS.md`
+
 ## 🛠️ **IMPORTANT: Ready-to-Use Toolshed Available**
 
 **⚡ This repository includes a complete toolshed of pre-built scripts that GitHub
@@ -199,13 +207,18 @@ curl -sSL https://git.io/copilot-essentials | bash -s -- --essential-only
 
 ### ✅ **Validate Setup**
 
-   ```bash
-   # Verify installation
-   ./scripts/validation/validate-structure.sh
+```bash
+# Quick lint + validation
+npm run quick:validate
 
-   # Or use npm if available
-   npm run validate
-   ```
+# Or run structure validator directly
+./scripts/validation/validate-structure.sh
+```
+
+Tip:
+
+- In VS Code, run “Tasks: Run Task” → quick:validate
+- In Codespaces, validations run fast on the prebuilt container
 
 ### 🎯 **Start Using Chatmodes**
 
@@ -237,18 +250,12 @@ Perfect for: Performance tuning, refactoring, advanced algorithms
 
 ## 📚 Documentation
 
-- 📖 **[Complete Documentation](docs/README.md)** - Comprehensive guides and
-  analysis
-- 🚀 **[Project Structure Guide](docs/guides/PROJECT_STRUCTURE.md)** - Repository
-  organization
-- 🔧 **[Copilot Instructions Guide](docs/guides/COPILOT-INSTRUCTIONS-GUIDE.md)** -
-  Detailed setup instructions
-- 🛠️ **[Toolshed Reference](docs/guides/TOOLSHED-REFERENCE.md)** - Available
-  tools and utilities
-- 🧪 **[MCP Examples Index](docs/guides/MCP-EXAMPLES.md)** - Offline-friendly
-  Model Context Protocol demos
-- 📘 **[Agent Runbooks](.github/runbooks/)** - Step-by-step workflows for
-  common engineering tasks
+- 📖 [Complete Documentation](docs/README.md) — guides and references
+- 🚀 [Project Structure Guide](docs/guides/PROJECT_STRUCTURE.md) — repository layout
+- 🔧 [Copilot Instructions Guide](docs/guides/COPILOT-INSTRUCTIONS-GUIDE.md) — setup
+- 🛠️ [Toolshed Reference](docs/guides/TOOLSHED-REFERENCE.md) — tools and utilities
+- 🧪 [MCP Examples Index](docs/guides/MCP-EXAMPLES.md) — offline MCP demos
+- 📘 [Agent Runbooks](.github/runbooks/) — step-by-step workflows
 
 ## 🏆 Enterprise Features
 
@@ -273,13 +280,13 @@ Perfect for: Performance tuning, refactoring, advanced algorithms
 - ⚡ **Gemini Pro** - Google's enterprise AI solution
 - 🔄 **Cross-platform** compatibility
 
-## 📊 Repository Statistics
+## 📊 Repository Snapshot
 
-- **11 Specialized Chatmodes** for different development scenarios
-- **7 Prompt Templates** for reusable AI interactions
-- **6 Instruction Sets** covering best practices and standards
-- **100% Validation Compliance** across all frameworks
-- **Enterprise-grade Documentation** with categorized reports
+- Specialized chatmodes for common engineering scenarios
+- Prompt templates for reusable AI interactions
+- Instruction sets covering best practices and standards
+- Validation and linting with automated checks
+- Enterprise-grade docs with categorized reports
 
 ## 🤝 Contributing
 
