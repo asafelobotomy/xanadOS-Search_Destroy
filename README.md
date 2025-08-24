@@ -160,11 +160,9 @@ This framework transforms your GitHub Copilot experience by providing:
 
 | Method | Description | Action |
 |--------|-------------|---------|
-| **VS Code Web** | Open in browser-based VS Code | [![Open in VS Code](https://img.shields.io/badge/Open%20in-VS%20Code-007ACC?style=flat-square&logo=visual-studio-code&logoColor=white)](https://vscode.dev/github/asafelobotomy/agent-instructions-co-pilot) |
-<!-- markdown-link-check-disable -->
-| **Clone Directly** | Clone to VS Code desktop | [![Clone in VS Code](https://img.shields.io/badge/Clone%20in-VS%20Code-007ACC?style=flat-square&logo=visual-studio-code&logoColor=white)](vscode://vscode.git/clone?url=https://github.com/asafelobotomy/agent-instructions-co-pilot.git) |
-<!-- markdown-link-check-enable -->
-| **GitHub Codespaces** | Cloud development environment | [![Open in Codespaces](https://img.shields.io/badge/Open%20in-Codespaces-24292e?style=flat-square&logo=github&logoColor=white)](https://codespaces.new/asafelobotomy/agent-instructions-co-pilot) |
+| **VS Code Web** | Open in browser-based VS Code | [🌐 Open in VS Code Web](https://vscode.dev/github/asafelobotomy/agent-instructions-co-pilot) |
+| **Clone Directly** | Clone to VS Code desktop | [📱 Clone in VS Code Desktop](vscode://vscode.git/clone?url=https://github.com/asafelobotomy/agent-instructions-co-pilot.git) |
+| **GitHub Codespaces** | Cloud development environment | [☁️ Open in Codespaces](https://codespaces.new/asafelobotomy/agent-instructions-co-pilot) |
 | **Essential Files Only** | Copy key files to existing project | See command below ⬇️ |
 
 <!-- markdownlint-enable MD013 -->
@@ -175,7 +173,8 @@ This framework transforms your GitHub Copilot experience by providing:
 
 ```bash
 # Copy essential files to current directory
-curl -sSL https://git.io/copilot-essentials | bash -s -- --essential-only
+REPO_URL="https://raw.githubusercontent.com/asafelobotomy/agent-instructions-co-pilot"
+curl -sSL "$REPO_URL/main/scripts/tools/quick-setup.sh" | bash -s -- --essential-only
 ```
 
 ### Installation Options
@@ -196,14 +195,11 @@ curl -sSL https://git.io/copilot-essentials | bash -s -- --essential-only
 
 #### Option 3: **Essential Files Only**
 
-   <!-- markdownlint-disable MD013 -->
    ```bash
-   # Alternative: Use full URL
-   curl -sSL \
-     https://raw.githubusercontent.com/asafelobotomy/agent-instructions-co-pilot/main/scripts/tools/quick-setup.sh \
-     | bash -s -- --essential-only
+   # Alternative: Use full URL (copy and paste this entire block)
+   REPO_URL="https://raw.githubusercontent.com/asafelobotomy/agent-instructions-co-pilot"
+   curl -sSL "$REPO_URL/main/scripts/tools/quick-setup.sh" | bash -s -- --essential-only
    ```
-   <!-- markdownlint-enable MD013 -->
 
 ### ✅ **Validate Setup**
 
