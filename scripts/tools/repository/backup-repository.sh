@@ -65,24 +65,24 @@ create_backup() {
     repo_name=$(basename "$(pwd)")
     local backup_name="${repo_name}_backup_${TIMESTAMP}"
     local backup_path="$BACKUP_DIR/$backup_name"
-    
+
     log_info "Creating backup: $backup_name"
-    
+
     # Create backup directory
     mkdir -p "$BACKUP_DIR"
-    
+
     # Create temporary backup directory
     mkdir -p "$backup_path"
-    
+
     # Copy repository contents
     log_info "Copying repository contents..."
-    
+
     if [[ "$INCLUDE_GIT" == "true" ]]; then
         cp -r . "$backup_path/" 2>/dev/null || log_warning "Some files could not be copied"
     else
         rsync -av --exclude='.git' . "$backup_path/" || log_warning "Some files could not be copied"
     fi
-    
+
     # Create backup metadata
     cat > "$backup_path/BACKUP_INFO.md" << EOF
 # Backup Information
@@ -100,7 +100,7 @@ $(find "$backup_path" -type f | wc -l) files backed up
 $(find "$backup_path" -type d | wc -l) directories backed up
 
 EOF
-    
+
     # Compress if requested
     if [[ "$COMPRESS" == "true" ]]; then
         log_info "Compressing backup..."
@@ -110,7 +110,7 @@ EOF
         backup_path="${backup_path}.tar.gz"
         cd - > /dev/null
     fi
-    
+
     log_success "Backup created: $backup_path"
     log_info "Backup size: $(du -sh "$backup_path" | cut -f1)"
 }
@@ -118,9 +118,9 @@ EOF
 # Main execution
 main() {
     log_info "Starting repository backup..."
-    
+
     create_backup
-    
+
     log_success "Repository backup complete!"
 }
 

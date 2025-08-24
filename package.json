@@ -7,10 +7,10 @@
     "update-readme": "node scripts/update-readme.js",
     "generate-install-links": "./scripts/generate-install-links.sh",
     "validate": "node .github/validation/templates/template-validation-system.js",
-  "test": "npm run validate",
-  "lint": "npx markdownlint **/*.md --ignore node_modules",
-  "lint:fix": "npx markdownlint **/*.md --ignore node_modules --fix",
-  "quick:validate": "npm run lint && npm run validate"
+    "test": "npm run validate",
+    "lint": "npx markdownlint **/*.md --ignore node_modules",
+    "lint:fix": "npx markdownlint **/*.md --ignore node_modules --fix",
+    "quick:validate": "npm run lint && npm run validate"
   },
   "keywords": [
     "github-copilot",
@@ -32,5 +32,8 @@
   },
   "engines": {
     "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "shellcheck": "^4.1.0"
   }
 }

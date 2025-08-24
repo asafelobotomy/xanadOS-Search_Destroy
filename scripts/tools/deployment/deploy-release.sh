@@ -62,13 +62,13 @@ EOF
 # Validate release prerequisites
 validate_prerequisites() {
     log_info "Validating release prerequisites..."
-    
+
     # Check git status
     if [[ -n "$(git status --porcelain)" ]]; then
         log_error "Repository has uncommitted changes"
         return 1
     fi
-    
+
     # Check current branch
     local current_branch
     current_branch=$(git branch --show-current)
@@ -76,19 +76,19 @@ validate_prerequisites() {
         log_error "Must be on release branch: $RELEASE_BRANCH (currently on: $current_branch)"
         return 1
     fi
-    
+
     # Check if version is specified
     if [[ -z "$VERSION" ]]; then
         log_error "Version must be specified with -v/--version"
         return 1
     fi
-    
+
     # Validate version format
     if ! [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
         log_error "Version must be in format X.Y.Z (e.g., 1.0.0)"
         return 1
     fi
-    
+
     log_success "Prerequisites validated"
 }
 
@@ -98,9 +98,9 @@ run_tests() {
         log_warning "Skipping test validation"
         return 0
     fi
-    
+
     log_info "Running test validation..."
-    
+
     # Run linting
     if command -v npm >/dev/null 2>&1 && [[ -f "package.json" ]]; then
         if [[ "$DRY_RUN" == "true" ]]; then
@@ -109,7 +109,7 @@ run_tests() {
             npm run lint || { log_error "Linting failed"; return 1; }
         fi
     fi
-    
+
     # Run structure validation
     if [[ -x "scripts/validation/verify-structure.sh" ]]; then
         if [[ "$DRY_RUN" == "true" ]]; then
@@ -118,31 +118,31 @@ run_tests() {
             ./scripts/validation/verify-structure.sh || { log_error "Structure validation failed"; return 1; }
         fi
     fi
-    
+
     log_success "Tests passed"
 }
 
 # Update version files
 update_version() {
     log_info "Updating version to $VERSION..."
-    
+
     if [[ "$DRY_RUN" == "true" ]]; then
         log_info "Would update version files with: $VERSION"
         return 0
     fi
-    
+
     # Update package.json if it exists
     if [[ -f "package.json" ]]; then
         sed -i "s/\"version\": \".*\"/\"version\": \"$VERSION\"/" package.json
         log_success "Updated package.json version"
     fi
-    
+
     # Update VERSION file if it exists
     if [[ -f "VERSION" ]]; then
         echo "$VERSION" > VERSION
         log_success "Updated VERSION file"
     fi
-    
+
     # Update CHANGELOG.md
     if [[ -f "CHANGELOG.md" ]]; then
         local release_date
@@ -158,51 +158,51 @@ create_tag() {
         log_info "Skipping tag creation"
         return 0
     fi
-    
+
     log_info "Creating git tag: v$VERSION"
-    
+
     if [[ "$DRY_RUN" == "true" ]]; then
         log_info "Would create tag: v$VERSION"
         return 0
     fi
-    
+
     git add . || true
     git commit -m "chore: release version $VERSION" || log_warning "No changes to commit"
     git tag -a "v$VERSION" -m "Release version $VERSION"
-    
+
     log_success "Created tag: v$VERSION"
 }
 
 # Deploy release
 deploy_release() {
     log_info "Deploying release..."
-    
+
     if [[ "$DRY_RUN" == "true" ]]; then
         log_info "Would push changes and tags to origin"
         return 0
     fi
-    
+
     # Push changes and tags
     git push origin "$RELEASE_BRANCH"
     if [[ "$AUTO_TAG" == "true" ]]; then
         git push origin "v$VERSION"
     fi
-    
+
     log_success "Release deployed to origin"
 }
 
 # Main execution
 main() {
     log_info "Starting release deployment for version: $VERSION"
-    
+
     validate_prerequisites
     run_tests
     update_version
     create_tag
     deploy_release
-    
+
     log_success "Release $VERSION deployed successfully!"
-    
+
     if [[ "$DRY_RUN" == "true" ]]; then
         log_info "This was a dry run - no changes were made"
     fi

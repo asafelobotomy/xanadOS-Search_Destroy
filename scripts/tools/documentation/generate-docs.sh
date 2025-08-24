@@ -80,7 +80,7 @@ setup_logging() {
     if [[ ! -d "$LOG_DIR" ]]; then
         mkdir -p "$LOG_DIR"
     fi
-    
+
     if [[ "$VERBOSE" == "true" ]]; then
         log_info "Logging enabled: $LOG_DIR/generate-docs.log"
     fi
@@ -89,23 +89,23 @@ setup_logging() {
 # Generate API documentation from comments
 generate_api_docs() {
     log_info "Generating API documentation..."
-    
+
     local api_files=$(find . -name "*.js" -o -name "*.ts" -o -name "*.py" -o -name "*.sh" | grep -v node_modules | grep -v .git)
-    
+
     if [[ -z "$api_files" ]]; then
         log_warning "No API files found for documentation generation"
         return 0
     fi
-    
+
     local output_file="$OUTPUT_DIR/api/README.md"
-    
+
     if [[ "$DRY_RUN" == "true" ]]; then
         log_info "Would generate API docs at: $output_file"
         return 0
     fi
-    
+
     mkdir -p "$(dirname "$output_file")"
-    
+
     cat > "$output_file" << 'EOF'
 # API Documentation
 
@@ -114,37 +114,37 @@ This directory contains automatically generated API documentation.
 ## Available APIs
 
 EOF
-    
+
     while IFS= read -r file; do
         local basename=$(basename "$file")
         echo "- [$basename]($file) - $(head -n 5 "$file" | grep -o "Purpose:.*" || echo "API interface")" >> "$output_file"
     done <<< "$api_files"
-    
+
     log_success "Generated API documentation"
 }
 
 # Generate README with project status
 generate_readme() {
     log_info "Generating README with current project status..."
-    
+
     local readme_file="README.md"
-    
+
     if [[ -f "$readme_file" ]] && [[ "$FORCE_OVERWRITE" != "true" ]]; then
         log_warning "README.md exists - use --force to overwrite"
         return 0
     fi
-    
+
     if [[ "$DRY_RUN" == "true" ]]; then
         log_info "Would generate/update README.md"
         return 0
     fi
-    
+
     # Get project info
     local project_name=$(basename "$(pwd)")
     local git_remote=$(git remote get-url origin 2>/dev/null || echo "No remote configured")
     local last_commit=$(git log -1 --format="%h - %s (%ar)" 2>/dev/null || echo "No commits")
     local file_count=$(find . -type f -not -path "./.git/*" -not -path "./node_modules/*" | wc -l)
-    
+
     cat > "$readme_file" << EOF
 # $project_name
 
@@ -179,48 +179,48 @@ npm install  # or pip install -r requirements.txt
 Please read [CONTRIBUTING.md](CONTRIBUTING.md) for details on our code of conduct and the process for submitting pull requests.
 
 EOF
-    
+
     log_success "Generated README.md"
 }
 
 # Generate table of contents for directories
 generate_toc() {
     log_info "Generating table of contents..."
-    
+
     local doc_dirs=("docs/guides" "docs/tutorials" "docs/reference")
-    
+
     for dir in "${doc_dirs[@]}"; do
         if [[ ! -d "$dir" ]]; then
             continue
         fi
-        
+
         local toc_file="$dir/README.md"
-        
+
         if [[ "$DRY_RUN" == "true" ]]; then
             log_info "Would generate TOC at: $toc_file"
             continue
         fi
-        
+
         if [[ -f "$toc_file" ]]; then
             log_info "TOC already exists at $toc_file"
             continue
         fi
-        
+
         local dir_name=$(basename "$dir")
-        
+
         cat > "$toc_file" << EOF
 # $dir_name
 
 ## Available Documents
 
 EOF
-        
+
         find "$dir" -name "*.md" -not -name "README.md" | sort | while read -r file; do
             local basename=$(basename "$file" .md)
             local title=$(head -n 1 "$file" | sed 's/^# //' || echo "$basename")
             echo "- [$title]($basename.md)" >> "$toc_file"
         done
-        
+
         log_success "Generated TOC for $dir"
     done
 }
@@ -228,14 +228,14 @@ EOF
 # Update changelog from git history
 update_changelog() {
     log_info "Updating changelog from git history..."
-    
+
     local changelog_file="CHANGELOG.md"
-    
+
     if [[ "$DRY_RUN" == "true" ]]; then
         log_info "Would update CHANGELOG.md"
         return 0
     fi
-    
+
     if [[ ! -f "$changelog_file" ]]; then
         cat > "$changelog_file" << 'EOF'
 # Changelog
@@ -244,21 +244,21 @@ All notable changes to this project will be documented in this file.
 
 EOF
     fi
-    
+
     # Get recent commits
     local recent_commits=$(git log --oneline --since="1 week ago" 2>/dev/null || echo "")
-    
+
     if [[ -n "$recent_commits" ]]; then
         # Backup existing changelog
         cp "$changelog_file" "${changelog_file}.backup"
-        
+
         # Insert recent changes
         sed -i '/^# Changelog/a\\n## Recent Changes (Generated)\n' "$changelog_file"
-        
+
         while IFS= read -r commit; do
             echo "- $commit" | sed -i '/^## Recent Changes/r /dev/stdin' "$changelog_file"
         done <<< "$recent_commits"
-        
+
         log_success "Updated changelog with recent commits"
     else
         log_warning "No recent commits to add to changelog"
@@ -268,23 +268,23 @@ EOF
 # Main execution function
 main() {
     setup_logging
-    
+
     log_info "Starting documentation generation..."
     log_info "Output directory: $OUTPUT_DIR"
-    
+
     # Create output directory structure
     if [[ "$DRY_RUN" != "true" ]]; then
         mkdir -p "$OUTPUT_DIR"/{api,guides,tutorials,reference}
     fi
-    
+
     # Generate different types of documentation
     generate_api_docs
     generate_readme
     generate_toc
     update_changelog
-    
+
     log_success "Documentation generation complete!"
-    
+
     if [[ "$DRY_RUN" == "true" ]]; then
         log_info "This was a dry run - no files were modified"
     fi
