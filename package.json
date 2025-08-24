@@ -12,7 +12,9 @@
     "lint": "npx markdownlint **/*.md --ignore node_modules",
     "lint:fix": "npx markdownlint **/*.md --ignore node_modules --fix",
   "quick:validate": "npm run lint && npm run validate",
-  "playground:test": "node examples/awesome-playground/test/greet.test.js"
+  "playground:test": "node examples/awesome-playground/test/greet.test.js",
+  "mcp:triage": "node examples/mcp/github-issues-triage/run.js",
+  "mcp:test": "node examples/mcp/github-issues-triage/test/triage.test.js"
   },
   "keywords": [
     "github-copilot",

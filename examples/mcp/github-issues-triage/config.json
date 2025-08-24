@@ -1,0 +1,9 @@
+{
+  "rules": [
+    { "keyword": "security", "label": "security", "severity": "high" },
+    { "keyword": "performance", "label": "performance", "severity": "medium" },
+    { "keyword": "docs", "label": "documentation", "severity": "low" },
+    { "keyword": "test", "label": "testing", "severity": "medium" },
+    { "keyword": "bug", "label": "bug", "severity": "high" }
+  ]
+}
