@@ -9,6 +9,23 @@ enterprise-grade system for AI-assisted development.
 - 📝 [Prompt Templates](../.github/prompts/) - 7 reusable prompt templates
 - 🔧 [Instructions](../.github/instructions/) - Advanced AI model instructions
 
+## � Documentation Structure
+
+```text
+docs/
+├── �📖 guides/              # How-to guides and comprehensive documentation
+│   ├── COPILOT-INSTRUCTIONS-GUIDE.md    # Complete framework guide
+│   ├── PROJECT_STRUCTURE.md             # Repository organization
+│   ├── TOOLSHED-REFERENCE.md           # Tool catalog and usage
+│   ├── troubleshooting.md               # Problem resolution guide
+│   └── ...                             # Additional guides
+├── 📚 tutorials/           # Step-by-step learning materials
+├── 📋 reference/           # Quick-lookup specifications
+├── 🔧 api/                # API documentation and integration
+├── 📊 implementation-reports/  # Development progress reports
+└── 📈 reports/            # Analysis and quality reports
+```
+
 ## 📖 User Guides
 
 ### Essential Documentation
@@ -22,7 +39,15 @@ enterprise-grade system for AI-assisted development.
 - 🔗 [**VS Code Integration**](guides/INSTALL_LINKS.md) - Extension installation
 - 🏗️ [**Project Structure**](guides/PROJECT_STRUCTURE.md) - Repository organization
 - 🛠️ [**Toolshed Reference**](guides/TOOLSHED-REFERENCE.md) - Quick tool lookup
-- 📚 [**Documentation Reference**](guides/DOCUMENTATION-REFERENCE.md) - Documentation awareness guide
+- 📚 [**Documentation Reference**](guides/DOCUMENTATION-REFERENCE.md) - Documentation
+  awareness guide
+- 🔧 [**Troubleshooting Guide**](guides/troubleshooting.md) - Problem resolution
+
+### Learning Resources
+
+- 📚 [**Tutorials**](tutorials/) - Step-by-step learning materials
+- 📋 [**Reference**](reference/) - Quick-lookup specifications
+- 🔧 [**API Documentation**](api/) - Integration guides and specifications
 
 ## � Framework Components
 
