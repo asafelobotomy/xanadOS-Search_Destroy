@@ -154,19 +154,52 @@ This framework transforms your GitHub Copilot experience by providing:
 
 ### One-Click Setup
 
-[![Open in VS Code](https://img.shields.io/badge/VS_Code-Install-0098FF?style=flat-square&logo=visualstudiocode&logoColor=white)](https://vscode.dev/redirect?url=vscode%3Achat-instructions%2Finstall%3Furl%3Dhttps%3A%2F%2Fraw.githubusercontent.com%2Fasafelobotomy%2Fagent-instructions-co-pilot%2Fmain%2F.github%2Fcopilot-instructions.md)
-[![Open in VS Code Insiders](https://img.shields.io/badge/VS_Code_Insiders-Install-24bfa5?style=flat-square&logo=visualstudiocode&logoColor=white)](https://insiders.vscode.dev/redirect?url=vscode-insiders%3Achat-instructions%2Finstall%3Furl%3Dhttps%3A%2F%2Fraw.githubusercontent.com%2Fasafelobotomy%2Fagent-instructions-co-pilot%2Fmain%2F.github%2Fcopilot-instructions.md)
+#### Basic Installation (Core Instructions Only)
+
+[![Open in VS Code](https://img.shields.io/badge/VS_Code-Basic_Install-0098FF?style=flat-square&logo=visualstudiocode&logoColor=white)](https://vscode.dev/redirect?url=vscode%3Achat-instructions%2Finstall%3Furl%3Dhttps%3A%2F%2Fraw.githubusercontent.com%2Fasafelobotomy%2Fagent-instructions-co-pilot%2Fmain%2F.github%2Fcopilot-instructions.md)
+[![Open in VS Code Insiders](https://img.shields.io/badge/VS_Code_Insiders-Basic_Install-24bfa5?style=flat-square&logo=visualstudiocode&logoColor=white)](https://insiders.vscode.dev/redirect?url=vscode-insiders%3Achat-instructions%2Finstall%3Furl%3Dhttps%3A%2F%2Fraw.githubusercontent.com%2Fasafelobotomy%2Fagent-instructions-co-pilot%2Fmain%2F.github%2Fcopilot-instructions.md)
+
+#### Complete Framework Installation (Recommended)
+
+[![Open in VS Code](https://img.shields.io/badge/VS_Code-Complete_Framework-FF6B6B?style=flat-square&logo=visualstudiocode&logoColor=white)](https://vscode.dev/redirect?url=vscode%3Achat-instructions%2Finstall%3Furl%3Dhttps%3A%2F%2Fraw.githubusercontent.com%2Fasafelobotomy%2Fagent-instructions-co-pilot%2Fmain%2F.github%2Fcopilot-instructions-complete.md)
+[![Open in VS Code Insiders](https://img.shields.io/badge/VS_Code_Insiders-Complete_Framework-FF6B6B?style=flat-square&logo=visualstudiocode&logoColor=white)](https://insiders.vscode.dev/redirect?url=vscode-insiders%3Achat-instructions%2Finstall%3Furl%3Dhttps%3A%2F%2Fraw.githubusercontent.com%2Fasafelobotomy%2Fagent-instructions-co-pilot%2Fmain%2F.github%2Fcopilot-instructions-complete.md)
+
+**Complete Framework includes:**
+
+- ✅ Core repository instructions
+- ✅ 11 specialized instruction sets (security, testing, docs, etc.)
+- ✅ 11 chat modes (architect, security, performance, etc.)
+- ✅ Validation systems and quality checks
+- ✅ Toolshed integration and usage guidance
 
 [![Open in Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/asafelobotomy/agent-instructions-co-pilot)
 
 ### Alternative Setup Methods
 
-#### Option 1: One-Click VS Code Installation (Recommended)
+#### Option 1: Complete Framework Installation Script
 
-**Use the VS Code buttons above** - they will automatically install the GitHub Copilot
-instructions into your VS Code.
+**For the most comprehensive setup**, run our installation script that copies all components:
 
-#### Option 2: GitHub Copilot Chat Installation
+```bash
+git clone https://github.com/asafelobotomy/agent-instructions-co-pilot.git
+cd agent-instructions-co-pilot
+./scripts/tools/setup/install-copilot-framework.sh
+```
+
+This installs:
+
+- Core instructions + 11 specialized instruction sets + 11 chat modes
+- All components organized in your VS Code config directory
+- Master framework file for easy loading
+
+#### Option 2: VS Code One-Click Installation
+
+**Use the VS Code buttons above** to install either:
+
+- **Basic Install**: Core instructions only (blue buttons)
+- **Complete Framework**: All components via comprehensive instruction file (red buttons)
+
+#### Option 3: GitHub Copilot Chat Installation
 
 1. **Clone or access this repository**:
 
