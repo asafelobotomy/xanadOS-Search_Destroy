@@ -6,7 +6,8 @@
   "scripts": {
     "update-readme": "node scripts/update-readme.js",
     "generate-install-links": "./scripts/generate-install-links.sh",
-    "validate": "node .github/validation/templates/template-validation-system.js",
+  "validate:chatmodes": "bash scripts/validation/validate-chatmodes.sh",
+  "validate": "node .github/validation/templates/template-validation-system.js && npm run validate:chatmodes",
     "test": "npm run validate",
     "lint": "npx markdownlint **/*.md --ignore node_modules",
     "lint:fix": "npx markdownlint **/*.md --ignore node_modules --fix",
