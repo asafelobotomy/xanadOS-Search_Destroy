@@ -154,7 +154,8 @@ This framework transforms your GitHub Copilot experience by providing:
 
 ### One-Click Setup
 
-[![Open in VS Code](https://img.shields.io/static/v1?logo=visualstudiocode&label=&message=Open%20in%20Visual%20Studio%20Code&labelColor=2c2c32&color=007acc&logoColor=007acc)](https://open.vscode.dev/asafelobotomy/agent-instructions-co-pilot)
+[![Open in VS Code](https://img.shields.io/badge/VS_Code-Install-0098FF?style=flat-square&logo=visualstudiocode&logoColor=white)](https://vscode.dev/redirect?url=vscode%3Achat-instructions%2Finstall%3Furl%3Dhttps%3A%2F%2Fraw.githubusercontent.com%2Fasafelobotomy%2Fagent-instructions-co-pilot%2Fmain%2F.github%2Fcopilot-instructions.md)
+[![Open in VS Code Insiders](https://img.shields.io/badge/VS_Code_Insiders-Install-24bfa5?style=flat-square&logo=visualstudiocode&logoColor=white)](https://insiders.vscode.dev/redirect?url=vscode-insiders%3Achat-instructions%2Finstall%3Furl%3Dhttps%3A%2F%2Fraw.githubusercontent.com%2Fasafelobotomy%2Fagent-instructions-co-pilot%2Fmain%2F.github%2Fcopilot-instructions.md)
 
 [![Open in Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/asafelobotomy/agent-instructions-co-pilot)
 
