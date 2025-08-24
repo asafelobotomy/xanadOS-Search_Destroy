@@ -154,15 +154,19 @@ This framework transforms your GitHub Copilot experience by providing:
 
 ### One-Click Setup
 
-> **Note**: This is a private repository. Use the manual setup below or Codespaces for access.
+[![Open in VS Code](https://img.shields.io/badge/VS_Code-Install-0098FF?style=flat-square&logo=visualstudiocode&logoColor=white)](https://vscode.dev/redirect?url=vscode%3Achat-instructions%2Finstall%3Furl%3Dhttps%3A%2F%2Fraw.githubusercontent.com%2Fasafelobotomy%2Fagent-instructions-co-pilot%2Fmain%2F.github%2Fcopilot-instructions.md)
+[![Open in VS Code Insiders](https://img.shields.io/badge/VS_Code_Insiders-Install-24bfa5?style=flat-square&logo=visualstudiocode&logoColor=white)](https://insiders.vscode.dev/redirect?url=vscode-insiders%3Achat-instructions%2Finstall%3Furl%3Dhttps%3A%2F%2Fraw.githubusercontent.com%2Fasafelobotomy%2Fagent-instructions-co-pilot%2Fmain%2F.github%2Fcopilot-instructions.md)
 
 [![Open in Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/asafelobotomy/agent-instructions-co-pilot)
 
-### Manual Setup
+### Alternative Setup Methods
 
-### Setup Instructions
+#### Option 1: One-Click VS Code Installation (Recommended)
 
-#### Option 1: GitHub Copilot Instructions (Recommended)
+**Use the VS Code buttons above** - they will automatically install the GitHub Copilot
+instructions into your VS Code.
+
+#### Option 2: GitHub Copilot Chat Installation
 
 1. **Clone or access this repository**:
 
