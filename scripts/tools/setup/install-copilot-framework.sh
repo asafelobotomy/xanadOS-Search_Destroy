@@ -31,14 +31,14 @@ detect_vscode_config() {
         "$HOME/AppData/Roaming/Code/User"
         "$HOME/AppData/Roaming/Code - Insiders/User"
     )
-    
+
     for dir in "${config_dirs[@]}"; do
         if [[ -d "$dir" ]]; then
             echo "$dir"
             return 0
         fi
     done
-    
+
     # Default fallback
     echo "$HOME/.vscode"
 }
@@ -54,7 +54,7 @@ create_directories() {
         "copilot-instructions/schemas"
         "copilot-instructions/runbooks"
     )
-    
+
     for dir in "${dirs[@]}"; do
         mkdir -p "$base_dir/$dir"
         log_info "Created directory: $base_dir/$dir"
@@ -64,26 +64,26 @@ create_directories() {
 # Copy instruction files
 copy_instructions() {
     local dest_dir="$1"
-    
+
     log_info "Installing core instructions..."
     cp "$REPO_ROOT/.github/copilot-instructions.md" "$dest_dir/copilot-instructions.md"
-    
+
     log_info "Installing specialized instruction files..."
     cp -r "$REPO_ROOT/.github/instructions/"* "$dest_dir/copilot-instructions/instructions/"
-    
+
     log_info "Installing chat modes..."
     cp -r "$REPO_ROOT/.github/chatmodes/"* "$dest_dir/copilot-instructions/chatmodes/"
-    
+
     log_info "Installing prompt templates..."
     if [[ -d "$REPO_ROOT/.github/prompts" ]]; then
         cp -r "$REPO_ROOT/.github/prompts/"* "$dest_dir/copilot-instructions/prompts/"
     fi
-    
+
     log_info "Installing schemas..."
     if [[ -d "$REPO_ROOT/.github/schemas" ]]; then
         cp -r "$REPO_ROOT/.github/schemas/"* "$dest_dir/copilot-instructions/schemas/"
     fi
-    
+
     log_info "Installing runbooks..."
     if [[ -d "$REPO_ROOT/.github/runbooks" ]]; then
         cp -r "$REPO_ROOT/.github/runbooks/"* "$dest_dir/copilot-instructions/runbooks/"
@@ -94,7 +94,7 @@ copy_instructions() {
 create_master_instructions() {
     local dest_dir="$1"
     local master_file="$dest_dir/copilot-instructions-framework.md"
-    
+
     cat > "$master_file" << 'EOF'
 ---
 applyTo: "**/*"
@@ -185,21 +185,21 @@ EOF
 # Main installation function
 main() {
     log_info "🚀 Installing GitHub Copilot Enhancement Framework..."
-    
+
     # Detect VS Code configuration directory
     local vscode_config
     vscode_config=$(detect_vscode_config)
     log_info "VS Code config directory: $vscode_config"
-    
+
     # Create directories
     create_directories "$vscode_config"
-    
+
     # Copy all framework components
     copy_instructions "$vscode_config"
-    
+
     # Create master instruction file
     create_master_instructions "$vscode_config"
-    
+
     log_success "🎉 GitHub Copilot Enhancement Framework installed successfully!"
     echo
     log_info "📋 Installation Summary:"
