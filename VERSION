@@ -1,11 +1,1 @@
-# Semantic Versioning
-VERSION_MAJOR=2
-VERSION_MINOR=11
-VERSION_PATCH=0
-VERSION_BUILD=$(git rev-list --count HEAD 2>/dev/null || echo "0")
-
-# Current version string
-VERSION="${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH}"
-VERSION_FULL="${VERSION}.${VERSION_BUILD}"
-
-echo $VERSION_FULL
+2.11.0
