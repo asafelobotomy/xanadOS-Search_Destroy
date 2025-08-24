@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.11.1] - 2025-08-25
+
+### Added
+
+- Comprehensive Flathub submission automation script
+- Complete Flathub submission documentation and guides
+- Automated submission process with fork detection and branch management
+- Enhanced submission validation and error handling
+
+### Fixed
+
+- VERSION file format simplified for Flathub compatibility
+- Flatpak manifest commit hash synchronization
+- Submission script robustness with better error recovery
+
+### Documentation
+
+- Added Flathub submission ready report with complete verification
+- Created step-by-step submission guides for various scenarios
+- Enhanced submission process documentation
+
 ## [2.11.0] - 2025-08-24
 
 ### Added
