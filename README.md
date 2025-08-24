@@ -167,7 +167,7 @@ curl -sSL https://git.io/copilot-essentials | bash -s -- --essential-only
 ### Installation Options
 
 #### Option 1: **VS Code Integration** (Recommended)
-   
+
    1. **Click the "Clone in VS Code" button above** ⬆️
    2. VS Code will open and prompt you to clone the repository
    3. Choose your workspace location
@@ -193,13 +193,13 @@ curl -sSL https://git.io/copilot-essentials | bash -s -- --essential-only
    ```bash
    # Verify installation
    ./scripts/validation/validate-structure.sh
-   
+
    # Or use npm if available
    npm run validate
    ```
 
 ### 🎯 **Start Using Chatmodes**
-   
+
    1. **Open VS Code** to your project directory
    2. **Navigate** to `.github/chatmodes/` in the Explorer
    3. **Copy content** from any `.chatmode.md` file
@@ -236,6 +236,10 @@ Perfect for: Performance tuning, refactoring, advanced algorithms
   Detailed setup instructions
 - 🛠️ **[Toolshed Reference](docs/guides/TOOLSHED-REFERENCE.md)** - Available
   tools and utilities
+- 🧪 **[MCP Examples Index](docs/guides/MCP-EXAMPLES.md)** - Offline-friendly
+  Model Context Protocol demos
+- 📘 **[Agent Runbooks](.github/runbooks/)** - Step-by-step workflows for
+  common engineering tasks
 
 ## 🏆 Enterprise Features
 
