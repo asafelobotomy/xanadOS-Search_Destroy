@@ -154,10 +154,49 @@ This framework transforms your GitHub Copilot experience by providing:
 
 ### One-Click Setup
 
-[![Open in VS Code](https://img.shields.io/badge/VS_Code-Install-0098FF?style=flat-square&logo=visualstudiocode&logoColor=white)](https://vscode.dev/redirect?url=vscode%3Achat-instructions%2Finstall%3Furl%3Dhttps%3A%2F%2Fraw.githubusercontent.com%2Fasafelobotomy%2Fagent-instructions-co-pilot%2Fmain%2F.github%2Fcopilot-instructions.md)
-[![Open in VS Code Insiders](https://img.shields.io/badge/VS_Code_Insiders-Install-24bfa5?style=flat-square&logo=visualstudiocode&logoColor=white)](https://insiders.vscode.dev/redirect?url=vscode-insiders%3Achat-instructions%2Finstall%3Furl%3Dhttps%3A%2F%2Fraw.githubusercontent.com%2Fasafelobotomy%2Fagent-instructions-co-pilot%2Fmain%2F.github%2Fcopilot-instructions.md)
+> **Note**: This is a private repository. Use the manual setup below or Codespaces for access.
 
 [![Open in Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/asafelobotomy/agent-instructions-co-pilot)
+
+### Manual Setup
+
+### Setup Instructions
+
+#### Option 1: GitHub Copilot Instructions (Recommended)
+
+1. **Clone or access this repository**:
+
+   ```bash
+   git clone https://github.com/asafelobotomy/agent-instructions-co-pilot.git
+   cd agent-instructions-co-pilot
+   ```
+
+2. **Install via GitHub Copilot Chat**:
+   - Open VS Code in this repository directory
+   - Open GitHub Copilot Chat (`Ctrl+Shift+I` or `Cmd+Shift+I`)
+   - Type: `@github use .github/copilot-instructions.md`
+   - Copilot will automatically load the repository's custom instructions
+
+#### Option 2: Manual File Installation
+
+1. **Copy the main instructions file**:
+
+   ```bash
+   # Copy to VS Code settings directory
+   cp .github/copilot-instructions.md ~/.vscode/copilot-instructions.md
+   ```
+
+2. **Or use VS Code command palette**:
+   - Open VS Code in this repository
+   - Press `Ctrl+Shift+P` (or `Cmd+Shift+P` on Mac)
+   - Type "GitHub Copilot: Add instruction file"
+   - Select `.github/copilot-instructions.md`
+
+#### Option 3: GitHub Codespaces (Automatic Setup)
+
+- Click the "Open in Codespaces" button above
+- Codespaces will automatically configure the GitHub Copilot instructions
+- No manual setup required!
 
 **For existing projects (copy essential files only):**
 
