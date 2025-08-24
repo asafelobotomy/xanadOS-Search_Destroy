@@ -22,5 +22,5 @@ Add entries when you must introduce a placeholder/stub:
 - ID: monitoring-mcp-custom-metrics
 	- Location: `.github/mcp/servers/monitoring-mcp/index.js` (method `getCustomMetrics`)
 	- Marker: `// Placeholder for custom metrics integration`
-	- Issue: (none yet) — consider opening a tracking issue to define data sources/endpoints
+	- Issue: `docs/reports/issues/issue-monitoring-mcp-custom-metrics.md`
 	- ETA: 2025-09-07 (proposed)
