@@ -64,7 +64,7 @@ jobs:
               exit 1
             fi
           fi
-          
+
           # Run semgrep if available
           if command -v semgrep >/dev/null 2>&1; then
             semgrep --config=auto --error || echo "Semgrep scan completed with findings"
