@@ -107,5 +107,5 @@ modules:
     sources:
       - type: git
         url: https://github.com/asafelobotomy/xanadOS-Search_Destroy.git
-        tag: v2.11.1
-        commit: f9a19348cb5dc117c03499e5a918e0dbbd1d5280
+        tag: v2.11.2
+        commit: 683d80c4c592b6c85dc0c827be678180b572ba08

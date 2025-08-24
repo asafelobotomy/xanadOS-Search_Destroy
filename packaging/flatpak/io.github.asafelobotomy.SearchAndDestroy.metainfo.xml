@@ -62,6 +62,18 @@
   <content_rating type="oars-1.1" />
 
   <releases>
+    <release version="2.11.2" date="2025-08-25">
+      <description>
+        <p>Flathub Submission Fixes with updated metadata and manifest synchronization.</p>
+        <ul>
+          <li>Updated Flatpak manifest to reference correct version tags</li>
+          <li>Added missing v2.11.1 release entry to AppStream metadata</li>
+          <li>Synchronized all Flathub submission files with latest release</li>
+          <li>Enhanced metainfo.xml with comprehensive release notes</li>
+          <li>Improved submission file consistency and validation</li>
+        </ul>
+      </description>
+    </release>
     <release version="2.11.1" date="2025-08-25">
       <description>
         <p>Flathub Submission Enhancement Release with comprehensive automation and documentation.</p>
