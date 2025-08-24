@@ -5,8 +5,8 @@
 **Release**: Search & Destroy v2.11.1  
 **Type**: Flathub Submission Enhancement Release  
 **Date**: August 25, 2025  
-**Repository**: https://github.com/asafelobotomy/xanadOS-Search_Destroy  
-**Release URL**: https://github.com/asafelobotomy/agent-instructions-co-pilot/releases/tag/v2.11.1
+**Repository**: <https://github.com/asafelobotomy/xanadOS-Search_Destroy>  
+**Release URL**: <https://github.com/asafelobotomy/xanadOS-Search_Destroy/releases/tag/v2.11.1>
 
 ## ✅ **Deployment Verification**
 
@@ -108,4 +108,4 @@
 
 **Deployment completed successfully on August 25, 2025**  
 **Search & Destroy v2.11.1 is now available and ready for Flathub submission**  
-**Release URL**: https://github.com/asafelobotomy/agent-instructions-co-pilot/releases/tag/v2.11.1
+**Release URL**: <https://github.com/asafelobotomy/xanadOS-Search_Destroy/releases/tag/v2.11.1>
