@@ -164,7 +164,20 @@ Open repository directly in browser-based VS Code:
 #### 📱 **VS Code Desktop** (Requires VS Code installed)
 
 Clone repository directly to your VS Code desktop app:
-**[→ Clone in VS Code Desktop](vscode://vscode.git/clone?url=https://github.com/asafelobotomy/agent-instructions-co-pilot.git)**
+
+**Option A:** Copy this URL and paste in VS Code (Command Palette → Git: Clone):
+
+```text
+https://github.com/asafelobotomy/agent-instructions-co-pilot.git
+```
+
+**Option B:** Manual steps:
+
+1. Open VS Code
+2. Press `Ctrl+Shift+P` (Windows/Linux) or `Cmd+Shift+P` (Mac)
+3. Type "Git: Clone" and select it
+4. Paste: `https://github.com/asafelobotomy/agent-instructions-co-pilot.git`
+5. Choose your workspace folder
 
 #### ☁️ **GitHub Codespaces** (Cloud development)
 
