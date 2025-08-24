@@ -1,3 +1,11 @@
+# Archive index
+
+This index tracks deprecated, legacy, and superseded content per the archive policy.
+
+- Category: deprecated — historical docs/releases referencing org.xanados.* kept for context
+- Category: legacy-versions — older release notes kept under docs/releases
+
+For policy and structure, see `archive/README.md`.
 # Archive Index
 
 ## Overview
@@ -35,6 +43,9 @@ No legacy versions currently archived.
 - `BUG_REPORT_2025-08-23.md` - Date-specific report superseded by completion
 - `COMPREHENSIVE_FIX_REPORT_2025-08-23.md` - Date-specific report superseded by completion
 - `version-control-validation-2025-08-23.md` - Date-specific validation superseded by completion
+- `config/org.xanados.searchanddestroy.policy` - Superseded by `config/io.github.asafelobotomy.searchanddestroy.policy`
+- `config/org.xanados.searchanddestroy.hardened.policy` - Superseded by `config/io.github.asafelobotomy.searchanddestroy.hardened.policy`
+- `config/org.xanados.searchanddestroy.rkhunter.policy` - Superseded by `config/io.github.asafelobotomy.searchanddestroy.rkhunter.policy`
 
 ## 📅 Chronological Index
 

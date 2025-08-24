@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE policyconfig PUBLIC
+"-//freedesktop//DTD PolicyKit Policy Configuration 1.0//EN"
+"http://www.freedesktop.org/standards/PolicyKit/1/policyconfig.dtd">
+
+<policyconfig>
+  <!-- Hardened Security Policy for Search & Destroy (io.github namespace) -->
+  <vendor>xanadOS</vendor>
+  <vendor_url>https://github.com/asafelobotomy/xanadOS-Search_Destroy</vendor_url>
+
+  <!-- RKHunter Scan Operation - Highly Restricted -->
+  <action id="io.github.asafelobotomy.searchanddestroy.rkhunter.scan">
+    <description>Run RKHunter rootkit scanner with scan operation only</description>
+    <message>Authentication required to perform system rootkit scan</message>
+    <icon_name>io.github.asafelobotomy.SearchAndDestroy</icon_name>
+    <defaults>
+      <allow_any>no</allow_any>
+      <allow_inactive>no</allow_inactive>
+      <allow_active>auth_admin</allow_active>
+    </defaults>
+    <annotate key="org.freedesktop.policykit.exec.path">/usr/bin/rkhunter</annotate>
+    <annotate key="org.freedesktop.policykit.exec.argv1">--check</annotate>
+    <annotate key="org.freedesktop.policykit.exec.allow_gui">false</annotate>
+  </action>
+
+  <!-- RKHunter Update Operation - Highly Restricted -->
+  <action id="io.github.asafelobotomy.searchanddestroy.rkhunter.update">
+    <description>Update RKHunter database</description>
+    <message>Authentication required to update RKHunter database</message>
+    <icon_name>io.github.asafelobotomy.SearchAndDestroy</icon_name>
+    <defaults>
+      <allow_any>no</allow_any>
+      <allow_inactive>no</allow_inactive>
+      <allow_active>auth_admin</allow_active>
+    </defaults>
+    <annotate key="org.freedesktop.policykit.exec.path">/usr/bin/rkhunter</annotate>
+    <annotate key="org.freedesktop.policykit.exec.argv1">--update</annotate>
+    <annotate key="org.freedesktop.policykit.exec.allow_gui">false</annotate>
+  </action>
+
+  <!-- RKHunter Version Check - Read-only Operation -->
+  <action id="io.github.asafelobotomy.searchanddestroy.rkhunter.version">
+    <description>Check RKHunter version information</description>
+    <message>Authentication required to check RKHunter version</message>
+    <icon_name>io.github.asafelobotomy.SearchAndDestroy</icon_name>
+    <defaults>
+      <allow_any>no</allow_any>
+      <allow_inactive>no</allow_inactive>
+      <allow_active>auth_admin</allow_active>
+    </defaults>
+    <annotate key="org.freedesktop.policykit.exec.path">/usr/bin/rkhunter</annotate>
+    <annotate key="org.freedesktop.policykit.exec.argv1">--version</annotate>
+    <annotate key="org.freedesktop.policykit.exec.allow_gui">false</annotate>
+  </action>
+
+  <!-- Kill Command for Process Termination - Emergency Only -->
+  <action id="io.github.asafelobotomy.searchanddestroy.kill">
+    <description>Terminate RKHunter processes</description>
+    <message>Authentication required to terminate system processes</message>
+    <icon_name>io.github.asafelobotomy.SearchAndDestroy</icon_name>
+    <defaults>
+      <allow_any>no</allow_any>
+      <allow_inactive>no</allow_inactive>
+      <allow_active>auth_admin</allow_active>
+    </defaults>
+    <annotate key="org.freedesktop.policykit.exec.path">/usr/bin/kill</annotate>
+    <annotate key="org.freedesktop.policykit.exec.allow_gui">false</annotate>
+  </action>
+
+</policyconfig>

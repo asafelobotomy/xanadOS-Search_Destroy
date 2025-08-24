@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=Search and Destroy
+GenericName=Antivirus Scanner
+Comment=A graphical interface for ClamAV antivirus scanning
+Exec=search-and-destroy
+Icon=io.github.asafelobotomy.SearchAndDestroy
+StartupNotify=true
+Categories=Security;Utility;
+Keywords=antivirus;scanner;malware;security;clamav;virus;

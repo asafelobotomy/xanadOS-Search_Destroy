@@ -1,0 +1,9 @@
+{
+    "update_branch": "stable",
+    "repo_owner": "asafelobotomy", 
+    "repo_name": "xanadOS-Search_Destroy",
+    "check_interval_hours": 24,
+    "auto_download": false,
+    "include_prereleases": false,
+    "description": "Auto-update configuration for S&D - Search & Destroy application"
+}

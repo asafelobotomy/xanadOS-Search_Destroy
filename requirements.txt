@@ -1,0 +1,35 @@
+# Core GUI and System Dependencies
+PyQt6>=6.8.0
+psutil>=6.0.0
+python-dotenv>=1.0.1
+setuptools>=75.0.0
+
+# File System Monitoring
+inotify>=0.2.10
+schedule>=1.2.2
+
+# Network and Web Features
+requests>=2.32.3
+aiohttp>=3.10.5
+dnspython>=2.7.0
+
+# Advanced Reporting and Analytics
+matplotlib>=3.9.0
+pandas>=2.2.3
+numpy>=2.0.0
+jinja2>=3.1.4
+
+# Documentation and Content
+markdown>=3.4.0
+
+# Security and Cloud Features
+cryptography>=43.0.1
+boto3>=1.35.0
+aiofiles>=24.1.0
+pyclamd>=0.4.0
+
+# Development and Testing Dependencies
+pylint>=3.3.0
+black>=24.8.0
+pytest>=8.3.0
+mypy>=1.11.0

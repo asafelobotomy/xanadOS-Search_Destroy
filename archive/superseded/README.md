@@ -1,4 +1,12 @@
-# Superseded Content Archive
+# Superseded Content
+
+This directory contains content fully replaced by newer implementations.
+
+- Archive type: superseded
+- Retention: 3 years from supersession
+- See ARCHIVE_INDEX.md for inventory.
+
+## Superseded Content Archive
 
 ## 🔄 Replaced Content
 
@@ -7,6 +15,7 @@ This directory contains files that have been completely replaced by new implemen
 ## Purpose
 
 Superseded content is preserved for:
+
 - Migration reference and guidance
 - Historical context and decision tracking
 - Compliance and audit requirements
@@ -14,7 +23,7 @@ Superseded content is preserved for:
 
 ## Organization
 
-```markdown
+```text
 superseded/
 ├── README.md                    # This file
 ├── 2025-08-22/                 # Content superseded on this date
@@ -23,7 +32,7 @@ superseded/
 └── development-reports/        # Standalone development reports
 ├── 2025-07-15/                 # Content superseded on this date
 └── [YYYY-MM-DD]/               # Additional supersession dates
-```markdown
+```
 
 ## Supersession Classification
 
@@ -48,6 +57,7 @@ superseded/
 ## Supersession Metadata
 
 Each superseded file includes:
+
 ```yaml
 ---
 superseded_date: "YYYY-MM-DD"
@@ -189,4 +199,5 @@ For superseded content assistance:
 
 ---
 
-**Superseded content provides migration context and rollback capabilities while maintaining historical implementation records.**
+**Superseded content provides migration context and rollback capabilities while
+maintaining historical implementation records.**

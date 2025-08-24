@@ -1,0 +1,119 @@
+{
+  "clamav_2025_optimizations": {
+    "version_requirement": "1.4+",
+    "security_level": "hardened",
+    "performance_profile": "optimized"
+  },
+  "performance": {
+    "enable_clamav_daemon": true,
+    "daemon_auto_start": true,
+    "parallel_scanning": true,
+    "max_scanning_threads": 8,
+    "thread_affinity_optimization": true,
+    "quick_scan_max_file_size": "50MB",
+    "max_media_file_size": "200MB",
+    "max_scan_size": "400MB",
+    "memory_mapped_scanning": true,
+    "signature_cache_optimization": true,
+    "quick_scan_mode": {
+      "max_filesize": "25MB",
+      "max_recursion": 8,
+      "max_files": 5000,
+      "skip_safe_extensions": true,
+      "prioritize_executables": true,
+      "algorithm_optimization": "aho_corasick_parallel"
+    },
+    "full_scan_mode": {
+      "max_filesize": "200MB",
+      "max_recursion": 12,
+      "max_files": 8000,
+      "comprehensive_archive_scanning": true,
+      "deep_file_analysis": true
+    },
+    "scan_batch_size": 100,
+    "max_memory_mb": 512,
+    "memory_optimization_threshold": 256
+  },
+  "security_2025": {
+    "database_verification": true,
+    "signature_validation": true,
+    "secure_permissions": true,
+    "network_security": {
+      "restrict_tcp_access": true,
+      "localhost_only": true,
+      "secure_socket_permissions": true
+    },
+    "memory_protection": {
+      "prevent_buffer_overflows": true,
+      "scan_size_limits": true,
+      "recursion_limits": true,
+      "file_count_limits": true
+    },
+    "privilege_separation": true,
+    "secure_temp_files": true
+  },
+  "daemon_configuration": {
+    "MaxThreads": 12,
+    "MaxConnectionQueueLength": 200,
+    "MaxScanSize": "400M",
+    "MaxFileSize": "100M",
+    "MaxRecursion": 12,
+    "MaxFiles": 8000,
+    "StreamMaxLength": "100M",
+    "ReadTimeout": 300,
+    "CommandReadTimeout": 30,
+    "LogVerbose": false,
+    "DatabaseDirectory": "/var/lib/clamav",
+    "LocalSocket": "/var/run/clamav/clamd.ctl",
+    "FixStaleSocket": true,
+    "User": "clamav",
+    "AllowSupplementaryGroups": false,
+    "ScanPE": true,
+    "ScanELF": true,
+    "DetectBrokenExecutables": true,
+    "ExitOnOOM": true,
+    "ScanArchive": true,
+    "ArchiveBlockEncrypted": false
+  },
+  "scan_settings": {
+    "scan_archives": true,
+    "scan_email": true,
+    "scan_ole2": true,
+    "scan_pdf": true,
+    "scan_html": true,
+    "scan_executable": true,
+    "detect_broken_executables": true,
+    "scan_elf": true,
+    "scan_pe": true,
+    "max_filesize": "100M",
+    "max_recursion": 12,
+    "max_files": 8000
+  },
+  "file_type_optimization": {
+    "high_priority_extensions": [
+      ".exe", ".scr", ".bat", ".cmd", ".com", ".pif", ".vbs", ".js", ".jar",
+      ".zip", ".rar", ".7z", ".tar", ".gz", ".bz2", ".xz",
+      ".doc", ".docx", ".xls", ".xlsx", ".ppt", ".pptx", ".pdf",
+      ".html", ".htm", ".php", ".asp", ".jsp"
+    ],
+    "skip_in_quick_scan": [
+      ".png", ".jpg", ".jpeg", ".gif", ".bmp", ".tiff", ".svg", ".webp",
+      ".mp3", ".mp4", ".avi", ".mkv", ".flv", ".wav", ".ogg", ".m4a",
+      ".txt", ".md", ".rst", ".log", ".json", ".yaml", ".yml", ".csv", ".xml",
+      ".ttf", ".otf", ".woff", ".woff2"
+    ],
+    "size_limits": {
+      "media_files": "200MB",
+      "archive_files": "500MB",
+      "document_files": "50MB",
+      "quick_scan_limit": "50MB"
+    }
+  },
+  "monitoring": {
+    "performance_metrics": true,
+    "memory_usage_tracking": true,
+    "scan_time_optimization": true,
+    "threat_detection_accuracy": true,
+    "false_positive_tracking": true
+  }
+}
