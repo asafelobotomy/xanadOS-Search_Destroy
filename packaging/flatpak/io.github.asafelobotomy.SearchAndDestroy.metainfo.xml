@@ -62,6 +62,20 @@
   <content_rating type="oars-1.1" />
 
   <releases>
+    <release version="2.11.1" date="2025-08-25">
+      <description>
+        <p>Flathub Submission Enhancement Release with comprehensive automation and documentation.</p>
+        <ul>
+          <li>Complete Flathub submission automation script</li>
+          <li>Enhanced fork detection and branch management</li>
+          <li>Comprehensive submission documentation and guides</li>
+          <li>Improved validation and error handling</li>
+          <li>Simplified VERSION file format for Flathub compatibility</li>
+          <li>Better Flatpak manifest synchronization</li>
+          <li>Robust submission process with error recovery</li>
+        </ul>
+      </description>
+    </release>
     <release version="2.10.0" date="2025-08-24">
       <description>
         <p>Latest stable release with enhanced security and performance improvements.</p>

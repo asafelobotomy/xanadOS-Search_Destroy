@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.11.2] - 2025-08-25
+
+### Fixed
+
+- Updated Flatpak manifest to reference v2.11.1 tag and correct commit hash
+- Added v2.11.1 release entry to AppStream metadata
+- Synchronized all Flathub submission files with latest release
+
+### Documentation
+
+- Updated metainfo.xml with comprehensive v2.11.1 release notes
+
 ## [2.11.1] - 2025-08-25
 
 ### Added
