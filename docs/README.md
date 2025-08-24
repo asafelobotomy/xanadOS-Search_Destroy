@@ -39,6 +39,10 @@ docs/
 - 🔗 [**VS Code Integration**](guides/INSTALL_LINKS.md) - Extension installation
 - 🏗️ [**Project Structure**](guides/PROJECT_STRUCTURE.md) - Repository organization
 - 🛠️ [**Toolshed Reference**](guides/TOOLSHED-REFERENCE.md) - Quick tool lookup
+- 🧪 [**MCP Examples Index**](guides/MCP-EXAMPLES.md) - Offline-friendly Model
+  Context Protocol demos
+- 📘 [**Agent Runbooks**](../.github/runbooks/) - Step-by-step workflows for common
+  engineering tasks
 - 📚 [**Documentation Reference**](guides/DOCUMENTATION-REFERENCE.md) - Documentation
   awareness guide
 - 🔧 [**Troubleshooting Guide**](guides/troubleshooting.md) - Problem resolution
