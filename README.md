@@ -181,7 +181,7 @@ curl -sSL "$REPO_URL/main/scripts/tools/quick-setup.sh" | bash -s -- --essential
 
 #### Option 1: **VS Code Integration** (Recommended)
 
-   1. **Click the "Clone in VS Code" button above** ⬆️
+   1. **Click the "Clone in VS Code Desktop" button above** ⬆️
    2. VS Code will open and prompt you to clone the repository
    3. Choose your workspace location
    4. The essential files will be available immediately
