@@ -154,18 +154,26 @@ This framework transforms your GitHub Copilot experience by providing:
 
 ### 🎯 **One-Click VS Code Setup**
 
-<!-- markdownlint-disable MD013 -->
-
 **⚡ Choose your preferred setup method:**
 
-| Method | Description | Action |
-|--------|-------------|---------|
-| **VS Code Web** | Open in browser-based VS Code | [🌐 Open in VS Code Web](https://vscode.dev/github/asafelobotomy/agent-instructions-co-pilot) |
-| **Clone Directly** | Clone to VS Code desktop | [📱 Clone in VS Code Desktop](vscode://vscode.git/clone?url=https://github.com/asafelobotomy/agent-instructions-co-pilot.git) |
-| **GitHub Codespaces** | Cloud development environment | [☁️ Open in Codespaces](https://codespaces.new/asafelobotomy/agent-instructions-co-pilot) |
-| **Essential Files Only** | Copy key files to existing project | See command below ⬇️ |
+#### 🌐 **VS Code Web** (Works in any browser)
 
-<!-- markdownlint-enable MD013 -->
+Open repository directly in browser-based VS Code:
+**[→ Open in VS Code Web](https://vscode.dev/github/asafelobotomy/agent-instructions-co-pilot)**
+
+#### 📱 **VS Code Desktop** (Requires VS Code installed)
+
+Clone repository directly to your VS Code desktop app:
+**[→ Clone in VS Code Desktop](vscode://vscode.git/clone?url=https://github.com/asafelobotomy/agent-instructions-co-pilot.git)**
+
+#### ☁️ **GitHub Codespaces** (Cloud development)
+
+Launch a complete cloud development environment:
+**[→ Open in Codespaces](https://codespaces.new/asafelobotomy/agent-instructions-co-pilot)**
+
+#### 📦 **Essential Files Only** (Add to existing project)
+
+See command in the next section ⬇️
 
 ### 📦 **Essential Files Quick Deploy**
 
