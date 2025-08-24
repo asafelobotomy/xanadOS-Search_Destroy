@@ -1,5 +1,5 @@
 {
-  "timestamp": "2025-08-24T14:19:50.551Z",
+  "timestamp": "2025-08-24T14:53:48.960Z",
   "summary": {
     "templatesValidated": 45,
     "schemasValidated": 0,
@@ -15,10 +15,10 @@
     "integrationSuccess": 1
   },
   "performanceMetrics": {
-    "totalValidationTime": 13,
-    "averageFileProcessingTime": 0.41379310344827586,
+    "totalValidationTime": 11,
+    "averageFileProcessingTime": 0.3448275862068966,
     "filesProcessed": 29,
-    "throughput": 2230.769230769231
+    "throughput": 2636.3636363636365
   },
   "complianceStatus": {
     "score": 1,

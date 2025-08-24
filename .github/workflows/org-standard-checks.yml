@@ -24,7 +24,7 @@ jobs:
       - name: Verify structure
         if: inputs.verify-structure == true
         run: |
-          bash scripts/verify-structure.sh
+          bash scripts/validation/verify-structure.sh
 
       - name: Lint (if configured)
         run: |

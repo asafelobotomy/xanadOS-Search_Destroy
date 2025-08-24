@@ -2,9 +2,9 @@ name: Spellcheck
 
 on:
   push:
-  branches: [ main ]
+    branches: [ main ]
   pull_request:
-  branches: [ main ]
+    branches: [ main ]
 
 jobs:
   spellcheck:
@@ -13,17 +13,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '18'
-
-      - name: Install cspell
-        run: npm install -g cspell
-
       - name: Run cspell
         run: |
-          cspell "**/*.md" --no-progress --no-summary \
+          npx cspell "**/*.md" --no-progress --no-summary \
             --exclude "node_modules/**" \
             --exclude "archive/**" \
             --exclude ".github/validation/**"

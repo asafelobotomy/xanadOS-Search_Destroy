@@ -188,12 +188,12 @@ Perfect for: Performance tuning, refactoring, advanced algorithms
 
 - 📖 **[Complete Documentation](docs/README.md)** - Comprehensive guides and
   analysis
-- 🚀 **[Quick Start Guide](docs/guides/quick-start.md)** - Get started in 5
-  minutes
-- 🔧 **[Installation Guide](docs/guides/installation.md)** - Detailed setup
-  instructions
-- 🛠️ **[Troubleshooting](docs/guides/troubleshooting.md)** - Common issues and
-  solutions
+- 🚀 **[Project Structure Guide](docs/guides/PROJECT_STRUCTURE.md)** - Repository
+  organization
+- 🔧 **[Copilot Instructions Guide](docs/guides/COPILOT-INSTRUCTIONS-GUIDE.md)** -
+  Detailed setup instructions
+- 🛠️ **[Toolshed Reference](docs/guides/TOOLSHED-REFERENCE.md)** - Available
+  tools and utilities
 
 ## 🏆 Enterprise Features
 
@@ -242,5 +242,5 @@ This project is open source and available under standard licensing terms.
 ---
 
 **🎯 Ready to enhance your GitHub Copilot experience?** Start with the
-[Quick Start Guide](docs/guides/quick-start.md) or explore our
+[Project Structure Guide](docs/guides/PROJECT_STRUCTURE.md) or explore our
 [specialized chatmodes](.github/chatmodes/).
