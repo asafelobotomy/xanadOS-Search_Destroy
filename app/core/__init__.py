@@ -2,7 +2,6 @@
 """
 Core functionality for S&D application.
 Includes scanning engine, security, quarantine management, and performance optimization.
-
 2025 Optimizations:
 - Unified Security Engine with eBPF integration
 - Advanced Performance Optimizer with ML-based resource management
@@ -18,31 +17,37 @@ from .rkhunter_wrapper import RKHunterResult, RKHunterScanResult, RKHunterWrappe
 # Unified systems (2025 optimizations)
 try:
     from .unified_security_engine import (
-        UnifiedSecurityEngine,
-        ThreatLevel,
-        ProtectionMode,
         EventType,
+        ProtectionMode,
         SecurityEvent,
-        SystemHealth
+        SystemHealth,
+        ThreatLevel,
+        UnifiedSecurityEngine,
     )
+
     UNIFIED_SECURITY_AVAILABLE = True
 except ImportError as e:
     UNIFIED_SECURITY_AVAILABLE = False
     import logging
+
     logging.getLogger(__name__).warning(f"Unified Security Engine unavailable: {e}")
 
 try:
     from .unified_performance_optimizer import (
-        UnifiedPerformanceOptimizer,
-        PerformanceMode,
+        OptimizationResult,
         PerformanceMetrics,
-        OptimizationResult
+        PerformanceMode,
+        UnifiedPerformanceOptimizer,
     )
+
     UNIFIED_PERFORMANCE_AVAILABLE = True
 except ImportError as e:
     UNIFIED_PERFORMANCE_AVAILABLE = False
     import logging
-    logging.getLogger(__name__).warning(f"Unified Performance Optimizer unavailable: {e}")
+
+    logging.getLogger(__name__).warning(
+        f"Unified Performance Optimizer unavailable: {e}"
+    )
 
 # Legacy components (maintained for compatibility)
 try:
@@ -64,13 +69,13 @@ from .ui_responsiveness import (
 
 # Performance optimization components (legacy fallback)
 try:
-    from .memory_optimizer import MemoryOptimizer
     from .database_optimizer import (
         DatabaseConnectionPool,
         QueryOptimizer,
         ScanResultsDB,
         get_scan_db,
     )
+    from .memory_optimizer import MemoryOptimizer
 except ImportError:
     pass
 
@@ -94,32 +99,34 @@ try:
     )
     from .heuristic_analysis import HeuristicAnalysisEngine, HeuristicType, RiskLevel
     from .multi_language_support import MultiLanguageSupport, SupportedLanguage
-    # Note: real_time_protection.py has been deprecated and moved to archive/
-    # Its functionality has been integrated into enhanced_real_time_protection.py
-    from .system_service import ServiceConfig, ServiceState, SystemServiceManager
-    from .web_protection import ThreatCategory, URLReputation, WebProtectionSystem
-    
-    # Non-invasive monitoring system - eliminates sudo requirements for status checks
+
+    # Non-invasive monitoring system - eliminates sudo requirements for status
+    # checks
     from .non_invasive_monitor import (
         NonInvasiveSystemMonitor,
         SystemStatus,
         get_system_status,
         record_activity,
-        system_monitor
+        system_monitor,
     )
     from .rkhunter_monitor_non_invasive import (
         RKHunterMonitorNonInvasive,
         RKHunterStatusNonInvasive,
         get_rkhunter_status_non_invasive,
         record_rkhunter_activity,
-        rkhunter_monitor
+        rkhunter_monitor,
     )
+
+    # Note: real_time_protection.py has been deprecated and moved to archive/
+    # Its functionality has been integrated into
+    # enhanced_real_time_protection.py
+    from .system_service import ServiceConfig, ServiceState, SystemServiceManager
+    from .web_protection import ThreatCategory, URLReputation, WebProtectionSystem
 except ImportError as e:
     # Advanced modules may not be available due to missing dependencies
     import logging
 
-    logging.getLogger(__name__).warning(
-        f"Some advanced features unavailable: {e}")
+    logging.getLogger(__name__).warning(f"Some advanced features unavailable: {e}")
 
 __all__ = [
     # Core scanning
@@ -128,7 +135,7 @@ __all__ = [
     "RKHunterWrapper",
     # Rate limiting and telemetry
     "RateLimiter",
-    "AdaptiveRateLimiter", 
+    "AdaptiveRateLimiter",
     "GlobalRateLimitManager",
     "TelemetryCollector",
     "PrivacyManager",
@@ -179,7 +186,7 @@ __all__ = [
     "ThreatIntelSource",
     # Non-invasive monitoring system
     "NonInvasiveSystemMonitor",
-    "SystemStatus", 
+    "SystemStatus",
     "get_system_status",
     "record_activity",
     "system_monitor",

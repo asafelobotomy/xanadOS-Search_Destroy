@@ -34,14 +34,19 @@ This directory contains debug and test scripts that were moved from the root dir
 
 ## Usage
 
-These scripts are for development and debugging purposes only. They are not part of the main application.
+These scripts are for development and debugging purposes only.
+They are not part of the main application.
 
 ```bash
-# Run a specific debug script
-python dev/debug-scripts/debug_[component].py
 
-# Run a specific test script
-python dev/debug-scripts/test_[feature].py
-```
+## Run a specific debug script
+
+Python dev/debug-scripts/debug_[component].py
+
+## Run a specific test script
+
+Python dev/debug-scripts/test_[feature].py
+
+```text
 
 **Note**: These scripts may require specific system permissions or configurations to run properly.

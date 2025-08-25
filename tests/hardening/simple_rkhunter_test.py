@@ -2,8 +2,9 @@
 """
 Simple test for RKHunter availability detection - standalone version
 """
-import os
 import logging
+
+import os
 
 # Set up basic logging
 logging.basicConfig(level=logging.INFO)
@@ -14,9 +15,9 @@ def test_rkhunter_availability_paths_checked():
     logger.info("Testing RKHunter availability detection...")
 
     possible_paths = [
-        '/usr/bin/rkhunter',
-        '/usr/local/bin/rkhunter',
-        '/opt/rkhunter/bin/rkhunter',
+        "/usr/bin/rkhunter",
+        "/usr/local/bin/rkhunter",
+        "/opt/rkhunter/bin/rkhunter",
     ]
 
     found = False
@@ -28,7 +29,8 @@ def test_rkhunter_availability_paths_checked():
             logger.info(f"Found RKHunter at {path}")
             break
 
-    # This is an environment-dependent tool; simply assert the logic runs and the path variable is consistent
+    # This is an environment-dependent tool; simply assert the logic runs and
+    # the path variable is consistent
     if found:
         assert rkhunter_path is not None
     else:

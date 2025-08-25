@@ -1,10 +1,13 @@
 # Comprehensive Threading State Management Test
 
 ## Overview
+
 This document outlines the test sequence for the new comprehensive state management system that handles ThreadPoolExecutor cancellation limitations through proper state tracking and timer-based completion monitoring.
 
 ## Technical Background
+
 Based on online research, we discovered:
+
 - **ThreadPoolExecutor Limitation**: Running tasks cannot be cancelled (Future.cancel() returns False)
 - **Qt Threading Best Practice**: Use requestInterruption() instead of dangerous terminate()
 - **Solution**: State management with completion monitoring instead of forced cancellation
@@ -12,12 +15,14 @@ Based on online research, we discovered:
 ## New State Management System
 
 ### Scan States
+
 - `"idle"`: Ready to start new scan
 - `"scanning"`: Scan in progress
 - `"stopping"`: Stop requested, waiting for completion
 - `"completing"`: Scan finishing naturally
 
 ### Key Features
+
 1. **Pending Scan Queue**: Stores scan requests when system is busy
 2. **Completion Timer**: Monitors thread completion after stop request
 3. **Automatic Execution**: Queued scans execute automatically when ready
@@ -26,6 +31,7 @@ Based on online research, we discovered:
 ## Test Sequence
 
 ### Test 1: Basic Start/Stop Cycle
+
 1. ✅ Start Quick Scan
 2. ✅ Immediately click Stop Scan
 3. ✅ Verify UI shows "Stopping scan..." message
@@ -34,6 +40,7 @@ Based on online research, we discovered:
 6. ✅ Verify "Scan stopped successfully" message appears
 
 ### Test 2: Stop and Immediate Restart (Single Click)
+
 1. ✅ Start Full Scan
 2. ✅ Click Stop Scan
 3. ✅ **IMMEDIATELY** click Start Scan (Quick) - should queue the request
@@ -42,6 +49,7 @@ Based on online research, we discovered:
 6. ✅ Verify queued Quick Scan starts automatically **without double-click**
 
 ### Test 3: Scan Type Switching Prevention
+
 1. ✅ Start Quick Scan
 2. ✅ Click Stop Scan
 3. ✅ Switch to Full Scan tab
@@ -50,6 +58,7 @@ Based on online research, we discovered:
 6. ✅ Verify proper state management
 
 ### Test 4: Multiple Queue Prevention
+
 1. ✅ Start scan
 2. ✅ Stop scan
 3. ✅ Click Start multiple times rapidly
@@ -57,6 +66,7 @@ Based on online research, we discovered:
 5. ✅ Verify no duplicate scans execute
 
 ### Test 5: Natural Completion
+
 1. ✅ Start Quick Scan
 2. ✅ Let it complete naturally (don't stop)
 3. ✅ Verify normal completion behavior unchanged
@@ -65,7 +75,8 @@ Based on online research, we discovered:
 ## Debug Output to Monitor
 
 Look for these debug messages in terminal:
-```
+
+```text
 DEBUG: Starting [quick/full] scan, current state: idle
 DEBUG: Scan state set to: scanning
 DEBUG: Stop scan requested, current state: scanning
@@ -74,7 +85,8 @@ DEBUG: Started stop completion monitoring timer
 DEBUG: Stopped scan has completed, performing cleanup
 DEBUG: Stop completed, state set to: idle
 DEBUG: Executing queued scan request (if pending)
-```
+
+```text
 
 ## Success Criteria
 
@@ -88,18 +100,22 @@ DEBUG: Executing queued scan request (if pending)
 ## Implementation Details
 
 ### Key Methods Added
+
 - `_start_stop_completion_timer()`: Monitors thread completion
 - `_check_stop_completion()`: Handles cleanup and pending execution
 - Enhanced `start_scan()`: State checking and request queuing
 - Enhanced `stop_scan()`: Proper state transitions
 
 ### State Variables
+
 - `_scan_state`: Current system state
 - `_pending_scan_request`: Queued scan parameters
 - `_stop_completion_timer`: QTimer for monitoring
 
 ## Fallback Strategy
+
 If immediate stopping proves impossible, the system will:
+
 1. Show clear "Completing scan..." messaging
 2. Queue user requests automatically
 3. Execute pending scans when safe

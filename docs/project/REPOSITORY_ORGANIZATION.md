@@ -4,7 +4,7 @@
 
 ## Directory Structure
 
-```
+```text
 xanadOS-Search_Destroy/
 ├── app/                    # Main application code
 │   ├── core/              # Core functionality
@@ -23,19 +23,22 @@ xanadOS-Search_Destroy/
 ├── scripts/              # Build and utility scripts
 ├── tests/                # Unit tests
 └── archive/              # Archived files
-```
+
+```text
 
 ## Organization Rules
 
 ### File Placement
+
 - **Python application code**: `app/` directory
 - **Development scripts**: `dev/` directory
-- **Test files**: `dev/` or `tests/` directory
+- **Test files**: `dev/`or`tests/` directory
 - **Documentation**: `docs/` directory (categorized by type)
 - **Configuration**: `config/` directory
 - **Build scripts**: `scripts/` directory
 
 ### Naming Conventions
+
 - **Python files**: snake_case
 - **Documentation**: SCREAMING_SNAKE_CASE for major docs, PascalCase for others
 - **Scripts**: kebab-case with appropriate extension
@@ -43,11 +46,13 @@ xanadOS-Search_Destroy/
 ## Maintenance
 
 ### Automated Checks
+
 - Run `scripts/check-organization.py` to verify organization
-- Install git hooks with `scripts/install-hooks.sh`
+- Install Git hooks with `scripts/install-hooks.sh`
 - Pre-commit hook prevents commits with organization issues
 
 ### Manual Maintenance
+
 - Use `dev/organize_repository.py` to fix organization issues
 - Review and categorize new files regularly
 - Update this documentation when structure changes
@@ -56,9 +61,9 @@ xanadOS-Search_Destroy/
 
 ### Files Moved
 
-- `test_grace_period.py` → `dev/test_grace_period.py`
-- `verify_cleanup.py` → `dev/verify_cleanup.py`
-- `REPOSITORY_CLEANUP_SUMMARY.md` → `docs/project/REPOSITORY_CLEANUP_SUMMARY.md`
+- `test_grace_period.py`→`dev/test_grace_period.py`
+- `verify_cleanup.py`→`dev/verify_cleanup.py`
+- `REPOSITORY_CLEANUP_SUMMARY.md`→`docs/project/REPOSITORY_CLEANUP_SUMMARY.md`
 
 No organization issues found.
 
@@ -70,4 +75,4 @@ No organization issues found.
 
 ---
 
-*This report is automatically generated. Do not edit manually.*
+_This report is automatically generated. Do not edit manually._

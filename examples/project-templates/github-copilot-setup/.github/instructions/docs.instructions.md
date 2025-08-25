@@ -1,5 +1,6 @@
 ---
 applyTo: "**/*.md"
+
 ---
 
 # Docs/Markdown Copilot Instructions

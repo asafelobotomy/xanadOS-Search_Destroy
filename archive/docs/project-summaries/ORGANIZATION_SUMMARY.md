@@ -5,16 +5,18 @@ This file documents the organization changes made to the xanadOS-Search_Destroy 
 ## Latest Changes (August 15, 2025)
 
 ### Cleanup and Organization
-1. **Removed cache files**: Cleaned all `__pycache__` directories and `.pyc` files
+
+1. **Removed cache files**: Cleaned all `**pycache**`directories and`.pyc` files
 2. **Created tools/ directory**: New directory for development tools and utilities
 3. **Moved misplaced files**:
-   - `flatpak-pip-generator` → `tools/`
-   - `package.json` → `tools/node/` (for development tools)
-   - `organize_repository.py` → `dev/` (removed duplicate)
+- `flatpak-pip-generator`→`tools/`
+- `package.JSON`→`tools/node/` (for development tools)
+- `organize_repository.py`→`dev/` (removed duplicate)
 4. **Updated .gitignore**: Added Node.js patterns and tools directory handling
 5. **Added tools setup script**: `tools/setup.sh` for automated tool installation
 
 ### High-Priority Features Implemented
+
 1. **✅ Dependencies Updated** - CVE-2025-20128 addressed
 2. **✅ CI/CD Pipeline** - GitHub Actions workflows
 3. **✅ Rate Limiting** - Comprehensive throttling system
@@ -26,7 +28,7 @@ This file documents the organization changes made to the xanadOS-Search_Destroy 
 
 ```text
 xanadOS-Search_Destroy/
-├── .github/               # GitHub workflows (CI/CD automation)
+├── .GitHub/               # GitHub workflows (CI/CD automation)
 ├── app/                   # Main application code
 │   ├── core/             # Core functionality modules
 │   ├── gui/              # User interface components
@@ -48,13 +50,14 @@ xanadOS-Search_Destroy/
     ├── node/             # Node.js development tools
     ├── flatpak-pip-generator  # Flatpak dependency generator
     └── setup.sh          # Tools setup script
-```
+
+```text
 
 ## Maintenance Notes
 
-- Python cache files (__pycache__) are automatically cleaned
+- Python cache files (**pycache**) are automatically cleaned
 - .gitignore has been updated with comprehensive patterns
-- All modules have proper __init__.py files
+- All modules have proper **init**.py files
 - Development files are properly organized
 
 ## Next Steps

@@ -1,5 +1,6 @@
 ---
-applyTo: "**/src/**/*.{tsx,jsx,vue,svelte,html}"
+applyTo: "**/src/**/*.{tsx,jsx,vue,svelte,HTML}"
+
 ---
 
 # Frontend/Accessibility-specific Copilot Instructions

@@ -1,5 +1,6 @@
 ---
-applyTo: "**/*.{py,js,ts,java,go,cs,rb,rs,yml,yaml,tf}"
+applyTo: "**/*.{py,js,ts,java,go,cs,rb,rs,yml,YAML,tf}"
+
 ---
 
 # Distributed Systems & Resilience Instructions

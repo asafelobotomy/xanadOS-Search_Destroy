@@ -2,156 +2,197 @@
 
 ## Overview
 
-This document outlines the comprehensive improvements made to the project's Makefile to align with industry best practices and standards as defined by the [Make Tutorial](https://makefiletutorial.com/) and GNU Make documentation.
+This document outlines the comprehensive improvements made to the project's Makefile to align with industry best practices and standards as defined by the [Make Tutorial](HTTPS://makefiletutorial.com/) and GNU Make documentation.
 
 ## Industry Standards Implemented
 
 ### 1. Proper Variable Definitions
 
-**Before:**
-```makefile
-# Variables defined without explicit assignment type
-```
+### Before
 
-**After:**
 ```makefile
-# Configuration variables (use := for immediate expansion)
+
+## Variables defined without explicit assignment type
+
+```text
+
+### After
+
+```makefile
+
+## Configuration variables (use := for immediate expansion)
+
 SHELL := /bin/bash
 .DEFAULT_GOAL := help
 
-# Project configuration
+## Project configuration
+
 PROJECT_NAME := xanadOS-Search-Destroy
 VENV_DIR := .venv
-PYTHON := $(VENV_DIR)/bin/python
+Python := $(VENV_DIR)/bin/Python
 PIP := $(VENV_DIR)/bin/pip
-```
 
-**Benefits:**
+```text
+
+### Benefits
+
 - `:=` ensures immediate expansion for consistent behavior
 - Centralized configuration reduces duplication
 - Variables are clearly defined at the top of the file
 
 ### 2. Silent/Verbose Operation Support
 
-**Implementation:**
+### Implementation
+
 ```makefile
-# Make behavior
+
+## Make behavior
+
 ifeq ($(V),1)
     Q :=
 else
     Q := @
 endif
-```
 
-**Usage:**
+```text
+
+### Usage
+
 - `make target` - Silent operation (default)
 - `make V=1 target` - Verbose operation showing all commands
 
 ### 3. Proper Target Dependencies
 
-**Before:**
+### Before 2
+
 ```makefile
 install:
-	python3 -m venv .venv
-	.venv/bin/pip install -r requirements.txt
-```
+  python3 -m venv .venv
+  .venv/bin/pip install -r requirements.txt
 
-**After:**
+```text
+
+### After 2
+
 ```makefile
 $(VENV_DIR):
-	$(Q)echo "📦 Creating Python virtual environment..."
-	$(Q)python3 -m venv $(VENV_DIR)
-	$(Q)$(PIP) install --upgrade pip
+  $(Q)echo "📦 Creating Python virtual environment..."
+  $(Q)python3 -m venv $(VENV_DIR)
+  $(Q)$(PIP) install --upgrade pip
 
 install: $(VENV_DIR)
-	$(Q)echo "📥 Installing dependencies..."
-	$(Q)$(PIP) install -r requirements.txt
-```
+  $(Q)echo "📥 Installing dependencies..."
+  $(Q)$(PIP) install -r requirements.txt
 
-**Benefits:**
+```text
+
+### Benefits 2
+
 - Proper dependency chains prevent redundant operations
 - Make only recreates virtual environment when needed
 
 ### 4. Error Handling and Safety
 
-**Implementation:**
-```makefile
-# Error handling target
-.DELETE_ON_ERROR:
-```
+### Implementation 2
 
-**Benefits:**
+```makefile
+
+## Error handling target
+
+.DELETE_ON_ERROR:
+
+```text
+
+### Benefits 3
+
 - Automatically deletes targets when commands fail
 - Prevents partially built artifacts from corrupting builds
 
 ### 5. Comprehensive `.PHONY` Declarations
 
-**Implementation:**
+### Implementation 3
+
 ```makefile
 .PHONY: all clean install build-flatpak install-flatpak run test clean-cache clean-all prepare verify \
         check-organization fix-organization install-hooks organize-legacy dev-setup check-style help \
         clean-dev clean-dev-force status update-deps lint format security-check type-check \
         run-flatpak full-install organize quality
-```
 
-**Benefits:**
+```text
+
+### Benefits 4
+
 - Prevents conflicts with files of the same name
 - Improves performance by skipping file existence checks
 
 ### 6. Proper Shell Configuration
 
-**Implementation:**
+### Implementation 4
+
 ```makefile
 SHELL := /bin/bash
-```
 
-**Benefits:**
+```text
+
+### Benefits 5
+
 - Ensures consistent shell behavior across systems
 - Enables bash-specific features where needed
 
 ### 7. Pattern Rules for Debugging
 
-**Implementation:**
+### Implementation 5
+
 ```makefile
 debug-%:
-	$(Q)echo "Debug info for $*:"
-	$(Q)echo "PROJECT_NAME = $(PROJECT_NAME)"
-	$(Q)echo "VENV_DIR = $(VENV_DIR)"
-	$(Q)echo "BUILD_DIR = $(BUILD_DIR)"
-	$(Q)echo "SRC_DIRS = $(SRC_DIRS)"
-```
+  $(Q)echo "Debug info for $*:"
+  $(Q)echo "PROJECT_NAME = $(PROJECT_NAME)"
+  $(Q)echo "VENV_DIR = $(VENV_DIR)"
+  $(Q)echo "BUILD_DIR = $(BUILD_DIR)"
+  $(Q)echo "SRC_DIRS = $(SRC_DIRS)"
 
-**Usage:**
+```text
+
+### Usage 2
+
 ```bash
 make debug-VENV_DIR  # Shows debug info for VENV_DIR variable
-```
+
+```text
 
 ### 8. Order-Only Prerequisites
 
-**Implementation:**
+### Implementation 6
+
 ```makefile
 test: clean-cache | $(VENV_DIR)
-```
 
-**Benefits:**
+```text
+
+### Benefits 6
+
 - `|` syntax ensures virtual environment exists without triggering rebuilds
 - Proper dependency management without unnecessary rebuilds
 
 ### 9. Automatic Variables Usage
 
-**Implementation:**
+### Implementation 7
+
 ```makefile
 $(BUILD_DIR):
-	$(Q)mkdir -p $@  # $@ represents the target name
-```
+  $(Q)mkdir -p $@  # $@ represents the target name
 
-**Benefits:**
+```text
+
+### Benefits 7
+
 - Reduces duplication and makes rules more maintainable
 - Standard Make practice for robust Makefiles
 
 ### 10. Comprehensive Help System
 
-**Features:**
+### Features
+
 - Categorized targets with emojis for visual clarity
 - Configuration options documentation
 - Quick start guide
@@ -160,39 +201,50 @@ $(BUILD_DIR):
 ## Quality Assurance Integration
 
 ### New Quality Target
+
 ```makefile
 quality: test lint type-check security-check check-style
-	$(Q)echo "✅ All quality checks passed"
-```
+  $(Q)echo "✅ All quality checks passed"
+
+```text
 
 ### Tool Configuration
+
 ```makefile
-# Tools configuration
+
+## Tools configuration
+
 BLACK_LINE_LENGTH := 100
 FLAKE8_MAX_LINE_LENGTH := 100
-```
+
+```text
 
 ## Makefile Structure Compliance
 
 ### 1. Variable Definitions (Top)
+
 - Project configuration
 - Tool settings
 - Directory paths
 
 ### 2. Special Targets
+
 - `.PHONY` declarations
 - `.DEFAULT_GOAL` setting
 - `.DELETE_ON_ERROR` handling
 
 ### 3. Build Targets
+
 - Primary build operations
 - Dependency management
 
 ### 4. Development Targets
+
 - Environment setup
 - Quality assurance
 
 ### 5. Utility Targets
+
 - Help system
 - Status reporting
 - Debug tools
@@ -200,22 +252,27 @@ FLAKE8_MAX_LINE_LENGTH := 100
 ## Best Practices Implemented
 
 ### ✅ Consistent Command Prefixing
+
 - All commands use `$(Q)` for silent/verbose control
 
 ### ✅ Proper Error Handling
+
 - Exit codes preserved
 - Conditional execution with proper error messages
 
 ### ✅ DRY Principle
+
 - Variables eliminate duplication
 - Pattern rules for common operations
 
 ### ✅ Documentation
+
 - Comprehensive help system
 - Clear target descriptions
 - Configuration options documented
 
 ### ✅ Modularity
+
 - Logical target grouping
 - Clear dependencies
 - Composable operations
@@ -223,21 +280,28 @@ FLAKE8_MAX_LINE_LENGTH := 100
 ## Validation Commands
 
 ```bash
-# Test help system
+
+## Test help system
+
 make help
 
-# Test variable system
+## Test variable system
+
 make debug-VENV_DIR
 
-# Test status reporting
+## Test status reporting
+
 make status
 
-# Test quality chain
+## Test quality chain
+
 make quality
 
-# Test verbose mode
+## Test verbose mode
+
 make V=1 status
-```
+
+```text
 
 ## Benefits Achieved
 
@@ -257,9 +321,9 @@ make V=1 status
 
 ## References
 
-- [GNU Make Manual](https://www.gnu.org/software/make/manual/)
-- [Makefile Tutorial](https://makefiletutorial.com/)
-- [Make Best Practices](https://tech.davis-hansson.com/p/make/)
+- [GNU Make Manual](HTTPS://www.gnu.org/software/make/manual/)
+- [Makefile Tutorial](HTTPS://makefiletutorial.com/)
+- [Make Best Practices](HTTPS://tech.davis-hansson.com/p/make/)
 
 ---
 

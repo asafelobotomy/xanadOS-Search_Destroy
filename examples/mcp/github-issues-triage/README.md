@@ -6,8 +6,8 @@ by applying simple rules to a set of sample issues.
 
 ## What it does
 
-- Loads triage rules from `config.json` (keywords → labels/severity)
-- Reads issues from a JSON file (defaults to `data/issues.sample.json`)
+- Loads triage rules from `config.JSON` (keywords → labels/severity)
+- Reads issues from a JSON file (defaults to `data/issues.sample.JSON`)
 - Applies rules to label each issue
 - Prints a compact summary to stdout
 
@@ -17,31 +17,35 @@ by applying simple rules to a set of sample issues.
 
 ```bash
 npm run mcp:triage
-```
+
+```text
 
 - Optional: point to a different issues file
 
 ```bash
-MCPEX_ISSUES_FILE=examples/mcp/github-issues-triage/data/issues.sample.json npm run mcp:triage
-```
+MCPEX_ISSUES_FILE=examples/mcp/GitHub-issues-triage/data/issues.sample.JSON npm run mcp:triage
+
+```text
 
 ## Test
 
 ```bash
 npm run mcp:test
-```
+
+```text
 
 ## Files
 
 - `src/triage.js`: Pure function that applies rules to issues
 - `run.js`: CLI wrapper; reads config and issues, prints results
-- `config.json`: Keyword → label/severity rules
-- `data/issues.sample.json`: Example issues
+- `config.JSON`: Keyword → label/severity rules
+- `data/issues.sample.JSON`: Example issues
 - `test/triage.test.js`: Tiny smoke test with built-in Node `assert`
 
 ## Notes
 
 - No secrets or network calls; safe to run offline.
-- Extend `config.json` to try different labeling strategies.
+- Extend `config.JSON` to try different labeling strategies.
 - This is a teaching/demo aid. For real MCP integrations, wire actual
-	clients and auth flows in a separate package.
+
+  clients and auth flows in a separate package.

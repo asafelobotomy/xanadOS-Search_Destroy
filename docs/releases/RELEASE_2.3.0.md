@@ -13,13 +13,14 @@
 - ✅ `VERSION` - Updated from 2.2.0 → 2.3.0
 - ✅ `CHANGELOG.md` - Added comprehensive 2.3.0 release notes
 - ✅ `README.md` - Updated version badge to 2.3.0
-- ✅ `app/gui/__init__.py` - Updated fallback version to 2.3.0
+- ✅ `app/gui/**init**.py` - Updated fallback version to 2.3.0
 
 ## Release Commit Message
 
 ```bash
 feat: release v2.3.0 with enhanced RKHunter integration and progress tracking improvements
-```
+
+```text
 
 - ✅ **Created annotated tag** `v2.3.0` with detailed release description
 
@@ -83,28 +84,37 @@ This release represents a significant enhancement to the RKHunter integration su
 ### From Previous Versions
 
 ```bash
-# Update the application
-git pull origin feature/dashboard-and-reports-improvements
-git checkout v2.3.0
 
-# Run the application
-python -m app.main
-```
+## Update the application
+
+Git pull origin feature/dashboard-and-reports-improvements
+Git checkout v2.3.0
+
+## Run the application
+
+Python -m app.main
+
+```text
 
 ### New Installation
 
 ```bash
-# Clone the repository
-git clone https://github.com/asafelobotomy/xanadOS-Search_Destroy.git
-cd xanadOS-Search_Destroy
-git checkout v2.3.0
 
-# Install dependencies
+## Clone the repository
+
+Git clone <HTTPS://GitHub.com/asafelobotomy/xanadOS-Search_Destroy.Git>
+cd xanadOS-Search_Destroy
+Git checkout v2.3.0
+
+## Install dependencies
+
 pip install -r requirements.txt
 
-# Launch
-python -m app.main
-```
+## Launch
+
+Python -m app.main
+
+```text
 
 ## Future Development
 
@@ -119,4 +129,4 @@ The foundation is now optimized for continued development of advanced security f
 
 ---
 
-**The xanadOS-Search & Destroy project is now at version 2.3.0 with enhanced RKHunter integration, robust progress tracking, and professional user experience - ready for advanced security scanning workflows.**
+## The xanadOS-Search & Destroy project is now at version 2.3.0 with enhanced RKHunter integration, robust progress tracking, and professional user experience - ready for advanced security scanning workflows

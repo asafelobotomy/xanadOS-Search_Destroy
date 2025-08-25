@@ -1,5 +1,6 @@
 ---
 applyTo: "**/backend/**/*.{py,js,ts,java,go,cs,rb,rs,php}"
+
 ---
 
 # Advanced Backend Development Instructions

@@ -1,5 +1,6 @@
 ---
-applyTo: "**/*.sql"
+applyTo: "**/*.SQL"
+
 ---
 
 # SQL/Database Migration-specific Copilot Instructions

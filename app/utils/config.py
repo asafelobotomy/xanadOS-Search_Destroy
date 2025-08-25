@@ -3,29 +3,25 @@
 Configuration management for S&D - Search & Destroy
 Clean rewrite to eliminate auto-save conflicts
 """
+
 import json
 import logging
 import os
 import shutil
 import tempfile
-from pathlib import Path
 from logging.handlers import RotatingFileHandler
+from pathlib import Path
 
 # XDG Base Directory specification paths
-XDG_CONFIG_HOME = os.environ.get(
-    "XDG_CONFIG_HOME",
-    os.path.expanduser("~/.config"))
-XDG_DATA_HOME = os.environ.get(
-    "XDG_DATA_HOME",
-    os.path.expanduser("~/.local/share"))
-XDG_CACHE_HOME = os.environ.get(
-    "XDG_CACHE_HOME",
-    os.path.expanduser("~/.cache"))
+XDG_CONFIG_HOME = os.environ.get("XDG_CONFIG_HOME", os.path.expanduser("~/.config"))
+XDG_DATA_HOME = os.environ.get("XDG_DATA_HOME", os.path.expanduser("~/.local/share"))
+XDG_CACHE_HOME = os.environ.get("XDG_CACHE_HOME", os.path.expanduser("~/.cache"))
 
 APP_NAME = "search-and-destroy"
 CONFIG_DIR = Path(XDG_CONFIG_HOME) / APP_NAME
 DATA_DIR = Path(XDG_DATA_HOME) / APP_NAME
 CACHE_DIR = Path(XDG_CACHE_HOME) / APP_NAME
+
 
 def _ensure_secure_dir(path: Path):
     """Create directory if missing and enforce 700 permissions (best-effort).
@@ -42,7 +38,10 @@ def _ensure_secure_dir(path: Path):
             if current_mode != 0o700:
                 path.chmod(0o700)
     except OSError as e:
-        logging.getLogger(APP_NAME).warning("Could not set secure permissions on %s: %s", path, e)
+        logging.getLogger(APP_NAME).warning(
+            "Could not set secure permissions on %s: %s", path, e
+        )
+
 
 _ensure_secure_dir(CONFIG_DIR)
 _ensure_secure_dir(DATA_DIR)
@@ -71,13 +70,16 @@ def setup_logging():
     """Setup application logging with rotation."""
     logger = logging.getLogger(APP_NAME)
     if not logger.handlers:
+
         class _RateLimitFilter(logging.Filter):
             def __init__(self, interval=5):
                 super().__init__()
                 self.interval = interval
-                self._last: dict[tuple[str,int], float] = {}
+                self._last: dict[tuple[str, int], float] = {}
+
             def filter(self, record: logging.LogRecord) -> bool:
                 import time
+
                 key = (record.getMessage()[:120], record.levelno)
                 now = time.time()
                 last = self._last.get(key, 0)
@@ -85,6 +87,7 @@ def setup_logging():
                     return False
                 self._last[key] = now
                 return True
+
         # Create formatter
         formatter = logging.Formatter(
             "%(asctime)s - %(name)s - %(levelname)s - %(message)s",
@@ -106,19 +109,26 @@ def setup_logging():
 
         # Optional structured logging
         from .config import CONFIG_FILE  # circular safe inside function
+
         try:
-            with open(CONFIG_FILE, 'r', encoding='utf-8') as cf:
+            with open(CONFIG_FILE, "r", encoding="utf-8") as cf:
                 cfg_json = json.load(cf)
-            structured = cfg_json.get('advanced_settings', {}).get('structured_logging', False)
+            structured = cfg_json.get("advanced_settings", {}).get(
+                "structured_logging", False
+            )
         except Exception:
             structured = False
         if structured:
-            formatter = logging.Formatter(json.dumps({
-                "time": "%(asctime)s",
-                "logger": "%(name)s",
-                "level": "%(levelname)s",
-                "message": "%(message)s"
-            }))
+            formatter = logging.Formatter(
+                json.dumps(
+                    {
+                        "time": "%(asctime)s",
+                        "logger": "%(name)s",
+                        "level": "%(levelname)s",
+                        "message": "%(message)s",
+                    }
+                )
+            )
             file_handler.setFormatter(formatter)
             console_handler.setFormatter(formatter)
 
@@ -149,9 +159,7 @@ def load_config(file_path=None):
             # Return config exactly as saved - no modifications
             return config
     except json.JSONDecodeError as e:
-        logging.getLogger(APP_NAME).error(
-            "Invalid JSON in config file: %s", e
-        )
+        logging.getLogger(APP_NAME).error("Invalid JSON in config file: %s", e)
         # Backup corrupted config and create new one
         shutil.move(str(config_path), str(config_path) + ".corrupted")
         initial_config = create_initial_config()
@@ -165,10 +173,13 @@ def _atomic_write_json(config_path: Path, config_data):
     tmp_path = None
     try:
         _ensure_secure_dir(config_path.parent)
-        tmp_fd, tmp_path = tempfile.mkstemp(prefix=".config.", dir=str(config_path.parent))
+        tmp_fd, tmp_path = tempfile.mkstemp(
+            prefix=".config.", dir=str(config_path.parent)
+        )
         with os.fdopen(tmp_fd, "w", encoding="utf-8") as tmp_file:
             json.dump(config_data, tmp_file, indent=4, sort_keys=True)
-            tmp_file.flush(); os.fsync(tmp_file.fileno())
+            tmp_file.flush()
+            os.fsync(tmp_file.fileno())
         os.replace(tmp_path, config_path)
         if os.name == "posix":
             try:
@@ -181,6 +192,7 @@ def _atomic_write_json(config_path: Path, config_data):
                 os.unlink(tmp_path)
             except OSError:
                 pass
+
 
 def save_config(config_data, file_path=None):
     """Atomically save configuration to file with restrictive permissions.
@@ -198,14 +210,14 @@ def save_config(config_data, file_path=None):
 
 def update_config_setting(config_dict, section, key, value, file_path=None):
     """Update a specific setting in config and save to file immediately.
-    
+
     Args:
         config_dict: The configuration dictionary to update
         section: Configuration section (e.g., 'ui_settings', 'scan_settings')
         key: Setting key within the section
         value: New value for the setting
         file_path: Optional custom file path (uses default if None)
-    
+
     Returns:
         bool: True if successfully saved, False otherwise
     """
@@ -213,14 +225,14 @@ def update_config_setting(config_dict, section, key, value, file_path=None):
         # Ensure section exists
         if section not in config_dict:
             config_dict[section] = {}
-        
+
         # Update the setting
         config_dict[section][key] = value
-        
+
         # Save immediately to ensure persistence
         save_config(config_dict, file_path)
         return True
-        
+
     except Exception as e:
         logging.getLogger(APP_NAME).error(
             "Failed to update setting %s.%s: %s", section, key, e
@@ -230,15 +242,15 @@ def update_config_setting(config_dict, section, key, value, file_path=None):
 
 def update_multiple_settings(config_dict, updates, file_path=None):
     """Update multiple settings at once and save to file.
-    
+
     Args:
         config_dict: The configuration dictionary to update
         updates: Dict of {section: {key: value}} format
         file_path: Optional custom file path (uses default if None)
-    
+
     Returns:
         bool: True if successfully saved, False otherwise
-    
+
     Example:
         updates = {
             'ui_settings': {'theme': 'dark', 'minimize_to_tray': True},
@@ -250,30 +262,28 @@ def update_multiple_settings(config_dict, updates, file_path=None):
         for section, settings in updates.items():
             if section not in config_dict:
                 config_dict[section] = {}
-            
+
             for key, value in settings.items():
                 config_dict[section][key] = value
-        
+
         # Save once after all updates
         save_config(config_dict, file_path)
         return True
-        
+
     except Exception as e:
-        logging.getLogger(APP_NAME).error(
-            "Failed to update multiple settings: %s", e
-        )
+        logging.getLogger(APP_NAME).error("Failed to update multiple settings: %s", e)
         return False
 
 
 def get_config_setting(config_dict, section, key, default=None):
     """Get a specific setting from config with optional default.
-    
+
     Args:
         config_dict: The configuration dictionary
         section: Configuration section
         key: Setting key within the section
         default: Default value if setting doesn't exist
-    
+
     Returns:
         The setting value or default
     """
@@ -365,39 +375,22 @@ def create_initial_config():
             "export_enabled": False,
         },
         "rate_limits": {
-            "file_scan": {
-                "calls": 100,
-                "period": 60.0,
-                "burst": 20,
-                "adaptive": True
-            },
+            "file_scan": {"calls": 100, "period": 60.0, "burst": 20, "adaptive": True},
             "directory_scan": {
                 "calls": 10,
                 "period": 60.0,
                 "burst": 5,
-                "adaptive": True
+                "adaptive": True,
             },
-            "virus_db_update": {
-                "calls": 1,
-                "period": 3600.0,
-                "adaptive": False
-            },
+            "virus_db_update": {"calls": 1, "period": 3600.0, "adaptive": False},
             "network_request": {
                 "calls": 50,
                 "period": 60.0,
                 "burst": 10,
-                "adaptive": True
+                "adaptive": True,
             },
-            "quarantine_action": {
-                "calls": 20,
-                "period": 60.0,
-                "adaptive": False
-            },
-            "system_command": {
-                "calls": 5,
-                "period": 60.0,
-                "adaptive": False
-            }
+            "quarantine_action": {"calls": 20, "period": 60.0, "adaptive": False},
+            "system_command": {"calls": 5, "period": 60.0, "adaptive": False},
         },
         "performance": {
             "scan_batch_size": 50,
@@ -405,17 +398,13 @@ def create_initial_config():
             "timer_interval": 1000,
             "debounce_delay": 0.5,
             "enable_async_scanning": True,
-            "enable_memory_optimization": True
+            "enable_memory_optimization": True,
         },
         "setup": {
             "first_time_setup_completed": False,
             "setup_version": "2.9.0",
-            "packages_installed": {
-                "clamav": False,
-                "ufw": False,
-                "rkhunter": False
-            },
-            "last_setup_check": None
+            "packages_installed": {"clamav": False, "ufw": False, "rkhunter": False},
+            "last_setup_check": None,
         },
     }
 

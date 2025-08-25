@@ -3,13 +3,13 @@
 Memory optimization module for xanadOS Search & Destroy
 Provides efficient memory management and resource optimization
 """
+
 import gc
 import logging
 import threading
 import time
 import weakref
 from dataclasses import dataclass
-from pathlib import Path
 from typing import Callable, Dict, List, Optional
 
 import psutil
@@ -102,8 +102,7 @@ class StreamProcessor:
                         break
                     processor_func(chunk)
         except Exception as e:
-            self.logger.error(
-                "Error processing file stream %s: %s", file_path, e)
+            self.logger.error("Error processing file stream %s: %s", file_path, e)
             raise
 
 
@@ -140,7 +139,9 @@ class MemoryOptimizer:
                 used_percent = 50.0
             try:
                 process_memory = psutil.Process().memory_info()
-                if hasattr(process_memory, "rss") and isinstance(process_memory.rss, int):
+                if hasattr(process_memory, "rss") and isinstance(
+                    process_memory.rss, int
+                ):
                     process_mb = process_memory.rss / 1024 / 1024
                 else:
                     process_mb = 100.0
@@ -151,7 +152,9 @@ class MemoryOptimizer:
                 cached = getattr(system_memory, "cached", 0)
                 if isinstance(cached, int):
                     cache_mb = cached / 1024 / 1024
-            return MemoryStats(total_mb, available_mb, used_mb, used_percent, process_mb, cache_mb)
+            return MemoryStats(
+                total_mb, available_mb, used_mb, used_percent, process_mb, cache_mb
+            )
         except Exception as e:  # pragma: no cover
             self.logger.error("Failed to get memory stats: %s", e)
             return MemoryStats(0, 0, 0, 0, 0, 0)
@@ -159,10 +162,16 @@ class MemoryOptimizer:
     def check_memory_pressure(self) -> bool:
         stats = self.get_memory_stats()
         if stats.process_mb > self.memory_limit_mb:
-            self.logger.warning("Process memory %.1f MB exceeds limit %d MB", stats.process_mb, self.memory_limit_mb)
+            self.logger.warning(
+                "Process memory %.1f MB exceeds limit %d MB",
+                stats.process_mb,
+                self.memory_limit_mb,
+            )
             return True
         if stats.used_percent > 90:
-            self.logger.warning("System memory usage %.1f%% is critically high", stats.used_percent)
+            self.logger.warning(
+                "System memory usage %.1f%% is critically high", stats.used_percent
+            )
             return True
         return False
 
@@ -234,10 +243,14 @@ class MemoryOptimizer:
         if self.monitor_thread:
             self.monitor_thread.join(timeout=5)
 
-    def set_memory_warning_callback(self, callback: Callable[[MemoryStats], None]) -> None:
+    def set_memory_warning_callback(
+        self, callback: Callable[[MemoryStats], None]
+    ) -> None:
         self.memory_warning_callback = callback
 
-    def set_memory_critical_callback(self, callback: Callable[[MemoryStats], None]) -> None:
+    def set_memory_critical_callback(
+        self, callback: Callable[[MemoryStats], None]
+    ) -> None:
         self.memory_critical_callback = callback
 
 

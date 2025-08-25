@@ -1,925 +1,1021 @@
 # Code Citations
 
 ## License: MIT
-https://github.com/cucumber/cucumber-ruby/blob/d9d6f380c77b79c3670fa8f1d620d7b57f42b3ae/features/docs/cli/publish_banner.feature
 
-```
+<<HTTPS://GitHub.com/cucumber/cucumber-ruby/blob/d9d6f380c77b79c3670fa8f1d620d7b57f42b3ae/features/docs/cli/publish_banner.feature>>
+
+```text
 │
-```
 
+```text
 
 ## License: unknown
-https://github.com/oneman/xmms2rcc/blob/f176b7916b77b03dcefe65f154b1953d71f6190a/README
 
-```
+<HTTPS://GitHub.com/oneman/xmms2rcc/blob/f176b7916b77b03dcefe65f154b1953d71f6190a/README>
+
+```text
 │
-```
 
+```text
 
-## License: MIT
-https://github.com/cucumber/cucumber-ruby/blob/d9d6f380c77b79c3670fa8f1d620d7b57f42b3ae/features/docs/cli/publish_banner.feature
+## License: MIT 2
 
-```
+<HTTPS://GitHub.com/cucumber/cucumber-ruby/blob/d9d6f380c77b79c3670fa8f1d620d7b57f42b3ae/features/docs/cli/publish_banner.feature>
+
+```text
 │         │
 │
-```
 
+```text
 
-## License: unknown
-https://github.com/oneman/xmms2rcc/blob/f176b7916b77b03dcefe65f154b1953d71f6190a/README
+## License: unknown 2
 
-```
+<HTTPS://GitHub.com/oneman/xmms2rcc/blob/f176b7916b77b03dcefe65f154b1953d71f6190a/README>
+
+```text
 │         │
 │
-```
 
+```text
 
-## License: unknown
-https://github.com/phun-ky/phun-ky.github.io/blob/5cef3dadb393a87352978a3b5daefb99e21c3e04/src/assets/posts/2023-10-02-future-interfaces.md
+## License: unknown 3
 
-```
+<HTTPS://GitHub.com/phun-ky/phun-ky.GitHub.io/blob/5cef3dadb393a87352978a3b5daefb99e21c3e04/src/assets/posts/2023-10-02-future-interfaces.md>
+
+```text
 │         │
 │
-```
 
+```text
 
-## License: MIT
-https://github.com/cucumber/cucumber-ruby/blob/d9d6f380c77b79c3670fa8f1d620d7b57f42b3ae/features/docs/cli/publish_banner.feature
+## License: MIT 3
 
-```
+<HTTPS://GitHub.com/cucumber/cucumber-ruby/blob/d9d6f380c77b79c3670fa8f1d620d7b57f42b3ae/features/docs/cli/publish_banner.feature>
+
+```text
 │         │
 │ └
-```
 
+```text
 
-## License: unknown
-https://github.com/oneman/xmms2rcc/blob/f176b7916b77b03dcefe65f154b1953d71f6190a/README
+## License: unknown 4
 
-```
+<HTTPS://GitHub.com/oneman/xmms2rcc/blob/f176b7916b77b03dcefe65f154b1953d71f6190a/README>
+
+```text
 │         │
 │ └
-```
 
+```text
 
-## License: unknown
-https://github.com/phun-ky/phun-ky.github.io/blob/5cef3dadb393a87352978a3b5daefb99e21c3e04/src/assets/posts/2023-10-02-future-interfaces.md
+## License: unknown 5
 
-```
+<HTTPS://GitHub.com/phun-ky/phun-ky.GitHub.io/blob/5cef3dadb393a87352978a3b5daefb99e21c3e04/src/assets/posts/2023-10-02-future-interfaces.md>
+
+```text
 │         │
 │ └
-```
 
+```text
 
-## License: MIT
-https://github.com/cucumber/cucumber-ruby/blob/d9d6f380c77b79c3670fa8f1d620d7b57f42b3ae/features/docs/cli/publish_banner.feature
+## License: MIT 4
 
-```
+<HTTPS://GitHub.com/cucumber/cucumber-ruby/blob/d9d6f380c77b79c3670fa8f1d620d7b57f42b3ae/features/docs/cli/publish_banner.feature>
+
+```text
 │         │
 │ └───
-```
 
+```text
 
-## License: unknown
-https://github.com/oneman/xmms2rcc/blob/f176b7916b77b03dcefe65f154b1953d71f6190a/README
+## License: unknown 6
 
-```
+<HTTPS://GitHub.com/oneman/xmms2rcc/blob/f176b7916b77b03dcefe65f154b1953d71f6190a/README>
+
+```text
 │         │
 │ └───
-```
 
+```text
 
-## License: unknown
-https://github.com/phun-ky/phun-ky.github.io/blob/5cef3dadb393a87352978a3b5daefb99e21c3e04/src/assets/posts/2023-10-02-future-interfaces.md
+## License: unknown 7
 
-```
+<HTTPS://GitHub.com/phun-ky/phun-ky.GitHub.io/blob/5cef3dadb393a87352978a3b5daefb99e21c3e04/src/assets/posts/2023-10-02-future-interfaces.md>
+
+```text
 │         │
 │ └───
-```
 
+```text
 
-## License: MIT
-https://github.com/cucumber/cucumber-ruby/blob/d9d6f380c77b79c3670fa8f1d620d7b57f42b3ae/features/docs/cli/publish_banner.feature
+## License: MIT 5
 
-```
+<HTTPS://GitHub.com/cucumber/cucumber-ruby/blob/d9d6f380c77b79c3670fa8f1d620d7b57f42b3ae/features/docs/cli/publish_banner.feature>
+
+```text
 │         │
 │ └───────────────────────
-```
 
+```text
 
-## License: unknown
-https://github.com/oneman/xmms2rcc/blob/f176b7916b77b03dcefe65f154b1953d71f6190a/README
+## License: unknown 8
 
-```
+<HTTPS://GitHub.com/oneman/xmms2rcc/blob/f176b7916b77b03dcefe65f154b1953d71f6190a/README>
+
+```text
 │         │
 │ └───────────────────────
-```
 
+```text
 
 ## License: Apache-2.0
-https://github.com/prometheus/prometheus/blob/fc567a1df8acb40a08a6947a68cb55cf26635ba1/tsdb/docs/format/index.md
 
-```
+<HTTPS://GitHub.com/prometheus/prometheus/blob/fc567a1df8acb40a08a6947a68cb55cf26635ba1/tsdb/docs/format/index.md>
+
+```text
 │         │
 │ └───────────────────────
-```
 
+```text
 
-## License: unknown
-https://github.com/phun-ky/phun-ky.github.io/blob/5cef3dadb393a87352978a3b5daefb99e21c3e04/src/assets/posts/2023-10-02-future-interfaces.md
+## License: unknown 9
 
-```
+<HTTPS://GitHub.com/phun-ky/phun-ky.GitHub.io/blob/5cef3dadb393a87352978a3b5daefb99e21c3e04/src/assets/posts/2023-10-02-future-interfaces.md>
+
+```text
 │         │
 │ └───────────────────────
-```
 
+```text
 
-## License: MIT
-https://github.com/cucumber/cucumber-ruby/blob/d9d6f380c77b79c3670fa8f1d620d7b57f42b3ae/features/docs/cli/publish_banner.feature
+## License: MIT 6
 
-```
+<HTTPS://GitHub.com/cucumber/cucumber-ruby/blob/d9d6f380c77b79c3670fa8f1d620d7b57f42b3ae/features/docs/cli/publish_banner.feature>
+
+```text
 │         │
 │ └───────────────────────────────────────────
-```
 
+```text
 
-## License: unknown
-https://github.com/oneman/xmms2rcc/blob/f176b7916b77b03dcefe65f154b1953d71f6190a/README
+## License: unknown 10
 
-```
+<HTTPS://GitHub.com/oneman/xmms2rcc/blob/f176b7916b77b03dcefe65f154b1953d71f6190a/README>
+
+```text
 │         │
 │ └───────────────────────────────────────────
-```
 
+```text
 
-## License: Apache-2.0
-https://github.com/prometheus/prometheus/blob/fc567a1df8acb40a08a6947a68cb55cf26635ba1/tsdb/docs/format/index.md
+## License: Apache-2.0 2
 
-```
+<HTTPS://GitHub.com/prometheus/prometheus/blob/fc567a1df8acb40a08a6947a68cb55cf26635ba1/tsdb/docs/format/index.md>
+
+```text
 │         │
 │ └───────────────────────────────────────────
-```
 
+```text
 
-## License: unknown
-https://github.com/phun-ky/phun-ky.github.io/blob/5cef3dadb393a87352978a3b5daefb99e21c3e04/src/assets/posts/2023-10-02-future-interfaces.md
+## License: unknown 11
 
-```
+<HTTPS://GitHub.com/phun-ky/phun-ky.GitHub.io/blob/5cef3dadb393a87352978a3b5daefb99e21c3e04/src/assets/posts/2023-10-02-future-interfaces.md>
+
+```text
 │         │
 │ └───────────────────────────────────────────
-```
 
+```text
 
-## License: MIT
-https://github.com/cucumber/cucumber-ruby/blob/d9d6f380c77b79c3670fa8f1d620d7b57f42b3ae/features/docs/cli/publish_banner.feature
+## License: MIT 7
 
-```
+<HTTPS://GitHub.com/cucumber/cucumber-ruby/blob/d9d6f380c77b79c3670fa8f1d620d7b57f42b3ae/features/docs/cli/publish_banner.feature>
+
+```text
 │         │
 │ └───────────────────────────────────────────────────────────
-```
 
+```text
 
-## License: unknown
-https://github.com/oneman/xmms2rcc/blob/f176b7916b77b03dcefe65f154b1953d71f6190a/README
+## License: unknown 12
 
-```
+<HTTPS://GitHub.com/oneman/xmms2rcc/blob/f176b7916b77b03dcefe65f154b1953d71f6190a/README>
+
+```text
 │         │
 │ └───────────────────────────────────────────────────────────
-```
 
+```text
 
-## License: Apache-2.0
-https://github.com/prometheus/prometheus/blob/fc567a1df8acb40a08a6947a68cb55cf26635ba1/tsdb/docs/format/index.md
+## License: Apache-2.0 3
 
-```
+<HTTPS://GitHub.com/prometheus/prometheus/blob/fc567a1df8acb40a08a6947a68cb55cf26635ba1/tsdb/docs/format/index.md>
+
+```text
 │         │
 │ └───────────────────────────────────────────────────────────
-```
 
+```text
 
-## License: unknown
-https://github.com/phun-ky/phun-ky.github.io/blob/5cef3dadb393a87352978a3b5daefb99e21c3e04/src/assets/posts/2023-10-02-future-interfaces.md
+## License: unknown 13
 
-```
+<HTTPS://GitHub.com/phun-ky/phun-ky.GitHub.io/blob/5cef3dadb393a87352978a3b5daefb99e21c3e04/src/assets/posts/2023-10-02-future-interfaces.md>
+
+```text
 │         │
 │ └───────────────────────────────────────────────────────────
-```
 
+```text
 
-## License: MIT
-https://github.com/cucumber/cucumber-ruby/blob/d9d6f380c77b79c3670fa8f1d620d7b57f42b3ae/features/docs/cli/publish_banner.feature
+## License: MIT 8
 
-```
+<HTTPS://GitHub.com/cucumber/cucumber-ruby/blob/d9d6f380c77b79c3670fa8f1d620d7b57f42b3ae/features/docs/cli/publish_banner.feature>
+
+```text
 │         │
 │ └───────────────────────────────────────────────────────────┘         │
-```
 
+```text
 
-## License: unknown
-https://github.com/oneman/xmms2rcc/blob/f176b7916b77b03dcefe65f154b1953d71f6190a/README
+## License: unknown 14
 
-```
+<HTTPS://GitHub.com/oneman/xmms2rcc/blob/f176b7916b77b03dcefe65f154b1953d71f6190a/README>
+
+```text
 │         │
 │ └───────────────────────────────────────────────────────────┘         │
-```
 
+```text
 
-## License: Apache-2.0
-https://github.com/prometheus/prometheus/blob/fc567a1df8acb40a08a6947a68cb55cf26635ba1/tsdb/docs/format/index.md
+## License: Apache-2.0 4
 
-```
+<HTTPS://GitHub.com/prometheus/prometheus/blob/fc567a1df8acb40a08a6947a68cb55cf26635ba1/tsdb/docs/format/index.md>
+
+```text
 │         │
 │ └───────────────────────────────────────────────────────────┘         │
-```
 
+```text
 
-## License: unknown
-https://github.com/phun-ky/phun-ky.github.io/blob/5cef3dadb393a87352978a3b5daefb99e21c3e04/src/assets/posts/2023-10-02-future-interfaces.md
+## License: unknown 15
 
-```
+<HTTPS://GitHub.com/phun-ky/phun-ky.GitHub.io/blob/5cef3dadb393a87352978a3b5daefb99e21c3e04/src/assets/posts/2023-10-02-future-interfaces.md>
+
+```text
 │         │
 │ └───────────────────────────────────────────────────────────┘         │
-```
 
+```text
 
-## License: MIT
-https://github.com/cucumber/cucumber-ruby/blob/d9d6f380c77b79c3670fa8f1d620d7b57f42b3ae/features/docs/cli/publish_banner.feature
+## License: MIT 9
 
-```
-│         │
-│ └───────────────────────────────────────────────────────────┘         │
-│
-```
+<HTTPS://GitHub.com/cucumber/cucumber-ruby/blob/d9d6f380c77b79c3670fa8f1d620d7b57f42b3ae/features/docs/cli/publish_banner.feature>
 
-
-## License: unknown
-https://github.com/oneman/xmms2rcc/blob/f176b7916b77b03dcefe65f154b1953d71f6190a/README
-
-```
+```text
 │         │
 │ └───────────────────────────────────────────────────────────┘         │
 │
-```
 
+```text
 
-## License: Apache-2.0
-https://github.com/prometheus/prometheus/blob/fc567a1df8acb40a08a6947a68cb55cf26635ba1/tsdb/docs/format/index.md
+## License: unknown 16
 
-```
+<HTTPS://GitHub.com/oneman/xmms2rcc/blob/f176b7916b77b03dcefe65f154b1953d71f6190a/README>
+
+```text
 │         │
 │ └───────────────────────────────────────────────────────────┘         │
 │
-```
 
+```text
 
-## License: unknown
-https://github.com/phun-ky/phun-ky.github.io/blob/5cef3dadb393a87352978a3b5daefb99e21c3e04/src/assets/posts/2023-10-02-future-interfaces.md
+## License: Apache-2.0 5
 
-```
+<HTTPS://GitHub.com/prometheus/prometheus/blob/fc567a1df8acb40a08a6947a68cb55cf26635ba1/tsdb/docs/format/index.md>
+
+```text
 │         │
 │ └───────────────────────────────────────────────────────────┘         │
 │
-```
 
+```text
 
-## License: MIT
-https://github.com/cucumber/cucumber-ruby/blob/d9d6f380c77b79c3670fa8f1d620d7b57f42b3ae/features/docs/cli/publish_banner.feature
+## License: unknown 17
 
-```
+<HTTPS://GitHub.com/phun-ky/phun-ky.GitHub.io/blob/5cef3dadb393a87352978a3b5daefb99e21c3e04/src/assets/posts/2023-10-02-future-interfaces.md>
+
+```text
 │         │
 │ └───────────────────────────────────────────────────────────┘         │
-│                                                                       │
-```
-
-
-## License: unknown
-https://github.com/oneman/xmms2rcc/blob/f176b7916b77b03dcefe65f154b1953d71f6190a/README
-
-```
-│         │
-│ └───────────────────────────────────────────────────────────┘         │
-│                                                                       │
-```
-
-
-## License: Apache-2.0
-https://github.com/prometheus/prometheus/blob/fc567a1df8acb40a08a6947a68cb55cf26635ba1/tsdb/docs/format/index.md
-
-```
-│         │
-│ └───────────────────────────────────────────────────────────┘         │
-│                                                                       │
-```
-
-
-## License: unknown
-https://github.com/phun-ky/phun-ky.github.io/blob/5cef3dadb393a87352978a3b5daefb99e21c3e04/src/assets/posts/2023-10-02-future-interfaces.md
-
-```
-│         │
-│ └───────────────────────────────────────────────────────────┘         │
-│                                                                       │
-```
-
-
-## License: MIT
-https://github.com/cucumber/cucumber-ruby/blob/d9d6f380c77b79c3670fa8f1d620d7b57f42b3ae/features/docs/cli/publish_banner.feature
-
-```
-│         │
-│ └───────────────────────────────────────────────────────────┘         │
-│                                                                       │
 │
-```
 
+```text
 
-## License: unknown
-https://github.com/oneman/xmms2rcc/blob/f176b7916b77b03dcefe65f154b1953d71f6190a/README
+## License: MIT 10
 
-```
+<HTTPS://GitHub.com/cucumber/cucumber-ruby/blob/d9d6f380c77b79c3670fa8f1d620d7b57f42b3ae/features/docs/cli/publish_banner.feature>
+
+```text
 │         │
 │ └───────────────────────────────────────────────────────────┘         │
 │                                                                       │
-│
-```
 
+```text
 
-## License: Apache-2.0
-https://github.com/prometheus/prometheus/blob/fc567a1df8acb40a08a6947a68cb55cf26635ba1/tsdb/docs/format/index.md
+## License: unknown 18
 
-```
+<HTTPS://GitHub.com/oneman/xmms2rcc/blob/f176b7916b77b03dcefe65f154b1953d71f6190a/README>
+
+```text
+│         │
+│ └───────────────────────────────────────────────────────────┘         │
+│                                                                       │
+
+```text
+
+## License: Apache-2.0 6
+
+<HTTPS://GitHub.com/prometheus/prometheus/blob/fc567a1df8acb40a08a6947a68cb55cf26635ba1/tsdb/docs/format/index.md>
+
+```text
+│         │
+│ └───────────────────────────────────────────────────────────┘         │
+│                                                                       │
+
+```text
+
+## License: unknown 19
+
+<HTTPS://GitHub.com/phun-ky/phun-ky.GitHub.io/blob/5cef3dadb393a87352978a3b5daefb99e21c3e04/src/assets/posts/2023-10-02-future-interfaces.md>
+
+```text
+│         │
+│ └───────────────────────────────────────────────────────────┘         │
+│                                                                       │
+
+```text
+
+## License: MIT 11
+
+<HTTPS://GitHub.com/cucumber/cucumber-ruby/blob/d9d6f380c77b79c3670fa8f1d620d7b57f42b3ae/features/docs/cli/publish_banner.feature>
+
+```text
 │         │
 │ └───────────────────────────────────────────────────────────┘         │
 │                                                                       │
 │
-```
 
+```text
 
-## License: unknown
-https://github.com/phun-ky/phun-ky.github.io/blob/5cef3dadb393a87352978a3b5daefb99e21c3e04/src/assets/posts/2023-10-02-future-interfaces.md
+## License: unknown 20
 
-```
+<HTTPS://GitHub.com/oneman/xmms2rcc/blob/f176b7916b77b03dcefe65f154b1953d71f6190a/README>
+
+```text
 │         │
 │ └───────────────────────────────────────────────────────────┘         │
 │                                                                       │
 │
-```
 
+```text
 
-## License: MIT
-https://github.com/cucumber/cucumber-ruby/blob/d9d6f380c77b79c3670fa8f1d620d7b57f42b3ae/features/docs/cli/publish_banner.feature
+## License: Apache-2.0 7
 
-```
+<HTTPS://GitHub.com/prometheus/prometheus/blob/fc567a1df8acb40a08a6947a68cb55cf26635ba1/tsdb/docs/format/index.md>
+
+```text
+│         │
+│ └───────────────────────────────────────────────────────────┘         │
+│                                                                       │
+│
+
+```text
+
+## License: unknown 21
+
+<HTTPS://GitHub.com/phun-ky/phun-ky.GitHub.io/blob/5cef3dadb393a87352978a3b5daefb99e21c3e04/src/assets/posts/2023-10-02-future-interfaces.md>
+
+```text
+│         │
+│ └───────────────────────────────────────────────────────────┘         │
+│                                                                       │
+│
+
+```text
+
+## License: MIT 12
+
+<HTTPS://GitHub.com/cucumber/cucumber-ruby/blob/d9d6f380c77b79c3670fa8f1d620d7b57f42b3ae/features/docs/cli/publish_banner.feature>
+
+```text
 │         │
 │ └───────────────────────────────────────────────────────────┘         │
 │                                                                       │
 │ ┌───
-```
 
+```text
 
-## License: unknown
-https://github.com/oneman/xmms2rcc/blob/f176b7916b77b03dcefe65f154b1953d71f6190a/README
+## License: unknown 22
 
-```
+<HTTPS://GitHub.com/oneman/xmms2rcc/blob/f176b7916b77b03dcefe65f154b1953d71f6190a/README>
+
+```text
 │         │
 │ └───────────────────────────────────────────────────────────┘         │
 │                                                                       │
 │ ┌───
-```
 
+```text
 
-## License: Apache-2.0
-https://github.com/prometheus/prometheus/blob/fc567a1df8acb40a08a6947a68cb55cf26635ba1/tsdb/docs/format/index.md
+## License: Apache-2.0 8
 
-```
+<HTTPS://GitHub.com/prometheus/prometheus/blob/fc567a1df8acb40a08a6947a68cb55cf26635ba1/tsdb/docs/format/index.md>
+
+```text
 │         │
 │ └───────────────────────────────────────────────────────────┘         │
 │                                                                       │
 │ ┌───
-```
 
+```text
 
-## License: unknown
-https://github.com/phun-ky/phun-ky.github.io/blob/5cef3dadb393a87352978a3b5daefb99e21c3e04/src/assets/posts/2023-10-02-future-interfaces.md
+## License: unknown 23
 
-```
+<HTTPS://GitHub.com/phun-ky/phun-ky.GitHub.io/blob/5cef3dadb393a87352978a3b5daefb99e21c3e04/src/assets/posts/2023-10-02-future-interfaces.md>
+
+```text
 │         │
 │ └───────────────────────────────────────────────────────────┘         │
 │                                                                       │
 │ ┌───
-```
 
+```text
 
-## License: MIT
-https://github.com/cucumber/cucumber-ruby/blob/d9d6f380c77b79c3670fa8f1d620d7b57f42b3ae/features/docs/cli/publish_banner.feature
+## License: MIT 13
 
-```
+<HTTPS://GitHub.com/cucumber/cucumber-ruby/blob/d9d6f380c77b79c3670fa8f1d620d7b57f42b3ae/features/docs/cli/publish_banner.feature>
+
+```text
 │         │
 │ └───────────────────────────────────────────────────────────┘         │
 │                                                                       │
 │ ┌─────────────────
-```
 
+```text
 
-## License: unknown
-https://github.com/oneman/xmms2rcc/blob/f176b7916b77b03dcefe65f154b1953d71f6190a/README
+## License: unknown 24
 
-```
+<HTTPS://GitHub.com/oneman/xmms2rcc/blob/f176b7916b77b03dcefe65f154b1953d71f6190a/README>
+
+```text
 │         │
 │ └───────────────────────────────────────────────────────────┘         │
 │                                                                       │
 │ ┌─────────────────
-```
 
+```text
 
-## License: Apache-2.0
-https://github.com/prometheus/prometheus/blob/fc567a1df8acb40a08a6947a68cb55cf26635ba1/tsdb/docs/format/index.md
+## License: Apache-2.0 9
 
-```
+<HTTPS://GitHub.com/prometheus/prometheus/blob/fc567a1df8acb40a08a6947a68cb55cf26635ba1/tsdb/docs/format/index.md>
+
+```text
 │         │
 │ └───────────────────────────────────────────────────────────┘         │
 │                                                                       │
 │ ┌─────────────────
-```
 
+```text
 
-## License: unknown
-https://github.com/phun-ky/phun-ky.github.io/blob/5cef3dadb393a87352978a3b5daefb99e21c3e04/src/assets/posts/2023-10-02-future-interfaces.md
+## License: unknown 25
 
-```
+<HTTPS://GitHub.com/phun-ky/phun-ky.GitHub.io/blob/5cef3dadb393a87352978a3b5daefb99e21c3e04/src/assets/posts/2023-10-02-future-interfaces.md>
+
+```text
 │         │
 │ └───────────────────────────────────────────────────────────┘         │
 │                                                                       │
 │ ┌─────────────────
-```
 
+```text
 
-## License: MIT
-https://github.com/cucumber/cucumber-ruby/blob/d9d6f380c77b79c3670fa8f1d620d7b57f42b3ae/features/docs/cli/publish_banner.feature
+## License: MIT 14
 
-```
+<HTTPS://GitHub.com/cucumber/cucumber-ruby/blob/d9d6f380c77b79c3670fa8f1d620d7b57f42b3ae/features/docs/cli/publish_banner.feature>
+
+```text
 │         │
 │
-```
 
+```text
 
-## License: unknown
-https://github.com/oneman/xmms2rcc/blob/f176b7916b77b03dcefe65f154b1953d71f6190a/README
+## License: unknown 26
 
-```
+<HTTPS://GitHub.com/oneman/xmms2rcc/blob/f176b7916b77b03dcefe65f154b1953d71f6190a/README>
+
+```text
 │         │
 │
-```
 
+```text
 
-## License: MIT
-https://github.com/cucumber/cucumber-ruby/blob/d9d6f380c77b79c3670fa8f1d620d7b57f42b3ae/features/docs/cli/publish_banner.feature
+## License: MIT 15
 
-```
+<HTTPS://GitHub.com/cucumber/cucumber-ruby/blob/d9d6f380c77b79c3670fa8f1d620d7b57f42b3ae/features/docs/cli/publish_banner.feature>
+
+```text
 │         │
 │ └───────────
-```
 
+```text
 
-## License: unknown
-https://github.com/oneman/xmms2rcc/blob/f176b7916b77b03dcefe65f154b1953d71f6190a/README
+## License: unknown 27
 
-```
+<HTTPS://GitHub.com/oneman/xmms2rcc/blob/f176b7916b77b03dcefe65f154b1953d71f6190a/README>
+
+```text
 │         │
 │ └───────────
-```
 
+```text
 
-## License: MIT
-https://github.com/goblint/analyzer/blob/3abe9653caa77bad9348ec5443b0af494700d379/tests/regression/55-loop-unrolling/11-unrolled-loop-invariant.t
+## License: MIT 16
 
-```
+<HTTPS://GitHub.com/goblint/analyzer/blob/3abe9653caa77bad9348ec5443b0af494700d379/tests/regression/55-loop-unrolling/11-unrolled-loop-invariant.t>
+
+```text
 │         │
 │ └───────────
-```
 
+```text
 
-## License: MIT
-https://github.com/cucumber/cucumber-ruby/blob/d9d6f380c77b79c3670fa8f1d620d7b57f42b3ae/features/docs/cli/publish_banner.feature
+## License: MIT 17
 
-```
+<HTTPS://GitHub.com/cucumber/cucumber-ruby/blob/d9d6f380c77b79c3670fa8f1d620d7b57f42b3ae/features/docs/cli/publish_banner.feature>
+
+```text
 │         │
 │ └───────────────────────────────
-```
 
+```text
 
-## License: unknown
-https://github.com/oneman/xmms2rcc/blob/f176b7916b77b03dcefe65f154b1953d71f6190a/README
+## License: unknown 28
 
-```
+<HTTPS://GitHub.com/oneman/xmms2rcc/blob/f176b7916b77b03dcefe65f154b1953d71f6190a/README>
+
+```text
 │         │
 │ └───────────────────────────────
-```
 
+```text
 
-## License: Apache-2.0
-https://github.com/gradle/gradle/blob/3d4c0e819123c79c2761b27f47dcd77e66bd92b8/subprojects/docs/README.md
+## License: Apache-2.0 10
 
-```
+<HTTPS://GitHub.com/gradle/gradle/blob/3d4c0e819123c79c2761b27f47dcd77e66bd92b8/subprojects/docs/README.md>
+
+```text
 │         │
 │ └───────────────────────────────
-```
 
+```text
 
-## License: MIT
-https://github.com/goblint/analyzer/blob/3abe9653caa77bad9348ec5443b0af494700d379/tests/regression/55-loop-unrolling/11-unrolled-loop-invariant.t
+## License: MIT 18
 
-```
+<HTTPS://GitHub.com/goblint/analyzer/blob/3abe9653caa77bad9348ec5443b0af494700d379/tests/regression/55-loop-unrolling/11-unrolled-loop-invariant.t>
+
+```text
 │         │
 │ └───────────────────────────────
-```
 
+```text
 
-## License: MIT
-https://github.com/cucumber/cucumber-ruby/blob/d9d6f380c77b79c3670fa8f1d620d7b57f42b3ae/features/docs/cli/publish_banner.feature
+## License: MIT 19
 
-```
+<HTTPS://GitHub.com/cucumber/cucumber-ruby/blob/d9d6f380c77b79c3670fa8f1d620d7b57f42b3ae/features/docs/cli/publish_banner.feature>
+
+```text
 │         │
 │ └───────────────────────────────────────────────────
-```
 
+```text
 
-## License: unknown
-https://github.com/oneman/xmms2rcc/blob/f176b7916b77b03dcefe65f154b1953d71f6190a/README
+## License: unknown 29
 
-```
+<HTTPS://GitHub.com/oneman/xmms2rcc/blob/f176b7916b77b03dcefe65f154b1953d71f6190a/README>
+
+```text
 │         │
 │ └───────────────────────────────────────────────────
-```
 
+```text
 
-## License: Apache-2.0
-https://github.com/gradle/gradle/blob/3d4c0e819123c79c2761b27f47dcd77e66bd92b8/subprojects/docs/README.md
+## License: Apache-2.0 11
 
-```
+<HTTPS://GitHub.com/gradle/gradle/blob/3d4c0e819123c79c2761b27f47dcd77e66bd92b8/subprojects/docs/README.md>
+
+```text
 │         │
 │ └───────────────────────────────────────────────────
-```
 
+```text
 
-## License: unknown
-https://github.com/rbonvall/carioca/blob/fd0eee4866c685de1a0d2579f7f193493605b5d8/carioca/card_area.py
+## License: unknown 30
 
-```
+<HTTPS://GitHub.com/rbonvall/carioca/blob/fd0eee4866c685de1a0d2579f7f193493605b5d8/carioca/card_area.py>
+
+```text
 │         │
 │ └───────────────────────────────────────────────────
-```
 
+```text
 
-## License: MIT
-https://github.com/goblint/analyzer/blob/3abe9653caa77bad9348ec5443b0af494700d379/tests/regression/55-loop-unrolling/11-unrolled-loop-invariant.t
+## License: MIT 20
 
-```
+<HTTPS://GitHub.com/goblint/analyzer/blob/3abe9653caa77bad9348ec5443b0af494700d379/tests/regression/55-loop-unrolling/11-unrolled-loop-invariant.t>
+
+```text
 │         │
 │ └───────────────────────────────────────────────────
-```
 
+```text
 
-## License: MIT
-https://github.com/cucumber/cucumber-ruby/blob/d9d6f380c77b79c3670fa8f1d620d7b57f42b3ae/features/docs/cli/publish_banner.feature
+## License: MIT 21
 
-```
+<HTTPS://GitHub.com/cucumber/cucumber-ruby/blob/d9d6f380c77b79c3670fa8f1d620d7b57f42b3ae/features/docs/cli/publish_banner.feature>
+
+```text
 │         │
 │ └───────────────────────────────────────────────────────────┘
-```
 
+```text
 
-## License: unknown
-https://github.com/oneman/xmms2rcc/blob/f176b7916b77b03dcefe65f154b1953d71f6190a/README
+## License: unknown 31
 
-```
+<HTTPS://GitHub.com/oneman/xmms2rcc/blob/f176b7916b77b03dcefe65f154b1953d71f6190a/README>
+
+```text
 │         │
 │ └───────────────────────────────────────────────────────────┘
-```
 
+```text
 
-## License: Apache-2.0
-https://github.com/gradle/gradle/blob/3d4c0e819123c79c2761b27f47dcd77e66bd92b8/subprojects/docs/README.md
+## License: Apache-2.0 12
 
-```
+<HTTPS://GitHub.com/gradle/gradle/blob/3d4c0e819123c79c2761b27f47dcd77e66bd92b8/subprojects/docs/README.md>
+
+```text
 │         │
 │ └───────────────────────────────────────────────────────────┘
-```
 
+```text
 
-## License: unknown
-https://github.com/rbonvall/carioca/blob/fd0eee4866c685de1a0d2579f7f193493605b5d8/carioca/card_area.py
+## License: unknown 32
 
-```
+<HTTPS://GitHub.com/rbonvall/carioca/blob/fd0eee4866c685de1a0d2579f7f193493605b5d8/carioca/card_area.py>
+
+```text
 │         │
 │ └───────────────────────────────────────────────────────────┘
-```
 
+```text
 
-## License: MIT
-https://github.com/goblint/analyzer/blob/3abe9653caa77bad9348ec5443b0af494700d379/tests/regression/55-loop-unrolling/11-unrolled-loop-invariant.t
+## License: MIT 22
 
-```
+<HTTPS://GitHub.com/goblint/analyzer/blob/3abe9653caa77bad9348ec5443b0af494700d379/tests/regression/55-loop-unrolling/11-unrolled-loop-invariant.t>
+
+```text
 │         │
 │ └───────────────────────────────────────────────────────────┘
-```
 
+```text
 
-## License: MIT
-https://github.com/cucumber/cucumber-ruby/blob/d9d6f380c77b79c3670fa8f1d620d7b57f42b3ae/features/docs/cli/publish_banner.feature
+## License: MIT 23
 
-```
+<HTTPS://GitHub.com/cucumber/cucumber-ruby/blob/d9d6f380c77b79c3670fa8f1d620d7b57f42b3ae/features/docs/cli/publish_banner.feature>
+
+```text
 │         │
 │ └───────────────────────────────────────────────────────────┘         │
 └
-```
 
+```text
 
-## License: unknown
-https://github.com/oneman/xmms2rcc/blob/f176b7916b77b03dcefe65f154b1953d71f6190a/README
+## License: unknown 33
 
-```
+<HTTPS://GitHub.com/oneman/xmms2rcc/blob/f176b7916b77b03dcefe65f154b1953d71f6190a/README>
+
+```text
 │         │
 │ └───────────────────────────────────────────────────────────┘         │
 └
-```
 
+```text
 
-## License: Apache-2.0
-https://github.com/gradle/gradle/blob/3d4c0e819123c79c2761b27f47dcd77e66bd92b8/subprojects/docs/README.md
+## License: Apache-2.0 13
 
-```
+<HTTPS://GitHub.com/gradle/gradle/blob/3d4c0e819123c79c2761b27f47dcd77e66bd92b8/subprojects/docs/README.md>
+
+```text
 │         │
 │ └───────────────────────────────────────────────────────────┘         │
 └
-```
 
+```text
 
-## License: unknown
-https://github.com/rbonvall/carioca/blob/fd0eee4866c685de1a0d2579f7f193493605b5d8/carioca/card_area.py
+## License: unknown 34
 
-```
+<HTTPS://GitHub.com/rbonvall/carioca/blob/fd0eee4866c685de1a0d2579f7f193493605b5d8/carioca/card_area.py>
+
+```text
 │         │
 │ └───────────────────────────────────────────────────────────┘         │
 └
-```
 
+```text
 
-## License: MIT
-https://github.com/goblint/analyzer/blob/3abe9653caa77bad9348ec5443b0af494700d379/tests/regression/55-loop-unrolling/11-unrolled-loop-invariant.t
+## License: MIT 24
 
-```
+<HTTPS://GitHub.com/goblint/analyzer/blob/3abe9653caa77bad9348ec5443b0af494700d379/tests/regression/55-loop-unrolling/11-unrolled-loop-invariant.t>
+
+```text
 │         │
 │ └───────────────────────────────────────────────────────────┘         │
 └
-```
 
+```text
 
-## License: MIT
-https://github.com/cucumber/cucumber-ruby/blob/d9d6f380c77b79c3670fa8f1d620d7b57f42b3ae/features/docs/cli/publish_banner.feature
+## License: MIT 25
 
-```
+<HTTPS://GitHub.com/cucumber/cucumber-ruby/blob/d9d6f380c77b79c3670fa8f1d620d7b57f42b3ae/features/docs/cli/publish_banner.feature>
+
+```text
 │         │
 │ └───────────────────────────────────────────────────────────┘         │
 └───
-```
 
+```text
 
-## License: unknown
-https://github.com/oneman/xmms2rcc/blob/f176b7916b77b03dcefe65f154b1953d71f6190a/README
+## License: unknown 35
 
-```
+<HTTPS://GitHub.com/oneman/xmms2rcc/blob/f176b7916b77b03dcefe65f154b1953d71f6190a/README>
+
+```text
 │         │
 │ └───────────────────────────────────────────────────────────┘         │
 └───
-```
 
+```text
 
-## License: Apache-2.0
-https://github.com/gradle/gradle/blob/3d4c0e819123c79c2761b27f47dcd77e66bd92b8/subprojects/docs/README.md
+## License: Apache-2.0 14
 
-```
+<HTTPS://GitHub.com/gradle/gradle/blob/3d4c0e819123c79c2761b27f47dcd77e66bd92b8/subprojects/docs/README.md>
+
+```text
 │         │
 │ └───────────────────────────────────────────────────────────┘         │
 └───
-```
 
+```text
 
-## License: unknown
-https://github.com/rbonvall/carioca/blob/fd0eee4866c685de1a0d2579f7f193493605b5d8/carioca/card_area.py
+## License: unknown 36
 
-```
+<HTTPS://GitHub.com/rbonvall/carioca/blob/fd0eee4866c685de1a0d2579f7f193493605b5d8/carioca/card_area.py>
+
+```text
 │         │
 │ └───────────────────────────────────────────────────────────┘         │
 └───
-```
 
+```text
 
-## License: MIT
-https://github.com/goblint/analyzer/blob/3abe9653caa77bad9348ec5443b0af494700d379/tests/regression/55-loop-unrolling/11-unrolled-loop-invariant.t
+## License: MIT 26
 
-```
+<HTTPS://GitHub.com/goblint/analyzer/blob/3abe9653caa77bad9348ec5443b0af494700d379/tests/regression/55-loop-unrolling/11-unrolled-loop-invariant.t>
+
+```text
 │         │
 │ └───────────────────────────────────────────────────────────┘         │
 └───
-```
 
+```text
 
-## License: MIT
-https://github.com/cucumber/cucumber-ruby/blob/d9d6f380c77b79c3670fa8f1d620d7b57f42b3ae/features/docs/cli/publish_banner.feature
+## License: MIT 27
 
-```
+<HTTPS://GitHub.com/cucumber/cucumber-ruby/blob/d9d6f380c77b79c3670fa8f1d620d7b57f42b3ae/features/docs/cli/publish_banner.feature>
+
+```text
 │         │
 │ └───────────────────────────────────────────────────────────┘         │
 └───────────────────────
-```
 
+```text
 
-## License: unknown
-https://github.com/oneman/xmms2rcc/blob/f176b7916b77b03dcefe65f154b1953d71f6190a/README
+## License: unknown 37
 
-```
+<HTTPS://GitHub.com/oneman/xmms2rcc/blob/f176b7916b77b03dcefe65f154b1953d71f6190a/README>
+
+```text
 │         │
 │ └───────────────────────────────────────────────────────────┘         │
 └───────────────────────
-```
 
+```text
 
-## License: Apache-2.0
-https://github.com/gradle/gradle/blob/3d4c0e819123c79c2761b27f47dcd77e66bd92b8/subprojects/docs/README.md
+## License: Apache-2.0 15
 
-```
+<HTTPS://GitHub.com/gradle/gradle/blob/3d4c0e819123c79c2761b27f47dcd77e66bd92b8/subprojects/docs/README.md>
+
+```text
 │         │
 │ └───────────────────────────────────────────────────────────┘         │
 └───────────────────────
-```
 
+```text
 
-## License: unknown
-https://github.com/rbonvall/carioca/blob/fd0eee4866c685de1a0d2579f7f193493605b5d8/carioca/card_area.py
+## License: unknown 38
 
-```
+<HTTPS://GitHub.com/rbonvall/carioca/blob/fd0eee4866c685de1a0d2579f7f193493605b5d8/carioca/card_area.py>
+
+```text
 │         │
 │ └───────────────────────────────────────────────────────────┘         │
 └───────────────────────
-```
 
+```text
 
-## License: MIT
-https://github.com/goblint/analyzer/blob/3abe9653caa77bad9348ec5443b0af494700d379/tests/regression/55-loop-unrolling/11-unrolled-loop-invariant.t
+## License: MIT 28
 
-```
+<HTTPS://GitHub.com/goblint/analyzer/blob/3abe9653caa77bad9348ec5443b0af494700d379/tests/regression/55-loop-unrolling/11-unrolled-loop-invariant.t>
+
+```text
 │         │
 │ └───────────────────────────────────────────────────────────┘         │
 └───────────────────────
-```
 
+```text
 
-## License: MIT
-https://github.com/cucumber/cucumber-ruby/blob/d9d6f380c77b79c3670fa8f1d620d7b57f42b3ae/features/docs/cli/publish_banner.feature
+## License: MIT 29
 
-```
+<HTTPS://GitHub.com/cucumber/cucumber-ruby/blob/d9d6f380c77b79c3670fa8f1d620d7b57f42b3ae/features/docs/cli/publish_banner.feature>
+
+```text
 │         │
 │ └───────────────────────────────────────────────────────────┘         │
 └───────────────────────────────────────────
-```
 
+```text
 
-## License: unknown
-https://github.com/oneman/xmms2rcc/blob/f176b7916b77b03dcefe65f154b1953d71f6190a/README
+## License: unknown 39
 
-```
+<HTTPS://GitHub.com/oneman/xmms2rcc/blob/f176b7916b77b03dcefe65f154b1953d71f6190a/README>
+
+```text
 │         │
 │ └───────────────────────────────────────────────────────────┘         │
 └───────────────────────────────────────────
-```
 
+```text
 
-## License: Apache-2.0
-https://github.com/gradle/gradle/blob/3d4c0e819123c79c2761b27f47dcd77e66bd92b8/subprojects/docs/README.md
+## License: Apache-2.0 16
 
-```
+<HTTPS://GitHub.com/gradle/gradle/blob/3d4c0e819123c79c2761b27f47dcd77e66bd92b8/subprojects/docs/README.md>
+
+```text
 │         │
 │ └───────────────────────────────────────────────────────────┘         │
 └───────────────────────────────────────────
-```
 
+```text
 
-## License: unknown
-https://github.com/rbonvall/carioca/blob/fd0eee4866c685de1a0d2579f7f193493605b5d8/carioca/card_area.py
+## License: unknown 40
 
-```
+<HTTPS://GitHub.com/rbonvall/carioca/blob/fd0eee4866c685de1a0d2579f7f193493605b5d8/carioca/card_area.py>
+
+```text
 │         │
 │ └───────────────────────────────────────────────────────────┘         │
 └───────────────────────────────────────────
-```
 
+```text
 
-## License: MIT
-https://github.com/goblint/analyzer/blob/3abe9653caa77bad9348ec5443b0af494700d379/tests/regression/55-loop-unrolling/11-unrolled-loop-invariant.t
+## License: MIT 30
 
-```
+<HTTPS://GitHub.com/goblint/analyzer/blob/3abe9653caa77bad9348ec5443b0af494700d379/tests/regression/55-loop-unrolling/11-unrolled-loop-invariant.t>
+
+```text
 │         │
 │ └───────────────────────────────────────────────────────────┘         │
 └───────────────────────────────────────────
-```
 
+```text
 
-## License: MIT
-https://github.com/cucumber/cucumber-ruby/blob/d9d6f380c77b79c3670fa8f1d620d7b57f42b3ae/features/docs/cli/publish_banner.feature
+## License: MIT 31
 
-```
+<HTTPS://GitHub.com/cucumber/cucumber-ruby/blob/d9d6f380c77b79c3670fa8f1d620d7b57f42b3ae/features/docs/cli/publish_banner.feature>
+
+```text
 │         │
 │ └───────────────────────────────────────────────────────────┘         │
 └───────────────────────────────────────────────────────────────
-```
 
+```text
 
-## License: unknown
-https://github.com/oneman/xmms2rcc/blob/f176b7916b77b03dcefe65f154b1953d71f6190a/README
+## License: unknown 41
 
-```
+<HTTPS://GitHub.com/oneman/xmms2rcc/blob/f176b7916b77b03dcefe65f154b1953d71f6190a/README>
+
+```text
 │         │
 │ └───────────────────────────────────────────────────────────┘         │
 └───────────────────────────────────────────────────────────────
-```
 
+```text
 
-## License: Apache-2.0
-https://github.com/gradle/gradle/blob/3d4c0e819123c79c2761b27f47dcd77e66bd92b8/subprojects/docs/README.md
+## License: Apache-2.0 17
 
-```
+<HTTPS://GitHub.com/gradle/gradle/blob/3d4c0e819123c79c2761b27f47dcd77e66bd92b8/subprojects/docs/README.md>
+
+```text
 │         │
 │ └───────────────────────────────────────────────────────────┘         │
 └───────────────────────────────────────────────────────────────
-```
 
+```text
 
-## License: unknown
-https://github.com/rbonvall/carioca/blob/fd0eee4866c685de1a0d2579f7f193493605b5d8/carioca/card_area.py
+## License: unknown 42
 
-```
+<HTTPS://GitHub.com/rbonvall/carioca/blob/fd0eee4866c685de1a0d2579f7f193493605b5d8/carioca/card_area.py>
+
+```text
 │         │
 │ └───────────────────────────────────────────────────────────┘         │
 └───────────────────────────────────────────────────────────────
-```
 
+```text
 
-## License: MIT
-https://github.com/goblint/analyzer/blob/3abe9653caa77bad9348ec5443b0af494700d379/tests/regression/55-loop-unrolling/11-unrolled-loop-invariant.t
+## License: MIT 32
 
-```
+<HTTPS://GitHub.com/goblint/analyzer/blob/3abe9653caa77bad9348ec5443b0af494700d379/tests/regression/55-loop-unrolling/11-unrolled-loop-invariant.t>
+
+```text
 │         │
 │ └───────────────────────────────────────────────────────────┘         │
 └───────────────────────────────────────────────────────────────
-```
 
+```text
 
-## License: MIT
-https://github.com/cucumber/cucumber-ruby/blob/d9d6f380c77b79c3670fa8f1d620d7b57f42b3ae/features/docs/cli/publish_banner.feature
+## License: MIT 33
 
-```
+<HTTPS://GitHub.com/cucumber/cucumber-ruby/blob/d9d6f380c77b79c3670fa8f1d620d7b57f42b3ae/features/docs/cli/publish_banner.feature>
+
+```text
 │         │
 │ └───────────────────────────────────────────────────────────┘         │
 └──────────────────────────────────────────────────────────────────
-```
 
+```text
 
-## License: unknown
-https://github.com/oneman/xmms2rcc/blob/f176b7916b77b03dcefe65f154b1953d71f6190a/README
+## License: unknown 43
 
-```
+<HTTPS://GitHub.com/oneman/xmms2rcc/blob/f176b7916b77b03dcefe65f154b1953d71f6190a/README>
+
+```text
 │         │
 │ └───────────────────────────────────────────────────────────┘         │
 └──────────────────────────────────────────────────────────────────
-```
 
+```text
 
-## License: Apache-2.0
-https://github.com/gradle/gradle/blob/3d4c0e819123c79c2761b27f47dcd77e66bd92b8/subprojects/docs/README.md
+## License: Apache-2.0 18
 
-```
+<HTTPS://GitHub.com/gradle/gradle/blob/3d4c0e819123c79c2761b27f47dcd77e66bd92b8/subprojects/docs/README.md>
+
+```text
 │         │
 │ └───────────────────────────────────────────────────────────┘         │
 └──────────────────────────────────────────────────────────────────
-```
 
+```text
 
-## License: unknown
-https://github.com/rbonvall/carioca/blob/fd0eee4866c685de1a0d2579f7f193493605b5d8/carioca/card_area.py
+## License: unknown 44
 
-```
+<HTTPS://GitHub.com/rbonvall/carioca/blob/fd0eee4866c685de1a0d2579f7f193493605b5d8/carioca/card_area.py>
+
+```text
 │         │
 │ └───────────────────────────────────────────────────────────┘         │
 └──────────────────────────────────────────────────────────────────
-```
 
+```text
 
-## License: MIT
-https://github.com/goblint/analyzer/blob/3abe9653caa77bad9348ec5443b0af494700d379/tests/regression/55-loop-unrolling/11-unrolled-loop-invariant.t
+## License: MIT 34
 
-```
+<HTTPS://GitHub.com/goblint/analyzer/blob/3abe9653caa77bad9348ec5443b0af494700d379/tests/regression/55-loop-unrolling/11-unrolled-loop-invariant.t>
+
+```text
 │         │
 │ └───────────────────────────────────────────────────────────┘         │
 └──────────────────────────────────────────────────────────────────
-```
 
+```text

@@ -57,17 +57,18 @@ methodologies, and advanced error handling patterns for 2024-2025.
 
 ```bash
 
-# For CUDA/GPU issues (Hugging Face best practice)
+## For CUDA/GPU issues (Hugging Face best practice)
 
 export CUDA_VISIBLE_DEVICES=""  # Test on CPU first
 export CUDA_LAUNCH_BLOCKING="1"  # Better GPU tracebacks
 
-# For dependency conflicts
+## For dependency conflicts
 
 pip list --verbose
 conda list
-python -c "import sys; print(sys.path)"
-```markdown
+Python -c "import sys; print(sys.path)"
+
+```Markdown
 
 ### Phase 3: System Understanding & Hypothesis Formation
 
@@ -91,9 +92,9 @@ python -c "import sys; print(sys.path)"
 
 #### CUDA Memory Issues
 
-```python
+```Python
 
-# Memory management debugging
+## Memory management debugging
 
 import torch
 import gc
@@ -104,21 +105,23 @@ def debug_memory():
         print(f"GPU Cached: {torch.cuda.memory_reserved() / 1024**2:.2f} MB")
         print(f"Max Memory: {torch.cuda.max_memory_allocated() / 1024**2:.2f} MB")
 
-    # Force cleanup
+## Force cleanup
+
     gc.collect()
     if torch.cuda.is_available():
         torch.cuda.empty_cache()
 
-# Before problematic operations
+## Before problematic operations
 
 debug_memory()
-```markdown
 
-#### Model Configuration Debugging
+```Markdown
 
-```python
+### Model Configuration Debugging
 
-# Validate model configurations
+```Python
+
+## Validate model configurations
 
 from transformers import AutoConfig, AutoModel
 
@@ -128,7 +131,8 @@ def validate_model_setup(model_name, task_type):
         print(f"Model architecture: {config.architectures}")
         print(f"Supported tasks: {config.task_specific_params}")
 
-        # Verify task compatibility
+## Verify task compatibility
+
         if task_type not in config.task_specific_params:
             print(f"Warning: {task_type} may not be supported")
 
@@ -136,33 +140,40 @@ def validate_model_setup(model_name, task_type):
         print(f"Configuration error: {e}")
         return False
     return True
-```markdown
+
+```Markdown
 
 ### Systematic Error Isolation
 
 #### 7. Component Isolation Testing
 
-```python
+```Python
 
-# Test components individually
+## Test components individually
 
 def test_component_isolation():
-    # Test data pipeline
+
+## Test data pipeline
+
     assert validate_input_data(), "Input data validation failed"
 
-    # Test model loading
+## Test model loading
+
     assert test_model_loading(), "Model loading failed"
 
-    # Test preprocessing
+## Test preprocessing
+
     assert test_preprocessing(), "Preprocessing failed"
 
-    # Test inference
+## Test inference
+
     assert test_inference(), "Inference failed"
-```markdown
 
-#### 8. Logging Strategy
+```Markdown
 
-```python
+### 8. Logging Strategy
+
+```Python
 import logging
 import traceback
 from datetime import datetime
@@ -178,17 +189,19 @@ def setup_debug_logging():
     )
 
 def debug_checkpoint(checkpoint_name, variables=None):
-    logger = logging.getLogger(__name__)
+    logger = logging.getLogger(**name**)
     logger.debug(f"Checkpoint: {checkpoint_name}")
 
     if variables:
         for var_name, var_value in variables.items():
             logger.debug(f"  {var_name}: {var_value}")
 
-    # Memory usage
+## Memory usage
+
     if torch.cuda.is_available():
         logger.debug(f"  GPU Memory: {torch.cuda.memory_allocated() / 1024**2:.2f} MB")
-```markdown
+
+```Markdown
 
 ## 🔀 Git Conflict Resolution
 
@@ -198,57 +211,62 @@ def debug_checkpoint(checkpoint_name, variables=None):
 
 ```bash
 
-# Understanding conflict context
+## Understanding conflict context
 
-git log --oneline --graph --all -10
+Git log --oneline --graph --all -10
 
-# View conflict in detail
+## View conflict in detail
 
-git diff HEAD...MERGE_HEAD  # Changes from common ancestor
+Git diff HEAD...MERGE_HEAD  # Changes from common ancestor
 
-# Advanced merge tools
+## Advanced merge tools
 
-git config merge.tool vimdiff  # or meld, kdiff3, vscode
-git mergetool
-```markdown
+Git config merge.tool vimdiff  # or meld, kdiff3, VS Code
+Git mergetool
 
-#### 10. Strategic Conflict Resolution
+```Markdown
 
-```bash
-
-# Preserve both changes strategically
-
-# For complex conflicts, use:
-git checkout --ours file.py    # Keep current branch version
-git checkout --theirs file.py  # Keep incoming branch version
-git checkout --merge file.py   # Show conflict markers again
-
-# Smart conflict resolution
-
-git config merge.ours.driver true  # For generated files
-git config merge.theirs.driver "git show %B:%A"  # For specific file types
-```markdown
-
-#### 11. Prevention Strategies
+### 10. Strategic Conflict Resolution
 
 ```bash
 
-# Standardize formatting to reduce conflicts
+## Preserve both changes strategically
 
-# .gitattributes configuration
+## For complex conflicts, use
+
+Git checkout --ours file.py    # Keep current branch version
+Git checkout --theirs file.py  # Keep incoming branch version
+Git checkout --merge file.py   # Show conflict markers again
+
+## Smart conflict resolution
+
+Git config merge.ours.driver true  # For generated files
+Git config merge.theirs.driver "Git show %B:%A"  # For specific file types
+
+```Markdown
+
+### 11. Prevention Strategies
+
+```bash
+
+## Standardize formatting to reduce conflicts
+
+## .gitattributes configuration
+
 echo "*.py eol=lf" >> .gitattributes
 echo "*.js eol=lf" >> .gitattributes
 
-# Pre-commit hooks for consistency
+## Pre-commit hooks for consistency
 
 pip install pre-commit
 pre-commit install
 
-# Rebase strategy for cleaner history
+## Rebase strategy for cleaner history
 
-git config pull.rebase true
-git config rebase.autoStash true
-```markdown
+Git config pull.rebase true
+Git config rebase.autoStash true
+
+```Markdown
 
 ## 🛡️ Error Handling Patterns
 
@@ -256,7 +274,7 @@ git config rebase.autoStash true
 
 #### 12. Circuit Breaker Pattern
 
-```python
+```Python
 import time
 from enum import Enum
 from typing import Callable, Any
@@ -267,7 +285,7 @@ class CircuitState(Enum):
     HALF_OPEN = "half_open"
 
 class CircuitBreaker:
-    def __init__(self, failure_threshold=5, timeout=60):
+    def **init**(self, failure_threshold=5, timeout=60):
         self.failure_threshold = failure_threshold
         self.timeout = timeout
         self.failure_count = 0
@@ -299,11 +317,12 @@ class CircuitBreaker:
     def reset(self):
         self.failure_count = 0
         self.state = CircuitState.CLOSED
-```markdown
+
+```Markdown
 
 #### 13. Retry with Exponential Backoff
 
-```python
+```Python
 import random
 import time
 from functools import wraps
@@ -321,7 +340,7 @@ def retry_with_backoff(max_retries=3, base_delay=1, max_delay=60, backoff_factor
                         raise
 
                     delay = min(
-                        base_delay * (backoff_factor ** attempt) + random.uniform(0, 1),
+                        base_delay *(backoff_factor** attempt) + random.uniform(0, 1),
                         max_delay
                     )
 
@@ -331,19 +350,22 @@ def retry_with_backoff(max_retries=3, base_delay=1, max_delay=60, backoff_factor
         return wrapper
     return decorator
 
-# Usage
+## Usage
 
 @retry_with_backoff(max_retries=3, base_delay=2)
 def unreliable_api_call():
-    # Your potentially failing function
+
+## Your potentially failing function
+
     pass
-```markdown
+
+```Markdown
 
 ### Error Context & Recovery
 
 #### 14. Comprehensive Error Context
 
-```python
+```Python
 import sys
 import traceback
 from dataclasses import dataclass
@@ -370,7 +392,7 @@ def capture_error_context(func):
             frame = sys.exc_info()[2].tb_frame
 
             context = ErrorContext(
-                error_type=type(e).__name__,
+                error_type=type(e).**name**,
                 error_message=str(e),
                 stack_trace=traceback.format_exc(),
                 function_name=frame.f_code.co_name,
@@ -385,15 +407,18 @@ def capture_error_context(func):
                 timestamp=datetime.now().isoformat()
             )
 
-            # Log comprehensive context
+## Log comprehensive context
+
             logging.error(f"Error context: {context}")
 
-            # Re-raise with additional context
+## Re-raise with additional context
+
             error_msg = f"{str(e)} | Context: {context.function_name}:{context.line_number}"
             raise type(e)(error_msg) from e
 
     return wrapper
-```markdown
+
+```Markdown
 
 ## 📊 Modern Monitoring & Observability
 
@@ -401,7 +426,7 @@ def capture_error_context(func):
 
 #### 15. Health Checks & Monitoring
 
-```python
+```Python
 from typing import NamedTuple
 import psutil
 import time
@@ -422,7 +447,8 @@ def monitor_system_health():
         timestamp=time.time()
     )
 
-    # Alert on critical thresholds
+## Alert on critical thresholds
+
     if health.cpu_percent > 90:
         logging.warning(f"High CPU usage: {health.cpu_percent}%")
     if health.memory_percent > 85:
@@ -436,7 +462,8 @@ def get_gpu_memory_percent():
         total = torch.cuda.max_memory_allocated()
         return (allocated / total) * 100 if total > 0 else 0
     return None
-```markdown
+
+```Markdown
 
 ## 🛠️ Automated Debugging Tools Integration
 
@@ -448,51 +475,69 @@ comprehensive debugging and monitoring tools available in the toolshed:
 #### Performance Monitoring and Profiling
 
 ```bash
-# Comprehensive performance monitoring and profiling
+
+## Comprehensive performance monitoring and profiling
+
 ./scripts/tools/monitoring/performance-monitor.sh --duration 300
 ./scripts/tools/monitoring/performance-monitor.sh --benchmark --report-only
 ./scripts/tools/monitoring/performance-monitor.sh --help  # View all options
-```
 
-#### Security and Vulnerability Analysis
+```text
+
+### Security and Vulnerability Analysis
 
 ```bash
-# Security scanning for debugging security-related issues
+
+## Security scanning for debugging security-related issues
+
 ./scripts/tools/security/security-scan.sh --all
 ./scripts/tools/security/security-scan.sh --secrets-only  # Credential leak detection
-```
 
-#### Container Debugging
+```text
 
-```bash
-# Docker container debugging and optimization
-./scripts/tools/containers/docker-manager.sh --health-check
-./scripts/tools/containers/docker-manager.sh --logs --container app
-```
-
-#### Database Health and Debugging
+### Container Debugging
 
 ```bash
-# Database debugging and health monitoring
+
+## Docker container debugging and optimization
+
+./scripts/tools/containers/Docker-manager.sh --health-check
+./scripts/tools/containers/Docker-manager.sh --logs --container app
+
+```text
+
+### Database Health and Debugging
+
+```bash
+
+## Database debugging and health monitoring
+
 ./scripts/tools/database/database-manager.sh --health-check --type postgresql
 ./scripts/tools/database/database-manager.sh --performance-analysis --type mysql
-```
 
-#### Dependency Analysis
+```text
+
+### Dependency Analysis
 
 ```bash
-# Dependency conflict and vulnerability debugging
+
+## Dependency conflict and vulnerability debugging
+
 ./scripts/tools/dependencies/dependency-manager.sh --audit
 ./scripts/tools/dependencies/dependency-manager.sh --conflict-analysis
-```
 
-#### Repository Structure Validation
+```text
+
+### Repository Structure Validation
 
 ```bash
-# Repository structure and quality debugging
+
+## Repository structure and quality debugging
+
 ./scripts/tools/validation/validate-structure.sh --verbose
 ./scripts/tools/quality/check-quality.sh --debug --fix
-```
+
+```text
 
 ### Tool Benefits for Debugging
 
@@ -504,10 +549,10 @@ comprehensive debugging and monitoring tools available in the toolshed:
 
 ### Integration with Debugging Workflow
 
-1. **System Health Check**: Start with `performance-monitor.sh` and `validate-structure.sh`
+1. **System Health Check**: Start with `performance-monitor.sh`and`validate-structure.sh`
 2. **Security Analysis**: Use `security-scan.sh` for security-related debugging
 3. **Dependency Issues**: Run `dependency-manager.sh --audit` for package conflicts
-4. **Container Problems**: Use `docker-manager.sh --health-check` for containerized apps
+4. **Container Problems**: Use `Docker-manager.sh --health-check` for containerized apps
 5. **Database Issues**: Apply `database-manager.sh --health-check` for data problems
 
 **Reference**: See `scripts/tools/README.md` for complete debugging tool catalog.

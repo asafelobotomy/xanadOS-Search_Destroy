@@ -17,7 +17,7 @@ This framework provides automated validation and quality assurance for GitHub Co
 
 - **Instruction Clarity**: Assesses readability and comprehensiveness
 - **Code Quality**: Validates example code and snippets
-- **Documentation Standards**: Ensures proper markdown formatting and structure
+- **Documentation Standards**: Ensures proper Markdown formatting and structure
 - **Context Relevance**: Validates instruction applicability and usefulness
 
 ### 3. Integration Validation
@@ -62,13 +62,14 @@ This framework provides automated validation and quality assurance for GitHub Co
 The validation framework is organized into the following components:
 
 ```text
-.github/validation/
+.GitHub/validation/
 ├── validators/          # Individual validation modules
 ├── configs/            # Validation configuration files
 ├── reports/            # Generated validation reports
 ├── tests/              # Automated test suites
 └── tools/              # Validation utilities and scripts
-```markdown
+
+```Markdown
 
 ## Usage Integration
 

@@ -9,22 +9,28 @@
 **Solution**: This repository uses GitHub Flow (main branch only). Avoid GitFlow setup:
 
 ```bash
-# Use GitHub Flow instead
-git checkout main
-git pull origin main
-git checkout -b feature/your-feature
-```
 
-#### Problem: Validation scripts not found
+## Use GitHub Flow instead
+
+Git checkout main
+Git pull origin main
+Git checkout -b feature/your-feature
+
+```text
+
+### Problem: Validation scripts not found
 
 **Solution**: Use correct script paths:
 
 ```bash
-# Correct path
+
+## Correct path
+
 ./scripts/validation/verify-structure.sh
 
-# NOT: ./scripts/verify-structure.sh
-```
+## NOT: ./scripts/verify-structure.sh
+
+```text
 
 ### Development Workflow Issues
 
@@ -34,35 +40,39 @@ git checkout -b feature/your-feature
 
 ```bash
 npm run lint
-# Fix indentation, line length, and heading issues
-```
 
-#### Problem: Spellcheck failures
+## Fix indentation, line length, and heading issues
 
-**Solution**: Add technical terms to `.cspell.json`:
+```text
 
-```json
+### Problem: Spellcheck failures
+
+**Solution**: Add technical terms to `.cspell.JSON`:
+
+```JSON
 {
   "words": [
     "your-technical-term",
     "framework-name"
   ]
 }
-```
+
+```text
 
 ### GitHub Actions Issues
 
 #### Problem: Workflow YAML syntax errors
 
-**Solution**: Check proper indentation in `.github/workflows/`:
+**Solution**: Check proper indentation in `.GitHub/workflows/`:
 
-```yaml
+```YAML
 on:
   push:
     branches: [main]
   pull_request:
     branches: [main]
-```
+
+```text
 
 #### Problem: Missing dependencies
 
@@ -71,7 +81,8 @@ on:
 ```bash
 node --version  # Should be 18+
 npm install
-```
+
+```text
 
 ### File Organization Issues
 
@@ -89,10 +100,13 @@ npm install
 **Solution**: Check existing tools first:
 
 ```bash
-# Check toolshed before creating new scripts
+
+## Check toolshed before creating new scripts
+
 ls scripts/tools/
 cat scripts/tools/README.md
-```
+
+```text
 
 ### Model and AI Issues
 
@@ -100,25 +114,28 @@ cat scripts/tools/README.md
 
 **Solution**: Ensure proper frontmatter and file placement:
 
-```yaml
+```YAML
+
 ---
 applyTo: "**/*.js"
+
 ---
-```
+
+```text
 
 #### Problem: Poor code suggestions
 
 **Solution**: Use specialized chatmodes:
 
-- Architecture: `.github/chatmodes/architect.chatmode.md`
-- Security: `.github/chatmodes/security.chatmode.md`
-- Testing: `.github/chatmodes/testing.chatmode.md`
+- Architecture: `.GitHub/chatmodes/architect.chatmode.md`
+- Security: `.GitHub/chatmodes/security.chatmode.md`
+- Testing: `.GitHub/chatmodes/testing.chatmode.md`
 
 ## Getting Help
 
 1. **Check Documentation**: Review `docs/guides/` for comprehensive guides
 2. **Validate Structure**: Run `./scripts/validation/verify-structure.sh`
-3. **Check Quality**: Run `npm run lint` and `npm run validate`
+3. **Check Quality**: Run `npm run lint`and`npm run validate`
 4. **Review Examples**: Check `examples/` for working configurations
 
 ## Escalation Path

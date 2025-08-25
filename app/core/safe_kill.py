@@ -1,18 +1,19 @@
 """Safe process termination helpers.
-
 Provides validated, optionally elevated termination of processes with
 minimal, auditable logic. Falls back to escalation only when required.
 """
+
 from __future__ import annotations
+
+import logging
 import os
 import signal
 import time
-import logging
 from dataclasses import dataclass
-from typing import Iterable, Sequence
-import subprocess
+from typing import Sequence
 
 logger = logging.getLogger(__name__)
+
 
 @dataclass
 class KillResult:
@@ -21,12 +22,14 @@ class KillResult:
     attempts: list[str]
     error: str | None = None
 
+
 _ALLOWED_SIGNALS = {
     signal.SIGTERM: "TERM",
     signal.SIGKILL: "KILL",
     signal.SIGINT: "INT",
     signal.SIGHUP: "HUP",
 }
+
 
 def _validate_pid(pid: int) -> None:
     if not isinstance(pid, int) or pid <= 0:
@@ -35,8 +38,10 @@ def _validate_pid(pid: int) -> None:
     if pid > 1_000_000:
         raise ValueError("PID out of expected range")
 
+
 def _signal_name(sig: int) -> str:
     return _ALLOWED_SIGNALS.get(sig, str(sig))
+
 
 def _process_exists(pid: int) -> bool:
     try:
@@ -48,7 +53,10 @@ def _process_exists(pid: int) -> bool:
         # Exists but we lack permission
         return True
 
-def safe_kill(pid: int, sig: int = signal.SIGTERM, *, escalate: bool = False, timeout: float = 2.0) -> KillResult:
+
+def safe_kill(
+    pid: int, sig: int = signal.SIGTERM, *, escalate: bool = False, timeout: float = 2.0
+) -> KillResult:
     """Send a single signal to a process, optionally escalating.
 
     escalate: if True, attempt privileged kill via elevated_run when PermissionError.
@@ -74,10 +82,23 @@ def safe_kill(pid: int, sig: int = signal.SIGTERM, *, escalate: bool = False, ti
         # escalate using elevated_run
         try:
             from .elevated_runner import elevated_run
-            cp = elevated_run(["kill", f"-{sig_name}", str(pid)], timeout=15, capture_output=True, gui=True)
+
+            cp = elevated_run(
+                ["kill", f"-{sig_name}", str(pid)],
+                timeout=15,
+                capture_output=True,
+                gui=True,
+            )
             attempts.append(f"elevated_run:{sig_name}:rc={cp.returncode}")
-            if cp.returncode == 0 or cp.returncode == 126:  # 126=user cancelled auth; treat as soft-success
-                return KillResult(cp.returncode == 0, True, attempts, None if cp.returncode == 0 else "auth_cancelled")
+            if (
+                cp.returncode == 0 or cp.returncode == 126
+            ):  # 126=user cancelled auth; treat as soft-success
+                return KillResult(
+                    cp.returncode == 0,
+                    True,
+                    attempts,
+                    None if cp.returncode == 0 else "auth_cancelled",
+                )
             return KillResult(False, True, attempts, cp.stderr or "kill failed")
         except Exception as ee:  # pragma: no cover
             return KillResult(False, True, attempts, f"elevated error:{ee}")
@@ -99,7 +120,14 @@ def safe_kill(pid: int, sig: int = signal.SIGTERM, *, escalate: bool = False, ti
         return KillResult(False, False, attempts, "timeout")
     return KillResult(True, False, attempts, None)
 
-def kill_sequence(pid: int, signals: Sequence[int] | None = None, *, escalate: bool = False, per_signal_timeout: float = 2.0) -> KillResult:
+
+def kill_sequence(
+    pid: int,
+    signals: Sequence[int] | None = None,
+    *,
+    escalate: bool = False,
+    per_signal_timeout: float = 2.0,
+) -> KillResult:
     """Attempt a sequence of signals (default TERM then KILL). Returns first definitive result.
 
     If TERM fails or times out, escalates to KILL. Escalation to privileged only triggered
@@ -123,5 +151,6 @@ def kill_sequence(pid: int, signals: Sequence[int] | None = None, *, escalate: b
         # If TERM timed out, continue to next (KILL)
         # If permission denied handled inside safe_kill with escalation decision.
     return KillResult(False, escalated, all_attempts, last_err)
+
 
 __all__ = ["safe_kill", "kill_sequence", "KillResult"]

@@ -2,6 +2,7 @@
 applyTo: "**/*.rb"
 priority: 70
 category: "language-specific"
+
 ---
 
 # Ruby-specific Copilot Instructions
@@ -28,7 +29,8 @@ category: "language-specific"
 - Write descriptive tests with clear describe/context/it blocks using RSpec's nested structure
 - Follow Ruby style guide and existing RuboCop configuration (prefer community style guide)
 - Prefer explicit return values for public methods, allow implicit returns for private methods
-- Use blocks with descriptive variable names: `users.each { |user| ... }` not `users.each { |u| ... }`
+
+- Use blocks with descriptive variable names: `users.each { |user| ... }`not`users.each { |u| ... }`
 - Keep methods under 10 lines, classes under 100 lines for maintainability
 
-**⚠️ SECURITY OVERRIDE: Always use strong parameters in Rails, validate all user input, avoid eval() and instance_eval() with user data**
+## ⚠️ SECURITY OVERRIDE: Always use strong parameters in Rails, validate all user input, avoid eval() and instance_eval() with user data

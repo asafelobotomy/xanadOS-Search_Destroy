@@ -3,6 +3,7 @@
 Automatic Updates System for S&D
 Handles virus definition updates, software updates, and threat intelligence feeds.
 """
+
 import asyncio
 import hashlib
 import json
@@ -16,7 +17,7 @@ from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from enum import Enum
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import Any, Callable, Dict, List, Optional
 
 import requests
 import schedule
@@ -61,7 +62,9 @@ class UpdateInfo:
     size_bytes: int
     download_url: str
     checksum: str
-    checksum_type: str = "sha256"  # Use SHA256 by default for security (SHA512 also recommended)
+    checksum_type: str = (
+        "sha256"  # Use SHA256 by default for security (SHA512 also recommended)
+    )
     priority: UpdatePriority = UpdatePriority.NORMAL
     release_date: datetime = field(default_factory=datetime.now)
     required_restart: bool = False
@@ -109,11 +112,15 @@ class AutoUpdateSystem:
     threat intelligence, and software components.
     """
 
-    def __init__(self, current_version=None, clamav_wrapper=None, config: UpdateConfig = None):
+    def __init__(
+        self, current_version=None, clamav_wrapper=None, config: UpdateConfig = None
+    ):
         self.logger = logging.getLogger(__name__)
         self.clamav = clamav_wrapper
         self.config = config or UpdateConfig()
-        self.current_version = current_version  # Store current version for compatibility
+        self.current_version = (
+            current_version  # Store current version for compatibility
+        )
 
         # State management
         self.status = UpdateStatus.IDLE
@@ -132,12 +139,11 @@ class AutoUpdateSystem:
         self.download_progress: Dict[str, Dict[str, Any]] = {}
 
         # Callbacks
-        self.update_available_callback: Optional[Callable[[
-            UpdateInfo], None]] = None
-        self.update_completed_callback: Optional[Callable[[
-            UpdateResult], None]] = None
-        self.update_progress_callback: Optional[Callable[[
-            UpdateType, int], None]] = (None)
+        self.update_available_callback: Optional[Callable[[UpdateInfo], None]] = None
+        self.update_completed_callback: Optional[Callable[[UpdateResult], None]] = None
+        self.update_progress_callback: Optional[Callable[[UpdateType, int], None]] = (
+            None
+        )
         self.update_error_callback: Optional[Callable[[str], None]] = None
 
         # Database paths
@@ -149,9 +155,11 @@ class AutoUpdateSystem:
         self.db_dir.mkdir(parents=True, exist_ok=True)
 
         # Config file for persistent state
-        self.config_file = Path.home() / ".config" / "search-and-destroy" / "update_state.json"
+        self.config_file = (
+            Path.home() / ".config" / "search-and-destroy" / "update_state.json"
+        )
         self.config_file.parent.mkdir(parents=True, exist_ok=True)
-        
+
         # Load persisted state
         self._load_persistent_state()
 
@@ -169,13 +177,15 @@ class AutoUpdateSystem:
         """Load persistent state from config file."""
         try:
             if self.config_file.exists():
-                with open(self.config_file, 'r') as f:
+                with open(self.config_file, "r") as f:
                     state = json.load(f)
-                
+
                 # Load last check time
-                if 'last_check_time' in state:
-                    self.last_check_time = datetime.fromisoformat(state['last_check_time'])
-                    
+                if "last_check_time" in state:
+                    self.last_check_time = datetime.fromisoformat(
+                        state["last_check_time"]
+                    )
+
         except Exception as e:
             self.logger.debug(f"Could not load persistent state: {e}")
 
@@ -183,14 +193,14 @@ class AutoUpdateSystem:
         """Save persistent state to config file."""
         try:
             state = {}
-            
+
             # Save last check time
             if self.last_check_time:
-                state['last_check_time'] = self.last_check_time.isoformat()
-                
-            with open(self.config_file, 'w') as f:
+                state["last_check_time"] = self.last_check_time.isoformat()
+
+            with open(self.config_file, "w") as f:
                 json.dump(state, f, indent=2)
-                
+
         except Exception as e:
             self.logger.debug(f"Could not save persistent state: {e}")
 
@@ -213,12 +223,12 @@ class AutoUpdateSystem:
             self.scheduler_thread.start()
 
             # Start update monitoring loop
-            self.update_loop_task = asyncio.create_task(
-                self._update_monitoring_loop())
+            self.update_loop_task = asyncio.create_task(self._update_monitoring_loop())
 
             # Perform initial update check
             self.check_updates_task = asyncio.create_task(
-                self.check_for_updates_async())
+                self.check_for_updates_async()
+            )
 
             self.logger.info("Auto-update system started")
             return True
@@ -291,7 +301,9 @@ class AutoUpdateSystem:
         if self.is_running:
             asyncio.create_task(self.update_threat_intelligence())
 
-    async def check_for_updates_async(self, force_check: bool = False) -> Dict[UpdateType, UpdateInfo]:
+    async def check_for_updates_async(
+        self, force_check: bool = False
+    ) -> Dict[UpdateType, UpdateInfo]:
         """Check for available updates (async version)."""
         with self.status_lock:
             if self.status != UpdateStatus.IDLE:
@@ -321,7 +333,7 @@ class AutoUpdateSystem:
             # Update state
             self.available_updates = available_updates
             self.last_check_time = datetime.now()
-            
+
             # Save persistent state
             self._save_persistent_state()
 
@@ -333,15 +345,17 @@ class AutoUpdateSystem:
             # Auto-schedule critical updates
             for update_info in available_updates.values():
                 if self.config.auto_update_enabled and update_info.priority in [
-                        UpdatePriority.CRITICAL, UpdatePriority.HIGH, ]:
+                    UpdatePriority.CRITICAL,
+                    UpdatePriority.HIGH,
+                ]:
                     self.pending_updates.append(update_info)
 
             with self.status_lock:
                 self.status = UpdateStatus.IDLE
 
             self.logger.info(
-                "Update check completed. Found %d updates",
-                len(available_updates))
+                "Update check completed. Found %d updates", len(available_updates)
+            )
             return available_updates
 
         except Exception as e:
@@ -375,8 +389,7 @@ class AutoUpdateSystem:
                     break
 
             if needs_update:
-                total_size = sum(info["size"]
-                                 for info in latest_version_info.values())
+                total_size = sum(info["size"] for info in latest_version_info.values())
                 return UpdateInfo(
                     update_type=UpdateType.VIRUS_DEFINITIONS,
                     version=datetime.now().strftime("%Y%m%d"),
@@ -452,8 +465,9 @@ class AutoUpdateSystem:
             last_intel_update = self.last_update_times.get(
                 UpdateType.THREAT_INTELLIGENCE
             )
-            if not last_intel_update or datetime.now(
-            ) - last_intel_update > timedelta(days=1):
+            if not last_intel_update or datetime.now() - last_intel_update > timedelta(
+                days=1
+            ):
                 return UpdateInfo(
                     update_type=UpdateType.THREAT_INTELLIGENCE,
                     version=datetime.now().strftime("%Y%m%d"),
@@ -481,9 +495,7 @@ class AutoUpdateSystem:
             self.status = UpdateStatus.INSTALLING
 
         try:
-            self.logger.info(
-                "Installing %d pending updates", len(
-                    self.pending_updates))
+            self.logger.info("Installing %d pending updates", len(self.pending_updates))
 
             # Sort by priority
             sorted_updates = sorted(
@@ -553,16 +565,14 @@ class AutoUpdateSystem:
 
             # Update last update time
             if result.success:
-                self.last_update_times[update_info.update_type] = datetime.now(
-                )
+                self.last_update_times[update_info.update_type] = datetime.now()
 
             return result
 
         except Exception as e:
             self.logger.error(
-                "Error installing update %s: %s",
-                update_info.update_type.value,
-                e)
+                "Error installing update %s: %s", update_info.update_type.value, e
+            )
             return UpdateResult(
                 update_type=update_info.update_type,
                 success=False,
@@ -570,8 +580,7 @@ class AutoUpdateSystem:
                 install_time=time.time() - start_time,
             )
 
-    async def _install_virus_definitions(
-            self, update_info: UpdateInfo) -> UpdateResult:
+    async def _install_virus_definitions(self, update_info: UpdateInfo) -> UpdateResult:
         """Install virus definition updates."""
         try:
             total_downloaded = 0
@@ -598,8 +607,7 @@ class AutoUpdateSystem:
                     )
                     if temp_path.exists():
                         temp_path.unlink()
-                    raise ValueError(
-                        f"Database verification failed: {db_filename}")
+                    raise ValueError(f"Database verification failed: {db_filename}")
 
             download_time = time.time() - download_start
 
@@ -622,8 +630,7 @@ class AutoUpdateSystem:
                 error_message=str(e),
             )
 
-    async def _install_software_update(
-            self, update_info: UpdateInfo) -> UpdateResult:
+    async def _install_software_update(self, update_info: UpdateInfo) -> UpdateResult:
         """Install software updates."""
         try:
             # Download update package
@@ -641,14 +648,13 @@ class AutoUpdateSystem:
                 if not await self._verify_checksum(
                     update_file, update_info.checksum, update_info.checksum_type
                 ):
-                    raise ValueError(
-                        "Update file checksum verification failed")
+                    raise ValueError("Update file checksum verification failed")
 
             # For safety, just log the update availability for now
             # In production, this would extract and apply the update
             self.logger.info(
-                "Software update downloaded and verified: %s",
-                update_info.version)
+                "Software update downloaded and verified: %s", update_info.version
+            )
             self.logger.info("Manual installation required for safety")
 
             # Cleanup
@@ -664,9 +670,8 @@ class AutoUpdateSystem:
 
         except Exception as e:
             return UpdateResult(
-                update_type=UpdateType.SOFTWARE,
-                success=False,
-                error_message=str(e))
+                update_type=UpdateType.SOFTWARE, success=False, error_message=str(e)
+            )
 
     async def _install_threat_intelligence(
         self, update_info: UpdateInfo
@@ -743,7 +748,7 @@ class AutoUpdateSystem:
         """Verify file checksum with support for multiple hash algorithms."""
         try:
             checksum_type = checksum_type.lower()
-            
+
             # Supported hash algorithms in order of security preference
             if checksum_type == "sha256":
                 hasher = hashlib.sha256()
@@ -755,7 +760,7 @@ class AutoUpdateSystem:
                     "SHA1 checksum verification is deprecated and should be avoided. "
                     "Please use SHA256 or SHA512 for better security."
                 )
-                hasher = hashlib.sha1()
+                hasher = hashlib.sha1(usedforsecurity=False)
             elif checksum_type == "md5":
                 # MD5 is cryptographically broken but kept for legacy compatibility
                 self.logger.warning(
@@ -763,11 +768,11 @@ class AutoUpdateSystem:
                     "Please upgrade to SHA256 or SHA512 for proper security. "
                     "This support will be removed in a future version."
                 )
-                hasher = hashlib.md5()
+                hasher = hashlib.md5(usedforsecurity=False)
             else:
                 self.logger.error(
                     "Unsupported checksum type: %s. Supported types: sha256, sha512, sha1 (deprecated), md5 (deprecated)",
-                    checksum_type
+                    checksum_type,
                 )
                 return False
 
@@ -778,15 +783,19 @@ class AutoUpdateSystem:
 
             computed_hash = hasher.hexdigest().lower()
             expected_hash = expected_checksum.lower()
-            
+
             if computed_hash == expected_hash:
                 if checksum_type in ["sha256", "sha512"]:
-                    self.logger.debug("Checksum verification successful using secure %s", checksum_type.upper())
+                    self.logger.debug(
+                        "Checksum verification successful using secure %s",
+                        checksum_type.upper(),
+                    )
                 return True
             else:
                 self.logger.error(
                     "Checksum verification failed: expected %s, got %s",
-                    expected_hash, computed_hash
+                    expected_hash,
+                    computed_hash,
                 )
                 return False
 
@@ -802,11 +811,19 @@ class AutoUpdateSystem:
             if sigtool_path:
                 try:
                     from .secure_subprocess import run_secure
-                    result = run_secure([sigtool_path, "--info", str(db_path)], timeout=30)
+
+                    result = run_secure(
+                        [sigtool_path, "--info", str(db_path)], timeout=30
+                    )
                     return result.returncode == 0
                 except Exception:
                     # Fallback to original subprocess if not allowed (sigtool not in allowlist)
-                    result = subprocess.run([sigtool_path, "--info", str(db_path)], capture_output=True, text=True, timeout=30)
+                    result = subprocess.run(
+                        [sigtool_path, "--info", str(db_path)],
+                        capture_output=True,
+                        text=True,
+                        timeout=30,
+                    )
                     return result.returncode == 0
 
             # Basic size check as fallback
@@ -867,10 +884,16 @@ class AutoUpdateSystem:
         except requests.exceptions.HTTPError as e:
             if e.response.status_code == 403:
                 # Rate limiting is expected for ClamAV database
-                self.logger.debug("Rate limited by %s (403 Forbidden) - this is normal", url)
+                self.logger.debug(
+                    "Rate limited by %s (403 Forbidden) - this is normal", url
+                )
             elif e.response.status_code in (429, 503):
                 # Temporary server issues
-                self.logger.warning("Server temporarily unavailable for %s: %s", url, e.response.status_code)
+                self.logger.warning(
+                    "Server temporarily unavailable for %s: %s",
+                    url,
+                    e.response.status_code,
+                )
             else:
                 # Other HTTP errors
                 self.logger.error("HTTP request failed %s %s: %s", method, url, e)
@@ -945,11 +968,9 @@ class AutoUpdateSystem:
                 for download_id, progress_info in self.download_progress.items():
                     if self.update_progress_callback:
                         update_type = progress_info.get("update_type")
-                        progress_percent = progress_info.get(
-                            "progress_percent", 0)
+                        progress_percent = progress_info.get("progress_percent", 0)
                         if update_type:
-                            self.update_progress_callback(
-                                update_type, progress_percent)
+                            self.update_progress_callback(update_type, progress_percent)
 
                 # Clean completed downloads
                 completed_downloads = [
@@ -1028,18 +1049,15 @@ class AutoUpdateSystem:
         return self.last_check_time
 
     # Callback setters
-    def set_update_available_callback(
-            self, callback: Callable[[UpdateInfo], None]):
+    def set_update_available_callback(self, callback: Callable[[UpdateInfo], None]):
         """Set callback for when updates are available."""
         self.update_available_callback = callback
 
-    def set_update_completed_callback(
-            self, callback: Callable[[UpdateResult], None]):
+    def set_update_completed_callback(self, callback: Callable[[UpdateResult], None]):
         """Set callback for when updates complete."""
         self.update_completed_callback = callback
 
-    def set_update_progress_callback(
-            self, callback: Callable[[UpdateType, int], None]):
+    def set_update_progress_callback(self, callback: Callable[[UpdateType, int], None]):
         """Set callback for update progress."""
         self.update_progress_callback = callback
 
@@ -1068,36 +1086,41 @@ class AutoUpdateSystem:
         """
         try:
             import asyncio
-            
+
             # Create event loop if none exists
             try:
                 loop = asyncio.get_event_loop()
             except RuntimeError:
                 loop = asyncio.new_event_loop()
                 asyncio.set_event_loop(loop)
-            
+
             # Run the async check_for_updates method
             updates = loop.run_until_complete(self.check_for_updates_async())
-            
+
             # Convert to GUI-compatible format
             if UpdateType.SOFTWARE in updates:
                 software_update = updates[UpdateType.SOFTWARE]
                 return {
-                    'available': True,
-                    'current_version': self.current_version or "2.9.0",
-                    'latest_version': software_update.version,
-                    'release_name': f'Version {software_update.version}',
-                    'release_notes': '\n'.join(software_update.changelog) if hasattr(software_update, 'changelog') and software_update.changelog else software_update.description,
-                    'download_url': software_update.download_url,
-                    'published_at': datetime.now().isoformat(),
-                    'prerelease': False
+                    "available": True,
+                    "current_version": self.current_version or "2.9.0",
+                    "latest_version": software_update.version,
+                    "release_name": f"Version {software_update.version}",
+                    "release_notes": (
+                        "\n".join(software_update.changelog)
+                        if hasattr(software_update, "changelog")
+                        and software_update.changelog
+                        else software_update.description
+                    ),
+                    "download_url": software_update.download_url,
+                    "published_at": datetime.now().isoformat(),
+                    "prerelease": False,
                 }
             else:
                 return {
-                    'available': False,
-                    'current_version': self.current_version or "2.9.0"
+                    "available": False,
+                    "current_version": self.current_version or "2.9.0",
                 }
-                
+
         except Exception as e:
             self.logger.error("Error in synchronous update check: %s", e)
             raise e

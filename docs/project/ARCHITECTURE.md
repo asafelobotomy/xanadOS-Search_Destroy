@@ -4,19 +4,20 @@ This document describes the architecture and organization of the xanadOS-Search_
 
 ## Overview
 
-S&D (Search & Destroy) is a modern GUI application for ClamAV antivirus scanning, built with Python and PyQt6. The application follows a modular architecture with clear separation of concerns.
+S&D (Search & Destroy) is a modern GUI application for ClamAV antivirus scanning, built with Python and PyQt6.
+The application follows a modular architecture with clear separation of concerns.
 
 ## Directory Structure
 
-```
+```text
 xanadOS-Search_Destroy/
 │
 ├── app/                           # Main application package
-│   ├── __init__.py               # Package initialization
+│   ├── **init**.py               # Package initialization
 │   ├── main.py                   # Application entry point
 │   │
 │   ├── core/                     # Core functionality modules
-│   │   ├── __init__.py
+│   │   ├── **init**.py
 │   │   ├── file_scanner.py       # File scanning engine
 │   │   ├── clamav_wrapper.py     # ClamAV integration
 │   │   ├── rkhunter_wrapper.py   # RKHunter integration
@@ -26,7 +27,7 @@ xanadOS-Search_Destroy/
 │   │   └── ...                   # Other core modules
 │   │
 │   ├── gui/                      # User interface components
-│   │   ├── __init__.py
+│   │   ├── **init**.py
 │   │   ├── main_window.py        # Main application window
 │   │   ├── theme_manager.py      # Theme and styling
 │   │   ├── settings_pages.py     # Settings interface
@@ -34,18 +35,18 @@ xanadOS-Search_Destroy/
 │   │   └── ...                   # Other GUI modules
 │   │
 │   ├── monitoring/               # System monitoring
-│   │   ├── __init__.py
+│   │   ├── **init**.py
 │   │   └── ...                   # Monitoring modules
 │   │
 │   └── utils/                    # Utility functions
-│       ├── __init__.py
+│       ├── **init**.py
 │       ├── config.py             # Configuration management
 │       ├── scan_reports.py       # Report generation
 │       └── ...                   # Other utilities
 │
 ├── config/                       # Configuration files
 │   ├── security.conf.example     # Security configuration template
-│   ├── update_config.json        # Update configuration
+│   ├── update_config.JSON        # Update configuration
 │   └── ...                       # Other config files
 │
 ├── docs/                         # Documentation
@@ -65,10 +66,9 @@ xanadOS-Search_Destroy/
 │   └── ...                       # Other scripts
 │
 ├── tests/                        # Test suite
-│   ├── __init__.py
+│   ├── **init**.py
 │   ├── conftest.py               # Test configuration
 │   ├── test_gui.py               # GUI tests
-│   ├── test_implementation.py    # Implementation tests
 │   └── test_monitoring.py        # Monitoring tests
 │
 ├── dev/                          # Development tools
@@ -81,10 +81,10 @@ xanadOS-Search_Destroy/
 │   ├── deprecated-theme-files/   # Old theme files
 │   └── experimental/             # Experimental code
 │
-├── .github/                      # GitHub configuration
+├── .GitHub/                      # GitHub configuration
 ├── .venv/                        # Virtual environment (local)
 ├── requirements.txt              # Python dependencies
-├── package.json                  # Node.js dependencies (if any)
+├── package.JSON                  # Node.js dependencies (if any)
 ├── mypy.ini                      # Type checking configuration
 ├── pytest.ini                   # Testing configuration
 ├── .gitignore                    # Git ignore patterns
@@ -93,17 +93,20 @@ xanadOS-Search_Destroy/
 ├── LICENSE                       # License information
 ├── VERSION                       # Version number
 └── run.sh                        # Quick start script
-```
+
+```text
 
 ## Architecture Principles
 
 ### 1. Modular Design
+
 - Each module has a single responsibility
 - Clear interfaces between modules
 - Minimal coupling between components
 
 ### 2. Layered Architecture
-```
+
+```text
 ┌─────────────────────────────┐
 │          GUI Layer          │  ← User Interface (PyQt6)
 ├─────────────────────────────┤
@@ -113,14 +116,17 @@ xanadOS-Search_Destroy/
 ├─────────────────────────────┤
 │        System Layer         │  ← OS Integration
 └─────────────────────────────┘
-```
+
+```text
 
 ### 3. Configuration Management
+
 - Centralized configuration system
 - Environment-specific settings
 - User preferences management
 
 ### 4. Error Handling
+
 - Comprehensive error handling
 - User-friendly error messages
 - Logging and debugging support
@@ -128,6 +134,7 @@ xanadOS-Search_Destroy/
 ## Key Components
 
 ### Core Engine (`app/core/`)
+
 - **file_scanner.py**: Main scanning engine
 - **clamav_wrapper.py**: ClamAV integration and management
 - **rkhunter_wrapper.py**: RKHunter rootkit detection
@@ -135,12 +142,14 @@ xanadOS-Search_Destroy/
 - **firewall_detector.py**: System firewall management
 
 ### User Interface (`app/gui/`)
+
 - **main_window.py**: Primary application interface
 - **theme_manager.py**: Dark/Light theme system
 - **settings_pages.py**: Configuration interface
 - **themed_widgets.py**: Custom UI components
 
 ### Utilities (`app/utils/`)
+
 - **config.py**: Configuration management
 - **scan_reports.py**: Report generation and storage
 - **scan_reports.py**: Threat analysis and reporting
@@ -171,14 +180,17 @@ xanadOS-Search_Destroy/
 ## Deployment Architecture
 
 ### Development Environment
+
 ```bash
-python -m venv .venv
+Python -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
-python app/main.py
-```
+Python app/main.py
+
+```text
 
 ### Production Distribution
+
 - Flatpak packaging for Linux distributions
 - Virtual environment isolation
 - Configuration validation

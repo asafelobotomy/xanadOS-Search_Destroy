@@ -2,6 +2,7 @@
 applyTo: "**/*.{py,js,ts,java,go,cs,rb,rs,php}"
 priority: 50
 category: "cross-cutting"
+
 ---
 
 # Compliance and Regulatory-specific Copilot Instructions

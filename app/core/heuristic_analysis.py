@@ -3,12 +3,12 @@
 Heuristic Analysis Engine for S&D
 Provides behavioral analysis, pattern detection, and machine learning-based threat detection.
 """
+
 import asyncio
 import hashlib
 import json
 import logging
 import math
-import os
 import re
 import sqlite3
 import struct
@@ -19,7 +19,7 @@ from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from enum import Enum
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional, Set, Tuple
+from typing import Any, Dict, List, Optional, Set
 
 
 class HeuristicType(Enum):
@@ -115,10 +115,8 @@ class HeuristicAnalysisEngine:
         self.suspicious_strings: Set[str] = set()
 
         # File tracking for behavioral analysis
-        self.file_activities: Dict[str,
-                                   List[Dict[str, Any]]] = defaultdict(list)
-        self.process_activities: Dict[int,
-                                      List[Dict[str, Any]]] = defaultdict(list)
+        self.file_activities: Dict[str, List[Dict[str, Any]]] = defaultdict(list)
+        self.process_activities: Dict[int, List[Dict[str, Any]]] = defaultdict(list)
 
         # Analysis cache
         self.analysis_cache: Dict[str, HeuristicResult] = {}
@@ -390,8 +388,7 @@ class HeuristicAnalysisEngine:
                             self._cache_result(file_hash, result)
 
             except asyncio.TimeoutError:
-                self.logger.warning(
-                    "Heuristic analysis timeout for %s", file_path)
+                self.logger.warning("Heuristic analysis timeout for %s", file_path)
 
             # Store results in database
             for result in results:
@@ -400,12 +397,10 @@ class HeuristicAnalysisEngine:
             return results
 
         except Exception as e:
-            self.logger.error(
-                "Error in heuristic analysis of %s: %s", file_path, e)
+            self.logger.error("Error in heuristic analysis of %s: %s", file_path, e)
             return []
 
-    async def _entropy_analysis(
-            self, file_path: str) -> Optional[HeuristicResult]:
+    async def _entropy_analysis(self, file_path: str) -> Optional[HeuristicResult]:
         """Analyze file entropy to detect packed/encrypted content."""
         try:
             file_path_obj = Path(file_path)
@@ -426,7 +421,7 @@ class HeuristicAnalysisEngine:
                 section_entropies = []
 
                 for i in range(0, len(data), section_size):
-                    section_data = data[i: i + section_size]
+                    section_data = data[i : i + section_size]
                     if section_data:
                         section_entropy = self._calculate_entropy(section_data)
                         section_entropies.append(section_entropy)
@@ -449,8 +444,7 @@ class HeuristicAnalysisEngine:
 
                 # Check for entropy variance (encrypted sections)
                 if section_entropies:
-                    entropy_variance = self._calculate_variance(
-                        section_entropies)
+                    entropy_variance = self._calculate_variance(section_entropies)
                     if entropy_variance > 1.0:  # High variance
                         threat_indicators.append(ThreatIndicator.ANTI_ANALYSIS)
                         if risk_level == RiskLevel.LOW:
@@ -480,8 +474,7 @@ class HeuristicAnalysisEngine:
             self.logger.error("Error in entropy analysis: %s", e)
             return None
 
-    async def _pattern_analysis(
-            self, file_path: str) -> Optional[HeuristicResult]:
+    async def _pattern_analysis(self, file_path: str) -> Optional[HeuristicResult]:
         """Analyze file for known malicious patterns."""
         try:
             file_path_obj = Path(file_path)
@@ -501,8 +494,7 @@ class HeuristicAnalysisEngine:
                     data_chunks.append(chunk)
 
                     # Limit total data for analysis
-                    if len(data_chunks) * chunk_size > 10 * \
-                            1024 * 1024:  # 10MB limit
+                    if len(data_chunks) * chunk_size > 10 * 1024 * 1024:  # 10MB limit
                         break
 
                 # Combine chunks for analysis
@@ -512,27 +504,22 @@ class HeuristicAnalysisEngine:
                 for sig_id, signature in self.file_signatures.items():
                     if self._check_signature_match(file_data, signature):
                         if signature.threat_type == "packed_executable":
-                            threat_indicators.append(
-                                ThreatIndicator.PACKED_EXECUTABLE)
+                            threat_indicators.append(ThreatIndicator.PACKED_EXECUTABLE)
                         elif signature.threat_type == "suspicious_overlay":
-                            threat_indicators.append(
-                                ThreatIndicator.ANTI_ANALYSIS)
+                            threat_indicators.append(ThreatIndicator.ANTI_ANALYSIS)
 
                         confidence_scores.append(signature.confidence)
                         details[f"signature_{sig_id}"] = signature.name
 
                 # Check for suspicious byte patterns
-                suspicious_patterns = self._detect_suspicious_patterns(
-                    file_data)
+                suspicious_patterns = self._detect_suspicious_patterns(file_data)
                 if suspicious_patterns:
-                    threat_indicators.append(
-                        ThreatIndicator.SUSPICIOUS_BEHAVIOR)
+                    threat_indicators.append(ThreatIndicator.SUSPICIOUS_BEHAVIOR)
                     confidence_scores.append(0.7)
                     details["suspicious_patterns"] = suspicious_patterns
 
                 if threat_indicators:
-                    avg_confidence = sum(confidence_scores) / \
-                        len(confidence_scores)
+                    avg_confidence = sum(confidence_scores) / len(confidence_scores)
                     risk_level = self._calculate_risk_level(
                         threat_indicators, avg_confidence
                     )
@@ -553,8 +540,7 @@ class HeuristicAnalysisEngine:
             self.logger.error("Error in pattern analysis: %s", e)
             return None
 
-    async def _structural_analysis(
-            self, file_path: str) -> Optional[HeuristicResult]:
+    async def _structural_analysis(self, file_path: str) -> Optional[HeuristicResult]:
         """Analyze file structure for anomalies."""
         try:
             file_path_obj = Path(file_path)
@@ -586,8 +572,7 @@ class HeuristicAnalysisEngine:
                     # Check for ELF anomalies
                     elf_anomalies = self._check_elf_anomalies(header)
                     if elf_anomalies:
-                        threat_indicators.append(
-                            ThreatIndicator.SUSPICIOUS_BEHAVIOR)
+                        threat_indicators.append(ThreatIndicator.SUSPICIOUS_BEHAVIOR)
                         details["elf_anomalies"] = elf_anomalies
                         confidence = 0.5
 
@@ -601,14 +586,12 @@ class HeuristicAnalysisEngine:
                     # Check for suspicious script content
                     script_threats = self._check_script_threats(header)
                     if script_threats:
-                        threat_indicators.append(
-                            ThreatIndicator.CODE_INJECTION)
+                        threat_indicators.append(ThreatIndicator.CODE_INJECTION)
                         details["script_threats"] = script_threats
                         confidence = 0.7
 
                 # Extension mismatch detection
-                if extension and not self._extension_matches_content(
-                        extension, header):
+                if extension and not self._extension_matches_content(extension, header):
                     threat_indicators.append(ThreatIndicator.ANTI_ANALYSIS)
                     details["extension_mismatch"] = True
                     confidence = max(confidence, 0.4)
@@ -634,8 +617,7 @@ class HeuristicAnalysisEngine:
             self.logger.error("Error in structural analysis: %s", e)
             return None
 
-    async def _metadata_analysis(
-            self, file_path: str) -> Optional[HeuristicResult]:
+    async def _metadata_analysis(self, file_path: str) -> Optional[HeuristicResult]:
         """Analyze file metadata for suspicious characteristics."""
         try:
             file_path_obj = Path(file_path)
@@ -668,8 +650,9 @@ class HeuristicAnalysisEngine:
             file_size = stat.st_size
 
             # Extremely small executables
-            if (file_path_obj.suffix.lower() in [
-                    ".exe", ".dll"] and file_size < 1024):  # Less than 1KB
+            if (
+                file_path_obj.suffix.lower() in [".exe", ".dll"] and file_size < 1024
+            ):  # Less than 1KB
                 threat_indicators.append(ThreatIndicator.SUSPICIOUS_BEHAVIOR)
                 details["tiny_executable"] = True
                 confidence = max(confidence, 0.5)
@@ -689,8 +672,7 @@ class HeuristicAnalysisEngine:
 
             for pattern in suspicious_name_patterns:
                 if re.match(pattern, filename):
-                    threat_indicators.append(
-                        ThreatIndicator.SUSPICIOUS_BEHAVIOR)
+                    threat_indicators.append(ThreatIndicator.SUSPICIOUS_BEHAVIOR)
                     details["suspicious_filename"] = pattern
                     confidence = max(confidence, 0.6)
                     break
@@ -705,8 +687,7 @@ class HeuristicAnalysisEngine:
                 confidence = max(confidence, 0.3)
 
             if threat_indicators:
-                risk_level = self._calculate_risk_level(
-                    threat_indicators, confidence)
+                risk_level = self._calculate_risk_level(threat_indicators, confidence)
 
                 return HeuristicResult(
                     file_path=file_path,
@@ -724,8 +705,7 @@ class HeuristicAnalysisEngine:
             self.logger.error("Error in metadata analysis: %s", e)
             return None
 
-    async def _string_analysis(
-            self, file_path: str) -> Optional[HeuristicResult]:
+    async def _string_analysis(self, file_path: str) -> Optional[HeuristicResult]:
         """Analyze strings in file for suspicious content."""
         try:
             threat_indicators = []
@@ -785,24 +765,20 @@ class HeuristicAnalysisEngine:
 
                     # Calculate threat indicators based on string categories
                     if api_calls > 5:
-                        threat_indicators.append(
-                            ThreatIndicator.SUSPICIOUS_BEHAVIOR)
+                        threat_indicators.append(ThreatIndicator.SUSPICIOUS_BEHAVIOR)
                         confidence = max(confidence, 0.4)
 
                     if network_strings > 3:
-                        threat_indicators.append(
-                            ThreatIndicator.NETWORK_COMMUNICATION)
+                        threat_indicators.append(ThreatIndicator.NETWORK_COMMUNICATION)
                         confidence = max(confidence, 0.5)
 
                     if crypto_strings > 2:
-                        threat_indicators.append(
-                            ThreatIndicator.FILE_ENCRYPTION)
+                        threat_indicators.append(ThreatIndicator.FILE_ENCRYPTION)
                         confidence = max(confidence, 0.6)
 
                     # High concentration of suspicious strings
                     if len(suspicious_strings_found) > 10:
-                        threat_indicators.append(
-                            ThreatIndicator.SUSPICIOUS_BEHAVIOR)
+                        threat_indicators.append(ThreatIndicator.SUSPICIOUS_BEHAVIOR)
                         confidence = max(confidence, 0.7)
 
                     details = {
@@ -827,7 +803,8 @@ class HeuristicAnalysisEngine:
                         risk_level=risk_level,
                         confidence_score=confidence,
                         description=f"Suspicious strings detected ({
-                            len(suspicious_strings_found)} found)",
+                            len(suspicious_strings_found)
+                        } found)",
                         details=details,
                     )
 
@@ -858,8 +835,7 @@ class HeuristicAnalysisEngine:
                     )
 
                     if match_score > 0.5:  # Threshold for pattern match
-                        threat_indicators = self._pattern_to_threat_indicators(
-                            pattern)
+                        threat_indicators = self._pattern_to_threat_indicators(pattern)
                         confidence = match_score * pattern.weight
 
                         result = HeuristicResult(
@@ -868,8 +844,7 @@ class HeuristicAnalysisEngine:
                             threat_indicators=threat_indicators,
                             risk_level=pattern.risk_level,
                             confidence_score=confidence,
-                            description=f"Behavioral pattern detected: {
-                                pattern.name}",
+                            description=f"Behavioral pattern detected: {pattern.name}",
                             details={
                                 "pattern_id": pattern_id,
                                 "match_score": match_score,
@@ -912,17 +887,14 @@ class HeuristicAnalysisEngine:
         variance = sum((x - mean) ** 2 for x in values) / len(values)
         return variance
 
-    def _check_signature_match(
-            self,
-            data: bytes,
-            signature: FileSignature) -> bool:
+    def _check_signature_match(self, data: bytes, signature: FileSignature) -> bool:
         """Check if data matches a file signature."""
         try:
             if signature.offset == -1:  # Variable offset
                 return signature.pattern in data
             elif signature.offset + len(signature.pattern) <= len(data):
                 return (
-                    data[signature.offset: signature.offset + len(signature.pattern)]
+                    data[signature.offset : signature.offset + len(signature.pattern)]
                     == signature.pattern
                 )
             return False
@@ -975,7 +947,7 @@ class HeuristicAnalysisEngine:
                 if len(full_header) > pe_offset + 24:
                     # Check number of sections
                     num_sections = struct.unpack(
-                        "<H", full_header[pe_offset + 6: pe_offset + 8]
+                        "<H", full_header[pe_offset + 6 : pe_offset + 8]
                     )[0]
 
                     if num_sections > 20:  # Unusual number of sections
@@ -1039,10 +1011,7 @@ class HeuristicAnalysisEngine:
 
         return threats
 
-    def _extension_matches_content(
-            self,
-            extension: str,
-            header: bytes) -> bool:
+    def _extension_matches_content(self, extension: str, header: bytes) -> bool:
         """Check if file extension matches content type."""
         extension = extension.lower()
 
@@ -1063,8 +1032,7 @@ class HeuristicAnalysisEngine:
 
         if extension in type_mappings:
             expected_headers = type_mappings[extension]
-            return any(header.startswith(expected)
-                       for expected in expected_headers)
+            return any(header.startswith(expected) for expected in expected_headers)
 
         return True  # Unknown extension, assume valid
 
@@ -1092,7 +1060,7 @@ class HeuristicAnalysisEngine:
     ) -> Dict[datetime, List[Dict[str, Any]]]:
         """Group activities into time windows."""
         windows = defaultdict(list)
-        window_size = timedelta(minutes=window_minutes)
+        timedelta(minutes=window_minutes)
 
         for activity in activities:
             timestamp = activity.get("timestamp", datetime.now())
@@ -1194,8 +1162,9 @@ class HeuristicAnalysisEngine:
         }
 
         # Calculate total risk score
-        total_risk = sum(indicator_risks.get(indicator, 1)
-                         for indicator in threat_indicators)
+        total_risk = sum(
+            indicator_risks.get(indicator, 1) for indicator in threat_indicators
+        )
 
         # Adjust by confidence
         adjusted_risk = total_risk * confidence
@@ -1250,9 +1219,8 @@ class HeuristicAnalysisEngine:
             if len(self.analysis_cache) > 1000:
                 # Remove oldest entries
                 oldest_hashes = sorted(
-                    self.cache_expiry.keys(),
-                    key=lambda h: self.cache_expiry[h])[
-                    :100]
+                    self.cache_expiry.keys(), key=lambda h: self.cache_expiry[h]
+                )[:100]
 
                 for hash_to_remove in oldest_hashes:
                     self.analysis_cache.pop(hash_to_remove, None)

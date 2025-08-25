@@ -4,11 +4,13 @@ description: 'Comprehensive RESTful API design assistant that follows industry b
 mode: 'agent'
 tools: ['codebase', 'editFiles', 'fetch', 'githubRepo', 'new', 'openSimpleBrowser', 'problems', 'runCommands', 'search', 'searchResults', 'usages', 'vscodeAPI']
 model: 'GPT-4'
+
 ---
 
 # API Design Expert
 
-You are designing a RESTful API that follows industry best practices for scalability, security, and developer experience. Create comprehensive API specifications with clear contracts, proper error handling, and documentation.
+You are designing a RESTful API that follows industry best practices for scalability, security, and developer experience.
+Create comprehensive API specifications with clear contracts, proper error handling, and documentation.
 
 ## API Design Methodology
 
@@ -23,57 +25,65 @@ You are designing a RESTful API that follows industry best practices for scalabi
 
 #### RESTful URL Design
 
-```yaml
-# Example: E-commerce API resource structure
+```YAML
+
+## Example: E-commerce API resource structure
 
 resources:
   users:
-    path: /api/v1/users
+    path: /API/v1/users
     operations:
-      - GET /api/v1/users                    # List users
-      - POST /api/v1/users                   # Create user
-      - GET /api/v1/users/{userId}           # Get user
-      - PUT /api/v1/users/{userId}           # Update user
-      - DELETE /api/v1/users/{userId}        # Delete user
 
-    nested_resources:
-      orders:
-        path: /api/v1/users/{userId}/orders
-        operations:
-          - GET /api/v1/users/{userId}/orders                # List user orders
-          - POST /api/v1/users/{userId}/orders               # Create order for user
-          - GET /api/v1/users/{userId}/orders/{orderId}      # Get specific order
-          - PUT /api/v1/users/{userId}/orders/{orderId}      # Update order
-          - DELETE /api/v1/users/{userId}/orders/{orderId}   # Cancel order
+- GET /API/v1/users                    # List users
+- POST /API/v1/users                   # Create user
+- GET /API/v1/users/{userId}           # Get user
+- PUT /API/v1/users/{userId}           # Update user
+- DELETE /API/v1/users/{userId}        # Delete user
+
+  nested_resources:
+  orders:
+  path: /API/v1/users/{userId}/orders
+  operations:
+
+- GET /API/v1/users/{userId}/orders                # List user orders
+- POST /API/v1/users/{userId}/orders               # Create order for user
+- GET /API/v1/users/{userId}/orders/{orderId}      # Get specific order
+- PUT /API/v1/users/{userId}/orders/{orderId}      # Update order
+- DELETE /API/v1/users/{userId}/orders/{orderId}   # Cancel order
 
   products:
-    path: /api/v1/products
-    operations:
-      - GET /api/v1/products                 # List products
-      - POST /api/v1/products                # Create product
-      - GET /api/v1/products/{productId}     # Get product
-      - PUT /api/v1/products/{productId}     # Update product
-      - DELETE /api/v1/products/{productId}  # Delete product
+  path: /API/v1/products
+  operations:
 
-    search:
-      path: /api/v1/products/search
-      operations:
-        - GET /api/v1/products/search?q={query}&category={category}&price_min={min}&price_max={max}
+- GET /API/v1/products                 # List products
+- POST /API/v1/products                # Create product
+- GET /API/v1/products/{productId}     # Get product
+- PUT /API/v1/products/{productId}     # Update product
+- DELETE /API/v1/products/{productId}  # Delete product
+
+  search:
+  path: /API/v1/products/search
+  operations:
+
+- GET /API/v1/products/search?q={query}&category={category}&price_min={min}&price_max={max}
 
   orders:
-    path: /api/v1/orders
-    operations:
-      - GET /api/v1/orders                   # List all orders (admin)
-      - GET /api/v1/orders/{orderId}         # Get order details
-      - PUT /api/v1/orders/{orderId}/status  # Update order status
-```markdown
+  path: /API/v1/orders
+  operations:
+
+- GET /API/v1/orders                   # List all orders (admin)
+- GET /API/v1/orders/{orderId}         # Get order details
+- PUT /API/v1/orders/{orderId}/status  # Update order status
+
+```Markdown
 
 ### 2. HTTP Methods and Status Codes
 
 #### Method Usage Guidelines
 
-```python
-# HTTP Method selection guide
+```Python
+
+## HTTP Method selection guide
 
 http_methods = {
     'GET': {
@@ -82,8 +92,8 @@ http_methods = {
         'safe': True,
         'request_body': False,
         'examples': [
-            'GET /api/v1/users/123',
-            'GET /api/v1/users?page=1&limit=20'
+            'GET /API/v1/users/123',
+            'GET /API/v1/users?page=1&limit=20'
         ]
     },
     'POST': {
@@ -92,8 +102,8 @@ http_methods = {
         'safe': False,
         'request_body': True,
         'examples': [
-            'POST /api/v1/users',
-            'POST /api/v1/orders/123/payments'
+            'POST /API/v1/users',
+            'POST /API/v1/orders/123/payments'
         ]
     },
     'PUT': {
@@ -102,8 +112,8 @@ http_methods = {
         'safe': False,
         'request_body': True,
         'examples': [
-            'PUT /api/v1/users/123',
-            'PUT /api/v1/products/456'
+            'PUT /API/v1/users/123',
+            'PUT /API/v1/products/456'
         ]
     },
     'PATCH': {
@@ -112,8 +122,8 @@ http_methods = {
         'safe': False,
         'request_body': True,
         'examples': [
-            'PATCH /api/v1/users/123',
-            'PATCH /api/v1/orders/456/status'
+            'PATCH /API/v1/users/123',
+            'PATCH /API/v1/orders/456/status'
         ]
     },
     'DELETE': {
@@ -122,13 +132,13 @@ http_methods = {
         'safe': False,
         'request_body': False,
         'examples': [
-            'DELETE /api/v1/users/123',
-            'DELETE /api/v1/orders/456'
+            'DELETE /API/v1/users/123',
+            'DELETE /API/v1/orders/456'
         ]
     }
 }
 
-# Status code selection guide
+## Status code selection guide
 
 status_codes = {
     'success': {
@@ -154,14 +164,15 @@ status_codes = {
         504: 'Gateway Timeout - Upstream server timeout'
     }
 }
-```markdown
+
+```Markdown
 
 ### 3. Request/Response Format Design
 
 #### Request Structure
 
-```json
-// POST /api/v1/users - Create user request
+```JSON
+// POST /API/v1/users - Create user request
 {
   "data": {
     "type": "user",
@@ -185,7 +196,7 @@ status_codes = {
   }
 }
 
-// PATCH /api/v1/products/123 - Partial update request
+// PATCH /API/v1/products/123 - Partial update request
 {
   "data": {
     "type": "product",
@@ -197,14 +208,15 @@ status_codes = {
   }
 }
 
-// GET /api/v1/orders?status=pending&page=2&limit=20 - Query parameters
+// GET /API/v1/orders?status=pending&page=2&limit=20 - Query parameters
 // Query parameters for filtering, pagination, sorting, and field selection
-```markdown
+
+```Markdown
 
 #### Response Structure
 
-```json
-// GET /api/v1/users/123 - Single resource response
+```JSON
+// GET /API/v1/users/123 - Single resource response
 {
   "data": {
     "type": "user",
@@ -220,8 +232,8 @@ status_codes = {
     "relationships": {
       "orders": {
         "links": {
-          "self": "/api/v1/users/123/relationships/orders",
-          "related": "/api/v1/users/123/orders"
+          "self": "/API/v1/users/123/relationships/orders",
+          "related": "/API/v1/users/123/orders"
         },
         "meta": {
           "count": 5
@@ -229,7 +241,7 @@ status_codes = {
       }
     },
     "links": {
-      "self": "/api/v1/users/123"
+      "self": "/API/v1/users/123"
     }
   },
   "meta": {
@@ -238,7 +250,7 @@ status_codes = {
   }
 }
 
-// GET /api/v1/users - Collection response
+// GET /API/v1/users - Collection response
 {
   "data": [
     {
@@ -250,7 +262,7 @@ status_codes = {
         "lastName": "Doe"
       },
       "links": {
-        "self": "/api/v1/users/123"
+        "self": "/API/v1/users/123"
       }
     }
     // ... more users
@@ -265,11 +277,11 @@ status_codes = {
     "responseTime": 120
   },
   "links": {
-    "self": "/api/v1/users?page=1&limit=20",
-    "first": "/api/v1/users?page=1&limit=20",
+    "self": "/API/v1/users?page=1&limit=20",
+    "first": "/API/v1/users?page=1&limit=20",
     "prev": null,
-    "next": "/api/v1/users?page=2&limit=20",
-    "last": "/api/v1/users?page=8&limit=20"
+    "next": "/API/v1/users?page=2&limit=20",
+    "last": "/API/v1/users?page=8&limit=20"
   }
 }
 
@@ -296,14 +308,16 @@ status_codes = {
     "responseTime": 15
   }
 }
-```markdown
+
+```Markdown
 
 ### 4. Authentication and Authorization
 
 #### Authentication Schemes
 
-```python
-# JWT-based authentication implementation
+```Python
+
+## JWT-based authentication implementation
 
 from datetime import datetime, timedelta
 import jwt
@@ -312,7 +326,7 @@ from functools import wraps
 class APIAuthentication:
     """Handle API authentication and authorization"""
 
-    def __init__(self, secret_key, algorithm='HS256'):
+    def **init**(self, secret_key, algorithm='HS256'):
         self.secret_key = secret_key
         self.algorithm = algorithm
 
@@ -347,7 +361,7 @@ class APIAuthentication:
         except jwt.InvalidTokenError:
             raise AuthenticationError("Invalid token")
 
-# Authorization decorators
+## Authorization decorators
 
 def require_auth(permissions=None):
     """Decorator to require authentication and optional permissions"""
@@ -360,13 +374,14 @@ def require_auth(permissions=None):
             if permissions and not user.has_permissions(permissions):
                 raise ForbiddenError("Insufficient permissions")
 
-            # Add user to request context
+## Add user to request context
+
             request.current_user = user
             return func(*args, **kwargs)
         return wrapper
     return decorator
 
-# Usage examples
+## Usage examples
 
 @require_auth(permissions=['user:read'])
 def get_user(user_id):
@@ -382,17 +397,19 @@ def update_user(user_id):
 def get_all_users():
     """Get all users - requires admin:read permission"""
     pass
-```markdown
 
-#### API Key Authentication
+```Markdown
 
-```python
-# API Key-based authentication for service-to-service communication
+### API Key Authentication
+
+```Python
+
+## API Key-based authentication for service-to-service communication
 
 class APIKeyAuthentication:
     """Handle API key authentication for external services"""
 
-    def __init__(self, api_key_service):
+    def **init**(self, api_key_service):
         self.api_key_service = api_key_service
 
     def generate_api_key(self, service_name, permissions, expires_at=None):
@@ -428,26 +445,28 @@ class APIKeyAuthentication:
         import secrets
         return f"ak_{secrets.token_urlsafe(32)}"
 
-# Rate limiting per API key
+## Rate limiting per API key
 
 @require_api_key
 @rate_limit(requests_per_minute=100)
 def api_endpoint():
     """API endpoint with rate limiting per API key"""
     pass
-```markdown
+
+```Markdown
 
 ### 5. Pagination and Filtering
 
 #### Pagination Implementation
 
-```python
-# Cursor-based pagination for large datasets
+```Python
+
+## Cursor-based pagination for large datasets
 
 class CursorPagination:
     """Implement cursor-based pagination for APIs"""
 
-    def __init__(self, page_size=20, max_page_size=100):
+    def **init**(self, page_size=20, max_page_size=100):
         self.page_size = page_size
         self.max_page_size = max_page_size
 
@@ -456,12 +475,15 @@ class CursorPagination:
         page_size = min(page_size or self.page_size, self.max_page_size)
 
         if cursor:
-            # Decode cursor to get last item's sort key
+
+## Decode cursor to get last item's sort key
+
             last_id = self._decode_cursor(cursor)
             queryset = queryset.filter(id__gt=last_id)
 
-        # Get one extra item to determine if there's a next page
-        items = list(queryset.order_by('id')[:page_size + 1])
+## Get one extra item to determine if there's a next page
+
+        items = list[:page_size + 1](queryset.order_by('id'))
 
         has_next = len(items) > page_size
         if has_next:
@@ -490,16 +512,16 @@ class CursorPagination:
         import base64
         try:
             decoded = base64.b64decode(cursor).decode()
-            return int(decoded.split('cursor:')[1])
+            return int[1](decoded.split('cursor:'))
         except (ValueError, IndexError):
             raise ValidationError("Invalid cursor format")
 
-# Offset-based pagination for smaller datasets
+## Offset-based pagination for smaller datasets
 
 class OffsetPagination:
     """Implement offset-based pagination for APIs"""
 
-    def __init__(self, page_size=20, max_page_size=100):
+    def **init**(self, page_size=20, max_page_size=100):
         self.page_size = page_size
         self.max_page_size = max_page_size
 
@@ -524,17 +546,19 @@ class OffsetPagination:
                 'has_prev': page > 1
             }
         }
-```markdown
 
-#### Advanced Filtering
+```Markdown
 
-```python
-# Query parameter filtering system
+### Advanced Filtering
+
+```Python
+
+## Query parameter filtering system
 
 class APIFilterSet:
     """Handle complex filtering for API endpoints"""
 
-    def __init__(self, model_class):
+    def **init**(self, model_class):
         self.model_class = model_class
         self.filters = {}
 
@@ -553,7 +577,8 @@ class APIFilterSet:
                 field_name = filter_config['field']
                 filter_type = filter_config['type']
 
-                # Build filter expression
+## Build filter expression
+
                 if filter_type == 'exact':
                     filter_expr = {field_name: param_value}
                 elif filter_type == 'icontains':
@@ -576,13 +601,13 @@ class APIFilterSet:
 
         return queryset
 
-# Example usage
+## Example usage
 
 class ProductFilterSet(APIFilterSet):
     """Filter set for product API endpoint"""
 
-    def __init__(self):
-        super().__init__(Product)
+    def **init**(self):
+        super().**init**(Product)
         self.add_filter('name', 'name', 'icontains')
         self.add_filter('category', 'category_id', 'exact')
         self.add_filter('price_min', 'price', 'gte')
@@ -591,25 +616,28 @@ class ProductFilterSet(APIFilterSet):
         self.add_filter('tags', 'tags__name', 'in')
         self.add_filter('created_after', 'created_at', 'gte')
 
-# API endpoint with filtering
+## API endpoint with filtering
 
-@app.route('/api/v1/products')
+@app.route('/API/v1/products')
 def get_products():
     """Get products with filtering, sorting, and pagination"""
     filter_set = ProductFilterSet()
     queryset = Product.objects.all()
 
-    # Apply filters
+## Apply filters
+
     queryset = filter_set.apply_filters(queryset, request.args)
 
-    # Apply sorting
+## Apply sorting
+
     sort_by = request.args.get('sort', 'name')
     order = request.args.get('order', 'asc')
     if order == 'desc':
         sort_by = f'-{sort_by}'
     queryset = queryset.order_by(sort_by)
 
-    # Apply pagination
+## Apply pagination
+
     paginator = OffsetPagination()
     page = int(request.args.get('page', 1))
     page_size = int(request.args.get('page_size', 20))
@@ -619,33 +647,35 @@ def get_products():
     return jsonify({
         'data': [serialize_product(product) for product in result['items']],
         'meta': result['pagination'],
-        'links': build_pagination_links(request.url, result['pagination'])
+        'links': build_pagination_links(request.URL, result['pagination'])
     })
-```markdown
+
+```Markdown
 
 ### 6. Error Handling and Validation
 
 #### Comprehensive Error Response System
 
-```python
-# Error handling framework
+```Python
+
+## Error handling framework
 
 class APIError(Exception):
     """Base API error class"""
 
-    def __init__(self, message, status_code=500, error_code=None, details=None):
+    def **init**(self, message, status_code=500, error_code=None, details=None):
         self.message = message
         self.status_code = status_code
         self.error_code = error_code or 'INTERNAL_ERROR'
         self.details = details or {}
-        super().__init__(message)
+        super().**init**(message)
 
 class ValidationError(APIError):
     """Validation error with field-specific details"""
 
-    def __init__(self, message="Validation failed", field_errors=None):
+    def **init**(self, message="Validation failed", field_errors=None):
         self.field_errors = field_errors or {}
-        super().__init__(
+        super().**init**(
             message=message,
             status_code=422,
             error_code='VALIDATION_ERROR',
@@ -655,9 +685,9 @@ class ValidationError(APIError):
 class NotFoundError(APIError):
     """Resource not found error"""
 
-    def __init__(self, resource_type, resource_id):
+    def **init**(self, resource_type, resource_id):
         message = f"{resource_type} with ID '{resource_id}' not found"
-        super().__init__(
+        super().**init**(
             message=message,
             status_code=404,
             error_code='RESOURCE_NOT_FOUND',
@@ -667,9 +697,9 @@ class NotFoundError(APIError):
 class RateLimitError(APIError):
     """Rate limit exceeded error"""
 
-    def __init__(self, limit, window_seconds, retry_after):
+    def **init**(self, limit, window_seconds, retry_after):
         message = f"Rate limit exceeded: {limit} requests per {window_seconds} seconds"
-        super().__init__(
+        super().**init**(
             message=message,
             status_code=429,
             error_code='RATE_LIMIT_EXCEEDED',
@@ -680,7 +710,7 @@ class RateLimitError(APIError):
             }
         )
 
-# Global error handler
+## Global error handler
 
 @app.errorhandler(APIError)
 def handle_api_error(error):
@@ -699,30 +729,35 @@ def handle_api_error(error):
         }]
     }
 
-    # Add field-specific errors for validation errors
+## Add field-specific errors for validation errors
+
     if isinstance(error, ValidationError):
         response_data['errors'][0]['source'] = {
             'field_errors': error.field_errors
         }
 
-    # Add details if available
+## Add details if available
+
     if error.details:
         response_data['errors'][0]['meta'].update(error.details)
 
     response = jsonify(response_data)
     response.status_code = error.status_code
 
-    # Add rate limiting headers
+## Add rate limiting headers
+
     if isinstance(error, RateLimitError):
         response.headers['Retry-After'] = str(error.details['retry_after'])
 
     return response
-```markdown
 
-#### Input Validation Framework
+```Markdown
 
-```python
-# Schema-based validation
+### Input Validation Framework
+
+```Python
+
+## Schema-based validation
 
 from marshmallow import Schema, fields, validate, ValidationError as MarshmallowValidationError
 
@@ -756,7 +791,7 @@ class UserUpdateSchema(Schema):
     phone = fields.Str(allow_none=True, validate=validate.Regexp(r'^\+?1?\d{9,15}$'))
     preferences = fields.Dict()
 
-# Validation decorator
+## Validation decorator
 
 def validate_json(schema_class):
     """Decorator to validate JSON request body against schema"""
@@ -773,25 +808,27 @@ def validate_json(schema_class):
         return wrapper
     return decorator
 
-# Usage in API endpoints
+## Usage in API endpoints
 
-@app.route('/api/v1/users', methods=['POST'])
+@app.route('/API/v1/users', methods=['POST'])
 @validate_json(UserCreateSchema)
 def create_user():
     """Create new user with validation"""
     user_data = request.validated_data
 
-    # Check if email already exists
+## Check if email already exists
+
     if User.objects.filter(email=user_data['email']).exists():
         raise ValidationError(
             field_errors={'email': ['Email address already in use']}
         )
 
-    # Create user
+## Create user
+
     user = User.objects.create(**user_data)
     return jsonify(serialize_user(user)), 201
 
-@app.route('/api/v1/users/<int:user_id>', methods=['PATCH'])
+@app.route('/API/v1/users/<int:user_id>', methods=['PATCH'])
 @validate_json(UserUpdateSchema)
 def update_user(user_id):
     """Update user with partial validation"""
@@ -802,20 +839,23 @@ def update_user(user_id):
     except User.DoesNotExist:
         raise NotFoundError('User', user_id)
 
-    # Update user fields
+## Update user fields
+
     for field, value in user_data.items():
         setattr(user, field, value)
 
     user.save()
     return jsonify(serialize_user(user))
-```markdown
+
+```Markdown
 
 ### 7. API Documentation
 
 #### OpenAPI/Swagger Specification
 
-```yaml
-# openapi.yaml - Comprehensive API specification
+```YAML
+
+## openapi.YAML - Comprehensive API specification
 
 openapi: 3.0.3
 info:
@@ -824,33 +864,42 @@ info:
     Comprehensive e-commerce API providing user management, product catalog,
     order processing, and payment integration capabilities.
 
-    ## Authentication
+## Authentication
+
     This API uses JWT tokens for authentication. Include the token in the
     Authorization header: `Authorization: Bearer <token>`
 
-    ## Rate Limiting
-    - Authenticated requests: 1000 requests per hour
-    - Unauthenticated requests: 100 requests per hour
+## Rate Limiting
 
-    ## Pagination
-    Collections use cursor-based pagination for performance. Use the `cursor`
-    parameter to navigate through results.
+- Authenticated requests: 1000 requests per hour
+- Unauthenticated requests: 100 requests per hour
+
+## Pagination
+
+  Collections use cursor-based pagination for performance. Use the `cursor`
+  parameter to navigate through results.
   version: 1.0.0
   contact:
-    name: API Support
-    email: api-support@example.com
-    url: https://example.com/api-support
+  name: API Support
+  email: API-support@example.com
+  URL: <HTTPS://example.com/API-support>
   license:
-    name: MIT
-    url: https://opensource.org/licenses/MIT
+  name: MIT
+  URL: <HTTPS://opensource.org/licenses/MIT>
 
 servers:
-  - url: https://api.example.com/v1
-    description: Production server
-  - url: https://staging-api.example.com/v1
-    description: Staging server
-  - url: http://localhost:8000/v1
-    description: Local development server
+
+- URL: <HTTPS://API.example.com/v1>
+
+  description: Production server
+
+- URL: <HTTPS://staging-API.example.com/v1>
+
+  description: Staging server
+
+- URL: <HTTP://localhost:8000/v1>
+
+  description: Local development server
 
 paths:
   /users:
@@ -858,371 +907,396 @@ paths:
       summary: List users
       description: Retrieve a paginated list of users with optional filtering
       parameters:
-        - name: cursor
-          in: query
-          description: Pagination cursor for next page
-          schema:
-            type: string
-        - name: page_size
-          in: query
-          description: Number of items per page (max 100)
-          schema:
-            type: integer
-            minimum: 1
-            maximum: 100
-            default: 20
-        - name: email
-          in: query
-          description: Filter by email address (partial match)
-          schema:
-            type: string
-        - name: created_after
-          in: query
-          description: Filter users created after date
-          schema:
-            type: string
-            format: date
-      responses:
-        200:
-          description: Successful response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/UserListResponse'
-        401:
-          $ref: '#/components/responses/UnauthorizedError'
-        429:
-          $ref: '#/components/responses/RateLimitError'
-      security:
-        - bearerAuth: ['user:read']
 
-    post:
-      summary: Create user
-      description: Create a new user account
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/UserCreateRequest'
-      responses:
-        201:
-          description: User created successfully
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/UserResponse'
-        400:
-          $ref: '#/components/responses/ValidationError'
-        409:
-          description: Email already exists
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-      security:
-        - bearerAuth: ['user:write']
+- name: cursor
+
+  in: query
+  description: Pagination cursor for next page
+  schema:
+  type: string
+
+- name: page_size
+
+  in: query
+  description: Number of items per page (max 100)
+  schema:
+  type: integer
+  minimum: 1
+  maximum: 100
+  default: 20
+
+- name: email
+
+  in: query
+  description: Filter by email address (partial match)
+  schema:
+  type: string
+
+- name: created_after
+
+  in: query
+  description: Filter users created after date
+  schema:
+  type: string
+  format: date
+  responses:
+  200:
+  description: Successful response
+  content:
+  application/JSON:
+  schema:
+  $ref: '#/components/schemas/UserListResponse'
+  401:
+  $ref: '#/components/responses/UnauthorizedError'
+  429:
+  $ref: '#/components/responses/RateLimitError'
+  security:
+
+- bearerAuth: ['user:read']
+
+  post:
+  summary: Create user
+  description: Create a new user account
+  requestBody:
+  required: true
+  content:
+  application/JSON:
+  schema:
+  $ref: '#/components/schemas/UserCreateRequest'
+  responses:
+  201:
+  description: User created successfully
+  content:
+  application/JSON:
+  schema:
+  $ref: '#/components/schemas/UserResponse'
+  400:
+  $ref: '#/components/responses/ValidationError'
+  409:
+  description: Email already exists
+  content:
+  application/JSON:
+  schema:
+  $ref: '#/components/schemas/ErrorResponse'
+  security:
+
+- bearerAuth: ['user:write']
 
   /users/{userId}:
-    parameters:
-      - name: userId
-        in: path
-        required: true
-        description: Unique identifier for the user
-        schema:
-          type: integer
-          format: int64
+  parameters:
 
-    get:
-      summary: Get user by ID
-      description: Retrieve detailed information about a specific user
-      responses:
-        200:
-          description: User found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/UserResponse'
-        404:
-          $ref: '#/components/responses/NotFoundError'
-      security:
-        - bearerAuth: ['user:read']
+- name: userId
 
-    patch:
-      summary: Update user
-      description: Partially update user information
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/UserUpdateRequest'
-      responses:
-        200:
-          description: User updated successfully
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/UserResponse'
-        404:
-          $ref: '#/components/responses/NotFoundError'
-        422:
-          $ref: '#/components/responses/ValidationError'
-      security:
-        - bearerAuth: ['user:write']
+  in: path
+  required: true
+  description: Unique identifier for the user
+  schema:
+  type: integer
+  format: int64
+
+  get:
+  summary: Get user by ID
+  description: Retrieve detailed information about a specific user
+  responses:
+  200:
+  description: User found
+  content:
+  application/JSON:
+  schema:
+  $ref: '#/components/schemas/UserResponse'
+  404:
+  $ref: '#/components/responses/NotFoundError'
+  security:
+
+- bearerAuth: ['user:read']
+
+  patch:
+  summary: Update user
+  description: Partially update user information
+  requestBody:
+  required: true
+  content:
+  application/JSON:
+  schema:
+  $ref: '#/components/schemas/UserUpdateRequest'
+  responses:
+  200:
+  description: User updated successfully
+  content:
+  application/JSON:
+  schema:
+  $ref: '#/components/schemas/UserResponse'
+  404:
+  $ref: '#/components/responses/NotFoundError'
+  422:
+  $ref: '#/components/responses/ValidationError'
+  security:
+
+- bearerAuth: ['user:write']
 
 components:
   schemas:
     User:
       type: object
       required:
-        - id
-        - email
-        - firstName
-        - lastName
-        - createdAt
-      properties:
-        id:
-          type: integer
-          format: int64
-          example: 123
-        email:
-          type: string
-          format: email
-          example: john.doe@example.com
-        firstName:
-          type: string
-          minLength: 1
-          maxLength: 100
-          example: John
-        lastName:
-          type: string
-          minLength: 1
-          maxLength: 100
-          example: Doe
-        dateOfBirth:
-          type: string
-          format: date
-          example: '1990-05-15'
-        phone:
-          type: string
-          pattern: '^\+?1?\d{9,15}$'
-          example: '+1234567890'
-        createdAt:
-          type: string
-          format: date-time
-          example: '2024-01-15T10:30:00Z'
-        updatedAt:
-          type: string
-          format: date-time
-          example: '2024-01-20T14:45:00Z'
 
-    UserCreateRequest:
-      type: object
-      required:
-        - email
-        - firstName
-        - lastName
-        - password
-        - dateOfBirth
-      properties:
-        email:
-          type: string
-          format: email
-          maxLength: 255
-        firstName:
-          type: string
-          minLength: 1
-          maxLength: 100
-        lastName:
-          type: string
-          minLength: 1
-          maxLength: 100
-        password:
-          type: string
-          minLength: 8
-          maxLength: 128
-          description: |
-            Password must contain:
-            - At least 8 characters
-            - One uppercase letter
-            - One lowercase letter
-            - One digit
-            - One special character
-        dateOfBirth:
-          type: string
-          format: date
-        phone:
-          type: string
-          pattern: '^\+?1?\d{9,15}$'
+- id
+- email
+- firstName
+- lastName
+- createdAt
 
-    UserUpdateRequest:
-      type: object
-      properties:
-        firstName:
-          type: string
-          minLength: 1
-          maxLength: 100
-        lastName:
-          type: string
-          minLength: 1
-          maxLength: 100
-        phone:
-          type: string
-          pattern: '^\+?1?\d{9,15}$'
-        preferences:
-          type: object
-          description: User preferences object
+  properties:
+  id:
+  type: integer
+  format: int64
+  example: 123
+  email:
+  type: string
+  format: email
+  example: john.doe@example.com
+  firstName:
+  type: string
+  minLength: 1
+  maxLength: 100
+  example: John
+  lastName:
+  type: string
+  minLength: 1
+  maxLength: 100
+  example: Doe
+  dateOfBirth:
+  type: string
+  format: date
+  example: '1990-05-15'
+  phone:
+  type: string
+  pattern: '^\+?1?\d{9,15}$'
+  example: '+1234567890'
+  createdAt:
+  type: string
+  format: date-time
+  example: '2024-01-15T10:30:00Z'
+  updatedAt:
+  type: string
+  format: date-time
+  example: '2024-01-20T14:45:00Z'
 
-    UserResponse:
-      type: object
-      properties:
-        data:
-          $ref: '#/components/schemas/User'
-        meta:
-          type: object
-          properties:
-            responseTime:
-              type: integer
-              description: Response time in milliseconds
+  UserCreateRequest:
+  type: object
+  required:
 
-    UserListResponse:
-      type: object
-      properties:
-        data:
-          type: array
-          items:
-            $ref: '#/components/schemas/User'
-        meta:
-          type: object
-          properties:
-            pagination:
-              $ref: '#/components/schemas/CursorPagination'
-            responseTime:
-              type: integer
-        links:
-          $ref: '#/components/schemas/PaginationLinks'
+- email
+- firstName
+- lastName
+- password
+- dateOfBirth
 
-    CursorPagination:
-      type: object
-      properties:
-        pageSize:
-          type: integer
-        hasNext:
-          type: boolean
-        nextCursor:
-          type: string
-          nullable: true
+  properties:
+  email:
+  type: string
+  format: email
+  maxLength: 255
+  firstName:
+  type: string
+  minLength: 1
+  maxLength: 100
+  lastName:
+  type: string
+  minLength: 1
+  maxLength: 100
+  password:
+  type: string
+  minLength: 8
+  maxLength: 128
+  description: |
+  Password must contain:
 
-    PaginationLinks:
-      type: object
-      properties:
-        self:
-          type: string
-          format: uri
-        next:
-          type: string
-          format: uri
-          nullable: true
+- At least 8 characters
+- One uppercase letter
+- One lowercase letter
+- One digit
+- One special character
 
-    ErrorResponse:
-      type: object
-      properties:
-        errors:
-          type: array
-          items:
-            $ref: '#/components/schemas/Error'
-        meta:
-          type: object
-          properties:
-            requestId:
-              type: string
-            responseTime:
-              type: integer
+  dateOfBirth:
+  type: string
+  format: date
+  phone:
+  type: string
+  pattern: '^\+?1?\d{9,15}$'
 
-    Error:
-      type: object
-      required:
-        - id
-        - status
-        - code
-        - title
-      properties:
-        id:
-          type: string
-          description: Unique error identifier
-        status:
-          type: string
-          description: HTTP status code
-        code:
-          type: string
-          description: Application-specific error code
-        title:
-          type: string
-          description: Short error summary
-        detail:
-          type: string
-          description: Detailed error description
-        source:
-          type: object
-          description: Error source information
-        meta:
-          type: object
-          description: Additional error metadata
+  UserUpdateRequest:
+  type: object
+  properties:
+  firstName:
+  type: string
+  minLength: 1
+  maxLength: 100
+  lastName:
+  type: string
+  minLength: 1
+  maxLength: 100
+  phone:
+  type: string
+  pattern: '^\+?1?\d{9,15}$'
+  preferences:
+  type: object
+  description: User preferences object
+
+  UserResponse:
+  type: object
+  properties:
+  data:
+  $ref: '#/components/schemas/User'
+  meta:
+  type: object
+  properties:
+  responseTime:
+  type: integer
+  description: Response time in milliseconds
+
+  UserListResponse:
+  type: object
+  properties:
+  data:
+  type: array
+  items:
+  $ref: '#/components/schemas/User'
+  meta:
+  type: object
+  properties:
+  pagination:
+  $ref: '#/components/schemas/CursorPagination'
+  responseTime:
+  type: integer
+  links:
+  $ref: '#/components/schemas/PaginationLinks'
+
+  CursorPagination:
+  type: object
+  properties:
+  pageSize:
+  type: integer
+  hasNext:
+  type: boolean
+  nextCursor:
+  type: string
+  nullable: true
+
+  PaginationLinks:
+  type: object
+  properties:
+  self:
+  type: string
+  format: URI
+  next:
+  type: string
+  format: URI
+  nullable: true
+
+  ErrorResponse:
+  type: object
+  properties:
+  errors:
+  type: array
+  items:
+  $ref: '#/components/schemas/Error'
+  meta:
+  type: object
+  properties:
+  requestId:
+  type: string
+  responseTime:
+  type: integer
+
+  Error:
+  type: object
+  required:
+
+- id
+- status
+- code
+- title
+
+  properties:
+  id:
+  type: string
+  description: Unique error identifier
+  status:
+  type: string
+  description: HTTP status code
+  code:
+  type: string
+  description: Application-specific error code
+  title:
+  type: string
+  description: Short error summary
+  detail:
+  type: string
+  description: Detailed error description
+  source:
+  type: object
+  description: Error source information
+  meta:
+  type: object
+  description: Additional error metadata
 
   responses:
-    UnauthorizedError:
-      description: Authentication required
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorResponse'
+  UnauthorizedError:
+  description: Authentication required
+  content:
+  application/JSON:
+  schema:
+  $ref: '#/components/schemas/ErrorResponse'
 
-    ValidationError:
-      description: Validation failed
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorResponse'
+  ValidationError:
+  description: Validation failed
+  content:
+  application/JSON:
+  schema:
+  $ref: '#/components/schemas/ErrorResponse'
 
-    NotFoundError:
-      description: Resource not found
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorResponse'
+  NotFoundError:
+  description: Resource not found
+  content:
+  application/JSON:
+  schema:
+  $ref: '#/components/schemas/ErrorResponse'
 
-    RateLimitError:
-      description: Rate limit exceeded
-      headers:
-        Retry-After:
-          description: Seconds until rate limit resets
-          schema:
-            type: integer
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorResponse'
+  RateLimitError:
+  description: Rate limit exceeded
+  headers:
+  Retry-After:
+  description: Seconds until rate limit resets
+  schema:
+  type: integer
+  content:
+  application/JSON:
+  schema:
+  $ref: '#/components/schemas/ErrorResponse'
 
   securitySchemes:
-    bearerAuth:
-      type: http
-      scheme: bearer
-      bearerFormat: JWT
-      description: |
-        JWT token authentication. Include the token in the Authorization header:
-        `Authorization: Bearer <token>`
+  bearerAuth:
+  type: HTTP
+  scheme: bearer
+  bearerFormat: JWT
+  description: |
+  JWT token authentication. Include the token in the Authorization header:
+  `Authorization: Bearer <token>`
 
 security:
-  - bearerAuth: []
-```markdown
+
+- bearerAuth: []
+
+```Markdown
 
 ### 8. API Testing Strategy
 
 #### Comprehensive Test Suite
 
-```python
-# API testing framework
+```Python
+
+## API testing framework
 
 import pytest
 import requests
@@ -1231,7 +1305,7 @@ from unittest.mock import Mock, patch
 class APITestClient:
     """Test client for API testing"""
 
-    def __init__(self, base_url, auth_token=None):
+    def **init**(self, base_url, auth_token=None):
         self.base_url = base_url.rstrip('/')
         self.session = requests.Session()
 
@@ -1242,23 +1316,23 @@ class APITestClient:
 
     def get(self, endpoint, **kwargs):
         """Make GET request"""
-        url = f"{self.base_url}{endpoint}"
-        return self.session.get(url, **kwargs)
+        URL = f"{self.base_url}{endpoint}"
+        return self.session.get(URL, **kwargs)
 
-    def post(self, endpoint, json=None, **kwargs):
+    def post(self, endpoint, JSON=None, **kwargs):
         """Make POST request"""
-        url = f"{self.base_url}{endpoint}"
-        return self.session.post(url, json=json, **kwargs)
+        URL = f"{self.base_url}{endpoint}"
+        return self.session.post(URL, JSON=JSON, **kwargs)
 
-    def patch(self, endpoint, json=None, **kwargs):
+    def patch(self, endpoint, JSON=None, **kwargs):
         """Make PATCH request"""
-        url = f"{self.base_url}{endpoint}"
-        return self.session.patch(url, json=json, **kwargs)
+        URL = f"{self.base_url}{endpoint}"
+        return self.session.patch(URL, JSON=JSON, **kwargs)
 
     def delete(self, endpoint, **kwargs):
         """Make DELETE request"""
-        url = f"{self.base_url}{endpoint}"
-        return self.session.delete(url, **kwargs)
+        URL = f"{self.base_url}{endpoint}"
+        return self.session.delete(URL, **kwargs)
 
 class TestUserAPI:
     """Comprehensive user API tests"""
@@ -1267,7 +1341,7 @@ class TestUserAPI:
     def api_client(self):
         """Create authenticated API client"""
         return APITestClient(
-            base_url='http://localhost:8000/api/v1',
+            base_url='<HTTP://localhost:8000/API/v1',>
             auth_token='test_token_with_user_permissions'
         )
 
@@ -1275,7 +1349,7 @@ class TestUserAPI:
     def admin_client(self):
         """Create admin API client"""
         return APITestClient(
-            base_url='http://localhost:8000/api/v1',
+            base_url='<HTTP://localhost:8000/API/v1',>
             auth_token='test_token_with_admin_permissions'
         )
 
@@ -1289,11 +1363,11 @@ class TestUserAPI:
             'dateOfBirth': '1990-01-01'
         }
 
-        response = api_client.post('/users', json=user_data)
+        response = api_client.post('/users', JSON=user_data)
 
         assert response.status_code == 201
 
-        response_data = response.json()
+        response_data = response.JSON()
         assert 'data' in response_data
         assert response_data['data']['email'] == user_data['email']
         assert response_data['data']['firstName'] == user_data['firstName']
@@ -1310,11 +1384,11 @@ class TestUserAPI:
             'dateOfBirth': 'invalid-date'
         }
 
-        response = api_client.post('/users', json=invalid_user_data)
+        response = api_client.post('/users', JSON=invalid_user_data)
 
         assert response.status_code == 422
 
-        response_data = response.json()
+        response_data = response.JSON()
         assert 'errors' in response_data
 
         error = response_data['errors'][0]
@@ -1330,7 +1404,9 @@ class TestUserAPI:
 
     def test_create_user_duplicate_email(self, api_client):
         """Test user creation with duplicate email"""
-        # Create first user
+
+## Create first user
+
         user_data = {
             'email': 'duplicate@example.com',
             'firstName': 'First',
@@ -1339,21 +1415,24 @@ class TestUserAPI:
             'dateOfBirth': '1990-01-01'
         }
 
-        response1 = api_client.post('/users', json=user_data)
+        response1 = api_client.post('/users', JSON=user_data)
         assert response1.status_code == 201
 
-        # Try to create second user with same email
+## Try to create second user with same email
+
         user_data['firstName'] = 'Second'
-        response2 = api_client.post('/users', json=user_data)
+        response2 = api_client.post('/users', JSON=user_data)
 
         assert response2.status_code == 409
 
-        response_data = response2.json()
+        response_data = response2.JSON()
         assert response_data['errors'][0]['code'] == 'EMAIL_ALREADY_EXISTS'
 
     def test_get_user_success(self, api_client):
         """Test successful user retrieval"""
-        # Create user first
+
+## Create user first
+
         user_data = {
             'email': 'gettest@example.com',
             'firstName': 'Get',
@@ -1362,15 +1441,16 @@ class TestUserAPI:
             'dateOfBirth': '1990-01-01'
         }
 
-        create_response = api_client.post('/users', json=user_data)
-        user_id = create_response.json()['data']['id']
+        create_response = api_client.post('/users', JSON=user_data)
+        user_id = create_response.JSON()['data']['id']
 
-        # Get user
+## Get user
+
         response = api_client.get(f'/users/{user_id}')
 
         assert response.status_code == 200
 
-        response_data = response.json()
+        response_data = response.JSON()
         assert response_data['data']['id'] == user_id
         assert response_data['data']['email'] == user_data['email']
 
@@ -1380,12 +1460,14 @@ class TestUserAPI:
 
         assert response.status_code == 404
 
-        response_data = response.json()
+        response_data = response.JSON()
         assert response_data['errors'][0]['code'] == 'RESOURCE_NOT_FOUND'
 
     def test_list_users_pagination(self, admin_client):
         """Test user listing with pagination"""
-        # Create multiple users for pagination testing
+
+## Create multiple users for pagination testing
+
         for i in range(25):
             user_data = {
                 'email': f'pagtest{i}@example.com',
@@ -1394,14 +1476,15 @@ class TestUserAPI:
                 'password': 'SecurePassword123!',
                 'dateOfBirth': '1990-01-01'
             }
-            admin_client.post('/users', json=user_data)
+            admin_client.post('/users', JSON=user_data)
 
-        # Test first page
+## Test first page
+
         response = admin_client.get('/users?page_size=10')
 
         assert response.status_code == 200
 
-        response_data = response.json()
+        response_data = response.JSON()
         assert len(response_data['data']) == 10
         assert 'meta' in response_data
         assert 'pagination' in response_data['meta']
@@ -1415,7 +1498,9 @@ class TestUserAPI:
     ])
     def test_list_users_filtering(self, admin_client, filter_param, filter_value, expected_count):
         """Test user listing with various filters"""
-        # Create test users
+
+## Create test users
+
         for i in range(2):
             user_data = {
                 'email': f'filtertest{i}@example.com',
@@ -1424,19 +1509,22 @@ class TestUserAPI:
                 'password': 'SecurePassword123!',
                 'dateOfBirth': '1990-01-01'
             }
-            admin_client.post('/users', json=user_data)
+            admin_client.post('/users', JSON=user_data)
 
-        # Test filtering
+## Test filtering
+
         response = admin_client.get(f'/users?{filter_param}={filter_value}')
 
         assert response.status_code == 200
 
-        response_data = response.json()
+        response_data = response.JSON()
         assert len(response_data['data']) >= expected_count
 
     def test_update_user_success(self, api_client):
         """Test successful user update"""
-        # Create user first
+
+## Create user first 2
+
         user_data = {
             'email': 'updatetest@example.com',
             'firstName': 'Original',
@@ -1445,50 +1533,56 @@ class TestUserAPI:
             'dateOfBirth': '1990-01-01'
         }
 
-        create_response = api_client.post('/users', json=user_data)
-        user_id = create_response.json()['data']['id']
+        create_response = api_client.post('/users', JSON=user_data)
+        user_id = create_response.JSON()['data']['id']
 
-        # Update user
+## Update user
+
         update_data = {
             'firstName': 'Updated',
             'phone': '+1234567890'
         }
 
-        response = api_client.patch(f'/users/{user_id}', json=update_data)
+        response = api_client.patch(f'/users/{user_id}', JSON=update_data)
 
         assert response.status_code == 200
 
-        response_data = response.json()
+        response_data = response.JSON()
         assert response_data['data']['firstName'] == 'Updated'
         assert response_data['data']['phone'] == '+1234567890'
         assert response_data['data']['lastName'] == 'Name'  # Unchanged
 
     def test_rate_limiting(self, api_client):
         """Test API rate limiting"""
-        # Make many requests quickly
+
+## Make many requests quickly
+
         responses = []
         for i in range(10):
             response = api_client.get('/users/1')
             responses.append(response)
 
-        # Check if any request was rate limited
+## Check if any request was rate limited
+
         rate_limited = any(r.status_code == 429 for r in responses)
 
         if rate_limited:
             rate_limited_response = next(r for r in responses if r.status_code == 429)
             assert 'Retry-After' in rate_limited_response.headers
 
-            response_data = rate_limited_response.json()
+            response_data = rate_limited_response.JSON()
             assert response_data['errors'][0]['code'] == 'RATE_LIMIT_EXCEEDED'
 
-# Integration testing
+## Integration testing
 
 class TestAPIIntegration:
     """Integration tests for API workflows"""
 
     def test_complete_user_lifecycle(self, api_client):
         """Test complete user CRUD lifecycle"""
-        # 1. Create user
+
+## 1. Create user
+
         user_data = {
             'email': 'lifecycle@example.com',
             'firstName': 'Lifecycle',
@@ -1497,30 +1591,34 @@ class TestAPIIntegration:
             'dateOfBirth': '1990-01-01'
         }
 
-        create_response = api_client.post('/users', json=user_data)
+        create_response = api_client.post('/users', JSON=user_data)
         assert create_response.status_code == 201
-        user_id = create_response.json()['data']['id']
+        user_id = create_response.JSON()['data']['id']
 
-        # 2. Read user
+## 2. Read user
+
         get_response = api_client.get(f'/users/{user_id}')
         assert get_response.status_code == 200
-        assert get_response.json()['data']['email'] == user_data['email']
+        assert get_response.JSON()['data']['email'] == user_data['email']
 
-        # 3. Update user
+## 3. Update user
+
         update_data = {'firstName': 'Updated'}
-        update_response = api_client.patch(f'/users/{user_id}', json=update_data)
+        update_response = api_client.patch(f'/users/{user_id}', JSON=update_data)
         assert update_response.status_code == 200
-        assert update_response.json()['data']['firstName'] == 'Updated'
+        assert update_response.JSON()['data']['firstName'] == 'Updated'
 
-        # 4. Delete user
+## 4. Delete user
+
         delete_response = api_client.delete(f'/users/{user_id}')
         assert delete_response.status_code == 204
 
-        # 5. Verify deletion
+## 5. Verify deletion
+
         get_deleted_response = api_client.get(f'/users/{user_id}')
         assert get_deleted_response.status_code == 404
 
-# Load testing setup
+## Load testing setup
 
 def test_api_performance():
     """Basic performance test"""
@@ -1528,7 +1626,7 @@ def test_api_performance():
     import concurrent.futures
 
     def make_request():
-        client = APITestClient('http://localhost:8000/api/v1')
+        client = APITestClient('<HTTP://localhost:8000/API/v1>')
         start_time = time.time()
         response = client.get('/users')
         end_time = time.time()
@@ -1537,17 +1635,22 @@ def test_api_performance():
             'response_time': end_time - start_time
         }
 
-    # Test concurrent requests
+## Test concurrent requests
+
     with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
         futures = [executor.submit(make_request) for _ in range(100)]
         results = [future.result() for future in concurrent.futures.as_completed(futures)]
 
-    # Analyze results
+## Analyze results
+
     successful_requests = [r for r in results if r['status_code'] == 200]
     avg_response_time = sum(r['response_time'] for r in successful_requests) / len(successful_requests)
 
     assert len(successful_requests) >= 95  # 95% success rate
     assert avg_response_time < 1.0  # Average response time under 1 second
-```markdown
 
-Remember: API design is about creating intuitive, consistent, and scalable interfaces. Focus on developer experience, clear documentation, comprehensive error handling, and robust testing. Always version your APIs and maintain backward compatibility when possible.
+```Markdown
+
+Remember: API design is about creating intuitive, consistent, and scalable interfaces.
+Focus on developer experience, clear documentation, comprehensive error handling, and robust testing
+Always version your APIs and maintain backward compatibility when possible.

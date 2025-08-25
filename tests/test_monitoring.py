@@ -2,19 +2,22 @@
 """
 Test script for Phase 3 real-time monitoring system
 """
-import sys
-import os
-import time
-import tempfile
 from pathlib import Path
 
+import os
+
+import sys
+import tempfile
+
+import time
+
 # Add src to path for imports
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'app'))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "app"))
 
 try:
-    from monitoring import RealTimeMonitor, MonitorConfig
+    from monitoring import MonitorConfig, RealTimeMonitor
     from utils.config import setup_logging
-    
+
     def test_basic_monitoring():
         """Test basic monitoring functionality (assert-based, no return)."""
         logger = setup_logging()
@@ -71,11 +74,11 @@ try:
             final_status = monitor.get_status()
             logger.info("Final status: %s", final_status["state"])
             assert final_status["state"] in {"stopped", "idle"}
-    
+
     if __name__ == "__main__":
         print("Testing Phase 3 Real-Time Monitoring System")
         print("=" * 50)
-        
+
         try:
             success = test_basic_monitoring()
             if success:
@@ -86,6 +89,7 @@ try:
         except Exception as e:
             print(f"✗ Test failed with error: {e}")
             import traceback
+
             traceback.print_exc()
             sys.exit(1)
 

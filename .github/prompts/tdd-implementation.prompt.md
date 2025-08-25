@@ -2,11 +2,13 @@
 applyTo: "**/{src,lib,app,test,tests,spec}/**/*.{js,ts,py,rb,go,java,php,cs}"
 description: "TDD implementation guidance for source and test files"
 priority: "medium"
+
 ---
 
 # Test-Driven Development (TDD) Prompt
 
-You are implementing Test-Driven Development (TDD) methodology. Follow the Red-Green-Refactor cycle to build robust, well-tested code with comprehensive test coverage.
+You are implementing Test-Driven Development (TDD) methodology.
+Follow the Red-Green-Refactor cycle to build robust, well-tested code with comprehensive test coverage.
 
 ## TDD Core Principles
 
@@ -20,13 +22,15 @@ You are implementing Test-Driven Development (TDD) methodology. Follow the Red-G
 
 1. **First Law**: You may not write production code until you have written a failing unit test
 2. **Second Law**: You may not write more of a unit test than is sufficient to fail
-3. **Third Law**: You may not write more production code than is sufficient to pass the currently failing test
+
+3.
+**Third Law**: You may not write more production code than is sufficient to pass the currently failing test
 
 ## TDD Implementation Framework
 
 ### 1. Test Planning Phase
 
-#### Before Writing Code, Define:
+#### Before Writing Code, Define
 
 - [ ] **User Story**: What functionality are we building?
 - [ ] **Acceptance Criteria**: How do we know it's working correctly?
@@ -35,10 +39,12 @@ You are implementing Test-Driven Development (TDD) methodology. Follow the Red-G
 
 #### Example: User Registration Feature
 
-```markdown
+```Markdown
+
 **User Story**: As a new user, I want to register an account so I can access the application.
 
 **Acceptance Criteria**:
+
 - User can register with email, password, and name
 - Email must be unique and valid format
 - Password must meet security requirements (12+ chars, complexity)
@@ -46,6 +52,7 @@ You are implementing Test-Driven Development (TDD) methodology. Follow the Red-G
 - Invalid inputs return appropriate error messages
 
 **Test Scenarios**:
+
 - Valid registration data
 - Duplicate email address
 - Invalid email format
@@ -53,14 +60,16 @@ You are implementing Test-Driven Development (TDD) methodology. Follow the Red-G
 - Missing required fields
 - Database connection failure
 - Email service failure
-```markdown
+
+```Markdown
 
 ### 2. Red Phase: Write Failing Tests
 
 #### Test Structure (Arrange-Act-Assert)
 
-```python
-# Example: User registration test
+```Python
+
+## Example: User registration test
 
 import pytest
 from unittest.mock import Mock, patch
@@ -76,7 +85,9 @@ class TestUserRegistration:
 
     def test_successful_user_registration(self):
         """Test successful user registration with valid data"""
-        # Arrange
+
+## Arrange
+
         user_data = {
             'email': 'john.doe@example.com',
             'password': 'SecurePassword123!',
@@ -88,15 +99,18 @@ class TestUserRegistration:
         self.mock_db.create_user.return_value = expected_user_id
         self.mock_email_service.send_welcome_email.return_value = True
 
-        # Act
+## Act
+
         result = self.user_service.register_user(user_data)
 
-        # Assert
+## Assert
+
         assert result['success'] is True
         assert result['user_id'] == expected_user_id
         assert result['message'] == 'User registered successfully'
 
-        # Verify interactions
+## Verify interactions
+
         self.mock_db.email_exists.assert_called_once_with('john.doe@example.com')
         self.mock_db.create_user.assert_called_once()
         self.mock_email_service.send_welcome_email.assert_called_once_with(
@@ -105,7 +119,9 @@ class TestUserRegistration:
 
     def test_registration_with_duplicate_email(self):
         """Test registration fails when email already exists"""
-        # Arrange
+
+## Arrange 2
+
         user_data = {
             'email': 'existing@example.com',
             'password': 'SecurePassword123!',
@@ -114,33 +130,39 @@ class TestUserRegistration:
 
         self.mock_db.email_exists.return_value = True
 
-        # Act & Assert
+## Act & Assert
+
         with pytest.raises(UserAlreadyExistsError) as exc_info:
             self.user_service.register_user(user_data)
 
         assert str(exc_info.value) == 'Email address already registered'
 
-        # Verify database was checked but user not created
+## Verify database was checked but user not created
+
         self.mock_db.email_exists.assert_called_once_with('existing@example.com')
         self.mock_db.create_user.assert_not_called()
         self.mock_email_service.send_welcome_email.assert_not_called()
 
     def test_registration_with_invalid_email(self):
         """Test registration fails with invalid email format"""
-        # Arrange
+
+## Arrange 3
+
         user_data = {
             'email': 'invalid-email-format',
             'password': 'SecurePassword123!',
             'name': 'John Doe'
         }
 
-        # Act & Assert
+## Act & Assert 2
+
         with pytest.raises(InvalidEmailError) as exc_info:
             self.user_service.register_user(user_data)
 
         assert 'Invalid email format' in str(exc_info.value)
 
-        # Verify no database operations occurred
+## Verify no database operations occurred
+
         self.mock_db.email_exists.assert_not_called()
         self.mock_db.create_user.assert_not_called()
 
@@ -153,14 +175,17 @@ class TestUserRegistration:
     ])
     def test_registration_with_weak_password(self, weak_password):
         """Test registration fails with weak passwords"""
-        # Arrange
+
+## Arrange 4
+
         user_data = {
             'email': 'test@example.com',
             'password': weak_password,
             'name': 'Test User'
         }
 
-        # Act & Assert
+## Act & Assert 3
+
         with pytest.raises(ValueError) as exc_info:
             self.user_service.register_user(user_data)
 
@@ -168,7 +193,9 @@ class TestUserRegistration:
 
     def test_registration_with_database_failure(self):
         """Test registration handles database failures gracefully"""
-        # Arrange
+
+## Arrange 5
+
         user_data = {
             'email': 'test@example.com',
             'password': 'SecurePassword123!',
@@ -178,17 +205,20 @@ class TestUserRegistration:
         self.mock_db.email_exists.return_value = False
         self.mock_db.create_user.side_effect = Exception('Database connection failed')
 
-        # Act & Assert
+## Act & Assert 4
+
         with pytest.raises(Exception) as exc_info:
             self.user_service.register_user(user_data)
 
         assert 'Database connection failed' in str(exc_info.value)
 
-        # Verify email was not sent on failure
-        self.mock_email_service.send_welcome_email.assert_not_called()
-```markdown
+## Verify email was not sent on failure
 
-#### JavaScript/TypeScript Example
+        self.mock_email_service.send_welcome_email.assert_not_called()
+
+```Markdown
+
+### JavaScript/TypeScript Example
 
 ```typescript
 // Example: E-commerce cart functionality
@@ -348,7 +378,8 @@ describe('Shopping Cart', () => {
     });
   });
 });
-```markdown
+
+```Markdown
 
 ### 3. Green Phase: Write Minimal Implementation
 
@@ -360,8 +391,9 @@ describe('Shopping Cart', () => {
 
 #### Example: Initial Implementation
 
-```python
-# user_service.py - Initial implementation to make tests pass
+```Python
+
+## user_service.py - Initial implementation to make tests pass
 
 import re
 from typing import Dict, Any
@@ -373,29 +405,34 @@ class InvalidEmailError(Exception):
     pass
 
 class UserService:
-    def __init__(self, database, email_service):
+    def **init**(self, database, email_service):
         self.database = database
         self.email_service = email_service
 
     def register_user(self, user_data: Dict[str, Any]) -> Dict[str, Any]:
         """Register a new user - minimal implementation"""
 
-        # Validate email format
+## Validate email format
+
         if not self._is_valid_email(user_data['email']):
             raise InvalidEmailError('Invalid email format')
 
-        # Validate password strength
+## Validate password strength
+
         if not self._is_strong_password(user_data['password']):
             raise ValueError('Password does not meet security requirements')
 
-        # Check if email already exists
+## Check if email already exists
+
         if self.database.email_exists(user_data['email']):
             raise UserAlreadyExistsError('Email address already registered')
 
-        # Create user in database
+## Create user in database
+
         user_id = self.database.create_user(user_data)
 
-        # Send welcome email
+## Send welcome email
+
         self.email_service.send_welcome_email(user_data['email'], user_data['name'])
 
         return {
@@ -420,7 +457,8 @@ class UserService:
         has_special = any(c in '!@#$%^&*()_+-=[]{}|;:,.<>?' for c in password)
 
         return has_upper and has_lower and has_digit and has_special
-```markdown
+
+```Markdown
 
 ### 4. Refactor Phase: Improve Code Quality
 
@@ -434,15 +472,16 @@ class UserService:
 
 #### Example: Refactored Implementation
 
-```python
-# user_service.py - Refactored version
+```Python
+
+## user_service.py - Refactored version
 
 import re
 from typing import Dict, Any
 from dataclasses import dataclass
 from abc import ABC, abstractmethod
 
-# Value Objects
+## Value Objects
 
 @dataclass
 class UserRegistrationData:
@@ -457,7 +496,7 @@ class UserRegistrationData:
         if not self.email or not self.password or not self.name:
             raise ValueError('All fields are required')
 
-# Custom Exceptions
+## Custom Exceptions
 
 class UserRegistrationError(Exception):
     """Base exception for user registration errors"""
@@ -472,7 +511,7 @@ class InvalidEmailError(UserRegistrationError):
 class WeakPasswordError(UserRegistrationError):
     pass
 
-# Validation Services
+## Validation Services
 
 class EmailValidator:
     @staticmethod
@@ -506,7 +545,7 @@ class PasswordValidator:
             f"uppercase, lowercase, numbers, and special characters."
         )
 
-# Interfaces
+## Interfaces
 
 class DatabaseInterface(ABC):
     @abstractmethod
@@ -522,32 +561,38 @@ class EmailServiceInterface(ABC):
     def send_welcome_email(self, email: str, name: str) -> bool:
         pass
 
-# Main Service
+## Main Service
 
 class UserService:
-    def __init__(self, database: DatabaseInterface, email_service: EmailServiceInterface):
+    def **init**(self, database: DatabaseInterface, email_service: EmailServiceInterface):
         self.database = database
         self.email_service = email_service
 
     def register_user(self, user_data: Dict[str, Any]) -> Dict[str, Any]:
         """Register a new user with comprehensive validation"""
 
-        # Create validated user data object
+## Create validated user data object
+
         registration_data = UserRegistrationData(**user_data)
 
-        # Validate email format
+## Validate email format 2
+
         self._validate_email(registration_data.email)
 
-        # Validate password strength
+## Validate password strength 2
+
         self._validate_password(registration_data.password)
 
-        # Check for existing user
+## Check for existing user
+
         self._check_email_uniqueness(registration_data.email)
 
-        # Create user
+## Create user
+
         user_id = self._create_user_account(registration_data)
 
-        # Send notification
+## Send notification
+
         self._send_welcome_notification(registration_data)
 
         return self._create_success_response(user_id)
@@ -584,7 +629,9 @@ class UserService:
                 registration_data.name
             )
         except Exception as e:
-            # Log error but don't fail registration
+
+## Log error but don't fail registration
+
             print(f'Warning: Failed to send welcome email: {str(e)}')
 
     def _create_success_response(self, user_id: int) -> Dict[str, Any]:
@@ -593,14 +640,16 @@ class UserService:
             'user_id': user_id,
             'message': 'User registered successfully'
         }
-```markdown
+
+```Markdown
 
 ### 5. TDD Best Practices
 
 #### Test Organization
 
-```python
-# conftest.py - Shared test fixtures
+```Python
+
+## conftest.py - Shared test fixtures
 
 import pytest
 from unittest.mock import Mock
@@ -633,37 +682,42 @@ def valid_user_data():
         'password': 'SecurePassword123!',
         'name': 'Test User'
     }
-```markdown
 
-#### Test Coverage Monitoring
+```Markdown
+
+### Test Coverage Monitoring
 
 ```bash
-# Coverage configuration (.coveragerc)
+
+## Coverage configuration (.coveragerc)
 
 [run]
 source = src/
 omit =
-    */tests/*
-    */venv/*
-    */migrations/*
+
+    _/tests/_
+    _/venv/_
+    _/migrations/_
 
 [report]
 exclude_lines =
     pragma: no cover
-    def __repr__
+    def **repr**
     raise AssertionError
     raise NotImplementedError
 
-# Run tests with coverage
+## Run tests with coverage
 
-pytest --cov=src --cov-report=html --cov-report=term-missing
+pytest --cov=src --cov-report=HTML --cov-report=term-missing
 coverage report --fail-under=90
-```markdown
 
-#### Continuous Integration Integration
+```Markdown
 
-```yaml
-# .github/workflows/tdd.yml
+### Continuous Integration Integration
+
+```YAML
+
+## .GitHub/workflows/tdd.yml
 
 name: TDD Workflow
 
@@ -674,27 +728,32 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v3
 
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.9'
+- uses: actions/checkout@v3
+- name: Set up Python
 
-    - name: Install dependencies
-      run: |
-        pip install -r requirements.txt
-        pip install pytest pytest-cov
+  uses: actions/setup-Python@v4
+  with:
+  Python-version: '3.9'
 
-    - name: Run tests with coverage
-      run: |
-        pytest --cov=src --cov-report=xml --cov-fail-under=90
+- name: Install dependencies
 
-    - name: Upload coverage to Codecov
-      uses: codecov/codecov-action@v3
-      with:
-        file: ./coverage.xml
-```markdown
+  run: |
+  pip install -r requirements.txt
+  pip install pytest pytest-cov
+
+- name: Run tests with coverage
+
+  run: |
+  pytest --cov=src --cov-report=XML --cov-fail-under=90
+
+- name: Upload coverage to Codecov
+
+  uses: codecov/codecov-action@v3
+  with:
+  file: ./coverage.XML
+
+```Markdown
 
 ### 6. TDD Anti-Patterns to Avoid
 
@@ -708,20 +767,26 @@ jobs:
 
 #### Better Approaches
 
-```python
-# Anti-pattern: Testing implementation
+```Python
+
+## Anti-pattern: Testing implementation
 
 def test_password_validation_implementation():
-    # Don't test internal regex pattern
+
+## Don't test internal regex pattern
+
     assert user_service._password_regex.match('password123!')
 
-# Better: Testing behavior
+## Better: Testing behavior
 
 def test_password_validation_behavior():
-    # Test what the function should do, not how it does it
+
+## Test what the function should do, not how it does it
+
     assert user_service.is_valid_password('SecurePassword123!')
     assert not user_service.is_valid_password('weak')
-```markdown
+
+```Markdown
 
 ### 7. TDD Metrics and Quality Gates
 
@@ -742,4 +807,5 @@ def test_password_validation_behavior():
 - [ ] Performance requirements met
 - [ ] Security considerations addressed
 
-Remember: TDD is not just about testing - it's a design methodology that leads to better code architecture, higher quality, and more maintainable software. The tests are a byproduct of good design practices.
+Remember: TDD is not just about testing - it's a design methodology that leads to better code architecture, higher quality, and more maintainable software.
+The tests are a byproduct of good design practices.

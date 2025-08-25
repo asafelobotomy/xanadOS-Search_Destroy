@@ -1,0 +1,8 @@
+# Ignore backup and archive directories for spell checking
+.markdown-backups/**
+.python-backups/**
+archive/**
+node_modules/**
+**/dist/**
+**/build/**
+**/out/**

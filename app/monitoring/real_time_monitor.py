@@ -3,7 +3,10 @@
 Real-time monitor that coordinates file watching, event processing, and background scanning
 Main entry point for Phase 3 real-time monitoring system
 """
+
 import logging
+import os
+from datetime import datetime
 import tempfile
 import threading
 import time
@@ -17,7 +20,7 @@ from .event_processor import EventAction, EventProcessor, ProcessedEvent
 from .file_watcher import FileSystemWatcher, WatchEvent
 
 try:
-    from core.clamav_wrapper import ClamAVWrapper
+    from app.core.clamav_wrapper import ClamAVWrapper
 except ImportError:
     # Fallback for development/testing
     class ClamAVWrapper:  # type: ignore[no-redef]
@@ -91,11 +94,9 @@ class RealTimeMonitor:
         self.scans_performed = 0
 
         # Callbacks
-        self.threat_detected_callback: Optional[Callable[[
-            str, str], None]] = None
+        self.threat_detected_callback: Optional[Callable[[str, str], None]] = None
         self.file_quarantined_callback: Optional[Callable[[str], None]] = None
-        self.scan_completed_callback: Optional[Callable[[
-            str, str], None]] = None
+        self.scan_completed_callback: Optional[Callable[[str, str], None]] = None
         self.error_callback: Optional[Callable[[str], None]] = None
 
         # Threading
@@ -126,8 +127,7 @@ class RealTimeMonitor:
         try:
             # Check ClamAV availability
             if not self.clamav.available:
-                raise RuntimeError(
-                    "ClamAV not available - real-time scanning disabled")
+                raise RuntimeError("ClamAV not available - real-time scanning disabled")
 
             # Start background scanner
             self.logger.info("Starting background scanner...")
@@ -256,9 +256,8 @@ class RealTimeMonitor:
 
         except Exception as e:
             self.logger.error(
-                "Error executing action for %s: %s",
-                event.original_event.file_path,
-                e)
+                "Error executing action for %s: %s", event.original_event.file_path, e
+            )
 
     def _schedule_scan(self, event: ProcessedEvent):
         """Schedule a file scan based on processed event."""
@@ -273,8 +272,7 @@ class RealTimeMonitor:
             priority = ScanPriority.LOW
 
         # Schedule scan
-        self.background_scanner.schedule_scan(
-            event.original_event.file_path, priority)
+        self.background_scanner.schedule_scan(event.original_event.file_path, priority)
 
         self.logger.debug(
             "Scheduled scan for %s (priority: %s)",
@@ -289,10 +287,13 @@ class RealTimeMonitor:
             if file_path.exists():
                 # Determine quarantine destination (reuse configured path if available)
                 try:
-                    from utils.config import QUARANTINE_DIR
+                    from app.utils.config import QUARANTINE_DIR
+
                     quarantine_dir = QUARANTINE_DIR
                 except Exception:
-                    quarantine_dir = Path.home() / ".local/share/search-and-destroy/quarantine"
+                    quarantine_dir = (
+                        Path.home() / ".local/share/search-and-destroy/quarantine"
+                    )
                 quarantine_dir.mkdir(parents=True, exist_ok=True)
                 # Hard permission on directory
                 if os.name == "posix":
@@ -309,9 +310,10 @@ class RealTimeMonitor:
                     sha256 = None
                     try:
                         import hashlib
+
                         h = hashlib.sha256()
-                        with file_path.open('rb') as f_in:
-                            for chunk in iter(lambda: f_in.read(8192), b''):
+                        with file_path.open("rb") as f_in:
+                            for chunk in iter(lambda: f_in.read(8192), b""):
                                 h.update(chunk)
                         sha256 = h.hexdigest()
                     except Exception:
@@ -322,10 +324,16 @@ class RealTimeMonitor:
                             dest.chmod(0o600)
                         except OSError:
                             pass
-                    self.logger.warning("QUARANTINE: %s -> %s (rule: %s)", file_path, dest, event.rule_name)
+                    self.logger.warning(
+                        "QUARANTINE: %s -> %s (rule: %s)",
+                        file_path,
+                        dest,
+                        event.rule_name,
+                    )
                     # Write metadata JSON
                     try:
                         import json
+
                         meta = {
                             "original_path": str(file_path),
                             "quarantine_path": str(dest),
@@ -333,34 +341,36 @@ class RealTimeMonitor:
                             "rule": event.rule_name,
                             "sha256": sha256,
                         }
-                        with (dest.with_suffix(dest.suffix + '.metadata.json')).open('w', encoding='utf-8') as m_out:
+                        with (dest.with_suffix(dest.suffix + ".metadata.json")).open(
+                            "w", encoding="utf-8"
+                        ) as m_out:
                             json.dump(meta, m_out, indent=2, sort_keys=True)
                     except Exception as m_err:
-                        self.logger.error("Failed writing quarantine metadata: %s", m_err)
+                        self.logger.error(
+                            "Failed writing quarantine metadata: %s", m_err
+                        )
                     with self.lock:
                         self.files_quarantined += 1
                     if self.file_quarantined_callback:
                         try:
                             self.file_quarantined_callback(str(dest))
                         except Exception as cb_err:
-                            self.logger.error("Error in quarantine callback: %s", cb_err)
+                            self.logger.error(
+                                "Error in quarantine callback: %s", cb_err
+                            )
                 except OSError as move_err:
                     self.logger.error("Failed moving file to quarantine: %s", move_err)
 
         except Exception as e:
             self.logger.error(
-                "Error quarantining file %s: %s",
-                event.original_event.file_path,
-                e)
+                "Error quarantining file %s: %s", event.original_event.file_path, e
+            )
 
     def _block_file(self, event: ProcessedEvent):
         """Block file access."""
         try:
             file_path = event.original_event.file_path
-            self.logger.warning(
-                "BLOCKED: %s (rule: %s)",
-                file_path,
-                event.rule_name)
+            self.logger.warning("BLOCKED: %s (rule: %s)", file_path, event.rule_name)
 
             # Could implement actual file blocking here
             # For now, just log and alert
@@ -391,10 +401,7 @@ class RealTimeMonitor:
             with self.lock:
                 self.scans_performed += 1
 
-            self.logger.debug(
-                "Scan result: %s - %s",
-                file_path,
-                result["result"])
+            self.logger.debug("Scan result: %s - %s", file_path, result["result"])
 
             if self.scan_completed_callback:
                 try:
@@ -411,17 +418,13 @@ class RealTimeMonitor:
             with self.lock:
                 self.threats_detected += 1
 
-            self.logger.critical(
-                "THREAT DETECTED: %s - %s",
-                file_path,
-                threat_name)
+            self.logger.critical("THREAT DETECTED: %s - %s", file_path, threat_name)
 
             if self.threat_detected_callback:
                 try:
                     self.threat_detected_callback(file_path, threat_name)
                 except Exception as e:
-                    self.logger.error(
-                        "Error in threat detection callback: %s", e)
+                    self.logger.error("Error in threat detection callback: %s", e)
 
         except Exception as e:
             self.logger.error("Error handling threat detection: %s", e)
@@ -471,7 +474,7 @@ class RealTimeMonitor:
             return False
 
     def remove_watch_path(self, path: str) -> bool:
-        """Remove a path from monitoring."""
+        """Remove a path from app.monitoring."""
         try:
             self.file_watcher.remove_watch_path(path)
             if path in self.config.watch_paths:
@@ -484,8 +487,7 @@ class RealTimeMonitor:
             return False
 
     # Callback setters
-    def set_threat_detected_callback(
-            self, callback: Callable[[str, str], None]):
+    def set_threat_detected_callback(self, callback: Callable[[str, str], None]):
         """Set callback for threat detection."""
         self.threat_detected_callback = callback
 
@@ -493,8 +495,7 @@ class RealTimeMonitor:
         """Set callback for file quarantine."""
         self.file_quarantined_callback = callback
 
-    def set_scan_completed_callback(
-            self, callback: Callable[[str, str], None]):
+    def set_scan_completed_callback(self, callback: Callable[[str, str], None]):
         """Set callback for scan completion."""
         self.scan_completed_callback = callback
 

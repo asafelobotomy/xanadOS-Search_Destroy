@@ -1,6 +1,6 @@
 # xanadOS Search & Destroy v2.8.0 Release Notes
 
-*Released: August 20, 2025*
+_Released: August 20, 2025_
 
 ## 🚀 **Major Feature Release: Setup Wizard Implementation**
 
@@ -15,19 +15,17 @@ This release introduces a comprehensive first-time setup system that significant
 **File**: `app/gui/setup_wizard.py` (1,174 lines)
 
 - **Distribution Detection**: Automatic identification of user's Linux distribution
-  - Supports: Arch Linux, Ubuntu, Debian, Fedora, openSUSE
-  - Intelligent package manager detection (pacman, apt, dnf, zypper)
-
+- Supports: Arch Linux, Ubuntu, Debian, Fedora, openSUSE
+- Intelligent package manager detection (pacman, apt, dnf, zypper)
 - **Security Component Installation**: One-click installation of essential tools
-  - **ClamAV**: Antivirus scanning and real-time protection
-  - **UFW**: Uncomplicated Firewall for network security
-  - **RKHunter**: Rootkit detection and system integrity checking
-
+- **ClamAV**: Antivirus scanning and real-time protection
+- **UFW**: Uncomplicated Firewall for network security
+- **RKHunter**: Rootkit detection and system integrity checking
 - **GUI Integration**: Seamlessly integrated into the main application
-  - Themed widgets matching application design
-  - Real-time progress tracking and status updates
-  - Comprehensive error handling and user feedback
-  - Post-installation configuration and service management
+- Themed widgets matching application design
+- Real-time progress tracking and status updates
+- Comprehensive error handling and user feedback
+- Post-installation configuration and service management
 
 ### 🎨 **Enhanced User Experience**
 
@@ -43,14 +41,13 @@ This release introduces a comprehensive first-time setup system that significant
 ### 📁 **Comprehensive Archival System**
 
 - **Deprecated Testing Scripts**: Moved 7 obsolete test scripts to `archive/deprecated-testing/`
-  - Scripts for removed SELinux functionality (replaced with AppArmor-only approach)
-  - Dangerous parameter testing scripts (functionality intentionally removed for safety)
-  - Fixed security issue verification scripts (work completed and integrated)
-
+- Scripts for removed SELinux functionality (replaced with AppArmor-only approach)
+- Dangerous parameter testing scripts (functionality intentionally removed for safety)
+- Fixed security issue verification scripts (work completed and integrated)
 - **Historical Documentation**: Archived 12+ completed project documents to `archive/docs/`
-  - Project completion reports and version-specific summaries
-  - Organized into structured subdirectories with comprehensive READMEs
-  - Preserves development history without cluttering active documentation
+- Project completion reports and version-specific summaries
+- Organized into structured subdirectories with comprehensive READMEs
+- Preserves development history without cluttering active documentation
 
 ---
 
@@ -58,23 +55,33 @@ This release introduces a comprehensive first-time setup system that significant
 
 ### **Setup Wizard Components**
 
-```python
+```Python
 class SetupWizard(QDialog):
-    # Main wizard class with distribution detection
-    # Package installation management
-    # GUI integration with themed widgets
+
+## Main wizard class with distribution detection
+
+## Package installation management
+
+## GUI integration with themed widgets
 
 class InstallationWorker(QThread):
-    # Background thread for package installation
-    # Real-time progress reporting
-    # Error handling and recovery
+
+## Background thread for package installation
+
+## Real-time progress reporting
+
+## Error handling and recovery
 
 @dataclass
 class PackageInfo:
-    # Structured package information management
-    # Distribution-specific package names
-    # Installation verification methods
-```
+
+## Structured package information management
+
+## Distribution-specific package names
+
+## Installation verification methods
+
+```text
 
 ### **Integration Points**
 
@@ -116,6 +123,7 @@ This release represents a **MINOR version increment** (2.7.x → 2.8.0) due to:
 ### **GitHub Synchronization**
 
 This release contains significant local development that needs to be pushed to GitHub:
+
 - Setup wizard implementation
 - Repository organization and archival
 - Updated version references and documentation

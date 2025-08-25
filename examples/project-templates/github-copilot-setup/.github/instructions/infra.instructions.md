@@ -1,10 +1,11 @@
 ---
-applyTo: "**/docker-compose.yml"
+applyTo: "**/Docker-compose.yml"
+
 ---
 
 # Infrastructure-specific Copilot Instructions
 
-- Pin all image versions in docker-compose.yml; avoid `latest` tags.
+- Pin all image versions in Docker-compose.yml; avoid `latest` tags.
 - Use health checks for all services that expose endpoints.
 - Set resource limits (memory, CPU) for containers to prevent resource exhaustion.
 - Use secrets management, never environment variables for sensitive data.

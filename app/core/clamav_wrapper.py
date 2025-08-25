@@ -3,6 +3,7 @@
 Enhanced ClamAV wrapper for S&D - Search & Destroy
 Supports virus definition updates, multiple signature sources, and detailed scanning
 """
+
 import hashlib
 import os
 import re
@@ -14,6 +15,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
 import requests
+
 from .secure_subprocess import run_secure
 
 
@@ -55,10 +57,11 @@ class ClamAVWrapper:
 
     def __init__(self):
         try:
-            from utils.config import CACHE_DIR, load_config, setup_logging
+            from app.utils.config import CACHE_DIR, load_config, setup_logging
         except ImportError:
             # Create minimal fallbacks for testing
             import logging
+            import tempfile  # <-- Add this import
 
             def setup_logging():
                 return logging.getLogger(__name__)
@@ -72,7 +75,7 @@ class ClamAVWrapper:
                     }
                 }
 
-            CACHE_DIR = Path("/tmp/test_cache")
+            CACHE_DIR = Path(tempfile.gettempdir()) / "xanados_test_cache"
 
         self.logger = setup_logging()
         self.config = load_config()
@@ -93,17 +96,18 @@ class ClamAVWrapper:
 
         # Handle CACHE_DIR which might be mocked during testing
         try:
-            if hasattr(
-                    CACHE_DIR,
-                    "__truediv__"):  # Check if it's a Path object
+            if hasattr(CACHE_DIR, "__truediv__"):  # Check if it's a Path object
                 self.custom_db_path = CACHE_DIR / "custom_signatures"
             else:
                 # Handle string or Mock case
-                self.custom_db_path = Path(
-                    str(CACHE_DIR)) / "custom_signatures"
+                self.custom_db_path = Path(str(CACHE_DIR)) / "custom_signatures"
         except (TypeError, AttributeError):
-            # Fallback for testing
-            self.custom_db_path = Path("/tmp/test_cache") / "custom_signatures"
+            # Fallback for testing - use secure temp directory
+            import tempfile
+
+            self.custom_db_path = (
+                Path(tempfile.gettempdir()) / "xanados_test_cache" / "custom_signatures"
+            )
 
         try:
             self.custom_db_path.mkdir(exist_ok=True)
@@ -133,9 +137,13 @@ class ClamAVWrapper:
 
         self.logger.info("Attempting to start ClamAV daemon for better performance...")
         if self.start_daemon():
-            self.logger.info("ClamAV daemon started successfully - scans will be faster")
+            self.logger.info(
+                "ClamAV daemon started successfully - scans will be faster"
+            )
         else:
-            self.logger.info("Could not start daemon - will use regular clamscan (slower)")
+            self.logger.info(
+                "Could not start daemon - will use regular clamscan (slower)"
+            )
 
     def _find_executable(self, name: str) -> Optional[str]:
         """Find ClamAV executable in system PATH."""
@@ -149,9 +157,11 @@ class ClamAVWrapper:
             return False
 
         try:
-            result = run_secure([
-                self.clamscan_path, "--version"
-            ], timeout=10, capture_output=True, text=True)
+            # Ensure self.clamscan_path is not None before using
+            cmd = [self.clamscan_path, "--version"] if self.clamscan_path else None
+            if not cmd or None in cmd:
+                return False
+            result = run_secure(cmd, timeout=10, capture_output=True, text=True)
             return result.returncode == 0
         except (subprocess.SubprocessError, FileNotFoundError):
             return False
@@ -162,9 +172,12 @@ class ClamAVWrapper:
             return "Not available", "Not available"
 
         try:
-            result = run_secure([
-                self.clamscan_path, "--version"
-            ], timeout=10, capture_output=True, text=True)
+            result = run_secure(
+                [self.clamscan_path, "--version"],
+                timeout=10,
+                capture_output=True,
+                text=True,
+            )
 
             if result.returncode == 0:
                 # Parse version output
@@ -187,7 +200,9 @@ class ClamAVWrapper:
 
         return "Unknown", "Unknown"
 
-    def scan_file(self, file_path: str, use_daemon: bool = True, **kwargs) -> ScanFileResult:
+    def scan_file(
+        self, file_path: str, use_daemon: bool = True, **kwargs
+    ) -> ScanFileResult:
         """Scan a single file with ClamAV.
 
         Args:
@@ -199,13 +214,25 @@ class ClamAVWrapper:
         try:
             p = Path(file_path)
             if p.is_symlink():
-                return ScanFileResult(file_path=file_path, result=ScanResult.ERROR, error_message="Symlink not allowed")
+                return ScanFileResult(
+                    file_path=file_path,
+                    result=ScanResult.ERROR,
+                    error_message="Symlink not allowed",
+                )
             if os.name == "posix":
                 st = p.stat()
                 if st.st_mode & 0o002:
-                    return ScanFileResult(file_path=file_path, result=ScanResult.ERROR, error_message="World-writable file blocked")
+                    return ScanFileResult(
+                        file_path=file_path,
+                        result=ScanResult.ERROR,
+                        error_message="World-writable file blocked",
+                    )
         except OSError:
-            return ScanFileResult(file_path=file_path, result=ScanResult.ERROR, error_message="Path validation failed")
+            return ScanFileResult(
+                file_path=file_path,
+                result=ScanResult.ERROR,
+                error_message="Path validation failed",
+            )
 
         if not self.available:
             return ScanFileResult(
@@ -232,15 +259,21 @@ class ClamAVWrapper:
             if not self._is_clamd_running():
                 # Only try to start daemon if configured to do so
                 if self.config.get("performance", {}).get("enable_clamav_daemon", True):
-                    self.logger.debug("Daemon not running, attempting to start for scan operation")
+                    self.logger.debug(
+                        "Daemon not running, attempting to start for scan operation"
+                    )
                     self._try_start_daemon_if_needed()
 
             # Use daemon if it's now running
             if self._is_clamd_running():
                 try:
-                    return self._scan_file_with_daemon(file_path, file_size, start_time, **kwargs)
+                    return self._scan_file_with_daemon(
+                        file_path, file_size, start_time, **kwargs
+                    )
                 except Exception as e:
-                    self.logger.warning(f"Daemon scan failed, falling back to clamscan: {e}")
+                    self.logger.warning(
+                        f"Daemon scan failed, falling back to clamscan: {e}"
+                    )
 
         # Fallback to regular clamscan
         try:
@@ -288,20 +321,37 @@ class ClamAVWrapper:
                 error_message=str(e),
             )
 
-    def scan_directory(self, directory_path: str, **
-                       kwargs) -> List[ScanFileResult]:
+    def scan_directory(self, directory_path: str, **kwargs) -> List[ScanFileResult]:
         """Scan a directory recursively."""
         # Directory validation
         try:
             d = Path(directory_path)
             if d.is_symlink():
-                return [ScanFileResult(file_path=directory_path, result=ScanResult.ERROR, error_message="Symlink directory not allowed")]
+                return [
+                    ScanFileResult(
+                        file_path=directory_path,
+                        result=ScanResult.ERROR,
+                        error_message="Symlink directory not allowed",
+                    )
+                ]
             if os.name == "posix":
                 st = d.stat()
                 if st.st_mode & 0o002:
-                    return [ScanFileResult(file_path=directory_path, result=ScanResult.ERROR, error_message="World-writable directory blocked")]
+                    return [
+                        ScanFileResult(
+                            file_path=directory_path,
+                            result=ScanResult.ERROR,
+                            error_message="World-writable directory blocked",
+                        )
+                    ]
         except OSError:
-            return [ScanFileResult(file_path=directory_path, result=ScanResult.ERROR, error_message="Directory validation failed")]
+            return [
+                ScanFileResult(
+                    file_path=directory_path,
+                    result=ScanResult.ERROR,
+                    error_message="Directory validation failed",
+                )
+            ]
         if not self.available:
             return [
                 ScanFileResult(
@@ -334,7 +384,7 @@ class ClamAVWrapper:
                 text=True,
                 timeout=self.config["advanced_settings"]["scan_timeout"]
                 * 10,  # Longer timeout for directories
-                check=False
+                check=False,
             )
 
             # Parse directory scan results
@@ -374,13 +424,13 @@ class ClamAVWrapper:
         if quick_scan:
             # Reduced limits for faster scanning
             options.extend(["--max-filesize", "25M"])  # Smaller than default
-            options.extend(["--max-recursion", "8"])   # Less recursion
-            options.extend(["--max-files", "5000"])    # Fewer files per archive
+            options.extend(["--max-recursion", "8"])  # Less recursion
+            options.extend(["--max-files", "5000"])  # Fewer files per archive
 
             # Skip some intensive scan types in quick mode
             options.append("--scan-archive")  # Still scan archives but with limits
-            options.append("--scan-pe")       # Always scan executables
-            options.append("--scan-elf")      # Always scan Linux executables
+            options.append("--scan-pe")  # Always scan executables
+            options.append("--scan-elf")  # Always scan Linux executables
         else:
             # Full scan mode with comprehensive options
             # Archive scanning
@@ -408,12 +458,16 @@ class ClamAVWrapper:
             options.append("--scan-elf")
 
             # File size limits
-            max_filesize = kwargs.get("max_filesize", scan_settings.get("max_filesize", "100M"))
+            max_filesize = kwargs.get(
+                "max_filesize", scan_settings.get("max_filesize", "100M")
+            )
             if max_filesize:
                 options.extend(["--max-filesize", str(max_filesize)])
 
             # Recursion limits
-            max_recursion = kwargs.get("max_recursion", scan_settings.get("max_recursion", 16))
+            max_recursion = kwargs.get(
+                "max_recursion", scan_settings.get("max_recursion", 16)
+            )
             if max_recursion:
                 options.extend(["--max-recursion", str(max_recursion)])
 
@@ -427,7 +481,9 @@ class ClamAVWrapper:
         options.append("--detect-broken")
 
         # Skip files larger than necessary (configurable per scan type)
-        max_scan_size = performance_settings.get("max_scan_size", "200M" if not quick_scan else "50M")
+        max_scan_size = performance_settings.get(
+            "max_scan_size", "200M" if not quick_scan else "50M"
+        )
         options.extend(["--max-scansize", max_scan_size])
 
         # Custom database path or bundled db inside Flatpak
@@ -446,11 +502,11 @@ class ClamAVWrapper:
     def get_version_info(self) -> Dict[str, str]:
         """Get detailed ClamAV version and database information."""
         version_info = {
-            'engine_version': 'Unknown',
-            'database_version': 'Unknown',
-            'database_date': 'Unknown',
-            'signatures_count': 'Unknown',
-            'engine_capabilities': []
+            "engine_version": "Unknown",
+            "database_version": "Unknown",
+            "database_date": "Unknown",
+            "signatures_count": "Unknown",
+            "engine_capabilities": [],
         }
 
         if not self.available:
@@ -458,32 +514,38 @@ class ClamAVWrapper:
 
         try:
             # Get engine version
-            result = subprocess.run([self.clamscan_path, '--version'],
-                                  capture_output=True, text=True, timeout=10, check=False)
+            result = subprocess.run(
+                [self.clamscan_path, "--version"],
+                capture_output=True,
+                text=True,
+                timeout=10,
+                check=False,
+            )
             if result.returncode == 0:
-                version_info['engine_version'] = result.stdout.strip()
+                version_info["engine_version"] = result.stdout.strip()
 
         except (subprocess.SubprocessError, subprocess.TimeoutExpired):
             pass
 
         # Get database info
         try:
-            db_cmd = [self.clamscan_path, '--database-info']
+            db_cmd = [self.clamscan_path, "--database-info"]
             if self.custom_db_path.exists():
-                db_cmd.extend(['--database', str(self.custom_db_path)])
+                db_cmd.extend(["--database", str(self.custom_db_path)])
             else:
-                bundled_db = Path('/app/share/clamav')
+                bundled_db = Path("/app/share/clamav")
                 if bundled_db.exists():
-                    db_cmd.extend(['--database', str(bundled_db)])
-            result = subprocess.run(db_cmd,
-                                  capture_output=True, text=True, timeout=10, check=False)
+                    db_cmd.extend(["--database", str(bundled_db)])
+            result = subprocess.run(
+                db_cmd, capture_output=True, text=True, timeout=10, check=False
+            )
             if result.returncode == 0:
-                lines = result.stdout.strip().split('\n')
+                lines = result.stdout.strip().split("\n")
                 for line in lines:
-                    if 'signatures:' in line.lower():
-                        version_info['signatures_count'] = line.split(':')[-1].strip()
-                    elif 'database date:' in line.lower():
-                        version_info['database_date'] = line.split(':', 1)[-1].strip()
+                    if "signatures:" in line.lower():
+                        version_info["signatures_count"] = line.split(":")[-1].strip()
+                    elif "database date:" in line.lower():
+                        version_info["database_date"] = line.split(":", 1)[-1].strip()
 
         except (subprocess.SubprocessError, subprocess.TimeoutExpired):
             pass
@@ -498,12 +560,12 @@ class ClamAVWrapper:
         try:
             # Check if database files exist and are readable
             db_files = [
-                '/var/lib/clamav/main.cvd',
-                '/var/lib/clamav/main.cld',
-                '/var/lib/clamav/daily.cvd',
-                '/var/lib/clamav/daily.cld',
-                '/var/lib/clamav/bytecode.cvd',
-                '/var/lib/clamav/bytecode.cld'
+                "/var/lib/clamav/main.cvd",
+                "/var/lib/clamav/main.cld",
+                "/var/lib/clamav/daily.cvd",
+                "/var/lib/clamav/daily.cld",
+                "/var/lib/clamav/bytecode.cvd",
+                "/var/lib/clamav/bytecode.cld",
             ]
 
             valid_db_found = False
@@ -517,8 +579,12 @@ class ClamAVWrapper:
                 return False
 
             # Test scan a known clean file to verify database is working
-            test_result = subprocess.run([self.clamscan_path, '--database-info'],
-                                       capture_output=True, text=True, timeout=15)
+            test_result = subprocess.run(
+                [self.clamscan_path, "--database-info"],
+                capture_output=True,
+                text=True,
+                timeout=15,
+            )
             return test_result.returncode == 0
 
         except (subprocess.SubprocessError, subprocess.TimeoutExpired, OSError) as e:
@@ -531,32 +597,49 @@ class ClamAVWrapper:
 
         # Check for latest version (ClamAV 1.4 LTS as of 2025)
         version_info = self.get_version_info()
-        if 'ClamAV 1.4' not in version_info.get('engine_version', ''):
-            recommendations.append("Update to ClamAV 1.4 LTS for latest security fixes and performance improvements")
+        if "ClamAV 1.4" not in version_info.get("engine_version", ""):
+            recommendations.append(
+                "Update to ClamAV 1.4 LTS for latest security fixes and performance improvements"
+            )
 
         # Check database freshness
         if not self.verify_database_integrity():
             recommendations.append("Update virus databases using freshclam")
 
         # Check daemon configuration (skip inside Flatpak)
-        if self.clamdscan_path and not os.environ.get("FLATPAK_ID") and not self._is_clamd_running():
-            recommendations.append("Start ClamAV daemon (clamd) for better performance and security")
+        if (
+            self.clamdscan_path
+            and not os.environ.get("FLATPAK_ID")
+            and not self._is_clamd_running()
+        ):
+            recommendations.append(
+                "Start ClamAV daemon (clamd) for better performance and security"
+            )
 
         # Check for secure configuration
-        config_path = Path('/etc/clamav/clamd.conf')
+        config_path = Path("/etc/clamav/clamd.conf")
         if config_path.exists() and not os.environ.get("FLATPAK_ID"):
             try:
-                with open(config_path, 'r', encoding='utf-8') as f:
+                with open(config_path, "r", encoding="utf-8") as f:
                     config_content = f.read()
 
-                if 'TCPSocket' in config_content and 'TCPAddr 127.0.0.1' not in config_content:
-                    recommendations.append("Restrict TCP socket access to localhost for security")
+                if (
+                    "TCPSocket" in config_content
+                    and "TCPAddr 127.0.0.1" not in config_content
+                ):
+                    recommendations.append(
+                        "Restrict TCP socket access to localhost for security"
+                    )
 
-                if 'MaxScanSize' not in config_content:
-                    recommendations.append("Configure MaxScanSize to prevent memory exhaustion")
+                if "MaxScanSize" not in config_content:
+                    recommendations.append(
+                        "Configure MaxScanSize to prevent memory exhaustion"
+                    )
 
             except (IOError, PermissionError):
-                recommendations.append("Review ClamAV daemon configuration for security settings")
+                recommendations.append(
+                    "Review ClamAV daemon configuration for security settings"
+                )
 
         return recommendations
 
@@ -565,25 +648,26 @@ class ClamAVWrapper:
         if max_threads is None:
             try:
                 import psutil
+
                 max_threads = min(psutil.cpu_count(logical=False) * 2, 8)
             except (ImportError, AttributeError):
                 max_threads = 4
 
         optimization_config = {
-            'performance_mode': True,
-            'max_threads': max_threads,
-            'memory_optimization': True,
-            'scan_options': {
-                'max_filesize': '200M',  # Based on 2024-2025 recommendations
-                'max_recursion': 12,     # Balanced for performance/security
-                'max_files': 8000,       # Optimized for modern systems
-                'max_scansize': '400M',  # Prevent excessive memory usage
+            "performance_mode": True,
+            "max_threads": max_threads,
+            "memory_optimization": True,
+            "scan_options": {
+                "max_filesize": "200M",  # Based on 2024-2025 recommendations
+                "max_recursion": 12,  # Balanced for performance/security
+                "max_files": 8000,  # Optimized for modern systems
+                "max_scansize": "400M",  # Prevent excessive memory usage
             },
-            'daemon_config': {
-                'use_daemon': True,
-                'concurrent_connections': max_threads,
-                'memory_limit': '2G',    # Align with 3GB+ recommendation
-            }
+            "daemon_config": {
+                "use_daemon": True,
+                "concurrent_connections": max_threads,
+                "memory_limit": "2G",  # Align with 3GB+ recommendation
+            },
         }
 
         return optimization_config
@@ -604,22 +688,48 @@ class ClamAVWrapper:
 
             # Performance optimization: Skip very large files in quick scan mode
             if quick_scan:
-                max_quick_size = self.config.get("performance", {}).get("quick_scan_max_file_size", 50 * 1024 * 1024)  # 50MB
+                max_quick_size = self.config.get("performance", {}).get(
+                    "quick_scan_max_file_size", 50 * 1024 * 1024
+                )  # 50MB
                 if file_size > max_quick_size:
                     return False
 
             # Skip files that are very unlikely to be malicious
             safe_extensions = {
                 # Text files
-                '.txt', '.md', '.rst', '.log',
+                ".txt",
+                ".md",
+                ".rst",
+                ".log",
                 # Image files (unless specifically requested)
-                '.png', '.jpg', '.jpeg', '.gif', '.bmp', '.tiff', '.svg', '.webp',
+                ".png",
+                ".jpg",
+                ".jpeg",
+                ".gif",
+                ".bmp",
+                ".tiff",
+                ".svg",
+                ".webp",
                 # Audio/Video (large files, low risk in quick scans)
-                '.mp3', '.mp4', '.avi', '.mkv', '.flv', '.wav', '.ogg', '.m4a',
+                ".mp3",
+                ".mp4",
+                ".avi",
+                ".mkv",
+                ".flv",
+                ".wav",
+                ".ogg",
+                ".m4a",
                 # Font files
-                '.ttf', '.otf', '.woff', '.woff2',
+                ".ttf",
+                ".otf",
+                ".woff",
+                ".woff2",
                 # Data files
-                '.json', '.yaml', '.yml', '.csv', '.xml',
+                ".json",
+                ".yaml",
+                ".yml",
+                ".csv",
+                ".xml",
             }
 
             # In quick scan mode, skip safe file types
@@ -627,19 +737,58 @@ class ClamAVWrapper:
                 return False
 
             # Skip very large media files even in full scans (configurable)
-            media_extensions = {'.mp4', '.avi', '.mkv', '.mov', '.wmv', '.flv', '.webm',
-                              '.mp3', '.wav', '.flac', '.ogg', '.m4a', '.aac'}
+            media_extensions = {
+                ".mp4",
+                ".avi",
+                ".mkv",
+                ".mov",
+                ".wmv",
+                ".flv",
+                ".webm",
+                ".mp3",
+                ".wav",
+                ".flac",
+                ".ogg",
+                ".m4a",
+                ".aac",
+            }
             if file_extension in media_extensions:
-                max_media_size = self.config.get("performance", {}).get("max_media_file_size", 100 * 1024 * 1024)  # 100MB
+                max_media_size = self.config.get("performance", {}).get(
+                    "max_media_file_size", 100 * 1024 * 1024
+                )  # 100MB
                 if file_size > max_media_size:
                     return False
 
             # Always scan potentially dangerous file types
             high_risk_extensions = {
-                '.exe', '.scr', '.bat', '.cmd', '.com', '.pif', '.vbs', '.js', '.jar',
-                '.zip', '.rar', '.7z', '.tar', '.gz', '.bz2', '.xz',
-                '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx', '.pdf',
-                '.html', '.htm', '.php', '.asp', '.jsp',
+                ".exe",
+                ".scr",
+                ".bat",
+                ".cmd",
+                ".com",
+                ".pif",
+                ".vbs",
+                ".js",
+                ".jar",
+                ".zip",
+                ".rar",
+                ".7z",
+                ".tar",
+                ".gz",
+                ".bz2",
+                ".xz",
+                ".doc",
+                ".docx",
+                ".xls",
+                ".xlsx",
+                ".ppt",
+                ".pptx",
+                ".pdf",
+                ".html",
+                ".htm",
+                ".php",
+                ".asp",
+                ".jsp",
             }
 
             if file_extension in high_risk_extensions:
@@ -653,13 +802,13 @@ class ClamAVWrapper:
             if not file_extension:
                 # Read first few bytes to check for executable signatures
                 try:
-                    with open(file_path, 'rb') as f:
+                    with open(file_path, "rb") as f:
                         header = f.read(4)
                         # ELF magic number (Linux executables)
-                        if header.startswith(b'\x7fELF'):
+                        if header.startswith(b"\x7fELF"):
                             return True
                         # PE magic number (Windows executables)
-                        if header.startswith(b'MZ'):
+                        if header.startswith(b"MZ"):
                             return True
                 except (IOError, PermissionError):
                     pass
@@ -679,13 +828,19 @@ class ClamAVWrapper:
                 capture_output=True,
                 text=True,
                 timeout=5,
-                check=False
+                check=False,
             )
             return result.returncode == 0
-        except (subprocess.SubprocessError, FileNotFoundError, subprocess.TimeoutExpired):
+        except (
+            subprocess.SubprocessError,
+            FileNotFoundError,
+            subprocess.TimeoutExpired,
+        ):
             return False
 
-    def _scan_file_with_daemon(self, file_path: str, file_size: int, start_time: datetime, **kwargs) -> ScanFileResult:
+    def _scan_file_with_daemon(
+        self, file_path: str, file_size: int, start_time: datetime, **kwargs
+    ) -> ScanFileResult:
         """Scan file using ClamAV daemon (faster)."""
         cmd = [self.clamdscan_path]
 
@@ -693,7 +848,9 @@ class ClamAVWrapper:
         cmd.extend(["--infected", "--verbose"])
 
         # Add file size limit if specified
-        max_filesize = kwargs.get("max_filesize", self.config.get("scan_settings", {}).get("max_filesize"))
+        max_filesize = kwargs.get(
+            "max_filesize", self.config.get("scan_settings", {}).get("max_filesize")
+        )
         if max_filesize:
             cmd.extend(["--max-filesize", str(max_filesize)])
 
@@ -705,7 +862,7 @@ class ClamAVWrapper:
             capture_output=True,
             text=True,
             timeout=self.config["advanced_settings"]["scan_timeout"],
-            check=False
+            check=False,
         )
 
         scan_time = (datetime.now() - start_time).total_seconds()
@@ -732,12 +889,13 @@ class ClamAVWrapper:
 
         try:
             # Start daemon in background
-            subprocess.Popen([self.clamd_path],
-                           stdout=subprocess.DEVNULL,
-                           stderr=subprocess.DEVNULL)
+            subprocess.Popen(
+                [self.clamd_path], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
+            )
 
             # Wait a moment for it to start
             import time
+
             time.sleep(2)
 
             if self._is_clamd_running():
@@ -754,48 +912,55 @@ class ClamAVWrapper:
     def apply_2025_security_hardening(self) -> Dict[str, bool]:
         """Apply 2025 security hardening recommendations for ClamAV."""
         hardening_results = {
-            'database_verification': False,
-            'secure_permissions': False,
-            'memory_limits': False,
-            'network_security': False,
-            'signature_validation': False
+            "database_verification": False,
+            "secure_permissions": False,
+            "memory_limits": False,
+            "network_security": False,
+            "signature_validation": False,
         }
 
         # 1. Verify database integrity and signatures
-        hardening_results['database_verification'] = self.verify_database_integrity()
+        hardening_results["database_verification"] = self.verify_database_integrity()
 
         # 2. Check and secure file permissions
         try:
-            db_path = Path('/var/lib/clamav')
+            db_path = Path("/var/lib/clamav")
             if db_path.exists():
                 # Verify database directory permissions
                 stat_info = db_path.stat()
                 # Should be readable by clamav user, not world-writable
                 if not (stat_info.st_mode & 0o002):  # Not world-writable
-                    hardening_results['secure_permissions'] = True
+                    hardening_results["secure_permissions"] = True
         except OSError:
             pass
 
         # 3. Validate memory limits are set
-        config_path = Path('/etc/clamav/clamd.conf')
+        config_path = Path("/etc/clamav/clamd.conf")
         if config_path.exists():
             try:
-                with open(config_path, 'r', encoding='utf-8') as f:
+                with open(config_path, "r", encoding="utf-8") as f:
                     config = f.read()
-                    if any(param in config for param in ['MaxScanSize', 'MaxFileSize', 'MaxRecursion']):
-                        hardening_results['memory_limits'] = True
-                    if 'TCPAddr 127.0.0.1' in config or 'LocalSocket' in config:
-                        hardening_results['network_security'] = True
+                    if any(
+                        param in config
+                        for param in ["MaxScanSize", "MaxFileSize", "MaxRecursion"]
+                    ):
+                        hardening_results["memory_limits"] = True
+                    if "TCPAddr 127.0.0.1" in config or "LocalSocket" in config:
+                        hardening_results["network_security"] = True
             except (IOError, PermissionError):
                 pass
 
         # 4. Signature validation (CVD files have built-in verification)
         try:
             # Check if we can verify signature database
-            result = subprocess.run([self.clamscan_path, '--version'],
-                                  capture_output=True, text=True, timeout=10)
-            if result.returncode == 0 and 'ClamAV' in result.stdout:
-                hardening_results['signature_validation'] = True
+            result = subprocess.run(
+                [self.clamscan_path, "--version"],
+                capture_output=True,
+                text=True,
+                timeout=10,
+            )
+            if result.returncode == 0 and "ClamAV" in result.stdout:
+                hardening_results["signature_validation"] = True
         except (subprocess.SubprocessError, subprocess.TimeoutExpired):
             pass
 
@@ -804,49 +969,52 @@ class ClamAVWrapper:
     def get_2025_performance_settings(self) -> Dict[str, Any]:
         """Get optimized performance settings based on 2024-2025 research."""
         return {
-            'daemon_settings': {
-                'MaxThreads': 12,  # Based on modern multi-core systems
-                'MaxConnectionQueueLength': 200,
-                'MaxScanSize': '400M',  # Increased for modern file sizes
-                'MaxFileSize': '100M',
-                'MaxRecursion': 12,     # Balanced security/performance
-                'MaxFiles': 8000,       # Optimized for current malware
-                'StreamMaxLength': '100M',
-                'ReadTimeout': 300,     # 5 minutes for large files
-                'CommandReadTimeout': 30,
-                'LogVerbose': False,    # Reduce I/O overhead
-                'DatabaseDirectory': '/var/lib/clamav',
+            "daemon_settings": {
+                "MaxThreads": 12,  # Based on modern multi-core systems
+                "MaxConnectionQueueLength": 200,
+                "MaxScanSize": "400M",  # Increased for modern file sizes
+                "MaxFileSize": "100M",
+                "MaxRecursion": 12,  # Balanced security/performance
+                "MaxFiles": 8000,  # Optimized for current malware
+                "StreamMaxLength": "100M",
+                "ReadTimeout": 300,  # 5 minutes for large files
+                "CommandReadTimeout": 30,
+                "LogVerbose": False,  # Reduce I/O overhead
+                "DatabaseDirectory": "/var/lib/clamav",
             },
-            'scanning_optimizations': {
-                'algorithm_optimization': {
-                    'use_aho_corasick': True,  # Parallelization research shows benefits
-                    'parallel_signature_matching': True,
-                    'memory_mapped_scanning': True,
+            "scanning_optimizations": {
+                "algorithm_optimization": {
+                    "use_aho_corasick": True,  # Parallelization research shows benefits
+                    "parallel_signature_matching": True,
+                    "memory_mapped_scanning": True,
                 },
-                'file_type_detection': {
-                    'fast_file_type_detection': True,
-                    'skip_non_executable_in_quick_scan': True,
-                    'prioritize_high_risk_extensions': True,
+                "file_type_detection": {
+                    "fast_file_type_detection": True,
+                    "skip_non_executable_in_quick_scan": True,
+                    "prioritize_high_risk_extensions": True,
                 },
-                'memory_management': {
-                    'lazy_loading': True,
-                    'signature_cache_optimization': True,
-                    'reduced_locking_overhead': True,  # ClamAV 1.4.1+ improvement
-                }
+                "memory_management": {
+                    "lazy_loading": True,
+                    "signature_cache_optimization": True,
+                    "reduced_locking_overhead": True,  # ClamAV 1.4.1+ improvement
+                },
             },
-            'security_enhancements': {
-                'signature_verification': True,
-                'database_integrity_checks': True,
-                'secure_temp_files': True,
-                'privilege_separation': True,
-            }
+            "security_enhancements": {
+                "signature_verification": True,
+                "database_integrity_checks": True,
+                "secure_temp_files": True,
+                "privilege_separation": True,
+            },
         }
 
-    def implement_multithreaded_scanning(self, file_list: List[str], max_workers: int = None) -> List[Dict[str, Any]]:
+    def implement_multithreaded_scanning(
+        self, file_list: List[str], max_workers: int = None
+    ) -> List[Dict[str, Any]]:
         """Implement parallel scanning based on 2024 research findings."""
         if max_workers is None:
             try:
                 import psutil
+
                 # Research shows optimal performance with CPU cores * 1.5 for I/O bound tasks
                 max_workers = min(int(psutil.cpu_count(logical=False) * 1.5), 8)
             except (ImportError, AttributeError, TypeError):
@@ -856,7 +1024,9 @@ class ClamAVWrapper:
 
         # Use daemon if available for better parallel performance
         if self._is_clamd_running():
-            self.logger.info(f"Using daemon-based parallel scanning with {max_workers} workers")
+            self.logger.info(
+                f"Using daemon-based parallel scanning with {max_workers} workers"
+            )
             # Implement parallel daemon scanning
             from concurrent.futures import ThreadPoolExecutor, as_completed
 
@@ -865,42 +1035,52 @@ class ClamAVWrapper:
                 try:
                     result = self._scan_file_with_daemon(
                         file_path,
-                        Path(file_path).stat().st_size if Path(file_path).exists() else 0,
-                        start_time
+                        (
+                            Path(file_path).stat().st_size
+                            if Path(file_path).exists()
+                            else 0
+                        ),
+                        start_time,
                     )
                     return {
-                        'file_path': file_path,
-                        'result': result.result.value,
-                        'threat_name': result.threat_name,
-                        'scan_time': result.scan_time,
-                        'success': True
+                        "file_path": file_path,
+                        "result": result.result.value,
+                        "threat_name": result.threat_name,
+                        "scan_time": result.scan_time,
+                        "success": True,
                     }
                 except Exception as e:
                     return {
-                        'file_path': file_path,
-                        'result': 'error',
-                        'error': str(e),
-                        'scan_time': (datetime.now() - start_time).total_seconds(),
-                        'success': False
+                        "file_path": file_path,
+                        "result": "error",
+                        "error": str(e),
+                        "scan_time": (datetime.now() - start_time).total_seconds(),
+                        "success": False,
                     }
 
             with ThreadPoolExecutor(max_workers=max_workers) as executor:
-                future_to_file = {executor.submit(scan_single_file, file_path): file_path
-                                 for file_path in file_list}
+                future_to_file = {
+                    executor.submit(scan_single_file, file_path): file_path
+                    for file_path in file_list
+                }
 
                 for future in as_completed(future_to_file):
                     results.append(future.result())
         else:
-            self.logger.warning("Daemon not available, falling back to sequential scanning")
+            self.logger.warning(
+                "Daemon not available, falling back to sequential scanning"
+            )
             for file_path in file_list:
                 result = self.scan_file(file_path)
-                results.append({
-                    'file_path': file_path,
-                    'result': result.result.value,
-                    'threat_name': result.threat_name,
-                    'scan_time': result.scan_time,
-                    'success': result.result != ScanResult.ERROR
-                })
+                results.append(
+                    {
+                        "file_path": file_path,
+                        "result": result.result.value,
+                        "threat_name": result.threat_name,
+                        "scan_time": result.scan_time,
+                        "success": result.result != ScanResult.ERROR,
+                    }
+                )
 
         return results
 
@@ -1027,9 +1207,12 @@ class ClamAVWrapper:
         Returns:
             bool: True if update was successful, False otherwise
         """
-        # Inside Flatpak sandbox, system freshclam is not available; updates should be provided via app updates
+        # Inside Flatpak sandbox, system freshclam is not available; updates
+        # should be provided via app updates
         if os.environ.get("FLATPAK_ID"):
-            self.logger.info("Flatpak environment detected: virus definitions are bundled and updated via app updates")
+            self.logger.info(
+                "Flatpak environment detected: virus definitions are bundled and updated via app updates"
+            )
             return False
         if not self.available:
             self.logger.error("ClamAV not available")
@@ -1047,8 +1230,7 @@ class ClamAVWrapper:
             # database directory)
             [self.freshclam_path, "--verbose"],
             # Try with user database directory if system directory fails
-            [self.freshclam_path, "--verbose",
-                "--datadir", str(self.custom_db_path)],
+            [self.freshclam_path, "--verbose", "--datadir", str(self.custom_db_path)],
         ]
 
         # Use elevated_run for consistent GUI sudo experience (same as RKHunter)
@@ -1059,24 +1241,25 @@ class ClamAVWrapper:
 
         for i, cmd in enumerate(update_commands):
             try:
-                self.logger.debug(
-                    f"Attempt {i + 1}: Running command: {' '.join(cmd)}"
-                )
+                self.logger.debug(f"Attempt {i + 1}: Running command: {' '.join(cmd)}")
 
                 # Skip privileged commands if we're already running as root
                 if os.getuid() == 0 and i >= 2:  # Skip elevated attempts if root
                     self.logger.debug(
-                        "Already running as root, skipping elevated command")
+                        "Already running as root, skipping elevated command"
+                    )
                     continue
 
                 # Use elevated_run for the last attempt (consistent with RKHunter)
                 if i == len(update_commands) - 1:
-                    self.logger.info("Using elevated privileges with GUI authentication (same as RKHunter)")
+                    self.logger.info(
+                        "Using elevated privileges with GUI authentication (same as RKHunter)"
+                    )
                     result = elevated_run(
                         cmd,
                         capture_output=True,
                         timeout=300,  # 5 minutes timeout
-                        gui=True  # Use GUI authentication like RKHunter
+                        gui=True,  # Use GUI authentication like RKHunter
                     )
 
                     self.logger.debug(f"Return code: {result.returncode}")
@@ -1095,12 +1278,12 @@ class ClamAVWrapper:
                         "is up to date" in output_text.lower()
                         or "database is up-to-date" in output_text.lower()
                     ):
-                        self.logger.info(
-                            "Virus definitions already up to date")
+                        self.logger.info("Virus definitions already up to date")
                         return True
 
                     self.logger.warning(
-                        f"Elevated update failed (code {result.returncode}): {result.stderr}")
+                        f"Elevated update failed (code {result.returncode}): {result.stderr}"
+                    )
                     continue
 
                 else:
@@ -1118,8 +1301,7 @@ class ClamAVWrapper:
                     self.logger.debug(f"STDERR: {result.stderr}")
 
                     if result.returncode == 0:
-                        self.logger.info(
-                            "Virus definitions updated successfully")
+                        self.logger.info("Virus definitions updated successfully")
                         return True
 
                     # Check if definitions are already up to date
@@ -1128,8 +1310,7 @@ class ClamAVWrapper:
                         "is up to date" in output_text.lower()
                         or "database is up-to-date" in output_text.lower()
                     ):
-                        self.logger.info(
-                            "Virus definitions already up to date")
+                        self.logger.info("Virus definitions already up to date")
                         return True
 
                     # Check for specific error patterns
@@ -1139,13 +1320,16 @@ class ClamAVWrapper:
                     ):
                         self.logger.warning(
                             f"Permission error with attempt {
-                                i + 1}, trying next method...")
+                                i + 1
+                            }, trying next method..."
+                        )
                         continue
 
                     # If this was not the last attempt, log the failure
                     if i < len(update_commands) - 1:
                         self.logger.warning(
-                            f"Update attempt {i + 1} failed, trying next method")
+                            f"Update attempt {i + 1} failed, trying next method"
+                        )
 
             except subprocess.TimeoutExpired:
                 self.logger.error(
@@ -1153,9 +1337,7 @@ class ClamAVWrapper:
                 )
                 continue
             except FileNotFoundError as e:
-                self.logger.error(
-                    f"Command not found in attempt {i + 1}: {e}"
-                )
+                self.logger.error(f"Command not found in attempt {i + 1}: {e}")
                 continue
             except Exception as e:
                 self.logger.error(f"Error in update attempt {i + 1}: {str(e)}")
@@ -1164,8 +1346,7 @@ class ClamAVWrapper:
         # If all attempts failed, provide helpful error message
         self.logger.error("All virus definition update attempts failed.")
         self.logger.error("Please ensure either:")
-        self.logger.error(
-            "1. You have write permissions to /var/lib/clamav/, or")
+        self.logger.error("1. You have write permissions to /var/lib/clamav/, or")
         self.logger.error("2. GUI authentication is working properly, or")
         self.logger.error(
             "3. Set up a custom database directory with proper permissions"
@@ -1179,7 +1360,10 @@ class ClamAVWrapper:
             response.raise_for_status()
 
             # Save to custom database directory
-            filename = hashlib.md5(source_url.encode()).hexdigest() + ".cvd"
+            filename = (
+                hashlib.md5(source_url.encode(), usedforsecurity=False).hexdigest()
+                + ".cvd"
+            )
             filepath = self.custom_db_path / filename
 
             with open(filepath, "wb") as f:
@@ -1189,8 +1373,7 @@ class ClamAVWrapper:
             return True
 
         except (requests.RequestException, IOError) as e:
-            self.logger.error(
-                "Failed to update custom source %s: %s", source_url, e)
+            self.logger.error("Failed to update custom source %s: %s", source_url, e)
             return False
 
     def get_definition_info(self) -> List[VirusDefinitionInfo]:
@@ -1207,8 +1390,7 @@ class ClamAVWrapper:
                             VirusDefinitionInfo(
                                 name=db_file.name,
                                 version="Unknown",  # Would need to parse database file for actual version
-                                last_updated=datetime.fromtimestamp(
-                                    stat.st_mtime),
+                                last_updated=datetime.fromtimestamp(stat.st_mtime),
                                 size=stat.st_size,
                                 url="official",
                             )
@@ -1218,9 +1400,7 @@ class ClamAVWrapper:
                         print(f"Warning: Could not access {db_file}: {e}")
                         continue
         except (OSError, IOError, PermissionError) as e:
-            print(
-                f"Warning: Could not access database directory {
-                    self.db_path}: {e}")
+            print(f"Warning: Could not access database directory {self.db_path}: {e}")
 
         # Check custom databases - handle permission errors gracefully
         try:
@@ -1232,20 +1412,21 @@ class ClamAVWrapper:
                             VirusDefinitionInfo(
                                 name=db_file.name,
                                 version="Custom",
-                                last_updated=datetime.fromtimestamp(
-                                    stat.st_mtime),
+                                last_updated=datetime.fromtimestamp(stat.st_mtime),
                                 size=stat.st_size,
                                 url="custom",
-                            ))
+                            )
+                        )
                     except (OSError, IOError, PermissionError) as e:
                         # Log the error but continue processing other files
-                        print(
-                            f"Warning: Could not access custom db {db_file}: {e}")
+                        print(f"Warning: Could not access custom db {db_file}: {e}")
                         continue
         except (OSError, IOError, PermissionError) as e:
             print(
                 f"Warning: Could not access custom database directory {
-                    self.custom_db_path}: {e}")
+                    self.custom_db_path
+                }: {e}"
+            )
 
         return definitions
 

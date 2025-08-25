@@ -2,6 +2,7 @@
 """
 Enhanced file scanner with quarantine management and scheduling for S&D - Search & Destroy
 """
+
 import gc
 import hashlib
 import os
@@ -17,11 +18,17 @@ from pathlib import Path
 from typing import Callable, List, Optional
 
 import psutil
-# import schedule  # Temporarily disabled for testing - will re-enable in Phase 2
 
 from .clamav_wrapper import ClamAVWrapper, ScanFileResult, ScanResult
 
 
+# Optional scheduler dependency
+try:
+    import schedule  # type: ignore
+    _SCHED_AVAILABLE = True
+except Exception:
+    schedule = None  # type: ignore
+    _SCHED_AVAILABLE = False
 class MemoryMonitor:
     """Monitor and optimize memory usage during scanning operations."""
 
@@ -82,7 +89,7 @@ class QuarantineManager:
 
     def __init__(self):
         try:
-            from utils.config import load_config, setup_logging
+            from app.utils.config import load_config, setup_logging
         except ImportError:
             from app.utils.config import load_config, setup_logging
 
@@ -95,9 +102,7 @@ class QuarantineManager:
         self.quarantine_files_dir = self.quarantine_dir / "files"
         self.quarantine_metadata_dir = self.quarantine_dir / "metadata"
 
-        for directory in [
-                self.quarantine_files_dir,
-                self.quarantine_metadata_dir]:
+        for directory in [self.quarantine_files_dir, self.quarantine_metadata_dir]:
             directory.mkdir(exist_ok=True)
 
     def quarantine_file(
@@ -107,8 +112,7 @@ class QuarantineManager:
         try:
             source_path = Path(file_path)
             if not source_path.exists():
-                self.logger.error(
-                    "File to quarantine not found: %s", file_path)
+                self.logger.error("File to quarantine not found: %s", file_path)
                 return False
 
             # Generate unique quarantine filename
@@ -133,17 +137,13 @@ class QuarantineManager:
             )
 
             # Save metadata
-            metadata_file = self.quarantine_metadata_dir / \
-                f"{quarantine_filename}.json"
+            metadata_file = self.quarantine_metadata_dir / f"{quarantine_filename}.json"
             import json
 
             with open(metadata_file, "w", encoding="utf-8") as f:
                 json.dump(asdict(metadata), f, indent=2, default=str)
 
-            self.logger.info(
-                "File quarantined: %s -> %s",
-                file_path,
-                quarantine_path)
+            self.logger.info("File quarantined: %s -> %s", file_path, quarantine_path)
             return True
 
         except (OSError, IOError, shutil.Error) as e:
@@ -180,13 +180,11 @@ class QuarantineManager:
 
             except (json.JSONDecodeError, IOError, TypeError, ValueError) as e:
                 self.logger.warning(
-                    "Failed to load quarantine metadata %s: %s", metadata_file, e)
+                    "Failed to load quarantine metadata %s: %s", metadata_file, e
+                )
                 continue
 
-        return sorted(
-            quarantined_files,
-            key=lambda x: x.quarantine_date,
-            reverse=True)
+        return sorted(quarantined_files, key=lambda x: x.quarantine_date, reverse=True)
 
     def restore_file(
         self, quarantine_path: str, original_path: Optional[str] = None
@@ -195,9 +193,7 @@ class QuarantineManager:
         try:
             quarantine_file = Path(quarantine_path)
             if not quarantine_file.exists():
-                self.logger.error(
-                    "Quarantined file not found: %s",
-                    quarantine_path)
+                self.logger.error("Quarantined file not found: %s", quarantine_path)
                 return False
 
             # Find metadata
@@ -205,9 +201,7 @@ class QuarantineManager:
                 self.quarantine_metadata_dir / f"{quarantine_file.name}.json"
             )
             if not metadata_file.exists():
-                self.logger.error(
-                    "Quarantine metadata not found: %s",
-                    metadata_file)
+                self.logger.error("Quarantine metadata not found: %s", metadata_file)
                 return False
 
             # Load metadata
@@ -232,17 +226,11 @@ class QuarantineManager:
             # Remove metadata
             metadata_file.unlink()
 
-            self.logger.info(
-                "File restored: %s -> %s",
-                quarantine_path,
-                restore_path)
+            self.logger.info("File restored: %s -> %s", quarantine_path, restore_path)
             return True
 
         except (OSError, IOError, shutil.Error, json.JSONDecodeError) as e:
-            self.logger.error(
-                "Failed to restore file %s: %s",
-                quarantine_path,
-                e)
+            self.logger.error("Failed to restore file %s: %s", quarantine_path, e)
             return False
 
     def delete_quarantined_file(self, quarantine_path: str) -> bool:
@@ -275,14 +263,11 @@ class QuarantineManager:
 
         for quarantined_file in self.list_quarantined_files():
             if quarantined_file.quarantine_date < cutoff_date:
-                if self.delete_quarantined_file(
-                        quarantined_file.quarantine_path):
+                if self.delete_quarantined_file(quarantined_file.quarantine_path):
                     deleted_count += 1
 
         if deleted_count > 0:
-            self.logger.info(
-                "Cleaned up %d old quarantined files",
-                deleted_count)
+            self.logger.info("Cleaned up %d old quarantined files", deleted_count)
 
 
 class FileScanner:
@@ -292,14 +277,14 @@ class FileScanner:
         # Use try-except for different import scenarios
         try:
             from .input_validation import FileSizeMonitor, PathValidator
-            from .rate_limiting import rate_limit_manager, configure_rate_limits
+            from .rate_limiting import configure_rate_limits, rate_limit_manager
         except ImportError:
             from app.core.input_validation import FileSizeMonitor, PathValidator
-            from app.core.rate_limiting import rate_limit_manager, configure_rate_limits
-        
+            from app.core.rate_limiting import configure_rate_limits, rate_limit_manager
+
         try:
-            from utils.config import load_config, setup_logging
-            from utils.scan_reports import ScanReportManager
+            from app.utils.config import load_config, setup_logging
+            from app.utils.scan_reports import ScanReportManager
         except ImportError:
             from app.utils.config import load_config, setup_logging
             from app.utils.scan_reports import ScanReportManager
@@ -320,9 +305,7 @@ class FileScanner:
 
         # Memory optimization: Add file batching and monitoring
         self.memory_monitor = MemoryMonitor()
-        self.batch_size = self.config.get(
-            "performance", {}).get(
-            "scan_batch_size", 50)
+        self.batch_size = self.config.get("performance", {}).get("scan_batch_size", 50)
         self.max_memory_usage = self.config.get("performance", {}).get(
             "max_memory_mb", 256
         )
@@ -338,7 +321,9 @@ class FileScanner:
 
         # Callbacks
         self.progress_callback: Optional[Callable[[float, str], None]] = None
-        self.detailed_progress_callback: Optional[Callable[[dict], None]] = None  # New detailed callback
+        self.detailed_progress_callback: Optional[Callable[[dict], None]] = (
+            None  # New detailed callback
+        )
         self.result_callback: Optional[Callable[[ScanFileResult], None]] = None
 
         # Scheduled scanning
@@ -347,25 +332,18 @@ class FileScanner:
         self._scheduler_stop_event = threading.Event()
 
         # Initialize scheduled scans if enabled
-        if self.config.get(
-                "security_settings",
-                {}).get(
-                "scheduled_scanning",
-                False):
+        if self.config.get("security_settings", {}).get("scheduled_scanning", False):
             self.start_scheduler()
 
-    def set_progress_callback(
-            self, callback: Callable[[float, str], None]) -> None:
+    def set_progress_callback(self, callback: Callable[[float, str], None]) -> None:
         """Set callback for scan progress updates."""
         self.progress_callback = callback
 
-    def set_detailed_progress_callback(
-            self, callback: Callable[[dict], None]) -> None:
+    def set_detailed_progress_callback(self, callback: Callable[[dict], None]) -> None:
         """Set callback for detailed scan progress updates."""
         self.detailed_progress_callback = callback
 
-    def set_result_callback(
-            self, callback: Callable[[ScanFileResult], None]) -> None:
+    def set_result_callback(self, callback: Callable[[ScanFileResult], None]) -> None:
         """Set callback for individual scan results."""
         self.result_callback = callback
 
@@ -387,11 +365,10 @@ class FileScanner:
         from .input_validation import SecurityValidationError
 
         # Apply rate limiting for file scans
-        if not self.rate_limiter.acquire('file_scan'):
-            wait_time = self.rate_limiter.wait_time('file_scan')
+        if not self.rate_limiter.acquire("file_scan"):
+            wait_time = self.rate_limiter.wait_time("file_scan")
             self.logger.warning(
-                "Rate limit exceeded for file scan. Wait time: %.2f seconds", 
-                wait_time
+                "Rate limit exceeded for file scan. Wait time: %.2f seconds", wait_time
             )
             return ScanFileResult(
                 file_path=file_path,
@@ -406,13 +383,11 @@ class FileScanner:
 
         # Security validation before scanning
         try:
-            is_valid, error_msg = self.path_validator.validate_file_for_scan(
-                file_path)
+            is_valid, error_msg = self.path_validator.validate_file_for_scan(file_path)
             if not is_valid:
                 self.logger.warning(
-                    "Security validation failed for %s: %s",
-                    file_path,
-                    error_msg)
+                    "Security validation failed for %s: %s", file_path, error_msg
+                )
                 return ScanFileResult(
                     file_path=file_path,
                     result=ScanResult.ERROR,
@@ -428,8 +403,7 @@ class FileScanner:
                 )
 
         except SecurityValidationError as e:
-            self.logger.error(
-                "Security validation error for %s: %s", file_path, e)
+            self.logger.error("Security validation error for %s: %s", file_path, e)
             return ScanFileResult(
                 file_path=file_path,
                 result=ScanResult.ERROR,
@@ -438,9 +412,7 @@ class FileScanner:
 
         # Only report file-level progress if this is a single file scan
         # For multi-file scans, progress is reported by scan_files method
-        if hasattr(
-                self,
-                "_total_files_to_scan") and self._total_files_to_scan > 1:
+        if hasattr(self, "_total_files_to_scan") and self._total_files_to_scan > 1:
             # Multi-file scan - don't report individual file progress
             pass
         else:
@@ -449,15 +421,17 @@ class FileScanner:
                 self.progress_callback(0.0, f"Scanning {Path(file_path).name}")
 
         # Performance optimization: Check if file should be scanned
-        scan_type = kwargs.get('scan_type', 'full')
-        quick_scan = scan_type.lower() in ['quick', 'fast', 'basic']
-        
+        scan_type = kwargs.get("scan_type", "full")
+        quick_scan = scan_type.lower() in ["quick", "fast", "basic"]
+
         if not self.clamav_wrapper.should_scan_file(file_path, quick_scan=quick_scan):
             # Return clean result for skipped files
             result = ScanFileResult(
                 file_path=file_path,
                 result=ScanResult.CLEAN,
-                file_size=Path(file_path).stat().st_size if Path(file_path).exists() else 0,
+                file_size=(
+                    Path(file_path).stat().st_size if Path(file_path).exists() else 0
+                ),
                 scan_time=0.001,  # Minimal time for skipped file
             )
             if self.result_callback:
@@ -465,7 +439,7 @@ class FileScanner:
             return result
 
         # Perform scan with optimization flags
-        kwargs['quick_scan'] = quick_scan
+        kwargs["quick_scan"] = quick_scan
         result = self.clamav_wrapper.scan_file(file_path, **kwargs)
 
         # Record processed file for size monitoring
@@ -476,13 +450,12 @@ class FileScanner:
             self._handle_infected_file(result, scan_id)
 
         # Only report completion for single file scans
-        if not hasattr(
-                self,
-                "_total_files_to_scan") or self._total_files_to_scan <= 1:
+        if not hasattr(self, "_total_files_to_scan") or self._total_files_to_scan <= 1:
             if self.progress_callback:
                 self.progress_callback(
-                    100.0, f"Completed {
-                        Path(file_path).name}")
+                    100.0,
+                    f"Completed {Path(file_path).name}",
+                )
 
         # Notify result
         if self.result_callback:
@@ -517,20 +490,17 @@ class FileScanner:
         return validation_result
 
     def scan_files(
-            self,
-            file_paths: List[str],
-            scan_type=None,
-            max_workers: int = 4,
-            timeout: Optional[int] = None,
-            save_report: bool = True,
-            **kwargs):
+        self,
+        file_paths: List[str],
+        scan_type=None,
+        max_workers: int = 4,
+        timeout: Optional[int] = None,
+        save_report: bool = True,
+        **kwargs,
+    ):
         """Scan multiple files with progress tracking and enhanced reporting."""
-        from utils.scan_reports import ScanResult as ReportScanResult
-        from utils.scan_reports import (
-            ScanType,
-            ThreatInfo,
-            ThreatLevel,
-        )
+        from app.utils.scan_reports import ScanResult as ReportScanResult
+        from app.utils.scan_reports import ScanType, ThreatInfo, ThreatLevel
 
         if scan_type is None:
             scan_type = ScanType.CUSTOM
@@ -579,9 +549,9 @@ class FileScanner:
 
         try:
             # Set up timeout protection
-            scan_timeout = timeout or kwargs.get('timeout', 1800)  # Default 30 minutes
+            scan_timeout = timeout or kwargs.get("timeout", 1800)  # Default 30 minutes
             scan_start_time = time.time()
-            
+
             executor = ThreadPoolExecutor(max_workers=max_workers)
             try:
                 # Submit all scan tasks
@@ -596,7 +566,9 @@ class FileScanner:
                 for future in as_completed(future_to_path, timeout=scan_timeout):
                     # Check for cancellation (supports both manual flag and Qt6 interruption)
                     if self._scan_cancelled:
-                        self.logger.info("Scan cancelled by user - shutting down executor")
+                        self.logger.info(
+                            "Scan cancelled by user - shutting down executor"
+                        )
                         # Cancel all pending futures immediately
                         for pending_future in future_to_path:
                             if not pending_future.done():
@@ -604,12 +576,14 @@ class FileScanner:
                         # Shutdown executor immediately without waiting
                         executor.shutdown(wait=False)
                         break
-                    
+
                     # Additional check for Qt6 thread interruption if thread reference available
-                    if hasattr(self, '_current_thread') and self._current_thread:
-                        if hasattr(self._current_thread, 'isInterruptionRequested'):
+                    if hasattr(self, "_current_thread") and self._current_thread:
+                        if hasattr(self._current_thread, "isInterruptionRequested"):
                             if self._current_thread.isInterruptionRequested():
-                                self.logger.info("Scan interrupted via Qt6 thread interruption - shutting down executor")
+                                self.logger.info(
+                                    "Scan interrupted via Qt6 thread interruption - shutting down executor"
+                                )
                                 self._scan_cancelled = True
                                 # Cancel all pending futures immediately
                                 for pending_future in future_to_path:
@@ -618,7 +592,7 @@ class FileScanner:
                                 # Shutdown executor immediately without waiting
                                 executor.shutdown(wait=False)
                                 break
-                    
+
                     # Check for timeout
                     if time.time() - scan_start_time > scan_timeout:
                         self.logger.warning("Scan timeout reached, stopping")
@@ -659,8 +633,7 @@ class FileScanner:
 
                     except Exception as e:
                         scan_result.errors.append(f"{file_path}: {str(e)}")
-                        self.logger.error(
-                            "Error scanning %s: %s", file_path, e)
+                        self.logger.error("Error scanning %s: %s", file_path, e)
 
                     # Update overall progress with better status message
                     progress = (completed / len(file_paths)) * 100
@@ -673,13 +646,19 @@ class FileScanner:
                         # Truncate filename if too long to keep "Remaining:" visible
                         max_filename_length = 25  # Very conservative length to ensure "Remaining:" stays visible
                         if len(current_file) > max_filename_length:
-                            current_file = current_file[:max_filename_length-3] + "..."
-                        status_msg = f"Scanning: {current_file} | Remaining: {files_remaining}"
+                            current_file = (
+                                current_file[: max_filename_length - 3] + "..."
+                            )
+                        status_msg = (
+                            f"Scanning: {current_file} | Remaining: {files_remaining}"
+                        )
                         self.progress_callback(progress, status_msg)
-                    
+
                     # Emit detailed progress information for results display
                     if self.detailed_progress_callback:
-                        current_dir = str(Path(file_path).parent.resolve())  # Use resolve() for consistent paths
+                        current_dir = str(
+                            Path(file_path).parent.resolve()
+                        )  # Use resolve() for consistent paths
                         detail_info = {
                             "type": "file_scanned",
                             "current_directory": current_dir,
@@ -688,16 +667,18 @@ class FileScanner:
                             "files_remaining": files_remaining,
                             "total_files": len(file_paths),
                             "progress_percent": progress,
-                            "scan_result": file_result.result.value if file_result else "clean"
+                            "scan_result": (
+                                file_result.result.value if file_result else "clean"
+                            ),
                         }
                         self.detailed_progress_callback(detail_info)
-            
+
             except Exception as e:
                 self.logger.error("Error during scan execution: %s", e)
                 self._scan_cancelled = True
             finally:
                 # Always cleanup the executor
-                if 'executor' in locals():
+                if "executor" in locals():
                     try:
                         executor.shutdown(wait=False)  # Don't wait for completion
                     except Exception as e:
@@ -726,25 +707,32 @@ class FileScanner:
 
             # Save scan report (conditional based on save_report parameter)
             if save_report:
-                print(f"\n💾 === FILESCANNER SAVE REPORT ===")
+                print("\n💾 === FILESCANNER SAVE REPORT ===")
                 print(f"DEBUG: FileScanner saving scan report: {scan_result.scan_id}")
                 print(f"DEBUG: Scan type: {scan_result.scan_type}")
                 print(f"DEBUG: Files scanned: {scan_result.scanned_files}")
                 print(f"DEBUG: Threats found: {scan_result.threats_found}")
-                print(f"DEBUG: Report will be saved to: {self.scan_report_manager.daily_reports}/scan_{scan_result.scan_id}.json")
+                print(
+                    f"DEBUG: Report will be saved to: {
+                        self.scan_report_manager.daily_reports
+                    }/scan_{scan_result.scan_id}.json"
+                )
                 try:
                     saved_path = self.scan_report_manager.save_scan_result(scan_result)
-                    print(f"DEBUG: ✅ FileScanner report saved successfully to: {saved_path}")
+                    print(
+                        f"DEBUG: ✅ FileScanner report saved successfully to: {saved_path}"
+                    )
                 except Exception as e:
                     print(f"DEBUG: ❌ FileScanner report save failed: {e}")
                     import traceback
+
                     traceback.print_exc()
                     raise
             else:
-                print(f"\n💾 === FILESCANNER SKIP REPORT SAVE ===")
+                print("\n💾 === FILESCANNER SKIP REPORT SAVE ===")
                 print(f"DEBUG: Skipping report save for scan: {scan_result.scan_id}")
                 print(f"DEBUG: Files scanned: {scan_result.scanned_files}")
-                print(f"DEBUG: This is part of a multi-directory scan")
+                print("DEBUG: This is part of a multi-directory scan")
 
             self.logger.info(
                 "Scan completed: %s - %d files scanned, %d threats found",
@@ -773,27 +761,26 @@ class FileScanner:
         **kwargs,
     ):
         """Scan all files in a directory with security validation."""
-        from utils.scan_reports import ScanResult as ReportScanResult
-        from utils.scan_reports import ScanType
+        from app.utils.scan_reports import ScanType
 
         if scan_type is None:
             scan_type = ScanType.CUSTOM
         """Scan a directory recursively."""
         directory_obj = Path(directory_path)
-        
+
         # Debug scan options to verify they're being received
-        print(f"\n🔍 === FILESCANNER SCAN OPTIONS DEBUG ===")
+        print("\n🔍 === FILESCANNER SCAN OPTIONS DEBUG ===")
         print(f"DEBUG: Directory: {directory_path}")
         print(f"DEBUG: Scan type: {scan_type}")
         print(f"DEBUG: Include hidden: {include_hidden}")
         print(f"DEBUG: Scan options received: {kwargs}")
-        if 'file_filter' in kwargs:
+        if "file_filter" in kwargs:
             print(f"DEBUG: File filter: {kwargs['file_filter']}")
-        if 'depth' in kwargs:
+        if "depth" in kwargs:
             print(f"DEBUG: Depth limit: {kwargs['depth']}")
-        if 'memory_limit' in kwargs:
+        if "memory_limit" in kwargs:
             print(f"DEBUG: Memory limit: {kwargs['memory_limit']}")
-        if 'exclusions' in kwargs:
+        if "exclusions" in kwargs:
             print(f"DEBUG: Exclusions: {kwargs['exclusions']}")
 
         if not directory_obj.exists() or not directory_obj.is_dir():
@@ -804,7 +791,7 @@ class FileScanner:
         # Enhanced memory and performance protection
         MAX_FILES_LIMIT = kwargs.get("max_files", 1000)  # Reduced default limit
         MEMORY_LIMIT_MB = kwargs.get("memory_limit_mb", 512)  # Memory limit
-        
+
         # Handle depth limiting
         scan_depth = kwargs.get("depth", None)
         if scan_depth is not None:
@@ -814,7 +801,7 @@ class FileScanner:
                 max_depth = None
         else:
             max_depth = None
-        
+
         # Always instantiate a MemoryMonitor (previous conditional check was ineffective)
         memory_monitor = MemoryMonitor()
 
@@ -822,54 +809,60 @@ class FileScanner:
         if max_depth is not None:
             # Depth-limited scanning
             for file_path in self._scan_directory_with_depth(directory_obj, max_depth):
-                if hasattr(self, '_scan_cancelled') and self._scan_cancelled:
+                if hasattr(self, "_scan_cancelled") and self._scan_cancelled:
                     self.logger.info("📁 File collection cancelled by manual flag")
                     break
-                
+
                 # Additional check for Qt6 thread interruption if thread reference available
-                if hasattr(self, '_current_thread') and self._current_thread:
-                    if hasattr(self._current_thread, 'isInterruptionRequested'):
+                if hasattr(self, "_current_thread") and self._current_thread:
+                    if hasattr(self._current_thread, "isInterruptionRequested"):
                         if self._current_thread.isInterruptionRequested():
-                            self.logger.info("📁 File collection cancelled by Qt6 thread interruption")
+                            self.logger.info(
+                                "📁 File collection cancelled by Qt6 thread interruption"
+                            )
                             self._scan_cancelled = True
                             break
-                            
+
                 if file_path.is_file():
                     # Skip hidden files unless requested
                     if not include_hidden and any(
                         part.startswith(".") for part in file_path.parts
                     ):
                         continue
-                    
+
                     # Apply file filter options if specified
-                    if 'file_filter' in kwargs:
-                        file_filter = kwargs['file_filter']
-                        if file_filter == 'executables':
+                    if "file_filter" in kwargs:
+                        file_filter = kwargs["file_filter"]
+                        if file_filter == "executables":
                             # Only scan executable files
                             if not self._is_executable_file(file_path):
                                 continue
-                        elif file_filter == 'documents':
+                        elif file_filter == "documents":
                             # Only scan document files
                             if not self._is_document_file(file_path):
                                 continue
-                        elif file_filter == 'archives':
-                            # Only scan archive files  
+                        elif file_filter == "archives":
+                            # Only scan archive files
                             if not self._is_archive_file(file_path):
                                 continue
                         # 'all' or other values scan all files (default behavior)
-                    
+
                     # Apply exclusion patterns if specified
-                    if 'exclusions' in kwargs:
-                        exclusions = kwargs['exclusions']
+                    if "exclusions" in kwargs:
+                        exclusions = kwargs["exclusions"]
                         if self._is_excluded_file(file_path, exclusions):
                             continue
-                    
+
                     # Memory and performance checks (same as below)
-                    if memory_monitor and memory_monitor.check_memory_pressure(MEMORY_LIMIT_MB):
-                        self.logger.warning("Memory pressure detected, limiting file collection")
+                    if memory_monitor and memory_monitor.check_memory_pressure(
+                        MEMORY_LIMIT_MB
+                    ):
+                        self.logger.warning(
+                            "Memory pressure detected, limiting file collection"
+                        )
                         memory_monitor.force_garbage_collection()
                         MAX_FILES_LIMIT = min(MAX_FILES_LIMIT, len(file_paths) + 100)
-                    
+
                     file_paths.append(str(file_path))
 
                     # Check limits and interruption (same as below)
@@ -881,83 +874,99 @@ class FileScanner:
                             MAX_FILES_LIMIT,
                         )
                         break
-                        
+
                     # More frequent interruption checks for large scans (every 100 files)
                     if len(file_paths) % 100 == 0:
                         # Check for Qt6 thread interruption
-                        if hasattr(self, '_current_thread') and self._current_thread:
-                            if hasattr(self._current_thread, 'isInterruptionRequested'):
+                        if hasattr(self, "_current_thread") and self._current_thread:
+                            if hasattr(self._current_thread, "isInterruptionRequested"):
                                 if self._current_thread.isInterruptionRequested():
-                                    self.logger.info(f"📁 File collection interrupted after {len(file_paths)} files")
+                                    self.logger.info(
+                                        f"📁 File collection interrupted after {
+                                            len(file_paths)
+                                        } files"
+                                    )
                                     self._scan_cancelled = True
                                     break
-                    
+
                     # Periodic memory check for large directories
                     if len(file_paths) % 500 == 0 and memory_monitor:
                         if memory_monitor.check_memory_pressure(MEMORY_LIMIT_MB * 0.8):
-                            self.logger.warning("Memory pressure during file collection, forcing GC")
+                            self.logger.warning(
+                                "Memory pressure during file collection, forcing GC"
+                            )
                             memory_monitor.force_garbage_collection()
         else:
             # Regular recursive scanning (existing logic)
             for file_path in directory_obj.rglob("*"):
                 # Check for cancellation (both manual flag and Qt6 interruption)
-                if hasattr(self, '_scan_cancelled') and self._scan_cancelled:
+                if hasattr(self, "_scan_cancelled") and self._scan_cancelled:
                     self.logger.info("📁 File collection cancelled by manual flag")
                     break
-                    
+
                 # Additional check for Qt6 thread interruption if thread reference available
-                if hasattr(self, '_current_thread') and self._current_thread:
-                    if hasattr(self._current_thread, 'isInterruptionRequested'):
+                if hasattr(self, "_current_thread") and self._current_thread:
+                    if hasattr(self._current_thread, "isInterruptionRequested"):
                         if self._current_thread.isInterruptionRequested():
-                            self.logger.info("📁 File collection cancelled by Qt6 thread interruption")
+                            self.logger.info(
+                                "📁 File collection cancelled by Qt6 thread interruption"
+                            )
                             self._scan_cancelled = True
                             break
-                            
+
                 if file_path.is_file():
                     # Skip hidden files unless requested
                     if not include_hidden and any(
                         part.startswith(".") for part in file_path.parts
                     ):
                         continue
-                    
+
                     # Apply file filter options if specified
-                    if 'file_filter' in kwargs:
-                        file_filter = kwargs['file_filter']
-                        if file_filter == 'executables':
+                    if "file_filter" in kwargs:
+                        file_filter = kwargs["file_filter"]
+                        if file_filter == "executables":
                             # Only scan executable files
                             if not self._is_executable_file(file_path):
                                 continue
-                        elif file_filter == 'documents':
+                        elif file_filter == "documents":
                             # Only scan document files
                             if not self._is_document_file(file_path):
                                 continue
-                        elif file_filter == 'archives':
-                            # Only scan archive files  
+                        elif file_filter == "archives":
+                            # Only scan archive files
                             if not self._is_archive_file(file_path):
                                 continue
                         # 'all' or other values scan all files (default behavior)
-                    
+
                     # Apply exclusion patterns if specified
-                    if 'exclusions' in kwargs:
-                        exclusions = kwargs['exclusions']
+                    if "exclusions" in kwargs:
+                        exclusions = kwargs["exclusions"]
                         if self._is_excluded_file(file_path, exclusions):
                             continue
-                    
+
                     # Check memory pressure
-                    if memory_monitor and memory_monitor.check_memory_pressure(MEMORY_LIMIT_MB):
-                        self.logger.warning("Memory pressure detected, limiting file collection")
+                    if memory_monitor and memory_monitor.check_memory_pressure(
+                        MEMORY_LIMIT_MB
+                    ):
+                        self.logger.warning(
+                            "Memory pressure detected, limiting file collection"
+                        )
                         memory_monitor.force_garbage_collection()
                         MAX_FILES_LIMIT = min(MAX_FILES_LIMIT, len(file_paths) + 100)
-                    
+
                     file_paths.append(str(file_path))
 
                     # More frequent interruption checks for large scans (every 100 files)
                     if len(file_paths) % 100 == 0:
                         # Check for Qt6 thread interruption
-                        if hasattr(self, '_current_thread') and self._current_thread:
-                            if hasattr(self._current_thread, 'isInterruptionRequested'):
+                        if hasattr(self, "_current_thread") and self._current_thread:
+                            if hasattr(self._current_thread, "isInterruptionRequested"):
                                 if self._current_thread.isInterruptionRequested():
-                                    self.logger.info(f"📁 File collection interrupted after {len(file_paths)} files")
+                                    self.logger.info(
+                                        f"📁 File collection interrupted after {
+                                            len(file_paths)
+                                        } files"
+                                    )
                                     self._scan_cancelled = True
                                     break
 
@@ -970,11 +979,13 @@ class FileScanner:
                             MAX_FILES_LIMIT,
                         )
                         break
-                        
+
                     # Periodic memory check for large directories
                     if len(file_paths) % 500 == 0 and memory_monitor:
                         if memory_monitor.check_memory_pressure(MEMORY_LIMIT_MB * 0.8):
-                            self.logger.warning("Memory pressure during file collection, forcing GC")
+                            self.logger.warning(
+                                "Memory pressure during file collection, forcing GC"
+                            )
                             memory_monitor.force_garbage_collection()
 
         self.logger.info(
@@ -983,10 +994,7 @@ class FileScanner:
 
         return self.scan_files(file_paths, scan_type, save_report=save_report, **kwargs)
 
-    def _handle_infected_file(
-            self,
-            result: ScanFileResult,
-            scan_id: str) -> None:
+    def _handle_infected_file(self, result: ScanFileResult, scan_id: str) -> None:
         """Handle an infected file according to configuration."""
         auto_quarantine = self.config.get("security_settings", {}).get(
             "auto_quarantine_threats", False
@@ -994,7 +1002,8 @@ class FileScanner:
 
         if auto_quarantine:
             success = self.quarantine_manager.quarantine_file(
-                result.file_path, result.threat_name, result.threat_type, scan_id)
+                result.file_path, result.threat_name, result.threat_type, scan_id
+            )
 
             if success:
                 self.logger.warning(
@@ -1031,10 +1040,20 @@ class FileScanner:
 
     def start_scheduler(self) -> None:
         """Start the scheduled scan scheduler."""
-        if self._scheduler_running and self._scheduler_thread and self._scheduler_thread.is_alive():
+        if (
+            self._scheduler_running
+            and self._scheduler_thread
+            and self._scheduler_thread.is_alive()
+        ):
             self.logger.info("Scheduler is already running")
             return
-            
+
+        if not _SCHED_AVAILABLE:
+            self.logger.warning(
+                "Scheduled scanning enabled but 'schedule' module is not available; skipping scheduler start"
+            )
+            return
+
         self._scheduler_running = True
         # Clear the stop event before starting
         self._scheduler_stop_event.clear()
@@ -1049,13 +1068,13 @@ class FileScanner:
         self._scheduler_running = False
         # Signal the event to wake up the scheduler thread immediately
         self._scheduler_stop_event.set()
-        
+
         if self._scheduler_thread and self._scheduler_thread.is_alive():
             # With event-based stopping, thread should stop almost immediately
             self._scheduler_thread.join(timeout=2.0)
             if self._scheduler_thread.is_alive():
                 self.logger.warning("Scheduler thread did not stop gracefully")
-        
+
         # Reset the event for next time
         self._scheduler_stop_event.clear()
         self.logger.info("Scan scheduler stopped")
@@ -1063,18 +1082,19 @@ class FileScanner:
     def _run_scheduler(self) -> None:
         """Run the scheduler loop."""
         # Setup scheduled scans based on configuration
+        if not _SCHED_AVAILABLE:
+            self.logger.debug("Schedule module not available; scheduler loop exiting")
+            return
         schedule_config = self.config.get("advanced_settings", {})
         update_frequency = schedule_config.get("update_frequency", "daily")
         update_time = schedule_config.get("update_time", "02:00")
-        definition_update = schedule_config.get(
-            "auto_update_definitions", True)
+        definition_update = schedule_config.get("auto_update_definitions", True)
 
         # Schedule virus definition updates
         if definition_update:
             # Update definitions daily at 1 AM
             schedule.every().day.at("01:00").do(self.update_virus_definitions)
-            self.logger.info(
-                "Scheduled daily virus definition updates at 01:00")
+            self.logger.info("Scheduled daily virus definition updates at 01:00")
 
         # Schedule system scans
         if update_frequency == "daily":
@@ -1082,13 +1102,11 @@ class FileScanner:
             self.logger.info(f"Scheduled daily scans at {update_time}")
         elif update_frequency == "weekly":
             schedule.every().sunday.at(update_time).do(self._scheduled_scan)
-            self.logger.info(
-                f"Scheduled weekly scans on Sunday at {update_time}")
+            self.logger.info(f"Scheduled weekly scans on Sunday at {update_time}")
         elif update_frequency == "monthly":
             # Schedule first Sunday of each month (monthly approximation)
             schedule.every(4).weeks.at(update_time).do(self._scheduled_scan)
-            self.logger.info(
-                f"Scheduled monthly scans every 4 weeks at {update_time}")
+            self.logger.info(f"Scheduled monthly scans every 4 weeks at {update_time}")
 
         while self._scheduler_running:
             schedule.run_pending()
@@ -1101,8 +1119,7 @@ class FileScanner:
     def _scheduled_scan(self) -> None:
         """Perform a scheduled scan."""
         if self._scan_running:
-            self.logger.info(
-                "Skipping scheduled scan - another scan is running")
+            self.logger.info("Skipping scheduled scan - another scan is running")
             return
 
         self.logger.info("Starting scheduled scan")
@@ -1122,7 +1139,7 @@ class FileScanner:
 
         if existing_paths:
             try:
-                from utils.scan_reports import ScanType
+                from app.utils.scan_reports import ScanType
 
                 for path in existing_paths:
                     self.scan_directory(path, ScanType.SCHEDULED)
@@ -1130,15 +1147,16 @@ class FileScanner:
                 self.logger.error("Scheduled scan failed: %s", e)
 
     def _scan_files_batched(
-        self, file_paths: List[str], scan_type, max_workers: int = 4, save_report: bool = True, **kwargs
+        self,
+        file_paths: List[str],
+        scan_type,
+        max_workers: int = 4,
+        save_report: bool = True,
+        **kwargs,
     ):
         """Scan files in batches to optimize memory usage."""
-        from utils.scan_reports import ScanResult as ReportScanResult
-        from utils.scan_reports import (
-            ScanType,
-            ThreatInfo,
-            ThreatLevel,
-        )
+        from app.utils.scan_reports import ScanResult as ReportScanResult
+        from app.utils.scan_reports import ThreatInfo, ThreatLevel
 
         scan_id = self.scan_report_manager.generate_scan_id()
         self._current_scan_id = scan_id
@@ -1185,8 +1203,7 @@ class FileScanner:
                 batch_files = file_paths[batch_start:batch_end]
 
                 # Check memory pressure before each batch
-                if self.memory_monitor.check_memory_pressure(
-                        self.max_memory_usage):
+                if self.memory_monitor.check_memory_pressure(self.max_memory_usage):
                     self.logger.warning(
                         "Memory pressure detected, forcing garbage collection"
                     )
@@ -1243,8 +1260,7 @@ class FileScanner:
                                 combined_result.threats.append(threat_info)
 
                         except Exception as e:
-                            self.logger.error(
-                                "Error scanning %s: %s", file_path, e)
+                            self.logger.error("Error scanning %s: %s", file_path, e)
                             combined_result.errors.append(
                                 f"Error scanning {file_path}: {str(e)}"
                             )
@@ -1286,30 +1302,39 @@ class FileScanner:
             # Save scan report (conditional based on save_report parameter)
             if save_report:
                 try:
-                    print(f"\n💾 === FILESCANNER BATCHED SAVE REPORT ===")
-                    print(f"DEBUG: FileScanner saving batched scan report: {combined_result.scan_id}")
+                    print("\n💾 === FILESCANNER BATCHED SAVE REPORT ===")
+                    print(
+                        f"DEBUG: FileScanner saving batched scan report: {combined_result.scan_id}"
+                    )
                     print(f"DEBUG: Batched scan type: {combined_result.scan_type}")
-                    print(f"DEBUG: Total files scanned: {combined_result.scanned_files}")
-                    print(f"DEBUG: Total threats found: {combined_result.threats_found}")
+                    print(
+                        f"DEBUG: Total files scanned: {combined_result.scanned_files}"
+                    )
+                    print(
+                        f"DEBUG: Total threats found: {combined_result.threats_found}"
+                    )
                     self.scan_report_manager.save_scan_result(combined_result)
-                    print(f"DEBUG: ✅ FileScanner batched report saved successfully")
+                    print("DEBUG: ✅ FileScanner batched report saved successfully")
                 except Exception as e:
                     print(f"DEBUG: ❌ FileScanner batched report save failed: {e}")
                     self.logger.error("Failed to save scan report: %s", e)
             else:
-                print(f"\n💾 === FILESCANNER BATCHED SKIP REPORT SAVE ===")
-                print(f"DEBUG: Skipping batched report save for scan: {combined_result.scan_id}")
+                print("\n💾 === FILESCANNER BATCHED SKIP REPORT SAVE ===")
+                print(
+                    f"DEBUG: Skipping batched report save for scan: {combined_result.scan_id}"
+                )
                 print(f"DEBUG: Total files scanned: {combined_result.scanned_files}")
-                print(f"DEBUG: This is part of a multi-directory scan")
+                print("DEBUG: This is part of a multi-directory scan")
 
         return combined_result
 
     def _scan_directory_with_depth(self, directory_obj, max_depth):
         """Scan directory with depth limitation."""
+
         def _recursive_scan(current_dir, current_depth):
             if current_depth > max_depth:
                 return
-            
+
             try:
                 for item in current_dir.iterdir():
                     yield item
@@ -1318,47 +1343,105 @@ class FileScanner:
             except (OSError, PermissionError):
                 # Skip directories we can't access
                 pass
-        
+
         return _recursive_scan(directory_obj, 0)
 
     def _is_executable_file(self, file_path):
         """Check if a file is executable."""
         try:
             # Check file extension
-            executable_extensions = {'.exe', '.bat', '.cmd', '.com', '.scr', '.pif', 
-                                   '.app', '.deb', '.rpm', '.dmg', '.pkg', '.msi',
-                                   '.sh', '.bash', '.zsh', '.fish', '.py', '.pl', 
-                                   '.rb', '.js', '.jar', '.bin', '.run'}
+            executable_extensions = {
+                ".exe",
+                ".bat",
+                ".cmd",
+                ".com",
+                ".scr",
+                ".pif",
+                ".app",
+                ".deb",
+                ".rpm",
+                ".dmg",
+                ".pkg",
+                ".msi",
+                ".sh",
+                ".bash",
+                ".zsh",
+                ".fish",
+                ".py",
+                ".pl",
+                ".rb",
+                ".js",
+                ".jar",
+                ".bin",
+                ".run",
+            }
             if file_path.suffix.lower() in executable_extensions:
                 return True
-            
+
             # Check if file has execute permissions (Unix-like systems)
-            if hasattr(os, 'access'):
+            if hasattr(os, "access"):
                 return os.access(file_path, os.X_OK)
-                
+
             return False
         except (OSError, AttributeError):
             return False
-    
+
     def _is_document_file(self, file_path):
         """Check if a file is a document."""
-        document_extensions = {'.pdf', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx',
-                             '.txt', '.rtf', '.odt', '.ods', '.odp', '.csv', '.xml',
-                             '.html', '.htm', '.md', '.tex', '.epub', '.mobi'}
+        document_extensions = {
+            ".pdf",
+            ".doc",
+            ".docx",
+            ".xls",
+            ".xlsx",
+            ".ppt",
+            ".pptx",
+            ".txt",
+            ".rtf",
+            ".odt",
+            ".ods",
+            ".odp",
+            ".csv",
+            ".xml",
+            ".html",
+            ".htm",
+            ".md",
+            ".tex",
+            ".epub",
+            ".mobi",
+        }
         return file_path.suffix.lower() in document_extensions
-    
+
     def _is_archive_file(self, file_path):
         """Check if a file is an archive."""
-        archive_extensions = {'.zip', '.rar', '.7z', '.tar', '.gz', '.bz2', '.xz',
-                            '.tar.gz', '.tar.bz2', '.tar.xz', '.tgz', '.tbz2',
-                            '.cab', '.iso', '.dmg', '.img'}
+        archive_extensions = {
+            ".zip",
+            ".rar",
+            ".7z",
+            ".tar",
+            ".gz",
+            ".bz2",
+            ".xz",
+            ".tar.gz",
+            ".tar.bz2",
+            ".tar.xz",
+            ".tgz",
+            ".tbz2",
+            ".cab",
+            ".iso",
+            ".dmg",
+            ".img",
+        }
         return file_path.suffix.lower() in archive_extensions
-    
+
     def _is_excluded_file(self, file_path, exclusions):
         """Check if a file matches any exclusion pattern."""
         import fnmatch
+
         file_str = str(file_path)
         for pattern in exclusions:
-            if fnmatch.fnmatch(file_str, pattern) or fnmatch.fnmatch(file_path.name, pattern):
+            if fnmatch.fnmatch(file_str, pattern) or fnmatch.fnmatch(
+                file_path.name, pattern
+            ):
                 return True
         return False

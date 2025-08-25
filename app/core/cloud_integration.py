@@ -3,6 +3,7 @@
 Cloud Integration System for S&D
 Provides enhanced threat intelligence, cloud backup, and community threat sharing.
 """
+
 import asyncio
 import base64
 import gzip
@@ -16,10 +17,8 @@ import time
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from enum import Enum
-from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional
 
-import aiofiles
 import aiohttp
 import boto3
 from botocore.exceptions import ClientError
@@ -164,9 +163,9 @@ class CloudIntegrationSystem:
         try:
             # Initialize HTTP session
             self.session = aiohttp.ClientSession(
-                timeout=aiohttp.ClientTimeout(
-                    total=self.cloud_config.timeout), connector=aiohttp.TCPConnector(
-                    ssl=ssl.create_default_context()), )
+                timeout=aiohttp.ClientTimeout(total=self.cloud_config.timeout),
+                connector=aiohttp.TCPConnector(ssl=ssl.create_default_context()),
+            )
 
             # Initialize cloud client
             await self._init_cloud_client()
@@ -179,11 +178,9 @@ class CloudIntegrationSystem:
                 self.sync_task = asyncio.create_task(self._sync_loop())
 
             if self.threat_intel_config.update_interval > 0:
-                self.threat_intel_task = asyncio.create_task(
-                    self._threat_intel_loop())
+                self.threat_intel_task = asyncio.create_task(self._threat_intel_loop())
 
-            self.logger.info(
-                "Cloud integration system initialized successfully")
+            self.logger.info("Cloud integration system initialized successfully")
 
         except Exception as e:
             self.logger.error("Error initializing cloud integration: %s", e)
@@ -289,8 +286,7 @@ class CloudIntegrationSystem:
                         all_intelligence.extend(intel_data)
 
                 except Exception as e:
-                    self.logger.warning(
-                        "Error querying %s: %s", source.value, e)
+                    self.logger.warning("Error querying %s: %s", source.value, e)
 
             # Deduplicate and filter by confidence
             filtered_intel = self._filter_and_deduplicate(all_intelligence)
@@ -299,16 +295,15 @@ class CloudIntegrationSystem:
             await self._cache_threat_intelligence(filtered_intel)
 
             self.logger.info(
-                "Downloaded %d threat intelligence entries",
-                len(filtered_intel))
+                "Downloaded %d threat intelligence entries", len(filtered_intel)
+            )
             return filtered_intel
 
         except Exception as e:
             self.logger.error("Error downloading threat intelligence: %s", e)
             return []
 
-    async def backup_scan_data(
-            self, scan_results: List[Dict[str, Any]]) -> bool:
+    async def backup_scan_data(self, scan_results: List[Dict[str, Any]]) -> bool:
         """
         Backup scan results to cloud storage.
 
@@ -344,9 +339,7 @@ class CloudIntegrationSystem:
             success = await self._upload_to_cloud(backup_path, processed_data)
 
             if success:
-                self.logger.info(
-                    "Backed up %d scan results",
-                    len(scan_results))
+                self.logger.info("Backed up %d scan results", len(scan_results))
                 self.sync_status.files_synced += 1
                 self.sync_status.bytes_synced += len(processed_data)
 
@@ -503,8 +496,7 @@ class CloudIntegrationSystem:
             }
 
             # Anonymize sensitive information
-            false_positive_data = self._anonymize_threat_data(
-                false_positive_data)
+            false_positive_data = self._anonymize_threat_data(false_positive_data)
 
             # Process and upload
             processed_data = await self._process_upload_data(false_positive_data)
@@ -515,8 +507,7 @@ class CloudIntegrationSystem:
             success = await self._upload_to_cloud(upload_path, processed_data)
 
             if success:
-                self.logger.info(
-                    "False positive report submitted for %s", file_hash)
+                self.logger.info("False positive report submitted for %s", file_hash)
 
             return success
 
@@ -661,8 +652,7 @@ class CloudIntegrationSystem:
 
                 # Test connection
                 try:
-                    self.cloud_client.head_bucket(
-                        Bucket=self.cloud_config.bucket_name)
+                    self.cloud_client.head_bucket(Bucket=self.cloud_config.bucket_name)
                 except ClientError as e:
                     if e.response["Error"]["Code"] == "404":
                         # Create bucket if it doesn't exist
@@ -680,8 +670,8 @@ class CloudIntegrationSystem:
                 )
 
             self.logger.info(
-                "Cloud client initialized for %s",
-                self.cloud_config.provider.value)
+                "Cloud client initialized for %s", self.cloud_config.provider.value
+            )
 
         except Exception as e:
             self.logger.error("Error initializing cloud client: %s", e)
@@ -745,18 +735,13 @@ class CloudIntegrationSystem:
         except asyncio.CancelledError:
             self.logger.info("Threat intel loop cancelled")
 
-    def _anonymize_threat_data(
-            self, threat_data: Dict[str, Any]) -> Dict[str, Any]:
+    def _anonymize_threat_data(self, threat_data: Dict[str, Any]) -> Dict[str, Any]:
         """Anonymize sensitive data in threat information."""
         try:
             anonymized = threat_data.copy()
 
             # Remove or hash sensitive fields
-            sensitive_fields = [
-                "source_path",
-                "username",
-                "hostname",
-                "ip_address"]
+            sensitive_fields = ["source_path", "username", "hostname", "ip_address"]
 
             for field in sensitive_fields:
                 if field in anonymized:
@@ -833,15 +818,15 @@ class CloudIntegrationSystem:
         """Upload data to cloud storage."""
         try:
             if len(data) > self.cloud_config.max_file_size:
-                self.logger.warning(
-                    "File too large for upload: %d bytes", len(data))
+                self.logger.warning("File too large for upload: %d bytes", len(data))
                 return False
 
             for attempt in range(self.cloud_config.retry_attempts):
                 try:
                     if self.cloud_config.provider == CloudProvider.AWS_S3:
                         self.cloud_client.put_object(
-                            Bucket=self.cloud_config.bucket_name, Key=path, Body=data)
+                            Bucket=self.cloud_config.bucket_name, Key=path, Body=data
+                        )
                         return True
 
                     elif self.cloud_config.provider == CloudProvider.CUSTOM_API:
@@ -855,8 +840,7 @@ class CloudIntegrationSystem:
                             return response.status == 200
 
                 except Exception as e:
-                    self.logger.warning(
-                        "Upload attempt %d failed: %s", attempt + 1, e)
+                    self.logger.warning("Upload attempt %d failed: %s", attempt + 1, e)
                     if attempt < self.cloud_config.retry_attempts - 1:
                         await asyncio.sleep(2**attempt)  # Exponential backoff
 
@@ -917,15 +901,11 @@ class CloudIntegrationSystem:
             elif source == ThreatIntelSource.COMMUNITY_DB:
                 return await self._query_community_db(hash_value)
             else:
-                self.logger.warning(
-                    "Unsupported threat source: %s", source.value)
+                self.logger.warning("Unsupported threat source: %s", source.value)
                 return []
 
         except Exception as e:
-            self.logger.error(
-                "Error querying threat source %s: %s",
-                source.value,
-                e)
+            self.logger.error("Error querying threat source %s: %s", source.value, e)
             return []
 
     async def _query_virustotal(
@@ -939,13 +919,12 @@ class CloudIntegrationSystem:
                 return []
 
             if hash_value:
-                url = f"https://www.virustotal.com/vtapi/v2/file/report"
+                url = "https://www.virustotal.com/vtapi/v2/file/report"
                 params = {"apikey": api_key, "resource": hash_value}
             else:
                 # Get recent intelligence
-                url = f"https://www.virustotal.com/vtapi/v2/domain/report"
-                params = {"apikey": api_key,
-                          "domain": "example.com"}  # Placeholder
+                url = "https://www.virustotal.com/vtapi/v2/domain/report"
+                params = {"apikey": api_key, "domain": "example.com"}  # Placeholder
 
             async with self.session.get(url, params=params) as response:
                 if response.status == 200:
@@ -997,16 +976,8 @@ class CloudIntegrationSystem:
 
             intel = ThreatIntelligence(
                 hash_value=data.get("resource", ""),
-                threat_type="malware" if data.get(
-                    "positives", 0) > 0 else "clean",
-                confidence=min(
-                    data.get(
-                        "positives",
-                        0) /
-                    data.get(
-                        "total",
-                        1),
-                    1.0),
+                threat_type="malware" if data.get("positives", 0) > 0 else "clean",
+                confidence=min(data.get("positives", 0) / data.get("total", 1), 1.0),
                 source="virustotal",
                 first_seen=datetime.now(),  # VT doesn't provide this in v2 API
                 last_seen=datetime.fromisoformat(
@@ -1080,11 +1051,7 @@ class CloudIntegrationSystem:
             filtered_list = []
             for hash_value, group in hash_groups.items():
                 # Sort by confidence and recency
-                group.sort(
-                    key=lambda x: (
-                        x.confidence,
-                        x.last_seen),
-                    reverse=True)
+                group.sort(key=lambda x: (x.confidence, x.last_seen), reverse=True)
                 best_intel = group[0]
 
                 # Merge threat names from all sources
@@ -1245,8 +1212,7 @@ class CloudIntegrationSystem:
         except Exception as e:
             self.logger.error("Error recording upload: %s", e)
 
-    async def _list_backup_files(
-            self, backup_date: datetime = None) -> List[str]:
+    async def _list_backup_files(self, backup_date: datetime = None) -> List[str]:
         """List available backup files."""
         # Placeholder implementation
         return []
@@ -1267,8 +1233,7 @@ class CloudIntegrationSystem:
             self.logger.error("Error downloading community signatures: %s", e)
             return []
 
-    async def _update_signature_database(
-            self, signatures: List[Dict[str, Any]]):
+    async def _update_signature_database(self, signatures: List[Dict[str, Any]]):
         """Update local signature database."""
         # This would update the local antivirus signature database
         # Placeholder implementation
@@ -1278,8 +1243,7 @@ class CloudIntegrationSystem:
         """Get threat intelligence statistics."""
         try:
             with sqlite3.connect(self.db_path) as conn:
-                cursor = conn.execute(
-                    "SELECT COUNT(*) FROM threat_intelligence")
+                cursor = conn.execute("SELECT COUNT(*) FROM threat_intelligence")
                 total_intel = cursor.fetchone()[0]
 
                 cursor = conn.execute(
@@ -1342,18 +1306,19 @@ except ImportError:
     # Mock boto3 if not available
     class MockBoto3:
         def client(self, *args, **kwargs):
-            return type("",
-                        (),
-                        {"head_bucket": lambda **x: None,
-                         "create_bucket": lambda **x: None,
-                         "put_object": lambda **x: None,
-                         "get_object": lambda **x: {"Body": type("",
-                                                                 (),
-                                                                 {"read": lambda: b""})()},
-                         "list_objects_v2": lambda **x: {"KeyCount": 0,
-                                                         "Contents": []},
-                         },
-                        )()
+            return type(
+                "",
+                (),
+                {
+                    "head_bucket": lambda **x: None,
+                    "create_bucket": lambda **x: None,
+                    "put_object": lambda **x: None,
+                    "get_object": lambda **x: {
+                        "Body": type("", (), {"read": lambda: b""})()
+                    },
+                    "list_objects_v2": lambda **x: {"KeyCount": 0, "Contents": []},
+                },
+            )()
 
     boto3 = MockBoto3()
     ClientError = Exception

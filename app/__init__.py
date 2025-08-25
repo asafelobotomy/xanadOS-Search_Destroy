@@ -4,7 +4,6 @@ xanadOS Search & Destroy - Main Application Package
 A modern GUI for ClamAV antivirus scanning with real-time monitoring.
 """
 
-import os
 from pathlib import Path
 
 
@@ -14,7 +13,7 @@ def get_version():
         # Get the project root directory (2 levels up from this file)
         project_root = Path(__file__).parent.parent
         version_file = project_root / "VERSION"
-        
+
         if version_file.exists():
             return version_file.read_text().strip()
         else:
@@ -23,6 +22,7 @@ def get_version():
     except (OSError, IOError, FileNotFoundError):
         # Fallback version in case of any file reading errors
         return "2.10.0"
+
 
 __version__ = get_version()
 __author__ = "xanadOS Team"

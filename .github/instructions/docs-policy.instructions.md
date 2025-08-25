@@ -1,5 +1,6 @@
 ---
 applyTo: "docs/**"
+
 ---
 
 # Documentation Directory Policy (/docs/) - MANDATORY
@@ -49,7 +50,7 @@ maintain these standards in any repository containing documentation.
 │   ├── user-guide.md
 │   ├── troubleshooting.md
 │   └── faq.md
-├── api/                              # API documentation
+├── API/                              # API documentation
 │   ├── reference/
 │   ├── examples/
 │   └── changelogs/
@@ -77,7 +78,8 @@ maintain these standards in any repository containing documentation.
 └── _archive/                        # Historical documentation
     ├── deprecated/
     └── legacy-versions/
-```markdown
+
+```Markdown
 
 ### Content Type Categories
 
@@ -91,14 +93,14 @@ maintain these standards in any repository containing documentation.
 #### 2. Procedural Documentation
 
 - **Purpose**: Step-by-step instructions
-- **Location**: `/docs/tutorials/` or `/docs/guides/`
+- **Location**: `/docs/tutorials/`or`/docs/guides/`
 - **Format**: Numbered steps, clear actions
 - **Examples**: Installation guides, setup procedures
 
 #### 3. Reference Documentation
 
 - **Purpose**: Quick lookup information
-- **Location**: `/docs/reference/` or `/docs/api/`
+- **Location**: `/docs/reference/`or`/docs/API/`
 - **Format**: Tables, lists, specifications
 - **Examples**: API references, configuration options
 
@@ -121,14 +123,14 @@ maintain these standards in any repository containing documentation.
 ### Naming Conventions
 
 - Use lowercase with hyphens: `installation-guide.md`
-- Be descriptive and specific: `api-authentication.md`
-- Avoid abbreviations: `frequently-asked-questions.md` not `faq.md`
+- Be descriptive and specific: `API-authentication.md`
+- Avoid abbreviations: `frequently-asked-questions.md`not`faq.md`
 - Include version when applicable: `v2-migration-guide.md`
 
 ### File Extensions
 
 - Documentation: `.md` (Markdown primary format)
-- Configuration examples: `.yml`, `.json`, `.xml`
+- Configuration examples: `.yml`, `.JSON`, `.XML`
 - Code examples: Language-appropriate extensions
 - Images: `.png`, `.jpg`, `.svg` (prefer SVG for diagrams)
 
@@ -137,22 +139,20 @@ maintain these standards in any repository containing documentation.
 ### For GitHub Copilot Agents
 
 1. **Immediate Compliance**
-   - Assess current documentation structure
-   - Implement required directory organization
-   - Apply naming convention standards
-   - Establish quality processes
-
+- Assess current documentation structure
+- Implement required directory organization
+- Apply naming convention standards
+- Establish quality processes
 2. **Ongoing Responsibilities**
-   - Maintain structure standards
-   - Enforce naming conventions
-   - Monitor content quality
-   - Execute archive procedures
-
+- Maintain structure standards
+- Enforce naming conventions
+- Monitor content quality
+- Execute archive procedures
 3. **Reporting Requirements**
-   - Document compliance status
-   - Report structure violations
-   - Track quality metrics
-   - Maintain audit trails
+- Document compliance status
+- Report structure violations
+- Track quality metrics
+- Maintain audit trails
 
 ### Repository Assessment Checklist
 
@@ -167,9 +167,9 @@ maintain these standards in any repository containing documentation.
 
 ## Related Policies
 
-- Archive Management Policy: `.github/instructions/archive-policy.instructions.md`
-- Security Guidelines: `.github/instructions/security.instructions.md`
-- Testing Standards: `.github/instructions/testing.instructions.md`
+- Archive Management Policy: `.GitHub/instructions/archive-policy.instructions.md`
+- Security Guidelines: `.GitHub/instructions/security.instructions.md`
+- Testing Standards: `.GitHub/instructions/testing.instructions.md`
 - Placeholder/Stub Tracking: `docs/reports/PLACEHOLDERS.md`
 
 ## Policy Metadata

@@ -3,6 +3,8 @@
 Network security module for xanadOS Search & Destroy
 Handles secure network communications, certificate validation, and secure updates
 """
+
+import contextlib
 import hashlib
 import logging
 import os
@@ -14,11 +16,10 @@ import time
 import urllib.error
 import urllib.parse
 import urllib.request
-import contextlib
 from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple, Union
+from typing import Dict, Optional, Tuple
 
 
 class NetworkSecurityLevel(Enum):
@@ -120,11 +121,14 @@ class SecureNetworkManager:
             return
         try:
             import json
+
             try:
                 mode = self.PIN_FILE.stat().st_mode & 0o777
                 if mode & 0o077:
                     self.logger.warning(
-                        "Skipping pin file with insecure permissions (%o): %s", mode, self.PIN_FILE
+                        "Skipping pin file with insecure permissions (%o): %s",
+                        mode,
+                        self.PIN_FILE,
                     )
                     return
             except OSError:
@@ -145,9 +149,13 @@ class SecureNetworkManager:
         """Reload pins at runtime. Returns True if any pin changed.
 
         Ignores pin files with insecure permissions (group/other access)."""
-        before = {h: ep.certificate_fingerprint for h, ep in self.CLAMAV_ENDPOINTS.items()}
+        before = {
+            h: ep.certificate_fingerprint for h, ep in self.CLAMAV_ENDPOINTS.items()
+        }
         self._load_certificate_pins()
-        after = {h: ep.certificate_fingerprint for h, ep in self.CLAMAV_ENDPOINTS.items()}
+        after = {
+            h: ep.certificate_fingerprint for h, ep in self.CLAMAV_ENDPOINTS.items()
+        }
         return before != after
 
     def _verify_certificate_fingerprint(
@@ -173,8 +181,7 @@ class SecureNetworkManager:
 
             # Validate certificate data
             if cert_der is None:
-                self.logger.error(
-                    "No certificate data received from %s", hostname)
+                self.logger.error("No certificate data received from %s", hostname)
                 return False
 
             # Calculate fingerprint
@@ -184,8 +191,7 @@ class SecureNetworkManager:
             return actual_fingerprint == expected_fingerprint
 
         except Exception as e:
-            self.logger.error(
-                "Certificate verification failed for %s: %s", hostname, e)
+            self.logger.error("Certificate verification failed for %s: %s", hostname, e)
             return False
 
     def _create_secure_request(
@@ -239,8 +245,7 @@ class SecureNetworkManager:
         if expected_content_type:
             content_type = response.headers.get("Content-Type", "")
             if not content_type.startswith(expected_content_type):
-                self.logger.warning(
-                    "Unexpected content type: %s", content_type)
+                self.logger.warning("Unexpected content type: %s", content_type)
                 return False
 
         # Check content length
@@ -264,8 +269,7 @@ class SecureNetworkManager:
         for header, expected_value in security_headers.items():
             actual_value = response.headers.get(header)
             if expected_value and actual_value != expected_value:
-                self.logger.warning(
-                    "Missing or incorrect security header: %s", header)
+                self.logger.warning("Missing or incorrect security header: %s", header)
 
         return True
 
@@ -312,8 +316,7 @@ class SecureNetworkManager:
 
         # Configure URL opener with our SSL context
         if parsed_url.scheme == "https":
-            https_handler = urllib.request.HTTPSHandler(
-                context=self.ssl_context)
+            https_handler = urllib.request.HTTPSHandler(context=self.ssl_context)
             opener = urllib.request.build_opener(https_handler)
         else:
             opener = urllib.request.build_opener()
@@ -326,9 +329,8 @@ class SecureNetworkManager:
             for attempt in range(endpoint.max_retries):
                 try:
                     self.logger.debug(
-                        "Download attempt %d/%d",
-                        attempt + 1,
-                        endpoint.max_retries)
+                        "Download attempt %d/%d", attempt + 1, endpoint.max_retries
+                    )
 
                     with opener.open(request) as response:
                         # Validate response
@@ -339,8 +341,7 @@ class SecureNetworkManager:
                         if destination:
                             dest_path = Path(destination)
                         else:
-                            fd, dest_path = tempfile.mkstemp(
-                                prefix="xanados_download_")
+                            fd, dest_path = tempfile.mkstemp(prefix="xanados_download_")
                             os.close(fd)
                             dest_path = Path(dest_path)
 
@@ -361,8 +362,7 @@ class SecureNetworkManager:
 
                                 f.write(chunk)
 
-                        self.logger.info(
-                            "Download completed: %d bytes", total_size)
+                        self.logger.info("Download completed: %d bytes", total_size)
 
                         # Verify file signature if requested
                         if verify_signature:
@@ -378,8 +378,11 @@ class SecureNetworkManager:
                     )
                     if attempt == endpoint.max_retries - 1:
                         return (
-                            False, f"Download failed after {
-                                endpoint.max_retries} attempts: {e}", )
+                            False,
+                            f"Download failed after {endpoint.max_retries} attempts: {
+                                e
+                            }",
+                        )
                     time.sleep(2**attempt)  # Exponential backoff
 
         except Exception as e:
@@ -409,7 +412,6 @@ class SecureNetworkManager:
         try:
             # Download signature file if it doesn't exist
             if not sig_file.exists():
-                sig_url = f"{file_path.name}.sig"
                 # This would need to be implemented based on the actual
                 # signature URL
                 self.logger.info(
@@ -419,13 +421,15 @@ class SecureNetworkManager:
 
             # Verify signature using GPG or similar
             from .secure_subprocess import run_secure
-            result = run_secure(["gpg", "--verify", str(sig_file), str(file_path)], timeout=30)
+
+            result = run_secure(
+                ["gpg", "--verify", str(sig_file), str(file_path)], timeout=30
+            )
 
             return result.returncode == 0
 
         except (subprocess.TimeoutExpired, FileNotFoundError):
-            self.logger.warning(
-                "GPG not available, skipping signature verification")
+            self.logger.warning("GPG not available, skipping signature verification")
             return True  # Skip if GPG not available
         except Exception as e:
             self.logger.error("Signature verification failed: %s", e)
@@ -470,9 +474,8 @@ class SecureNetworkManager:
 
                 if success:
                     self.logger.info(
-                        "Successfully downloaded %s from %s",
-                        db_file,
-                        endpoint_name)
+                        "Successfully downloaded %s from %s", db_file, endpoint_name
+                    )
                     success_count += 1
                     break
                 else:
@@ -557,11 +560,11 @@ class SecureNetworkManager:
             except ValueError:
                 pass  # Not an IP address, which is fine
 
-            # Check for suspicious patterns
+            # Check for suspicious patterns in URLs (security validation, not network binding)
             suspicious_patterns = [
                 "localhost",
                 "127.0.0.1",
-                "0.0.0.0",
+                "0.0.0.0",  # nosec B104 - This is URL validation, not network binding
                 "file://",
                 "ftp://",
                 "javascript:",

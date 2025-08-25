@@ -1,10 +1,13 @@
 # Dropdown Menu Theme Fixes
 
 ## Issue Identified
+
 Dropdown menus (QComboBox) were displaying white borders at the top and bottom that didn't match the selected theme (Light/Dark mode).
 
 ## Root Cause
+
 The `QComboBox QAbstractItemView` styling had:
+
 1. **Excessive border width**: 2px borders were creating visual artifacts
 2. **Large border radius**: 6px radius was causing rendering issues at edges
 3. **Missing item-specific styling**: No explicit styling for selected/hover states
@@ -13,72 +16,76 @@ The `QComboBox QAbstractItemView` styling had:
 ## Fixes Applied
 
 ### Dark Theme Improvements
-```css
+
+```CSS
 QComboBox QAbstractItemView {
     background-color: #2a2a2a;
-    border: 1px solid #EE8980;          /* Reduced from 2px */
-    border-radius: 4px;                  /* Reduced from 6px */
+    border: 1px solid #EE8980;          /_Reduced from 2px_/
+    border-radius: 4px;                  /_Reduced from 6px_/
     color: #FFCDAA;
     selection-background-color: #F14666;
     selection-color: #ffffff;
     outline: none;
-    margin: 0px;                         /* Added explicit reset */
-    padding: 0px;                        /* Added explicit reset */
+    margin: 0px;                         /_Added explicit reset_/
+    padding: 0px;                        /_Added explicit reset_/
 }
 
 QComboBox QAbstractItemView::item {
     padding: 8px 12px;
     min-height: 20px;
-    border: none;                        /* Added explicit none */
-    margin: 0px;                         /* Added explicit reset */
+    border: none;                        /_Added explicit none_/
+    margin: 0px;                         /_Added explicit reset_/
 }
 
 QComboBox QAbstractItemView::item:hover {
     background-color: #EE8980;
     color: #ffffff;
-    border: none;                        /* Added explicit none */
+    border: none;                        /_Added explicit none_/
 }
 
-QComboBox QAbstractItemView::item:selected {  /* Added new state */
+QComboBox QAbstractItemView::item:selected {  /_Added new state_/
     background-color: #F14666;
     color: #ffffff;
     border: none;
 }
-```
+
+```text
 
 ### Light Theme Improvements
-```css
+
+```CSS
 QComboBox QAbstractItemView {
     background-color: #ffffff;
-    border: 1px solid #75BDE0;          /* Reduced from 2px */
-    border-radius: 4px;                  /* Reduced from 6px */
+    border: 1px solid #75BDE0;          /_Reduced from 2px_/
+    border-radius: 4px;                  /_Reduced from 6px_/
     color: #333333;
     selection-background-color: #F8BC9B;
     selection-color: #2c2c2c;
     outline: none;
-    margin: 0px;                         /* Added explicit reset */
-    padding: 0px;                        /* Added explicit reset */
+    margin: 0px;                         /_Added explicit reset_/
+    padding: 0px;                        /_Added explicit reset_/
 }
 
 QComboBox QAbstractItemView::item {
     padding: 8px 12px;
     min-height: 20px;
-    border: none;                        /* Added explicit none */
-    margin: 0px;                         /* Added explicit reset */
+    border: none;                        /_Added explicit none_/
+    margin: 0px;                         /_Added explicit reset_/
 }
 
 QComboBox QAbstractItemView::item:hover {
     background-color: #75BDE0;
     color: #ffffff;
-    border: none;                        /* Added explicit none */
+    border: none;                        /_Added explicit none_/
 }
 
-QComboBox QAbstractItemView::item:selected {  /* Added new state */
+QComboBox QAbstractItemView::item:selected {  /_Added new state_/
     background-color: #F8BC9B;
     color: #2c2c2c;
     border: none;
 }
-```
+
+```text
 
 ## Key Improvements
 
@@ -91,6 +98,7 @@ QComboBox QAbstractItemView::item:selected {  /* Added new state */
 ## Components Affected
 
 All dropdown menus throughout the application:
+
 - Scan Type dropdown
 - Scan Depth dropdown
 - File Filter dropdown
@@ -107,6 +115,7 @@ All dropdown menus throughout the application:
 ## Result
 
 Dropdown menus now display with:
+
 - No white borders at top/bottom
 - Consistent colors matching the selected theme
 - Proper hover and selection states

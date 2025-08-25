@@ -3,9 +3,11 @@
 ## Current Script Distribution
 
 ### 📁 `/scripts/` (21 files)
+
 **Purpose**: Build, deployment, and utility scripts
 
 #### Shell Scripts (.sh)
+
 - `activate.sh` - Virtual environment activation
 - `archive.sh` - Archive old files
 - `cleanup.sh` - Basic cleanup
@@ -25,15 +27,18 @@
 - `verify-build.sh` - Build verification
 
 #### Python Scripts (.py)
+
 - `check-organization.py` - Organization checker
 - `fix_scan_crashes.py` - Scan crash fixes
 - `organize_documentation.py` - Documentation organizer
 - `organize_repository.py` - Repository organizer
 
 ### 📁 `/dev/` (8 files + subdirs)
+
 **Purpose**: Development utilities and testing
 
 #### Main Scripts
+
 - `cleanup_repository.py` - Repository cleanup
 - `grace_period_demo.py` - Grace period demonstration
 - `organize_repository_comprehensive.py` - Comprehensive organizer
@@ -44,6 +49,7 @@
 - `verify_cleanup.py` - Cleanup verification
 
 #### `/dev/debug-scripts/` (6 files)
+
 - `debug_firewall.py` - Firewall debugging
 - `debug_pkexec_gui.py` - GUI privilege debugging
 - `debug_rkhunter.py` - RKHunter debugging
@@ -52,51 +58,57 @@
 - `verify_stop_scan_fix.py` - Scan stop fix verification
 
 #### `/dev/test-scripts/` (4 files)
+
 - `final_integration_test.py` - Integration testing
 - `rkhunter_fix_summary.py` - RKHunter fix summary
 - `visual_improved_layout.py` - Visual layout testing
 - `visual_test_enhancements.py` - Visual test enhancements
 
 ### 📁 `/tools/` (2 files)
+
 **Purpose**: Development tools and utilities
 
 - `setup.sh` - Tools setup script
 - `flatpak-pip-generator` - Flatpak dependency generator
 
 ### 📁 Root Directory (1 file)
+
 - `run.sh` - Application launcher
 
 ### 📁 `/packaging/flatpak/` (1 file)
+
 - `search-and-destroy.sh` - Flatpak launch script
 
 ## Issues Identified
 
 ### 🔴 Duplicate Functionality
-1. **Repository Organization**: Multiple scripts do similar tasks
-   - `scripts/organize_repository.py`
-   - `dev/organize_repository_comprehensive.py`
-   - `dev/cleanup_repository.py`
 
+1. **Repository Organization**: Multiple scripts do similar tasks
+- `scripts/organize_repository.py`
+- `dev/organize_repository_comprehensive.py`
+- `dev/cleanup_repository.py`
 2. **Cleanup Scripts**: Overlapping cleanup functionality
-   - `scripts/cleanup.sh`
-   - `scripts/cleanup-repository.sh`
-   - `dev/verify_cleanup.py`
+- `scripts/cleanup.sh`
+- `scripts/cleanup-repository.sh`
+- `dev/verify_cleanup.py`
 
 ### 🔴 Misplaced Scripts
+
 1. **Development vs Production**: Some dev scripts might belong in scripts/
 2. **Script Categories**: Mixed purposes in same directories
 
 ### 🔴 Naming Inconsistencies
-1. **Hyphen vs Underscore**: Inconsistent naming conventions
-   - `cleanup-repository.sh` vs `cleanup_repository.py`
-   - `check-organization.py` vs `organize_repository.py`
 
+1. **Hyphen vs Underscore**: Inconsistent naming conventions
+- `cleanup-repository.sh`vs`cleanup_repository.py`
+- `check-organization.py`vs`organize_repository.py`
 2. **Extension Patterns**: Some scripts missing .py extension
 
 ## Recommended Organization
 
 ### 📂 Proposed Structure
-```
+
+```text
 scripts/
 ├── build/              # Build and deployment scripts
 │   ├── prepare-build.sh
@@ -135,7 +147,8 @@ dev/
 tools/
 ├── build/              # Build tools
 └── external/           # External tools
-```
+
+```text
 
 ## Priority Actions Needed
 

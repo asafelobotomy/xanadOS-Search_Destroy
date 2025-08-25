@@ -51,32 +51,30 @@ The GitHub Copilot Enhancement Framework now includes advanced model targeting c
 ### When to Use Advanced Models
 
 1. **Claude Sonnet 4** - Choose for:
-   - Complex system architecture design
-   - Advanced reasoning requirements
-   - Comprehensive system analysis
-   - Sophisticated problem-solving
-
+- Complex system architecture design
+- Advanced reasoning requirements
+- Comprehensive system analysis
+- Sophisticated problem-solving
 2. **GPT-5** - Choose for:
-   - Next-generation development projects
-   - Multimodal capabilities needed
-   - Enhanced reasoning requirements
-   - Complex project management
-
+- Next-generation development projects
+- Multimodal capabilities needed
+- Enhanced reasoning requirements
+- Complex project management
 3. **Gemini Pro** - Choose for:
-   - Google ecosystem projects
-   - Multimodal development needs
-   - Advanced integration requirements
-   - Comprehensive analysis tasks
-
+- Google ecosystem projects
+- Multimodal development needs
+- Advanced integration requirements
+- Comprehensive analysis tasks
 4. **OpenAI o1-preview** - Choose for:
-   - Mathematical problem-solving
-   - Deep reasoning requirements
-   - Complex algorithmic development
-   - Sophisticated analysis needs
+- Mathematical problem-solving
+- Deep reasoning requirements
+- Complex algorithmic development
+- Sophisticated analysis needs
 
 ### Fallback Strategy
 
 If advanced models are not available:
+
 1. Templates automatically fall back to GPT-4.1 or GPT-4
 2. Core functionality remains intact
 3. Specialized capabilities may be reduced
@@ -88,19 +86,23 @@ If advanced models are not available:
 
 Each template includes model targeting in its frontmatter:
 
-```yaml
+```YAML
+
 ---
 model: "Claude-Sonnet-4"
 priority: 1
 reasoning: "advanced"
 specialized_for: "architecture design"
 category: "Development"
+
 ---
-```markdown
+
+```Markdown
 
 ### VS Code Integration
 
 The framework includes enhanced VS Code settings for model selection:
+
 - Direct model selection via command center
 - Automatic template discovery
 - Model-specific optimizations
@@ -109,6 +111,7 @@ The framework includes enhanced VS Code settings for model selection:
 ### Installation
 
 Templates are installed with one-click VS Code integration:
+
 1. Click the install badge for your desired template
 2. VS Code automatically opens with the template ready
 3. Model targeting is configured automatically
@@ -149,6 +152,7 @@ Templates are installed with one-click VS Code integration:
 ## Future Enhancements
 
 The model targeting system is designed for extensibility:
+
 - Additional models will be added as they become available
 - Enhanced model-specific optimizations
 - Improved automatic model selection

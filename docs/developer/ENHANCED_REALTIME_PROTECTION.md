@@ -8,13 +8,15 @@ This document describes the comprehensive enhancement of xanadOS Search & Destro
 
 ### 1. Enhanced Real-Time Protection Engine (`enhanced_real_time_protection.py`)
 
-**Key Features:**
+### Key Features
+
 - **Machine Learning Anomaly Detection**: Lightweight ML models using statistical anomaly detection
 - **Adaptive Resource Management**: Dynamic performance scaling based on system load
 - **Advanced Behavioral Analysis**: Process behavior monitoring and threat assessment
 - **Edge AI Integration**: Efficient on-device threat detection without cloud dependencies
 
-**2025 Optimizations:**
+### 2025 Optimizations
+
 - Statistical ML models for 95%+ accuracy with minimal CPU overhead
 - Adaptive batch processing (1-50 files based on system load)
 - Process behavior profiling with suspicious activity detection
@@ -22,13 +24,15 @@ This document describes the comprehensive enhancement of xanadOS Search & Destro
 
 ### 2. Enhanced File System Watcher (`enhanced_file_watcher.py`)
 
-**Key Features:**
+### Key Features 2
+
 - **fanotify API Support**: Kernel-level file system monitoring (Linux)
 - **Intelligent Event Filtering**: Smart filtering to reduce false positives by 80%
 - **Adaptive Event Batching**: Priority-based event processing
 - **eBPF Integration Ready**: Prepared for kernel-level event filtering
 
-**2025 Optimizations:**
+### 2025 Optimizations 2
+
 - fanotify for mount-point level monitoring (more efficient than inotify)
 - Smart filtering based on file extensions, paths, and process intelligence
 - Priority-based batching: immediate, 100ms, and 1s delays based on threat level
@@ -36,13 +40,15 @@ This document describes the comprehensive enhancement of xanadOS Search & Destro
 
 ### 3. Integrated Protection Manager (`integrated_protection_manager.py`)
 
-**Key Features:**
+### Key Features 3
+
 - **Unified System Management**: Coordinates all protection components
 - **Performance Optimization**: Real-time mode switching based on system resources
 - **Health Monitoring**: Continuous system health assessment
 - **Configuration Management**: Export/import system configurations
 
-**2025 Optimizations:**
+### 2025 Optimizations 3
+
 - 4 adaptive modes: maximum_security, balanced, performance, gaming
 - Real-time system health monitoring with automatic mode switching
 - Performance metrics tracking and optimization learning
@@ -72,8 +78,10 @@ This document describes the comprehensive enhancement of xanadOS Search & Destro
 
 ### 1. Adaptive Resource Management
 
-```python
-# Dynamic mode switching based on system load
+```Python
+
+## Dynamic mode switching based on system load
+
 modes = {
     'maximum_security': {     # <30% CPU, <50% RAM
         'scan_depth': 'deep',
@@ -91,61 +99,77 @@ modes = {
         'batch_size': 20
     }
 }
-```
+
+```text
 
 ### 2. Intelligent Event Filtering
 
-```python
-# Smart filtering reduces processing by 80%
+```Python
+
+## Smart filtering reduces processing by 80%
+
 - High-risk files: .exe, .dll, .py, .sh -> Immediate processing
 - Medium-risk files: .zip, .pdf, .doc -> Batched processing
 - Low-risk files: .txt, .jpg, .mp3 -> Background processing
 - Excluded paths: /proc, /sys, /tmp -> No processing
-```
+
+```text
 
 ### 3. Machine Learning Integration
 
-```python
-# Lightweight statistical anomaly detection
+```Python
+
+## Lightweight statistical anomaly detection
+
 - File size anomalies (Z-score > 2.0)
 - Access pattern anomalies (unusual process access)
 - Behavioral anomalies (process behavior scoring)
 - Real-time model updates
-```
+
+```text
 
 ## Usage Integration
 
 ### Basic Integration
 
-```python
+```Python
 from app.core.integrated_protection_manager import IntegratedProtectionManager
 
-# Initialize protection system
+## Initialize protection system
+
 protection_manager = IntegratedProtectionManager(['/home', '/opt', '/usr/local'])
 
-# Add threat callback
+## Add threat callback
+
 def handle_threat(threat_info):
     print(f"Threat detected: {threat_info}")
 
 protection_manager.add_threat_callback(handle_threat)
 
-# Start protection
+## Start protection
+
 await protection_manager.initialize()
 await protection_manager.start_protection()
-```
+
+```text
 
 ### Advanced Configuration
 
-```python
-# Export current settings
+```Python
+
+## Export current settings
+
 config = protection_manager.export_configuration()
 
-# Modify settings
+## Modify settings
+
 config['performance_settings']['ml_sensitivity'] = 0.8
 
-# Import modified settings
+## Import modified settings
+
 await protection_manager.import_configuration(config)
-```
+
+```text
 
 ## Performance Monitoring
 
@@ -153,13 +177,14 @@ await protection_manager.import_configuration(config)
 
 The system provides comprehensive performance monitoring:
 
-```python
+```Python
 status = protection_manager.get_status()
 print(f"Files scanned: {status['performance_metrics']['files_scanned']}")
 print(f"Threats detected: {status['performance_metrics']['threats_detected']}")
 print(f"CPU usage: {status['system_health']['cpu_usage']}%")
 print(f"Filter efficiency: {status['file_watcher']['filter_efficiency']}%")
-```
+
+```text
 
 ### Optimization History
 
@@ -173,31 +198,31 @@ print(f"Filter efficiency: {status['file_watcher']['filter_efficiency']}%")
 ### 2025 Threat Detection Capabilities
 
 1. **Behavioral Analysis**:
-   - Process execution pattern analysis
-   - Network communication monitoring
-   - File system access pattern detection
-   - Memory usage anomaly detection
-
+- Process execution pattern analysis
+- Network communication monitoring
+- File system access pattern detection
+- Memory usage anomaly detection
 2. **Heuristic Detection**:
-   - Advanced static analysis
-   - Dynamic behavior scoring
-   - Machine learning-based classification
-   - Context-aware threat assessment
-
+- Advanced static analysis
+- Dynamic behavior scoring
+- Machine learning-based classification
+- Context-aware threat assessment
 3. **Real-Time Response**:
-   - Immediate threat blocking
-   - Automated quarantine procedures
-   - Process termination capabilities
-   - User notification system
+- Immediate threat blocking
+- Automated quarantine procedures
+- Process termination capabilities
+- User notification system
 
 ## Platform Compatibility
 
 ### Linux Optimizations
+
 - **fanotify API**: Kernel-level file system monitoring
 - **eBPF Ready**: Prepared for Berkeley Packet Filter integration
 - **systemd Integration**: Service management compatibility
 
 ### Cross-Platform Support
+
 - **Windows**: NTFS monitoring with ReadDirectoryChangesW
 - **macOS**: FSEvents API integration
 - **Fallback**: Polling-based monitoring for unsupported systems
@@ -255,25 +280,27 @@ This system maintains maximum security effectiveness while dramatically improvin
 To test the enhanced system:
 
 1. **Install Dependencies**:
-   ```bash
-   pip install numpy psutil asyncio
-   ```
+
+  ```bash
+  pip install numpy psutil asyncio
+
+```text
 
 2. **Run Individual Components**:
-   ```bash
-   python app/core/enhanced_real_time_protection.py
-   python app/core/enhanced_file_watcher.py
-   python app/core/integrated_protection_manager.py
-   ```
+
+  ```bash
+  Python app/core/enhanced_real_time_protection.py
+  Python app/core/enhanced_file_watcher.py
+  Python app/core/integrated_protection_manager.py
+```text
 
 3. **Integration Testing**:
-   - The integrated protection manager includes comprehensive testing
-   - Monitor system resource usage during testing
-   - Validate threat detection accuracy with test files
-
+- The integrated protection manager includes comprehensive testing
+- Monitor system resource usage during testing
+- Validate threat detection accuracy with test files
 4. **Production Deployment**:
-   - Start with 'balanced' mode for initial deployment
-   - Monitor performance metrics for 24-48 hours
-   - Adjust settings based on system usage patterns
+- Start with 'balanced' mode for initial deployment
+- Monitor performance metrics for 24-48 hours
+- Adjust settings based on system usage patterns
 
 The enhanced system is designed for seamless integration with existing xanadOS Search & Destroy architecture while providing significant performance improvements and advanced threat detection capabilities.

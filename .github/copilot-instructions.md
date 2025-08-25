@@ -1,5 +1,6 @@
 ---
 applyTo: "**/*"
+
 ---
 
 # Repository custom instructions (lean)
@@ -10,22 +11,22 @@ Keep details in `/docs`; keep this file short and operational.
 ## Build, test, lint
 
 - Build/validate: see scripts under `scripts/tools/` and package scripts.
-- Lint markdown: `npm run lint` (uses markdownlint)
+- Lint Markdown: `npm run lint` (uses markdownlint)
 - Validate templates: `npm run validate`
 
 ## Minimal repo map
 
-- `.github/instructions/`: scoped rules for Copilot (read when relevant)
-- `.github/chatmodes/` and `.github/prompts/`: chat modes and prompt files
+- `.GitHub/instructions/`: scoped rules for Copilot (read when relevant)
+- `.GitHub/chatmodes/`and`.GitHub/prompts/`: chat modes and prompt files
 - `docs/`: human-facing guides and references
 - `scripts/tools/`: toolshed; prefer these over writing new scripts
 
-See full guide: `docs/guides/COPILOT-INSTRUCTIONS-GUIDE.md`.
+See full guide: `docs/guides/Copilot-INSTRUCTIONS-GUIDE.md`.
 
 ## Coding standards (imperative, short)
 
 - Prefer small, focused changes with tests or validation output.
-- Don’t duplicate tools or docs; search `scripts/tools/` and `docs/` first.
+- Don’t duplicate tools or docs; search `scripts/tools/`and`docs/` first.
 - Follow security and testing instructions when files match their scope.
 - Update `CHANGELOG.md` for notable changes; use conventional commits.
 
@@ -52,8 +53,8 @@ Always pick the smallest capable model; switch up for harder reasoning.
 
 ## References
 
-- Agent workflow: `.github/instructions/agent-workflow.instructions.md`
-- Toolshed usage: `.github/instructions/toolshed-usage.instructions.md`
-- Docs awareness: `.github/instructions/documentation-awareness.instructions.md`
-- Security/testing: `.github/instructions/security.instructions.md`, `testing.instructions.md`
-- Full framework guide: `docs/guides/COPILOT-INSTRUCTIONS-GUIDE.md`
+- Agent workflow: `.GitHub/instructions/agent-workflow.instructions.md`
+- Toolshed usage: `.GitHub/instructions/toolshed-usage.instructions.md`
+- Docs awareness: `.GitHub/instructions/documentation-awareness.instructions.md`
+- Security/testing: `.GitHub/instructions/security.instructions.md`, `testing.instructions.md`
+- Full framework guide: `docs/guides/Copilot-INSTRUCTIONS-GUIDE.md`

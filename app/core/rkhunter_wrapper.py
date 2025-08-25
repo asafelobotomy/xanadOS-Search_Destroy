@@ -1,29 +1,31 @@
 #!/usr/bin/env python3
-"""
-RKHunter (Rootkit Hunter) integration wrapper for S&D - Search & Destroy
-Provides rootkit detection capabilities complementing ClamAV
+"""RKHunter (Rootkit Hunter) integration wrapper for S&D - Search & Destroy.
+Provides rootkit detection capabilities complementing ClamAV.
 """
 
-import json
+import configparser
 import logging
 import os
+import shutil
 import subprocess
+import tempfile
 import time
+import traceback
 from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple, Callable
+from typing import Callable, List, Optional, Tuple
 
-# Import the warning analyzer
 from .rkhunter_analyzer import RKHunterWarningAnalyzer, WarningExplanation
-# Import security validator
 from .security_validator import SecureRKHunterValidator
 
+# Import the warning analyzer
+# Import security validator
 # Provide a module-level alias for elevated_run to ease monkeypatching in tests.
 try:  # pragma: no cover - import guard
     from .elevated_runner import elevated_run as _elevated_run
-except Exception:  # pragma: no cover - fallback if elevated runner unavailable
+except Exception as e:  # pragma: no cover - fallback if elevated runner unavailable
     _elevated_run = None
 
 
@@ -89,8 +91,7 @@ class RKHunterScanResult:
 
 
 class RKHunterWrapper:
-    """
-    Wrapper for RKHunter (Rootkit Hunter) integration.
+    """Wrapper for RKHunter (Rootkit Hunter) integration.
 
     Provides methods to run rootkit scans, parse results, and integrate
     with the main antivirus application.
@@ -105,7 +106,7 @@ class RKHunterWrapper:
             Path.home() / ".config" / "search-and-destroy" / "rkhunter.conf"
         )
         self._current_process = None  # Track current running process
-        
+
         # Authentication session management
         self._auth_session_start = None  # Track when authentication was granted
         self._auth_session_duration = 60  # Session valid for 60 seconds
@@ -114,28 +115,35 @@ class RKHunterWrapper:
         # Extended to match scan duration with enhanced security validation
         self._grace_period = 1800  # 30 minutes - covers typical RKHunter scan duration
         self._max_grace_period = 3600  # 60 minutes - absolute maximum for large systems
-        self._grace_period_extensions = 0  # Track grace period usage for security monitoring
-        
+        self._grace_period_extensions = (
+            0  # Track grace period usage for security monitoring
+        )
+
         # Initialize security validator
         self.security_validator = SecureRKHunterValidator()
-        
+
         # Initialize warning analyzer
         self.warning_analyzer = RKHunterWarningAnalyzer()
-        
+
         # Validate RKHunter path on initialization for security
         if self.rkhunter_path:
             if not self.security_validator.validate_executable_path(self.rkhunter_path):
-                self.logger.warning(f"RKHunter path {self.rkhunter_path} failed security validation")
+                self.logger.warning(
+                    "RKHunter path %s failed security validation",
+                    self.rkhunter_path,
+                )
                 # Try to get a safe path
                 safe_path = self.security_validator.get_safe_rkhunter_path()
                 if safe_path:
-                    self.logger.info(f"Using safe RKHunter path: {safe_path}")
+                    self.logger.info("Using safe RKHunter path: %s", safe_path)
                     self.rkhunter_path = safe_path
                 else:
-                    self.logger.error("No safe RKHunter path found - disabling RKHunter")
+                    self.logger.error(
+                        "No safe RKHunter path found - disabling RKHunter",
+                    )
                     self.rkhunter_path = None
                     self._available = False
-        
+
         # SECURITY: Configure grace period based on environment
         self._configure_security_settings()
 
@@ -146,22 +154,10 @@ class RKHunterWrapper:
                 "system_commands_known_rootkits",
                 "system_commands_properties",
             ],
-            "rootkits": [
-                "rootkits",
-                "trojans",
-                "malware"],
-            "network": [
-                "network",
-                "ports",
-                "packet_cap_apps"],
-            "system_integrity": [
-                "filesystem",
-                "system_configs",
-                "startup_files"],
-            "applications": [
-                "applications",
-                "hidden_procs",
-                "hidden_files"],
+            "rootkits": ["rootkits", "trojans", "malware"],
+            "network": ["network", "ports", "packet_cap_apps"],
+            "system_integrity": ["filesystem", "system_configs", "startup_files"],
+            "applications": ["applications", "hidden_procs", "hidden_files"],
         }
 
         if self.available:
@@ -170,22 +166,22 @@ class RKHunterWrapper:
         else:
             self.logger.warning("RKHunter not available on system")
 
-
     def _initialize_config(self):
-        """Initialize RKHunter configuration (early definition for tests)."""
+        """Initialize minimal RKHunter configuration if missing."""
         try:
             self.config_path.parent.mkdir(parents=True, exist_ok=True)
             if not self.config_path.exists():
-                self.config_path.write_text("# minimal rkhunter config generated for tests\n")
+                self.config_path.write_text(
+                    "# minimal rkhunter config generated for tests\n",
+                )
         except Exception:
-            pass
+            self.logger.debug("Failed to initialize minimal config", exc_info=True)
 
     def get_version(self) -> Tuple[str, str]:
         """Return (version_string, status). Single authoritative implementation."""
         if not self.available or self.rkhunter_path is None:
             return "Not Available", "N/A"
         try:
-            from .secure_subprocess import run_secure
             result = run_secure([self.rkhunter_path, "--version"], timeout=5)
             if result.returncode == 0 and result.stdout:
                 line = result.stdout.strip().split("\n")[0].strip()
@@ -196,7 +192,9 @@ class RKHunterWrapper:
             pass
         try:
             elevated_result = self._run_with_privilege_escalation(
-                [self.rkhunter_path, "--version"], capture_output=True, timeout=10
+                [self.rkhunter_path, "--version"],
+                capture_output=True,
+                timeout=10,
             )
             if elevated_result.returncode == 0 and elevated_result.stdout:
                 line = elevated_result.stdout.strip().split("\n")[0].strip()
@@ -207,60 +205,80 @@ class RKHunterWrapper:
             return "Unknown", "Permission denied"
         return "Unknown", "Error"
 
-
     def _configure_security_settings(self):
-        """
-        Configure security settings based on environment and security policy.
+        """Configure security settings based on environment and security policy.
         SECURITY: Adaptive grace period based on system security requirements.
         """
         try:
             # SECURITY: Check for security configuration file
-            config_path = Path.home() / ".config" / "search-and-destroy" / "security.conf"
-            
+            config_path = (
+                Path.home() / ".config" / "search-and-destroy" / "security.conf"
+            )
+
             if config_path.exists():
                 # Load custom security configuration
-                import configparser
+
+
                 config = configparser.ConfigParser()
                 config.read(config_path)
-                
-                if config.has_section('grace_period'):
-                    custom_period = config.getint('grace_period', 'duration', fallback=self._grace_period)
-                    max_period = config.getint('grace_period', 'max_duration', fallback=self._max_grace_period)
-                    
+
+                if config.has_section("grace_period"):
+                    custom_period = config.getint(
+                        "grace_period",
+                        "duration",
+                        fallback=self._grace_period,
+                    )
+                    max_period = config.getint(
+                        "grace_period",
+                        "max_duration",
+                        fallback=self._max_grace_period,
+                    )
+
                     # SECURITY: Validate custom grace period
                     if 30 <= custom_period <= max_period:
                         self._grace_period = custom_period
-                        self.logger.info(f"Using custom grace period: {custom_period}s")
+                        self.logger.info("Using custom grace period: %ss", custom_period)
                     else:
                         self.logger.warning(
-                            f"Invalid custom grace period {custom_period}s, "
-                            f"using default: {self._grace_period}s"
+                            "Invalid custom grace period %ss, using default: %ss",
+                            custom_period,
+                            self._grace_period,
                         )
-            
+
             # SECURITY: Environment-based adjustments
             # Check if running in a high-security environment
-            if os.path.exists('/etc/security/high-security-mode'):
+            if os.path.exists("/etc/security/high-security-mode"):
                 # Reduce grace period in high-security environments
                 self._grace_period = min(300, self._grace_period)  # Max 5 minutes
                 self.logger.info("High-security mode detected - reduced grace period")
-            
+
             # SECURITY: Check system load to adjust grace period
             try:
-                import psutil
-                system_load = psutil.getloadavg()[0] if hasattr(psutil, 'getloadavg') else 0
+
+
+                system_load = (
+                    psutil.getloadavg()[0] if hasattr(psutil, "getloadavg") else 0
+                )
                 if system_load > 2.0:
                     # Increase grace period on high-load systems (scans take longer)
-                    self._grace_period = min(self._max_grace_period, int(self._grace_period * 1.5))
-                    self.logger.info(f"High system load detected - extended grace period to {self._grace_period}s")
+                    self._grace_period = min(
+                        self._max_grace_period,
+                        int(self._grace_period * 1.5),
+                    )
+                    self.logger.info(
+                        "High system load detected - extended grace period to %ss",
+                        self._grace_period,
+                    )
             except ImportError:
                 pass  # psutil not available
-                
-        except Exception as e:
-            self.logger.warning(f"Error configuring security settings: {e}")
-        
+
+        except Exception:
+            self.logger.warning("Error configuring security settings", exc_info=True)
+
         self.logger.info(
-            f"Security configuration complete - grace period: {self._grace_period}s, "
-            f"max: {self._max_grace_period}s"
+            "Security configuration complete - grace period: %ss, max: %ss",
+            self._grace_period,
+            self._max_grace_period,
         )
 
     def _find_rkhunter(self) -> Optional[str]:
@@ -277,25 +295,21 @@ class RKHunterWrapper:
 
         # Try which command
         try:
-            from .secure_subprocess import run_secure
             result = run_secure(["which", "rkhunter"], timeout=5)
             if result.returncode == 0 and result.stdout:
                 return result.stdout.strip()
-        except Exception:
+        except Exception as e:
             pass
 
         return None
 
     def _find_executable(self, name: str) -> Optional[str]:
         """Find an executable in PATH."""
-        import shutil
-
         return shutil.which(name)
 
     def terminate_current_scan(self):
-        """
-        Safely terminate the currently running RKHunter scan.
-        
+        """Safely terminate the currently running RKHunter scan.
+
         Uses a graceful approach: SIGTERM first, then SIGKILL if needed.
         For elevated processes, also attempts privileged termination.
         """
@@ -303,37 +317,56 @@ class RKHunterWrapper:
             try:
                 pid = self._current_process.pid
                 self.logger.info("Terminating RKHunter scan process (PID: %d)", pid)
-                from .safe_kill import kill_sequence
+
+
                 within_grace = self._is_within_auth_grace_period()
                 result = kill_sequence(pid, escalate=within_grace is False)
                 if result.success:
-                    self.logger.info("Scan termination success (escalated=%s attempts=%s)", result.escalated, result.attempts)
+                    self.logger.info(
+                        "Scan termination success (escalated=%s attempts=%s)",
+                        result.escalated,
+                        result.attempts,
+                    )
                     return True
-                else:
-                    self.logger.warning("Scan termination failed (escalated=%s attempts=%s error=%s)", result.escalated, result.attempts, result.error)
-                    return within_grace  # Treat as soft-success inside grace window
+                self.logger.warning(
+                    "Scan termination failed (escalated=%s attempts=%s error=%s)",
+                    result.escalated,
+                    result.attempts,
+                    result.error,
+                )
+                return within_grace  # Treat as soft-success inside grace window
             except PermissionError as e:
                 # This is expected when trying to terminate elevated processes
-                self.logger.info("Permission denied when terminating elevated RKHunter process (expected): %s", e)
-                
+                self.logger.info(
+                    "Permission denied when terminating elevated RKHunter process (expected): %s",
+                    e,
+                )
+
                 # Try privileged termination as fallback
-                if hasattr(self, '_current_process') and self._current_process:
+                if hasattr(self, "_current_process") and self._current_process:
                     pid = self._current_process.pid
-                    
+
                     # If we're within grace period, be more lenient about termination
                     if self._is_within_auth_grace_period():
-                        self.logger.info("Within grace period - attempting privileged termination but accepting if unsuccessful")
+                        self.logger.info(
+                            "Within grace period - attempting privileged termination but accepting if unsuccessful",
+                        )
                         success = self._terminate_with_privilege_escalation(pid)
                         if not success:
-                            self.logger.info("Privileged termination within grace period was unsuccessful, but process will terminate naturally")
+                            self.logger.info(
+                                "Privileged termination within grace period was unsuccessful, but process will terminate naturally",
+                            )
                         return True  # Always return success within grace period
-                    else:
-                        # Outside grace period, try harder to terminate
-                        if self._terminate_with_privilege_escalation(pid):
-                            self.logger.info("RKHunter scan terminated via privileged escalation fallback")
-                            return True
-                
-                self.logger.info("RKHunter process was started with elevated privileges and cannot be terminated by non-elevated process")
+                    # Outside grace period, try harder to terminate
+                    if self._terminate_with_privilege_escalation(pid):
+                        self.logger.info(
+                            "RKHunter scan terminated via privileged escalation fallback",
+                        )
+                        return True
+
+                self.logger.info(
+                    "RKHunter process was started with elevated privileges and cannot be terminated by non-elevated process",
+                )
                 return True  # Still consider this a "success" since the process will eventually finish
             except Exception as e:
                 self.logger.error("Error terminating RKHunter scan: %s", e)
@@ -345,161 +378,196 @@ class RKHunterWrapper:
             return True
 
     def _is_within_auth_grace_period(self) -> bool:
-        """
-        Check if we're within the authentication grace period.
+        """Check if we're within the authentication grace period.
         SECURITY: Enhanced with additional safeguards for extended grace period.
-        
+
         Returns:
             bool: True if within grace period, False otherwise
+
         """
         if self._auth_session_start is None:
             return False
-        
+
         current_time = time.time()
         elapsed = current_time - self._auth_session_start
-        
+
         # SECURITY: Additional validation for extended grace period
         # Check if we're within the standard grace period first
         within_standard_period = elapsed <= 30  # Original 30-second period
         within_extended_period = elapsed <= self._grace_period
-        
+
         # SECURITY: Log extended grace period usage for monitoring
         if within_extended_period and not within_standard_period:
             self._grace_period_extensions += 1
             self.logger.warning(
-                f"Extended grace period in use: {elapsed:.1f}s elapsed, "
-                f"extension #{self._grace_period_extensions}"
+                "Extended grace period in use: %.1fs elapsed, extension #%s",
+                elapsed,
+                self._grace_period_extensions,
             )
-            
+
             # SECURITY: Limit grace period extensions to prevent abuse
             if self._grace_period_extensions > 3:
                 self.logger.error(
-                    "Grace period extension limit exceeded - forcing re-authentication"
+                    "Grace period extension limit exceeded - forcing re-authentication",
                 )
                 return False
-        
+
         self.logger.debug(
-            f"Auth session elapsed time: {elapsed:.1f}s, "
-            f"grace period: {self._grace_period}s, "
-            f"within standard: {within_standard_period}, "
-            f"within extended: {within_extended_period}"
+            "Auth session elapsed time: %.1fs, grace period: %ss, within standard: %s, within extended: %s",
+            elapsed,
+            self._grace_period,
+            within_standard_period,
+            within_extended_period,
         )
-        
+
         return within_extended_period
 
     def _ensure_auth_session(self) -> bool:
-        """
-        Ensure authentication session is active to minimize prompts.
-        
+        """Ensure authentication session is active to minimize prompts.
+
         Returns:
             True if session is active, False if authentication failed
+
         """
         try:
             self.logger.info("Attempting to ensure authentication session...")
-            from .elevated_runner import validate_auth_session
+
+
             self.logger.info("validate_auth_session imported successfully")
-            
+
             result = validate_auth_session()
             self.logger.info("validate_auth_session returned: %s", result)
             return result
-            
+
         except ImportError as e:
             # Fallback if validate_auth_session is not available
-            self.logger.warning("validate_auth_session not available: %s, authentication may prompt multiple times", e)
+            self.logger.warning(
+                "validate_auth_session not available: %s, authentication may prompt multiple times",
+                e,
+            )
             return True
-        except Exception as e:
-            self.logger.error("Authentication session validation failed: %s", e)
-            # Log the full traceback for debugging
-            import traceback
-            self.logger.error("Full traceback: %s", traceback.format_exc())
+        except Exception:
+            self.logger.error("Authentication session validation failed", exc_info=True)
             return False
 
     def _update_auth_session(self):
-        """
-        Update the authentication session timestamp.
+        """Update the authentication session timestamp.
         SECURITY: Enhanced with session validation and monitoring.
         """
         current_time = time.time()
-        
+
         # SECURITY: Check for session reset (new scan starting)
         if self._auth_session_start is not None:
             previous_elapsed = current_time - self._auth_session_start
             self.logger.info(
-                f"Authentication session reset after {previous_elapsed:.1f}s, "
-                f"extensions used: {self._grace_period_extensions}"
+                "Authentication session reset after %.1fs, extensions used: %s",
+                previous_elapsed,
+                self._grace_period_extensions,
             )
-        
+
         self._auth_session_start = current_time
         self._grace_period_extensions = 0  # Reset extension counter
-        
+
         self.logger.info(
-            f"Authentication session updated - grace period: {self._grace_period}s"
+            "Authentication session updated - grace period: %ss",
+            self._grace_period,
         )
-        
+
         # SECURITY: Log session start for audit trail
         self.logger.info("SECURITY_AUDIT: New privileged session started")
-    
+
     def _reset_auth_session(self):
-        """
-        Reset the authentication session.
+        """Reset the authentication session.
         SECURITY: Clean session termination with audit logging.
         """
         if self._auth_session_start is not None:
             elapsed = time.time() - self._auth_session_start
             self.logger.info(
-                f"Authentication session ended after {elapsed:.1f}s, "
-                f"extensions used: {self._grace_period_extensions}"
+                "Authentication session ended after %.1fs, extensions used: %s",
+                elapsed,
+                self._grace_period_extensions,
             )
             # SECURITY: Log session end for audit trail
             self.logger.info("SECURITY_AUDIT: Privileged session ended")
-        
+
         self._auth_session_start = None
         self._grace_period_extensions = 0
 
     def _terminate_with_privilege_escalation(self, pid: int) -> bool:
-        """
-        Legacy compatibility wrapper now using kill_sequence abstraction.
+        """Legacy compatibility wrapper now using kill_sequence abstraction.
         Prefer graceful TERM then KILL; escalate only when outside grace
         period (to avoid unnecessary auth prompts) and direct signals denied.
         """
         try:
-            from .safe_kill import kill_sequence
             within_grace = self._is_within_auth_grace_period()
             # escalate only if NOT within grace period to avoid extra prompts
             result = kill_sequence(pid, escalate=not within_grace)
             if result.success:
-                self.logger.info("Termination succeeded (grace=%s escalated=%s attempts=%s)", within_grace, result.escalated, result.attempts)
+                self.logger.info(
+                    "Termination succeeded (grace=%s escalated=%s attempts=%s)",
+                    within_grace,
+                    result.escalated,
+                    result.attempts,
+                )
                 return True
             if within_grace:
                 # treat as soft-success to avoid prompting again
-                self.logger.info("Termination treated as success inside grace window (attempts=%s error=%s)", result.attempts, result.error)
+                self.logger.info(
+                    "Termination treated as success inside grace window (attempts=%s error=%s)",
+                    result.attempts,
+                    result.error,
+                )
                 return True
-            self.logger.warning("Termination failed (escalated=%s attempts=%s error=%s)", result.escalated, result.attempts, result.error)
+            self.logger.warning(
+                "Termination failed (escalated=%s attempts=%s error=%s)",
+                result.escalated,
+                result.attempts,
+                result.error,
+            )
             return False
         except Exception as e:  # pragma: no cover - defensive
             self.logger.error("safe_kill termination error: %s", e)
             return False
 
     def _run_with_privilege_escalation(
-            self,
-            cmd_args: List[str],
-            capture_output: bool = True,
-            timeout: int = 300) -> subprocess.CompletedProcess:
+        self,
+        cmd_args: List[str],
+        capture_output: bool = True,
+        timeout: int = 300,
+    ) -> subprocess.CompletedProcess:
         # Use injected/aliased elevated_run so tests can monkeypatch without
         # hitting real privilege escalation paths.
-        elevated_run = _elevated_run
-        if elevated_run is None:  # Lazy import fallback
+        _elev_run = _elevated_run
+        if _elev_run is None:  # Lazy import fallback
             from .elevated_runner import elevated_run as _fallback
-            elevated_run = _fallback
-        is_valid, error_message = self.security_validator.validate_command_args(cmd_args)
+
+            _elev_run = _fallback
+        is_valid, error_message = self.security_validator.validate_command_args(
+            cmd_args,
+        )
         if not is_valid:
-            return subprocess.CompletedProcess(args=cmd_args, returncode=1, stdout="", stderr=f"Security validation failed: {error_message}")
-        self.logger.info(f"Security validation passed for command: {' '.join(cmd_args[:2])}")
+            return subprocess.CompletedProcess(
+                args=cmd_args,
+                returncode=1,
+                stdout="",
+                stderr="Security validation failed: %s" % (error_message,),
+            )
+        self.logger.info(
+            "Security validation passed for command: %s",
+            " ".join(cmd_args[:2]),
+        )
         # elevated_run with GUI authentication for consistent user experience
-        result = elevated_run(cmd_args, timeout=timeout, capture_output=capture_output, gui=True)
+        result = _elev_run(
+            cmd_args,
+            timeout=timeout,
+            capture_output=capture_output,
+            gui=True,
+        )
         # Apply success heuristic abstraction
         try:
-            if _is_successful_scan(result.returncode, getattr(result, 'stdout', '')):
+            if self._is_successful_scan(
+                result.returncode, getattr(result, "stdout", "")
+            ):
                 # Note: Simplified elevated runner doesn't need session tracking
                 self.logger.debug("Elevated operation completed successfully")
         except Exception:  # pragma: no cover - defensive
@@ -521,6 +589,7 @@ class RKHunterWrapper:
 
         Returns:
             True if conditions classify as successful scan, else False.
+
         """
         if returncode not in (0, 1):
             return False
@@ -532,12 +601,12 @@ class RKHunterWrapper:
         return False
 
     def _run_with_privilege_escalation_streaming(
-            self,
-            cmd_args: List[str],
-            output_callback: Optional[Callable[[str], None]] = None,
-            timeout: int = 300) -> subprocess.CompletedProcess:
-        """
-        Run a command with privilege escalation and real-time output streaming.
+        self,
+        cmd_args: List[str],
+        output_callback: Optional[Callable[[str], None]] = None,
+        timeout: int = 300,
+    ) -> subprocess.CompletedProcess:
+        """Run a command with privilege escalation and stream output.
         SECURITY: Validates all commands against security policy before execution.
 
         Args:
@@ -546,35 +615,37 @@ class RKHunterWrapper:
             timeout: Command timeout in seconds
 
         Returns:
-            subprocess.CompletedProcess: The result of the command
+            subprocess.CompletedProcess with stdout collected line-by-line.
         """
+
         # SECURITY: Validate command arguments before any execution
-        is_valid, error_message = self.security_validator.validate_command_args(cmd_args)
+        is_valid, error_message = self.security_validator.validate_command_args(
+            cmd_args,
+        )
         if not is_valid:
-            self.logger.error(f"Security validation failed: {error_message}")
-            # Return a failed result instead of raising exception for better error handling
-            result = subprocess.CompletedProcess(
+            self.logger.error("Security validation failed: %s", error_message)
+            return subprocess.CompletedProcess(
                 args=cmd_args,
                 returncode=1,
                 stdout="",
-                stderr=f"Security validation failed: {error_message}"
+                stderr="Security validation failed: %s" % (error_message,),
             )
-            return result
-        
-        self.logger.info(f"Security validation passed for streaming command: {' '.join(cmd_args[:2])}")  # Log first 2 args only
+
+        self.logger.info(
+            "Security validation passed for streaming command: %s",
+            " ".join(cmd_args[:2]),
+        )
+
+        # Lazy import to allow tests to monkeypatch without escalations
         from .elevated_runner import elevated_popen
-        is_valid, error_message = self.security_validator.validate_command_args(cmd_args)
-        if not is_valid:
-            return subprocess.CompletedProcess(args=cmd_args, returncode=1, stdout="", stderr=f"Security validation failed: {error_message}")
-        
-        # elevated_popen with GUI authentication for consistent user experience
-        # Launch process
+
+        # Launch process with GUI auth for consistent UX
         process = elevated_popen(cmd_args, gui=True)
         self._current_process = process
         stdout_lines: list[str] = []
         try:
             if process.stdout:
-                for line in iter(process.stdout.readline, ''):
+                for line in iter(process.stdout.readline, ""):
                     if not line:
                         break
                     line_clean = line.rstrip()
@@ -584,12 +655,27 @@ class RKHunterWrapper:
             process.wait(timeout=timeout)
         except subprocess.TimeoutExpired:
             process.kill()
-            return subprocess.CompletedProcess(args=cmd_args, returncode=124, stdout='\n'.join(stdout_lines), stderr='timeout')
+            return subprocess.CompletedProcess(
+                args=cmd_args,
+                returncode=124,
+                stdout="\n".join(stdout_lines),
+                stderr="timeout",
+            )
         finally:
             self._current_process = None
-        result = subprocess.CompletedProcess(args=cmd_args, returncode=process.returncode, stdout='\n'.join(stdout_lines), stderr='')
-        if result.returncode in (0,1) and ("Info: End date is" in result.stdout or "System checks summary" in result.stdout or result.returncode==0):
-            # Note: Simplified elevated runner doesn't need session tracking  
+
+        result = subprocess.CompletedProcess(
+            args=cmd_args,
+            returncode=process.returncode,
+            stdout="\n".join(stdout_lines),
+            stderr="",
+        )
+
+        if result.returncode in (0, 1) and (
+            "Info: End date is" in result.stdout
+            or "System checks summary" in result.stdout
+            or result.returncode == 0
+        ):
             self.logger.debug("RKHunter operation completed successfully")
         return result
 
@@ -619,7 +705,7 @@ class RKHunterWrapper:
                     "# Update behavior",
                     "UPDATE_MIRRORS=1",
                     "MIRRORS_MODE=0",
-                    "WEB_CMD=\"\"",
+                    'WEB_CMD=""',
                     "",
                     "# Database locations - Arch Linux specific paths",
                     "DBDIR=/var/lib/rkhunter/db",
@@ -629,7 +715,7 @@ class RKHunterWrapper:
                     "TMPDIR=/tmp",
                     "",
                     "# Suppress common warnings and false positives",
-                    "DISABLE_TESTS=\"suspscan hidden_procs deleted_files packet_cap_apps apps\"",
+                    'DISABLE_TESTS="suspscan hidden_procs deleted_files packet_cap_apps apps"',
                     "",
                     "# Additional Arch Linux specific settings",
                     "ALLOWHIDDENDIR=/etc/.java",
@@ -639,9 +725,9 @@ class RKHunterWrapper:
                     "",
                     "# Package manager",
                     "PKGMGR=PACMAN",
-                    "SCRIPTWHITELIST=\"\"",
-                    "ALLOWHIDDENDIR=\"/etc/.java\"",
-                    "ALLOWHIDDENFILE=\"/etc/.java\"",
+                    'SCRIPTWHITELIST=""',
+                    'ALLOWHIDDENDIR="/etc/.java"',
+                    'ALLOWHIDDENFILE="/etc/.java"',
                     "",
                     "# Disable GUI prompts (for automated scanning)",
                     "AUTO_X_DETECT=1",
@@ -653,9 +739,12 @@ class RKHunterWrapper:
                     "",
                 ]
                 try:
-                    with open(self.config_path, "w") as f:
+                    with open(self.config_path, "w", encoding="utf-8") as f:
                         f.write("\n".join(config_lines))
-                    self.logger.info("Created RKHunter configuration at %s", self.config_path)
+                    self.logger.info(
+                        "Created RKHunter configuration at %s",
+                        self.config_path,
+                    )
                 except Exception as write_err:
                     self.logger.warning("Failed writing RKHunter config: %s", write_err)
 
@@ -682,7 +771,8 @@ class RKHunterWrapper:
 
         try:
             # First try without privilege escalation
-            from .secure_subprocess import run_secure
+
+
             result = run_secure([self.rkhunter_path, "--version"], timeout=10)
             if result.returncode == 0:
                 return True
@@ -695,14 +785,13 @@ class RKHunterWrapper:
         # elevated_run now automatically prefers sudo when session is active
         try:
             result = self._run_with_privilege_escalation(
-                [self.rkhunter_path, "--version"], 
-                capture_output=True, 
-                timeout=10
+                [self.rkhunter_path, "--version"],
+                capture_output=True,
+                timeout=10,
             )
             return result.returncode == 0
-        except Exception:
+        except Exception as e:
             return False
-        
 
     def update_database(self) -> bool:
         """Update the RKHunter database (returns True on success)."""
@@ -712,19 +801,23 @@ class RKHunterWrapper:
             self.logger.info("Updating RKHunter database...")
             # elevated_run now automatically prefers sudo when session is active
             result = self._run_with_privilege_escalation(
-                [self.rkhunter_path, "--update"], 
-                capture_output=True, 
-                timeout=300
+                [self.rkhunter_path, "--update"],
+                capture_output=True,
+                timeout=300,
             )
             if result.returncode == 0:
                 self.logger.info("RKHunter database updated successfully")
                 return True
             output_text = (result.stdout or "") + (result.stderr or "")
-            if any(s in output_text.lower() for s in ("already have the latest", "up to date")):
+            if any(
+                s in output_text.lower()
+                for s in ("already have the latest", "up to date")
+            ):
                 self.logger.info("RKHunter database already up to date")
                 return True
             self.logger.warning(
-                "RKHunter database update failed (code %d)", result.returncode
+                "RKHunter database update failed (code %d)",
+                result.returncode,
             )
             return False
         except subprocess.TimeoutExpired:
@@ -734,13 +827,14 @@ class RKHunterWrapper:
             self.logger.error("RKHunter database update error: %s", e)
             return False
 
-    def scan_system_with_output_callback(self,
-                    test_categories: Optional[List[str]] = None,
-                    skip_keypress: bool = True,
-                    update_database: bool = True,
-                    output_callback: Optional[Callable[[str], None]] = None) -> RKHunterScanResult:
-        """
-        Perform a full system rootkit scan with real-time output streaming.
+    def scan_system_with_output_callback(
+        self,
+        test_categories: Optional[List[str]] = None,
+        skip_keypress: bool = True,
+        update_database: bool = True,
+        output_callback: Optional[Callable[[str], None]] = None,
+    ) -> RKHunterScanResult:
+        """Perform a full system rootkit scan with real-time output streaming.
 
         Args:
             test_categories: List of test categories to run (None for all)
@@ -750,12 +844,15 @@ class RKHunterWrapper:
 
         Returns:
             RKHunterScanResult with scan results
+
         """
         scan_id = f"rkhunter_scan_{int(time.time())}"
         start_time = datetime.now()
 
         result = RKHunterScanResult(
-            scan_id=scan_id, start_time=start_time, end_time=None
+            scan_id=scan_id,
+            start_time=start_time,
+            end_time=None,
         )
 
         if not self.available or self.rkhunter_path is None:
@@ -770,10 +867,12 @@ class RKHunterWrapper:
             if skip_keypress:
                 cmd_args.append("--sk")  # Skip keypress
 
-            cmd_args.extend([
-                "--nocolors", 
-                "--no-mail-on-warning",  # Don't try to send mail
-            ])
+            cmd_args.extend(
+                [
+                    "--nocolors",
+                    "--no-mail-on-warning",  # Don't try to send mail
+                ],
+            )
 
             # Skip specific test categories for now - RKHunter will run all tests by default
             # if test_categories:
@@ -786,17 +885,22 @@ class RKHunterWrapper:
             if os.path.exists("/etc/rkhunter.conf"):
                 cmd_args.extend(["--configfile", "/etc/rkhunter.conf"])
                 # Override problematic settings via command line
-                cmd_args.extend(["--tmpdir", "/var/lib/rkhunter/tmp"])  # Use secure temp dir
+                cmd_args.extend(
+                    ["--tmpdir", "/var/lib/rkhunter/tmp"],
+                )  # Use secure temp dir
             elif self.config_path.exists():
                 cmd_args.extend(["--configfile", str(self.config_path)])
 
             self.logger.info(
-                "Running RKHunter scan with command: %s", " ".join(cmd_args)
+                "Running RKHunter scan with command: %s",
+                " ".join(cmd_args),
             )
 
             # Run the scan with real-time output capture
             scan_result = self._run_with_privilege_escalation_streaming(
-                cmd_args, output_callback=output_callback, timeout=1800
+                cmd_args,
+                output_callback=output_callback,
+                timeout=1800,
             )
 
             result.end_time = datetime.now()
@@ -809,8 +913,7 @@ class RKHunterWrapper:
                 result.scan_summary = "System appears clean"
             elif scan_result.returncode == 1:
                 result.success = True
-                result.scan_summary = f"Warnings found: {
-                    result.warnings_found}"
+                result.scan_summary = f"Warnings found: {result.warnings_found}"
             elif scan_result.returncode == 2:
                 result.success = True  # Still successful scan, but infections found
                 result.scan_summary = (
@@ -822,9 +925,7 @@ class RKHunterWrapper:
                     f"Scan failed with return code {scan_result.returncode}"
                 )
 
-            self.logger.info(
-                "RKHunter scan completed: %s",
-                result.scan_summary)
+            self.logger.info("RKHunter scan completed: %s", result.scan_summary)
 
         except subprocess.TimeoutExpired:
             result.end_time = datetime.now()
@@ -840,11 +941,12 @@ class RKHunterWrapper:
 
         return result
 
-    def scan_system(self,
-                    test_categories: Optional[List[str]] = None,
-                    skip_keypress: bool = True) -> RKHunterScanResult:
-        """
-        Perform a full system rootkit scan.
+    def scan_system(
+        self,
+        test_categories: Optional[List[str]] = None,
+        skip_keypress: bool = True,
+    ) -> RKHunterScanResult:
+        """Perform a full system rootkit scan.
 
         Args:
             test_categories: List of test categories to run (None for all)
@@ -852,12 +954,15 @@ class RKHunterWrapper:
 
         Returns:
             RKHunterScanResult with scan results
+
         """
         scan_id = f"rkhunter_scan_{int(time.time())}"
         start_time = datetime.now()
 
         result = RKHunterScanResult(
-            scan_id=scan_id, start_time=start_time, end_time=None
+            scan_id=scan_id,
+            start_time=start_time,
+            end_time=None,
         )
 
         if not self.available or self.rkhunter_path is None:
@@ -872,10 +977,12 @@ class RKHunterWrapper:
             if skip_keypress:
                 cmd_args.append("--sk")  # Skip keypress
 
-            cmd_args.extend([
-                "--nocolors", 
-                "--no-mail-on-warning",  # Don't try to send mail
-            ])
+            cmd_args.extend(
+                [
+                    "--nocolors",
+                    "--no-mail-on-warning",  # Don't try to send mail
+                ],
+            )
 
             # Skip specific test categories for now - RKHunter will run all tests by default
             # if test_categories:
@@ -888,17 +995,22 @@ class RKHunterWrapper:
             if os.path.exists("/etc/rkhunter.conf"):
                 cmd_args.extend(["--configfile", "/etc/rkhunter.conf"])
                 # Override problematic settings via command line
-                cmd_args.extend(["--tmpdir", "/var/lib/rkhunter/tmp"])  # Use secure temp dir
+                cmd_args.extend(
+                    ["--tmpdir", "/var/lib/rkhunter/tmp"],
+                )  # Use secure temp dir
             elif self.config_path.exists():
                 cmd_args.extend(["--configfile", str(self.config_path)])
 
             self.logger.info(
-                "Running RKHunter scan with command: %s", " ".join(cmd_args)
+                "Running RKHunter scan with command: %s",
+                " ".join(cmd_args),
             )
 
             # Run the scan using privilege escalation (prefers GUI dialog)
             scan_result = self._run_with_privilege_escalation(
-                cmd_args, capture_output=True, timeout=1800  # 30 minutes timeout
+                cmd_args,
+                capture_output=True,
+                timeout=1800,  # 30 minutes timeout
             )
 
             result.end_time = datetime.now()
@@ -911,8 +1023,7 @@ class RKHunterWrapper:
                 result.scan_summary = "System appears clean"
             elif scan_result.returncode == 1:
                 result.success = True
-                result.scan_summary = f"Warnings found: {
-                    result.warnings_found}"
+                result.scan_summary = f"Warnings found: {result.warnings_found}"
             elif scan_result.returncode == 2:
                 result.success = True  # Still successful scan, but infections found
                 result.scan_summary = (
@@ -924,9 +1035,7 @@ class RKHunterWrapper:
                     f"Scan failed with return code {scan_result.returncode}"
                 )
 
-            self.logger.info(
-                "RKHunter scan completed: %s",
-                result.scan_summary)
+            self.logger.info("RKHunter scan completed: %s", result.scan_summary)
 
         except subprocess.TimeoutExpired:
             result.end_time = datetime.now()
@@ -943,9 +1052,10 @@ class RKHunterWrapper:
         return result
 
     def _parse_scan_results(
-            self,
-            scan_process: subprocess.CompletedProcess,
-            result: RKHunterScanResult):
+        self,
+        scan_process: subprocess.CompletedProcess,
+        result: RKHunterScanResult,
+    ):
         """Parse RKHunter scan output and populate results."""
         try:
             # Combine stdout and stderr since RKHunter outputs to both
@@ -965,64 +1075,48 @@ class RKHunterWrapper:
                     continue
 
                 # Skip grep/egrep warnings that clutter output
-                if ("grep: warning:" in line or 
-                    "egrep: warning:" in line):
+                if "grep: warning:" in line or "egrep: warning:" in line:
                     continue
 
                 # Parse test result indicators - these are the actual test completions
-                if (" [ OK ]" in line or " [ Not found ]" in line or 
-                    " [ None found ]" in line or " [ Found ]" in line or
-                    " [ Warning ]" in line or " [ Infected ]" in line or
-                    " [ Skipped ]" in line):
+                if (
+                    " [ OK ]" in line
+                    or " [ Not found ]" in line
+                    or " [ None found ]" in line
+                    or " [ Found ]" in line
+                    or " [ Warning ]" in line
+                    or " [ Infected ]" in line
+                    or " [ Skipped ]" in line
+                ):
                     test_count += 1
 
                 # Extract test name from the line
                 if "Checking" in line:
-                    current_test = line.replace("Checking", "").replace("...", "").strip()
-
-                # Parse warnings - RKHunter uses "Warning:" format and "[ Warning ]" 
-                if (" [ Warning ]" in line):
-                    result.warnings_found += 1
-                    
-                    # Analyze the warning to get detailed explanation
-                    explanation = self.warning_analyzer.analyze_warning(line)
-                    
-                    # Map analyzer severity to RKHunter severity
-                    from .rkhunter_analyzer import SeverityLevel
-                    severity_mapping = {
-                        SeverityLevel.LOW: RKHunterSeverity.LOW,
-                        SeverityLevel.MEDIUM: RKHunterSeverity.MEDIUM, 
-                        SeverityLevel.HIGH: RKHunterSeverity.HIGH,
-                        SeverityLevel.CRITICAL: RKHunterSeverity.CRITICAL,
-                    }
-                    rk_severity = severity_mapping.get(explanation.severity, RKHunterSeverity.MEDIUM)
-                    
-                    finding = RKHunterFinding(
-                        test_name=current_test or "Security Check",
-                        result=RKHunterResult.WARNING,
-                        severity=rk_severity,
-                        description=line,
-                        explanation=explanation,
+                    current_test = (
+                        line.replace("Checking", "").replace("...", "").strip()
                     )
-                    if result.findings is not None:
-                        result.findings.append(finding)
 
-                elif line.startswith("Warning:"):
+                # Parse warnings - RKHunter uses "Warning:" format and "[ Warning ]"
+                if " [ Warning ]" in line or line.startswith("Warning:"):
                     result.warnings_found += 1
-                    
+
                     # Analyze the warning to get detailed explanation
                     explanation = self.warning_analyzer.analyze_warning(line)
-                    
+
                     # Map analyzer severity to RKHunter severity
                     from .rkhunter_analyzer import SeverityLevel
+
                     severity_mapping = {
                         SeverityLevel.LOW: RKHunterSeverity.LOW,
-                        SeverityLevel.MEDIUM: RKHunterSeverity.MEDIUM, 
+                        SeverityLevel.MEDIUM: RKHunterSeverity.MEDIUM,
                         SeverityLevel.HIGH: RKHunterSeverity.HIGH,
                         SeverityLevel.CRITICAL: RKHunterSeverity.CRITICAL,
                     }
-                    rk_severity = severity_mapping.get(explanation.severity, RKHunterSeverity.MEDIUM)
-                    
+                    rk_severity = severity_mapping.get(
+                        explanation.severity,
+                        RKHunterSeverity.MEDIUM,
+                    )
+
                     finding = RKHunterFinding(
                         test_name=current_test or "Security Check",
                         result=RKHunterResult.WARNING,
@@ -1036,20 +1130,24 @@ class RKHunterWrapper:
                 # Parse traditional format markers (in case they exist)
                 elif "[ Warning ]" in line:
                     result.warnings_found += 1
-                    
+
                     # Analyze the warning to get detailed explanation
                     explanation = self.warning_analyzer.analyze_warning(line)
-                    
+
                     # Map analyzer severity to RKHunter severity
                     from .rkhunter_analyzer import SeverityLevel
+
                     severity_mapping = {
                         SeverityLevel.LOW: RKHunterSeverity.LOW,
                         SeverityLevel.MEDIUM: RKHunterSeverity.MEDIUM,
                         SeverityLevel.HIGH: RKHunterSeverity.HIGH,
                         SeverityLevel.CRITICAL: RKHunterSeverity.CRITICAL,
                     }
-                    rk_severity = severity_mapping.get(explanation.severity, RKHunterSeverity.MEDIUM)
-                    
+                    rk_severity = severity_mapping.get(
+                        explanation.severity,
+                        RKHunterSeverity.MEDIUM,
+                    )
+
                     finding = RKHunterFinding(
                         test_name=current_test or "Unknown Test",
                         result=RKHunterResult.WARNING,
@@ -1086,18 +1184,16 @@ class RKHunterWrapper:
                         if len(parts) > 1:
                             file_count = int(parts[1].strip())
                             # Add to test count if not already counted
-                            pass
                     except ValueError:
                         pass
 
                 elif "Rootkits checked" in line:
-                    # Extract rootkit count from summary  
+                    # Extract rootkit count from summary
                     try:
                         parts = line.split(":")
                         if len(parts) > 1:
                             rootkit_count = int(parts[1].strip())
                             # Add to test count if not already counted
-                            pass
                     except ValueError:
                         pass
 
@@ -1108,7 +1204,6 @@ class RKHunterWrapper:
                         if len(parts) > 1:
                             suspect_count = int(parts[1].strip())
                             # These are likely warnings we should count
-                            pass
                     except ValueError:
                         pass
 
@@ -1119,10 +1214,7 @@ class RKHunterWrapper:
         except Exception as e:
             self.logger.error("Error parsing RKHunter results: %s", e)
 
-    def _parse_scan_summary(
-            self,
-            stderr_output: str,
-            result: RKHunterScanResult):
+    def _parse_scan_summary(self, stderr_output: str, result: RKHunterScanResult):
         """Parse summary information from RKHunter stderr output."""
         try:
             for line in stderr_output.split("\n"):
@@ -1143,8 +1235,9 @@ class RKHunterWrapper:
         """Get path to RKHunter log file."""
         log_paths = [
             Path("/var/log/rkhunter.log"),
-            Path("/tmp/rkhunter-scan.log"),
             Path.home() / ".rkhunter.log",
+            # Use secure temp path as last resort
+            Path(tempfile.gettempdir()) / "rkhunter-scan.log",
         ]
 
         for log_path in log_paths:
@@ -1154,11 +1247,11 @@ class RKHunterWrapper:
         return None
 
     def install_rkhunter(self) -> Tuple[bool, str]:
-        """
-        Attempt to install RKHunter using system package manager with GUI-friendly auth.
+        """Attempt to install RKHunter using system package manager with GUI-friendly auth.
 
         Returns:
             Tuple of (success, message)
+
         """
         try:
             # Try different package managers (without sudo prefix - we'll add
@@ -1177,12 +1270,13 @@ class RKHunterWrapper:
                     if not self._find_executable(cmd_args[0]):
                         continue
 
-                    self.logger.info(
-                        f"Attempting to install RKHunter using {pm_name}")
+                    self.logger.info("Attempting to install RKHunter using %s", pm_name)
 
                     # Use privilege escalation (prefers GUI dialog)
                     result = self._run_with_privilege_escalation(
-                        cmd_args, capture_output=True, timeout=300  # 5 minutes
+                        cmd_args,
+                        capture_output=True,
+                        timeout=300,  # 5 minutes
                     )
 
                     if result.returncode == 0:
@@ -1193,17 +1287,19 @@ class RKHunterWrapper:
                         if self.available:
                             self._initialize_config()
                             return (
-                                True, f"RKHunter installed successfully using {pm_name}", )
-                        else:
-                            return (
-                                False, f"Installation appeared successful but RKHunter not found", )
-                    else:
-                        self.logger.warning(
-                            f"Installation with {pm_name} failed: {
-                                result.stderr}")
+                                True,
+                                f"RKHunter installed successfully using {pm_name}",
+                            )
+                        return (
+                            False,
+                            "Installation appeared successful but RKHunter not found",
+                        )
+                    self.logger.warning(
+                        f"Installation with {pm_name} failed: {result.stderr}",
+                    )
 
                 except Exception as e:
-                    self.logger.warning(f"Error trying {pm_name}: {e}")
+                    self.logger.warning("Error trying %s: %s", pm_name, e)
                     continue  # Try next package manager
 
             return False, "No compatible package manager found or installation failed"
@@ -1211,51 +1307,47 @@ class RKHunterWrapper:
         except Exception as e:
             return False, f"Installation error: {str(e)}"
 
-    def get_scan_recommendations(
-            self, scan_result: RKHunterScanResult) -> List[str]:
-        """
-        Get recommendations based on scan results.
+    def get_scan_recommendations(self, scan_result: RKHunterScanResult) -> List[str]:
+        """Get recommendations based on scan results.
 
         Args:
             scan_result: The completed scan result
 
         Returns:
             List of recommendation strings
+
         """
         recommendations = []
 
         if not scan_result.success:
             recommendations.append(
-                "• Scan failed - check RKHunter installation and permissions"
+                "• Scan failed - check RKHunter installation and permissions",
             )
             return recommendations
 
         if scan_result.infections_found > 0:
             recommendations.append(
-                "• **CRITICAL**: Potential rootkits detected - immediate action required"
+                "• **CRITICAL**: Potential rootkits detected - immediate action required",
             )
             recommendations.append(
-                "• Run system in rescue mode and perform manual inspection"
+                "• Run system in rescue mode and perform manual inspection",
             )
             recommendations.append(
-                "• Consider reinstalling the operating system if compromised"
+                "• Consider reinstalling the operating system if compromised",
             )
-            recommendations.append(
-                "• Change all passwords after cleaning the system")
+            recommendations.append("• Change all passwords after cleaning the system")
 
         if scan_result.warnings_found > 0:
             recommendations.append(
-                "• Review warnings carefully - they may indicate suspicious activity"
+                "• Review warnings carefully - they may indicate suspicious activity",
             )
-            recommendations.append(
-                "• Update RKHunter database and run scan again")
+            recommendations.append("• Update RKHunter database and run scan again")
             recommendations.append("• Check system logs for unusual activity")
 
         if scan_result.warnings_found == 0 and scan_result.infections_found == 0:
             recommendations.append("• System appears clean of rootkits")
             recommendations.append("• Continue regular security monitoring")
-            recommendations.append(
-                "• Keep system and antivirus definitions updated")
+            recommendations.append("• Keep system and antivirus definitions updated")
 
         # Add general recommendations
         recommendations.extend(
@@ -1264,15 +1356,22 @@ class RKHunterWrapper:
                 "• Keep operating system updated",
                 "• Use strong passwords and enable 2FA where possible",
                 "• Monitor system performance and network activity",
-            ]
+            ],
         )
 
         return recommendations
 
 
+import psutil
+
+from .safe_kill import kill_sequence
+from .secure_subprocess import run_secure
+
 # Import elevated_run for module-level usage/fallback (outside class)
 try:  # pragma: no cover - testing convenience
     from .elevated_runner import elevated_run  # type: ignore  # noqa: F401
+    from .elevated_runner import validate_auth_session  # type: ignore
 except Exception:  # pragma: no cover
+
     def elevated_run(*a, **k):  # type: ignore
         raise RuntimeError("elevated_run unavailable")

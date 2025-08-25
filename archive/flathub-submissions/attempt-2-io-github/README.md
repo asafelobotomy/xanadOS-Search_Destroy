@@ -7,30 +7,24 @@ Based on comprehensive review of Flathub requirements and common rejection reaso
 ### ✅ **Fixed Critical Issues:**
 
 1. **Application ID Domain Control**
-   - Changed from `org.xanados.SearchAndDestroy` to `io.github.asafelobotomy.SearchAndDestroy`
-   - Uses GitHub-based ID which is verifiable and follows Flathub requirements
-
+- Changed from `org.xanados.SearchAndDestroy`to`io.GitHub.asafelobotomy.SearchAndDestroy`
+- Uses GitHub-based ID which is verifiable and follows Flathub requirements
 2. **Missing License Information**
-   - Added `<project_license>GPL-3.0-or-later</project_license>` to metainfo.xml
-
+- Added `<project_license>GPL-3.0-or-later</project_license>` to metainfo.XML
 3. **Complete Python Dependencies**
-   - Added all missing Python packages with valid SHA256 hashes
-   - Includes: pyclamd, requests, python-dotenv, psutil, schedule, aiohttp, dnspython, markdown
-
+- Added all missing Python packages with valid SHA256 hashes
+- Includes: pyclamd, requests, Python-dotenv, psutil, schedule, aiohttp, dnspython, Markdown
 4. **Reduced Filesystem Permissions**
-   - Removed overly broad `--filesystem=home:ro` permission
-   - Limited to specific XDG directories for better security
-   - Emphasizes portal-based file access
-
+- Removed overly broad `--filesystem=home:ro` permission
+- Limited to specific XDG directories for better security
+- Emphasizes portal-based file access
 5. **Updated Version Information**
-   - Added v2.10.0 release information in metainfo
-   - Matches the version being built from the repository
-
+- Added v2.10.0 release information in metainfo
+- Matches the version being built from the repository
 6. **Added Content Rating**
-   - Added OARS content rating as required for software store listings
-
+- Added OARS content rating as required for software store listings
 7. **Corrected File Names**
-   - All files now use the correct `io.github.asafelobotomy.SearchAndDestroy` naming convention
+- All files now use the correct `io.GitHub.asafelobotomy.SearchAndDestroy` naming convention
 
 ### ✅ **Previously Fixed Issues (from first review):**
 
@@ -38,17 +32,18 @@ Based on comprehensive review of Flathub requirements and common rejection reaso
 - Using PyQt BaseApp for dependencies
 - Added portal support for file access
 - Updated screenshot URLs to use specific tags
-- Removed unnecessary flathub.json file
+- Removed unnecessary flathub.JSON file
 - Proper repository structure
 
 ## Submission Files
 
-```
-io.github.asafelobotomy.SearchAndDestroy/
-├── io.github.asafelobotomy.SearchAndDestroy.yml        # Main manifest
-├── io.github.asafelobotomy.SearchAndDestroy.metainfo.xml  # AppStream metadata
-└── io.github.asafelobotomy.SearchAndDestroy.desktop     # Desktop entry
-```
+```text
+io.GitHub.asafelobotomy.SearchAndDestroy/
+├── io.GitHub.asafelobotomy.SearchAndDestroy.yml        # Main manifest
+├── io.GitHub.asafelobotomy.SearchAndDestroy.metainfo.XML  # AppStream metadata
+└── io.GitHub.asafelobotomy.SearchAndDestroy.desktop     # Desktop entry
+
+```text
 
 ## Validation Checks Passed
 

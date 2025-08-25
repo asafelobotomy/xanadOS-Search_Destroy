@@ -1,5 +1,6 @@
 ---
-applyTo: "**/deployment/**/*.{yml,yaml,tf,json}"
+applyTo: "**/deployment/**/*.{yml,YAML,tf,JSON}"
+
 ---
 
 # Deployment/DevOps-specific Copilot Instructions

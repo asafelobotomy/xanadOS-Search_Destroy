@@ -2,22 +2,21 @@
 """
 Startup Performance Optimization Analysis and Implementation
 ============================================================
-
 Analysis of current startup bottlenecks and optimization recommendations
 for xanadOS Search & Destroy application.
-
 Author: GitHub Copilot
 Date: August 17, 2025
 """
+from typing import Dict, List, Optional
 
 import time
-from dataclasses import dataclass
-from typing import List, Dict, Optional
 
+from dataclasses import dataclass
 
 @dataclass
 class StartupBottleneck:
     """Represents a performance bottleneck during app startup."""
+
     component: str
     description: str
     current_time_ms: float
@@ -25,13 +24,12 @@ class StartupBottleneck:
     potential_savings_ms: float
     priority: str  # high, medium, low
 
-
 class StartupOptimizer:
     """Analyzes and provides optimization recommendations for app startup."""
-    
+
     def __init__(self):
         self.bottlenecks = self._analyze_current_bottlenecks()
-    
+
     def _analyze_current_bottlenecks(self) -> List[StartupBottleneck]:
         """Analyze current startup sequence and identify bottlenecks."""
         return [
@@ -41,7 +39,7 @@ class StartupOptimizer:
                 current_time_ms=200.0,
                 optimization="Defer to background thread after UI is shown",
                 potential_savings_ms=150.0,
-                priority="high"
+                priority="high",
             ),
             StartupBottleneck(
                 component="Real-time Monitoring Init",
@@ -49,7 +47,7 @@ class StartupOptimizer:
                 current_time_ms=150.0,
                 optimization="Initialize lazily when protection is first enabled",
                 potential_savings_ms=120.0,
-                priority="high"
+                priority="high",
             ),
             StartupBottleneck(
                 component="Qt Effects Setup",
@@ -57,7 +55,7 @@ class StartupOptimizer:
                 current_time_ms=100.0,
                 optimization="Apply effects progressively after window is shown",
                 potential_savings_ms=80.0,
-                priority="medium"
+                priority="medium",
             ),
             StartupBottleneck(
                 component="RKHunter Wrapper Init",
@@ -65,7 +63,7 @@ class StartupOptimizer:
                 current_time_ms=80.0,
                 optimization="Initialize on-demand when first needed",
                 potential_savings_ms=60.0,
-                priority="medium"
+                priority="medium",
             ),
             StartupBottleneck(
                 component="Auto-save Connections",
@@ -73,7 +71,7 @@ class StartupOptimizer:
                 current_time_ms=50.0,
                 optimization="Batch setup with reduced signal blocking",
                 potential_savings_ms=30.0,
-                priority="low"
+                priority="low",
             ),
             StartupBottleneck(
                 component="Settings Loading",
@@ -81,21 +79,21 @@ class StartupOptimizer:
                 current_time_ms=40.0,
                 optimization="Optimize signal management strategy",
                 potential_savings_ms=25.0,
-                priority="low"
+                priority="low",
             ),
         ]
-    
+
     def get_optimization_plan(self) -> Dict[str, List[StartupBottleneck]]:
         """Get optimization plan categorized by priority."""
         plan = {"high": [], "medium": [], "low": []}
         for bottleneck in self.bottlenecks:
             plan[bottleneck.priority].append(bottleneck)
         return plan
-    
+
     def estimate_total_savings(self) -> float:
         """Estimate total potential time savings in milliseconds."""
         return sum(b.potential_savings_ms for b in self.bottlenecks)
-    
+
     def generate_implementation_strategy(self) -> str:
         """Generate implementation strategy for optimizations."""
         strategy = """
@@ -141,18 +139,17 @@ EXPECTED RESULTS:
 """
         return strategy
 
-
 def main():
     """Analyze startup performance and generate optimization report."""
     optimizer = StartupOptimizer()
-    
+
     print("🚀 STARTUP PERFORMANCE ANALYSIS")
     print("=" * 50)
     print()
-    
+
     # Show current bottlenecks
     plan = optimizer.get_optimization_plan()
-    
+
     for priority in ["high", "medium", "low"]:
         bottlenecks = plan[priority]
         if bottlenecks:
@@ -164,16 +161,15 @@ def main():
                 print(f"  Solution: {b.optimization}")
                 print(f"  Savings: {b.potential_savings_ms}ms")
                 print()
-    
+
     # Show total potential savings
     total_savings = optimizer.estimate_total_savings()
     print(f"💡 TOTAL POTENTIAL SAVINGS: {total_savings}ms")
-    print(f"⚡ ESTIMATED IMPROVEMENT: {(total_savings/800)*100:.1f}% faster startup")
+    print(f"⚡ ESTIMATED IMPROVEMENT: {(total_savings / 800) * 100:.1f}% faster startup")
     print()
-    
+
     # Show implementation strategy
     print(optimizer.generate_implementation_strategy())
-
 
 if __name__ == "__main__":
     main()

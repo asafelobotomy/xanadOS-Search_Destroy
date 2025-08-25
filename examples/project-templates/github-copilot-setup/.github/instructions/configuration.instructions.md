@@ -2,6 +2,7 @@
 applyTo: "**/*.{example,template,sample}"
 priority: 80
 category: "configuration"
+
 ---
 
 # Configuration & Template Management Instructions
@@ -11,21 +12,21 @@ category: "configuration"
 - When encountering `.example`, `.template`, or `.sample` files, automatically suggest creating the actual config file
 - Replace placeholder values with specific environment variable references using `${VAR_NAME}` syntax
 - Never commit actual secrets, tokens, or credentials - always use environment variables or HashiCorp Vault
-- Maintain the `.example` file as documentation while creating the actual config file in `.gitignore`
+- Maintain the `.example`file as documentation while creating the actual config file in`.gitignore`
 
 ## Placeholder Replacement Strategy
 
-- `YOUR_*_HERE` patterns: Replace with environment variable references like `${GITHUB_PAT}` or `process.env.GITHUB_PAT`
-- `<your-*>` patterns: Replace with uppercase env vars: `<your-api-key>` → `${API_KEY}`
-- Domain placeholders: Use specific patterns: `example.com` → `${API_DOMAIN:-api.example.com}`
-- Token placeholders: Use secure patterns: `your-token` → `${API_TOKEN}` with validation
+- `YOUR_*_HERE`patterns: Replace with environment variable references like`${GITHUB_PAT}`or`process.env.GITHUB_PAT`
+- `<your-*>`patterns: Replace with uppercase env vars:`<your-API-key>`→`${API_KEY}`
+- Domain placeholders: Use specific patterns: `example.com`→`${API_DOMAIN:-API.example.com}`
+- Token placeholders: Use secure patterns: `your-token`→`${API_TOKEN}` with validation
 
 ## MCP Configuration Automation
 
-- For `.vscode/mcp.json.example`, create `.vscode/mcp.json` with environment variable references
-- Add `.vscode/mcp.json` to `.gitignore` if not already present
+- For `.VS Code/mcp.JSON.example`, create `.VS Code/mcp.JSON` with environment variable references
+- Add `.VS Code/mcp.JSON`to`.gitignore` if not already present
 - Create `.env.example` with all required variables and placeholder descriptions
-- Implement dotenv loading using `python-dotenv`, `dotenv` (Node.js), or language-specific loaders
+- Implement dotenv loading using `Python-dotenv`, `dotenv` (Node.js), or language-specific loaders
 
 ## Security-First Configuration
 
@@ -43,37 +44,43 @@ category: "configuration"
 
 ## Example Implementation Patterns
 
-### For JSON configurations:
+### For JSON configurations
 
-```javascript
+```JavaScript
 const config = {
-  github: {
+  GitHub: {
+
     token: process.env.GITHUB_PAT || (() => {
       throw new Error('GITHUB_PAT environment variable is required');
+
     })()
   }
 };
-```markdown
 
-### For YAML configurations:
+```Markdown
 
-```yaml
+### For YAML configurations
+
+```YAML
 servers:
-  github:
-    url: "https://api.githubcopilot.com/mcp/"
+  GitHub:
+    URL: "<HTTPS://API.githubcopilot.com/mcp/">
     requestInit:
       headers:
         Authorization: "Bearer ${GITHUB_PAT}"
-```markdown
 
-### For environment file generation:
+```Markdown
+
+### For environment file generation
 
 ```bash
-# Copy example and prompt for values
+
+## Copy example and prompt for values
 
 cp .env.example .env
 echo "Please edit .env file with your actual values"
-```markdown
+
+```Markdown
 
 ## Documentation Requirements
 

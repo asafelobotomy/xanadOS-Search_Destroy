@@ -14,26 +14,34 @@ Thank you for your interest in contributing to xanadOS-Search_Destroy! This docu
 ### Environment Setup
 
 1. Clone the repository:
+
 ```bash
-git clone https://github.com/asafelobotomy/xanadOS-Search_Destroy.git
+Git clone <HTTPS://GitHub.com/asafelobotomy/xanadOS-Search_Destroy.Git>
 cd xanadOS-Search_Destroy
-```
+
+```text
 
 2. Create and activate virtual environment:
+
 ```bash
-python -m venv .venv
+Python -m venv .venv
 source .venv/bin/activate  # On Linux/Mac
-```
+
+```text
 
 3. Install dependencies:
+
 ```bash
 pip install -r requirements.txt
-```
+
+```text
 
 4. Run the application:
+
 ```bash
-python app/main.py
-```
+Python app/main.py
+
+```text
 
 ## Code Style and Standards
 
@@ -69,15 +77,20 @@ python app/main.py
 ### Running Tests
 
 ```bash
-# Run all tests
-python -m pytest tests/
 
-# Run specific test file
-python -m pytest tests/test_specific.py
+## Run all tests
 
-# Run with coverage
-python -m pytest --cov=app tests/
-```
+Python -m pytest tests/
+
+## Run specific test file
+
+Python -m pytest tests/test_specific.py
+
+## Run with coverage
+
+Python -m pytest --cov=app tests/
+
+```text
 
 ### Writing Tests
 
@@ -90,43 +103,45 @@ python -m pytest --cov=app tests/
 ## Pull Request Process
 
 1. **Fork the repository** and create a feature branch:
+
 ```bash
-git checkout -b feature/your-feature-name
-```
+Git checkout -b feature/your-feature-name
+
+```text
 
 2. **Make your changes** following the code style guidelines
-
 3. **Test thoroughly**:
-   - Run existing tests
-   - Add new tests for your changes
-   - Test GUI functionality manually
-   - Verify security features work correctly
-
+- Run existing tests
+- Add new tests for your changes
+- Test GUI functionality manually
+- Verify security features work correctly
 4. **Update documentation**:
-   - Update README.md if needed
-   - Add docstrings to new functions
-   - Update API documentation
-
+- Update README.md if needed
+- Add docstrings to new functions
+- Update API documentation
 5. **Commit with clear messages**:
+
 ```bash
-git commit -m "feat: add new scanning feature
+Git commit -m "feat: add new scanning feature
 
 - Implement advanced threat detection
 - Add GUI controls for new feature
 - Include comprehensive tests"
-```
+
+```text
 
 6. **Submit pull request**:
-   - Provide clear description of changes
-   - Reference any related issues
-   - Include screenshots for GUI changes
-   - Request review from maintainers
+- Provide clear description of changes
+- Reference any related issues
+- Include screenshots for GUI changes
+- Request review from maintainers
 
 ## Issue Reporting
 
 ### Bug Reports
 
 Include the following information:
+
 - Operating system and version
 - Python version
 - Steps to reproduce
@@ -137,6 +152,7 @@ Include the following information:
 ### Feature Requests
 
 Include the following:
+
 - Clear description of the feature
 - Use case and benefits
 - Possible implementation approach
@@ -187,6 +203,7 @@ This project handles system security, so special care is needed:
 ## Recognition
 
 Contributors will be acknowledged in:
+
 - CHANGELOG.md for significant contributions
 - README.md contributors section
 - Release notes for major features

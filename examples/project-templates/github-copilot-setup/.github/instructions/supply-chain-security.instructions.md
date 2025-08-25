@@ -1,5 +1,6 @@
 ---
-applyTo: "**/*.{yml,yaml,json,toml,lock,Dockerfile,Containerfile,tf,hcl}"
+applyTo: "**/*.{yml,YAML,JSON,toml,lock,Dockerfile,Containerfile,tf,hcl}"
+
 ---
 
 # Supply Chain Security-specific Copilot Instructions

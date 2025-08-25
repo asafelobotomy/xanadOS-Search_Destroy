@@ -1,7 +1,8 @@
 ---
-applyTo: ".github/**"
+applyTo: ".GitHub/**"
 priority: "high"
 enforcement: "mandatory"
+
 ---
 
 # Version Control Implementation Instructions - MANDATORY
@@ -11,10 +12,15 @@ enforcement: "mandatory"
 ## Copilot usage quick cues
 
 - Ask: confirm if version-control setup or policy edits are in scope; if not,
+
   skip heavy content and proceed.
+
 - Edit: small CI or template tweaks; keep diffs minimal and reference
+
   existing scripts.
+
 - Agent: full VC bootstrap or workflow overhaul; require validation output
+
   and a short summary of changes.
 
 ### Model routing
@@ -38,7 +44,9 @@ enforcement: "mandatory"
 
 ## Executive Summary
 
-All GitHub Copilot agents MUST implement comprehensive industry-standard version control when working on any repository. This includes Git configuration, branching strategies, commit conventions, CI/CD workflows, and quality assurance automation. Version control implementation is a prerequisite for professional development practices.
+All GitHub Copilot agents MUST implement comprehensive industry-standard version control when working on any repository.
+This includes Git configuration, branching strategies, commit conventions, CI/CD workflows, and quality assurance automation
+Version control implementation is a prerequisite for professional development practices.
 
 ## 🎯 **MANDATORY: Version Control Implementation Checklist**
 
@@ -46,73 +54,109 @@ Before beginning any development work, agents MUST implement these version contr
 
 ### ✅ **Core Git Configuration**
 
-**1. Commit Message Templates**
-```bash
-# Create .gitmessage file
-cat > .gitmessage << 'EOF'
-# <type>[optional scope]: <description>
-#
-# [optional body]
-#
-# [optional footer(s)]
+### 1. Commit Message Templates
 
-# Type can be one of:
-# feat:     A new feature
-# fix:      A bug fix
-# docs:     Documentation only changes
-# style:    Changes that do not affect the meaning of the code
-# refactor: A code change that neither fixes a bug nor adds a feature
-# perf:     A code change that improves performance
-# test:     Adding missing tests or correcting existing tests
-# build:    Changes that affect the build system or external dependencies
-# ci:       Changes to CI configuration files and scripts
-# chore:    Other changes that don't modify src or test files
-# revert:   Reverts a previous commit
+```bash
+
+## Create .gitmessage file
+
+cat > .gitmessage << 'EOF'
+
+## <type>[optional scope]: <description>
+
+#
+
+## [optional body]
+
+#
+
+## [optional footer(s)]
+
+## Type can be one of
+
+## feat:     A new feature
+
+## fix:      A bug fix
+
+## docs:     Documentation only changes
+
+## style:    Changes that do not affect the meaning of the code
+
+## refactor: A code change that neither fixes a bug nor adds a feature
+
+## perf:     A code change that improves performance
+
+## test:     Adding missing tests or correcting existing tests
+
+## build:    Changes that affect the build system or external dependencies
+
+## ci:       Changes to CI configuration files and scripts
+
+## chore:    Other changes that don't modify src or test files
+
+## revert:   Reverts a previous commit
+
 EOF
 
-# Configure git to use template
-git config commit.template .gitmessage
-```
+## Configure Git to use template
 
-**2. Essential Git Configuration**
+Git config commit.template .gitmessage
+
+```text
+
+### 2. Essential Git Configuration
+
 ```bash
-# Configure pull strategy
-git config pull.rebase false
 
-# Set default branch
-git config init.defaultBranch main
+## Configure pull strategy
 
-# Configure useful aliases
-git config alias.co checkout
-git config alias.br branch
-git config alias.ci commit
-git config alias.st status
-git config alias.lg "log --color --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit"
-```
+Git config pull.rebase false
 
-**3. Comprehensive .gitignore**
+## Set default branch
+
+Git config init.defaultBranch main
+
+## Configure useful aliases
+
+Git config alias.co checkout
+Git config alias.br branch
+Git config alias.ci commit
+Git config alias.st status
+Git config alias.lg "log --color --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit"
+
+```text
+
+### 3. Comprehensive .gitignore
+
 ```bash
-# Create comprehensive .gitignore (minimum required patterns)
+
+## Create comprehensive .gitignore (minimum required patterns)
+
 cat > .gitignore << 'EOF'
-# Dependencies
+
+## Dependencies
+
 node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-# Build outputs
+## Build outputs
+
 dist/
 build/
 out/
 
-# Environment variables
+## Environment variables
+
 .env
 .env.local
 .env.development.local
 .env.test.local
 .env.production.local
 
-# OS generated files
+## OS generated files
+
 .DS_Store
 .DS_Store?
 ._*
@@ -121,73 +165,96 @@ out/
 ehthumbs.db
 Thumbs.db
 
-# IDE files
+## IDE files
+
 *.swp
 *.swo
 *~
 .idea/
+
 *.iml
 
-# Logs
+## Logs
+
 logs/
+
 *.log
 
-# Temporary files
+## Temporary files
+
 .tmp/
 temp/
+
 *.tmp
 
-# Backup files
+## Backup files
+
 *.backup
 *.bak
 *.orig
 
-# Cache directories
+## Cache directories
+
 .cache/
 .npm/
 .yarn/
 
-# Archive exclusions
+## Archive exclusions
+
 archive/.tmp/
 archive/*.processing
 archive/*.staging
 
-# Test output
+## Test output
+
 test-results/
 test-output/
 EOF
-```
+
+```text
 
 ### ✅ **Semantic Versioning System**
 
-**1. VERSION File**
+### 1. VERSION File
+
 ```bash
-# Create VERSION file with semantic versioning
+
+## Create VERSION file with semantic versioning
+
 cat > VERSION << 'EOF'
-# Semantic Versioning
+
+## Semantic Versioning
+
 VERSION_MAJOR=1
 VERSION_MINOR=0
 VERSION_PATCH=0
-VERSION_BUILD=$(git rev-list --count HEAD 2>/dev/null || echo "0")
 
-# Current version string
+VERSION_BUILD=$(Git rev-list --count HEAD 2>/dev/null || echo "0")
+
+## Current version string
+
 VERSION="${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH}"
 VERSION_FULL="${VERSION}.${VERSION_BUILD}"
 
 echo $VERSION_FULL
 EOF
-```
 
-**2. CHANGELOG.md**
+```text
+
+### 2. CHANGELOG.md
+
 ```bash
-# Create CHANGELOG.md following Keep a Changelog format
+
+## Create CHANGELOG.md following Keep a Changelog format
+
 cat > CHANGELOG.md << 'EOF'
-# Changelog
+
+## Changelog
 
 All notable changes to this project will be documented in this file.
 
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
-and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+The format is based on [Keep a Changelog](HTTPS://keepachangelog.com/en/1.0.0/),
+and this project adheres to [Semantic Versioning](HTTPS://semver.org/spec/v2.0.0.HTML).
 
 ## [Unreleased]
 
@@ -198,27 +265,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.0.0] - $(date +%Y-%m-%d)
 
-### Added
+### Added 2
 
 - Initial release
 - Basic project structure
+
 EOF
-```
+
+```text
 
 ### ✅ **GitHub Workflows Implementation**
 
-**1. Continuous Integration Workflow**
+### 1. Continuous Integration Workflow
+
 ```bash
-# Create .github/workflows/ci.yml
-mkdir -p .github/workflows
-cat > .github/workflows/ci.yml << 'EOF'
+
+## Create .GitHub/workflows/ci.yml
+
+mkdir -p .GitHub/workflows
+cat > .GitHub/workflows/ci.yml << 'EOF'
 name: Continuous Integration
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
-    branches: [ main ]
+    branches: [main]
   workflow_dispatch:
 
 permissions:
@@ -235,89 +307,111 @@ jobs:
         node-version: [18, 20]
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
-      - name: Setup Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ matrix.node-version }}
-          cache: 'npm'
+- name: Checkout repository
 
-      - name: Install dependencies
-        run: npm ci
+  uses: actions/checkout@v4
+  with:
+  fetch-depth: 0
 
-      - name: Run linting
-        run: npm run lint
-        continue-on-error: true
+- name: Setup Node.js ${{ matrix.node-version }}
 
-      - name: Run tests
-        run: npm test
-        continue-on-error: true
+  uses: actions/setup-node@v4
+  with:
+  node-version: ${{ matrix.node-version }}
+  cache: 'npm'
 
-      - name: Verify repository structure
-        run: |
-          if [ -f "scripts/validation/verify-structure.sh" ]; then
-            chmod +x scripts/validation/verify-structure.sh
-            ./scripts/validation/verify-structure.sh
-          fi
+- name: Install dependencies
+
+  run: npm ci
+
+- name: Run linting
+
+  run: npm run lint
+  continue-on-error: true
+
+- name: Run tests
+
+  run: npm test
+  continue-on-error: true
+
+- name: Verify repository structure
+
+  run: |
+  if [-f "scripts/validation/verify-structure.sh"]; then
+  chmod +x scripts/validation/verify-structure.sh
+  ./scripts/validation/verify-structure.sh
+  fi
 
   security-scan:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+  runs-on: ubuntu-latest
+  steps:
 
-      - name: Run Trivy vulnerability scanner
-        uses: aquasecurity/trivy-action@master
-        with:
-          scan-type: 'fs'
-          scan-ref: '.'
-          format: 'sarif'
-          output: 'trivy-results.sarif'
+- name: Checkout repository
 
-      - name: Upload Trivy scan results
-        uses: github/codeql-action/upload-sarif@v3
-        with:
-          sarif_file: 'trivy-results.sarif'
+  uses: actions/checkout@v4
 
-  markdown-lint:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+- name: Run Trivy vulnerability scanner
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '18'
+  uses: aquasecurity/trivy-action@master
+  with:
+  scan-type: 'fs'
+  scan-ref: '.'
+  format: 'sarif'
+  output: 'trivy-results.sarif'
 
-      - name: Install markdownlint-cli
-        run: npm install -g markdownlint-cli
+- name: Upload Trivy scan results
 
-      - name: Run Markdown lint
-        run: markdownlint "**/*.md" --ignore node_modules --ignore archive
+  uses: GitHub/codeql-action/upload-sarif@v3
+  with:
+  sarif_file: 'trivy-results.sarif'
+
+  Markdown-lint:
+  runs-on: ubuntu-latest
+  steps:
+
+- name: Checkout repository
+
+  uses: actions/checkout@v4
+
+- name: Setup Node.js
+
+  uses: actions/setup-node@v4
+  with:
+  node-version: '18'
+
+- name: Install markdownlint-cli
+
+  run: npm install -g markdownlint-cli
+
+- name: Run Markdown lint
+
+  run: markdownlint "**/*.md" --ignore node_modules --ignore archive
 EOF
-```
 
-**2. Release Management Workflow**
+```text
+
+### 2. Release Management Workflow
+
 ```bash
-# Create .github/workflows/release.yml
-cat > .github/workflows/release.yml << 'EOF'
+
+## Create .GitHub/workflows/release.yml
+
+cat > .GitHub/workflows/release.yml << 'EOF'
 name: Release Management
 
 on:
   push:
     tags:
-      - 'v*'
+
+- 'v*'
+
   workflow_dispatch:
-    inputs:
-      version:
-        description: 'Version to release (e.g., v1.0.0)'
-        required: true
-        type: string
+  inputs:
+  version:
+  description: 'Version to release (e.g., v1.0.0)'
+  required: true
+  type: string
 
 permissions:
   contents: write
@@ -332,71 +426,83 @@ jobs:
       version: ${{ steps.extract.outputs.version }}
       is_prerelease: ${{ steps.extract.outputs.is_prerelease }}
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
-      - name: Extract version info
-        id: extract
-        run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            VERSION="${{ github.event.inputs.version }}"
-          else
-            VERSION="${{ github.ref_name }}"
-          fi
+- name: Checkout
 
-          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+  uses: actions/checkout@v4
+  with:
+  fetch-depth: 0
 
-          if [[ $VERSION =~ -[a-zA-Z] ]]; then
-            echo "is_prerelease=true" >> $GITHUB_OUTPUT
-          else
-            echo "is_prerelease=false" >> $GITHUB_OUTPUT
-          fi
+- name: Extract version info
+
+  id: extract
+  run: |
+  if ["${{ GitHub.event_name }}" = "workflow_dispatch"]; then
+  VERSION="${{ GitHub.event.inputs.version }}"
+  else
+  VERSION="${{ GitHub.ref_name }}"
+  fi
+
+  echo "version=${VERSION}" >> $GITHUB_OUTPUT
+
+  if [[ $VERSION =~ -[a-zA-Z] ]]; then
+  echo "is_prerelease=true" >> $GITHUB_OUTPUT
+  else
+  echo "is_prerelease=false" >> $GITHUB_OUTPUT
+  fi
 
   create-release:
-    runs-on: ubuntu-latest
-    needs: [validate-version]
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
+  runs-on: ubuntu-latest
+  needs: [validate-version]
+  steps:
 
-      - name: Generate release notes
-        id: release_notes
-        run: |
-          VERSION=${{ needs.validate-version.outputs.version }}
-          sed -n "/## \[${VERSION#v}\]/,/## \[/p" CHANGELOG.md | head -n -1 > release_notes.md
+- name: Checkout
 
-          if [ ! -s release_notes.md ]; then
-            echo "## Changes in $VERSION" > release_notes.md
-            echo "" >> release_notes.md
-            echo "See [CHANGELOG.md](CHANGELOG.md) for details." >> release_notes.md
-          fi
+  uses: actions/checkout@v4
+  with:
+  fetch-depth: 0
 
-      - name: Create GitHub Release
-        uses: softprops/action-gh-release@v1
-        with:
-          tag_name: ${{ needs.validate-version.outputs.version }}
-          name: Release ${{ needs.validate-version.outputs.version }}
-          body_path: release_notes.md
-          prerelease: ${{ needs.validate-version.outputs.is_prerelease }}
-          files: |
-            CHANGELOG.md
-            README.md
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+- name: Generate release notes
+
+  id: release_notes
+  run: |
+  VERSION=${{ needs.validate-version.outputs.version }}
+  sed -n "/## \[${VERSION#v}\]/,/## \[/p" CHANGELOG.md | head -n -1 > release_notes.md
+
+  if [! -s release_notes.md]; then
+  echo "## Changes in $VERSION" > release_notes.md
+  echo "" >> release_notes.md
+  echo "See [CHANGELOG.md](CHANGELOG.md) for details." >> release_notes.md
+  fi
+
+- name: Create GitHub Release
+
+  uses: softprops/action-gh-release@v1
+  with:
+  tag_name: ${{ needs.validate-version.outputs.version }}
+  name: Release ${{ needs.validate-version.outputs.version }}
+  body_path: release_notes.md
+  prerelease: ${{ needs.validate-version.outputs.is_prerelease }}
+  files: |
+  CHANGELOG.md
+  README.md
+  env:
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 EOF
-```
+
+```text
 
 ### ✅ **GitHub Templates**
 
-**1. Pull Request Template**
+### 1. Pull Request Template
+
 ```bash
-# Create .github/pull_request_template.md
-cat > .github/pull_request_template.md << 'EOF'
-# Pull Request Template
+
+## Create .GitHub/pull_request_template.md
+
+cat > .GitHub/pull_request_template.md << 'EOF'
+
+## Pull Request Template
 
 ## Summary
 
@@ -444,16 +550,22 @@ Please delete options that are not relevant.
 - [ ] I have made corresponding changes to the documentation
 - [ ] My changes generate no new warnings
 - [ ] New and existing unit tests pass locally with my changes
+
 EOF
-```
 
-**2. Issue Templates**
+```text
+
+### 2. Issue Templates
+
 ```bash
-# Create issue templates directory
-mkdir -p .github/ISSUE_TEMPLATE
 
-# Bug report template
-cat > .github/ISSUE_TEMPLATE/bug_report.yml << 'EOF'
+## Create issue templates directory
+
+mkdir -p .GitHub/ISSUE_TEMPLATE
+
+## Bug report template
+
+cat > .GitHub/ISSUE_TEMPLATE/bug_report.yml << 'EOF'
 name: Bug Report
 description: File a bug report to help us improve
 title: "[Bug]: "
@@ -461,45 +573,55 @@ labels: ["bug", "triage"]
 assignees: []
 
 body:
-  - type: markdown
-    attributes:
-      value: |
-        Thanks for taking the time to fill out this bug report!
 
-  - type: textarea
-    id: what-happened
-    attributes:
-      label: What happened?
-      description: Also tell us, what did you expect to happen?
-      placeholder: Tell us what you see!
-    validations:
-      required: true
+- type: Markdown
 
-  - type: textarea
-    id: steps
-    attributes:
-      label: Steps to Reproduce
-      description: Please provide detailed steps to reproduce the issue
-      placeholder: |
-        1. Go to '...'
-        2. Click on '....'
-        3. Scroll down to '....'
-        4. See error
-    validations:
-      required: true
+  attributes:
+  value: |
+  Thanks for taking the time to fill out this bug report!
 
-  - type: checkboxes
-    id: terms
-    attributes:
-      label: Code of Conduct
-      description: By submitting this issue, you agree to follow our Code of Conduct
-      options:
-        - label: I agree to follow this project's Code of Conduct
-          required: true
+- type: textarea
+
+  id: what-happened
+  attributes:
+  label: What happened?
+  description: Also tell us, what did you expect to happen?
+  placeholder: Tell us what you see!
+  validations:
+  required: true
+
+- type: textarea
+
+  id: steps
+  attributes:
+  label: Steps to Reproduce
+  description: Please provide detailed steps to reproduce the issue
+  placeholder: |
+
+1. Go to '...'
+2. Click on '....'
+3. Scroll down to '....'
+4. See error
+
+  validations:
+  required: true
+
+- type: checkboxes
+
+  id: terms
+  attributes:
+  label: Code of Conduct
+  description: By submitting this issue, you agree to follow our Code of Conduct
+  options:
+
+- label: I agree to follow this project's Code of Conduct
+
+  required: true
 EOF
 
-# Feature request template
-cat > .github/ISSUE_TEMPLATE/feature_request.yml << 'EOF'
+## Feature request template
+
+cat > .GitHub/ISSUE_TEMPLATE/feature_request.yml << 'EOF'
 name: Feature Request
 description: Suggest an idea for this project
 title: "[Feature]: "
@@ -507,48 +629,61 @@ labels: ["enhancement", "feature-request"]
 assignees: []
 
 body:
-  - type: markdown
-    attributes:
-      value: |
-        Thanks for suggesting a new feature! Please provide as much detail as possible.
 
-  - type: textarea
-    id: problem
-    attributes:
-      label: Is your feature request related to a problem?
-      description: A clear and concise description of what the problem is.
-      placeholder: I'm always frustrated when...
-    validations:
-      required: true
+- type: Markdown
 
-  - type: textarea
-    id: solution
-    attributes:
-      label: Describe the solution you'd like
-      description: A clear and concise description of what you want to happen.
-    validations:
-      required: true
+  attributes:
+  value: |
+  Thanks for suggesting a new feature! Please provide as much detail as possible.
+
+- type: textarea
+
+  id: problem
+  attributes:
+  label: Is your feature request related to a problem?
+  description: A clear and concise description of what the problem is.
+  placeholder: I'm always frustrated when...
+  validations:
+  required: true
+
+- type: textarea
+
+  id: solution
+  attributes:
+  label: Describe the solution you'd like
+  description: A clear and concise description of what you want to happen.
+  validations:
+  required: true
 EOF
-```
+
+```text
 
 ### ✅ **Automation Scripts**
 
-**1. Git Workflow Helper**
+### 1. Git Workflow Helper
+
 ```bash
-# Create scripts/utils/git-workflow.sh
+
+## Create scripts/utils/Git-workflow.sh
+
 mkdir -p scripts/utils
-cat > scripts/utils/git-workflow.sh << 'EOF'
-#!/bin/bash
-# Git Workflow Helper Script
-# Implements industry-standard branching strategy
+cat > scripts/utils/Git-workflow.sh << 'EOF'
+
+## !/bin/bash
+
+## Git Workflow Helper Script
+
+## Implements industry-standard branching strategy
 
 set -e
 
-# Configuration
+## Configuration
+
 DEFAULT_BRANCH="main"
 VERSION_FILE="VERSION"
 
-# Colors for output
+## Colors for output
+
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
@@ -567,11 +702,12 @@ print_error() {
     echo -e "${RED}[ERROR]${NC} $1"
 }
 
-# Create feature branch
+## Create feature branch
+
 create_feature_branch() {
     local feature_name="$1"
 
-    if [ -z "$feature_name" ]; then
+    if [-z "$feature_name"]; then
         print_error "Feature name is required"
         echo "Usage: $0 feature <feature-name>"
         exit 1
@@ -581,31 +717,36 @@ create_feature_branch() {
 
     print_status "Creating feature branch: $branch_name"
 
-    # Ensure we're on main and it's up to date
-    git checkout "$DEFAULT_BRANCH"
-    git pull origin "$DEFAULT_BRANCH"
+## Ensure we're on main and it's up to date
 
-    # Create and switch to feature branch
-    git checkout -b "$branch_name"
+    Git checkout "$DEFAULT_BRANCH"
+    Git pull origin "$DEFAULT_BRANCH"
+
+## Create and switch to feature branch
+
+    Git checkout -b "$branch_name"
     print_success "Created and switched to $branch_name"
 
-    # Set up tracking
-    git push -u origin "$branch_name" || true
+## Set up tracking
+
+    Git push -u origin "$branch_name" || true
 }
 
-# Show current status
+## Show current status
+
 show_status() {
     print_status "Git Workflow Status"
     echo ""
-    echo "Current branch: $(git branch --show-current)"
+    echo "Current branch: $(Git branch --show-current)"
     echo "Repository status:"
-    git status --short
+    Git status --short
     echo ""
     echo "Recent commits:"
-    git log --oneline -5
+    Git log --oneline -5
 }
 
-# Main script logic
+## Main script logic
+
 case "$1" in
     "feature")
         create_feature_branch "$2"
@@ -613,6 +754,7 @@ case "$1" in
     "status")
         show_status
         ;;
+
     *)
         echo "Git Workflow Helper"
         echo ""
@@ -630,20 +772,27 @@ case "$1" in
 esac
 EOF
 
-chmod +x scripts/utils/git-workflow.sh
-```
+chmod +x scripts/utils/Git-workflow.sh
 
-**2. Version Control Validation Script**
+```text
+
+### 2. Version Control Validation Script
+
 ```bash
-# Create scripts/validation/validate-version-control.sh
+
+## Create scripts/validation/validate-version-control.sh
+
 mkdir -p scripts/validation
 cat > scripts/validation/validate-version-control.sh << 'EOF'
-#!/bin/bash
-# Version Control Standards Validation Script
+
+## !/bin/bash 2
+
+## Version Control Standards Validation Script
 
 set -e
 
-# Colors
+## Colors
+
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 BLUE='\033[0;34m'
@@ -669,7 +818,8 @@ print_status() {
     echo -e "${BLUE}[INFO]${NC} $1"
 }
 
-# Check required files
+## Check required files
+
 check_required_files() {
     print_status "Checking required version control files..."
 
@@ -681,7 +831,7 @@ check_required_files() {
     )
 
     for file in "${required_files[@]}"; do
-        if [ -f "$file" ]; then
+        if [-f "$file"]; then
             print_success "Required file exists: $file"
         else
             print_failure "Required file missing: $file"
@@ -689,24 +839,26 @@ check_required_files() {
     done
 }
 
-# Check GitHub workflows
+## Check GitHub workflows
+
 check_github_workflows() {
     print_status "Checking GitHub Actions workflows..."
 
-    if [ -f ".github/workflows/ci.yml" ]; then
+    if [-f ".GitHub/workflows/ci.yml"]; then
         print_success "CI workflow exists"
     else
         print_failure "CI workflow missing"
     fi
 
-    if [ -f ".github/workflows/release.yml" ]; then
+    if [-f ".GitHub/workflows/release.yml"]; then
         print_success "Release workflow exists"
     else
         print_failure "Release workflow missing"
     fi
 }
 
-# Generate report
+## Generate report
+
 generate_report() {
     echo ""
     echo "======================================"
@@ -721,14 +873,15 @@ generate_report() {
     local pass_percentage=$((CHECKS_PASSED * 100 / TOTAL_CHECKS))
     echo "Pass Rate: $pass_percentage%"
 
-    if [ $CHECKS_FAILED -eq 0 ]; then
+    if [$CHECKS_FAILED -eq 0]; then
         echo -e "${GREEN}✓ All version control standards met!${NC}"
     else
         echo -e "${RED}✗ Version control improvements needed${NC}"
     fi
 }
 
-# Main execution
+## Main execution
+
 main() {
     echo "Version Control Standards Validator"
     echo ""
@@ -743,7 +896,8 @@ main "$@"
 EOF
 
 chmod +x scripts/validation/validate-version-control.sh
-```
+
+```text
 
 ## 🔄 **Implementation Workflow**
 
@@ -752,62 +906,78 @@ chmod +x scripts/validation/validate-version-control.sh
 Before manual configuration, check for existing automated setup tools:
 
 ```bash
-# Use pre-built Git automation tools from toolshed
-./scripts/tools/git/setup-repository.sh --help
-./scripts/tools/git/setup-repository.sh --dry-run
-./scripts/tools/git/workflow-helper.sh --help
-```
+
+## Use pre-built Git automation tools from toolshed
+
+./scripts/tools/Git/setup-repository.sh --help
+./scripts/tools/Git/setup-repository.sh --dry-run
+./scripts/tools/Git/workflow-helper.sh --help
+
+```text
 
 ### **Step 2: Initialize Version Control**
 
 ```bash
-# Run this command to implement all version control standards
+
+## Run this command to implement all version control standards
+
 ./scripts/utils/implement-version-control.sh
-```
+
+```text
 
 ### **Step 3: Validate Implementation**
 
 ```bash
-# Verify all standards are met using automated validation
+
+## Verify all standards are met using automated validation
+
 ./scripts/validation/validate-version-control.sh
-./scripts/tools/validation/validate-structure.sh --category git
-```
+./scripts/tools/validation/validate-structure.sh --category Git
+
+```text
 
 ### **Step 4: Initial Commit**
 
 ```bash
-# Stage all version control files
-git add .
 
-# Commit with conventional format
-git commit -m "feat: implement industry-standard version control system
+## Stage all version control files
+
+Git add .
+
+## Commit with conventional format
+
+Git commit -m "feat: implement industry-standard version control system
 
 - Add comprehensive Git configuration and commit templates
 - Implement semantic versioning with VERSION and CHANGELOG files
 - Create CI/CD workflows for automated testing and releases
 - Add GitHub templates for issues and pull requests
-- Configure git aliases and productivity tools
+- Configure Git aliases and productivity tools
 - Add validation scripts for compliance checking
 
 BREAKING CHANGE: Repository now follows industry-standard version control practices"
 
-# Create initial release tag
-git tag -a v1.0.0 -m "Initial release with version control implementation"
-```
+## Create initial release tag
+
+Git tag -a v1.0.0 -m "Initial release with version control implementation"
+
+```text
 
 ## 📋 **Conventional Commit Format**
 
 All commits MUST follow this format:
 
-```
+```text
 <type>[optional scope]: <description>
 
 [optional body]
 
 [optional footer(s)]
-```
+
+```text
 
 ### **Commit Types:**
+
 - `feat`: New features
 - `fix`: Bug fixes
 - `docs`: Documentation changes
@@ -820,40 +990,53 @@ All commits MUST follow this format:
 - `chore`: Maintenance tasks
 
 ### **Examples:**
+
 ```bash
-git commit -m "feat(auth): add OAuth2 authentication"
-git commit -m "fix(ui): resolve button alignment issue"
-git commit -m "docs: update installation instructions"
-git commit -m "refactor: simplify validation logic"
-```
+Git commit -m "feat(auth): add OAuth2 authentication"
+Git commit -m "fix(ui): resolve button alignment issue"
+Git commit -m "docs: update installation instructions"
+Git commit -m "refactor: simplify validation logic"
+
+```text
 
 ## 🛡️ **Security and Quality Standards**
 
 ### **Automated Security Scanning**
+
 - Trivy vulnerability scanning on every PR
 - Dependency review for security issues
 - Secret detection in commit history
 - SARIF report generation for security dashboard
 
 ### **Quality Gates**
+
 - Markdown linting for documentation quality
 - Link checking to prevent broken references
 - Spell checking for professional documentation
 - Code formatting validation
 
 ### **Branch Protection Rules**
+
 ```bash
-# Recommended branch protection settings:
-# - Require pull request reviews
-# - Require status checks to pass
-# - Require branches to be up to date
-# - Restrict pushes to main branch
-# - Require signed commits (recommended)
-```
+
+## Recommended branch protection settings
+
+## - Require pull request reviews
+
+## - Require status checks to pass
+
+## - Require branches to be up to date
+
+## - Restrict pushes to main branch
+
+## - Require signed commits (recommended)
+
+```text
 
 ## 📊 **Success Metrics**
 
 ### **Compliance Indicators:**
+
 - ✅ 100% conventional commit adherence
 - ✅ All CI/CD workflows passing
 - ✅ Semantic versioning implemented
@@ -861,6 +1044,7 @@ git commit -m "refactor: simplify validation logic"
 - ✅ Documentation quality maintained
 
 ### **Quality Assurance:**
+
 - All version control files present and configured
 - GitHub workflows functional and validated
 - Branch protection rules enabled
@@ -879,19 +1063,25 @@ git commit -m "refactor: simplify validation logic"
 ### **Validation Commands:**
 
 ```bash
-# Validate version control implementation
+
+## Validate version control implementation
+
 ./scripts/validation/validate-version-control.sh
 
-# Check commit message format
-git log --oneline -10 | grep -E '^[a-f0-9]+ (feat|fix|docs|style|refactor|perf|test|build|ci|chore)(\(.+\))?: .+'
+## Check commit message format
 
-# Verify CI/CD workflows
-ls -la .github/workflows/
+Git log --oneline -10 | grep -E '^[a-f0-9]+ (feat|fix|docs|style|refactor|perf|test|build|ci|chore)(\(.+\))?: .+'
 
-# Check GitHub templates
-ls -la .github/ISSUE_TEMPLATE/ .github/pull_request_template.md
-```
+## Verify CI/CD workflows
+
+ls -la .GitHub/workflows/
+
+## Check GitHub templates
+
+ls -la .GitHub/ISSUE_TEMPLATE/ .GitHub/pull_request_template.md
+
+```text
 
 ---
 
-**This version control implementation is MANDATORY for all GitHub Copilot agents to ensure professional development standards and enterprise-grade repository management.**
+## This version control implementation is MANDATORY for all GitHub Copilot agents to ensure professional development standards and enterprise-grade repository management

@@ -3,17 +3,19 @@
 Theme Performance Migration Tool
 Replaces the old theme system with the optimized one for better performance.
 """
+from pathlib import Path
 
 import os
+
 import re
+
 import shutil
-from pathlib import Path
 
 def backup_original_theme_manager():
     """Backup the original theme manager before migration."""
     original = Path("app/gui/theme_manager.py")
     backup = Path("app/gui/theme_manager_backup.py")
-    
+
     if original.exists() and not backup.exists():
         shutil.copy2(original, backup)
         print(f"✅ Backed up original theme manager to {backup}")
@@ -26,76 +28,74 @@ def update_main_window_imports():
     if not main_window_path.exists():
         print("❌ Main window file not found")
         return
-    
-    with open(main_window_path, 'r') as f:
+
+    with open(main_window_path, "r") as f:
         content = f.read()
-    
+
     # Replace imports
     old_import = "from gui.theme_manager import init_theming, get_theme_manager"
     new_import = "from gui.optimized_theme_manager import get_optimized_theme_manager"
     content = content.replace(old_import, new_import)
-    
+
     # Replace function calls
-    content = re.sub(r'get_theme_manager\(\)', 'get_optimized_theme_manager()', content)
-    
+    content = re.sub(r"get_theme_manager\(\)", "get_optimized_theme_manager()", content)
+
     # Remove redundant theme color method (now handled by optimized manager)
     theme_color_method = re.search(
-        r'def get_theme_color\(self.*?\n(?:.*?\n)*?.*?(?=\n    def|\nclass|\Z)',
-        content,
-        re.DOTALL
+        r"def get_theme_color\(self.*?\n(?:.*?\n)*?.*?(?=\n    def|\nclass|\Z)", content, re.DOTALL
     )
     if theme_color_method:
-        content = content.replace(theme_color_method.group(0), '')
+        content = content.replace(theme_color_method.group(0), "")
         print("✅ Removed redundant theme color method")
-    
-    with open(main_window_path, 'w') as f:
+
+    with open(main_window_path, "w") as f:
         f.write(content)
-    
+
     print("✅ Updated main window imports and calls")
 
 def remove_redundant_theme_applications():
     """Remove redundant setStyleSheet calls that are now handled globally."""
-    
+
     files_to_update = [
         "app/gui/update_dialog.py",
         "app/gui/warning_explanation_dialog.py",
-        "app/gui/update_components.py"
+        "app/gui/update_components.py",
     ]
-    
+
     for file_path in files_to_update:
         path = Path(file_path)
         if not path.exists():
             continue
-        
-        with open(path, 'r') as f:
+
+        with open(path, "r") as f:
             content = f.read()
-        
+
         original_content = content
-        
+
         # Remove manual theme application methods
         content = re.sub(
-            r'def (apply_theme|_apply_theme)\(self.*?\n(?:.*?\n)*?.*?(?=\n    def|\nclass|\Z)',
-            '',
+            r"def (apply_theme|_apply_theme)\(self.*?\n(?:.*?\n)*?.*?(?=\n    def|\nclass|\Z)",
+            "",
             content,
-            flags=re.DOTALL
+            flags=re.DOTALL,
         )
-        
+
         # Remove manual setStyleSheet calls in theme methods
         content = re.sub(
-            r'self\.setStyleSheet\([^)]*\)',
-            '# Removed: Now handled by global theme manager',
-            content
+            r"self\.setStyleSheet\([^)]*\)",
+            "# Removed: Now handled by global theme manager",
+            content,
         )
-        
+
         # Remove theme application calls
         content = re.sub(
-            r'self\.(apply_theme|_apply_theme)\([^)]*\)',
-            '# Removed: Now handled by global theme manager',
-            content
+            r"self\.(apply_theme|_apply_theme)\([^)]*\)",
+            "# Removed: Now handled by global theme manager",
+            content,
         )
-        
+
         if content != original_content:
-            with open(path, 'w') as f:
+            with open(path, "w") as f:
                 f.write(content)
             print(f"✅ Cleaned up redundant theme code in {path.name}")
 
@@ -108,8 +108,10 @@ Compare the performance of old vs new theme system.
 """
 
 import sys
+
 import time
 import gc
+
 from PyQt6.QtWidgets import QApplication, QMainWindow, QPushButton, QVBoxLayout, QWidget
 
 # Add the app directory to the path
@@ -118,62 +120,62 @@ sys.path.insert(0, '../..')
 def test_theme_performance():
     """Test theme application performance."""
     app = QApplication(sys.argv)
-    
+
     # Create test window with multiple widgets
     window = QMainWindow()
     central_widget = QWidget()
     layout = QVBoxLayout(central_widget)
-    
+
     # Create 50 buttons to test performance
     buttons = []
     for i in range(50):
         button = QPushButton(f"Test Button {i}")
         buttons.append(button)
         layout.addWidget(button)
-    
+
     window.setCentralWidget(central_widget)
     window.show()
-    
+
     print("🧪 Testing optimized theme manager performance...")
-    
+
     # Test optimized theme manager
     from app.gui.optimized_theme_manager import get_optimized_theme_manager
-    
+
     theme_manager = get_optimized_theme_manager()
-    
+
     # Measure theme application time
     start_time = time.time()
     for _ in range(10):  # Apply theme 10 times
         theme_manager.set_theme("dark")
         theme_manager.set_theme("light")
     end_time = time.time()
-    
+
     optimized_time = end_time - start_time
     print(f"✅ Optimized theme manager: {optimized_time:.4f} seconds for 20 theme switches")
-    
+
     # Test effect application
     start_time = time.time()
     for button in buttons:
         theme_manager.apply_qt_effects(button, "button")
     end_time = time.time()
-    
+
     effects_time = end_time - start_time
     print(f"✅ Effect application: {effects_time:.4f} seconds for {len(buttons)} buttons")
-    
+
     # Memory usage test
     gc.collect()
     print("🧠 Memory optimization: Caches active, redundant operations eliminated")
-    
+
     app.quit()
 
 if __name__ == "__main__":
     test_theme_performance()
 '''
-    
+
     script_path = Path("dev/theme_performance_test.py")
-    with open(script_path, 'w') as f:
+    with open(script_path, "w") as f:
         f.write(script_content)
-    
+
     print(f"✅ Created performance test script: {script_path}")
 
 def create_migration_summary():
@@ -247,37 +249,39 @@ The optimized theme manager is a drop-in replacement:
 ```python
 # Old way
 from gui.theme_manager import get_theme_manager
+
 get_theme_manager().set_theme("dark")
 
-# New optimized way  
+# New optimized way
 from gui.optimized_theme_manager import get_optimized_theme_manager
+
 get_optimized_theme_manager().set_theme("dark")
 ```
 
 All existing functionality is preserved with significant performance improvements.
 """
-    
+
     summary_path = Path("docs/developer/Theme_Performance_Migration.md")
-    with open(summary_path, 'w') as f:
+    with open(summary_path, "w") as f:
         f.write(summary)
-    
+
     print(f"✅ Created migration summary: {summary_path}")
 
 def main():
     """Run the complete theme performance migration."""
     print("🚀 Starting Theme Performance Migration...")
     print()
-    
+
     # Change to the project root directory
     os.chdir("/home/merlin/Documents/xanadOS-Search_Destroy")
-    
+
     try:
         backup_original_theme_manager()
         update_main_window_imports()
         remove_redundant_theme_applications()
         create_performance_comparison_script()
         create_migration_summary()
-        
+
         print()
         print("✅ Theme Performance Migration Complete!")
         print()
@@ -292,11 +296,11 @@ def main():
         print("   python dev/theme_performance_test.py")
         print()
         print("▶️ Run the application to see performance improvements!")
-        
+
     except Exception as e:
         print(f"❌ Migration failed: {e}")
         return False
-    
+
     return True
 
 if __name__ == "__main__":

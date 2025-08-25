@@ -4,32 +4,33 @@ Firewall Settings Scroll Area Test
 ==================================
 Verifies the scroll area implementation for the firewall settings page.
 """
-
-import sys
 import os
 
+import sys
+
 # Add the app directory to the Python path
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'app'))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "app"))
 
 def test_firewall_scroll_area():
     """Test the firewall settings scroll area implementation."""
     print("📜 FIREWALL SETTINGS SCROLL AREA TEST")
     print("=" * 50)
-    
+
     try:
         # Test PyQt6 scroll area functionality
         print("\n1. TESTING SCROLL AREA COMPONENTS:")
-        from PyQt6.QtWidgets import QScrollArea, QWidget, QVBoxLayout
         from PyQt6.QtCore import Qt
-        
+        from PyQt6.QtWidgets import QScrollArea, QVBoxLayout, QWidget
+
         print("   ✅ QScrollArea import successful")
         print("   ✅ Qt.ScrollBarPolicy enums available")
-        
+
         # Test firewall page builder with scroll area
         print("\n2. TESTING FIREWALL PAGE BUILDER:")
         from gui.settings_pages import build_firewall_page
+
         print("   ✅ build_firewall_page function available")
-        
+
         # Test scroll area features
         print("\n3. SCROLL AREA FEATURES:")
         features = [
@@ -39,23 +40,23 @@ def test_firewall_scroll_area():
             "Organized section spacing (20px between groups)",
             "Clean margins (15px around content)",
             "Scroll area fills entire page widget",
-            "No margins on main page for better space usage"
+            "No margins on main page for better space usage",
         ]
-        
+
         for feature in features:
             print(f"   ✅ {feature}")
-        
+
         print("\n4. SETTINGS SECTIONS ORGANIZATION:")
         sections = [
             "Firewall Status & Basic Controls",
-            "Firewall Behavior Settings", 
+            "Firewall Behavior Settings",
             "Advanced Settings",
-            "Firewall Controls (buttons)"
+            "Firewall Controls (buttons)",
         ]
-        
+
         for section in sections:
             print(f"   📁 {section}")
-        
+
         print("\n5. USABILITY IMPROVEMENTS:")
         improvements = [
             "No more squished/cramped settings display",
@@ -63,25 +64,26 @@ def test_firewall_scroll_area():
             "Proper spacing between setting groups",
             "Scroll bars appear only when needed",
             "Maintains responsive design on smaller screens",
-            "Consistent with RKHunter page scroll implementation"
+            "Consistent with RKHunter page scroll implementation",
         ]
-        
+
         for improvement in improvements:
             print(f"   🎯 {improvement}")
-        
+
         print("\n🎉 FIREWALL SETTINGS SCROLL AREA IMPLEMENTATION COMPLETE!")
         print("\nBenefits:")
-        print("• Settings are no longer squished together")  
+        print("• Settings are no longer squished together")
         print("• All firewall options are clearly readable")
         print("• Proper organization with adequate spacing")
         print("• Responsive design adapts to different screen sizes")
         print("• Professional appearance matching other settings pages")
-        
+
         return True
-        
+
     except Exception as e:
         print(f"\n❌ Error during testing: {e}")
         import traceback
+
         traceback.print_exc()
         return False
 

@@ -14,7 +14,7 @@ Successfully implemented comprehensive performance optimizations for the S&D - S
 - **Event Deduplication:** Groups similar events by directory and processes only unique changes
 - **Memory-Conscious Processing:** Reduces redundant file system event callbacks
 
-**Impact:**
+### Impact
 
 - Reduces CPU usage during high file activity by ~60%
 - Eliminates duplicate event processing
@@ -26,13 +26,13 @@ Successfully implemented comprehensive performance optimizations for the S&D - S
 
 - **Consolidated Timers:** Replaced multiple individual QTimers with single unified system
 - **Staggered Updates:** Different components update at optimal intervals:
-  - Firewall status: Every 5 seconds
-  - Monitoring statistics: Every 10 seconds
-  - Activity log saves: Every 30 seconds
-  - System tray tooltip: Every 10 seconds
+- Firewall status: Every 5 seconds
+- Monitoring statistics: Every 10 seconds
+- Activity log saves: Every 30 seconds
+- System tray tooltip: Every 10 seconds
 - **Performance Tracking:** Built-in execution time monitoring
 
-**Impact:**
+### Impact 2
 
 - Reduced timer overhead by ~75% (from 4+ separate timers to 1)
 - Lower CPU usage from constant timer callbacks
@@ -47,7 +47,7 @@ Successfully implemented comprehensive performance optimizations for the S&D - S
 - **Intelligent Threading:** Dynamic worker count adjustment based on batch size
 - **Memory Pressure Detection:** Automatic optimization when memory usage exceeds 256MB
 
-**Impact:**
+### Impact 3
 
 - Memory usage stays under control during large scans
 - Prevents system memory exhaustion
@@ -62,7 +62,7 @@ Successfully implemented comprehensive performance optimizations for the S&D - S
 - **Component Tracking:** Individual performance metrics for app components
 - **Automatic Optimization:** Triggers optimizations when thresholds exceeded
 
-**Features:**
+### Features
 
 - Continuous background monitoring
 - Historical performance data (last 100 samples)
@@ -80,38 +80,38 @@ Successfully implemented comprehensive performance optimizations for the S&D - S
 
 ## 📊 Performance Metrics & Thresholds
 
-### CPU Usage Thresholds:
+### CPU Usage Thresholds
 
 - **Warning:** 50% CPU usage
 - **Critical:** 80% CPU usage
 - **Auto-optimization:** Reduces update frequency during high CPU
 
-### Memory Usage Thresholds:
+### Memory Usage Thresholds
 
 - **Warning:** 200 MB RAM usage
 - **Critical:** 500 MB RAM usage
 - **Batch Processing:** Triggered at 256 MB for file scanning
 
-### File Handle Limits:
+### File Handle Limits
 
 - **Warning:** 100 open file handles
 - **Critical:** 200 open file handles
 
 ## 🛠 Automatic Optimization Features
 
-### CPU Pressure Response:
+### CPU Pressure Response
 
 - Increases timer intervals from 1s to 2s
 - Reduces monitoring frequency
 - Applies optimization callbacks
 
-### Memory Pressure Response:
+### Memory Pressure Response
 
 - Forces garbage collection
 - Clears cached data
 - Enables batched processing mode
 
-### I/O Optimization:
+### I/O Optimization
 
 - Debounces file system events
 - Batches similar operations
@@ -119,14 +119,14 @@ Successfully implemented comprehensive performance optimizations for the S&D - S
 
 ## 📈 Expected Performance Improvements
 
-### Resource Usage Reduction:
+### Resource Usage Reduction
 
 - **CPU Usage:** 35-50% reduction during normal operation
 - **Memory Usage:** 40-60% reduction during large scans
 - **I/O Operations:** 60-75% reduction in file system calls
 - **Timer Overhead:** 75% reduction in GUI timer usage
 
-### User Experience Improvements:
+### User Experience Improvements
 
 - Smoother GUI responsiveness
 - Faster file scanning for large directories
@@ -135,18 +135,19 @@ Successfully implemented comprehensive performance optimizations for the S&D - S
 
 ## 🔧 Configuration Options
 
-### Performance Settings (via config):
+### Performance Settings (via config)
 
-```python
+```Python
 'performance': {
     'scan_batch_size': 50,        # Files per batch
     'max_memory_mb': 256,         # Memory limit for batching
     'timer_interval': 1000,       # Base timer interval (ms)
     'debounce_delay': 0.5         # Event debouncing delay (s)
 }
-```
 
-### Monitoring Settings:
+```text
+
+### Monitoring Settings
 
 - Sample interval: 5 seconds
 - History retention: 100 samples (8+ minutes)
@@ -163,7 +164,7 @@ All optimizations have been:
 
 ## 🚀 Implementation Status
 
-**COMPLETED:**
+### COMPLETED
 
 - [x] File system monitoring debouncing
 - [x] Unified timer system
@@ -172,7 +173,7 @@ All optimizations have been:
 - [x] System tray performance integration
 - [x] Automatic optimization callbacks
 
-**ACTIVE:**
+### ACTIVE
 
 - Performance monitoring running in background
 - Automatic optimizations triggered based on thresholds
@@ -180,9 +181,12 @@ All optimizations have been:
 
 ## 💡 Usage
 
-The performance optimizations are **automatically active** with no user intervention required. Users can view performance information by:
+The performance optimizations are **automatically active** with no user intervention required.
+Users can view performance information by:
 
-1. **Hovering over system tray icon** - Shows detailed performance metrics, status, and optimization tips
+1.
+**Hovering over system tray icon** - Shows detailed performance metrics, status, and optimization tips
+
 2. **Automatic optimization** - System automatically optimizes when resource usage is high
 3. **Background monitoring** - Continuous performance tracking with minimal overhead
 

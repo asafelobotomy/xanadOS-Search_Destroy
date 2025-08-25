@@ -13,9 +13,9 @@ This document provides comprehensive API documentation for the xanadOS-Search_De
 
 Enhanced ClamAV integration with full feature support and performance optimizations.
 
-```python
+```Python
 class ClamAVWrapper:
-    def __init__(self, config: Optional[Dict[str, Any]] = None)
+    def **init**(self, config: Optional[Dict[str, Any]] = None)
     def scan_file(self, file_path: str, use_daemon: bool = True, **kwargs) -> ScanFileResult
     def scan_directory(self, directory_path: str, **kwargs) -> List[ScanFileResult]
     def should_scan_file(self, file_path: str, quick_scan: bool = False) -> bool
@@ -24,9 +24,10 @@ class ClamAVWrapper:
     def apply_2025_security_hardening(self) -> Dict[str, bool]
     def get_2025_performance_settings(self) -> Dict[str, Any]
     def implement_multithreaded_scanning(self, file_list: List[str], max_workers: int = None) -> List[Dict[str, Any]]
-```
 
-**Key Features:**
+```text
+
+### Key Features
 
 - Daemon-based scanning for 3-10x performance improvement
 - Smart file filtering with risk-based analysis
@@ -39,9 +40,9 @@ class ClamAVWrapper:
 
 The main scanning engine with quarantine management and scheduling.
 
-```python
+```Python
 class FileScanner:
-    def __init__(self, clamav_wrapper: Optional[ClamAVWrapper] = None)
+    def **init**(self, clamav_wrapper: Optional[ClamAVWrapper] = None)
     def scan_file(self, file_path: str, scan_id: Optional[str] = None, **kwargs) -> ScanFileResult
     def scan_directory(self, directory_path: str, **kwargs) -> List[ScanFileResult]
     def validate_scan_directory(self, directory_path: str) -> dict
@@ -49,9 +50,10 @@ class FileScanner:
     def set_progress_callback(self, callback: Callable[[float, str], None]) -> None
     def set_detailed_progress_callback(self, callback: Callable[[dict], None]) -> None
     def set_result_callback(self, callback: Callable[[ScanFileResult], None]) -> None
-```
 
-**Advanced Features:**
+```text
+
+### Advanced Features
 
 - Rate limiting and memory optimization
 - Quarantine management with secure isolation
@@ -64,14 +66,15 @@ class FileScanner:
 
 RKHunter rootkit detection integration with optimization support.
 
-```python
+```Python
 class RKHunterWrapper:
-    def __init__(self, config: Optional[Dict[str, Any]] = None)
+    def **init**(self, config: Optional[Dict[str, Any]] = None)
     def run_scan(self, categories: List[str] = None, **kwargs) -> RKHunterScanResult
     def update_database(self) -> bool
     def get_available_tests(self) -> List[str]
     def check_system_integrity(self) -> Dict[str, Any]
-```
+
+```text
 
 ## GUI Modules
 
@@ -81,15 +84,16 @@ class RKHunterWrapper:
 
 Main application window and user interface controller with modern PyQt6 interface.
 
-```python
+```Python
 class MainWindow(QMainWindow):
-    def __init__(self)
+    def **init**(self)
     def start_scan(self)
     def stop_scan(self)
     def update_progress(self, progress: int)
     def switch_theme(self, theme_name: str)
     def show_scan_results(self, results: List[ScanFileResult])
-```
+
+```text
 
 ### app.gui.scan_dialog
 
@@ -97,12 +101,13 @@ class MainWindow(QMainWindow):
 
 Dialog for configuring advanced scan parameters.
 
-```python
+```Python
 class ScanDialog(QDialog):
     def get_scan_settings(self) -> Dict[str, Any]
     def set_default_settings(self, settings: Dict[str, Any])
     def configure_scan_options(self) -> ScanConfiguration
-```
+
+```text
 
 ### app.gui.rkhunter_components
 
@@ -110,23 +115,25 @@ class ScanDialog(QDialog):
 
 Specialized dialog for RKHunter rootkit scan configuration.
 
-```python
+```Python
 class RKHunterScanDialog(QDialog):
-    def __init__(self, parent=None)
+    def **init**(self, parent=None)
     def get_selected_categories(self) -> List[str]
     def apply_theme(self, theme_name: str)
-```
+
+```text
 
 #### RKHunterScanThread Class
 
 Non-blocking thread for RKHunter scan execution.
 
-```python
+```Python
 class RKHunterScanThread(QThread):
     progress_updated = pyqtSignal(str, int)
     scan_completed = pyqtSignal(object)
     error_occurred = pyqtSignal(str)
-```
+
+```text
 
 ## Utility Modules
 
@@ -136,13 +143,14 @@ class RKHunterScanThread(QThread):
 
 Centralized configuration system with validation and defaults.
 
-```python
+```Python
 def load_config() -> Dict[str, Any]
 def save_config(config: Dict[str, Any]) -> bool
 def get_default_config() -> Dict[str, Any]
 def validate_config(config: Dict[str, Any]) -> bool
 def setup_logging() -> logging.Logger
-```
+
+```text
 
 ### app.utils.scan_reports
 
@@ -150,21 +158,22 @@ def setup_logging() -> logging.Logger
 
 Advanced report generation and export system.
 
-```python
+```Python
 class ScanReportManager:
-    def __init__(self, config: Dict[str, Any])
-    def generate_report(self, results: List[ScanResult], format: str = "json") -> str
+    def **init**(self, config: Dict[str, Any])
+    def generate_report(self, results: List[ScanResult], format: str = "JSON") -> str
     def save_report(self, report_data: Dict[str, Any], filename: str) -> bool
     def export_to_html(self, results: List[ScanResult]) -> str
     def export_to_csv(self, results: List[ScanResult]) -> str
     def get_recent_reports(self, days: int = 7) -> List[Dict[str, Any]]
-```
+
+```text
 
 ## Data Types and Enums
 
 ### Core Data Types
 
-```python
+```Python
 @dataclass
 class ScanFileResult:
     file_path: str
@@ -195,12 +204,13 @@ class MonitorConfig:
     excluded_extensions: List[str]
     scan_new_files: bool = True
     scan_modified_files: bool = True
-    max_file_size: int = 100 * 1024 * 1024  # 100MB
-```
+    max_file_size: int = 100 _1024_ 1024  # 100MB
+
+```text
 
 ### Event Types
 
-```python
+```Python
 class WatchEventType(Enum):
     FILE_CREATED = "file_created"
     FILE_MODIFIED = "file_modified"
@@ -216,7 +226,8 @@ class WatchEvent:
     timestamp: float
     size: int = 0
     is_directory: bool = False
-```
+
+```text
 
 ## Security and Performance Features
 
@@ -244,7 +255,8 @@ class WatchEvent:
 
 ---
 
-**Note**: This API documentation covers the core public interfaces. For detailed implementation examples and usage patterns, see the comprehensive implementation documentation in the `docs/implementation/` directory.
+**Note**: This API documentation covers the core public interfaces.
+For detailed implementation examples and usage patterns, see the comprehensive implementation documentation in the `docs/implementation/` directory.
 
 ## Additional Resources
 
@@ -255,4 +267,4 @@ class WatchEvent:
 
 ---
 
-**Last updated:** August 19, 2025 | **Version:** 2.7.0
+**Last updated:**August 19, 2025 |**Version:** 2.7.0

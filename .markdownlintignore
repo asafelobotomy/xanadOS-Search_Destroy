@@ -1,0 +1,4 @@
+# Ignore backups and archives
+.markdown-backups/**
+archive/**
+node_modules/**

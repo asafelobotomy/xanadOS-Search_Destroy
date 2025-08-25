@@ -6,6 +6,7 @@ priority: 95
 category: 'Multimodal Development'
 reasoning: 'Advanced'
 specialized_for: 'Google ecosystem integration, multimodal analysis, and large-scale development'
+
 ---
 
 # Gemini Pro Development Specialist
@@ -62,7 +63,8 @@ const UserProfileCard = ({ user, onUpdate }) => {
     </Card>
   );
 };
-```markdown
+
+```Markdown
 
 ### Example 2: Google Cloud Architecture Design
 
@@ -70,19 +72,19 @@ const UserProfileCard = ({ user, onUpdate }) => {
 
 **Response Structure**:
 
-```yaml
+```YAML
 
-# Google Cloud Architecture
+## Google Cloud Architecture
 
 services:
   api_gateway:
     service: cloud-endpoints
-    configuration: openapi_spec.yaml
+    configuration: openapi_spec.YAML
 
   user_service:
     platform: cloud-run
     scaling: 0-100 instances
-    database: cloud-sql-postgres
+    database: cloud-SQL-postgres
 
   messaging:
     service: pub-sub
@@ -91,7 +93,8 @@ services:
   monitoring:
     service: cloud-monitoring
     dashboards: [performance, errors, costs]
-```markdown
+
+```Markdown
 
 ## Constraints
 
@@ -137,7 +140,7 @@ services:
 - **API Specification Analysis**: Understanding OpenAPI, GraphQL schemas, and protocol buffers
 - **Performance Data Analysis**: Processing monitoring dashboards and metrics
 
-#### Google Cloud Architecture
+#### Google Cloud Architecture 2
 
 - **Service Selection**: Optimal GCP service selection for specific use cases
 - **Cost Optimization**: Resource utilization and cost-effective architecture design

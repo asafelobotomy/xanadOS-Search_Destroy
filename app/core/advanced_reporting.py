@@ -3,13 +3,12 @@
 Advanced Reporting System for S&D
 Provides comprehensive reporting, analytics, and threat intelligence visualization.
 """
-import asyncio
+
 import base64
 import csv
 import io
 import json
 import logging
-import sqlite3
 import time
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
@@ -110,17 +109,10 @@ class AdvancedReportingSystem:
 
         # Chart configurations
         self.chart_config = {
-            "figure_size": (
-                12,
-                8),
+            "figure_size": (12, 8),
             "dpi": 300,
             "style": "seaborn-v0_8",
-            "color_palette": [
-                "#2E86AB",
-                "#A23B72",
-                "#F18F01",
-                "#C73E1D",
-                "#592941"],
+            "color_palette": ["#2E86AB", "#A23B72", "#F18F01", "#C73E1D", "#592941"],
         }
 
         # Initialize matplotlib
@@ -341,9 +333,7 @@ class AdvancedReportingSystem:
                     start_date, end_date, config
                 )
             else:
-                raise ValueError(
-                    f"Unsupported report type: {
-                        config.report_type}")
+                raise ValueError(f"Unsupported report type: {config.report_type}")
 
             # Add metadata
             report_data.metadata.update(
@@ -363,8 +353,8 @@ class AdvancedReportingSystem:
                 await self._generate_charts(report_data, config)
 
             self.logger.info(
-                "Report generation completed in %.2f seconds",
-                time.time() - start_time)
+                "Report generation completed in %.2f seconds", time.time() - start_time
+            )
 
             return report_data
 
@@ -451,7 +441,8 @@ class AdvancedReportingSystem:
 
             # Generate recommendations
             report_data.recommendations = self._generate_security_recommendations(
-                scan_stats, threat_stats, web_stats)
+                scan_stats, threat_stats, web_stats
+            )
 
             return report_data
 
@@ -558,19 +549,18 @@ class AdvancedReportingSystem:
 
             # Summary
             report_data.summary = {
-                "total_scan_time": perf_metrics.get(
-                    "total_scan_time", 0), "avg_scan_duration": perf_metrics.get(
-                    "avg_scan_duration", 0), "files_per_second": perf_metrics.get(
-                    "avg_throughput", 0), "total_data_scanned": perf_metrics.get(
-                    "total_bytes_scanned", 0), "scan_errors": error_analysis.get(
-                        "total_errors", 0), "error_rate": error_analysis.get(
-                            "error_rate", 0), }
+                "total_scan_time": perf_metrics.get("total_scan_time", 0),
+                "avg_scan_duration": perf_metrics.get("avg_scan_duration", 0),
+                "files_per_second": perf_metrics.get("avg_throughput", 0),
+                "total_data_scanned": perf_metrics.get("total_bytes_scanned", 0),
+                "scan_errors": error_analysis.get("total_errors", 0),
+                "error_rate": error_analysis.get("error_rate", 0),
+            }
 
             return report_data
 
         except Exception as e:
-            self.logger.error(
-                "Error generating scan performance report: %s", e)
+            self.logger.error("Error generating scan performance report: %s", e)
             raise
 
     async def _generate_web_protection_report(
@@ -677,7 +667,8 @@ class AdvancedReportingSystem:
 
             # Strategic recommendations
             report_data.recommendations = self._generate_executive_recommendations(
-                security_data)
+                security_data
+            )
 
             return report_data
 
@@ -734,10 +725,7 @@ class AdvancedReportingSystem:
             self.logger.error("Error generating technical report: %s", e)
             raise
 
-    async def _generate_charts(
-            self,
-            report_data: ReportData,
-            config: ReportConfig):
+    async def _generate_charts(self, report_data: ReportData, config: ReportConfig):
         """Generate charts for report visualization."""
         try:
             charts = {}
@@ -1035,7 +1023,7 @@ class AdvancedReportingSystem:
                 ax.text(
                     0.5,
                     0.8,
-                    f"S&D Security Report",
+                    "S&D Security Report",
                     ha="center",
                     va="center",
                     fontsize=24,
@@ -1052,8 +1040,7 @@ class AdvancedReportingSystem:
                 ax.text(
                     0.5,
                     0.6,
-                    f"Generated: {
-                        report_data.metadata.get('generation_time')}",
+                    f"Generated: {report_data.metadata.get('generation_time')}",
                     ha="center",
                     va="center",
                     fontsize=12,
@@ -1131,8 +1118,7 @@ class AdvancedReportingSystem:
 
                 # Write main tables
                 for table_name, table_data in report_data.tables.items():
-                    writer.writerow(
-                        [f'{table_name.replace("_", " ").title()} Data'])
+                    writer.writerow([f"{table_name.replace('_', ' ').title()} Data"])
 
                     if table_data:
                         # Write headers
@@ -1141,8 +1127,7 @@ class AdvancedReportingSystem:
 
                         # Write data
                         for row in table_data:
-                            writer.writerow([row.get(header, "")
-                                            for header in headers])
+                            writer.writerow([row.get(header, "") for header in headers])
 
                     writer.writerow([])  # Empty row
 
@@ -1156,11 +1141,8 @@ class AdvancedReportingSystem:
             with pd.ExcelWriter(output_path, engine="openpyxl") as writer:
                 # Summary sheet
                 summary_df = pd.DataFrame(
-                    list(
-                        report_data.summary.items()),
-                    columns=[
-                        "Metric",
-                        "Value"])
+                    list(report_data.summary.items()), columns=["Metric", "Value"]
+                )
                 summary_df.to_excel(writer, sheet_name="Summary", index=False)
 
                 # Data sheets for each table
@@ -1188,8 +1170,7 @@ class AdvancedReportingSystem:
 
                     if metrics_data:
                         metrics_df = pd.DataFrame(metrics_data)
-                        metrics_df.to_excel(
-                            writer, sheet_name="Metrics", index=False)
+                        metrics_df.to_excel(writer, sheet_name="Metrics", index=False)
 
         except Exception as e:
             self.logger.error("Error exporting Excel report: %s", e)
@@ -1305,13 +1286,11 @@ class AdvancedReportingSystem:
             )
 
         if not recommendations:
-            recommendations.append(
-                "Security posture is good - continue monitoring")
+            recommendations.append("Security posture is good - continue monitoring")
 
         return recommendations
 
-    def _format_summary_metrics(
-            self, summary: Dict[str, Any]) -> List[Dict[str, Any]]:
+    def _format_summary_metrics(self, summary: Dict[str, Any]) -> List[Dict[str, Any]]:
         """Format summary metrics for template rendering."""
         formatted = []
         for key, value in summary.items():
@@ -1356,8 +1335,7 @@ class AdvancedReportingSystem:
             )
         return formatted
 
-    def _format_technical_sections(
-            self, report_data: ReportData) -> Dict[str, Any]:
+    def _format_technical_sections(self, report_data: ReportData) -> Dict[str, Any]:
         """Format technical sections for detailed report."""
         sections = {}
 
@@ -1403,31 +1381,31 @@ class AdvancedReportingSystem:
         self, start_date: datetime, end_date: datetime
     ) -> List[Dict[str, Any]]:
         """Get threat breakdown by type."""
-        return [{"type": "Malware",
-                 "count": 15,
-                 "risk_level": "high",
-                 "status": "Blocked"},
-                {"type": "Phishing",
-                 "count": 8,
-                 "risk_level": "medium",
-                 "status": "Blocked",
-                 },
-                {"type": "Suspicious",
-                 "count": 12,
-                 "risk_level": "low",
-                 "status": "Monitored",
-                 },
-                ]
+        return [
+            {"type": "Malware", "count": 15, "risk_level": "high", "status": "Blocked"},
+            {
+                "type": "Phishing",
+                "count": 8,
+                "risk_level": "medium",
+                "status": "Blocked",
+            },
+            {
+                "type": "Suspicious",
+                "count": 12,
+                "risk_level": "low",
+                "status": "Monitored",
+            },
+        ]
 
-    def _calculate_security_posture_score(
-            self, security_data: ReportData) -> str:
+    def _calculate_security_posture_score(self, security_data: ReportData) -> str:
         """Calculate overall security posture score."""
         # Simplified calculation
         threats_blocked = security_data.summary.get("threats_blocked", 0)
         threats_detected = security_data.summary.get("threats_detected", 1)
 
-        effectiveness = ((threats_blocked / threats_detected)
-                         * 100 if threats_detected > 0 else 100)
+        effectiveness = (
+            (threats_blocked / threats_detected) * 100 if threats_detected > 0 else 100
+        )
 
         if effectiveness >= 95:
             return "Excellent"
@@ -1438,14 +1416,14 @@ class AdvancedReportingSystem:
         else:
             return "Needs Improvement"
 
-    def _calculate_protection_effectiveness(
-            self, security_data: ReportData) -> float:
+    def _calculate_protection_effectiveness(self, security_data: ReportData) -> float:
         """Calculate protection effectiveness percentage."""
         threats_blocked = security_data.summary.get("threats_blocked", 0)
         threats_detected = security_data.summary.get("threats_detected", 1)
 
-        return ((threats_blocked / threats_detected)
-                * 100 if threats_detected > 0 else 100)
+        return (
+            (threats_blocked / threats_detected) * 100 if threats_detected > 0 else 100
+        )
 
     def _assess_overall_risk_level(self, security_data: ReportData) -> str:
         """Assess overall risk level."""
@@ -1458,14 +1436,12 @@ class AdvancedReportingSystem:
         else:
             return "Low"
 
-    def _calculate_false_positive_rate(
-            self, security_data: ReportData) -> float:
+    def _calculate_false_positive_rate(self, security_data: ReportData) -> float:
         """Calculate false positive rate."""
         false_positives = security_data.summary.get("false_positives", 0)
         total_detections = security_data.summary.get("threats_detected", 1)
 
-        return (false_positives / total_detections) * \
-            100 if total_detections > 0 else 0
+        return (false_positives / total_detections) * 100 if total_detections > 0 else 0
 
     def _generate_executive_recommendations(
         self, security_data: ReportData
@@ -1481,18 +1457,15 @@ class AdvancedReportingSystem:
 
         effectiveness = self._calculate_protection_effectiveness(security_data)
         if effectiveness < 90:
-            recommendations.append(
-                "Consider enhancing threat detection capabilities")
+            recommendations.append("Consider enhancing threat detection capabilities")
 
-        false_positive_rate = self._calculate_false_positive_rate(
-            security_data)
+        false_positive_rate = self._calculate_false_positive_rate(security_data)
         if false_positive_rate > 10:
             recommendations.append(
                 "Review and optimize detection rules to reduce operational overhead"
             )
 
-        recommendations.append(
-            "Continue regular security monitoring and updates")
+        recommendations.append("Continue regular security monitoring and updates")
 
         return recommendations
 
@@ -1647,38 +1620,38 @@ except ImportError:
 
     plt = MockMatplotlib()
     mdates = type(
-        "", (), {
-            "DateFormatter": lambda x: None, "DayLocator": lambda **x: None})()
-
-    def PdfPages(x): return type(
-        "",
-        (),
-        {
-            "__enter__": lambda self: self,
-            "__exit__": lambda *args: None,
-            "savefig": lambda *args, **kwargs: None,
-        },
+        "", (), {"DateFormatter": lambda x: None, "DayLocator": lambda **x: None}
     )()
+
+    def PdfPages(x):
+        return type(
+            "",
+            (),
+            {
+                "__enter__": lambda self: self,
+                "__exit__": lambda *args: None,
+                "savefig": lambda *args, **kwargs: None,
+            },
+        )()
+
 
 try:
     import numpy as np
     import pandas as pd
 except ImportError:
     # Mock pandas and numpy
-    pd = type("pd",
-              (),
-              {"DataFrame": lambda *args,
-               **kwargs: type("",
-                              (),
-                              {"to_excel": lambda *args,
-                                  **kwargs: None})(),
-               "ExcelWriter": lambda *args,
-               **kwargs: type("",
-                              (),
-                              {"__enter__": lambda self: self,
-                                  "__exit__": lambda *args: None})(),
-               },
-              )()
+    pd = type(
+        "pd",
+        (),
+        {
+            "DataFrame": lambda *args, **kwargs: type(
+                "", (), {"to_excel": lambda *args, **kwargs: None}
+            )(),
+            "ExcelWriter": lambda *args, **kwargs: type(
+                "", (), {"__enter__": lambda self: self, "__exit__": lambda *args: None}
+            )(),
+        },
+    )()
     np = type(
         "np",
         (),

@@ -3,20 +3,20 @@
 GUI responsiveness improvements for xanadOS Search & Destroy
 Provides non-blocking UI operations and smooth user experience
 """
+
 import logging
 import time
 from dataclasses import dataclass
-from threading import Event, Timer
-from typing import Any, Callable, Dict, Optional
+from typing import Any, Callable, Optional
 
-from PyQt6.QtCore import Q_ARG, QMetaObject, QObject, Qt, QThread, QTimer, pyqtSignal
-from PyQt6.QtGui import QMovie, QPixmap
-from PyQt6.QtWidgets import QApplication, QLabel, QProgressBar
+from PyQt6.QtCore import QObject, Qt, QTimer, pyqtSignal
+from PyQt6.QtWidgets import QApplication, QProgressBar
 
 
 @dataclass
 class UITask:
     """Represents a UI task to be executed."""
+
     task_id: str
     callback: Callable
     args: tuple = ()
@@ -78,8 +78,9 @@ class ResponsiveUI(QObject):
         self.show_notification.connect(self._handle_notification)
         self.task_completed.connect(self._handle_task_completion)
 
-    def schedule_task(self, task_id: str, callback: Callable,
-                      *args, priority: int = 1, **kwargs):
+    def schedule_task(
+        self, task_id: str, callback: Callable, *args, priority: int = 1, **kwargs
+    ):
         """
         Schedule a background task.
 
@@ -103,10 +104,7 @@ class ResponsiveUI(QObject):
         if not inserted:
             self.pending_tasks.append(task)
 
-        self.logger.debug(
-            "Scheduled task '%s' with priority %d",
-            task_id,
-            priority)
+        self.logger.debug("Scheduled task '%s' with priority %d", task_id, priority)
 
     def _process_background_tasks(self):
         """Process queued background tasks."""
@@ -121,8 +119,9 @@ class ResponsiveUI(QObject):
             result = task.callback(*task.args, **task.kwargs)
             execution_time = time.time() - start_time
 
-            self.logger.debug("Completed task '%s' in %.3fs",
-                              task.task_id, execution_time)
+            self.logger.debug(
+                "Completed task '%s' in %.3fs", task.task_id, execution_time
+            )
 
             # Emit completion signal
             self.task_completed.emit(task.task_id, result)
@@ -142,21 +141,20 @@ class ResponsiveUI(QObject):
 
         # Update progress bar animations
         for widget_id, animation in list(self.animations.items()):
-            if animation['type'] == 'progress_smooth':
-                self._update_progress_animation(
-                    widget_id, animation, current_time)
-            elif animation['type'] == 'pulse':
-                self._update_pulse_animation(
-                    widget_id, animation, current_time)
+            if animation["type"] == "progress_smooth":
+                self._update_progress_animation(widget_id, animation, current_time)
+            elif animation["type"] == "pulse":
+                self._update_pulse_animation(widget_id, animation, current_time)
 
-    def _update_progress_animation(self, widget_id: str, animation: dict,
-                                   current_time: float):
+    def _update_progress_animation(
+        self, widget_id: str, animation: dict, current_time: float
+    ):
         """Update smooth progress bar animation."""
-        widget = animation.get('widget')
+        widget = animation.get("widget")
         if not widget:
             return
 
-        target_value = animation['target_value']
+        target_value = animation["target_value"]
         current_value = widget.value()
 
         if current_value != target_value:
@@ -171,23 +169,23 @@ class ResponsiveUI(QObject):
 
             widget.setValue(new_value)
 
-    def _update_pulse_animation(self, widget_id: str, animation: dict,
-                                current_time: float):
+    def _update_pulse_animation(
+        self, widget_id: str, animation: dict, current_time: float
+    ):
         """Update pulsing animation."""
-        widget = animation.get('widget')
+        widget = animation.get("widget")
         if not widget:
             return
 
         # Calculate pulse opacity based on time
-        pulse_duration = animation.get('duration', 2.0)
+        pulse_duration = animation.get("duration", 2.0)
         phase = (current_time % pulse_duration) / pulse_duration
         # Smooth pulse between 0.5 and 1.0
         opacity = 0.5 + 0.5 * abs(2 * phase - 1)
 
         widget.setWindowOpacity(opacity)
 
-    def smooth_progress_update(self, progress_bar: QProgressBar,
-                               target_value: int):
+    def smooth_progress_update(self, progress_bar: QProgressBar, target_value: int):
         """
         Update progress bar with smooth animation.
 
@@ -198,10 +196,10 @@ class ResponsiveUI(QObject):
         widget_id = f"progress_{id(progress_bar)}"
 
         self.animations[widget_id] = {
-            'type': 'progress_smooth',
-            'widget': progress_bar,
-            'target_value': target_value,
-            'start_time': time.time()
+            "type": "progress_smooth",
+            "widget": progress_bar,
+            "target_value": target_value,
+            "start_time": time.time(),
         }
 
     def start_pulse_animation(self, widget, duration: float = 2.0):
@@ -215,10 +213,10 @@ class ResponsiveUI(QObject):
         widget_id = f"pulse_{id(widget)}"
 
         self.animations[widget_id] = {
-            'type': 'pulse',
-            'widget': widget,
-            'duration': duration,
-            'start_time': time.time()
+            "type": "pulse",
+            "widget": widget,
+            "duration": duration,
+            "start_time": time.time(),
         }
 
     def stop_animation(self, widget):
@@ -238,16 +236,15 @@ class ResponsiveUI(QObject):
 
     def _handle_progress_update(self, progress: int, message: str):
         """Handle progress update signal."""
-        if self.main_window and hasattr(self.main_window, 'progress_bar'):
-            self.smooth_progress_update(
-                self.main_window.progress_bar, progress)
+        if self.main_window and hasattr(self.main_window, "progress_bar"):
+            self.smooth_progress_update(self.main_window.progress_bar, progress)
 
-        if self.main_window and hasattr(self.main_window, 'status_label'):
+        if self.main_window and hasattr(self.main_window, "status_label"):
             self.main_window.status_label.setText(message)
 
     def _handle_status_update(self, status: str):
         """Handle status update signal."""
-        if self.main_window and hasattr(self.main_window, 'status_label'):
+        if self.main_window and hasattr(self.main_window, "status_label"):
             self.main_window.status_label.setText(status)
 
     def _handle_notification(self, title: str, message: str):
@@ -257,10 +254,7 @@ class ResponsiveUI(QObject):
 
     def _handle_task_completion(self, task_id: str, result: Any):
         """Handle task completion."""
-        self.logger.debug(
-            "Task '%s' completed with result: %s",
-            task_id,
-            result)
+        self.logger.debug("Task '%s' completed with result: %s", task_id, result)
 
 
 class ScanProgressManager(QObject):
@@ -302,13 +296,16 @@ class ScanProgressManager(QObject):
         self.errors = 0
         self.start_time = time.time()
 
-        self.logger.info(
-            "Started scan progress tracking for %d files",
-            total_files)
+        self.logger.info("Started scan progress tracking for %d files", total_files)
         self._emit_progress_update()
 
-    def update_progress(self, scanned: int = 1, infected: int = 0,
-                        errors: int = 0, current_file: str = ""):
+    def update_progress(
+        self,
+        scanned: int = 1,
+        infected: int = 0,
+        errors: int = 0,
+        current_file: str = "",
+    ):
         """
         Update scan progress.
 
@@ -352,18 +349,16 @@ class ScanProgressManager(QObject):
         if current_file:
             message = f"Scanning: {current_file}"
         else:
-            message = f"Scanned {
-                self.scanned_files} of {
-                self.total_files} files"
+            message = f"Scanned {self.scanned_files} of {self.total_files} files"
 
         stats = {
-            'scanned': self.scanned_files,
-            'total': self.total_files,
-            'infected': self.infected_files,
-            'errors': self.errors,
-            'elapsed_time': elapsed_time,
-            'files_per_second': files_per_second,
-            'eta_seconds': eta_seconds
+            "scanned": self.scanned_files,
+            "total": self.total_files,
+            "infected": self.infected_files,
+            "errors": self.errors,
+            "elapsed_time": elapsed_time,
+            "files_per_second": files_per_second,
+            "eta_seconds": eta_seconds,
         }
 
         self.progress_updated.emit(progress, message, stats)
@@ -371,11 +366,11 @@ class ScanProgressManager(QObject):
     def finish_scan(self):
         """Finish scan and emit final statistics."""
         final_stats = {
-            'total_files': self.total_files,
-            'scanned_files': self.scanned_files,
-            'infected_files': self.infected_files,
-            'errors': self.errors,
-            'scan_time': time.time() - self.start_time
+            "total_files": self.total_files,
+            "scanned_files": self.scanned_files,
+            "infected_files": self.infected_files,
+            "errors": self.errors,
+            "scan_time": time.time() - self.start_time,
         }
 
         self.scan_completed.emit(final_stats)
@@ -427,7 +422,7 @@ class LoadingIndicator(QObject):
             QApplication.setOverrideCursor(Qt.CursorShape.WaitCursor)
             self.busy_cursor_active = True
 
-        if self.main_window and hasattr(self.main_window, 'status_label'):
+        if self.main_window and hasattr(self.main_window, "status_label"):
             self.main_window.status_label.setText(message)
 
         self.logger.debug("Started loading for operation '%s'", operation_id)
@@ -480,8 +475,7 @@ def initialize_responsive_ui(main_window=None):
     if responsive_ui and scan_progress:
         scan_progress.progress_updated.connect(responsive_ui.update_progress)
         scan_progress.error_occurred.connect(
-            lambda msg: responsive_ui.show_notification.emit(
-                "Scan Error", msg)  # type: ignore
+            lambda msg: responsive_ui.show_notification.emit("Scan Error", msg)  # type: ignore
         )
 
 

@@ -1,10 +1,13 @@
 # RKHunter Optimization Issue Resolution
 
 ## Problem Identified
+
 The user reported that RKHunter optimization settings were not working, showing cryptic "Permission denied: 'rkhunter'" errors.
 
 ## Root Cause Analysis
+
 Investigation revealed that RKHunter was not installed on the system:
+
 - `which rkhunter` returned "no rkhunter in PATH"
 - `pacman -Qs rkhunter` showed it was available but not installed
 - The optimization code was attempting to execute RKHunter commands without checking availability
@@ -12,10 +15,12 @@ Investigation revealed that RKHunter was not installed on the system:
 ## Solution Implemented
 
 ### 1. Enhanced RKHunter Availability Checking
+
 **File:** `app/core/rkhunter_optimizer.py`
 
 Added comprehensive availability checking methods:
-```python
+
+```Python
 def _check_rkhunter_availability(self) -> bool:
     """Check if RKHunter is available and executable."""
 
@@ -27,10 +32,13 @@ def get_installation_command(self) -> str:
 
 def install_rkhunter(self) -> bool:
     """Attempt to install RKHunter using the system package manager."""
-```
+
+```text
 
 ### 2. Graceful Error Handling
+
 Enhanced all optimization methods to check availability first:
+
 - `optimize_configuration()` - Now checks before attempting optimization
 - `get_current_status()` - Returns "Not Available" status when RKHunter missing
 - `update_mirrors_enhanced()` - Provides installation guidance
@@ -38,39 +46,52 @@ Enhanced all optimization methods to check availability first:
 - `_validate_configuration()` - Returns installation instructions as issues
 
 ### 3. User-Friendly Error Messages
+
 **Before:** "Permission denied: 'rkhunter'"
 **After:** "RKHunter is not installed. Run: sudo pacman -S rkhunter"
 
 ### 4. Main Window Integration
+
 **File:** `app/gui/main_window.py`
 
 Enhanced the optimization handler methods:
-```python
+
+```Python
 def run_rkhunter_optimization(self, optimization_type):
-    # Check if RKHunter optimizer is available
+
+## Check if RKHunter optimizer is available
+
     if not RKHUNTER_OPTIMIZER_AVAILABLE:
         self.show_themed_message_box("warning", ...)
         return
 
-    # Check if RKHunter itself is available
+## Check if RKHunter itself is available
+
     if not self._rkhunter_available():
-        # Show installation dialog with callback support
+
+## Show installation dialog with callback support
+
         reply = self.show_themed_message_box("question", ...)
         if reply == QMessageBox.StandardButton.Yes:
             self.install_rkhunter_with_callback(
                 lambda: self.run_rkhunter_optimization(optimization_type)
             )
         return
-```
+
+```text
 
 Added installation helper with callback support:
-```python
+
+```Python
 def install_rkhunter_with_callback(self, callback=None):
     """Install RKHunter with optional callback after successful installation."""
-```
+
+```text
 
 ### 5. Enhanced Status Display
+
 The RKHunter status widget now shows:
+
 - **Status:** "Not Available" when RKHunter is missing
 - **Action:** Specific installation command for the user's system
 - **Issues:** Clear explanation with installation guidance
@@ -78,15 +99,18 @@ The RKHunter status widget now shows:
 ## Testing Results
 
 ### Before Fix
-```
+
+```text
 ❌ Permission denied: 'rkhunter'
 ❌ ModuleNotFoundError: No module named 'rkhunter'
 ❌ Cryptic error messages
 ❌ No guidance for users
-```
+
+```text
 
 ### After Fix
-```
+
+```text
 ✅ RKHunter availability: False
 ✅ Installation command: sudo pacman -S rkhunter
 ✅ Status: Not Available
@@ -94,36 +118,36 @@ The RKHunter status widget now shows:
 ✅ Proper error handling with user-friendly messages
 ✅ Installation dialog with progress feedback
 ✅ Callback support for seamless experience after installation
-```
+
+```text
 
 ## User Experience Flow
 
 1. **User clicks RKHunter optimization button**
 2. **System checks availability**
-   - If available: Proceeds with optimization
-   - If not available: Shows installation dialog
+- If available: Proceeds with optimization
+- If not available: Shows installation dialog
 3. **Installation dialog offers:**
-   - Clear explanation of what's needed
-   - Option to install automatically
-   - Specific command for their system
+- Clear explanation of what's needed
+- Option to install automatically
+- Specific command for their system
 4. **After installation:**
-   - Automatically retries the optimization
-   - Updates UI to reflect new availability
-   - Seamless transition to working state
+- Automatically retries the optimization
+- Updates UI to reflect new availability
+- Seamless transition to working state
 
 ## Files Modified
 
 1. **`app/core/rkhunter_optimizer.py`**
-   - Added availability checking methods
-   - Enhanced error handling in all optimization methods
-   - Added installation helper methods
-   - Improved status reporting
-
+- Added availability checking methods
+- Enhanced error handling in all optimization methods
+- Added installation helper methods
+- Improved status reporting
 2. **`app/gui/main_window.py`**
-   - Enhanced RKHunter optimization handler
-   - Added installation dialog with callback support
-   - Improved error message display
-   - Better integration with settings interface
+- Enhanced RKHunter optimization handler
+- Added installation dialog with callback support
+- Improved error message display
+- Better integration with settings interface
 
 ## Key Improvements
 
@@ -136,6 +160,7 @@ The RKHunter status widget now shows:
 ## Verification
 
 The solution was tested and verified to:
+
 - ✅ Detect missing RKHunter installation correctly
 - ✅ Provide appropriate installation commands (sudo pacman -S rkhunter)
 - ✅ Show user-friendly error messages instead of cryptic failures

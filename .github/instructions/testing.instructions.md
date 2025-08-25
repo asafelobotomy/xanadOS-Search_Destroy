@@ -1,5 +1,6 @@
 ---
-applyTo: "**/{test,tests,spec,__tests__}/**/*"
+applyTo: "**/{test,tests,spec,**tests**}/**/*"
+
 ---
 
 # Testing Excellence Standards
@@ -27,13 +28,20 @@ applyTo: "**/{test,tests,spec,__tests__}/**/*"
 ### Test modification policy (MANDATORY)
 
 - Do not alter tests just to make them pass. Fix the underlying issue in the
-	implementation or configuration instead.
+
+  implementation or configuration instead.
+
 - If a test is actually broken or deprecated, repair or update the test first
-	(minimal diff, clear rationale), then address any newly reported failures.
+
+  (minimal diff, clear rationale), then address any newly reported failures.
+
 - Avoid skipping or xfail-ing tests. If unavoidable, add a temporary quarantine
-	tag with a linked issue and an explicit removal date.
+
+  tag with a linked issue and an explicit removal date.
+
 - When a product bug is found via a failing test, add or keep a regression test
-	that proves the fix.
+
+  that proves the fix.
 
 ### Test Coverage Standards
 
@@ -83,52 +91,70 @@ comprehensive testing and quality tools available in the toolshed:
 #### Pre-Commit Testing Hooks
 
 ```bash
-# Setup comprehensive pre-commit testing hooks
-./scripts/tools/hooks/setup-pre-commit.sh --languages python,javascript,java
+
+## Setup comprehensive pre-commit testing hooks
+
+./scripts/tools/hooks/setup-pre-commit.sh --languages Python,JavaScript,java
 ./scripts/tools/hooks/setup-pre-commit.sh --testing-frameworks --dry-run
 ./scripts/tools/hooks/setup-pre-commit.sh --help  # View all options
-```
 
-#### Quality and Code Coverage Validation
+```text
+
+### Quality and Code Coverage Validation
 
 ```bash
-# Comprehensive quality checking with test coverage validation
+
+## Comprehensive quality checking with test coverage validation
+
 ./scripts/tools/quality/check-quality.sh --test-coverage --threshold 80
 ./scripts/tools/quality/check-quality.sh --lint-tests --fix
 ./scripts/tools/quality/check-quality.sh --validate-test-structure
-```
 
-#### Security Testing Integration
+```text
+
+### Security Testing Integration
 
 ```bash
-# Security testing for test environments and code
+
+## Security testing for test environments and code
+
 ./scripts/tools/security/security-scan.sh --test-env-only
 ./scripts/tools/security/security-scan.sh --sast-tests  # Static analysis of test code
-```
 
-#### Performance Testing and Monitoring
+```text
+
+### Performance Testing and Monitoring
 
 ```bash
-# Performance testing and benchmarking
+
+## Performance testing and benchmarking
+
 ./scripts/tools/monitoring/performance-monitor.sh --test-mode --duration 120
 ./scripts/tools/monitoring/performance-monitor.sh --benchmark-tests
-```
 
-#### Container Testing Support
+```text
 
-```bash
-# Container-based testing environments
-./scripts/tools/containers/docker-manager.sh --test-environment
-./scripts/tools/containers/docker-manager.sh --test-cleanup
-```
-
-#### Repository Structure Validation for Tests
+### Container Testing Support
 
 ```bash
-# Validate test organization and structure
+
+## Container-based testing environments
+
+./scripts/tools/containers/Docker-manager.sh --test-environment
+./scripts/tools/containers/Docker-manager.sh --test-cleanup
+
+```text
+
+### Repository Structure Validation for Tests
+
+```bash
+
+## Validate test organization and structure
+
 ./scripts/tools/validation/validate-structure.sh --category testing
 ./scripts/tools/validation/validate-structure.sh --test-coverage-report
-```
+
+```text
 
 ### Tool Benefits for Testing
 

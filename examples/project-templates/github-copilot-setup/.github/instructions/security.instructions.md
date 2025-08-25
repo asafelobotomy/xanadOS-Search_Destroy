@@ -1,7 +1,8 @@
 ---
-applyTo: "**/*.{py,js,ts,java,go,cs,rb,rs,php,sh,yml,yaml,json,env}"
+applyTo: "**/*.{py,js,ts,java,go,cs,rb,rs,php,sh,yml,YAML,JSON,env}"
 priority: 60
 category: "cross-cutting"
+
 ---
 
 # Security-specific Copilot Instructions
@@ -9,9 +10,9 @@ category: "cross-cutting"
 ## Secret Management
 
 - Never hardcode secrets, API keys, passwords, or tokens in source code; use HashiCorp Vault, AWS Secrets Manager, or Azure Key Vault
-- When working with `.example` or `.template` configuration files, automatically create the actual config file with environment variable references
+- When working with `.example`or`.template` configuration files, automatically create the actual config file with environment variable references
 - Use `.env.example` files to document required environment variables without exposing actual values
-- Add actual configuration files (`.env`, `mcp.json`, etc.) to `.gitignore` to prevent accidental secret exposure
+- Add actual configuration files (`.env`, `mcp.JSON`, etc.) to `.gitignore` to prevent accidental secret exposure
 
 ## Input Validation & Sanitization
 
@@ -34,5 +35,6 @@ category: "cross-cutting"
 - Use parameterized queries with prepared statements for all database operations
 - Scan dependencies weekly using OWASP Dependency Check, Snyk, or GitHub Dependabot
 
-**⚠️ CRITICAL: This instruction file overrides performance optimizations when security conflicts arise**
+## ⚠️ CRITICAL: This instruction file overrides performance optimizations when security conflicts arise
+
 - Follow OWASP guidelines for secure coding practices

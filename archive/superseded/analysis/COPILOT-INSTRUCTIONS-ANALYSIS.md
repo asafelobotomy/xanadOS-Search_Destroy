@@ -4,30 +4,30 @@
 
 ### What We Have ✅
 
-- **Chat Mode Files**: 5 files in `.github/chatmodes/` with `.chatmode.md` extension
-- **Prompt Files**: 7 files in `.github/prompts/` with `.prompt.md` extension
+- **Chat Mode Files**: 5 files in `.GitHub/chatmodes/`with`.chatmode.md` extension
+- **Prompt Files**: 7 files in `.GitHub/prompts/`with`.prompt.md` extension
 - **Comprehensive Validation System**: Complete validation framework for template quality
-- **Repo Template**: Basic `.github/copilot-instructions.md` in repo-template directory
+- **Repo Template**: Basic `.GitHub/Copilot-instructions.md` in repo-template directory
 - **Integration Framework**: Full testing and validation automation
 
 ### What We're Missing ❌
 
-## 1. 🚨 Critical: No Repository-Level copilot-instructions.md
+## 1. 🚨 Critical: No Repository-Level Copilot-instructions.md
 
-**Issue**: We don't have a `.github/copilot-instructions.md` file in the main repository
+**Issue**: We don't have a `.GitHub/Copilot-instructions.md` file in the main repository
 **Impact**: No central repository custom instructions for this specific project
-**GitHub Doc Reference**: All tools support `.github/copilot-instructions.md` as the primary custom instructions file
+**GitHub Doc Reference**: All tools support `.GitHub/Copilot-instructions.md` as the primary custom instructions file
 
 ## 2. 🚨 VS Code Prompt Files Configuration Missing
 
-**Issue**: No `.vscode/settings.json` with `"chat.promptFiles": true`
-**Impact**: VS Code users can't use our `.github/prompts/` files as prompt attachments
+**Issue**: No `.VS Code/settings.JSON`with`"chat.promptFiles": true`
+**Impact**: VS Code users can't use our `.GitHub/prompts/` files as prompt attachments
 **GitHub Doc Reference**: Requires workspace setting `"chat.promptFiles": true`
 
 ## 3. ⚠️ Non-Standard File Extensions
 
-**Issue**: Using `.chatmode.md` and `.prompt.md` extensions
-**Standard**: GitHub expects `.instructions.md` files in `.github/instructions/`
+**Issue**: Using `.chatmode.md`and`.prompt.md` extensions
+**Standard**: GitHub expects `.instructions.md`files in`.GitHub/instructions/`
 **Impact**: Our custom structure may not be recognized by some tools
 
 ## 4. ⚠️ Missing applyTo Frontmatter
@@ -47,7 +47,8 @@
 
 #### A. Create Repository-Level Custom Instructions
 
-Create `.github/copilot-instructions.md` for this specific repository with:
+Create `.GitHub/Copilot-instructions.md` for this specific repository with:
+
 - Project overview (GitHub Copilot Enhancement Framework)
 - Build instructions (validation system, testing)
 - Architecture description (validation, templates, configs)
@@ -55,40 +56,48 @@ Create `.github/copilot-instructions.md` for this specific repository with:
 
 #### B. Enable VS Code Prompt Files Support
 
-Create `.vscode/settings.json` with:
-```json
+Create `.VS Code/settings.JSON` with:
+
+```JSON
 {
   "chat.promptFiles": true
 }
-```markdown
+
+```Markdown
 
 ### Priority 2: Standards Compliance
 
 #### C. Consider Dual Structure Support
 
-Add standard `.github/instructions/` directory with:
-- `.instructions.md` files with `applyTo` frontmatter
-- Maintain current `.github/chatmodes/` and `.github/prompts/` for our validation system
+Add standard `.GitHub/instructions/` directory with:
+
+- `.instructions.md`files with`applyTo` frontmatter
+- Maintain current `.GitHub/chatmodes/`and`.GitHub/prompts/` for our validation system
 - Update validation system to support both structures
 
 #### D. Add applyTo Frontmatter to Existing Prompts
 
 Update prompt files with scoping, e.g.:
-```markdown
+
+```Markdown
+
 ---
-applyTo: ".github/validation/**/*.js"
+applyTo: ".GitHub/validation/**/*.js"
+
 ---
 
-# Security Review Prompt
+## Security Review Prompt
 
 ...
-```markdown
+
+```Markdown
 
 ### Priority 3: Enhanced Integration
 
 #### E. Repository Settings Documentation
 
 Create documentation for:
+
 - Enabling/disabling custom instructions in repository settings
 - Configuring Copilot code review settings
 - User-level VS Code settings configuration
@@ -101,7 +110,7 @@ Create documentation for:
 
 ## Compatibility Matrix
 
-| Tool | .github/copilot-instructions.md | .github/instructions/*.instructions.md | Our Custom Structure |
+| Tool | .GitHub/Copilot-instructions.md | .GitHub/instructions/*.instructions.md | Our Custom Structure |
 |------|--------------------------------|---------------------------------------|---------------------|
 | VS Code Chat | ✅ | ✅ | ⚠️ (partial) |
 | Copilot Coding Agent | ✅ | ✅ | ❌ |
@@ -122,7 +131,7 @@ Create documentation for:
 
 ### Compatibility Improvements: ✅ Significant
 
-- Adding `.github/copilot-instructions.md` enables support across all tools
+- Adding `.GitHub/Copilot-instructions.md` enables support across all tools
 - VS Code settings unlock prompt file functionality
 - Standard structure increases adoption potential
 
@@ -134,9 +143,9 @@ Create documentation for:
 
 ## Next Steps Recommendation
 
-1. **Immediate (30 min)**: Create `.github/copilot-instructions.md` and `.vscode/settings.json`
+1. **Immediate (30 min)**: Create `.GitHub/Copilot-instructions.md`and`.VS Code/settings.JSON`
 2. **Short-term (2 hours)**: Add `applyTo` frontmatter to existing prompts
-3. **Medium-term (1 day)**: Create parallel `.github/instructions/` structure
+3. **Medium-term (1 day)**: Create parallel `.GitHub/instructions/` structure
 4. **Long-term (ongoing)**: Monitor GitHub's evolution of custom instructions features
 
 This analysis ensures we're fully leveraging GitHub's official Copilot custom instructions capabilities while maintaining our advanced validation framework.

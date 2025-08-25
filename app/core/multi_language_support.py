@@ -3,18 +3,17 @@
 Multi-language Support System for S&D
 Provides internationalization (i18n) and localization (l10n) capabilities.
 """
+
 import gettext
 import json
 import locale
 import logging
-import os
-import re
 from dataclasses import dataclass, field
 from enum import Enum
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
-from PyQt6.QtCore import QCoreApplication, QLocale, QTranslator
+from PyQt6.QtCore import QCoreApplication, QTranslator
 from PyQt6.QtWidgets import QApplication
 
 
@@ -135,7 +134,7 @@ class MultiLanguageSupport:
 
                 # Create translation files if they don't exist
                 po_file = lang_dir / "s_and_d.po"
-                mo_file = lang_dir / "s_and_d.mo"
+                lang_dir / "s_and_d.mo"
 
                 if not po_file.exists():
                     self._create_initial_po_file(po_file, language)
@@ -262,15 +261,13 @@ class MultiLanguageSupport:
                 self._notify_language_change(old_language, language)
 
                 self.logger.info(
-                    "Language successfully changed to %s",
-                    language.english_name)
+                    "Language successfully changed to %s", language.english_name
+                )
                 return True
             else:
                 # Revert on failure
                 self.current_language = old_language
-                self.logger.error(
-                    "Failed to set language to %s",
-                    language.english_name)
+                self.logger.error("Failed to set language to %s", language.english_name)
                 return False
 
         except Exception as e:
@@ -428,13 +425,8 @@ class MultiLanguageSupport:
                 # German format: 1.234,56
                 formatted = f"{number:,.{decimal_places}f}"
                 formatted = (
-                    formatted.replace(
-                        ",",
-                        "X").replace(
-                        ".",
-                        ",").replace(
-                        "X",
-                        "."))
+                    formatted.replace(",", "X").replace(".", ",").replace("X", ".")
+                )
             elif self.current_language == SupportedLanguage.FRENCH:
                 # French format: 1 234,56
                 formatted = f"{number:,.{decimal_places}f}"
@@ -481,8 +473,7 @@ class MultiLanguageSupport:
             import math
 
             size = abs(size_bytes)
-            unit_index = min(
-                int(math.floor(math.log(size, 1024))), len(unit_list) - 1)
+            unit_index = min(int(math.floor(math.log(size, 1024))), len(unit_list) - 1)
 
             if unit_index == 0:
                 return f"{size_bytes} {unit_list[0]}"
@@ -544,14 +535,16 @@ class MultiLanguageSupport:
                         "completed", False
                     ):
                         export_data["translations"][category][key] = {
-                            "original": translation_data["default_text"], "context": translation_data.get(
-                                "context", ""), "description": translation_data.get(
-                                "description", ""), "translation": translation_data.get(
-                                "translation", ""), "completed": translation_data.get(
-                                "completed", False), }
+                            "original": translation_data["default_text"],
+                            "context": translation_data.get("context", ""),
+                            "description": translation_data.get("description", ""),
+                            "translation": translation_data.get("translation", ""),
+                            "completed": translation_data.get("completed", False),
+                        }
 
             export_data["metadata"]["total_strings"] = sum(
-                len(strings) for strings in export_data["translations"].values())
+                len(strings) for strings in export_data["translations"].values()
+            )
 
             # Write to file
             with open(output_file, "w", encoding="utf-8") as f:
@@ -584,8 +577,7 @@ class MultiLanguageSupport:
             imported_count = 0
 
             # Process translations by category
-            for category, translations in import_data.get(
-                    "translations", {}).items():
+            for category, translations in import_data.get("translations", {}).items():
                 for key, translation_data in translations.items():
                     if translation_data.get(
                         "completed", False
@@ -638,10 +630,7 @@ class MultiLanguageSupport:
             }
 
             for category, strings in all_strings.items():
-                category_stats = {
-                    "total": len(strings),
-                    "translated": 0,
-                    "missing": []}
+                category_stats = {"total": len(strings), "translated": 0, "missing": []}
 
                 for key in strings.keys():
                     full_key = f"{category}.{key}"
@@ -670,10 +659,7 @@ class MultiLanguageSupport:
 
     # Private methods
 
-    def _create_initial_po_file(
-            self,
-            po_file: Path,
-            language: SupportedLanguage):
+    def _create_initial_po_file(self, po_file: Path, language: SupportedLanguage):
         """Create initial PO file with headers."""
         try:
             po_content = f"""# S&D Antivirus Translation File
@@ -733,10 +719,7 @@ msgstr ""
                 return False
 
         except Exception as e:
-            self.logger.error(
-                "Error loading translations for %s: %s",
-                language.code,
-                e)
+            self.logger.error("Error loading translations for %s: %s", language.code, e)
             return False
 
     def _update_qt_translators(self, language: SupportedLanguage):
@@ -758,16 +741,12 @@ msgstr ""
 
             # Load Qt translations
             qt_translation_file = f"qt_{language.code}"
-            if self.qt_translator.load(
-                qt_translation_file, str(
-                    self.languages_dir)):
+            if self.qt_translator.load(qt_translation_file, str(self.languages_dir)):
                 app.installTranslator(self.qt_translator)
 
             # Load application translations
             app_translation_file = f"s_and_d_{language.code}"
-            if self.app_translator.load(
-                app_translation_file, str(
-                    self.languages_dir)):
+            if self.app_translator.load(app_translation_file, str(self.languages_dir)):
                 app.installTranslator(self.app_translator)
 
         except Exception as e:
@@ -781,8 +760,7 @@ msgstr ""
             # Emit Qt language change event
             app = QApplication.instance()
             if app:
-                QCoreApplication.postEvent(
-                    app, QCoreApplication.LanguageChange)
+                QCoreApplication.postEvent(app, QCoreApplication.LanguageChange)
 
             # Could emit custom signals here for application components
             self.logger.info(
@@ -836,8 +814,7 @@ msgstr ""
                 return template
 
         except Exception as e:
-            self.logger.warning(
-                "Error formatting string '%s': %s", template, e)
+            self.logger.warning("Error formatting string '%s': %s", template, e)
             return template
 
     def _collect_translatable_strings(self) -> Dict[str, Dict[str, Any]]:
@@ -897,11 +874,8 @@ msgstr ""
         return {}
 
     def _store_translation(
-            self,
-            language: SupportedLanguage,
-            category: str,
-            key: str,
-            translation: str):
+        self, language: SupportedLanguage, category: str, key: str, translation: str
+    ):
         """Store translation in database/file."""
         # This would store in the appropriate translation file
         pass
@@ -917,8 +891,7 @@ msgstr ""
 _translation_system = None
 
 
-def initialize_translations(
-        languages_dir: str = "locales") -> MultiLanguageSupport:
+def initialize_translations(languages_dir: str = "locales") -> MultiLanguageSupport:
     """Initialize the global translation system."""
     global _translation_system
     _translation_system = MultiLanguageSupport(languages_dir)
@@ -931,9 +904,8 @@ def get_translation_system() -> Optional[MultiLanguageSupport]:
 
 
 def _(
-        text: str,
-        category: TranslationCategory = TranslationCategory.UI_GENERAL,
-        **kwargs) -> str:
+    text: str, category: TranslationCategory = TranslationCategory.UI_GENERAL, **kwargs
+) -> str:
     """
     Quick translation function.
 
@@ -971,8 +943,7 @@ def ngettext(
         Translated text with correct plural form
     """
     if _translation_system:
-        return _translation_system.translate_plural(
-            singular, count, category, **kwargs)
+        return _translation_system.translate_plural(singular, count, category, **kwargs)
     return singular if count == 1 else plural
 
 
@@ -1105,16 +1076,17 @@ def demonstrate_translations():
         SupportedLanguage.FRENCH,
         SupportedLanguage.GERMAN,
     ]:
-
         system.set_language(language)
 
         print(f"\n--- {language.english_name} ---")
         print(f"App Name: {_('app_name')}")
         print(f"Scan: {_('scan')}")
         print(f"Settings: {_('settings')}")
-        print(f"Files scanned: {_('files_scanned',
-                                  TranslationCategory.SCAN_OPERATIONS,
-                                  count=150)}")
+        print(
+            f"Files scanned: {
+                _('files_scanned', TranslationCategory.SCAN_OPERATIONS, count=150)
+            }"
+        )
         print(f"File size: {format_file_size(1024 * 1024 * 2.5)}")
         print(f"Number: {format_number(1234.56)}")
 

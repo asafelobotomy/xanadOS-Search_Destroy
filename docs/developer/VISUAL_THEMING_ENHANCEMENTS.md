@@ -7,15 +7,19 @@ The centralized theming system has been enhanced with significantly improved vis
 ## Key Visual Enhancements
 
 ### 1. **Enhanced Color Palettes**
+
 **Before:** Basic color scheme with limited depth
-```css
+
+```CSS
 background: #1a1a1a;
 secondary_bg: #2a2a2a;
 accent: #F14666;
-```
+
+```text
 
 **After:** Rich, layered color system with visual depth
-```css
+
+```CSS
 background: #1e1e1e;
 secondary_bg: #2d2d2d;
 card_bg: #252525;
@@ -25,32 +29,41 @@ accent_bright: #FF7043;
 accent_dark: #D84315;
 success: #4CAF50;
 success_bright: #66BB6A;
-```
+
+```text
 
 ### 2. **Gradient Backgrounds**
+
 **Before:** Flat color backgrounds
-```css
+
+```CSS
 QDialog {
     background-color: #1a1a1a;
 }
-```
+
+```text
 
 **After:** Modern gradient backgrounds with depth
-```css
+
+```CSS
 QDialog {
     background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
                                 stop: 0 #323232,
                                 stop: 1 #252525);
 }
-```
+
+```text
 
 ### 3. **Enhanced Status Cards**
+
 **Before:** Basic frames with minimal styling
+
 - Simple background colors
 - Basic borders
 - Limited visual feedback
 
 **After:** Modern elevated cards with visual appeal
+
 - Gradient backgrounds for depth
 - Enhanced hover effects with transform
 - Improved typography and spacing
@@ -58,16 +71,20 @@ QDialog {
 - Professional card elevation
 
 ### 4. **Interactive Elements**
+
 **Before:** Simple color changes on hover
-```css
+
+```CSS
 QPushButton:hover {
     background-color: #4a4a4a;
     border-color: #F14666;
 }
-```
+
+```text
 
 **After:** Rich interactive feedback
-```css
+
+```CSS
 QPushButton:hover {
     background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
                                 stop: 0 #FF7043,
@@ -76,11 +93,14 @@ QPushButton:hover {
     color: white;
     transform: translateY(-1px);
 }
-```
+
+```text
 
 ### 5. **Visual Hierarchy**
+
 **Before:** Limited visual differentiation
 **After:** Clear visual layers with:
+
 - Multiple background levels (background → secondary_bg → card_bg → elevated_bg)
 - Enhanced typography with shadows
 - Better spacing and padding
@@ -89,15 +109,18 @@ QPushButton:hover {
 ## Dashboard Card Enhancements
 
 ### Status Cards (Real-Time Protection, Firewall, etc.)
-**Enhanced Features:**
+
+### Enhanced Features
+
 - Gradient backgrounds for depth
 - Improved hover animations
 - Better typography hierarchy
 - Enhanced visual feedback
 - Professional elevation appearance
 
-**Styling Examples:**
-```css
+### Styling Examples
+
+```CSS
 QFrame#statusCard {
     background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
                                 stop: 0 #323232,
@@ -114,23 +137,27 @@ QFrame#statusCard:hover {
     border-color: #FF5722;
     transform: translateY(-2px);
 }
-```
+
+```text
 
 ## Benefits Achieved
 
 ### ✅ **Visual Appeal**
+
 - Modern, professional appearance
 - Rich color gradients and depth
 - Enhanced visual feedback
 - Improved user experience
 
 ### ✅ **Systematic Approach Maintained**
+
 - All enhancements work through the centralized system
 - No manual theme application required
 - Consistent across all components
 - Easy to maintain and extend
 
 ### ✅ **Performance**
+
 - Global stylesheet approach maintains efficiency
 - Single point of style management
 - Optimized gradient rendering
@@ -139,8 +166,11 @@ QFrame#statusCard:hover {
 ## Technical Implementation
 
 ### Color System Architecture
-```python
-# Extended color palette with visual depth
+
+```Python
+
+## Extended color palette with visual depth
+
 "colors": {
     "background": "#1e1e1e",        # Base background
     "secondary_bg": "#2d2d2d",      # Secondary level
@@ -151,37 +181,46 @@ QFrame#statusCard:hover {
     "accent_dark": "#D84315",       # Darker accent
     "success": "#4CAF50",           # Success states
     "success_bright": "#66BB6A",    # Bright success
-    # ... and more semantic colors
+
+## ... and more semantic colors
+
 }
-```
+
+```text
 
 ### Gradient System
-```css
-/* Depth through gradients */
+
+```CSS
+/_Depth through gradients_/
 background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
                             stop: 0 {elevated_color},
                             stop: 1 {base_color});
-```
+
+```text
 
 ### Enhanced Interactions
-```css
-/* Modern hover feedback */
+
+```CSS
+/_Modern hover feedback_/
 :hover {
     transform: translateY(-1px);
     background: enhanced_gradient;
     border-color: accent_bright;
 }
-```
+
+```text
 
 ## User Experience Impact
 
 ### **Before:** Functional but visually basic
+
 - Standard Qt appearance
 - Limited visual feedback
 - Basic color scheme
 - Flat design elements
 
 ### **After:** Modern, engaging interface
+
 - Professional gradient-based design
 - Rich visual feedback and animations
 - Vibrant, cohesive color scheme

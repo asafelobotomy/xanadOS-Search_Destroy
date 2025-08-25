@@ -3,6 +3,7 @@
 Event processor for intelligent handling of file system events
 Filters, prioritizes, and processes file events for real-time monitoring
 """
+
 import fnmatch
 import logging
 import threading
@@ -11,7 +12,7 @@ from collections import defaultdict, deque
 from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional, Set
+from typing import Any, Callable, Dict, List, Optional
 
 from .file_watcher import WatchEvent, WatchEventType
 
@@ -75,8 +76,7 @@ class EventProcessor:
 
         # Event filtering
         self.ignored_extensions = {".tmp", ".swp", ".log", ".cache", ".lock"}
-        self.ignored_directories = {
-            "__pycache__", ".git", ".svn", "node_modules"}
+        self.ignored_directories = {"__pycache__", ".git", ".svn", "node_modules"}
         self.max_event_rate = 100  # events per second
         self.event_rate_window = {}  # path -> list of timestamps
 
@@ -124,9 +124,7 @@ class EventProcessor:
 
             # Check event rate limiting
             if not self._check_event_rate(event):
-                self.logger.debug(
-                    "Event rate limit exceeded for %s",
-                    event.file_path)
+                self.logger.debug("Event rate limit exceeded for %s", event.file_path)
                 return None
 
             # Find matching rule
@@ -168,8 +166,8 @@ class EventProcessor:
                 try:
                     self.alert_callback(
                         event.file_path,
-                        f"Alert triggered by rule: {
-                            rule.name}")
+                        f"Alert triggered by rule: {rule.name}",
+                    )
                 except Exception as e:
                     self.logger.error("Error in alert callback: %s", e)
 
@@ -183,10 +181,7 @@ class EventProcessor:
             return processed
 
         except Exception as e:
-            self.logger.error(
-                "Error processing event for %s: %s",
-                event.file_path,
-                e)
+            self.logger.error("Error processing event for %s: %s", event.file_path, e)
             return None
 
     def _should_process_event(self, event: WatchEvent) -> bool:
@@ -198,8 +193,7 @@ class EventProcessor:
             return False
 
         # Skip directories for certain event types
-        if event.is_directory and event.event_type in [
-                WatchEventType.FILE_MODIFIED]:
+        if event.is_directory and event.event_type in [WatchEventType.FILE_MODIFIED]:
             return False
 
         # Skip ignored file extensions
@@ -251,9 +245,7 @@ class EventProcessor:
                     continue
 
                 # Check file pattern
-                if not fnmatch.fnmatch(
-                        event.file_path.lower(),
-                        rule.pattern.lower()):
+                if not fnmatch.fnmatch(event.file_path.lower(), rule.pattern.lower()):
                     continue
 
                 # Check additional conditions
@@ -264,10 +256,7 @@ class EventProcessor:
 
         return None
 
-    def _check_rule_conditions(
-            self,
-            event: WatchEvent,
-            rule: EventRule) -> bool:
+    def _check_rule_conditions(self, event: WatchEvent, rule: EventRule) -> bool:
         """Check if event meets rule conditions."""
         if not rule.conditions:
             return True
@@ -277,8 +266,10 @@ class EventProcessor:
         # Check file size condition
         if "max_file_size" in rule.conditions:
             try:
-                if (file_path.exists() and file_path.stat().st_size >
-                        rule.conditions["max_file_size"]):
+                if (
+                    file_path.exists()
+                    and file_path.stat().st_size > rule.conditions["max_file_size"]
+                ):
                     return False
             except (OSError, IOError):
                 pass
@@ -357,9 +348,7 @@ class EventProcessor:
             EventRule(
                 name="scan_new_executables",
                 pattern="*.exe",
-                event_types=[
-                    WatchEventType.FILE_CREATED,
-                    WatchEventType.FILE_MODIFIED],
+                event_types=[WatchEventType.FILE_CREATED, WatchEventType.FILE_MODIFIED],
                 action=EventAction.SCAN,
                 priority=90,
             ),
@@ -367,9 +356,7 @@ class EventProcessor:
             EventRule(
                 name="scan_scripts",
                 pattern="*.{py,sh,bat,ps1,vbs}",
-                event_types=[
-                    WatchEventType.FILE_CREATED,
-                    WatchEventType.FILE_MODIFIED],
+                event_types=[WatchEventType.FILE_CREATED, WatchEventType.FILE_MODIFIED],
                 action=EventAction.SCAN,
                 priority=80,
             ),
@@ -385,9 +372,7 @@ class EventProcessor:
             EventRule(
                 name="scan_archives",
                 pattern="*.{zip,rar,tar,gz,7z}",
-                event_types=[
-                    WatchEventType.FILE_CREATED,
-                    WatchEventType.FILE_MODIFIED],
+                event_types=[WatchEventType.FILE_CREATED, WatchEventType.FILE_MODIFIED],
                 action=EventAction.SCAN,
                 priority=60,
             ),
@@ -395,9 +380,7 @@ class EventProcessor:
             EventRule(
                 name="alert_system_changes",
                 pattern="/etc/*",
-                event_types=[
-                    WatchEventType.FILE_MODIFIED,
-                    WatchEventType.FILE_DELETED],
+                event_types=[WatchEventType.FILE_MODIFIED, WatchEventType.FILE_DELETED],
                 action=EventAction.ALERT,
                 priority=50,
             ),
@@ -405,9 +388,7 @@ class EventProcessor:
             EventRule(
                 name="ignore_temp_files",
                 pattern="*.{tmp,swp,log,cache}",
-                event_types=[
-                    WatchEventType.FILE_CREATED,
-                    WatchEventType.FILE_MODIFIED],
+                event_types=[WatchEventType.FILE_CREATED, WatchEventType.FILE_MODIFIED],
                 action=EventAction.IGNORE,
                 priority=10,
             ),

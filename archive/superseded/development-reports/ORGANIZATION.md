@@ -13,26 +13,27 @@ agent-instructions-co-pilot/
 ├── 📄 CONTRIBUTING.md              # Contribution guidelines
 ├── ⚙️ .editorconfig               # Cross-platform editor settings
 ├── ⚙️ .prettierrc                 # Code formatting configuration
-├── ⚙️ .markdownlint.json          # Markdown linting rules
+├── ⚙️ .markdownlint.JSON          # Markdown linting rules
 ├── ⚙️ .prettierignore             # Prettier exclusion patterns
 ├── ⚙️ .gitignore                  # Git ignore patterns
 ├── ⚙️ .gitattributes              # Git file handling rules
-├── 📦 package.json                # Node.js dependencies
-├── 📦 package-lock.json           # Locked dependency versions
-├── 📁 .github/                    # GitHub-specific configurations
-├── 📁 .vscode/                    # VS Code workspace settings
+├── 📦 package.JSON                # Node.js dependencies
+├── 📦 package-lock.JSON           # Locked dependency versions
+├── 📁 .GitHub/                    # GitHub-specific configurations
+├── 📁 .VS Code/                    # VS Code workspace settings
 ├── 📁 docs/                       # Comprehensive documentation
 ├── 📁 scripts/                    # Automation and utility scripts
 ├── 📁 examples/                   # Example implementations
 ├── 📁 archive/                    # Historical and deprecated content
 ├── 📁 ci/                         # Continuous integration configs
 └── 📁 node_modules/               # Node.js dependencies (auto-generated)
-```markdown
 
-## 🔧 **GitHub Configuration (.github/)**
+```Markdown
 
-```markdown
-.github/
+## 🔧 **GitHub Configuration (.GitHub/)**
+
+```Markdown
+.GitHub/
 ├── 📁 chatmodes/                  # GitHub Copilot chat mode configurations
 │   ├── 🎯 architect.chatmode.md
 │   ├── 🔒 security.chatmode.md
@@ -50,7 +51,7 @@ agent-instructions-co-pilot/
 │   ├── ⚡ performance-optimization.prompt.md
 │   ├── 🧪 tdd-implementation.prompt.md
 │   ├── 🔄 code-refactoring.prompt.md
-│   ├── 🎨 api-design.prompt.md
+│   ├── 🎨 API-design.prompt.md
 │   ├── 💾 database-optimization.prompt.md
 │   └── 🚀 deployment-strategy.prompt.md
 ├── 📁 instructions/               # Mandatory policy instructions
@@ -63,11 +64,12 @@ agent-instructions-co-pilot/
 ├── 📁 workflows/                  # GitHub Actions CI/CD
 ├── 📁 validation/                 # Testing and validation frameworks
 └── 📁 mcp/                        # Model Context Protocol configurations
-```markdown
+
+```Markdown
 
 ## 📚 **Documentation Structure (docs/)**
 
-```markdown
+```Markdown
 docs/
 ├── 📄 README.md                   # Documentation overview and navigation
 ├── 📁 guides/                     # User-facing documentation
@@ -89,7 +91,7 @@ docs/
     ├── 📁 completed-phases/       # Phase-based implementation reports
     │   ├── 📊 PHASE-2-REPORT.md
     │   ├── 📊 PHASE-3-REPORT.md
-    │   ├── 🎯 COPILOT-OPTIMIZATION-SUMMARY.md
+    │   ├── 🎯 Copilot-OPTIMIZATION-SUMMARY.md
     │   └── 🔧 CRITICAL-FIXES-SUMMARY.md
     ├── 📁 policy-implementations/ # Policy and organizational reports
     │   ├── ⚡ code-quality-implementation.md
@@ -99,31 +101,34 @@ docs/
         ├── 🖥️ BACKEND-IMPROVEMENTS.md
         ├── 💻 VS_CODE_ENHANCEMENTS.md
         └── 🔧 SYSTEM-INTEGRITY-FIXES.md
-```markdown
+
+```Markdown
 
 ## 🛠️ **Scripts Directory (scripts/)**
 
-```markdown
+```Markdown
 scripts/
 ├── 🔍 validate-policies.sh       # Policy compliance validation
 ├── 🏗️ verify-structure.sh        # Repository structure verification
 ├── 🔗 generate-install-links.sh  # VS Code install link generation
 └── 📝 update-readme.js           # README maintenance automation
-```markdown
+
+```Markdown
 
 ## 📦 **Examples Directory (examples/)**
 
-```markdown
+```Markdown
 examples/
 └── 📁 project-templates/         # Template repositories and setups
-    └── 📁 github-copilot-setup/  # Complete Copilot enhancement templates
-        └── 📁 .github/
+    └── 📁 GitHub-Copilot-setup/  # Complete Copilot enhancement templates
+        └── 📁 .GitHub/
             └── 📁 instructions/   # Technology-specific instruction examples
-```markdown
+
+```Markdown
 
 ## 🗄️ **Archive Directory (archive/)**
 
-```markdown
+```Markdown
 archive/
 ├── 📄 README.md                  # Archive policy and guidelines
 ├── 📄 ARCHIVE_INDEX.md          # Comprehensive content index
@@ -136,7 +141,8 @@ archive/
 └── 📁 superseded/              # Replaced content archive
     ├── 📄 README.md
     └── 📁 [YYYY-MM-DD]/
-```markdown
+
+```Markdown
 
 ## 🎯 **Organizational Principles**
 
@@ -169,28 +175,29 @@ archive/
 - 📋 [Main README](../README.md) - Project overview and quick start
 - 🔧 [Installation Guide](guides/installation.md) - Setup instructions
 - 📚 [Documentation Index](README.md) - Complete documentation overview
-- 🎯 [Chat Modes](../.github/chatmodes/) - GitHub Copilot enhancements
-- 📝 [Prompts](../.github/prompts/) - Reusable prompt templates
-- 🔒 [Security Policy](../.github/instructions/security.instructions.md)
-- 🧪 [Testing Standards](../.github/instructions/testing.instructions.md)
+- 🎯 [Chat Modes](../.GitHub/chatmodes/) - GitHub Copilot enhancements
+- 📝 [Prompts](../.GitHub/prompts/) - Reusable prompt templates
+- 🔒 [Security Policy](../.GitHub/instructions/security.instructions.md)
+- 🧪 [Testing Standards](../.GitHub/instructions/testing.instructions.md)
 
 ### **For Contributors**
 
 - 📋 [Contributing Guidelines](../CONTRIBUTING.md)
-- 📁 [File Organization Policy](../.github/instructions/file-organization.instructions.md)
+- 📁 [File Organization Policy](../.GitHub/instructions/file-organization.instructions.md)
 - 🔍 [Validation Scripts](../scripts/)
 - 📊 [Implementation Reports](implementation-reports/)
 
 ### **For Developers**
 
-- 🎨 [Code Quality Standards](../.github/instructions/code-quality.instructions.md)
-- 🔧 [VS Code Setup](../.vscode/)
+- 🎨 [Code Quality Standards](../.GitHub/instructions/code-quality.instructions.md)
+- 🔧 [VS Code Setup](../.VS Code/)
 - 📦 [Project Templates](../examples/project-templates/)
-- 🤖 [AI Enhancement Tools](../.github/chatmodes/)
+- 🤖 [AI Enhancement Tools](../.GitHub/chatmodes/)
 
 ## ✅ **Maintenance**
 
 This organizational structure is maintained through:
+
 - 🔍 **Automated Validation**: `scripts/validate-policies.sh`
 - 📝 **Policy Enforcement**: Mandatory file organization instructions
 - 🔄 **Regular Reviews**: Quarterly assessment and updates
@@ -198,4 +205,4 @@ This organizational structure is maintained through:
 
 ---
 
-**This guide ensures consistent, professional repository organization that scales with project growth and maintains clarity for all contributors.**
+## This guide ensures consistent, professional repository organization that scales with project growth and maintains clarity for all contributors

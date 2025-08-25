@@ -1,17 +1,18 @@
 """Secure subprocess execution helpers.
-
 Centralizes command execution with:
 - Allowlist enforcement / pattern validation
 - Default timeouts
 - Sanitized environment (PATH, no dangerous overrides)
 - Optional root elevation prevention
 """
+
 from __future__ import annotations
+
 import os
+import re
 import shlex
 import subprocess
-import re
-from typing import Sequence, Mapping, Optional
+from typing import Mapping, Optional, Sequence
 
 DEFAULT_TIMEOUT = 60
 SAFE_PATH = "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
@@ -24,7 +25,7 @@ ALLOWED_BINARIES = {
     "systemctl",
     "kill",
     "pkexec",  # still allow, but can gate
-    "sudo",     # consider removing; prefer pkexec GUI
+    "sudo",  # consider removing; prefer pkexec GUI
     "ufw",
     "firewall-cmd",
     "iptables",
@@ -41,6 +42,7 @@ ALLOWED_BINARIES = {
 
 # Simple disallowed pattern for arguments (shell metachars not expected in argv elements)
 _ARG_UNSAFE_RE = re.compile(r"[;&|><`$(){}]\s*")
+
 
 def _is_allowed(argv: Sequence[str]) -> bool:
     if not argv:
@@ -62,9 +64,16 @@ def _sanitized_env(extra: Optional[Mapping[str, str]] = None) -> Mapping[str, st
     return env
 
 
-def run_secure(argv: Sequence[str], *, timeout: int = DEFAULT_TIMEOUT, check: bool = False,
-               allow_root: bool = False, env: Optional[Mapping[str, str]] = None,
-               capture_output: bool = True, text: bool = True) -> subprocess.CompletedProcess:
+def run_secure(
+    argv: Sequence[str],
+    *,
+    timeout: int = DEFAULT_TIMEOUT,
+    check: bool = False,
+    allow_root: bool = False,
+    env: Optional[Mapping[str, str]] = None,
+    capture_output: bool = True,
+    text: bool = True,
+) -> subprocess.CompletedProcess:
     """Run a subprocess with security constraints.
 
     Raises ValueError if binary not in allowlist.
@@ -92,14 +101,23 @@ def run_secure(argv: Sequence[str], *, timeout: int = DEFAULT_TIMEOUT, check: bo
 def quote_for_logging(argv: Sequence[str]) -> str:
     return " ".join(shlex.quote(a) for a in argv)
 
+
 __all__ = [
     "run_secure",
     "quote_for_logging",
 ]
 
 
-def popen_secure(argv: Sequence[str], *, allow_root: bool = False, env: Optional[Mapping[str, str]] = None,
-                 text: bool = True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, bufsize: int = 1) -> subprocess.Popen:
+def popen_secure(
+    argv: Sequence[str],
+    *,
+    allow_root: bool = False,
+    env: Optional[Mapping[str, str]] = None,
+    text: bool = True,
+    stdout=subprocess.PIPE,
+    stderr=subprocess.PIPE,
+    bufsize: int = 1,
+) -> subprocess.Popen:
     """Popen variant with same security constraints as run_secure.
 
     Returns a subprocess.Popen object. Caller responsible for communicating / waiting.
@@ -119,5 +137,6 @@ def popen_secure(argv: Sequence[str], *, allow_root: bool = False, env: Optional
         stderr=stderr,
         bufsize=bufsize,
     )
+
 
 __all__.append("popen_secure")

@@ -1,18 +1,20 @@
 #!/usr/bin/env python3
-"""
-Database optimization module for xanadOS Search & Destroy
+"""Database optimization module for xanadOS Search & Destroy
 Provides efficient database operations and connection management
 """
+
 import logging
 import queue
+import re
 import sqlite3
 import threading
 import time
-import weakref
 from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Dict, List, Optional
+
+from app.utils.config import load_config
 
 
 @dataclass
@@ -27,22 +29,21 @@ class QueryStats:
 
 
 class DatabaseConnectionPool:
-    """
-    Thread-safe database connection pool with automatic management.
-    """
+    """Thread-safe database connection pool with automatic management."""
 
     def __init__(
-            self,
-            database_path: str,
-            max_connections: int = 5,
-            timeout: float = 30.0):
-        """
-        Initialize connection pool.
+        self,
+        database_path: str,
+        max_connections: int = 5,
+        timeout: float = 30.0,
+    ):
+        """Initialize connection pool.
 
         Args:
             database_path: Path to SQLite database file
             max_connections: Maximum number of connections in pool
             timeout: Connection timeout in seconds
+
         """
         self.database_path = database_path
         self.max_connections = max_connections
@@ -63,14 +64,14 @@ class DatabaseConnectionPool:
             Path(self.database_path).parent.mkdir(parents=True, exist_ok=True)
 
             # Create initial connections
-            for _ in range(
-                    min(2, self.max_connections)):  # Start with 2 connections
+            for _ in range(min(2, self.max_connections)):  # Start with 2 connections
                 conn = self._create_connection()
                 if conn:
                     self.pool.put(conn)
 
-        except Exception as e:
-            self.logger.error("Failed to initialize connection pool: %s", e)
+        except Exception:
+            # Log full stack for easier diagnostics
+            self.logger.exception("Failed to initialize connection pool")
 
     def _create_connection(self) -> Optional[sqlite3.Connection]:
         """Create a new database connection."""
@@ -78,7 +79,8 @@ class DatabaseConnectionPool:
             conn = sqlite3.connect(
                 self.database_path,
                 timeout=self.timeout,
-                check_same_thread=False)
+                check_same_thread=False,
+            )
 
             # Configure connection for performance
             conn.execute("PRAGMA journal_mode=WAL")  # Write-Ahead Logging
@@ -96,21 +98,22 @@ class DatabaseConnectionPool:
                 self.created_connections += 1
 
             self.logger.debug(
-                "Created database connection #%d", self.created_connections
+                "Created database connection #%d",
+                self.created_connections,
             )
             return conn
 
-        except Exception as e:
-            self.logger.error("Failed to create database connection: %s", e)
+        except Exception:
+            self.logger.exception("Failed to create database connection")
             return None
 
     @contextmanager
     def get_connection(self):
-        """
-        Get a connection from the pool.
+        """Get a connection from the pool.
 
         Yields:
             Database connection
+
         """
         conn = None
         try:
@@ -131,8 +134,8 @@ class DatabaseConnectionPool:
 
             yield conn
 
-        except Exception as e:
-            self.logger.error("Database connection error: %s", e)
+        except Exception:
+            self.logger.exception("Database connection error")
             # Close broken connection
             if conn:
                 try:
@@ -172,16 +175,14 @@ class DatabaseConnectionPool:
 
 
 class QueryOptimizer:
-    """
-    Database query optimizer with caching and performance monitoring.
-    """
+    """Database query optimizer with caching and performance monitoring."""
 
     def __init__(self, connection_pool: DatabaseConnectionPool):
-        """
-        Initialize query optimizer.
+        """Initialize query optimizer.
 
         Args:
             connection_pool: Database connection pool
+
         """
         self.connection_pool = connection_pool
         self.logger = logging.getLogger(__name__)
@@ -214,10 +215,12 @@ class QueryOptimizer:
         return not any(func in query_lower for func in volatile_functions)
 
     def execute_query(
-        self, query: str, params: tuple = (), cache_results: bool = True
+        self,
+        query: str,
+        params: tuple = (),
+        cache_results: bool = True,
     ) -> List[sqlite3.Row]:
-        """
-        Execute optimized database query.
+        """Execute optimized database query.
 
         Args:
             query: SQL query string
@@ -226,10 +229,10 @@ class QueryOptimizer:
 
         Returns:
             Query results
+
         """
         start_time = time.time()
-        cache_key = self._get_cache_key(
-            query, params) if cache_results else None
+        cache_key = self._get_cache_key(query, params) if cache_results else None
 
         # Check cache first
         if cache_key and self._should_cache_query(query):
@@ -256,8 +259,7 @@ class QueryOptimizer:
                             # Remove oldest 25% of entries
                             items_to_remove = len(self.query_cache) // 4
                             for _ in range(items_to_remove):
-                                self.query_cache.pop(
-                                    next(iter(self.query_cache)))
+                                self.query_cache.pop(next(iter(self.query_cache)))
 
                         self.query_cache[cache_key] = results
 
@@ -267,21 +269,22 @@ class QueryOptimizer:
 
                 return results
 
-        except Exception as e:
-            self.logger.error("Query execution failed: %s", e)
+        except Exception:
+            self.logger.exception("Query execution failed")
             self.logger.debug("Failed query: %s", query)
             raise
 
     def execute_transaction(self, queries: List[tuple]) -> bool:
-        """
-        Execute multiple queries in a transaction.
+        """Execute multiple queries in a transaction.
 
         Args:
             queries: List of (query, params) tuples
 
         Returns:
             True if transaction succeeded, False otherwise
+
         """
+        conn = None
         try:
             with self.connection_pool.get_connection() as conn:
                 conn.execute("BEGIN TRANSACTION")
@@ -292,10 +295,11 @@ class QueryOptimizer:
                 conn.execute("COMMIT")
                 return True
 
-        except Exception as e:
-            self.logger.error("Transaction failed: %s", e)
+        except Exception:
+            self.logger.exception("Transaction failed")
             try:
-                conn.execute("ROLLBACK")
+                if conn is not None:
+                    conn.execute("ROLLBACK")
             except BaseException:
                 pass
             return False
@@ -321,7 +325,6 @@ class QueryOptimizer:
     def _normalize_query(self, query: str) -> str:
         """Normalize query for statistics grouping."""
         # Simple normalization - replace literal values with placeholders
-        import re
 
         normalized = query.lower()
         # Replace string literals
@@ -361,21 +364,19 @@ class QueryOptimizer:
 
             self.logger.info("Database optimization completed")
 
-        except Exception as e:
-            self.logger.error("Database optimization failed: %s", e)
+        except Exception:
+            self.logger.exception("Database optimization failed")
 
 
 class ScanResultsDB:
-    """
-    Optimized database manager for scan results.
-    """
+    """Optimized database manager for scan results."""
 
     def __init__(self, database_path: str):
-        """
-        Initialize scan results database.
+        """Initialize scan results database.
 
         Args:
             database_path: Path to database file
+
         """
         self.database_path = database_path
         self.logger = logging.getLogger(__name__)
@@ -440,19 +441,19 @@ class ScanResultsDB:
 
             self.logger.info("Database schema initialized")
 
-        except Exception as e:
-            self.logger.error("Failed to initialize database schema: %s", e)
+        except Exception:
+            self.logger.exception("Failed to initialize database schema")
             raise
 
     def create_scan_session(self, scan_type: str) -> int:
-        """
-        Create a new scan session.
+        """Create a new scan session.
 
         Args:
             scan_type: Type of scan
 
         Returns:
             Session ID
+
         """
         query = """
         INSERT INTO scan_sessions (start_time, scan_type, status)
@@ -469,12 +470,14 @@ class ScanResultsDB:
                     raise RuntimeError("Failed to get session ID")
 
             self.logger.info(
-                "Created scan session %d for type '%s'", session_id, scan_type
+                "Created scan session %d for type '%s'",
+                session_id,
+                scan_type,
             )
             return session_id
 
-        except Exception as e:
-            self.logger.error("Failed to create scan session: %s", e)
+        except Exception:
+            self.logger.exception("Failed to create scan session")
             raise
 
     def add_scan_result(
@@ -485,8 +488,7 @@ class ScanResultsDB:
         scan_result: str,
         threat_name: Optional[str] = None,
     ):
-        """
-        Add scan result to database.
+        """Add scan result to database.
 
         Args:
             session_id: Scan session ID
@@ -494,6 +496,7 @@ class ScanResultsDB:
             file_size: Size of file in bytes
             scan_result: Scan result (CLEAN, INFECTED, ERROR)
             threat_name: Name of threat if infected
+
         """
         query = """
         INSERT INTO scan_results
@@ -505,30 +508,28 @@ class ScanResultsDB:
             with self.connection_pool.get_connection() as conn:
                 conn.execute(
                     query,
-                    (session_id,
-                     file_path,
-                     file_size,
-                     scan_result,
-                     threat_name))
+                    (session_id, file_path, file_size, scan_result, threat_name),
+                )
                 conn.commit()
 
-        except Exception as e:
-            self.logger.error("Failed to add scan result: %s", e)
+        except Exception:
+            self.logger.exception("Failed to add scan result")
 
     def finish_scan_session(
-            self,
-            session_id: int,
-            total_files: int,
-            infected_files: int,
-            errors: int):
-        """
-        Mark scan session as completed.
+        self,
+        session_id: int,
+        total_files: int,
+        infected_files: int,
+        errors: int,
+    ):
+        """Mark scan session as completed.
 
         Args:
             session_id: Scan session ID
             total_files: Total number of files scanned
             infected_files: Number of infected files found
             errors: Number of errors encountered
+
         """
         query = """
         UPDATE scan_sessions
@@ -539,24 +540,23 @@ class ScanResultsDB:
 
         try:
             with self.connection_pool.get_connection() as conn:
-                conn.execute(
-                    query, (total_files, infected_files, errors, session_id))
+                conn.execute(query, (total_files, infected_files, errors, session_id))
                 conn.commit()
 
             self.logger.info("Completed scan session %d", session_id)
 
-        except Exception as e:
-            self.logger.error("Failed to finish scan session: %s", e)
+        except Exception:
+            self.logger.exception("Failed to finish scan session")
 
     def get_recent_sessions(self, limit: int = 10) -> List[sqlite3.Row]:
-        """
-        Get recent scan sessions.
+        """Get recent scan sessions.
 
         Args:
             limit: Maximum number of sessions to return
 
         Returns:
             List of scan session records
+
         """
         query = """
         SELECT * FROM scan_sessions
@@ -567,11 +567,11 @@ class ScanResultsDB:
         return self.query_optimizer.execute_query(query, (limit,))
 
     def cleanup_old_sessions(self, days_to_keep: int = 30):
-        """
-        Clean up old scan sessions and results.
+        """Clean up old scan sessions and results.
 
         Args:
             days_to_keep: Number of days of data to keep
+
         """
         cleanup_queries = [
             (
@@ -579,28 +579,24 @@ class ScanResultsDB:
             DELETE FROM scan_results
             WHERE session_id IN (
                 SELECT id FROM scan_sessions
-                WHERE start_time < datetime('now', '-{} days')
+                WHERE start_time < datetime('now', '-? days')
             )
-            """.format(
-                    days_to_keep
-                ),
-                (),
+            """,
+                (days_to_keep,),
             ),
             (
                 """
             DELETE FROM scan_sessions
-            WHERE start_time < datetime('now', '-{} days')
-            """.format(
-                    days_to_keep
-                ),
-                (),
+            WHERE start_time < datetime('now', '-? days')
+            """,
+                (days_to_keep,),
             ),
         ]
 
         if self.query_optimizer.execute_transaction(cleanup_queries):
             self.logger.info(
-                "Cleaned up scan data older than %d days",
-                days_to_keep)
+                "Cleaned up scan data older than %d days", days_to_keep
+            )
         else:
             self.logger.error("Failed to clean up old scan data")
 
@@ -617,8 +613,6 @@ def get_scan_db() -> ScanResultsDB:
     """Get global scan results database instance."""
     global scan_db
     if scan_db is None:
-        from utils.config import load_config
-
         config = load_config()
         db_path = config.get("database", {}).get("path", "scan_results.db")
         scan_db = ScanResultsDB(db_path)

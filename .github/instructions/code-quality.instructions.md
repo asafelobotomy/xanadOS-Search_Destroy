@@ -1,5 +1,6 @@
 ---
 applyTo: "**/*.{js,ts,tsx,jsx,py,rb,go,java,php,cs,rs,kt,swift,sh,md}"
+
 ---
 
 # Code Quality and Formatting Standards - MANDATORY
@@ -40,14 +41,21 @@ repositories.
 ## Placeholders, TODOs, and Stubs Policy (MANDATORY)
 
 - Avoid unnecessary placeholders/stubs. Prefer delivering minimal, working
+
   implementations or omitting features until ready.
+
 - When a placeholder/TODO is unavoidable, you MUST:
-  - Use a clear marker in code or docs: `TODO(scope): description` or
-    `PLACEHOLDER(scope): description` with an expected resolution date.
-  - Open a tracking issue and reference it inline (e.g., `(#123)`), or add it
-    to the repository placeholder log (see below).
-  - Minimize surface area: keep the stub small, isolated, and non-breaking.
+- Use a clear marker in code or docs: `TODO(scope): description` or
+
+  `PLACEHOLDER(scope): description` with an expected resolution date.
+
+- Open a tracking issue and reference it inline (e.g., `(#123)`), or add it
+
+  to the repository placeholder log (see below).
+
+- Minimize surface area: keep the stub small, isolated, and non-breaking.
 - The repository SHOULD have little to no placeholders. Clean them as a priority
+
   during refactors or when touching nearby code.
 
 ## Shell Script Standards (ShellCheck)
@@ -58,21 +66,22 @@ repositories.
 
 ```bash
 
-# Docker-based linting (recommended)
+## Docker-based linting (recommended)
 
-docker run --rm -v "$PWD:/mnt" koalaman/shellcheck:stable scripts/**/*.sh
+Docker run --rm -v "$PWD:/mnt" koalaman/shellcheck:stable scripts/**/*.sh
 
-# Local installation
+## Local installation
 
 sudo apt-get install shellcheck  # Ubuntu/Debian
 brew install shellcheck          # macOS
-```markdown
 
-#### Mandatory Configuration
+```Markdown
 
-```yaml
+### Mandatory Configuration
 
-# .github/workflows/shellcheck.yml
+```YAML
+
+## .GitHub/workflows/shellcheck.yml
 
 name: ShellCheck
 on: [push, pull_request]
@@ -80,54 +89,66 @@ jobs:
   shellcheck:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - name: Run ShellCheck
-        uses: docker://koalaman/shellcheck:stable
-        with:
-          args: --severity=warning scripts/**/*.sh
-```markdown
 
-#### Shell Script Quality Standards
+- uses: actions/checkout@v3
+- name: Run ShellCheck
 
-**Shebang Requirements:**
-```bash
-#!/bin/bash          # For bash-specific features
-#!/bin/sh            # For POSIX compatibility
-```markdown
+  uses: Docker://koalaman/shellcheck:stable
+  with:
+  args: --severity=warning scripts/**/*.sh
 
-**Quoting Standards:**
+```Markdown
+
+### Shell Script Quality Standards
+
+### Shebang Requirements
+
 ```bash
 
-# CORRECT: Always quote variables
+## !/bin/bash          # For bash-specific features
+
+## !/bin/sh            # For POSIX compatibility
+
+```Markdown
+
+### Quoting Standards
+
+```bash
+
+## CORRECT: Always quote variables
 
 echo "$var"
 echo "${array[@]}"
 
-# INCORRECT: Unquoted variables
+## INCORRECT: Unquoted variables
 
 echo $var
 echo ${array[@]}
-```markdown
 
-**Error Handling:**
+```Markdown
+
+### Error Handling
+
 ```bash
 
-# MANDATORY: Set error handling
+## MANDATORY: Set error handling
 
 set -euo pipefail
 
-# MANDATORY: Check command success
+## MANDATORY: Check command success
 
-if ! command -v git >/dev/null 2>&1; then
-    echo "Error: git is required" >&2
+if ! command -v Git >/dev/null 2>&1; then
+    echo "Error: Git is required" >&2
     exit 1
 fi
-```markdown
 
-**Portability Requirements:**
-- Use `[[ ]]` for bash, `[ ]` for POSIX sh
+```Markdown
+
+### Portability Requirements
+
+- Use `[[ ]]`for bash,`[ ]` for POSIX sh
 - Avoid bash-specific features in `#!/bin/sh` scripts
-- Use `printf` instead of `echo` for portable output
+- Use `printf`instead of`echo` for portable output
 - Test with different shells when claiming POSIX compliance
 
 ### Shell Formatting Standards (shfmt)
@@ -136,16 +157,17 @@ fi
 
 ```bash
 
-# Format all scripts with Google Shell Style Guide
+## Format all scripts with Google Shell Style Guide
 
 shfmt -i 2 -ci -w scripts/**/*.sh
 
-# CI/CD integration
+## CI/CD integration
 
 shfmt -i 2 -ci -d scripts/**/*.sh  # Check without modifying
-```markdown
 
-#### Formatting Rules
+```Markdown
+
+### Formatting Rules
 
 - **Indentation**: 2 spaces (no tabs)
 - **Case Indentation**: Enabled (`-ci`)
@@ -154,25 +176,27 @@ shfmt -i 2 -ci -d scripts/**/*.sh  # Check without modifying
 
 ## Markdown Standards (markdownlint)
 
-### Core Requirements
+### Core Requirements 2
 
 #### Installation and Setup
 
 ```bash
 
-# Global installation
+## Global installation
 
 npm install -g markdownlint-cli2
 
-# Project-specific
+## Project-specific
 
 npm install --save-dev markdownlint-cli2
-```markdown
 
-#### Mandatory Configuration
+```Markdown
 
-**`.markdownlint.json`:**
-```json
+### Mandatory Configuration 2
+
+### `.markdownlint.JSON`
+
+```JSON
 {
   "default": true,
   "MD003": { "style": "atx" },
@@ -186,32 +210,38 @@ npm install --save-dev markdownlint-cli2
   "MD040": true,
   "MD041": false
 }
-```markdown
+
+```Markdown
 
 #### Critical Rules Enforcement
 
-**Heading Standards:**
+### Heading Standards
+
 - MD001: Heading levels increment by one
 - MD003: ATX heading style (`# Header`)
 - MD022: Headings surrounded by blank lines
 
-**Code Block Standards:**
+### Code Block Standards
+
 - MD031: Fenced code blocks surrounded by blank lines
 - MD040: Fenced code blocks have language specified
 
-**List Standards:**
+### List Standards
+
 - MD007: Unordered list indentation (2 spaces)
 - MD032: Lists surrounded by blank lines
 
-**Line Standards:**
+### Line Standards
+
 - MD009: No trailing spaces
 - MD012: No multiple consecutive blank lines
 - MD013: Line length limit (100 characters)
 
 ### VS Code Integration
 
-**`.vscode/settings.json`:**
-```json
+### `.VS Code/settings.JSON`
+
+```JSON
 {
   "markdownlint.config": {
     "MD013": { "line_length": 100 },
@@ -221,29 +251,32 @@ npm install --save-dev markdownlint-cli2
     "MD040": true
   }
 }
-```markdown
+
+```Markdown
 
 ## Code Formatting Standards (Prettier)
 
-### Core Requirements
+### Core Requirements 3
 
 #### Installation and Configuration
 
 ```bash
 
-# Project installation
+## Project installation
 
 npm install --save-dev prettier
 
-# Global installation
+## Global installation 2
 
 npm install -g prettier
-```markdown
 
-#### Mandatory Configuration
+```Markdown
 
-**`.prettierrc`:**
-```json
+### Mandatory Configuration 3
+
+### `.prettierrc`
+
+```JSON
 {
   "printWidth": 100,
   "tabWidth": 2,
@@ -258,83 +291,92 @@ npm install -g prettier
   "endOfLine": "lf",
   "embeddedLanguageFormatting": "auto"
 }
-```markdown
 
-**`.prettierignore`:**
+```Markdown
+
+### `.prettierignore`
+
 ```text
 
-# Dependencies
+## Dependencies
 
 node_modules/
 vendor/
 
-# Build outputs
+## Build outputs
 
 dist/
 build/
-*.min.*
 
-# Generated files
+_.min._
+
+## Generated files
 
 coverage/
 .next/
 .nuxt/
 
-# Documentation
+## Documentation
 
 docs/generated/
-```markdown
 
-#### Language-Specific Standards
+```Markdown
 
-**JavaScript/TypeScript:**
+### Language-Specific Standards
+
+### JavaScript/TypeScript
+
 - Single quotes for strings
 - Semicolons required
 - Trailing commas in multiline structures
 - 2-space indentation
 
-**JSON:**
+### JSON
+
 - Double quotes (JSON standard)
 - No trailing commas
 - 2-space indentation
 
-**CSS/SCSS:**
+### CSS/SCSS
+
 - Single quotes for strings
 - No trailing semicolons on last property
 - 2-space indentation
 
-### VS Code Integration
+### VS Code Integration 2
 
-**`.vscode/settings.json`:**
-```json
+### `.VS Code/settings.JSON` 2
+
+```JSON
 {
-  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "editor.defaultFormatter": "esbenp.prettier-VS Code",
   "editor.formatOnSave": true,
   "editor.formatOnPaste": true,
   "prettier.requireConfig": true,
   "prettier.useEditorConfig": false,
-  "[javascript]": {
-    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  "[JavaScript]": {
+    "editor.defaultFormatter": "esbenp.prettier-VS Code"
   },
   "[typescript]": {
-    "editor.defaultFormatter": "esbenp.prettier-vscode"
+    "editor.defaultFormatter": "esbenp.prettier-VS Code"
   },
-  "[json]": {
-    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  "[JSON]": {
+    "editor.defaultFormatter": "esbenp.prettier-VS Code"
   }
 }
-```markdown
+
+```Markdown
 
 ## EditorConfig Standards
 
-### Core Requirements
+### Core Requirements 4
 
 #### Mandatory `.editorconfig`
 
 ```ini
 root = true
 
-# All files
+## All files
 
 [*]
 charset = utf-8
@@ -344,60 +386,63 @@ trim_trailing_whitespace = true
 indent_style = space
 indent_size = 2
 
-# JavaScript/TypeScript
+## JavaScript/TypeScript 2
 
 [*.{js,ts,jsx,tsx}]
 indent_size = 2
 quote_type = single
 
-# Python/Java/C-based languages
+## Python/Java/C-based languages
 
 [*.{py,java,c,cpp,cs,go,rs,kt}]
 indent_size = 4
 
-# Makefile (requires tabs)
+## Makefile (requires tabs)
 
 [Makefile]
 indent_style = tab
 
-# Markdown (preserve trailing spaces for line breaks)
+## Markdown (preserve trailing spaces for line breaks)
 
 [*.md]
 trim_trailing_whitespace = false
 
-# Windows batch files
+## Windows batch files
 
 [*.bat]
 end_of_line = crlf
 
-# Tab-separated values
+## Tab-separated values
 
 [*.tsv]
 indent_style = tab
 
-# YAML
+## YAML
 
-[*.{yml,yaml}]
+[*.{yml,YAML}]
 indent_size = 2
 
-# XML/HTML
+## XML/HTML
 
-[*.{xml,html}]
+[*.{XML,HTML}]
 indent_size = 2
 
-# Configuration files
+## Configuration files
 
-[*.{json,jsonc}]
+[*.{JSON,jsonc}]
 indent_size = 2
-```markdown
+
+```Markdown
 
 ### Platform-Specific Rules
 
-**Windows Compatibility:**
+### Windows Compatibility
+
 - Batch files: `end_of_line = crlf`
 - PowerShell scripts: `end_of_line = crlf`
 
-**Unix Compatibility:**
+### Unix Compatibility
+
 - Shell scripts: `end_of_line = lf`
 - All other files: `end_of_line = lf`
 
@@ -407,7 +452,7 @@ indent_size = 2
 
 #### GitHub Actions Example
 
-```yaml
+```YAML
 name: Code Quality
 on: [push, pull_request]
 
@@ -415,64 +460,82 @@ jobs:
   lint-and-format:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: '18'
+- uses: actions/checkout@v3
+- name: Setup Node.js
 
-      - name: Install dependencies
-        run: npm ci
+  uses: actions/setup-node@v3
+  with:
+  node-version: '18'
 
-      - name: Run ShellCheck
-        uses: docker://koalaman/shellcheck:stable
-        with:
-          args: --severity=warning scripts/**/*.sh
+- name: Install dependencies
 
-      - name: Lint Markdown
-        run: npx markdownlint-cli2 "**/*.md"
+  run: npm ci
 
-      - name: Check Prettier formatting
-        run: npx prettier --check .
+- name: Run ShellCheck
 
-      - name: Validate EditorConfig
-        uses: editorconfig-checker/action-editorconfig-checker@main
-```markdown
+  uses: Docker://koalaman/shellcheck:stable
+  with:
+  args: --severity=warning scripts/**/*.sh
+
+- name: Lint Markdown
+
+  run: npx markdownlint-cli2 "**/*.md"
+
+- name: Check Prettier formatting
+
+  run: npx prettier --check .
+
+- name: Validate EditorConfig
+
+  uses: editorconfig-checker/action-editorconfig-checker@main
+
+```Markdown
 
 ### Pre-commit Hooks
 
-**`.pre-commit-config.yaml`:**
-```yaml
+### `.pre-commit-config.YAML`
+
+```YAML
 repos:
-  - repo: https://github.com/shellcheck-py/shellcheck-py
-    rev: v0.9.0.6
-    hooks:
-      - id: shellcheck
-        args: [--severity=warning]
 
-  - repo: https://github.com/igorshubovych/markdownlint-cli
-    rev: v0.37.0
-    hooks:
-      - id: markdownlint
+- repo: <HTTPS://GitHub.com/shellcheck-py/shellcheck-py>
 
-  - repo: https://github.com/pre-commit/mirrors-prettier
-    rev: v3.0.3
-    hooks:
-      - id: prettier
+  rev: v0.9.0.6
+  hooks:
 
-  - repo: https://github.com/editorconfig-checker/editorconfig-checker.python
-    rev: 2.7.3
-    hooks:
-      - id: editorconfig-checker
-```markdown
+- id: shellcheck
+
+  args: [--severity=warning]
+
+- repo: <HTTPS://GitHub.com/igorshubovych/markdownlint-cli>
+
+  rev: v0.37.0
+  hooks:
+
+- id: markdownlint
+- repo: <HTTPS://GitHub.com/pre-commit/mirrors-prettier>
+
+  rev: v3.0.3
+  hooks:
+
+- id: prettier
+- repo: <HTTPS://GitHub.com/editorconfig-checker/editorconfig-checker.Python>
+
+  rev: 2.7.3
+  hooks:
+
+- id: editorconfig-checker
+
+```Markdown
 
 ### VS Code Workspace Configuration
 
-**`.vscode/settings.json` (Complete):**
-```json
+### `.VS Code/settings.JSON` (Complete)
+
+```JSON
 {
-  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "editor.defaultFormatter": "esbenp.prettier-VS Code",
   "editor.formatOnSave": true,
   "editor.formatOnPaste": true,
   "editor.codeActionsOnSave": {
@@ -493,47 +556,49 @@ repos:
   "[shellscript]": {
     "editor.defaultFormatter": "foxundermoon.shell-format"
   },
-  "[markdown]": {
-    "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "[Markdown]": {
+    "editor.defaultFormatter": "esbenp.prettier-VS Code",
     "editor.wordWrap": "on"
   }
 }
-```markdown
+
+```Markdown
 
 ## Validation and Compliance
 
 ### Automated Validation Tools
 
 ```bash
-#!/bin/bash
 
-# validate-code-quality.sh
+## !/bin/bash
+
+## validate-code-quality.sh
 
 set -euo pipefail
 
 echo "🔍 Running code quality checks..."
 
-# ShellCheck validation
+## ShellCheck validation
 
 if command -v shellcheck >/dev/null 2>&1; then
     echo "📋 Checking shell scripts..."
     find . -name "*.sh" -type f -exec shellcheck {} +
 else
     echo "⚠️  ShellCheck not found, using Docker..."
-    docker run --rm -v "$PWD:/mnt" koalaman/shellcheck:stable scripts/**/*.sh
+    Docker run --rm -v "$PWD:/mnt" koalaman/shellcheck:stable scripts/**/*.sh
 fi
 
-# Markdown validation
+## Markdown validation
 
 if command -v markdownlint-cli2 >/dev/null 2>&1; then
-    echo "📝 Checking markdown files..."
+    echo "📝 Checking Markdown files..."
     markdownlint-cli2 "**/*.md"
 else
     echo "⚠️  markdownlint-cli2 not found"
     exit 1
 fi
 
-# Prettier validation
+## Prettier validation
 
 if command -v prettier >/dev/null 2>&1; then
     echo "🎨 Checking code formatting..."
@@ -543,7 +608,7 @@ else
     exit 1
 fi
 
-# EditorConfig validation
+## EditorConfig validation
 
 if command -v editorconfig-checker >/dev/null 2>&1; then
     echo "⚙️  Checking EditorConfig compliance..."
@@ -553,7 +618,8 @@ else
 fi
 
 echo "✅ All code quality checks passed!"
-```markdown
+
+```Markdown
 
 ### Compliance Checklist
 
@@ -562,7 +628,7 @@ echo "✅ All code quality checks passed!"
 - [ ] ShellCheck configuration present and functional
 - [ ] All shell scripts pass ShellCheck validation
 - [ ] Markdown linting configuration implemented
-- [ ] All markdown files pass linting rules
+- [ ] All Markdown files pass linting rules
 - [ ] Prettier configuration exists and enforced
 - [ ] All code files formatted consistently
 - [ ] EditorConfig file present and comprehensive
@@ -572,15 +638,17 @@ echo "✅ All code quality checks passed!"
 
 #### Quality Gates
 
-**Blocking Issues:**
+### Blocking Issues
+
 - ShellCheck errors (not warnings)
-- Critical markdown violations (MD031, MD040, MD022)
+- Critical Markdown violations (MD031, MD040, MD022)
 - Prettier formatting inconsistencies
 - EditorConfig violations
 
-**Warning Issues:**
+### Warning Issues
+
 - ShellCheck warnings
-- Non-critical markdown style issues
+- Non-critical Markdown style issues
 - Performance optimization opportunities
 
 ## Implementation Requirements
@@ -588,60 +656,60 @@ echo "✅ All code quality checks passed!"
 ### For GitHub Copilot Agents
 
 1. **Immediate Compliance**
-   - Install required tools (shellcheck, markdownlint-cli2, prettier)
-   - Create configuration files in repository root
-   - Run initial validation and fix all issues
-   - Set up VS Code workspace integration
-
+- Install required tools (shellcheck, markdownlint-cli2, prettier)
+- Create configuration files in repository root
+- Run initial validation and fix all issues
+- Set up VS Code workspace integration
 2. **Ongoing Responsibilities**
-   - Enforce quality standards on all new code
-   - Monitor and fix quality regressions
-   - Update configurations as tools evolve
-   - Train team members on quality standards
-
+- Enforce quality standards on all new code
+- Monitor and fix quality regressions
+- Update configurations as tools evolve
+- Train team members on quality standards
 3. **Reporting Requirements**
-   - Document quality metrics and trends
-   - Report blocking issues immediately
-   - Track compliance across repositories
-   - Maintain audit trails for quality changes
+- Document quality metrics and trends
+- Report blocking issues immediately
+- Track compliance across repositories
+- Maintain audit trails for quality changes
 
 ### Tool Installation Commands
 
 ```bash
 
-# Complete setup script
+## Complete setup script
 
-#!/bin/bash
+## !/bin/bash 2
+
 set -euo pipefail
 
 echo "🚀 Setting up code quality tools..."
 
-# Install ShellCheck
+## Install ShellCheck
 
 if ! command -v shellcheck >/dev/null 2>&1; then
-    if [[ "$OSTYPE" == "linux"* ]]; then
+    if [["$OSTYPE" == "Linux"*]]; then
         sudo apt-get update && sudo apt-get install -y shellcheck
-    elif [[ "$OSTYPE" == "darwin"* ]]; then
+    elif [["$OSTYPE" == "darwin"*]]; then
         brew install shellcheck
     fi
 fi
 
-# Install Node.js tools
+## Install Node.js tools
 
 npm install -g markdownlint-cli2 prettier
 
-# Install VS Code extensions (if VS Code is available)
+## Install VS Code extensions (if VS Code is available)
 
 if command -v code >/dev/null 2>&1; then
-    code --install-extension DavidAnson.vscode-markdownlint
-    code --install-extension esbenp.prettier-vscode
+    code --install-extension DavidAnson.VS Code-markdownlint
+    code --install-extension esbenp.prettier-VS Code
     code --install-extension timonwong.shellcheck
     code --install-extension EditorConfig.EditorConfig
     code --install-extension foxundermoon.shell-format
 fi
 
 echo "✅ Code quality tools installation complete!"
-```
+
+```text
 
 ## Automated Quality Tools Integration
 
@@ -653,27 +721,36 @@ toolshed before creating custom quality scripts:
 #### Quality Management Tool
 
 ```bash
-# Comprehensive quality checking with auto-fix capabilities
-./scripts/tools/quality/check-quality.sh --check markdown --fix
-./scripts/tools/quality/check-quality.sh --format json --report quality.json
+
+## Comprehensive quality checking with auto-fix capabilities
+
+./scripts/tools/quality/check-quality.sh --check Markdown --fix
+./scripts/tools/quality/check-quality.sh --format JSON --report quality.JSON
 ./scripts/tools/quality/check-quality.sh --help  # View all options
-```
 
-#### Pre-Commit Quality Gates
+```text
+
+### Pre-Commit Quality Gates
 
 ```bash
-# Setup comprehensive pre-commit hooks with quality validation
-./scripts/tools/hooks/setup-pre-commit.sh --languages python,javascript
+
+## Setup comprehensive pre-commit hooks with quality validation
+
+./scripts/tools/hooks/setup-pre-commit.sh --languages Python,JavaScript
 ./scripts/tools/hooks/setup-pre-commit.sh --security-scanning --dry-run
-```
 
-#### Integration with Repository Management
+```text
+
+### Integration with Repository Management
 
 ```bash
-# Repository structure validation with quality checks
+
+## Repository structure validation with quality checks
+
 ./scripts/tools/validation/validate-structure.sh --category quality
-./scripts/tools/validation/validate-structure.sh --json --output results.json
-```
+./scripts/tools/validation/validate-structure.sh --JSON --output results.JSON
+
+```text
 
 ### Tool Benefits
 
@@ -703,7 +780,7 @@ as part of code quality requirements. This includes:
 
 - Conventional commit message templates (`.gitmessage`)
 - Standardized Git aliases for productivity
-- Semantic versioning with `VERSION` file and `CHANGELOG.md`
+- Semantic versioning with `VERSION`file and`CHANGELOG.md`
 - Comprehensive `.gitignore` with project-appropriate patterns
 
 #### CI/CD Quality Gates
@@ -716,41 +793,50 @@ as part of code quality requirements. This includes:
 #### Required Workflows
 
 ```bash
-# Implement version control before any code work
-./.github/instructions/version-control.instructions.md
 
-# Validate implementation
+## Implement version control before any code work
+
+./.GitHub/instructions/version-control.instructions.md
+
+## Validate implementation
+
 ./scripts/validation/validate-version-control.sh
 
-# Use conventional commits
-git commit -m "feat: implement code quality standards
+## Use conventional commits
+
+Git commit -m "feat: implement code quality standards
 
 - Add ShellCheck, markdownlint, and Prettier configuration
 - Set up CI/CD workflows with quality gates
 - Configure VS Code workspace for consistent formatting
 - Implement pre-commit hooks for quality validation"
-```
 
-#### Quality Integration Commands
+```text
+
+### Quality Integration Commands
 
 ```bash
-# Combined quality and version control validation
+
+## Combined quality and version control validation
+
 ./scripts/validation/validate-code-quality.sh
 ./scripts/validation/validate-version-control.sh
 
-# Git workflow with quality checks
-./scripts/utils/git-workflow.sh feature code-quality-improvements
-```
+## Git workflow with quality checks
 
-See `.github/instructions/version-control.instructions.md` for complete implementation details.
+./scripts/utils/Git-workflow.sh feature code-quality-improvements
+
+```text
+
+See `.GitHub/instructions/version-control.instructions.md` for complete implementation details.
 
 ## Related Policies
 
-- **Version Control Policy**: `.github/instructions/version-control.instructions.md` - MANDATORY
-- Documentation Policy: `.github/instructions/docs-policy.instructions.md`
-- Archive Management Policy: `.github/instructions/archive-policy.instructions.md`
-- Security Guidelines: `.github/instructions/security.instructions.md`
-- Testing Standards: `.github/instructions/testing.instructions.md`
+- **Version Control Policy**: `.GitHub/instructions/version-control.instructions.md` - MANDATORY
+- Documentation Policy: `.GitHub/instructions/docs-policy.instructions.md`
+- Archive Management Policy: `.GitHub/instructions/archive-policy.instructions.md`
+- Security Guidelines: `.GitHub/instructions/security.instructions.md`
+- Testing Standards: `.GitHub/instructions/testing.instructions.md`
 
 ## Policy Metadata
 
@@ -764,4 +850,5 @@ See `.github/instructions/version-control.instructions.md` for complete implemen
 **ENFORCEMENT NOTICE**: This policy is MANDATORY for all GitHub Copilot agents.
 Non-compliance will result in repository quality issues and additional oversight
 procedures. All code work must follow these standards without exception.
-**Version control implementation is a prerequisite for all development work.**
+
+## Version control implementation is a prerequisite for all development work

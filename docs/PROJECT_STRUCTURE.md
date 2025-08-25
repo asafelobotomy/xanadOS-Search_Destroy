@@ -1,32 +1,33 @@
 # 🗂️ Project Structure
 
 ## Overview
+
 This document describes the organization structure of the xanadOS Search & Destroy project.
 
 ## 📁 Directory Structure
 
-```
+```text
 xanadOS-Search_Destroy/
 ├── app/                          # 🎯 Main application code
-│   ├── __init__.py
+│   ├── **init**.py
 │   ├── main.py                   # Application entry point
 │   ├── core/                     # Core functionality
-│   │   ├── __init__.py
+│   │   ├── **init**.py
 │   │   ├── async_scanner.py      # Asynchronous scanning engine
 │   │   ├── clamav_wrapper.py     # ClamAV integration
 │   │   ├── file_scanner.py       # File scanning logic
 │   │   ├── system_hardening.py   # Security hardening assessment
 │   │   └── ...
 │   ├── gui/                      # User interface components
-│   │   ├── __init__.py
+│   │   ├── **init**.py
 │   │   ├── main_window.py        # Main application window
 │   │   ├── system_hardening_tab.py # Security hardening interface
 │   │   └── ...
 │   ├── monitoring/               # System monitoring
-│   │   ├── __init__.py
+│   │   ├── **init**.py
 │   │   └── ...
 │   └── utils/                    # Utility functions
-│       ├── __init__.py
+│       ├── **init**.py
 │       └── ...
 ├── archive/                      # 📦 Archived/deprecated code
 │   ├── README.md
@@ -39,7 +40,7 @@ xanadOS-Search_Destroy/
 │   ├── *.rules                   # Security rules
 │   ├── *.policy                  # PolicyKit policies
 │   ├── *.conf.example           # Configuration templates
-│   └── *.json                    # JSON configurations
+│   └── *.JSON                    # JSON configurations
 ├── dev/                          # 🔧 Development tools and utilities
 │   ├── analysis/                 # Code analysis tools
 │   ├── debug/                    # Debugging utilities
@@ -82,14 +83,13 @@ xanadOS-Search_Destroy/
 │   ├── check-organization.py     # Repository organization checker
 │   └── ...
 ├── tests/                        # 🧪 Unit and integration tests
-│   ├── __init__.py
+│   ├── **init**.py
 │   ├── conftest.py               # Test configuration
-│   ├── test_gui.py               # GUI tests
-│   ├── test_implementation.py    # Implementation tests
-│   └── test_monitoring.py        # Monitoring tests
+	│   ├── test_gui.py               # GUI tests
+	│   └── test_monitoring.py        # Monitoring tests
 ├── tools/                        # 🛠️ External tools
 │   └── flatpak-pip-generator     # Flatpak dependency generator
-├── .github/                      # 🔄 GitHub workflows
+├── .GitHub/                      # 🔄 GitHub workflows
 ├── .venv/                        # 🐍 Python virtual environment
 ├── CHANGELOG.md                  # 📝 Change log
 ├── LICENSE                       # 📄 License file
@@ -99,31 +99,37 @@ xanadOS-Search_Destroy/
 ├── requirements-dev.txt          # 📋 Development dependencies
 ├── run.sh                        # 🚀 Application launcher
 └── VERSION                       # 🏷️ Version file
-```
+
+```text
 
 ## 🎯 Organization Principles
 
 ### Core Application (`app/`)
+
 - **Purpose**: Production application code only
 - **Structure**: Modular organization by functionality
 - **Rules**: No temporary files, demos, or development tools
 
 ### Development (`dev/`)
+
 - **Purpose**: Development tools, utilities, and experimental code
 - **Structure**: Organized by tool type and purpose
 - **Rules**: All development scripts and tools go here
 
 ### Documentation (`docs/`)
+
 - **Purpose**: All project documentation
 - **Structure**: Organized by audience and document type
 - **Rules**: Generated reports and documentation only
 
 ### Configuration (`config/`)
+
 - **Purpose**: Configuration files and templates
 - **Structure**: Files organized by type and usage
 - **Rules**: Production configuration only
 
 ### Testing (`tests/`)
+
 - **Purpose**: Formal unit and integration tests
 - **Structure**: Mirror the `app/` structure
 - **Rules**: Only pytest-compatible test files
@@ -142,14 +148,16 @@ xanadOS-Search_Destroy/
 - ✅ Keep related files together
 - ✅ Separate production code from development tools
 - ✅ Use clear file naming conventions
-- ✅ Add `__init__.py` files to Python packages
+- ✅ Add `**init**.py` files to Python packages
 - ✅ Document the purpose of each directory
 
 ## 🔧 Maintenance
 
 Run the organization checker regularly:
+
 ```bash
-python scripts/check-organization.py
-```
+Python scripts/check-organization.py
+
+```text
 
 This will identify any organizational issues and suggest fixes.

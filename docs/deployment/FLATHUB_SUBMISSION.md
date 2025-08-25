@@ -13,14 +13,17 @@ This guide walks you through the process of submitting S&D - Search & Destroy to
 ## Quick Start
 
 1. **Prepare the submission:**
-   ```bash
-   ./scripts/prepare-flathub.sh
-   ```
+
+  ```bash
+  ./scripts/prepare-flathub.sh
+
+```text
 
 2. **Test the build locally:**
-   ```bash
-   ./scripts/test-flatpak-build.sh
-   ```
+
+  ```bash
+  ./scripts/test-flatpak-build.sh
+```text
 
 3. **Submit to Flathub following the steps below.**
 
@@ -31,99 +34,121 @@ This guide walks you through the process of submitting S&D - Search & Destroy to
 Before submitting, ensure your Flatpak builds correctly:
 
 ```bash
-# Test the build
+
+## Test the build
+
 ./scripts/test-flatpak-build.sh
 
-# Run the application
-flatpak run io.github.asafelobotomy.SearchAndDestroy
-```
+## Run the application
+
+flatpak run io.GitHub.asafelobotomy.SearchAndDestroy
+
+```text
 
 ### Step 2: Prepare Repository
 
 1. Ensure all changes are committed and pushed:
-   ```bash
-   git add .
-   git commit -m "feat: Prepare for Flathub submission"
-   git push origin master
-   ```
+
+  ```bash
+  Git add .
+  Git commit -m "feat: Prepare for Flathub submission"
+  Git push origin master
+
+```text
 
 2. Create and push the release tag:
-   ```bash
-   git tag -a v2.5.0 -m "Release version 2.5.0 for Flathub"
-   git push origin v2.5.0
-   ```
+
+  ```bash
+  Git tag -a v2.5.0 -m "Release version 2.5.0 for Flathub"
+  Git push origin v2.5.0
+```text
 
 ### Step 3: Fork and Clone Flathub Repository
 
-1. Fork the Flathub repository: https://github.com/flathub/flathub
+1. Fork the Flathub repository: <HTTPS://GitHub.com/flathub/flathub>
 2. Clone your fork:
-   ```bash
-   git clone --branch=new-pr git@github.com:YOUR_USERNAME/flathub.git
-   cd flathub
-   ```
+
+  ```bash
+  Git clone --branch=new-pr Git@GitHub.com:YOUR_USERNAME/flathub.Git
+  cd flathub
+
+```text
 
 ### Step 4: Create Submission Branch
 
 ```bash
-git checkout -b add-search-and-destroy new-pr
-```
+
+Git checkout -b add-search-and-destroy new-pr
+
+```text
 
 ### Step 5: Copy Required Files
 
 Create the app directory and copy files:
 
 ```bash
-mkdir io.github.asafelobotomy.SearchAndDestroy
-cd io.github.asafelobotomy.SearchAndDestroy
 
-# Copy the required files from your project
-cp /path/to/your/project/packaging/flatpak/io.github.asafelobotomy.SearchAndDestroy.yml .
-cp /path/to/your/project/packaging/flatpak/io.github.asafelobotomy.SearchAndDestroy.metainfo.xml .
-cp /path/to/your/project/packaging/flatpak/io.github.asafelobotomy.SearchAndDestroy.desktop .
-```
+mkdir io.GitHub.asafelobotomy.SearchAndDestroy
+cd io.GitHub.asafelobotomy.SearchAndDestroy
+
+## Copy the required files from your project
+
+cp /path/to/your/project/packaging/flatpak/io.GitHub.asafelobotomy.SearchAndDestroy.yml .
+cp /path/to/your/project/packaging/flatpak/io.GitHub.asafelobotomy.SearchAndDestroy.metainfo.XML .
+cp /path/to/your/project/packaging/flatpak/io.GitHub.asafelobotomy.SearchAndDestroy.desktop .
+
+```text
 
 ### Step 6: Update Manifest
 
 Update the commit hash in the manifest:
 
 ```bash
-# Get the actual commit hash from your repository
-COMMIT_HASH=$(cd /path/to/your/project && git rev-parse v2.5.0)
 
-# Update the manifest
-sed -i "s/commit: REPLACE_WITH_ACTUAL_COMMIT_HASH/commit: $COMMIT_HASH/" io.github.asafelobotomy.SearchAndDestroy.yml
-```
+## Get the actual commit hash from your repository
+
+COMMIT_HASH=$(cd /path/to/your/project && Git rev-parse v2.5.0)
+
+## Update the manifest
+
+sed -i "s/commit: REPLACE_WITH_ACTUAL_COMMIT_HASH/commit: $COMMIT_HASH/" io.GitHub.asafelobotomy.SearchAndDestroy.yml
+
+```text
 
 ### Step 7: Validate the Submission
 
 ```bash
-# Lint the manifest
-flatpak run --command=flatpak-builder-lint org.flatpak.Builder manifest io.github.asafelobotomy.SearchAndDestroy.yml
 
-# Test build in the Flathub environment
-flatpak run --command=flathub-build org.flatpak.Builder io.github.asafelobotomy.SearchAndDestroy.yml
-```
+## Lint the manifest
+
+flatpak run --command=flatpak-builder-lint org.flatpak.Builder manifest io.GitHub.asafelobotomy.SearchAndDestroy.yml
+
+## Test build in the Flathub environment
+
+flatpak run --command=flathub-build org.flatpak.Builder io.GitHub.asafelobotomy.SearchAndDestroy.yml
+
+```text
 
 ### Step 8: Submit Pull Request
 
 1. Commit and push your changes:
 
-   ```bash
-   git add .
-   git commit -m "Add io.github.asafelobotomy.SearchAndDestroy"
-   git push origin add-search-and-destroy
-   ```
+  ```bash
+  Git add .
+  Git commit -m "Add io.GitHub.asafelobotomy.SearchAndDestroy"
+  Git push origin add-search-and-destroy
+```text
 
 2. Open a pull request on GitHub:
-   - Base branch: `new-pr` (NOT master!)
-   - Title: "Add `io.github.asafelobotomy.SearchAndDestroy`"
-   - Include a description of your application
+- Base branch: `new-pr` (NOT master!)
+- Title: "Add `io.GitHub.asafelobotomy.SearchAndDestroy`"
+- Include a description of your application
 
 ## Required Files Checklist
 
-- [x] `io.github.asafelobotomy.SearchAndDestroy.yml` - Main Flatpak manifest
-- [x] `io.github.asafelobotomy.SearchAndDestroy.metainfo.xml` - AppStream metadata
-- [x] `io.github.asafelobotomy.SearchAndDestroy.desktop` - Desktop entry file
+- [x] `io.GitHub.asafelobotomy.SearchAndDestroy.yml` - Main Flatpak manifest
+- [x] `io.GitHub.asafelobotomy.SearchAndDestroy.metainfo.XML` - AppStream metadata
+- [x] `io.GitHub.asafelobotomy.SearchAndDestroy.desktop` - Desktop entry file
 
 ## Review Process
 
@@ -136,13 +161,13 @@ flatpak run --command=flathub-build org.flatpak.Builder io.github.asafelobotomy.
 
 ### Build Failures
 
-- **Missing dependencies**: Ensure all Python packages are included in `python3-requirements.json`
+- **Missing dependencies**: Ensure all Python packages are included in `python3-requirements.JSON`
 - **Network access**: Remember that builds have no network access
 - **Permissions**: Use minimal required permissions in `finish-args`
 
 ### Metadata Issues
 
-- **Invalid AppStream**: Validate your metainfo.xml file
+- **Invalid AppStream**: Validate your metainfo.XML file
 - **Missing icons**: Ensure all icon sizes are present
 - **License mismatch**: Ensure license in metainfo matches your repository
 
@@ -163,18 +188,18 @@ Once your app is approved and published:
 
 ## Resources
 
-- [Flathub Documentation](https://docs.flathub.org/)
-- [Flatpak Builder Reference](https://docs.flatpak.org/en/latest/flatpak-builder.html)
-- [AppStream Metainfo Guidelines](https://www.freedesktop.org/software/appstream/docs/chap-Metadata.html)
-- [Flathub Matrix Room](https://matrix.to/#/#flathub:matrix.org)
+- [Flathub Documentation](HTTPS://docs.flathub.org/)
+- [Flatpak Builder Reference](HTTPS://docs.flatpak.org/en/latest/flatpak-builder.HTML)
+- [AppStream Metainfo Guidelines](HTTPS://www.freedesktop.org/software/appstream/docs/chap-Metadata.HTML)
+- [Flathub Matrix Room](HTTPS://matrix.to/#/#flathub:matrix.org)
 
 ## Support
 
 If you encounter issues during submission:
 
-1. Check the [Flathub documentation](https://docs.flathub.org/)
-2. Search existing issues in the [Flathub repository](https://github.com/flathub/flathub/issues)
-3. Ask in the [Flathub Matrix room](https://matrix.to/#/#flathub:matrix.org)
+1. Check the [Flathub documentation](HTTPS://docs.flathub.org/)
+2. Search existing issues in the [Flathub repository](HTTPS://GitHub.com/flathub/flathub/issues)
+3. Ask in the [Flathub Matrix room](HTTPS://matrix.to/#/#flathub:matrix.org)
 4. Open an issue in the Flathub repository
 
 Good luck with your submission! 🚀

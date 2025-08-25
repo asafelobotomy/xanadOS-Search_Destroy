@@ -3,15 +3,20 @@
 ## 🚀 Quick Commands
 
 ```bash
-# Check if repository is organized
+
+## Check if repository is organized
+
 python3 scripts/check-organization.py
 
-# Fix organization issues
+## Fix organization issues
+
 python3 dev/organize_repository_comprehensive.py
 
-# Install git hooks (one-time setup)
+## Install Git hooks (one-time setup)
+
 bash scripts/install-hooks.sh
-```
+
+```text
 
 ## 📁 File Placement Rules
 
@@ -28,7 +33,7 @@ bash scripts/install-hooks.sh
 
 1. **Place in correct directory** (see rules above)
 2. **Use proper naming**: `snake_case.py`, `SCREAMING_SNAKE_CASE.md`
-3. **Add `__init__.py`** for new Python packages
+3. **Add `**init**.py`** for new Python packages
 4. **Update documentation** if needed
 
 ## ⚡ Git Hook Protection
@@ -39,7 +44,7 @@ bash scripts/install-hooks.sh
 
 ## 📋 Directory Structure
 
-```
+```text
 xanadOS-Search_Destroy/
 ├── app/           # Application code
 ├── config/        # Configuration
@@ -48,24 +53,30 @@ xanadOS-Search_Destroy/
 ├── packaging/     # Distribution
 ├── scripts/       # Build scripts
 └── tests/         # Unit tests
-```
+
+```text
 
 ## 🔍 Organization Check Results
 
 ### ✅ Good Organization
-```
+
+```text
 ✅ Repository is properly organized
-```
+
+```text
 
 ### ❌ Issues Found
-```
+
+```text
 ❌ Organization issues found:
-  - Misplaced file: test.py - Test files should be in dev/ or tests/
-  - Missing __init__.py in app/new_module
-```
+
+- Misplaced file: test.py - Test files should be in dev/ or tests/
+- Missing **init**.py in app/new_module
+
+```text
 
 **Fix with**: `python3 dev/organize_repository_comprehensive.py`
 
 ---
 
-💡 **Tip**: The git hook will automatically prevent commits with organization issues!
+💡 **Tip**: The Git hook will automatically prevent commits with organization issues!

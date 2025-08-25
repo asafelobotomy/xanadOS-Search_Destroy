@@ -2,24 +2,25 @@
 """
 Visual test for scan enhancements - shows the GUI with all new features
 """
+from PyQt6.QtWidgets import QApplication
+
+from PyQt6.QtCore import QTimer
+from gui.main_window import MainWindow
+
+from pathlib import Path
+import os
 
 import sys
-import os
-from pathlib import Path
 
 # Add app directory to path
 app_dir = Path(__file__).parent.parent.parent / "app"
 sys.path.insert(0, str(app_dir))
 
-from PyQt6.QtWidgets import QApplication
-from PyQt6.QtCore import QTimer
-from gui.main_window import MainWindow
-
 def main():
     """Launch the application to visually inspect the enhancements."""
     app = QApplication(sys.argv)
     window = MainWindow()
-    
+
     print("🚀 Launching xanadOS Search & Destroy with Scan Enhancements")
     print("=" * 60)
     print()
@@ -46,21 +47,21 @@ def main():
     print()
     print("Close the window to exit.")
     print("=" * 60)
-    
+
     # Show the window
     window.show()
-    
+
     # Set window title to indicate this is the enhanced version
     window.setWindowTitle("xanadOS Search & Destroy - Enhanced Scanning")
-    
+
     # Optionally switch to scan tab to highlight the new features
-    if hasattr(window, 'tab_widget'):
+    if hasattr(window, "tab_widget"):
         # Find the scan tab index
         for i in range(window.tab_widget.count()):
             if window.tab_widget.tabText(i) == "Scan":
                 window.tab_widget.setCurrentIndex(i)
                 break
-    
+
     return app.exec()
 
 if __name__ == "__main__":

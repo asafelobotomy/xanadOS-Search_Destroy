@@ -3,21 +3,21 @@
 Asynchronous file scanning system for xanadOS Search & Destroy
 Provides high-performance scanning with non-blocking operations and worker threads
 """
+
 import asyncio
 import logging
 import os
-import threading
 import time
-from concurrent.futures import ThreadPoolExecutor, as_completed
-from dataclasses import asdict, dataclass
+from concurrent.futures import ThreadPoolExecutor
+from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
-from queue import Empty, Queue
-from typing import AsyncIterator, Callable, Dict, List, Optional, Tuple
+from queue import Queue
+from typing import AsyncIterator, Callable, Dict, List, Optional
 
 import psutil
-from ..utils.config import load_config
 
+from ..utils.config import load_config
 from .clamav_wrapper import ScanFileResult, ScanResult
 from .file_scanner import FileScanner
 from .input_validation import FileSizeMonitor, PathValidator
@@ -60,10 +60,7 @@ class AsyncFileScanner:
     - Automatic load balancing
     """
 
-    def __init__(
-            self,
-            max_workers: Optional[int] = None,
-            memory_limit_mb: int = 512):
+    def __init__(self, max_workers: Optional[int] = None, memory_limit_mb: int = 512):
         """
         Initialize the async scanner.
 
@@ -112,9 +109,7 @@ class AsyncFileScanner:
         self.files_processed = 0
         self.total_bytes_processed = 0
 
-        self.logger.info(
-            "AsyncFileScanner initialized with %d workers",
-            max_workers)
+        self.logger.info("AsyncFileScanner initialized with %d workers", max_workers)
 
     async def _setup_async_components(self):
         """Setup async components that require an event loop."""
@@ -145,8 +140,7 @@ class AsyncFileScanner:
             self.logger.warning("Memory check failed: %s", e)
             return True  # Continue on error
 
-    async def _walk_directory_async(
-            self, directory: str) -> AsyncIterator[str]:
+    async def _walk_directory_async(self, directory: str) -> AsyncIterator[str]:
         """
         Asynchronously walk directory tree yielding file paths.
 
@@ -170,7 +164,7 @@ class AsyncFileScanner:
                         yield str(Path(root) / file_name)
 
             # Process in chunks to avoid blocking
-            loop = asyncio.get_event_loop()
+            asyncio.get_event_loop()
 
             async def _chunked_walk():
                 file_iterator = _walk_sync()
@@ -211,8 +205,7 @@ class AsyncFileScanner:
         """
         try:
             # Security validation
-            is_valid, error_msg = self.path_validator.validate_file_for_scan(
-                file_path)
+            is_valid, error_msg = self.path_validator.validate_file_for_scan(file_path)
             if not is_valid:
                 self.logger.debug(
                     "File validation failed for %s: %s", file_path, error_msg
@@ -322,8 +315,7 @@ class AsyncFileScanner:
 
             return result
 
-    async def scan_files_async(
-            self, file_paths: List[str]) -> List[ScanFileResult]:
+    async def scan_files_async(self, file_paths: List[str]) -> List[ScanFileResult]:
         """
         Scan multiple files asynchronously with parallel processing.
 
@@ -414,8 +406,7 @@ class AsyncFileScanner:
         finally:
             self.is_scanning = False
 
-    async def scan_directory_async(
-            self, directory: str) -> List[ScanFileResult]:
+    async def scan_directory_async(self, directory: str) -> List[ScanFileResult]:
         """
         Scan entire directory asynchronously with optimized file discovery.
 
@@ -445,10 +436,7 @@ class AsyncFileScanner:
                     except Exception as e:
                         self.logger.warning("Progress callback error: %s", e)
 
-        self.logger.info(
-            "Found %d files in directory %s",
-            len(file_paths),
-            directory)
+        self.logger.info("Found %d files in directory %s", len(file_paths), directory)
 
         # Scan collected files
         return await self.scan_files_async(file_paths)
@@ -483,8 +471,8 @@ class AsyncFileScanner:
             "memory_usage_mb": self.progress.memory_usage_mb,
             "active_workers": self.max_workers,
             "files_per_worker": (
-                self.files_processed /
-                self.max_workers if self.max_workers > 0 else 0),
+                self.files_processed / self.max_workers if self.max_workers > 0 else 0
+            ),
         }
 
     def cleanup(self):

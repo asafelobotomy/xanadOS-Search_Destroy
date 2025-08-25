@@ -2,6 +2,7 @@
 applyTo: "scripts/**"
 priority: "critical"
 enforcement: "mandatory"
+
 ---
 
 # Toolshed Usage Instructions - MANDATORY
@@ -31,7 +32,7 @@ Before writing ANY script or automation tool, agents MUST:
 
 ## 📁 **Available Tool Categories**
 
-### **Git Tools** (`scripts/tools/git/`)
+### **Git Tools** (`scripts/tools/Git/`)
 
 **Purpose**: Repository setup, workflow automation, release management
 
@@ -43,10 +44,13 @@ Before writing ANY script or automation tool, agents MUST:
 **Usage Example**:
 
 ```bash
-# Instead of writing custom Git setup
-./scripts/tools/git/setup-repository.sh --help
-./scripts/tools/git/setup-repository.sh --dry-run
-```
+
+## Instead of writing custom Git setup
+
+./scripts/tools/Git/setup-repository.sh --help
+./scripts/tools/Git/setup-repository.sh --dry-run
+
+```text
 
 ### **Validation Tools** (`scripts/tools/validation/`)
 
@@ -60,10 +64,13 @@ Before writing ANY script or automation tool, agents MUST:
 **Usage Example**:
 
 ```bash
-# Instead of writing custom validation
-./scripts/tools/validation/validate-structure.sh --category git
-./scripts/tools/validation/validate-structure.sh --json --output results.json
-```
+
+## Instead of writing custom validation
+
+./scripts/tools/validation/validate-structure.sh --category Git
+./scripts/tools/validation/validate-structure.sh --JSON --output results.JSON
+
+```text
 
 ### **Quality Tools** (`scripts/tools/quality/`)
 
@@ -76,10 +83,13 @@ Before writing ANY script or automation tool, agents MUST:
 **Usage Example**:
 
 ```bash
-# Instead of writing custom quality checks
-./scripts/tools/quality/check-quality.sh --check markdown --fix
-./scripts/tools/quality/check-quality.sh --format json --report quality.json
-```
+
+## Instead of writing custom quality checks
+
+./scripts/tools/quality/check-quality.sh --check Markdown --fix
+./scripts/tools/quality/check-quality.sh --format JSON --report quality.JSON
+
+```text
 
 ### **Repository Tools** (`scripts/tools/repository/`)
 
@@ -92,9 +102,12 @@ Before writing ANY script or automation tool, agents MUST:
 **Usage Example**:
 
 ```bash
-# Instead of writing custom backup scripts
+
+## Instead of writing custom backup scripts
+
 ./scripts/tools/repository/backup-repository.sh
-```
+
+```text
 
 ### **Documentation Tools** (`scripts/tools/documentation/`)
 
@@ -107,9 +120,12 @@ Before writing ANY script or automation tool, agents MUST:
 **Usage Example**:
 
 ```bash
-# Instead of writing custom documentation generators
+
+## Instead of writing custom documentation generators
+
 ./scripts/tools/documentation/generate-docs.sh
-```
+
+```text
 
 ### **Deployment Tools** (`scripts/tools/deployment/`)
 
@@ -122,10 +138,13 @@ Before writing ANY script or automation tool, agents MUST:
 **Usage Example**:
 
 ```bash
-# Instead of manually copying tools
-./scripts/tools/deployment/implement-toolshed.sh --category git
+
+## Instead of manually copying tools
+
+./scripts/tools/deployment/implement-toolshed.sh --category Git
 ./scripts/tools/deployment/implement-toolshed.sh --auto-commit
-```
+
+```text
 
 ### **Hooks & Automation Tools** (`scripts/tools/hooks/`)
 
@@ -138,10 +157,13 @@ Before writing ANY script or automation tool, agents MUST:
 **Usage Example**:
 
 ```bash
-# Instead of writing custom pre-commit setups
-./scripts/tools/hooks/setup-pre-commit.sh --languages python,javascript
+
+## Instead of writing custom pre-commit setups
+
+./scripts/tools/hooks/setup-pre-commit.sh --languages Python,JavaScript
 ./scripts/tools/hooks/setup-pre-commit.sh --security-scanning --dry-run
-```
+
+```text
 
 ### **Security Tools** (`scripts/tools/security/`)
 
@@ -154,10 +176,13 @@ Before writing ANY script or automation tool, agents MUST:
 **Usage Example**:
 
 ```bash
-# Instead of writing custom security scanners
+
+## Instead of writing custom security scanners
+
 ./scripts/tools/security/security-scan.sh --sast-only
-./scripts/tools/security/security-scan.sh --output json --severity high
-```
+./scripts/tools/security/security-scan.sh --output JSON --severity high
+
+```text
 
 ### **Dependency Management Tools** (`scripts/tools/dependencies/`)
 
@@ -170,10 +195,13 @@ Before writing ANY script or automation tool, agents MUST:
 **Usage Example**:
 
 ```bash
-# Instead of writing custom dependency tools
+
+## Instead of writing custom dependency tools
+
 ./scripts/tools/dependencies/dependency-manager.sh --update --strategy minor
 ./scripts/tools/dependencies/dependency-manager.sh --security-only --backup
-```
+
+```text
 
 ### **Performance Monitoring Tools** (`scripts/tools/monitoring/`)
 
@@ -186,10 +214,13 @@ Before writing ANY script or automation tool, agents MUST:
 **Usage Example**:
 
 ```bash
-# Instead of writing custom monitoring scripts
+
+## Instead of writing custom monitoring scripts
+
 ./scripts/tools/monitoring/performance-monitor.sh --duration 300
 ./scripts/tools/monitoring/performance-monitor.sh --benchmark --report-only
-```
+
+```text
 
 ### **Container Management Tools** (`scripts/tools/containers/`)
 
@@ -197,71 +228,93 @@ Before writing ANY script or automation tool, agents MUST:
 
 **Available Tools**:
 
-- `docker-manager.sh` - Complete Docker lifecycle management and optimization
+- `Docker-manager.sh` - Complete Docker lifecycle management and optimization
 
 **Usage Example**:
 
 ```bash
-# Instead of writing custom Docker scripts
-./scripts/tools/containers/docker-manager.sh --build --security-scan
-./scripts/tools/containers/docker-manager.sh --optimize --cleanup
-```
+
+## Instead of writing custom Docker scripts
+
+./scripts/tools/containers/Docker-manager.sh --build --security-scan
+./scripts/tools/containers/Docker-manager.sh --optimize --cleanup
+
+```text
 
 ### **Database Tools** (`scripts/tools/database/`)
 
 **Purpose**: Database backup, optimization, health monitoring
 
 **Available Tools**:
+
 - `database-manager.sh` - Multi-database management (MySQL, PostgreSQL, MongoDB, SQLite)
 
 **Usage Example**:
+
 ```bash
-# Instead of writing custom database scripts
+
+## Instead of writing custom database scripts
+
 ./scripts/tools/database/database-manager.sh --backup --type mysql
 ./scripts/tools/database/database-manager.sh --health-check --type postgresql
-```
+
+```text
 
 - `implement-toolshed.sh` - Deploy complete toolshed to any repository
 
 **Usage Example**:
 
 ```bash
-# Instead of manually copying tools
-./scripts/tools/implement-toolshed.sh --category git
+
+## Instead of manually copying tools 2
+
+./scripts/tools/implement-toolshed.sh --category Git
 ./scripts/tools/implement-toolshed.sh --auto-commit
-```
+
+```text
 
 ## 🎯 **Mandatory Usage Workflow**
 
 ### **Step 1: Always Check First**
 
 ```bash
-# Before ANY script creation, check:
+
+## Before ANY script creation, check
+
 ls scripts/tools/
 cat scripts/tools/README.md
 find scripts/tools/ -name "*.sh" -exec basename {} \;
-```
+
+```text
 
 ### **Step 2: Use Existing Tools**
 
 ```bash
-# Example: Repository setup
-./scripts/tools/git/setup-repository.sh
 
-# Example: Validation
+## Example: Repository setup
+
+./scripts/tools/Git/setup-repository.sh
+
+## Example: Validation
+
 ./scripts/tools/validation/validate-structure.sh
 
-# Example: Quality checking
+## Example: Quality checking
+
 ./scripts/tools/quality/check-quality.sh --fix
-```
+
+```text
 
 ### **Step 3: Get Help for Any Tool**
 
 ```bash
-# Every tool has comprehensive help
+
+## Every tool has comprehensive help
+
 ./scripts/tools/[category]/[tool-name].sh --help
 ./scripts/tools/[category]/[tool-name].sh --version
-```
+
+```text
 
 ### **Step 4: Extend, Don't Duplicate**
 
@@ -275,41 +328,52 @@ If existing tools don't meet requirements:
 ## 🔍 **Tool Discovery Commands**
 
 ```bash
-# List all available tools
+
+## List all available tools
+
 find scripts/tools/ -name "*.sh" | sort
 
-# Get summary of all tools
+## Get summary of all tools
+
 grep -r "^# Purpose:" scripts/tools/ | sed 's/.*://' | sort
 
-# Check tool functionality
+## Check tool functionality
+
 for tool in $(find scripts/tools/ -name "*.sh"); do
     echo "=== $tool ==="
+
     grep "^# Purpose:" "$tool" || echo "No description"
 done
-```
+
+```text
 
 ## 📋 **Quality Standards for Tool Usage**
 
 ### **Required Checks Before Script Creation**
 
 1. ✅ Checked `scripts/tools/README.md`
-2. ✅ Searched existing tools with `find scripts/tools/ -name "*keyword*"`
-3. ✅ Tested relevant tools with `--help` and `--dry-run`
+2. ✅ Searched existing tools with `find scripts/tools/ -name "_keyword_"`
+3. ✅ Tested relevant tools with `--help`and`--dry-run`
 4. ✅ Confirmed no existing tool meets the requirement
 5. ✅ Planned to extend existing tool or follow patterns
 
 ### **Validation Commands**
 
 ```bash
-# Verify toolshed is available
+
+## Verify toolshed is available
+
 test -d scripts/tools && echo "✅ Toolshed available" || echo "❌ Toolshed missing"
 
-# Count available tools
+## Count available tools
+
 find scripts/tools/ -name "*.sh" | wc -l
 
-# Validate tool execution
+## Validate tool execution
+
 ./scripts/tools/validation/validate-structure.sh --quick
-```
+
+```text
 
 ## 🚨 **Enforcement Policy**
 
@@ -324,14 +388,18 @@ find scripts/tools/ -name "*.sh" | wc -l
 ### **Compliance Validation**
 
 ```bash
-# Check if toolshed is being used properly
+
+## Check if toolshed is being used properly
+
 ./scripts/tools/validation/validate-structure.sh
 ./scripts/tools/quality/check-quality.sh --check scripts
 
-# Verify no duplicate functionality exists
+## Verify no duplicate functionality exists
+
 grep -r "setup.*repository" scripts/ --exclude-dir=tools
 grep -r "validate.*structure" scripts/ --exclude-dir=tools
-```
+
+```text
 
 ## 💡 **Best Practices for Agents**
 
@@ -345,15 +413,22 @@ grep -r "validate.*structure" scripts/ --exclude-dir=tools
 ### **Integration Patterns**
 
 ```bash
-# Standard tool integration approach
-if [[ -f "scripts/tools/git/setup-repository.sh" ]]; then
-    # Use existing tool
-    ./scripts/tools/git/setup-repository.sh "$@"
+
+## Standard tool integration approach
+
+if [[-f "scripts/tools/Git/setup-repository.sh"]]; then
+
+## Use existing tool
+
+    ./scripts/tools/Git/setup-repository.sh "$@"
 else
-    # Fallback only if toolshed unavailable
+
+## Fallback only if toolshed unavailable
+
     echo "Toolshed not available, implementing basic setup..."
 fi
-```
+
+```text
 
 ## 📊 **Success Metrics**
 
@@ -376,16 +451,20 @@ fi
 ### **Essential Commands**
 
 ```bash
-# ALWAYS RUN THESE FIRST:
+
+## ALWAYS RUN THESE FIRST
+
 ls scripts/tools/                           # See available categories
 cat scripts/tools/README.md                 # Read full tool catalog
 ./scripts/tools/implement-toolshed.sh --help  # Deploy to new repos
 
-# CORE TOOLS:
-./scripts/tools/git/setup-repository.sh     # Git setup
+## CORE TOOLS
+
+./scripts/tools/Git/setup-repository.sh     # Git setup
 ./scripts/tools/validation/validate-structure.sh  # Validation
 ./scripts/tools/quality/check-quality.sh    # Quality checks
-```
+
+```text
 
 ### **When in Doubt**
 

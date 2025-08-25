@@ -3,24 +3,25 @@
 Visual demonstration of the improved GUI layout
 Shows the application with the restructured Scan tab
 """
+from PyQt6.QtWidgets import QApplication
+
+from PyQt6.QtCore import QTimer
+from gui.main_window import MainWindow
+
+from pathlib import Path
+import os
 
 import sys
-import os
-from pathlib import Path
 
 # Add app directory to path
 app_dir = Path(__file__).parent.parent.parent / "app"
 sys.path.insert(0, str(app_dir))
 
-from PyQt6.QtWidgets import QApplication
-from PyQt6.QtCore import QTimer
-from gui.main_window import MainWindow
-
 def main():
     """Launch the application to demonstrate the improved layout."""
     app = QApplication(sys.argv)
     window = MainWindow()
-    
+
     print("🎨 xanadOS Search & Destroy - Improved GUI Layout")
     print("=" * 60)
     print()
@@ -61,20 +62,20 @@ def main():
     print()
     print("Close the window when done reviewing the improvements.")
     print("=" * 60)
-    
+
     # Show the window
     window.show()
-    
+
     # Set window title to indicate this is the improved version
     window.setWindowTitle("xanadOS Search & Destroy - Improved Layout ✨")
-    
+
     # Switch to scan tab to highlight the improvements
-    if hasattr(window, 'tab_widget'):
+    if hasattr(window, "tab_widget"):
         for i in range(window.tab_widget.count()):
             if window.tab_widget.tabText(i) == "Scan":
                 window.tab_widget.setCurrentIndex(i)
                 break
-    
+
     return app.exec()
 
 if __name__ == "__main__":

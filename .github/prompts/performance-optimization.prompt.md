@@ -1,6 +1,7 @@
 # Performance Optimization Prompt
 
-You are conducting a comprehensive performance optimization review. Follow this systematic approach to identify bottlenecks and optimization opportunities.
+You are conducting a comprehensive performance optimization review.
+Follow this systematic approach to identify bottlenecks and optimization opportunities.
 
 ## Performance Optimization Framework
 
@@ -10,14 +11,15 @@ Before making any optimizations, establish current performance baselines:
 
 ```bash
 
-# Example performance measurement commands
+## Example performance measurement commands
 
-ab -n 1000 -c 10 http://localhost:3000/api/users
-wrk -t12 -c400 -d30s http://localhost:3000/api/products
-siege -c 25 -t 1m http://localhost:3000
-```markdown
+ab -n 1000 -c 10 <HTTP://localhost:3000/API/users>
+wrk -t12 -c400 -d30s <HTTP://localhost:3000/API/products>
+siege -c 25 -t 1m <HTTP://localhost:3000>
 
-#### Key Metrics to Measure
+```Markdown
+
+### Key Metrics to Measure
 
 - [ ] **Response Time**: 50th, 95th, 99th percentiles
 - [ ] **Throughput**: Requests per second under normal load
@@ -31,8 +33,9 @@ Identify specific bottlenecks using profiling tools:
 
 #### Application Profiling
 
-```python
-# Example: Python performance profiling
+```Python
+
+## Example: Python performance profiling
 
 import cProfile
 import pstats
@@ -49,11 +52,13 @@ def profile_function(func, *args, **kwargs):
     stats.print_stats(20)  # Top 20 slowest functions
 
     return result
-```markdown
 
-#### Database Profiling
+```Markdown
 
-```sql
+### Database Profiling
+
+```SQL
+
 -- PostgreSQL: Enable query logging
 SET log_statement = 'all';
 SET log_min_duration_statement = 100; -- Log queries >100ms
@@ -61,7 +66,8 @@ SET log_min_duration_statement = 100; -- Log queries >100ms
 -- MySQL: Enable slow query log
 SET GLOBAL slow_query_log = 'ON';
 SET GLOBAL long_query_time = 0.1; -- Log queries >100ms
-```markdown
+
+```Markdown
 
 ### 3. Database Optimization
 
@@ -75,7 +81,8 @@ SET GLOBAL long_query_time = 0.1; -- Log queries >100ms
 
 #### Example: Query Optimization
 
-```sql
+```SQL
+
 -- Before: Inefficient query
 SELECT u.*, p.title, c.name
 FROM users u
@@ -96,7 +103,8 @@ LEFT JOIN categories c ON p.category_id = c.id
 WHERE u.created_at > '2024-01-01'
 ORDER BY u.created_at DESC
 LIMIT 50; -- Always limit large result sets
-```markdown
+
+```Markdown
 
 #### Database Performance Targets
 
@@ -109,15 +117,16 @@ LIMIT 50; -- Always limit large result sets
 
 #### Multi-Level Caching
 
-```python
-# Example: Comprehensive caching implementation
+```Python
+
+## Example: Comprehensive caching implementation
 
 import redis
 import memcache
 from functools import wraps
 
 class CacheManager:
-    def __init__(self):
+    def **init**(self):
         self.l1_cache = {}  # In-memory cache
         self.l2_cache = redis.Redis(host='localhost', port=6379, db=0)
         self.l3_cache = memcache.Client(['127.0.0.1:11211'])
@@ -125,11 +134,13 @@ class CacheManager:
     def cache_with_fallback(self, key, fetch_func, ttl=3600):
         """Multi-level cache with automatic fallback"""
 
-        # L1 Cache (fastest - in-memory)
+## L1 Cache (fastest - in-memory)
+
         if key in self.l1_cache:
             return self.l1_cache[key]
 
-        # L2 Cache (fast - Redis)
+## L2 Cache (fast - Redis)
+
         try:
             value = self.l2_cache.get(key)
             if value:
@@ -138,7 +149,8 @@ class CacheManager:
         except Exception:
             pass
 
-        # L3 Cache (medium - Memcached)
+## L3 Cache (medium - Memcached)
+
         try:
             value = self.l3_cache.get(key)
             if value:
@@ -148,10 +160,12 @@ class CacheManager:
         except Exception:
             pass
 
-        # Cache miss - fetch from source
+## Cache miss - fetch from source
+
         value = fetch_func()
 
-        # Populate all cache levels
+## Populate all cache levels
+
         self.l1_cache[key] = value
         try:
             self.l2_cache.setex(key, ttl, value)
@@ -166,7 +180,7 @@ def cached(ttl=3600):
     def decorator(func):
         @wraps(func)
         def wrapper(*args, **kwargs):
-            cache_key = f"{func.__name__}:{hash(str(args) + str(kwargs))}"
+            cache_key = f"{func.**name**}:{hash(str(args) + str(kwargs))}"
             cache_manager = CacheManager()
             return cache_manager.cache_with_fallback(
                 cache_key,
@@ -176,15 +190,18 @@ def cached(ttl=3600):
         return wrapper
     return decorator
 
-# Usage example
+## Usage example
 
 @cached(ttl=1800)  # Cache for 30 minutes
 def get_user_profile(user_id):
-    # Expensive database operation
-    return database.get_user_with_preferences(user_id)
-```markdown
 
-#### Caching Performance Targets
+## Expensive database operation
+
+    return database.get_user_with_preferences(user_id)
+
+```Markdown
+
+### Caching Performance Targets
 
 - **Hit Rate**: >95% for frequently accessed data
 - **Response Time**: <1ms for in-memory, <5ms for distributed cache
@@ -195,7 +212,7 @@ def get_user_profile(user_id):
 
 #### Asset Optimization
 
-```javascript
+```JavaScript
 // Example: Webpack optimization configuration
 module.exports = {
   optimization: {
@@ -222,17 +239,20 @@ module.exports = {
   plugins: [
     new CompressionPlugin({
       algorithm: 'gzip',
-      test: /\.(js|css|html|svg)$/,
+
+      test: /\.(js|CSS|HTML|svg)$/,
       threshold: 8192,
+
       minRatio: 0.8,
     }),
   ],
 };
-```markdown
+
+```Markdown
 
 #### Performance Monitoring
 
-```javascript
+```JavaScript
 // Example: Client-side performance monitoring
 class PerformanceMonitor {
   constructor() {
@@ -288,14 +308,15 @@ class PerformanceMonitor {
 
   sendMetric(name, value) {
     // Send to analytics service
-    fetch('/api/metrics', {
+    fetch('/API/metrics', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/JSON' },
       body: JSON.stringify({ metric: name, value, timestamp: Date.now() })
     });
   }
 }
-```markdown
+
+```Markdown
 
 #### Frontend Performance Targets
 
@@ -309,8 +330,9 @@ class PerformanceMonitor {
 
 #### Request Optimization
 
-```python
-# Example: Efficient API implementation with batching
+```Python
+
+## Example: Efficient API implementation with batching
 
 from dataclasses import dataclass
 from typing import List, Dict, Any
@@ -322,21 +344,23 @@ class BatchRequest:
     params: Dict[str, Any]
 
 class APIOptimizer:
-    def __init__(self):
+    def **init**(self):
         self.batch_requests = []
         self.batch_timeout = 50  # 50ms batching window
 
     async def batch_execute(self, requests: List[BatchRequest]):
         """Execute multiple requests in a single batch"""
 
-        # Group requests by operation type
+## Group requests by operation type
+
         grouped_requests = {}
         for req in requests:
             if req.operation not in grouped_requests:
                 grouped_requests[req.operation] = []
             grouped_requests[req.operation].append(req.params)
 
-        # Execute batched operations
+## Execute batched operations
+
         results = {}
         for operation, params_list in grouped_requests.items():
             if operation == 'get_users':
@@ -352,7 +376,9 @@ class APIOptimizer:
 
     async def get_users_batch(self, user_ids: List[int]):
         """Efficient batch user retrieval"""
-        # Single query instead of N queries
+
+## Single query instead of N queries
+
         query = """
         SELECT id, name, email, created_at
         FROM users
@@ -360,16 +386,17 @@ class APIOptimizer:
         """
         return await database.fetch_all(query, user_ids)
 
-# Usage: API endpoint with automatic batching
+## Usage: API endpoint with automatic batching
 
-@app.post("/api/batch")
+@app.post("/API/batch")
 async def batch_api(requests: List[BatchRequest]):
     optimizer = APIOptimizer()
     results = await optimizer.batch_execute(requests)
     return results
-```markdown
 
-#### API Performance Targets
+```Markdown
+
+### API Performance Targets
 
 - **Response Time**: 95th percentile <200ms
 - **Throughput**: >1000 requests/second per server
@@ -380,8 +407,9 @@ async def batch_api(requests: List[BatchRequest]):
 
 #### Auto-scaling Configuration
 
-```yaml
-# Example: Kubernetes horizontal pod autoscaler
+```YAML
+
+## Example: Kubernetes horizontal pod autoscaler
 
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
@@ -395,39 +423,49 @@ spec:
   minReplicas: 3
   maxReplicas: 50
   metrics:
-  - type: Resource
-    resource:
-      name: cpu
-      target:
-        type: Utilization
-        averageUtilization: 70
-  - type: Resource
-    resource:
-      name: memory
-      target:
-        type: Utilization
-        averageUtilization: 80
+
+- type: Resource
+
+  resource:
+  name: cpu
+  target:
+  type: Utilization
+  averageUtilization: 70
+
+- type: Resource
+
+  resource:
+  name: memory
+  target:
+  type: Utilization
+  averageUtilization: 80
   behavior:
-    scaleUp:
-      stabilizationWindowSeconds: 60
-      policies:
-      - type: Percent
-        value: 100
-        periodSeconds: 15
-    scaleDown:
-      stabilizationWindowSeconds: 300
-      policies:
-      - type: Percent
-        value: 10
-        periodSeconds: 60
-```markdown
+  scaleUp:
+  stabilizationWindowSeconds: 60
+  policies:
+
+- type: Percent
+
+  value: 100
+  periodSeconds: 15
+  scaleDown:
+  stabilizationWindowSeconds: 300
+  policies:
+
+- type: Percent
+
+  value: 10
+  periodSeconds: 60
+
+```Markdown
 
 ### 8. Performance Testing Strategy
 
 #### Load Testing Implementation
 
-```python
-# Example: Comprehensive load testing with Locust
+```Python
+
+## Example: Comprehensive load testing with Locust
 
 from locust import HttpUser, task, between
 import random
@@ -436,18 +474,20 @@ class PerformanceTestUser(HttpUser):
     wait_time = between(1, 3)
 
     def on_start(self):
-        # Authenticate user
-        response = self.client.post("/auth/login", json={
+
+## Authenticate user
+
+        response = self.client.post("/auth/login", JSON={
             "username": f"testuser_{random.randint(1, 1000)}",
             "password": "testpass123"
         })
-        self.token = response.json().get("access_token")
+        self.token = response.JSON().get("access_token")
         self.client.headers.update({"Authorization": f"Bearer {self.token}"})
 
     @task(10)
     def browse_products(self):
         """Simulate product browsing - high frequency"""
-        with self.client.get("/api/products",
+        with self.client.get("/API/products",
                            params={"page": random.randint(1, 10), "limit": 20},
                            catch_response=True) as response:
             if response.elapsed.total_seconds() > 0.5:
@@ -460,20 +500,20 @@ class PerformanceTestUser(HttpUser):
         """Simulate product search - medium frequency"""
         search_terms = ["laptop", "phone", "tablet", "headphones", "camera"]
         term = random.choice(search_terms)
-        self.client.get(f"/api/products/search?q={term}")
+        self.client.get(f"/API/products/search?q={term}")
 
     @task(3)
     def view_product_details(self):
         """Simulate product detail viewing - medium frequency"""
         product_id = random.randint(1, 1000)
-        self.client.get(f"/api/products/{product_id}")
+        self.client.get(f"/API/products/{product_id}")
 
     @task(1)
     def add_to_cart(self):
         """Simulate add to cart - low frequency"""
         product_id = random.randint(1, 1000)
         quantity = random.randint(1, 3)
-        self.client.post("/api/cart/add", json={
+        self.client.post("/API/cart/add", JSON={
             "product_id": product_id,
             "quantity": quantity
         })
@@ -481,24 +521,29 @@ class PerformanceTestUser(HttpUser):
     @task(1)
     def checkout_simulation(self):
         """Simulate checkout process - low frequency"""
-        # View cart
-        self.client.get("/api/cart")
 
-        # Proceed to checkout
-        self.client.post("/api/checkout/initiate")
+## View cart
 
-        # Simulate payment (mock)
-        self.client.post("/api/checkout/payment", json={
+        self.client.get("/API/cart")
+
+## Proceed to checkout
+
+        self.client.post("/API/checkout/initiate")
+
+## Simulate payment (mock)
+
+        self.client.post("/API/checkout/payment", JSON={
             "payment_method": "credit_card",
             "amount": random.uniform(10.0, 500.0)
         })
-```markdown
+
+```Markdown
 
 ### 9. Performance Monitoring Dashboard
 
 #### Key Performance Indicators
 
-```json
+```JSON
 {
   "performance_dashboard": {
     "response_times": {
@@ -536,14 +581,14 @@ class PerformanceTestUser(HttpUser):
     }
   }
 }
-```markdown
+
+```Markdown
 
 ### 10. Performance Optimization Report Template
 
-```markdown
+```Markdown
 
-# Performance Optimization Report - [System Name]
-
+## Performance Optimization Report - [System Name]
 
 ## Executive Summary
 
@@ -555,6 +600,7 @@ class PerformanceTestUser(HttpUser):
 ## Current Performance Metrics
 
 ### Response Times
+
 - API 95th percentile: XXXms (Target: <200ms)
 - Page load 95th percentile: X.Xs (Target: <2.5s)
 - Database query average: XXms (Target: <50ms)
@@ -568,6 +614,7 @@ class PerformanceTestUser(HttpUser):
 ## Identified Bottlenecks
 
 ### Critical Issues
+
 1. **[Issue 1]**: [Description and impact]
 2. **[Issue 2]**: [Description and impact]
 
@@ -579,6 +626,7 @@ class PerformanceTestUser(HttpUser):
 ## Optimization Recommendations
 
 ### Immediate Actions (0-1 week)
+
 1. [High-impact, low-effort optimizations]
 2. [Critical performance fixes]
 
@@ -611,6 +659,8 @@ class PerformanceTestUser(HttpUser):
 - Throughput goals met
 - Resource utilization optimized
 - User satisfaction improved
-```markdown
 
-Remember: Performance optimization is an iterative process. Always measure before and after changes, and focus on optimizations that provide the biggest impact for your specific use case and user patterns.
+```Markdown
+
+Remember: Performance optimization is an iterative process.
+Always measure before and after changes, and focus on optimizations that provide the biggest impact for your specific use case and user patterns.

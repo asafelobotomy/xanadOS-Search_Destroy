@@ -1,0 +1,12 @@
+[MASTER]
+ignore=.git, node_modules, __pycache__, .venv, venv, env
+ignore-patterns=.*\.bak, .*\.backup, .*\.orig
+ignore-paths=
+    ^archive/,
+    ^\.python-backups/,
+    ^\.markdown-backups/
+
+[MESSAGES CONTROL]
+disable=
+    C0103,  # invalid-name
+    R0903   # too-few-public-methods

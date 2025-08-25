@@ -11,7 +11,7 @@ This directory contains development tools and utilities for the xanadOS Search &
 - **Type**: External tool script
 - **Location**: Moved from root directory for better organization
 
-### node/package.json
+### node/package.JSON
 
 - **Purpose**: Node.js dependencies for development tools (markdownlint)
 - **Usage**: `cd tools/node && npm install` to install linting tools
@@ -25,13 +25,15 @@ tools/
 ├── README.md                    # This file
 ├── flatpak-pip-generator        # Flatpak dependency generator
 ├── node/                        # Node.js development tools
-│   └── package.json            # markdownlint and other Node tools
+│   └── package.JSON            # markdownlint and other Node tools
 └── [future tools]               # Additional development tools
-```
+
+```text
 
 ## Usage
 
-These tools are typically used during the build and packaging process. Most tools are called automatically by scripts in the `scripts/` directory or by the Makefile.
+These tools are typically used during the build and packaging process.
+Most tools are called automatically by scripts in the `scripts/` directory or by the Makefile.
 
 ## Adding New Tools
 

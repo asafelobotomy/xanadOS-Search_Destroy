@@ -5,35 +5,50 @@ This document outlines the maintenance practices for the xanadOS-Search_Destroy 
 ## Daily Maintenance
 
 ### Automated Cleanup
+
 ```bash
-# Clean Python cache files
-find app -name "__pycache__" -type d -exec rm -rf {} +
+
+## Clean Python cache files
+
+find app -name "**pycache**" -type d -exec rm -rf {} +
 find app -name "*.pyc" -delete
 
-# Check for large files
-find . -size +10M -not -path "./.venv/*" -not -path "./.git/*"
-```
+## Check for large files
+
+find . -size +10M -not -path "./.venv/_" -not -path "./.Git/_"
+
+```text
 
 ### Code Quality Checks
-```bash
-# Run linting
-python -m flake8 app/
-python -m mypy app/
 
-# Run tests
-python -m pytest tests/ -v
-```
+```bash
+
+## Run linting
+
+Python -m flake8 app/
+Python -m mypy app/
+
+## Run tests
+
+Python -m pytest tests/ -v
+
+```text
 
 ## Weekly Maintenance
 
 ### Dependency Updates
+
 ```bash
-# Update requirements
+
+## Update requirements
+
 pip list --outdated
 pip-review --local --interactive
-```
+
+```text
 
 ### Documentation Review
+
 - Update CHANGELOG.md with recent changes
 - Review and update README.md if needed
 - Check documentation links and accuracy
@@ -41,18 +56,24 @@ pip-review --local --interactive
 ## Monthly Maintenance
 
 ### Repository Cleanup
-```bash
-# Run the organization script
-python organize_repository.py
 
-# Check repository size
+```bash
+
+## Run the organization script
+
+Python organize_repository.py
+
+## Check repository size
+
 du -sh .
 du -sh app/ archive/ dev/ docs/
 
-# Review archive directory for cleanup opportunities
-```
+## Review archive directory for cleanup opportunities
+
+```text
 
 ### Security Review
+
 - Review dependencies for security vulnerabilities
 - Update security-related configurations
 - Check for hardcoded secrets or credentials
@@ -60,14 +81,16 @@ du -sh app/ archive/ dev/ docs/
 ## Release Maintenance
 
 ### Pre-Release Checklist
+
 - [ ] Update VERSION file
 - [ ] Update CHANGELOG.md
 - [ ] Run full test suite
 - [ ] Update documentation
-- [ ] Tag release in git
+- [ ] Tag release in Git
 - [ ] Update packaging files
 
 ### Post-Release Cleanup
+
 - [ ] Archive old development branches
 - [ ] Clean up temporary files
 - [ ] Update project status badges
@@ -75,6 +98,7 @@ du -sh app/ archive/ dev/ docs/
 ## File Organization Rules
 
 ### Keep in Main Repository
+
 - Essential source code (app/)
 - Current documentation (docs/)
 - Active configuration (config/)
@@ -82,13 +106,15 @@ du -sh app/ archive/ dev/ docs/
 - Tests (tests/)
 
 ### Move to Archive
+
 - Old versions and backups
 - Deprecated features
 - Experimental code no longer in use
 - Temporary development files
 
 ### Never Commit
-- Python cache files (__pycache__/)
+
+- Python cache files (**pycache**/)
 - Virtual environments (.venv/)
 - Personal configuration files
 - Large binary files
@@ -97,6 +123,7 @@ du -sh app/ archive/ dev/ docs/
 ## Automation Opportunities
 
 Consider implementing:
+
 1. Pre-commit hooks for code quality
 2. Automated dependency updates
 3. Periodic cleanup GitHub Actions
@@ -106,6 +133,7 @@ Consider implementing:
 ## Repository Health Metrics
 
 Monitor:
+
 - Repository size growth
 - Test coverage percentage
 - Code complexity metrics

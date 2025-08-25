@@ -2,6 +2,7 @@
 applyTo: "docs/**"
 priority: "critical"
 enforcement: "mandatory"
+
 ---
 
 # Documentation Awareness Instructions - MANDATORY
@@ -46,11 +47,14 @@ Before writing ANY documentation, guides, or README files, agents MUST:
 **Usage Example**:
 
 ```bash
-# Instead of writing custom documentation
+
+## Instead of writing custom documentation
+
 ls /docs/
 cat /docs/README.md                          # Documentation index
 ls /docs/guides/                             # Available user guides
-```
+
+```text
 
 ### **User Guides** (`/docs/guides/`)
 
@@ -68,13 +72,16 @@ ls /docs/guides/                             # Available user guides
 **Usage Example**:
 
 ```bash
-# Instead of writing custom user guides
+
+## Instead of writing custom user guides
+
 cat /docs/guides/ENHANCEMENTS.md             # Framework overview
 cat /docs/guides/model-targeting-guide.md    # AI model guidance
 cat /docs/guides/organization-custom-instructions.md  # Enterprise setup
-```
 
-### **GitHub Templates** (`/.github/`)
+```text
+
+### **GitHub Templates** (`/.GitHub/`)
 
 **Purpose**: Specialized AI interaction templates and instructions
 
@@ -87,11 +94,14 @@ cat /docs/guides/organization-custom-instructions.md  # Enterprise setup
 **Usage Example**:
 
 ```bash
-# Instead of creating custom templates
-ls .github/chatmodes/                        # Available chat modes
-ls .github/prompts/                          # Professional prompts
-ls .github/instructions/                     # Instruction files
-```
+
+## Instead of creating custom templates
+
+ls .GitHub/chatmodes/                        # Available chat modes
+ls .GitHub/prompts/                          # Professional prompts
+ls .GitHub/instructions/                     # Instruction files
+
+```text
 
 ### **Archive System** (`/archive/`)
 
@@ -106,43 +116,57 @@ ls .github/instructions/                     # Instruction files
 **Usage Example**:
 
 ```bash
-# Instead of recreating historical documentation
+
+## Instead of recreating historical documentation
+
 cat /archive/README.md                       # Archive policy
 cat /archive/ARCHIVE_INDEX.md                # Content inventory
-```
+
+```text
 
 ## 🎯 **MANDATORY: Documentation Discovery Workflow**
 
 ### **Step 1: Always Check Documentation Repository First**
 
 ```bash
-# Before ANY documentation creation, check:
+
+## Before ANY documentation creation, check
+
 ls /docs/
 cat /docs/README.md
 find /docs/ -name "*.md" -exec basename {} \;
-```
+
+```text
 
 ### **Step 2: Search for Existing Content**
 
 ```bash
-# Search for similar documentation
+
+## Search for similar documentation
+
 grep -r "keyword" /docs/
-find /docs/ -name "*keyword*"
-find .github/ -name "*topic*"
-```
+find /docs/ -name "_keyword_"
+find .GitHub/ -name "_topic_"
+
+```text
 
 ### **Step 3: Use Existing Documentation**
 
 ```bash
-# Example: Framework overview
+
+## Example: Framework overview
+
 cat /docs/guides/ENHANCEMENTS.md
 
-# Example: Project structure
+## Example: Project structure
+
 cat /docs/guides/PROJECT_STRUCTURE.md
 
-# Example: Organization setup
+## Example: Organization setup
+
 cat /docs/guides/organization-custom-instructions.md
-```
+
+```text
 
 ### **Step 4: Update, Don't Duplicate**
 
@@ -156,41 +180,52 @@ If existing documentation needs enhancement:
 ## 🔍 **Documentation Discovery Commands**
 
 ```bash
-# List all available documentation
+
+## List all available documentation
+
 find /docs/ -name "*.md" | sort
 
-# Get summary of all documentation topics
+## Get summary of all documentation topics
+
 grep -r "^# " /docs/ | sed 's/.*://' | sort
 
-# Check documentation coverage
+## Check documentation coverage
+
 for doc in $(find /docs/ -name "*.md"); do
     echo "=== $doc ==="
+
     head -5 "$doc" | grep "^#" || echo "No clear title"
 done
-```
+
+```text
 
 ## 📋 **Quality Standards for Documentation Usage**
 
 ### **Required Checks Before Documentation Creation**
 
 1. ✅ Checked `/docs/README.md` documentation index
-2. ✅ Searched existing guides with `find /docs/guides/ -name "*keyword*"`
-3. ✅ Reviewed relevant templates in `.github/` directories
+2. ✅ Searched existing guides with `find /docs/guides/ -name "_keyword_"`
+3. ✅ Reviewed relevant templates in `.GitHub/` directories
 4. ✅ Confirmed no existing documentation covers the topic
 5. ✅ Planned to update existing documentation or follow patterns
 
 ### **Validation Commands**
 
 ```bash
-# Verify documentation repository is available
+
+## Verify documentation repository is available
+
 test -d /docs && echo "✅ Documentation repository available" || echo "❌ Documentation missing"
 
-# Count available documentation
+## Count available documentation
+
 find /docs/ -name "*.md" | wc -l
 
-# Validate documentation organization
+## Validate documentation organization
+
 ls -la /docs/guides/ /docs/implementation-reports/
-```
+
+```text
 
 ## 🚨 **Enforcement Policy**
 
@@ -205,14 +240,18 @@ ls -la /docs/guides/ /docs/implementation-reports/
 ### **Compliance Validation**
 
 ```bash
-# Check if documentation repository is being used properly
+
+## Check if documentation repository is being used properly
+
 ls -la /docs/
 wc -l /docs/README.md
 
-# Verify no duplicate documentation exists
-find . -name "README.md" -not -path "./docs/*" -not -path "./.github/*"
-find . -name "*guide*" -not -path "./docs/guides/*"
-```
+## Verify no duplicate documentation exists
+
+find . -name "README.md" -not -path "./docs/_" -not -path "./.GitHub/_"
+find . -name "_guide_" -not -path "./docs/guides/*"
+
+```text
 
 ## 💡 **Best Practices for Agents**
 
@@ -226,17 +265,24 @@ find . -name "*guide*" -not -path "./docs/guides/*"
 ### **Integration Patterns**
 
 ```bash
-# Standard documentation integration approach
-if [[ -f "/docs/guides/topic-guide.md" ]]; then
-    # Use existing documentation
+
+## Standard documentation integration approach
+
+if [[-f "/docs/guides/topic-guide.md"]]; then
+
+## Use existing documentation
+
     echo "Using existing guide: /docs/guides/topic-guide.md"
     cat /docs/guides/topic-guide.md
 else
-    # Create following established patterns
+
+## Create following established patterns
+
     echo "Creating new documentation following patterns..."
     cp /docs/guides/template.md /docs/guides/new-topic.md
 fi
-```
+
+```text
 
 ## 📊 **Success Metrics**
 
@@ -259,21 +305,25 @@ fi
 ### **Essential Commands**
 
 ```bash
-# ALWAYS RUN THESE FIRST:
+
+## ALWAYS RUN THESE FIRST
+
 ls /docs/                                    # See available documentation
 cat /docs/README.md                          # Read full documentation index
 find /docs/guides/ -name "*.md"              # List all user guides
 
-# CORE DOCUMENTATION:
+## CORE DOCUMENTATION
+
 cat /docs/guides/ENHANCEMENTS.md             # Framework overview
 cat /docs/guides/PROJECT_STRUCTURE.md        # Repository structure
 cat /docs/guides/organization-custom-instructions.md  # Enterprise setup
-```
+
+```text
 
 ### **When in Doubt**
 
 1. Check `/docs/README.md` for documentation index
-2. Run `find /docs/ -name "*keyword*"`
+2. Run `find /docs/ -name "_keyword_"`
 3. Review existing guides for similar content
 4. Update existing documentation instead of creating new
 
@@ -293,9 +343,9 @@ cat /docs/guides/organization-custom-instructions.md  # Enterprise setup
 
 ### **Template Documentation**
 
-- **Chat Modes**: `/.github/chatmodes/` (11 specialized AI interaction modes)
-- **Prompt Templates**: `/.github/prompts/` (7 professional prompt templates)
-- **Instructions**: `/.github/instructions/` (6+ advanced instruction sets)
+- **Chat Modes**: `/.GitHub/chatmodes/` (11 specialized AI interaction modes)
+- **Prompt Templates**: `/.GitHub/prompts/` (7 professional prompt templates)
+- **Instructions**: `/.GitHub/instructions/` (6+ advanced instruction sets)
 
 ### **Archive Documentation**
 

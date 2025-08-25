@@ -2,6 +2,7 @@
 """
 Scan report management for S&D - Search & Destroy
 """
+
 import json
 from dataclasses import asdict, dataclass
 from datetime import datetime
@@ -78,10 +79,7 @@ class ScanReportManager:
         self.threat_logs = self.reports_dir / "threats"
         self.summary_reports = self.reports_dir / "summaries"
 
-        for directory in [
-                self.daily_reports,
-                self.threat_logs,
-                self.summary_reports]:
+        for directory in [self.daily_reports, self.threat_logs, self.summary_reports]:
             directory.mkdir(exist_ok=True)
 
     def generate_scan_id(self) -> str:
@@ -100,8 +98,7 @@ class ScanReportManager:
             # Save detailed report
             report_file = self.daily_reports / f"scan_{result.scan_id}.json"
             with open(report_file, "w", encoding="utf-8") as f:
-                json.dump(asdict(result), f, indent=2,
-                          default=self._serialize_for_json)
+                json.dump(asdict(result), f, indent=2, default=self._serialize_for_json)
 
             # Save threat summary if threats found
             if result.threats_found > 0:
@@ -169,8 +166,7 @@ class ScanReportManager:
 
         # Track scan types
         scan_type = result.scan_type.value
-        summary["scan_types"][scan_type] = summary["scan_types"].get(
-            scan_type, 0) + 1
+        summary["scan_types"][scan_type] = summary["scan_types"].get(scan_type, 0) + 1
 
         # Track threat types
         for threat in result.threats:
@@ -238,11 +234,15 @@ class ScanReportManager:
                             data["scan_type"] = ScanType(legacy_value)
                         except ValueError:
                             self.logger.warning(
-                                f"Unknown scan type: {scan_type_str}, defaulting to CUSTOM")
+                                "Unknown scan type: %s, defaulting to CUSTOM",
+                                scan_type_str,
+                            )
                             data["scan_type"] = ScanType.CUSTOM
                     else:
                         self.logger.warning(
-                            f"Unknown scan type: {scan_type_str}, defaulting to CUSTOM")
+                            "Unknown scan type: %s, defaulting to CUSTOM",
+                            scan_type_str,
+                        )
                         data["scan_type"] = ScanType.CUSTOM
 
             return ScanResult(**data)
@@ -312,7 +312,6 @@ class ScanReportManager:
                     data["timestamp"].replace("Z", "+00:00")
                 )
                 if start_date <= scan_date <= end_date:
-
                     for threat in data["threats"]:
                         stats["total_threats"] += 1
 
@@ -355,10 +354,7 @@ class ScanReportManager:
         cutoff_date = datetime.now() - timedelta(days=days_to_keep)
         deleted_count = 0
 
-        for report_dir in [
-                self.daily_reports,
-                self.threat_logs,
-                self.summary_reports]:
+        for report_dir in [self.daily_reports, self.threat_logs, self.summary_reports]:
             for report_file in report_dir.glob("*.json"):
                 try:
                     if (
@@ -411,14 +407,12 @@ class ScanReportManager:
 
                     # Date filtering if specified
                     if start_date or end_date:
-                        scan_date = datetime.fromisoformat(
-                            scan_data["start_time"])
+                        scan_date = datetime.fromisoformat(scan_data["start_time"])
                         if start_date and scan_date < datetime.fromisoformat(
                             start_date
                         ):
                             continue
-                        if end_date and scan_date > datetime.fromisoformat(
-                                end_date):
+                        if end_date and scan_date > datetime.fromisoformat(end_date):
                             continue
 
                     export_data["scans"].append(scan_data)
@@ -520,19 +514,19 @@ class ScanReportManager:
         </head>
         <body>
             <h1>S&D Scan Reports</h1>
-            <p>Export generated on {export_data['export_timestamp']}</p>
+            <p>Export generated on {export_data["export_timestamp"]}</p>
 
             <div class="stats">
                 <div class="stat-box">
-                    <div class="stat-value">{len(export_data['scans'])}</div>
+                    <div class="stat-value">{len(export_data["scans"])}</div>
                     <div>Total Scans</div>
                 </div>
                 <div class="stat-box">
-                    <div class="stat-value">{len(export_data['threats'])}</div>
+                    <div class="stat-value">{len(export_data["threats"])}</div>
                     <div>Threats Found</div>
                 </div>
                 <div class="stat-box">
-                    <div class="stat-value">{sum(scan.get('scanned_files', 0) for scan in export_data['scans'])}</div>
+                    <div class="stat-value">{sum(scan.get("scanned_files", 0) for scan in export_data["scans"])}</div>
                     <div>Files Scanned</div>
                 </div>
             </div>
@@ -557,11 +551,11 @@ class ScanReportManager:
             )
             html_content += f"""
                 <tr class="{threat_class}">
-                    <td>{threat.get('scan_date', '')}</td>
-                    <td>{threat.get('file_path', '')}</td>
-                    <td>{threat.get('threat_name', '')}</td>
-                    <td>{threat.get('threat_type', '')}</td>
-                    <td>{threat.get('action_taken', '')}</td>
+                    <td>{threat.get("scan_date", "")}</td>
+                    <td>{threat.get("file_path", "")}</td>
+                    <td>{threat.get("threat_name", "")}</td>
+                    <td>{threat.get("threat_type", "")}</td>
+                    <td>{threat.get("action_taken", "")}</td>
                 </tr>
             """
 
@@ -582,19 +576,16 @@ class ScanReportManager:
 
         # Add scan rows
         for scan in sorted(
-                export_data["scans"],
-                key=lambda x: x.get(
-                    "start_time",
-                    ""),
-                reverse=True):
+            export_data["scans"], key=lambda x: x.get("start_time", ""), reverse=True
+        ):
             status = "Success" if scan.get("success") else "Failed"
             html_content += f"""
                 <tr>
-                    <td>{scan.get('start_time', '')}</td>
-                    <td>{scan.get('scan_type', '')}</td>
-                    <td>{scan.get('duration', 0):.2f}s</td>
-                    <td>{scan.get('scanned_files', 0)}/{scan.get('total_files', 0)}</td>
-                    <td>{scan.get('threats_found', 0)}</td>
+                    <td>{scan.get("start_time", "")}</td>
+                    <td>{scan.get("scan_type", "")}</td>
+                    <td>{scan.get("duration", 0):.2f}s</td>
+                    <td>{scan.get("scanned_files", 0)}/{scan.get("total_files", 0)}</td>
+                    <td>{scan.get("threats_found", 0)}</td>
                     <td>{status}</td>
                 </tr>
             """

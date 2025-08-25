@@ -5,28 +5,35 @@
 Based on the review feedback from PR #6808, the following issues have been addressed:
 
 ### 1. Repository Layout ✅
+
 - Files are now properly organized in the `org.xanados.SearchAndDestroy/` directory
 - Correct file naming and structure for Flathub requirements
 
 ### 2. Runtime Version ✅
-- Updated from `23.08` to `24.08` as requested by reviewer @bbhtt
+
+- Updated from `23.08`to`24.08` as requested by reviewer @bbhtt
 
 ### 3. Python Dependencies ✅
+
 - Switched to using `com.riverbankcomputing.PyQt.BaseApp` base app
 - Simplified dependency management as suggested
 
 ### 4. File Access Permissions ✅
+
 - Added proper portal permissions for file access
 - Maintained necessary filesystem access for antivirus scanning
 - Added portal-based file chooser support
 
 ### 5. Screenshot URLs ✅
+
 - Updated to use specific tag `v2.10.0` instead of master branch
 
-### 6. Removed flathub.json ✅
+### 6. Removed flathub.JSON ✅
+
 - Removed as requested by reviewer
 
 ### 7. Updated Dependencies ✅
+
 - Updated to latest version tag `v2.10.0`
 - Corrected commit hash
 
@@ -34,12 +41,13 @@ Based on the review feedback from PR #6808, the following issues have been addre
 
 The following files should be submitted to the Flathub repository:
 
-```
+```text
 org.xanados.SearchAndDestroy/
 ├── org.xanados.SearchAndDestroy.yml        # Main manifest
-├── org.xanados.SearchAndDestroy.metainfo.xml  # AppStream metadata
+├── org.xanados.SearchAndDestroy.metainfo.XML  # AppStream metadata
 └── org.xanados.SearchAndDestroy.desktop     # Desktop entry
-```
+
+```text
 
 ## Submission Process
 
@@ -64,4 +72,5 @@ Before submission, you can test the build locally:
 
 ```bash
 flatpak-builder build-dir org.xanados.SearchAndDestroy.yml --install --user --force-clean
-```
+
+```text

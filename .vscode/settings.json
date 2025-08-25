@@ -12,6 +12,16 @@
   "markdown.preview.fontFamily": "-apple-system, BlinkMacSystemFont, 'Segoe WPC', 'Segoe UI', system-ui, 'Ubuntu', 'Droid Sans', sans-serif",
   "markdown.preview.fontSize": 14,
   "markdown.preview.lineHeight": 1.6,
+  "markdownlint.config": {
+    "default": true,
+    "MD013": false,
+    "MD033": false,
+    "ignores": [
+      ".markdown-backups/**",
+      "archive/**",
+      "node_modules/**"
+    ]
+  },
   "github.copilot.enable": {
     "*": true,
     "plaintext": true,
@@ -24,6 +34,15 @@
   "github.copilot.chat.localeOverride": "en",
   "github.copilot.chat.welcomeMessage": "never",
   "github.copilot.chat.insertionIndicator": true,
+  "cSpell.files": ["**/*.md"],
+  "cSpell.useGitignore": true,
+  "cSpell.ignorePaths": [
+    ".cspellignore",
+    ".markdown-backups/**",
+    ".python-backups/**",
+    "archive/**",
+    "node_modules/**"
+  ],
   "workbench.editorAssociations": {
     "*.chatmode.md": "vscode.markdown.preview.editor",
     "*.prompt.md": "vscode.markdown.preview.editor",
@@ -38,4 +57,27 @@
   "files.trimTrailingWhitespace": true,
   "files.insertFinalNewline": true,
   "files.trimFinalNewlines": true
+  ,
+  // Exclude backup/archives from Problems and search
+  "files.exclude": {
+    "**/.python-backups/**": true,
+    "**/.markdown-backups/**": true,
+    "**/archive/**": false
+  },
+  "search.exclude": {
+    "**/.python-backups/**": true,
+    "**/.markdown-backups/**": true,
+    "**/archive/**": false
+  },
+  // Python analysis excludes
+  "python.analysis.exclude": [
+    "**/.python-backups/**",
+    "**/.markdown-backups/**",
+    "archive/**"
+  ],
+  // Ruff extension excludes (if present)
+  "ruff.lint.args": [
+    "--exclude",
+    ".python-backups,.markdown-backups,archive,node_modules,.venv,venv"
+  ]
 }

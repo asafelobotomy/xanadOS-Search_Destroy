@@ -16,34 +16,45 @@ We follow a **Git Flow** branching model for organized development:
 
 1. **Feature Development**
 
-   ```bash
-   git checkout develop
-   git pull origin develop
-   git checkout -b feature/your-feature-name
-   # Make changes
-   git add .
-   git commit -m "feat: add feature description"
-   git push origin feature/your-feature-name
-   # Create pull request to develop
-   ```
+  ```bash
+  Git checkout develop
+  Git pull origin develop
+  Git checkout -b feature/your-feature-name
+
+## Make changes
+
+  Git add .
+  Git commit -m "feat: add feature description"
+  Git push origin feature/your-feature-name
+
+## Create pull request to develop
+
+```text
 
 2. **Bug Fixes**
 
-   ```bash
-   git checkout develop
-   git checkout -b bugfix/issue-description
-   # Fix the bug
-   git commit -m "fix: resolve issue description"
-   ```
+  ```bash
+  Git checkout develop
+  Git checkout -b bugfix/issue-description
+
+## Fix the bug
+
+  Git commit -m "fix: resolve issue description"
+```text
 
 3. **Hotfixes** (Critical production issues)
-   ```bash
-   git checkout master
-   git checkout -b hotfix/critical-issue
-   # Fix the issue
-   git commit -m "hotfix: resolve critical issue"
-   # Merge to both master and develop
-   ```
+
+  ```bash
+  Git checkout master
+  Git checkout -b hotfix/critical-issue
+
+## Fix the issue
+
+  Git commit -m "hotfix: resolve critical issue"
+
+## Merge to both master and develop
+
+```text
 
 ## Commit Message Convention
 
@@ -51,13 +62,15 @@ We use **Conventional Commits** for clear, semantic commit messages:
 
 ### Format
 
-```
+```text
+
 <type>[optional scope]: <description>
 
 [optional body]
 
 [optional footer(s)]
-```
+
+```text
 
 ### Types
 
@@ -74,91 +87,106 @@ We use **Conventional Commits** for clear, semantic commit messages:
 ### Examples
 
 ```bash
+
 feat(dashboard): add clickable Last Scan card functionality
 fix(reports): resolve duplicate scan reports issue
 docs(readme): update installation instructions
 refactor(scanner): optimize file scanning performance
 test(gui): add unit tests for dashboard components
-```
+
+```text
 
 ## Version Control Commands
 
 ### Daily Development
 
 ```bash
-# Check status
-git status
 
-# View changes
-git diff
+## Check status
 
-# Stage changes
-git add .
-# or stage specific files
-git add path/to/file.py
+Git status
 
-# Commit with conventional message
-git commit -m "feat(component): description of changes"
+## View changes
 
-# Push to remote
-git push origin branch-name
+Git diff
 
-# Pull latest changes
-git pull origin branch-name
-```
+## Stage changes
+
+Git add .
+
+## or stage specific files
+
+Git add path/to/file.py
+
+## Commit with conventional message
+
+Git commit -m "feat(component): description of changes"
+
+## Push to remote
+
+Git push origin branch-name
+
+## Pull latest changes
+
+Git pull origin branch-name
+
+```text
 
 ### Release Process
 
 1. **Create Release Branch**
 
-   ```bash
-   git checkout develop
-   git checkout -b release/2.1.0
-   ```
+  ```bash
+  Git checkout develop
+  Git checkout -b release/2.1.0
+```text
 
 2. **Update Version Files**
 
-   ```bash
-   echo "2.1.0" > VERSION
-   # Update CHANGELOG.md with release notes
-   git add VERSION CHANGELOG.md
-   git commit -m "chore(release): bump version to 2.9.0"
-   ```
+  ```bash
+  echo "2.1.0" > VERSION
+
+## Update CHANGELOG.md with release notes
+
+  Git add VERSION CHANGELOG.md
+  Git commit -m "chore(release): bump version to 2.9.0"
+
+```text
 
 3. **Merge to Master and Tag**
 
-   ```bash
-   git checkout master
-   git merge release/2.1.0
-   git tag -a v2.9.0 -m "Release version 2.9.0"
-   git push origin master --tags
-   ```
+  ```bash
+  Git checkout master
+  Git merge release/2.1.0
+  Git tag -a v2.9.0 -m "Release version 2.9.0"
+  Git push origin master --tags
+```text
 
 4. **Merge Back to Develop**
-   ```bash
-   git checkout develop
-   git merge release/2.1.0
-   git push origin develop
-   ```
+
+  ```bash
+  Git checkout develop
+  Git merge release/2.1.0
+  Git push origin develop
+
+```text
 
 ## Code Review Process
 
 1. **Create Pull Request**
-   - Target the appropriate base branch (`develop` for features)
-   - Include descriptive title and detailed description
-   - Reference any related issues
-
+- Target the appropriate base branch (`develop` for features)
+- Include descriptive title and detailed description
+- Reference any related issues
 2. **Review Checklist**
-   - [ ] Code follows project conventions
-   - [ ] Tests pass (if applicable)
-   - [ ] Documentation updated
-   - [ ] No security vulnerabilities
-   - [ ] Performance considerations addressed
-
+- [ ] Code follows project conventions
+- [ ] Tests pass (if applicable)
+- [ ] Documentation updated
+- [ ] No security vulnerabilities
+- [ ] Performance considerations addressed
 3. **Approval and Merge**
-   - Require at least one reviewer approval
-   - Use "Squash and merge" for clean history
-   - Delete feature branch after merge
+- Require at least one reviewer approval
+- Use "Squash and merge" for clean history
+- Delete feature branch after merge
 
 ## Tag Strategy
 
@@ -179,19 +207,23 @@ git pull origin branch-name
 ### Set up user info
 
 ```bash
-git config --global user.name "Your Name"
-git config --global user.email "your.email@example.com"
-```
+
+Git config --global user.name "Your Name"
+Git config --global user.email "your.email@example.com"
+
+```text
 
 ### Useful aliases
 
 ```bash
-git config --global alias.co checkout
-git config --global alias.br branch
-git config --global alias.ci commit
-git config --global alias.st status
-git config --global alias.lg "log --oneline --graph --decorate"
-```
+
+Git config --global alias.co checkout
+Git config --global alias.br branch
+Git config --global alias.ci commit
+Git config --global alias.st status
+Git config --global alias.lg "log --oneline --graph --decorate"
+
+```text
 
 ## Best Practices
 
@@ -199,7 +231,7 @@ git config --global alias.lg "log --oneline --graph --decorate"
 2. **Write Clear Messages**: Use conventional commit format
 3. **Test Before Commit**: Ensure code works before committing
 4. **Keep Branches Updated**: Regularly merge/rebase from develop
-5. **Review Your Changes**: Use `git diff` before committing
+5. **Review Your Changes**: Use `Git diff` before committing
 6. **Use .gitignore**: Keep repository clean of build artifacts
 7. **Backup Work**: Push branches regularly to remote
 
@@ -208,37 +240,47 @@ git config --global alias.lg "log --oneline --graph --decorate"
 ### Cleanup Commands
 
 ```bash
-# Use automated cleanup script (recommended)
+
+## Use automated cleanup script (recommended)
+
 ./scripts/cleanup-repository.sh
 
-# Remove merged branches
-git branch --merged | grep -v master | xargs git branch -d
+## Remove merged branches
 
-# Clean up remote tracking branches
-git remote prune origin
+Git branch --merged | grep -v master | xargs Git branch -d
 
-# Remove untracked files (be careful!)
-git clean -fd --dry-run  # Preview first
-git clean -fd           # Execute cleanup
-```
+## Clean up remote tracking branches
+
+Git remote prune origin
+
+## Remove untracked files (be careful!)
+
+Git clean -fd --dry-run  # Preview first
+Git clean -fd           # Execute cleanup
+
+```text
 
 ### Repository Statistics
 
 ```bash
-# View commit history
-git log --oneline --graph --decorate --all
 
-# See who contributed what
-git shortlog -sn
+## View commit history
 
-# View file changes over time
-git log --stat --oneline
-```
+Git log --oneline --graph --decorate --all
 
+## See who contributed what
+
+Git shortlog -sn
+
+## View file changes over time
+
+Git log --stat --oneline
+
+```text
 
 ---
 
-# Implementation Status
+## Implementation Status
 
 ## ✅ Implemented Features
 
@@ -307,31 +349,42 @@ git log --stat --oneline
 
 ## 🚀 Usage Examples
 
-### Daily Development
+### Daily Development 2
 
 ```bash
-# Start new feature
-git feature-start dashboard-improvements
 
-# Make changes with conventional commits
-git commit -m "feat(dashboard): add clickable cards"
-git commit -m "fix(reports): resolve duplicate issue"
+## Start new feature
 
-# Finish feature
-git feature-finish dashboard-improvements
-```
+Git feature-start dashboard-improvements
 
-### Release Process
+## Make changes with conventional commits
+
+Git commit -m "feat(dashboard): add clickable cards"
+Git commit -m "fix(reports): resolve duplicate issue"
+
+## Finish feature
+
+Git feature-finish dashboard-improvements
+
+```text
+
+### Release Process 2
 
 ```bash
-# Automated release
+
+## Automated release
+
 ./scripts/release.sh 2.3.0
 
-# Or manual process
-git release-start 2.1.0
-# Update CHANGELOG.md
-git release-finish 2.1.0
-```
+## Or manual process
+
+Git release-start 2.1.0
+
+## Update CHANGELOG.md
+
+Git release-finish 2.1.0
+
+```text
 
 ### Code Quality
 
@@ -357,4 +410,3 @@ git release-finish 2.1.0
 4. **Monitoring**: Track commit quality and workflow effectiveness
 
 This implementation follows industry best practices from the GitHub version control resource and provides a solid foundation for collaborative development.
-

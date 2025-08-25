@@ -7,25 +7,33 @@
 This project uses a Python virtual environment for dependency management:
 
 ```bash
-# Clone and navigate to project
-git clone https://github.com/asafelobotomy/xanadOS-Search_Destroy.git
+
+## Clone and navigate to project
+
+Git clone <HTTPS://GitHub.com/asafelobotomy/xanadOS-Search_Destroy.Git>
 cd xanadOS-Search_Destroy
 
-# Automated setup (recommended)
+## Automated setup (recommended)
+
 ./scripts/prepare-build.sh
 
-# Manual setup alternative
-python -m venv .venv
+## Manual setup alternative
+
+Python -m venv .venv
 source .venv/bin/activate  # On Linux/Mac
 pip install -r requirements.txt
 
-# Run the application
-./run.sh
-# or manually: python app/main.py
+## Run the application
 
-# Run tests
-python -m pytest tests/ -v
-```
+./run.sh
+
+## or manually: Python app/main.py
+
+## Run tests
+
+Python -m pytest tests/ -v
+
+```text
 
 ## Modern Development Features
 
@@ -43,42 +51,47 @@ This project includes comprehensive GitHub Copilot instructions for consistent d
 The project uses a modern Makefile with industry standards:
 
 ```bash
-# View all available targets
+
+## View all available targets
+
 make help
 
-# Development setup
+## Development setup
+
 make dev-setup
 
-# Quality assurance
+## Quality assurance
+
 make quality
 
-# Build Flatpak
+## Build Flatpak
+
 make build-flatpak
 
-# Install and run
+## Install and run
+
 make install-flatpak
 make run-flatpak
-```
+
+```text
 
 ## Project Architecture
 
 ### Core Components
 
 - **`app/core/`** - Core security functionality (11,030+ lines)
-  - `clamav_wrapper.py` - Enhanced ClamAV integration with daemon support
-  - `file_scanner.py` - Advanced scanning engine with quarantine management
-  - `rkhunter_wrapper.py` - RKHunter rootkit detection integration
-  - `firewall_detector.py` - Multi-platform firewall management
-
+- `clamav_wrapper.py` - Enhanced ClamAV integration with daemon support
+- `file_scanner.py` - Advanced scanning engine with quarantine management
+- `rkhunter_wrapper.py` - RKHunter rootkit detection integration
+- `firewall_detector.py` - Multi-platform firewall management
 - **`app/gui/`** - PyQt6 user interface components
-  - `main_window.py` - Main application window with tabbed interface
-  - `scan_thread.py` - Non-blocking scan operations
-  - `settings_dialog.py` - Comprehensive settings management
-
+- `main_window.py` - Main application window with tabbed interface
+- `scan_thread.py` - Non-blocking scan operations
+- `settings_dialog.py` - Comprehensive settings management
 - **`app/monitoring/`** - Real-time protection system
-  - `real_time_monitor.py` - File system monitoring coordinator
-  - `file_watcher.py` - inotify-based file watching
-  - `background_scanner.py` - Background threat scanning
+- `real_time_monitor.py` - File system monitoring coordinator
+- `file_watcher.py` - inotify-based file watching
+- `background_scanner.py` - Background threat scanning
 
 ### Modern Features
 
@@ -108,7 +121,7 @@ make run-flatpak
 - `app/` - Main application source code
 - `tests/` - Test suite
 - `docs/` - Documentation (empty, ready for future docs)
-- `config/` - Configuration files (local.json is ignored)
+- `config/` - Configuration files (local.JSON is ignored)
 - `data/logs/` - Application log files (ignored)
 - `data/reports/` - Generated scan reports (ignored)
 - `data/quarantine/` - Quarantined files (ignored)

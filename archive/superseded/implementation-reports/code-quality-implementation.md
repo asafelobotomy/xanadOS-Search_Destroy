@@ -11,7 +11,7 @@
 
 ### ✅ Policy Creation
 
-- **File**: `.github/instructions/code-quality.instructions.md`
+- **File**: `.GitHub/instructions/code-quality.instructions.md`
 - **Size**: 430+ lines of comprehensive quality standards
 - **Classification**: MANDATORY policy for all GitHub Copilot agents
 - **Scope**: All repositories with code content
@@ -27,10 +27,10 @@
 
 #### Markdown Linting (markdownlint)
 
-- **Configuration**: Comprehensive `.markdownlint.json` with 15+ rules
+- **Configuration**: Comprehensive `.markdownlint.JSON` with 15+ rules
 - **Critical Enforcement**: Heading hierarchy, code blocks, list formatting
 - **VS Code Integration**: Workspace settings for real-time linting
-- **CI/CD Integration**: Automated markdown validation
+- **CI/CD Integration**: Automated Markdown validation
 
 #### Code Formatting (Prettier)
 
@@ -81,7 +81,7 @@
 
 1. **Consistency**: Unified formatting and style across all code types
 2. **Reliability**: Automated detection of shell script errors and vulnerabilities
-3. **Readability**: Enforced markdown standards improve documentation quality
+3. **Readability**: Enforced Markdown standards improve documentation quality
 4. **Maintainability**: EditorConfig ensures cross-platform development consistency
 
 ### Developer Experience Improvements
@@ -103,14 +103,14 @@
 ### Tool Requirements
 
 - **ShellCheck**: Static analysis for shell scripts with severity controls
-- **markdownlint-cli2**: Modern markdown linting with comprehensive rule set
+- **markdownlint-cli2**: Modern Markdown linting with comprehensive rule set
 - **Prettier**: Opinionated code formatting with language-specific support
 - **EditorConfig**: Cross-editor configuration for consistent formatting
 
 ### Configuration Standards
 
 - **Centralized Config**: Repository-root configuration files for all tools
-- **Language-Specific**: Tailored rules for JavaScript, Python, shell, markdown, etc.
+- **Language-Specific**: Tailored rules for JavaScript, Python, shell, Markdown, etc.
 - **VS Code Integration**: Workspace settings optimize developer experience
 - **CI/CD Ready**: Automated workflows validate all changes
 
@@ -149,13 +149,15 @@
 ### Multi-Tool Integration
 
 ```bash
-# Complete validation pipeline
+
+## Complete validation pipeline
 
 shellcheck scripts/**/*.sh           # Shell script analysis
 markdownlint-cli2 "**/*.md"         # Markdown linting
 prettier --check .                   # Code formatting
 editorconfig-checker                 # Cross-platform consistency
-```markdown
+
+```Markdown
 
 ### VS Code Ecosystem
 

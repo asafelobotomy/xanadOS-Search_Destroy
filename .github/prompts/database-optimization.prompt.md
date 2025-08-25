@@ -1,6 +1,7 @@
 # Database Optimization Prompt
 
-You are optimizing database performance and design for scalability, reliability, and maintainability. Apply systematic analysis to identify bottlenecks and implement comprehensive optimization strategies across schema design, query performance, and infrastructure.
+You are optimizing database performance and design for scalability, reliability, and maintainability.
+Apply systematic analysis to identify bottlenecks and implement comprehensive optimization strategies across schema design, query performance, and infrastructure.
 
 ## Database Optimization Methodology
 
@@ -8,7 +9,8 @@ You are optimizing database performance and design for scalability, reliability,
 
 ### Query Performance Analysis
 
-```sql
+```SQL
+
 -- PostgreSQL: Enable query timing and logging
 SET log_statement = 'all';
 SET log_min_duration_statement = 100; -- Log queries taking >100ms
@@ -50,11 +52,13 @@ SELECT
 FROM pg_stat_user_indexes
 WHERE idx_scan = 0
 ORDER BY relname;
-```markdown
+
+```Markdown
 
 ### MySQL Performance Analysis
 
-```sql
+```SQL
+
 -- MySQL: Enable slow query log
 SET GLOBAL slow_query_log = 'ON';
 SET GLOBAL long_query_time = 0.1;  -- Log queries >100ms
@@ -86,11 +90,12 @@ SELECT
 FROM performance_schema.table_io_waits_summary_by_index_usage
 WHERE object_schema NOT IN ('mysql', 'performance_schema', 'information_schema')
 ORDER BY sum_timer_wait DESC;
-```markdown
+
+```Markdown
 
 ### Database Metrics Monitoring
 
-```python
+```Python
 import psycopg2
 import time
 from dataclasses import dataclass
@@ -112,7 +117,7 @@ class DatabaseMetrics:
 class DatabaseMonitor:
     """Monitor database performance metrics"""
 
-    def __init__(self, connection_params):
+    def **init**(self, connection_params):
         self.connection_params = connection_params
 
     def collect_metrics(self) -> DatabaseMetrics:
@@ -120,7 +125,8 @@ class DatabaseMonitor:
         with psycopg2.connect(**self.connection_params) as conn:
             cursor = conn.cursor()
 
-            # Connection metrics
+## Connection metrics
+
             cursor.execute("""
                 SELECT
                     state,
@@ -131,7 +137,8 @@ class DatabaseMonitor:
             """)
             connection_stats = dict(cursor.fetchall())
 
-            # Cache hit ratio
+## Cache hit ratio
+
             cursor.execute("""
                 SELECT
                     100.0 * sum(blks_hit) / (sum(blks_hit) + sum(blks_read)) as cache_hit_ratio
@@ -140,7 +147,8 @@ class DatabaseMonitor:
             """)
             cache_hit_ratio = cursor.fetchone()[0] or 0.0
 
-            # Query performance
+## Query performance
+
             cursor.execute("""
                 SELECT
                     avg(mean_time) as avg_query_time,
@@ -149,25 +157,31 @@ class DatabaseMonitor:
             """)
             query_stats = cursor.fetchone()
 
-            # Table sizes
+## Table sizes
+
             cursor.execute("""
                 SELECT
+
                     schemaname||'.'||tablename as table_name,
 |---|---|---|
                     pg_total_relation_size(schemaname||'.'||tablename) as size_bytes
 |---|---|---|
                 FROM pg_tables
+
                 WHERE schemaname = 'public'
                 ORDER BY size_bytes DESC
             """)
             table_sizes = dict(cursor.fetchall())
 
-            # Index usage
+## Index usage
+
             cursor.execute("""
                 SELECT
+
                     schemaname||'.'||tablename as table_name,
 |---|---|---|
                     CASE
+
                         WHEN seq_scan + idx_scan = 0 THEN 0
                         ELSE 100.0 * idx_scan / (seq_scan + idx_scan)
                     END as index_usage_percent
@@ -193,7 +207,7 @@ class DatabaseMonitor:
 
         report = f"""
 
-# Database Performance Report
+## Database Performance Report
 
 Generated: {time.strftime('%Y-%m-%d %H:%M:%S')}
 
@@ -203,7 +217,7 @@ Generated: {time.strftime('%Y-%m-%d %H:%M:%S')}
 - Idle Connections: {metrics.idle_connections}
 - Waiting Connections: {metrics.waiting_connections}
 
-## Query Performance
+## Query Performance 2
 
 - Cache Hit Ratio: {metrics.cache_hit_ratio:.2f}%
 - Average Query Time: {metrics.avg_query_time:.2f}ms
@@ -224,13 +238,15 @@ Top 10 Largest Tables:
             report += f"- {table}: {usage:.1f}% {status}\n"
 
         return report
-```markdown
+
+```Markdown
 
 ### 2. Index Optimization
 
 ### Strategic Index Design
 
-```sql
+```SQL
+
 -- Composite index strategy for common query patterns
 CREATE INDEX CONCURRENTLY idx_orders_user_status_date
 ON orders (user_id, status, created_at DESC);
@@ -249,6 +265,7 @@ CREATE INDEX CONCURRENTLY idx_users_lower_email
 ON users (LOWER(email));
 
 CREATE INDEX CONCURRENTLY idx_products_search_vector
+
 ON products USING gin(to_tsvector('english', name || ' ' || description));
 |---|---|---|
 
@@ -263,22 +280,24 @@ ON user_sessions USING hash (session_token);
 
 -- Prefix indexes for large text columns (MySQL)
 CREATE INDEX idx_articles_content_prefix ON articles (content(100));
-```markdown
+
+```Markdown
 
 ### Index Maintenance and Analysis
 
-```python
+```Python
 class IndexOptimizer:
     """Analyze and optimize database indexes"""
 
-    def __init__(self, db_connection):
+    def **init**(self, db_connection):
         self.db = db_connection
 
     def analyze_index_usage(self) -> Dict[str, Dict]:
         """Analyze index usage patterns"""
         cursor = self.db.cursor()
 
-        # PostgreSQL index usage analysis
+## PostgreSQL index usage analysis
+
         cursor.execute("""
             SELECT
                 schemaname,
@@ -326,12 +345,17 @@ class IndexOptimizer:
         suggestions = []
 
         for query in slow_queries:
-            # Parse query to identify potential index opportunities
-            if 'WHERE' in query.upper():
-                # Extract WHERE conditions
-                where_clause = query.upper().split('WHERE')[1].split('ORDER BY')[0]
 
-                # Simple pattern matching for common cases
+## Parse query to identify potential index opportunities
+
+            if 'WHERE' in query.upper():
+
+## Extract WHERE conditions
+
+                where_clause = query.upper().split[1]('WHERE').split[0]('ORDER BY')
+
+## Simple pattern matching for common cases
+
                 if 'AND' in where_clause:
                     suggestions.append({
                         'type': 'composite_index',
@@ -339,7 +363,7 @@ class IndexOptimizer:
                         'recommendation': 'Consider composite index on multiple WHERE columns'
                     })
 
-                if 'LIKE' in where_clause and '%' not in where_clause.split('LIKE')[1][:10]:
+                if 'LIKE' in where_clause and '%' not in where_clause.split[1][:10]('LIKE'):
                     suggestions.append({
                         'type': 'prefix_index',
                         'query': query,
@@ -352,7 +376,8 @@ class IndexOptimizer:
         """Generate index maintenance commands"""
         commands = []
 
-        # Reindex heavily used indexes
+## Reindex heavily used indexes
+
         cursor = self.db.cursor()
         cursor.execute("""
             SELECT indexname
@@ -366,7 +391,8 @@ class IndexOptimizer:
         for index in heavy_indexes:
             commands.append(f"REINDEX INDEX CONCURRENTLY {index};")
 
-        # Update table statistics
+## Update table statistics
+
         cursor.execute("""
             SELECT schemaname, tablename
             FROM pg_stat_user_tables
@@ -378,13 +404,15 @@ class IndexOptimizer:
             commands.append(f"ANALYZE {schema}.{table};")
 
         return commands
-```markdown
+
+```Markdown
 
 ### 3. Query Optimization
 
 ### Query Rewriting Strategies
 
-```sql
+```SQL
+
 -- BEFORE: Inefficient subquery
 SELECT u.*,
        (SELECT COUNT(*) FROM orders o WHERE o.user_id = u.id) as order_count
@@ -449,22 +477,24 @@ SELECT *, MATCH(name, description) AGAINST('search_term' IN NATURAL LANGUAGE MOD
 FROM products
 WHERE MATCH(name, description) AGAINST('search_term' IN NATURAL LANGUAGE MODE)
 ORDER BY score DESC;
-```markdown
+
+```Markdown
 
 ### Query Optimization Framework
 
-```python
+```Python
 class QueryOptimizer:
     """Analyze and optimize SQL queries"""
 
-    def __init__(self, db_connection):
+    def **init**(self, db_connection):
         self.db = db_connection
 
     def analyze_query_plan(self, query: str) -> Dict:
         """Analyze query execution plan"""
         cursor = self.db.cursor()
 
-        # Get execution plan with costs
+## Get execution plan with costs
+
         cursor.execute(f"EXPLAIN (ANALYZE, BUFFERS, FORMAT JSON) {query}")
         plan = cursor.fetchone()[0][0]
 
@@ -481,20 +511,25 @@ class QueryOptimizer:
         opportunities = []
 
         def analyze_node(node):
-            # Check for sequential scans on large tables
+
+## Check for sequential scans on large tables
+
             if node.get('Node Type') == 'Seq Scan' and node.get('Actual Rows', 0) > 10000:
                 opportunities.append(f"Consider adding index to {node.get('Relation Name', 'table')}")
 
-            # Check for expensive sorts
+## Check for expensive sorts
+
             if node.get('Node Type') == 'Sort' and node.get('Actual Total Time', 0) > 1000:
                 opportunities.append("Consider adding index to avoid expensive sort operation")
 
-            # Check for nested loop with high row counts
+## Check for nested loop with high row counts
+
             if (node.get('Node Type') == 'Nested Loop' and
                 node.get('Actual Rows', 0) > 1000):
                 opportunities.append("Consider hash join instead of nested loop")
 
-            # Recursively analyze child nodes
+## Recursively analyze child nodes
+
             for child in node.get('Plans', []):
                 analyze_node(child)
 
@@ -506,7 +541,8 @@ class QueryOptimizer:
         suggestions = []
         query_upper = query.upper()
 
-        # Detect common anti-patterns
+## Detect common anti-patterns
+
         if 'SELECT *' in query_upper:
             suggestions.append({
                 'type': 'column_selection',
@@ -540,7 +576,9 @@ class QueryOptimizer:
     def optimize_batch_operations(self, operation_type: str, data: List[Dict]) -> str:
         """Generate optimized batch operation queries"""
         if operation_type == 'insert':
-            # Use bulk insert instead of individual INSERTs
+
+## Use bulk insert instead of individual INSERTs
+
             if len(data) > 1:
                 columns = list(data[0].keys())
                 values_list = []
@@ -557,13 +595,16 @@ class QueryOptimizer:
                 """
 
         elif operation_type == 'update':
-            # Use CASE statements for bulk updates
+
+## Use CASE statements for bulk updates
+
             if len(data) > 10:
                 return """
                 UPDATE table_name
                 SET column1 = CASE
                     WHEN id = ? THEN ?
                     WHEN id = ? THEN ?
+
                     -- ... more cases
                     ELSE column1
                 END
@@ -571,13 +612,15 @@ class QueryOptimizer:
                 """
 
         return "No optimization available for this operation type"
-```markdown
+
+```Markdown
 
 ### 4. Schema Design Optimization
 
 ### Normalization and Denormalization Strategies
 
-```sql
+```SQL
+
 -- Properly normalized schema for transactional integrity
 CREATE TABLE users (
     id SERIAL PRIMARY KEY,
@@ -629,9 +672,11 @@ CREATE MATERIALIZED VIEW user_analytics AS
 SELECT
     u.id,
     u.email,
+
     u.first_name || ' ' || u.last_name as full_name,
 |---|---|---|
     COUNT(o.id) as total_orders,
+
     COALESCE(SUM(o.total_amount), 0) as lifetime_value,
     AVG(o.total_amount) as avg_order_value,
     MAX(o.created_at) as last_order_date,
@@ -664,11 +709,13 @@ CREATE TRIGGER trigger_refresh_user_analytics
     AFTER INSERT OR UPDATE OR DELETE ON orders
     FOR EACH STATEMENT
     EXECUTE FUNCTION refresh_user_analytics();
-```markdown
+
+```Markdown
 
 ### Data Type Optimization
 
-```sql
+```SQL
+
 -- Optimized data types for storage and performance
 CREATE TABLE optimized_products (
     id INTEGER NOT NULL,                    -- Use INTEGER instead of BIGINT if range sufficient
@@ -734,13 +781,15 @@ SELECT p.*, pa.attributes
 FROM products p
 JOIN product_attributes pa ON p.id = pa.product_id
 WHERE pa.attributes ? 'warranty_years';
-```markdown
+
+```Markdown
 
 ### 5. Partitioning Strategies
 
 ### Table Partitioning Implementation
 
-```sql
+```SQL
+
 -- Range partitioning by date (PostgreSQL)
 CREATE TABLE orders_partitioned (
     id INTEGER NOT NULL,
@@ -802,11 +851,12 @@ FOR VALUES IN (4, 5, 6);
 
 CREATE TABLE products_books PARTITION OF products_partitioned
 FOR VALUES IN (7, 8);
-```markdown
+
+```Markdown
 
 ### Automated Partition Management
 
-```python
+```Python
 import psycopg2
 from datetime import datetime, timedelta
 from typing import List
@@ -814,7 +864,7 @@ from typing import List
 class PartitionManager:
     """Manage database partitions automatically"""
 
-    def __init__(self, connection_params):
+    def **init**(self, connection_params):
         self.connection_params = connection_params
 
     def create_monthly_partitions(self, table_name: str, months_ahead: int = 3) -> List[str]:
@@ -832,7 +882,8 @@ class PartitionManager:
 
                 partition_name = f"{table_name}_{partition_date.strftime('%Y_%m')}"
 
-                # Check if partition already exists
+## Check if partition already exists
+
                 cursor.execute("""
                     SELECT EXISTS(
                         SELECT 1 FROM information_schema.tables
@@ -861,7 +912,8 @@ class PartitionManager:
         with psycopg2.connect(**self.connection_params) as conn:
             cursor = conn.cursor()
 
-            # Find old partitions
+## Find old partitions
+
             cursor.execute("""
                 SELECT schemaname, tablename
                 FROM pg_tables
@@ -872,11 +924,14 @@ class PartitionManager:
             old_partitions = cursor.fetchall()
 
             for schema, partition_name in old_partitions:
-                # Optionally backup before dropping
-                backup_command = f"pg_dump -t {schema}.{partition_name} > {partition_name}_backup.sql"
+
+## Optionally backup before dropping
+
+                backup_command = f"pg_dump -t {schema}.{partition_name} > {partition_name}_backup.SQL"
                 commands.append(f"-- Backup: {backup_command}")
 
-                # Drop partition
+## Drop partition
+
                 drop_command = f"DROP TABLE {schema}.{partition_name}"
                 commands.append(drop_command)
                 cursor.execute(drop_command)
@@ -894,9 +949,11 @@ class PartitionManager:
                 SELECT
                     schemaname,
                     tablename,
+
                     pg_size_pretty(pg_total_relation_size(schemaname||'.'||tablename)) as size,
 |---|---|---|
                     n_tup_ins,
+
                     n_tup_upd,
                     n_tup_del,
                     n_live_tup,
@@ -921,7 +978,7 @@ class PartitionManager:
 
             return partitions
 
-# Automated partition maintenance script
+## Automated partition maintenance script
 
 def maintain_partitions():
     """Daily partition maintenance routine"""
@@ -934,31 +991,36 @@ def maintain_partitions():
 
     manager = PartitionManager(connection_params)
 
-    # Create future partitions
+## Create future partitions
+
     future_partitions = manager.create_monthly_partitions('orders_partitioned', months_ahead=3)
     print(f"Created {len(future_partitions)} future partitions")
 
-    # Drop old partitions (keep 12 months)
+## Drop old partitions (keep 12 months)
+
     dropped_partitions = manager.drop_old_partitions('orders_partitioned', retain_months=12)
     print(f"Dropped {len(dropped_partitions)} old partitions")
 
-    # Analyze partition health
+## Analyze partition health
+
     partition_stats = manager.analyze_partition_usage('orders_partitioned')
     for partition, stats in partition_stats.items():
         if stats['health_score'] < 0.8:
             print(f"⚠️  Partition {partition} needs maintenance (health: {stats['health_score']:.2f})")
         print(f"📊 {partition}: {stats['size']}, {stats['live_tuples']} live rows")
 
-if __name__ == '__main__':
+if **name** == '**main**':
     maintain_partitions()
-```markdown
+
+```Markdown
 
 ## 6. Connection Pooling and Caching
 
 ### Connection Pool Configuration
 
-```python
-# Advanced connection pooling with PostgreSQL
+```Python
+
+## Advanced connection pooling with PostgreSQL
 
 import psycopg2.pool
 from contextlib import contextmanager
@@ -969,19 +1031,22 @@ import time
 class DatabaseConnectionPool:
     """Advanced database connection pool with monitoring"""
 
-    def __init__(self, connection_params, min_connections=5, max_connections=20):
+    def **init**(self, connection_params, min_connections=5, max_connections=20):
         self.connection_params = connection_params
         self.min_connections = min_connections
         self.max_connections = max_connections
 
-        # Create connection pool
+## Create connection pool
+
         self.pool = psycopg2.pool.ThreadedConnectionPool(
             min_connections,
             max_connections,
+
             **connection_params
         )
 
-        # Monitoring
+## Monitoring
+
         self.active_connections = 0
         self.total_requests = 0
         self.failed_requests = 0
@@ -997,7 +1062,8 @@ class DatabaseConnectionPool:
             with self.lock:
                 self.total_requests += 1
 
-            # Get connection from pool
+## Get connection from pool
+
             connection = self.pool.getconn()
 
             if connection is None:
@@ -1006,7 +1072,8 @@ class DatabaseConnectionPool:
             with self.lock:
                 self.active_connections += 1
 
-            # Test connection health
+## Test connection health
+
             cursor = connection.cursor()
             cursor.execute("SELECT 1")
             cursor.close()
@@ -1023,7 +1090,8 @@ class DatabaseConnectionPool:
                 with self.lock:
                     self.active_connections -= 1
 
-                # Return connection to pool
+## Return connection to pool
+
                 self.pool.putconn(connection)
 
     def get_pool_stats(self) -> dict:
@@ -1042,17 +1110,17 @@ class DatabaseConnectionPool:
         """Close all connections in pool"""
         self.pool.closeall()
 
-# Database caching layer
+## Database caching layer
 
 import redis
-import json
+import JSON
 import hashlib
 from functools import wraps
 
 class DatabaseCache:
     """Database query caching with Redis"""
 
-    def __init__(self, redis_client, default_ttl=300):
+    def **init**(self, redis_client, default_ttl=300):
         self.redis = redis_client
         self.default_ttl = default_ttl
 
@@ -1061,23 +1129,28 @@ class DatabaseCache:
         def decorator(func):
             @wraps(func)
             def wrapper(*args, **kwargs):
-                # Generate cache key from function name and parameters
-                cache_key = self._generate_cache_key(func.__name__, args, kwargs)
 
-                # Try to get from cache
+## Generate cache key from function name and parameters
+
+                cache_key = self._generate_cache_key(func.**name**, args, kwargs)
+
+## Try to get from cache
+
                 cached_result = self.redis.get(cache_key)
                 if cached_result:
-                    return json.loads(cached_result)
+                    return JSON.loads(cached_result)
 
-                # Execute query
+## Execute query
+
                 result = func(*args, **kwargs)
 
-                # Cache result
+## Cache result
+
                 ttl_seconds = ttl or self.default_ttl
                 self.redis.setex(
                     cache_key,
                     ttl_seconds,
-                    json.dumps(result, default=str)
+                    JSON.dumps(result, default=str)
                 )
 
                 return result
@@ -1091,7 +1164,7 @@ class DatabaseCache:
             'args': args,
             'kwargs': kwargs
         }
-        key_string = json.dumps(key_data, sort_keys=True, default=str)
+        key_string = JSON.dumps(key_data, sort_keys=True, default=str)
         return f"db_cache:{hashlib.md5(key_string.encode()).hexdigest()}"
 
     def invalidate_pattern(self, pattern: str):
@@ -1113,7 +1186,7 @@ class DatabaseCache:
             'connected_clients': info.get('connected_clients', 0)
         }
 
-# Usage example
+## Usage example
 
 connection_pool = DatabaseConnectionPool({
     'host': 'localhost',
@@ -1144,69 +1217,70 @@ def get_user_orders(user_id, status=None):
 
         return cursor.fetchall()
 
-# Cache invalidation on data changes
+## Cache invalidation on data changes
 
 def update_order_status(order_id, new_status):
     """Update order status and invalidate related cache"""
     with connection_pool.get_connection() as conn:
         cursor = conn.cursor()
 
-        # Get user_id for cache invalidation
+## Get user_id for cache invalidation
+
         cursor.execute("SELECT user_id FROM orders WHERE id = %s", (order_id,))
         user_id = cursor.fetchone()[0]
 
-        # Update order
+## Update order
+
         cursor.execute(
             "UPDATE orders SET status = %s WHERE id = %s",
             (new_status, order_id)
         )
         conn.commit()
 
-        # Invalidate cache
-        cache.invalidate_pattern(f"*user_id*{user_id}*")
-```markdown
+## Invalidate cache
+
+        cache.invalidate_pattern(f"_user_id_{user_id}*")
+
+```Markdown
 
 ## 7. Database Optimization Checklist
 
 ### Performance Optimization Checklist
 
 - [ ] **Query Analysis**
-  - [ ] Identify slow queries (>100ms)
-  - [ ] Analyze execution plans for all critical queries
-  - [ ] Profile query performance under load
-  - [ ] Monitor query frequency and resource usage
-
+- [ ] Identify slow queries (>100ms)
+- [ ] Analyze execution plans for all critical queries
+- [ ] Profile query performance under load
+- [ ] Monitor query frequency and resource usage
 - [ ] **Index Optimization**
-  - [ ] Create indexes for all WHERE clause columns
-  - [ ] Add composite indexes for multi-column filters
-  - [ ] Implement covering indexes to avoid table lookups
-  - [ ] Remove unused indexes to reduce write overhead
-  - [ ] Monitor index usage statistics
-
+- [ ] Create indexes for all WHERE clause columns
+- [ ] Add composite indexes for multi-column filters
+- [ ] Implement covering indexes to avoid table lookups
+- [ ] Remove unused indexes to reduce write overhead
+- [ ] Monitor index usage statistics
 - [ ] **Schema Design**
-  - [ ] Normalize to eliminate data redundancy
-  - [ ] Strategically denormalize for read performance
-  - [ ] Use appropriate data types for storage efficiency
-  - [ ] Implement proper constraints for data integrity
-  - [ ] Consider partitioning for large tables
-
+- [ ] Normalize to eliminate data redundancy
+- [ ] Strategically denormalize for read performance
+- [ ] Use appropriate data types for storage efficiency
+- [ ] Implement proper constraints for data integrity
+- [ ] Consider partitioning for large tables
 - [ ] **Connection Management**
-  - [ ] Implement connection pooling
-  - [ ] Configure optimal pool sizes
-  - [ ] Monitor connection usage patterns
-  - [ ] Set appropriate connection timeouts
-
+- [ ] Implement connection pooling
+- [ ] Configure optimal pool sizes
+- [ ] Monitor connection usage patterns
+- [ ] Set appropriate connection timeouts
 - [ ] **Caching Strategy**
-  - [ ] Implement query result caching
-  - [ ] Cache frequently accessed reference data
-  - [ ] Set appropriate cache TTLs
-  - [ ] Implement cache invalidation strategies
-
+- [ ] Implement query result caching
+- [ ] Cache frequently accessed reference data
+- [ ] Set appropriate cache TTLs
+- [ ] Implement cache invalidation strategies
 - [ ] **Maintenance Tasks**
-  - [ ] Regular VACUUM and ANALYZE operations
-  - [ ] Monitor table bloat and fragmentation
-  - [ ] Reindex heavily used indexes
-  - [ ] Update table statistics regularly
-  - [ ] Archive old data
+- [ ] Regular VACUUM and ANALYZE operations
+- [ ] Monitor table bloat and fragmentation
+- [ ] Reindex heavily used indexes
+- [ ] Update table statistics regularly
+- [ ] Archive old data
 
-Remember: Database optimization is an iterative process. Start with the biggest bottlenecks, measure the impact of changes, and continuously monitor performance. Always test optimizations in a staging environment before applying to production.
+Remember: Database optimization is an iterative process.
+Start with the biggest bottlenecks, measure the impact of changes, and continuously monitor performance
+Always test optimizations in a staging environment before applying to production.

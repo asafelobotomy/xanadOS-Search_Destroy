@@ -1,11 +1,14 @@
 # Release Notes - xanadOS Search & Destroy v2.6.0
 
 > Note: This document predates the app-id migration to
-> `io.github.asafelobotomy.SearchAndDestroy`. When following commands, replace
-> `org.xanados.SearchAndDestroy` with `io.github.asafelobotomy.SearchAndDestroy`
+> `io.GitHub.asafelobotomy.SearchAndDestroy`. When following commands, replace
+> `org.xanados.SearchAndDestroy`with`io.GitHub.asafelobotomy.SearchAndDestroy`
 > and update manifest/metainfo filenames accordingly.
-
-## 🎉 S&D - Search & Destroy v2.6.0 - Comprehensive Optimization Release!
+>
+>
+>
+>
+## 🎉 S&D - Search & Destroy v2.6.0 - Comprehensive Optimization Release
 
 **Release Date**: January 7, 2025
 **Version**: 2.6.0
@@ -40,25 +43,32 @@ to system performance, security, and development workflow.
 ### 🔧 **System Optimizations**
 
 - **Enhanced ClamAV Performance**: Optimized scanning algorithms and resource
-	utilization for 2025
+
+  utilization for 2025
+
 - **Comprehensive System Optimization**: Implementation of comprehensive
-	optimization plan across all components
+
+  optimization plan across all components
+
 - **Resource Efficiency**: Improved memory and CPU usage during scanning operations
 - **Scanning Performance**: Enhanced file processing speed and throughput
 
 ### 🏗️ **Development and Build Improvements**
+
 - **Enhanced Build Process**: New automation scripts for improved development workflow
 - **Flathub Automation**: Complete automation for Flathub package submissions
 - **Repository Organization**: Advanced repository maintenance and organization scripts
 - **Build Tracking**: Enhanced .gitignore configuration for better tracking
 
 ### 🔒 **Security Enhancements**
+
 - **Security Setup Automation**: New comprehensive security setup script for system configuration
 - **Modern Framework Integration**: Updated compatibility with latest Linux security standards
 - **Secure Operations**: Improved sandboxed execution and permission handling
 - **Enhanced Security Setup**: Comprehensive security configuration automation
 
 ### 📁 **Documentation and Organization**
+
 - **Documentation Structure**: Enhanced organization with better navigation and screenshots
 - **Repository Cleanup**: Advanced maintenance tools for keeping the repository organized
 - **Development Guides**: Improved documentation for contributors and developers
@@ -68,11 +78,13 @@ to system performance, security, and development workflow.
 ## 🐛 **Bug Fixes and Improvements**
 
 ### 🔧 **Stability Improvements**
+
 - **General Bug Fixes**: Multiple bug fixes across various modules for improved stability
-- **Build Process Issues**: Resolved issues with Flatpak manifest and git source handling
+- **Build Process Issues**: Resolved issues with Flatpak manifest and Git source handling
 - **User Experience**: Enhanced user experience with better feedback and error handling
 
 ### ⚡ **Performance Fixes**
+
 - **Resource Optimization**: Fixed memory leaks and improved resource cleanup
 - **Scanning Efficiency**: Resolved bottlenecks in file processing pipeline
 - **System Integration**: Better integration with host system resources
@@ -82,11 +94,13 @@ to system performance, security, and development workflow.
 ## 🔄 **Migration and Compatibility**
 
 ### ✅ **Backward Compatibility**
+
 - Full backward compatibility with all v2.5.x configurations
 - Existing user data and settings are preserved
 - No breaking changes to public APIs
 
 ### 📦 **Installation and Updates**
+
 - **Flatpak Users**: Update through your package manager or Flathub
 - **Manual Installation**: Download and install the new package
 - **Development Setup**: Run updated build scripts for latest optimizations
@@ -96,12 +110,14 @@ to system performance, security, and development workflow.
 ## 🎯 **Technical Details**
 
 ### 📊 **Performance Metrics**
+
 - **Scanning Speed**: Up to 15% improvement in file processing speed
 - **Memory Usage**: Reduced memory footprint by approximately 10%
 - **Startup Time**: Faster application initialization
 - **Resource Efficiency**: Better CPU utilization during intensive operations
 
 ### 🏗️ **Infrastructure Changes**
+
 - **Build System**: Enhanced automation with better error handling
 - **Testing**: Improved quality assurance processes
 - **Documentation**: Better organization and accessibility
@@ -114,11 +130,14 @@ to system performance, security, and development workflow.
 ### 📦 **Installation**
 
 #### Via Flathub (Recommended)
+
 ```bash
-flatpak install flathub io.github.asafelobotomy.SearchAndDestroy
-```
+flatpak install flathub io.GitHub.asafelobotomy.SearchAndDestroy
+
+```text
 
 #### Manual Installation
+
 1. Download the latest release from GitHub
 2. Follow installation instructions in `docs/user/Installation.md`
 3. Run the application and enjoy improved performance!
@@ -126,12 +145,14 @@ flatpak install flathub io.github.asafelobotomy.SearchAndDestroy
 ### 🔧 **For Developers**
 
 #### Setting Up Development Environment
+
 ```bash
-git clone https://github.com/asafelobotomy/xanadOS-Search_Destroy.git
+Git clone <HTTPS://GitHub.com/asafelobotomy/xanadOS-Search_Destroy.Git>
 cd xanadOS-Search_Destroy
 make dev-setup
 make quality  # Run quality checks
-```
+
+```text
 
 ---
 
@@ -139,8 +160,8 @@ make quality  # Run quality checks
 
 - **📚 Documentation**: [docs/user/User_Manual.md](../user/User_Manual.md)
 - **🔧 Development**: [docs/developer/DEVELOPMENT.md](../developer/DEVELOPMENT.md)
-- **🐛 Issues**: [GitHub Issues](https://github.com/asafelobotomy/xanadOS-Search_Destroy/issues)
-- **💬 Discussions**: [GitHub Discussions](https://github.com/asafelobotomy/xanadOS-Search_Destroy/discussions)
+- **🐛 Issues**: [GitHub Issues](HTTPS://GitHub.com/asafelobotomy/xanadOS-Search_Destroy/issues)
+- **💬 Discussions**: [GitHub Discussions](HTTPS://GitHub.com/asafelobotomy/xanadOS-Search_Destroy/discussions)
 
 ---
 
@@ -158,21 +179,23 @@ Special thanks to all contributors who helped make this optimization release pos
 ## 🔄 **What's Next**
 
 ### 🎯 **Future Roadmap**
+
 - **v2.7.0**: Enhanced UI/UX improvements and additional scanning features
 - **v3.0.0**: Major architecture updates with modern framework integration
 - **Community Features**: Enhanced collaboration and sharing capabilities
 
 ### 📅 **Release Schedule**
+
 - **Regular Updates**: Quarterly feature releases
 - **Bug Fix Releases**: As needed for critical issues
 - **Security Updates**: Immediate releases for security vulnerabilities
 
 ---
 
-**🎉 Thank you for using xanadOS Search & Destroy v2.6.0!**
+### 🎉 Thank you for using xanadOS Search & Destroy v2.6.0
 
-*Happy scanning and stay secure!* 🛡️
+_Happy scanning and stay secure!_ 🛡️
 
 ---
 
-*Last Updated: January 7, 2025 - Version 2.6.0*
+_Last Updated: January 7, 2025 - Version 2.6.0_

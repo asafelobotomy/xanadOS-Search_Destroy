@@ -14,17 +14,18 @@
 
 ### 📁 **Primary Directories**
 
-#### 🤖 `.github/` - Core GitHub Copilot Framework
+#### 🤖 `.GitHub/` - Core GitHub Copilot Framework
 
 ```text
-.github/
+.GitHub/
 ├── chatmodes/           # 11 specialized interaction modes
 ├── prompts/             # 7 reusable prompt templates
 ├── instructions/        # Path-specific development guidance
 ├── mcp/                 # Model Context Protocol integration
 ├── validation/          # Enterprise quality assurance system
 └── workflows/           # GitHub Actions automation
-```
+
+```text
 
 **Purpose**: Contains the core GitHub Copilot enhancement capabilities including
 specialized chat modes, prompt templates, and advanced instructions with
@@ -48,7 +49,8 @@ reports/
 ├── PROFESSIONAL_SUCCESS_REPORT.md
 ├── MISSION_ACCOMPLISHED.md
 └── README.md
-```
+
+```text
 
 **Purpose**: Centralized location for all project reports, analysis documents,
 and achievement summaries.
@@ -59,12 +61,12 @@ and achievement summaries.
 scripts/
 ├── stages/              # Stage implementation scripts
 │   ├── stage1-implementation.sh
-│   ├── stage2a-markdown-fixer.sh
+│   ├── stage2a-Markdown-fixer.sh
 │   ├── stage3a-content-quality-fixer.sh
 │   ├── stage3b-integration-enhancement.sh
 │   └── stage4-excellence-implementation.sh
 ├── quality/             # Quality enhancement tools
-│   └── markdown-quality-fixer.js
+│   └── Markdown-quality-fixer.js
 ├── validation/          # Structure and policy validation
 │   ├── validate-policies.sh
 │   └── verify-structure.sh
@@ -73,7 +75,8 @@ scripts/
 │   ├── update-readme.js
 │   └── organize-repository.sh
 └── README.md
-```
+
+```text
 
 **Purpose**: Organized automation scripts categorized by function — stage
 implementation, quality enhancement, validation, and utilities.
@@ -89,7 +92,8 @@ docs/
 ├── deployment/          # Deployment and setup guides
 ├── ORGANIZATION.md      # Organization standards
 └── README.md           # Documentation index
-```
+
+```text
 
 **Purpose**: Complete documentation system with guides, implementation reports,
 and organizational standards.
@@ -99,14 +103,20 @@ and organizational standards.
 ```text
 archive/
 ├── backups/             # All backup files (*.backup)
-│   ├── copilot-instructions.md.backup
+│   ├── Copilot-instructions.md.backup
 │   ├── security.instructions.md.backup
 │   └── [100+ other backup files]
 └── README.md
-```
+
+```text
 
 **Purpose**: Clean storage for all historical files and backups, keeping the
 main repository structure uncluttered.
+
+Recent updates (2025-08-25):
+- Archived deprecated umbrella test `tests/test_implementation.py` → `archive/deprecated/2025-08-25/tests/`
+- Archived deprecated component `app/core/elevated_runner_simple.py` → `archive/development/deprecated-components/2025-08-25/`
+- Removed `config/org.xanados.*.policy` from active config (superseded by `config/io.github.asafelobotomy.*.policy`); archived copies under `archive/superseded/2025-08-24/config/`
 
 ### 📋 **Configuration & Setup Files**
 
@@ -117,25 +127,27 @@ main repository structure uncluttered.
 ├── .editorconfig       # Editor configuration
 ├── .gitattributes      # Git attributes
 ├── .gitignore          # Git ignore patterns
-├── .markdownlint.json  # Markdown linting rules
+├── .markdownlint.JSON  # Markdown linting rules
 ├── .prettierignore     # Prettier ignore patterns
 ├── .prettierrc         # Prettier configuration
-├── package.json        # Node.js dependencies
-├── package-lock.json   # Dependency lock file
+├── package.JSON        # Node.js dependencies
+├── package-lock.JSON   # Dependency lock file
 ├── README.md           # Main project documentation
 └── CONTRIBUTING.md     # Contribution guidelines
-```
+
+```text
 
 #### Supporting Directories
 
 ```text
 📁 Additional Structure
-├── .vscode/            # VS Code workspace settings
+├── .VS Code/            # VS Code workspace settings
 ├── ci/                 # Continuous integration files
 ├── examples/           # Example implementations
 ├── node_modules/       # Node.js dependencies
 └── repo-template/      # Ready-to-deploy template
-```
+
+```text
 
 ## 🎯 **Organization Benefits**
 
@@ -172,9 +184,9 @@ main repository structure uncluttered.
 ### For Framework Users
 
 - **Start Here**: `README.md` - Main project overview
-- **Chat Modes**: `.github/chatmodes/` - Specialized interaction modes
-- **Prompt Templates**: `.github/prompts/` - Reusable development prompts
-- **Instructions**: `.github/instructions/` - Path-specific guidance
+- **Chat Modes**: `.GitHub/chatmodes/` - Specialized interaction modes
+- **Prompt Templates**: `.GitHub/prompts/` - Reusable development prompts
+- **Instructions**: `.GitHub/instructions/` - Path-specific guidance
 
 ### For Contributors
 

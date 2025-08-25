@@ -9,14 +9,21 @@ import time
 from datetime import datetime
 from pathlib import Path
 
-from core.file_scanner import FileScanner
-from core.firewall_detector import get_firewall_status, toggle_firewall
-from core.gui_auth_manager import GUIAuthManager
-from core.rkhunter_wrapper import RKHunterScanResult, RKHunterWrapper
-from core.scan_results_formatter import ModernScanResultsFormatter
+from app.core.file_scanner import FileScanner
+from app.core.firewall_detector import get_firewall_status, toggle_firewall
+from app.core.gui_auth_manager import GUIAuthManager
+from app.core.rkhunter_wrapper import RKHunterScanResult, RKHunterWrapper
+from app.core.scan_results_formatter import ModernScanResultsFormatter
+
 # Import RKHunter optimizer for settings integration
 try:
-    from core.rkhunter_optimizer import RKHunterOptimizer, RKHunterConfig, RKHunterStatus, OptimizationReport
+    from app.core.rkhunter_optimizer import (
+        OptimizationReport,
+        RKHunterConfig,
+        RKHunterOptimizer,
+        RKHunterStatus,
+    )
+
     RKHUNTER_OPTIMIZER_AVAILABLE = True
 except ImportError:
     RKHUNTER_OPTIMIZER_AVAILABLE = False
@@ -26,7 +33,8 @@ except ImportError:
     OptimizationReport = None
 # Import compatible update system
 try:
-    from core.automatic_updates import AutoUpdateSystem, UpdateStatus
+    from app.core.automatic_updates import AutoUpdateSystem, UpdateStatus
+
     UPDATES_AVAILABLE = True
 except ImportError:
     UPDATES_AVAILABLE = False
@@ -34,8 +42,9 @@ except ImportError:
 
 # Import non-invasive monitoring system for status checks without sudo
 try:
-    from core.non_invasive_monitor import get_system_status, record_activity
-    from core.rkhunter_monitor_non_invasive import get_rkhunter_status_non_invasive
+    from app.core.non_invasive_monitor import get_system_status, record_activity
+    from app.core.rkhunter_monitor_non_invasive import get_rkhunter_status_non_invasive
+
     NON_INVASIVE_MONITORING_AVAILABLE = True
 except ImportError:
     NON_INVASIVE_MONITORING_AVAILABLE = False
@@ -43,14 +52,8 @@ except ImportError:
     record_activity = None
     get_rkhunter_status_non_invasive = None
 
-from gui.rkhunter_components import RKHunterScanDialog, RKHunterScanThread
-from gui.scan_thread import ScanThread
-from gui.setup_wizard import SetupWizard
-from gui.system_hardening_tab import SystemHardeningTab
-from gui.update_components import UpdateNotifier
-from gui.user_manual_window import UserManualWindow
-from monitoring import MonitorConfig, MonitorState, RealTimeMonitor
-from PyQt6.QtCore import Qt, QTimer, QTime, pyqtSignal
+from monitoring import MonitorConfig, RealTimeMonitor
+from PyQt6.QtCore import Qt, QTimer, pyqtSignal
 from PyQt6.QtGui import (
     QAction,
     QFont,
@@ -59,7 +62,6 @@ from PyQt6.QtGui import (
     QMouseEvent,
     QPixmap,
     QShortcut,
-    QTextOption,
     QWheelEvent,
 )
 from PyQt6.QtWidgets import (
@@ -68,13 +70,11 @@ from PyQt6.QtWidgets import (
     QComboBox,
     QDialog,
     QFileDialog,
-    QFormLayout,
     QFrame,
     QGridLayout,
     QGroupBox,
     QHBoxLayout,
     QLabel,
-    QLineEdit,
     QListWidget,
     QListWidgetItem,
     QMainWindow,
@@ -84,10 +84,10 @@ from PyQt6.QtWidgets import (
     QProgressBar,
     QProgressDialog,
     QPushButton,
-    QScrollArea,
     QSizePolicy,
     QSpinBox,
     QSplitter,
+    QStackedWidget,
     QStatusBar,
     QSystemTrayIcon,
     QTabWidget,
@@ -95,11 +95,20 @@ from PyQt6.QtWidgets import (
     QTimeEdit,
     QVBoxLayout,
     QWidget,
-    QStackedWidget,
-    QSpacerItem,
 )
-from utils.config import load_config, save_config
-from utils.scan_reports import (
+
+from app.gui import APP_VERSION, settings_pages
+from app.gui.rkhunter_components import RKHunterScanThread
+from app.gui.scan_thread import ScanThread
+from app.gui.settings_pages import RKHunterOptimizationWorker
+from app.gui.setup_wizard import SetupWizard
+from app.gui.system_hardening_tab import SystemHardeningTab
+from app.gui.theme_manager import get_theme_manager
+from app.gui.themed_widgets import ThemedWidgetMixin
+from app.gui.update_components import UpdateNotifier
+from app.gui.user_manual_window import UserManualWindow
+from app.utils.config import load_config, save_config
+from app.utils.scan_reports import (
     ScanReportManager,
     ScanResult,
     ScanType,
@@ -107,27 +116,24 @@ from utils.scan_reports import (
     ThreatLevel,
 )
 
-from gui import APP_VERSION
-from gui import settings_pages
-from gui.settings_pages import RKHunterOptimizationWorker
-from gui.theme_manager import get_theme_manager
-from gui.themed_widgets import ThemedWidgetMixin
-
 
 class NoWheelComboBox(QComboBox):
     """ComboBox that ignores wheel events to prevent accidental changes."""
+
     def wheelEvent(self, event: QWheelEvent):  # type: ignore[override]
         event.ignore()
 
 
 class NoWheelSpinBox(QSpinBox):
     """SpinBox that ignores wheel events to prevent accidental changes."""
+
     def wheelEvent(self, event: QWheelEvent):  # type: ignore[override]
         event.ignore()
 
 
 class NoWheelTimeEdit(QTimeEdit):
     """TimeEdit that ignores wheel events."""
+
     def wheelEvent(self, event: QWheelEvent):  # type: ignore[override]
         event.ignore()
 
@@ -154,11 +160,13 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
         self.progress_tracker = progress_tracker
 
         # Initialize lazy dashboard loader
-        from gui.lazy_dashboard import LazyDashboardLoader
+        from app.gui.lazy_dashboard import LazyDashboardLoader
+
         self.dashboard_loader = LazyDashboardLoader()
 
         # Initialize memory cache for system status
-        from core.memory_cache import get_system_cache
+        from app.core.memory_cache import get_system_cache
+
         self.system_cache = get_system_cache()
         self._setup_cache_callbacks()
 
@@ -191,7 +199,8 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
             print(f"⚠️  FileScanner initialization failed: {e}")
             # Let's try a more robust initialization using absolute import
             try:
-                from core.file_scanner import FileScanner as FS
+                from app.core.file_scanner import FileScanner as FS
+
                 self.scanner = FS()
                 print("✅ FileScanner initialized successfully on second attempt")
             except Exception as e2:
@@ -244,10 +253,18 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
     def _setup_cache_callbacks(self):
         """Setup cache refresh callbacks for system status components."""
         # Register refresh callbacks for different system components
-        self.system_cache.register_refresh_callback('system_status', self._refresh_system_status)
-        self.system_cache.register_refresh_callback('rkhunter_status', self._refresh_rkhunter_status)
-        self.system_cache.register_refresh_callback('clamav_status', self._refresh_clamav_status)
-        self.system_cache.register_refresh_callback('firewall_status', self._refresh_firewall_status)
+        self.system_cache.register_refresh_callback(
+            "system_status", self._refresh_system_status
+        )
+        self.system_cache.register_refresh_callback(
+            "rkhunter_status", self._refresh_rkhunter_status
+        )
+        self.system_cache.register_refresh_callback(
+            "clamav_status", self._refresh_clamav_status
+        )
+        self.system_cache.register_refresh_callback(
+            "firewall_status", self._refresh_firewall_status
+        )
 
     def _refresh_system_status(self):
         """Refresh system status in background."""
@@ -255,10 +272,10 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
             # This would normally call your existing system status method
             # For now, return a mock status to avoid blocking
             return {
-                'timestamp': time.time(),
-                'overall_status': 'good',
-                'components_checked': 4,
-                'issues_found': 0
+                "timestamp": time.time(),
+                "overall_status": "good",
+                "components_checked": 4,
+                "issues_found": 0,
             }
         except Exception as e:
             print(f"Background system status refresh failed: {e}")
@@ -267,9 +284,9 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
     def _refresh_rkhunter_status(self):
         """Refresh RKHunter status in background."""
         try:
-            if hasattr(self, 'rkhunter') and self.rkhunter:
+            if hasattr(self, "rkhunter") and self.rkhunter:
                 return self.rkhunter.get_quick_status()
-            return {'status': 'not_available'}
+            return {"status": "not_available"}
         except Exception as e:
             print(f"Background RKHunter refresh failed: {e}")
             return None
@@ -277,9 +294,9 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
     def _refresh_clamav_status(self):
         """Refresh ClamAV status in background."""
         try:
-            if hasattr(self, 'clamav') and self.clamav:
-                return {'status': 'running', 'last_update': time.time()}
-            return {'status': 'not_available'}
+            if hasattr(self, "clamav") and self.clamav:
+                return {"status": "running", "last_update": time.time()}
+            return {"status": "not_available"}
         except Exception as e:
             print(f"Background ClamAV refresh failed: {e}")
             return None
@@ -288,7 +305,7 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
         """Refresh firewall status in background."""
         try:
             # Mock firewall status for now
-            return {'status': 'active', 'rules_count': 25}
+            return {"status": "active", "rules_count": 25}
         except Exception as e:
             print(f"Background firewall refresh failed: {e}")
             return None
@@ -320,74 +337,86 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
             # Priority 1 = highest (load immediately), 5 = default, 10 = lowest
 
             # High priority cards (always visible)
-            if hasattr(self, 'system_overview_card'):
+            if hasattr(self, "system_overview_card"):
                 self.dashboard_loader.register_card(
-                    'system_overview', self.system_overview_card,
-                    priority=1, data_loader=self._load_system_overview_data
+                    "system_overview",
+                    self.system_overview_card,
+                    priority=1,
+                    data_loader=self._load_system_overview_data,
                 )
 
             # Medium priority cards
-            if hasattr(self, 'recent_scans_card'):
+            if hasattr(self, "recent_scans_card"):
                 self.dashboard_loader.register_card(
-                    'recent_scans', self.recent_scans_card,
-                    priority=3, data_loader=self._load_recent_scans_data
+                    "recent_scans",
+                    self.recent_scans_card,
+                    priority=3,
+                    data_loader=self._load_recent_scans_data,
                 )
 
-            if hasattr(self, 'threat_summary_card'):
+            if hasattr(self, "threat_summary_card"):
                 self.dashboard_loader.register_card(
-                    'threat_summary', self.threat_summary_card,
-                    priority=3, data_loader=self._load_threat_summary_data
+                    "threat_summary",
+                    self.threat_summary_card,
+                    priority=3,
+                    data_loader=self._load_threat_summary_data,
                 )
 
             # Lower priority cards (less frequently accessed)
-            if hasattr(self, 'activity_list'):
+            if hasattr(self, "activity_list"):
                 self.dashboard_loader.register_card(
-                    'activity_list', self.activity_list,
-                    priority=5, data_loader=self._load_activity_data
+                    "activity_list",
+                    self.activity_list,
+                    priority=5,
+                    data_loader=self._load_activity_data,
                 )
 
-            print(f"✅ Registered {len(self.dashboard_loader.cards)} dashboard cards for lazy loading")
+            print(
+                f"✅ Registered {len(self.dashboard_loader.cards)} dashboard cards for lazy loading"
+            )
 
         except Exception as e:
             print(f"Error setting up dashboard lazy loading: {e}")
 
     def _load_system_overview_data(self):
         """Load system overview data (cached)."""
-        return self.system_cache.get_system_status('overview', self._refresh_system_status)
+        return self.system_cache.get_system_status(
+            "overview", self._refresh_system_status
+        )
 
     def _load_recent_scans_data(self):
         """Load recent scans data."""
         try:
             # Mock recent scans for now - replace with actual implementation
             return {
-                'recent_scans': [
-                    {'date': '2025-08-21', 'type': 'quick', 'threats': 0},
-                    {'date': '2025-08-20', 'type': 'full', 'threats': 1}
+                "recent_scans": [
+                    {"date": "2025-08-21", "type": "quick", "threats": 0},
+                    {"date": "2025-08-20", "type": "full", "threats": 1},
                 ]
             }
         except Exception:
-            return {'recent_scans': []}
+            return {"recent_scans": []}
 
     def _load_threat_summary_data(self):
         """Load threat summary data."""
         try:
             # Mock threat summary - replace with actual implementation
             return {
-                'total_threats': 12,
-                'quarantined': 10,
-                'resolved': 2,
-                'last_update': time.time()
+                "total_threats": 12,
+                "quarantined": 10,
+                "resolved": 2,
+                "last_update": time.time(),
             }
         except Exception:
-            return {'total_threats': 0}
+            return {"total_threats": 0}
 
     def _load_activity_data(self):
         """Load activity data."""
         try:
             # This will be loaded last as it's less critical
-            return {'activities': [], 'count': 0}
+            return {"activities": [], "count": 0}
         except Exception:
-            return {'activities': []}
+            return {"activities": []}
 
     def _finalize_startup(self):
         """Finalize the startup process and show main window."""
@@ -422,16 +451,16 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
 
     # --- RKHunter safe availability helper ---
     def _rkhunter_available(self) -> bool:
-        rk = getattr(self, 'rkhunter', None)
+        rk = getattr(self, "rkhunter", None)
         if not rk:
             return False
-        if hasattr(rk, 'is_available'):
+        if hasattr(rk, "is_available"):
             try:
                 return bool(rk.is_available())  # type: ignore[attr-defined]
             except Exception as e:
                 logging.debug("RKHunter availability check failed: %s", e)
-                return bool(getattr(rk, 'available', False))
-        return bool(getattr(rk, 'available', False))
+                return bool(getattr(rk, "available", False))
+        return bool(getattr(rk, "available", False))
 
     def create_settings_tab(self):
         """Create the settings tab (modular layout only; legacy removed)."""
@@ -439,44 +468,74 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
 
     # --- Settings Widget Factories (used by external builders) ---
     def _make_activity_retention_combo(self):
-        combo = NoWheelComboBox(); combo.addItems(["10","25","50","100","200"]); combo.setCurrentText("100"); combo.currentTextChanged.connect(self.on_retention_setting_changed); return combo
+        combo = NoWheelComboBox()
+        combo.addItems(["10", "25", "50", "100", "200"])
+        combo.setCurrentText("100")
+        combo.currentTextChanged.connect(self.on_retention_setting_changed)
+        return combo
+
     def _make_threads_spin(self):
-        spin = NoWheelSpinBox(); spin.setRange(1,16); spin.setValue(4); return spin
+        spin = NoWheelSpinBox()
+        spin.setRange(1, 16)
+        spin.setValue(4)
+        return spin
+
     def _make_timeout_spin(self):
-        spin = NoWheelSpinBox(); spin.setRange(30,3600); spin.setValue(300); spin.setSuffix(' seconds'); return spin
+        spin = NoWheelSpinBox()
+        spin.setRange(30, 3600)
+        spin.setValue(300)
+        spin.setSuffix(" seconds")
+        return spin
+
     def _make_depth_combo(self):
         combo = NoWheelComboBox()
-        combo.addItem('Surface (Faster)', 1)
-        combo.addItem('Normal', 2)
-        combo.addItem('Deep (Thorough)', 3)
+        combo.addItem("Surface (Faster)", 1)
+        combo.addItem("Normal", 2)
+        combo.addItem("Deep (Thorough)", 3)
         combo.setCurrentIndex(1)
         return combo
+
     def _make_file_filter_combo(self):
         combo = NoWheelComboBox()
-        combo.addItem('All Files', 'all')
-        combo.addItem('Executables Only', 'executables')
-        combo.addItem('Documents & Media', 'documents')
-        combo.addItem('System Files', 'system')
+        combo.addItem("All Files", "all")
+        combo.addItem("Executables Only", "executables")
+        combo.addItem("Documents & Media", "documents")
+        combo.addItem("System Files", "system")
         combo.setCurrentIndex(0)  # Default to "All Files"
         return combo
+
     def _make_memory_limit_combo(self):
         combo = NoWheelComboBox()
-        combo.addItem('Low (512MB)', 512)
-        combo.addItem('Normal (1GB)', 1024)
-        combo.addItem('High (2GB)', 2048)
+        combo.addItem("Low (512MB)", 512)
+        combo.addItem("Normal (1GB)", 1024)
+        combo.addItem("High (2GB)", 2048)
         combo.setCurrentIndex(1)  # Default to "Normal (1GB)"
         return combo
+
     def _make_frequency_combo(self):
-        combo = NoWheelComboBox(); combo.addItems(['Daily','Weekly','Monthly']); return combo
+        combo = NoWheelComboBox()
+        combo.addItems(["Daily", "Weekly", "Monthly"])
+        return combo
+
     def _make_time_edit(self):
         return NoWheelTimeEdit()
+
     def _make_scan_type_combo(self):
-        combo = NoWheelComboBox(); combo.addItems(['Quick Scan','Full System Scan','Custom Directory']); return combo
+        combo = NoWheelComboBox()
+        combo.addItems(["Quick Scan", "Full System Scan", "Custom Directory"])
+        return combo
+
     def _build_custom_dir_widget(self):
-        container = QWidget(); from PyQt6.QtWidgets import QHBoxLayout, QLineEdit, QPushButton
-        layout = QHBoxLayout(container); layout.setContentsMargins(0,0,0,0)
-        self.settings_custom_dir_edit = QLineEdit(); self.settings_custom_dir_edit.setReadOnly(True); layout.addWidget(self.settings_custom_dir_edit)
-        self.settings_custom_dir_btn = QPushButton('Browse...'); layout.addWidget(self.settings_custom_dir_btn)
+        container = QWidget()
+        from PyQt6.QtWidgets import QHBoxLayout, QLineEdit, QPushButton
+
+        layout = QHBoxLayout(container)
+        layout.setContentsMargins(0, 0, 0, 0)
+        self.settings_custom_dir_edit = QLineEdit()
+        self.settings_custom_dir_edit.setReadOnly(True)
+        layout.addWidget(self.settings_custom_dir_edit)
+        self.settings_custom_dir_btn = QPushButton("Browse...")
+        layout.addWidget(self.settings_custom_dir_btn)
         self.settings_custom_dir_widget = container
 
     def _format_tooltip(self, text, max_chars_per_line=50):
@@ -484,7 +543,7 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
         import textwrap
 
         # Split by existing newlines and process each paragraph
-        paragraphs = text.split('\n')
+        paragraphs = text.split("\n")
         formatted_paragraphs = []
 
         for paragraph in paragraphs:
@@ -495,15 +554,19 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
             else:  # Empty line
                 formatted_paragraphs.append("")
 
-        return '\n'.join(formatted_paragraphs)
+        return "\n".join(formatted_paragraphs)
 
     def _initialize_scan_state(self):
         """Initialize scan state tracking variables."""
         # Enhanced scan state tracking
         self.is_quick_scan_running = False
         self._scan_state = "idle"  # idle, scanning, stopping, completing
-        self._pending_scan_request = None  # Store scan parameters if user tries to start during stopping
-        self._stop_scan_user_wants_restart = False  # Track if user wants to restart after stop
+        self._pending_scan_request = (
+            None  # Store scan parameters if user tries to start during stopping
+        )
+        self._stop_scan_user_wants_restart = (
+            False  # Track if user wants to restart after stop
+        )
 
         # Initialize real-time monitoring
         self.real_time_monitor = None
@@ -516,12 +579,16 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
 
         # Performance monitoring
         try:
-            from core import UNIFIED_PERFORMANCE_AVAILABLE
+            from app.core import UNIFIED_PERFORMANCE_AVAILABLE
+
             if UNIFIED_PERFORMANCE_AVAILABLE:
-                from core.unified_performance_optimizer import UnifiedPerformanceOptimizer
+                from app.core.unified_performance_optimizer import (
+                    UnifiedPerformanceOptimizer,
+                )
+
                 self.performance_monitor = UnifiedPerformanceOptimizer()
                 # Add compatibility method for optimization callbacks
-                if hasattr(self.performance_monitor, 'add_optimization_callback'):
+                if hasattr(self.performance_monitor, "add_optimization_callback"):
                     self.performance_monitor.add_optimization_callback(
                         self.handle_performance_optimization
                     )
@@ -536,7 +603,6 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
         self.tooltip_timer = QTimer()
         self.tooltip_timer.setSingleShot(True)
 
-
     def _setup_signal_handlers(self):
         """Set up signal handlers for external termination detection."""
         try:
@@ -546,16 +612,19 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
                 # Attempt graceful shutdown
                 try:
                     from PyQt6.QtWidgets import QApplication
+
                     QApplication.quit()
                 except Exception as e:
-                    logging.debug("QApplication quit failed during signal handling: %s", e)
+                    logging.debug(
+                        "QApplication quit failed during signal handling: %s", e
+                    )
 
             # Set up handlers for SIGINT (Ctrl+C) and SIGTERM (kill command)
             signal.signal(signal.SIGINT, signal_handler)
             signal.signal(signal.SIGTERM, signal_handler)
 
             # On Unix systems, also handle SIGHUP (terminal close)
-            if hasattr(signal, 'SIGHUP'):
+            if hasattr(signal, "SIGHUP"):
                 signal.signal(signal.SIGHUP, signal_handler)
 
         except Exception as e:
@@ -570,7 +639,8 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
         if getattr(self, "_ui_initialized", False):
             pass  # UI already initialized safely
         else:
-            # In rare cases if _initialize_scan_state() is called prior to explicit init, allow build
+            # In rare cases if _initialize_scan_state() is called prior to explicit
+            # init, allow build
             self.init_ui()
             self._ui_initialized = True
 
@@ -599,7 +669,9 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
         self.init_unified_timer_system()
 
         # Start performance monitoring
-        if self.performance_monitor and hasattr(self.performance_monitor, 'start_monitoring'):
+        if self.performance_monitor and hasattr(
+            self.performance_monitor, "start_monitoring"
+        ):
             self.performance_monitor.start_monitoring()
         elif self.performance_monitor:
             # For unified optimizer, call initialization method
@@ -610,7 +682,9 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
 
         # Mark initialization as complete - scheduler can now be started safely
         self._initialization_complete = True
-        print("✅ Main window initialization complete - scheduler operations now enabled")
+        print(
+            "✅ Main window initialization complete - scheduler operations now enabled"
+        )
 
         # Defer enhanced Qt effects setup for faster startup
         QTimer.singleShot(200, self._setup_enhanced_effects)
@@ -624,9 +698,12 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
     def start_scheduler_if_enabled(self):
         """Start the scheduler if scheduled scans are enabled (called after initialization)."""
         try:
-            if hasattr(self, 'settings_enable_scheduled_cb') and self.settings_enable_scheduled_cb.isChecked():
+            if (
+                hasattr(self, "settings_enable_scheduled_cb")
+                and self.settings_enable_scheduled_cb.isChecked()
+            ):
                 print("🔄 Starting scheduler for enabled scheduled scans...")
-                if hasattr(self.scanner, 'start_scheduler'):
+                if hasattr(self.scanner, "start_scheduler"):
                     self.scanner.start_scheduler()
                     print("✅ Scheduler started successfully")
                 else:
@@ -652,7 +729,11 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
             self.activateWindow()
 
             # Show a notification if system tray is available
-            if hasattr(self, 'tray_icon') and self.tray_icon and self.tray_icon.isVisible():
+            if (
+                hasattr(self, "tray_icon")
+                and self.tray_icon
+                and self.tray_icon.isVisible()
+            ):
                 self.tray_icon.showMessage(
                     "S&D - Search & Destroy",
                     "Application window restored - another launch attempt was detected.",
@@ -664,7 +745,6 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
 
         except Exception as e:
             print(f"❌ Error bringing window to front: {e}")
-
 
     def get_status_color(self, status_type):
         """Get theme-appropriate color for status indicators."""
@@ -689,10 +769,7 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
         self.master_timer.start(1000)  # 1 second base interval
 
         # Performance monitoring
-        self.performance_stats = {
-            "timer_calls": 0,
-            "update_times": [],
-            "skip_count": 0}
+        self.performance_stats = {"timer_calls": 0, "update_times": [], "skip_count": 0}
 
     def unified_timer_update(self):
         """Central timer update method for performance optimization."""
@@ -711,9 +788,7 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
 
             # Only update monitoring stats every 10 cycles (10 seconds)
             if self.timer_cycle_count % 10 == 0:
-                if hasattr(
-                        self, "stats_timer") and hasattr(
-                        self, "real_time_monitor"):
+                if hasattr(self, "stats_timer") and hasattr(self, "real_time_monitor"):
                     self.update_monitoring_statistics()
 
                 # Update system tray tooltip with performance info
@@ -725,7 +800,7 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
             if self.timer_cycle_count >= 300:  # Reset every 5 minutes
                 self.timer_cycle_count = 0
 
-        except Exception as e:
+        except Exception:
             # Log error in unified timer update
             pass
 
@@ -751,23 +826,32 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
             elif pressure_type == "memory_pressure":
                 # Force garbage collection
                 import gc
+
                 gc.collect()
                 # Memory optimization applied
 
-        except Exception as e:
+        except Exception:
             # Error in performance optimization
             pass
 
     def get_performance_card_data(self) -> tuple:
         """Get concise performance data for system tray tooltip."""
         try:
-            if self.performance_monitor and hasattr(self.performance_monitor, 'get_performance_summary'):
+            if self.performance_monitor and hasattr(
+                self.performance_monitor, "get_performance_summary"
+            ):
                 summary = self.performance_monitor.get_performance_summary()
-            elif self.performance_monitor and hasattr(self.performance_monitor, 'get_performance_metrics'):
+            elif self.performance_monitor and hasattr(
+                self.performance_monitor, "get_performance_metrics"
+            ):
                 # Use unified optimizer method
                 metrics = self.performance_monitor.get_performance_metrics()
                 # Convert to expected format
-                summary = {"status": "active", "performance_score": 75, "current": metrics}
+                summary = {
+                    "status": "active",
+                    "performance_score": 75,
+                    "current": metrics,
+                }
             else:
                 return "Unavailable", get_theme_manager().get_color("muted_text"), ""
 
@@ -800,7 +884,11 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
             return status, color, details
 
         except Exception as e:
-            return "Error", get_theme_manager().get_color("error"), f"Monitor error: {e}"
+            return (
+                "Error",
+                get_theme_manager().get_color("error"),
+                f"Monitor error: {e}",
+            )
 
     def init_ui(self):
         self.setWindowTitle("S&D - Search & Destroy")
@@ -880,7 +968,9 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
         self.quick_scan_btn = QPushButton("Quick Scan")
         self.quick_scan_btn.setObjectName("actionButton")
         self.quick_scan_btn.setMinimumSize(150, 40)  # Increased width for longer text
-        self.quick_scan_btn.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed)
+        self.quick_scan_btn.setSizePolicy(
+            QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed
+        )
         self.quick_scan_btn.setToolTip(
             "Comprehensive Quick Scan of multiple directories\n"
             "• Downloads, Documents, Pictures, Videos, Music\n"
@@ -941,7 +1031,11 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
         self.protection_card = self.create_clickable_status_card(
             "Real-Time Protection",
             "Active" if self.monitoring_enabled else "Inactive",
-            get_theme_manager().get_color("success") if self.monitoring_enabled else get_theme_manager().get_color("error"),
+            (
+                get_theme_manager().get_color("success")
+                if self.monitoring_enabled
+                else get_theme_manager().get_color("error")
+            ),
             (
                 "Your system is being monitored"
                 if self.monitoring_enabled
@@ -949,8 +1043,7 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
             ),
         )
         # Connect the click signal
-        self.protection_card.clicked.connect(
-            self.toggle_protection_from_dashboard)
+        self.protection_card.clicked.connect(self.toggle_protection_from_dashboard)
 
         # Firewall Status Card - defer status check to avoid sudo prompt at startup
         self.firewall_card = self.create_clickable_status_card(
@@ -991,9 +1084,7 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
         status_row.addWidget(self.last_scan_card)
         status_row.addWidget(self.threats_card)
 
-        layout.addLayout(
-            status_row
-        )  # Activity Report (expanded to fill the space)
+        layout.addLayout(status_row)  # Activity Report (expanded to fill the space)
         activity_group = QGroupBox("Activity Report")
         activity_layout = QVBoxLayout(activity_group)
 
@@ -1123,8 +1214,7 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
                 self.stop_real_time_protection()
         else:
             # Just update the config if the protection tab doesn't exist yet
-            self.config["security_settings"] = self.config.get(
-                "security_settings", {})
+            self.config["security_settings"] = self.config.get("security_settings", {})
             self.config["security_settings"][
                 "real_time_protection"
             ] = self.monitoring_enabled
@@ -1145,12 +1235,13 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
         # Get current firewall status
         try:
             current_status = get_firewall_status()
-        except Exception as e:
+        except Exception:
             import traceback
+
             traceback.print_exc()
             return
 
-        is_currently_active = current_status.get('is_active', False)
+        is_currently_active = current_status.get("is_active", False)
 
         # Toggle the firewall (enable if currently disabled, disable if currently enabled)
         enable_firewall = not is_currently_active
@@ -1158,23 +1249,29 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
         # Show confirmation dialog for critical operations
         if enable_firewall:
             action = "enable"
-            message = "This will enable your firewall with basic security rules. Continue?"
+            message = (
+                "This will enable your firewall with basic security rules. Continue?"
+            )
         else:
             action = "disable"
-            message = "This will disable your firewall, reducing system security. Continue?"
+            message = (
+                "This will disable your firewall, reducing system security. Continue?"
+            )
 
         reply = self.show_themed_message_box(
             "question",
             f"Confirm Firewall {action.title()}",
             message,
-            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
         )
 
         if reply != QMessageBox.StandardButton.Yes:
             return
 
         # Show info about authentication
-        self.add_activity_message(f"🔒 Requesting admin privileges to {action} firewall...")
+        self.add_activity_message(
+            f"🔒 Requesting admin privileges to {action} firewall..."
+        )
 
         # Set flag to indicate this change is from GUI (prevents "external" messages)
         self._firewall_change_from_gui = True
@@ -1184,30 +1281,29 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
             result = toggle_firewall(enable_firewall)
         except Exception as e:
             import traceback
+
             traceback.print_exc()
             # Reset flag since operation failed
             self._firewall_change_from_gui = False
             self.add_activity_message(f"❌ Error during firewall {action}: {str(e)}")
             return
 
-        if result.get('success', False):
+        if result.get("success", False):
             # Success - show message and update UI
-            success_msg = str(result.get('message', f'Firewall {action}d successfully'))
+            success_msg = str(result.get("message", f"Firewall {action}d successfully"))
 
             # Check if alternative method was used
-            if 'method' in result:
-                method = result['method']
-                if method.startswith('iptables_direct'):
+            if "method" in result:
+                method = result["method"]
+                if method.startswith("iptables_direct"):
                     success_msg += "\n\n⚠️ Note: Using direct iptables (UFW unavailable due to kernel module issues)"
-                elif method.startswith('systemd_'):
+                elif method.startswith("systemd_"):
                     success_msg += f"\n\n⚠️ Note: Using systemd service fallback ({method.split('_')[1]})"
 
-            self.add_activity_message(f"🔥 Firewall {action}d successfully from dashboard")
-            self.show_themed_message_box(
-                "information",
-                "Firewall Control",
-                success_msg
+            self.add_activity_message(
+                f"🔥 Firewall {action}d successfully from dashboard"
             )
+            self.show_themed_message_box("information", "Firewall Control", success_msg)
             # Force immediate status update by clearing cache first
             self._clear_firewall_status_cache()
             self.update_firewall_status()
@@ -1215,7 +1311,7 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
         else:
             # Error - show error message and reset flag
             self._firewall_change_from_gui = False
-            error_msg = str(result.get('error', 'Unknown error'))
+            error_msg = str(result.get("error", "Unknown error"))
 
             # Check if it's a permission/authentication error
             if (
@@ -1225,19 +1321,22 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
             ):
                 print("🔍 DEBUG: Authentication error detected")
                 self.add_activity_message(
-                    f"🔒 Firewall {action} cancelled - authentication required")
+                    f"🔒 Firewall {action} cancelled - authentication required"
+                )
                 self.show_themed_message_box(
                     "warning",
                     "Authentication Required",
-                    f"Firewall control requires administrator privileges.\n"
-                    f"Authentication was cancelled or failed.",
+                    "Firewall control requires administrator privileges.\n"
+                    "Authentication was cancelled or failed.",
                 )
             else:
                 print("🔍 DEBUG: Other error detected")
-                self.add_activity_message(f"❌ Failed to {action} firewall: {error_msg}")
+                self.add_activity_message(
+                    f"❌ Failed to {action} firewall: {error_msg}"
+                )
 
                 # Check if there's diagnostic information for kernel module issues
-                diagnosis = result.get('diagnosis', '')
+                diagnosis = result.get("diagnosis", "")
                 if diagnosis:
                     # Kernel module issue detected - show detailed dialog
                     detailed_msg = f"Failed to {action} firewall:\n{error_msg}\n\n"
@@ -1273,7 +1372,7 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
         # Switch to the Quarantine tab (index 4)
         self.tab_widget.setCurrentIndex(4)
         # Refresh quarantine list to show current state
-        if hasattr(self, 'refresh_quarantine'):
+        if hasattr(self, "refresh_quarantine"):
             self.refresh_quarantine()
 
     def update_protection_status_card(self):
@@ -1282,10 +1381,14 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
             # Find the card's value label and update it
             for child in self.protection_card.findChildren(QLabel):
                 if child.objectName() == "cardValue":
-                    child.setText(
-                        "Active" if self.monitoring_enabled else "Inactive")
+                    child.setText("Active" if self.monitoring_enabled else "Inactive")
                     child.setStyleSheet(
-                        f"color: {get_theme_manager().get_color('success') if self.monitoring_enabled else get_theme_manager().get_color('error')}; font-size: 20px; font-weight: bold;")
+                        f"color: {
+                            get_theme_manager().get_color('success')
+                            if self.monitoring_enabled
+                            else get_theme_manager().get_color('error')
+                        }; font-size: 20px; font-weight: bold;"
+                    )
                 elif child.objectName() == "cardDescription":
                     child.setText(
                         "Your system is being monitored"
@@ -1297,7 +1400,7 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
         """Update the firewall status card with current state."""
         if hasattr(self, "firewall_card"):
             # Only update if we already have status (avoid sudo prompt during initialization)
-            if hasattr(self, '_firewall_status_cache'):
+            if hasattr(self, "_firewall_status_cache"):
                 firewall_status = self._firewall_status_cache
                 is_active = firewall_status.get("is_active", False)
 
@@ -1306,7 +1409,12 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
                     if child.objectName() == "cardValue":
                         child.setText("Active" if is_active else "Inactive")
                         child.setStyleSheet(
-                            f"color: {get_theme_manager().get_color('success') if is_active else get_theme_manager().get_color('error')}; font-size: 20px; font-weight: bold;")
+                            f"color: {
+                                get_theme_manager().get_color('success')
+                                if is_active
+                                else get_theme_manager().get_color('error')
+                            }; font-size: 20px; font-weight: bold;"
+                        )
                     elif child.objectName() == "cardDescription":
                         child.setText(
                             "Firewall is protecting your system"
@@ -1329,7 +1437,12 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
                     if child.objectName() == "cardValue":
                         child.setText("Active" if is_active else "Inactive")
                         child.setStyleSheet(
-                            f"color: {get_theme_manager().get_color('success') if is_active else get_theme_manager().get_color('error')}; font-size: 20px; font-weight: bold;")
+                            f"color: {
+                                get_theme_manager().get_color('success')
+                                if is_active
+                                else get_theme_manager().get_color('error')
+                            }; font-size: 20px; font-weight: bold;"
+                        )
                     elif child.objectName() == "cardDescription":
                         child.setText(
                             "Firewall is protecting your system"
@@ -1349,7 +1462,10 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
                     if child.objectName() == "cardValue":
                         child.setText("Error")
                         child.setStyleSheet(
-                            f"color: {get_theme_manager().get_color('error')}; font-size: 20px; font-weight: bold;")
+                            f"color: {
+                                get_theme_manager().get_color('error')
+                            }; font-size: 20px; font-weight: bold;"
+                        )
                     elif child.objectName() == "cardDescription":
                         child.setText("Unable to check firewall status")
 
@@ -1370,7 +1486,8 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
                     self.protection_status_label.setText("🛡️ Active")
                     color = self.get_status_color("success")
                     self.protection_status_label.setStyleSheet(
-                        f"color: {color}; font-weight: bold; font-size: 16px; padding: 5px;")
+                        f"color: {color}; font-weight: bold; font-size: 16px; padding: 5px;"
+                    )
                     self.protection_toggle_btn.setText("Stop")
                     print("✅ Protection tab UI updated to Active state")
                 else:
@@ -1383,7 +1500,8 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
                     self.protection_status_label.setText("❌ Failed to restore")
                     color = self.get_status_color("error")
                     self.protection_status_label.setStyleSheet(
-                        f"color: {color}; font-weight: bold; font-size: 16px; padding: 5px;")
+                        f"color: {color}; font-weight: bold; font-size: 16px; padding: 5px;"
+                    )
                     self.protection_toggle_btn.setText("Start")
 
                     # Update config to reflect actual state
@@ -1395,7 +1513,8 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
                 self.protection_status_label.setText("🔴 Inactive")
                 color = self.get_status_color("error")
                 self.protection_status_label.setStyleSheet(
-                    f"color: {color}; font-weight: bold; font-size: 16px; padding: 5px;")
+                    f"color: {color}; font-weight: bold; font-size: 16px; padding: 5px;"
+                )
                 self.protection_toggle_btn.setText("Start")
                 print("✅ Protection tab UI updated to Inactive state")
 
@@ -1418,13 +1537,13 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
                 self.protection_status_label.setText("🔴 Inactive")
                 color = self.get_status_color("error")
                 self.protection_status_label.setStyleSheet(
-                    f"color: {color}; font-weight: bold; font-size: 16px; padding: 5px;")
+                    f"color: {color}; font-weight: bold; font-size: 16px; padding: 5px;"
+                )
                 if hasattr(self, "protection_toggle_btn"):
                     self.protection_toggle_btn.setText("Start")
                 print("✅ Protection status forced to Inactive state")
             else:
-                print(
-                    f"✅ Protection status is properly set to: {current_text}")
+                print(f"✅ Protection status is properly set to: {current_text}")
         else:
             print("⚠️ Protection status label not found")
 
@@ -1434,13 +1553,16 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
             return
 
         try:
-            # Use cached status with time-based refresh to balance responsiveness and avoid frequent sudo prompts
+            # Use cached status with time-based refresh to balance responsiveness and
+            # avoid frequent sudo prompts
             current_time = time.time()
             cache_max_age = 30  # Refresh cache every 30 seconds at most
 
-            if (hasattr(self, '_firewall_status_cache') and
-                hasattr(self, '_firewall_status_cache_time') and
-                current_time - self._firewall_status_cache_time < cache_max_age):
+            if (
+                hasattr(self, "_firewall_status_cache")
+                and hasattr(self, "_firewall_status_cache_time")
+                and current_time - self._firewall_status_cache_time < cache_max_age
+            ):
                 status = self._firewall_status_cache
             else:
                 # Cache expired or first time - get fresh status
@@ -1466,8 +1588,7 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
                     else:
                         # This is a genuine external change
                         state_msg = "enabled" if current_active_state else "disabled"
-                        self.add_activity_message(
-                            f"🔥 Firewall {state_msg} externally")
+                        self.add_activity_message(f"🔥 Firewall {state_msg} externally")
                 self._last_firewall_state = current_active_state
 
             # Update firewall name
@@ -1533,21 +1654,22 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
                 f"font-weight: bold; font-size: 16px; color: {get_theme_manager().get_color('muted_text')};"
             )
             self.firewall_status_circle.setStyleSheet(
-                f"font-size: 20px; color: {get_theme_manager().get_color('muted_text')};")
+                f"font-size: 20px; color: {get_theme_manager().get_color('muted_text')};"
+            )
             if hasattr(self, "firewall_name_label"):
                 self.firewall_name_label.setText("Unable to detect")
 
     def _clear_firewall_status_cache(self):
         """Clear the firewall status cache to force immediate refresh."""
-        if hasattr(self, '_firewall_status_cache'):
-            delattr(self, '_firewall_status_cache')
-        if hasattr(self, '_firewall_status_cache_time'):
-            delattr(self, '_firewall_status_cache_time')
+        if hasattr(self, "_firewall_status_cache"):
+            delattr(self, "_firewall_status_cache")
+        if hasattr(self, "_firewall_status_cache_time"):
+            delattr(self, "_firewall_status_cache_time")
         print("🔄 Firewall status cache cleared")
 
     def toggle_firewall_status(self):
         """Toggle the firewall on/off based on current status."""
-        if not hasattr(self, 'firewall_toggle_btn'):
+        if not hasattr(self, "firewall_toggle_btn"):
             return
 
         # Disable button during operation
@@ -1557,7 +1679,7 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
         try:
             # Get current status to determine what action to take
             current_status = get_firewall_status()
-            is_currently_active = current_status.get('is_active', False)
+            is_currently_active = current_status.get("is_active", False)
 
             # Toggle the firewall (enable if currently disabled, disable if currently enabled)
             enable_firewall = not is_currently_active
@@ -1574,7 +1696,7 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
                 "question",
                 f"Confirm Firewall {action.title()}",
                 message,
-                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
             )
 
             if reply != QMessageBox.StandardButton.Yes:
@@ -1583,7 +1705,9 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
                 return
 
             # Show info about authentication
-            self.add_activity_message(f"🔒 Requesting admin privileges to {action} firewall...")
+            self.add_activity_message(
+                f"🔒 Requesting admin privileges to {action} firewall..."
+            )
 
             # Update button to show authentication in progress
             self.firewall_toggle_btn.setText("Authenticating...")
@@ -1592,44 +1716,49 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
             self._firewall_change_from_gui = True
 
             # Perform the firewall toggle operation
-            print(f"🔍 DEBUG (Protection): About to call toggle_firewall({enable_firewall})")
+            print(
+                f"🔍 DEBUG (Protection): About to call toggle_firewall({enable_firewall})"
+            )
             try:
                 result = toggle_firewall(enable_firewall)
                 print(f"🔍 DEBUG (Protection): toggle_firewall returned: {result}")
             except Exception as e:
                 print(f"❌ DEBUG (Protection): Exception in toggle_firewall: {e}")
                 import traceback
+
                 traceback.print_exc()
                 # Reset flag since operation failed
                 self._firewall_change_from_gui = False
-                self.add_activity_message(f"❌ Error during firewall {action}: {str(e)}")
+                self.add_activity_message(
+                    f"❌ Error during firewall {action}: {str(e)}"
+                )
                 self._restore_firewall_button()
                 return
 
-            if result.get('success', False):
+            if result.get("success", False):
                 # Success - show message and update UI
-                success_msg = str(result.get('message', f'Firewall {action}d successfully'))
+                success_msg = str(
+                    result.get("message", f"Firewall {action}d successfully")
+                )
 
                 # Check if alternative method was used
-                if 'method' in result:
-                    method = result['method']
-                    if method.startswith('iptables_direct'):
+                if "method" in result:
+                    method = result["method"]
+                    if method.startswith("iptables_direct"):
                         success_msg += "\n\n⚠️ Note: Using direct iptables (UFW unavailable due to kernel module issues)"
-                    elif method.startswith('systemd_'):
+                    elif method.startswith("systemd_"):
                         success_msg += f"\n\n⚠️ Note: Using systemd service fallback ({method.split('_')[1]})"
 
                 self.add_activity_message(f"🔥 Firewall {action}d successfully")
                 self.show_themed_message_box(
-                    "information",
-                    "Firewall Control",
-                    success_msg
+                    "information", "Firewall Control", success_msg
                 )
                 # Force immediate status update
                 self.update_firewall_status()
             else:
                 # Error - show error message and reset flag
                 self._firewall_change_from_gui = False
-                error_msg = str(result.get('error', 'Unknown error'))
+                error_msg = str(result.get("error", "Unknown error"))
 
                 # Check if it's a permission/authentication error
                 if (
@@ -1637,21 +1766,27 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
                     or "authentication" in error_msg.lower()
                     or "cancelled" in error_msg.lower()
                 ):
-                    self.add_activity_message(f"🔒 Firewall {action} cancelled - authentication required")
+                    self.add_activity_message(
+                        f"🔒 Firewall {action} cancelled - authentication required"
+                    )
                     self.show_themed_message_box(
                         "warning",
                         "Authentication Required",
-                        f"Firewall control requires administrator privileges.\n"
-                        f"Authentication was cancelled or failed."
+                        "Firewall control requires administrator privileges.\n"
+                        "Authentication was cancelled or failed.",
                     )
                 else:
-                    self.add_activity_message(f"❌ Failed to {action} firewall: {error_msg}")
+                    self.add_activity_message(
+                        f"❌ Failed to {action} firewall: {error_msg}"
+                    )
 
                     # Check if there's diagnostic information for kernel module issues
-                    diagnosis = result.get('diagnosis', '')
+                    diagnosis = result.get("diagnosis", "")
                     if diagnosis:
                         # Kernel module issue detected - show detailed dialog
-                        detailed_msg = f"Failed to {action} firewall:\n{str(result.get('message', error_msg))}\n\n"
+                        detailed_msg = f"Failed to {action} firewall:\n{
+                            str(result.get('message', error_msg))
+                        }\n\n"
                         detailed_msg += "Diagnostic Information:\n"
                         detailed_msg += diagnosis
                         detailed_msg += "\n\nSuggestions:\n"
@@ -1661,16 +1796,14 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
                         detailed_msg += "• Check if iptables packages are installed"
 
                         self.show_themed_message_box(
-                            "critical",
-                            "Firewall Kernel Module Error",
-                            detailed_msg
+                            "critical", "Firewall Kernel Module Error", detailed_msg
                         )
                     else:
                         # Regular error message
                         self.show_themed_message_box(
                             "critical",
                             "Firewall Control Error",
-                            f"Failed to {action} firewall:\n{str(result.get('message', error_msg))}"
+                            f"Failed to {action} firewall:\n{str(result.get('message', error_msg))}",
                         )
 
         except Exception as e:
@@ -1680,7 +1813,7 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
             self.show_themed_message_box(
                 "critical",
                 "Firewall Control Error",
-                f"An unexpected error occurred:\n{error_msg}"
+                f"An unexpected error occurred:\n{error_msg}",
             )
         finally:
             # Always restore button state
@@ -1704,7 +1837,15 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
         # DEBUG: log available rkhunter attributes related to availability/version
         try:
             import logging
-            logging.getLogger(__name__).debug('create_scan_tab rkhunter attrs: %s', [m for m in dir(getattr(self,'rkhunter', object())) if 'avail' in m or 'version' in m])
+
+            logging.getLogger(__name__).debug(
+                "create_scan_tab rkhunter attrs: %s",
+                [
+                    m
+                    for m in dir(getattr(self, "rkhunter", object()))
+                    if "avail" in m or "version" in m
+                ],
+            )
         except Exception:
             pass
         scan_widget = QWidget()
@@ -1794,7 +1935,9 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
         self.scan_type_combo.currentTextChanged.connect(self.on_scan_type_changed)
         # Set proper size policy and minimum size for the combo
         self.scan_type_combo.setMinimumHeight(45)  # Good height for visibility
-        self.scan_type_combo.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+        self.scan_type_combo.setSizePolicy(
+            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed
+        )
 
         scan_type_layout.addWidget(self.scan_type_combo)
         column2_layout.addWidget(scan_type_group)
@@ -1871,7 +2014,9 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
         self.scan_toggle_btn = QPushButton("🚀 Start Scan")
         self.scan_toggle_btn.setObjectName("primaryButton")
         self.scan_toggle_btn.setMinimumHeight(32)
-        self.scan_toggle_btn.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+        self.scan_toggle_btn.setSizePolicy(
+            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed
+        )
         self.scan_toggle_btn.clicked.connect(self.toggle_scan)
 
         # Keep track of current scan state for button toggling
@@ -1881,7 +2026,9 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
         self.rkhunter_scan_btn = QPushButton("🔍 RKHunter Scan")
         self.rkhunter_scan_btn.setObjectName("specialButton")
         self.rkhunter_scan_btn.setMinimumHeight(28)
-        self.rkhunter_scan_btn.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+        self.rkhunter_scan_btn.setSizePolicy(
+            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed
+        )
         self.rkhunter_scan_btn.setToolTip(
             "Run RKHunter rootkit detection scan\n(Configure scan categories in Settings → Scanning)"
         )
@@ -1891,18 +2038,22 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
         rkhunter_available = False
         if self.rkhunter is not None:
             try:
-                if hasattr(self.rkhunter, 'is_available'):
+                if hasattr(self.rkhunter, "is_available"):
                     rkhunter_available = self.rkhunter.is_available()
                 else:
                     # Fallback to attribute if method missing
-                    rkhunter_available = bool(getattr(self.rkhunter, 'available', False))
+                    rkhunter_available = bool(
+                        getattr(self.rkhunter, "available", False)
+                    )
             except Exception:
                 rkhunter_available = False
         if rkhunter_available:
             self.rkhunter_scan_btn.clicked.connect(self.start_rkhunter_scan)
         else:
             self.rkhunter_scan_btn.setText("📦 Setup RKHunter")
-            self.rkhunter_scan_btn.setToolTip("RKHunter not available - click to install or configure")
+            self.rkhunter_scan_btn.setToolTip(
+                "RKHunter not available - click to install or configure"
+            )
             self.rkhunter_scan_btn.clicked.connect(self.install_rkhunter)
 
         buttons_layout.addWidget(self.scan_toggle_btn)
@@ -1912,9 +2063,9 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
         column2_layout.addStretch()  # Push everything to top
 
         # Add 3 columns to main layout with equal proportions
-        main_layout.addWidget(column1, 1)   # 33.3% width for results
-        main_layout.addWidget(column2, 1)   # 33.3% width for scan type & actions
-        main_layout.addWidget(column3, 1)   # 33.3% width for target
+        main_layout.addWidget(column1, 1)  # 33.3% width for results
+        main_layout.addWidget(column2, 1)  # 33.3% width for scan type & actions
+        main_layout.addWidget(column3, 1)  # 33.3% width for target
 
         self.tab_widget.addTab(scan_widget, "Scan")
 
@@ -2013,8 +2164,12 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
 
         self.settings_category_list = QListWidget()
         self.settings_category_list.setFixedWidth(180)
-        self.settings_category_list.setSelectionMode(QListWidget.SelectionMode.SingleSelection)
-        self.settings_category_list.currentRowChanged.connect(self._on_settings_category_changed)
+        self.settings_category_list.setSelectionMode(
+            QListWidget.SelectionMode.SingleSelection
+        )
+        self.settings_category_list.currentRowChanged.connect(
+            self._on_settings_category_changed
+        )
         split_layout.addWidget(self.settings_category_list)
 
         self.settings_pages = QStackedWidget()
@@ -2051,11 +2206,14 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
     # Removed inline page builder methods; now in settings_pages module.
 
     def _build_settings_page_security(self):
-        page = QWidget(); layout = QVBoxLayout(page)
-        if not hasattr(self, 'settings_auto_update_cb'):
-            self.settings_auto_update_cb = QCheckBox('Auto-update Virus Definitions'); self.settings_auto_update_cb.setChecked(True)
+        page = QWidget()
+        layout = QVBoxLayout(page)
+        if not hasattr(self, "settings_auto_update_cb"):
+            self.settings_auto_update_cb = QCheckBox("Auto-update Virus Definitions")
+            self.settings_auto_update_cb.setChecked(True)
         layout.addWidget(self.settings_auto_update_cb)
-        layout.addStretch(); return page
+        layout.addStretch()
+        return page
 
     def create_real_time_tab(self):
         """Create the real-time protection tab with improved three-column layout."""
@@ -2124,10 +2282,11 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
 
         # Control button - centered and prominent
         self.protection_toggle_btn = QPushButton("Start")
-        self.protection_toggle_btn.clicked.connect(
-            self.toggle_real_time_protection)
+        self.protection_toggle_btn.clicked.connect(self.toggle_real_time_protection)
         self.protection_toggle_btn.setMinimumHeight(40)
-        self.protection_toggle_btn.setFixedWidth(120)  # Fixed width for consistent positioning
+        self.protection_toggle_btn.setFixedWidth(
+            120
+        )  # Fixed width for consistent positioning
         self.protection_toggle_btn.setObjectName("primaryButton")
 
         button_layout = QHBoxLayout()
@@ -2206,12 +2365,13 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
         firewall_status_left.setSpacing(5)
 
         self.firewall_status_label = QLabel("Status:")
-        self.firewall_status_label.setStyleSheet(
-            "font-weight: bold; font-size: 12px;")
+        self.firewall_status_label.setStyleSheet("font-weight: bold; font-size: 12px;")
         firewall_status_left.addWidget(self.firewall_status_label)
 
         self.firewall_name_label = QLabel("Checking...")
-        self.firewall_name_label.setStyleSheet(f"font-size: 11px; color: {self.get_theme_color('secondary_text')};")
+        self.firewall_name_label.setStyleSheet(
+            f"font-size: 11px; color: {self.get_theme_color('secondary_text')};"
+        )
         firewall_status_left.addWidget(self.firewall_name_label)
 
         firewall_status_container.addLayout(firewall_status_left)
@@ -2231,7 +2391,8 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
         # Status circle
         self.firewall_status_circle = QLabel("●")
         self.firewall_status_circle.setStyleSheet(
-            f"font-size: 20px; color: {get_theme_manager().get_color('error')};")
+            f"font-size: 20px; color: {get_theme_manager().get_color('error')};"
+        )
         self.firewall_status_circle.setAlignment(Qt.AlignmentFlag.AlignCenter)
         firewall_status_right.addWidget(self.firewall_status_circle)
 
@@ -2240,15 +2401,13 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
 
         # Add firewall toggle button
         firewall_button_layout = QHBoxLayout()
-        firewall_button_layout.setContentsMargins(
-            0, 10, 0, 0)  # Add top margin
+        firewall_button_layout.setContentsMargins(0, 10, 0, 0)  # Add top margin
 
         self.firewall_toggle_btn = QPushButton("Enable Firewall")
         self.firewall_toggle_btn.clicked.connect(self.toggle_firewall_status)
         self.firewall_toggle_btn.setMinimumHeight(35)
         self.firewall_toggle_btn.setObjectName("primaryButton")
-        self.firewall_toggle_btn.setToolTip(
-            "Click to enable or disable the firewall")
+        self.firewall_toggle_btn.setToolTip("Click to enable or disable the firewall")
 
         firewall_button_layout.addStretch()
         firewall_button_layout.addWidget(self.firewall_toggle_btn)
@@ -2392,8 +2551,7 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
                 print("✅ Scan completion callback set")
 
             if hasattr(self.real_time_monitor, "set_error_callback"):
-                self.real_time_monitor.set_error_callback(
-                    self.on_monitoring_error)
+                self.real_time_monitor.set_error_callback(self.on_monitoring_error)
                 print("✅ Error callback set")
 
             # Statistics updates now handled by unified timer system
@@ -2409,7 +2567,8 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
                         self.protection_status_label.setText("🛡️ Active")
                         color = self.get_status_color("success")
                         self.protection_status_label.setStyleSheet(
-                            f"color: {color}; font-weight: bold; font-size: 16px; padding: 5px;")
+                            f"color: {color}; font-weight: bold; font-size: 16px; padding: 5px;"
+                        )
                         if hasattr(self, "protection_toggle_btn"):
                             self.protection_toggle_btn.setText("Stop")
                         print("✅ Real-time protection restored successfully!")
@@ -2420,11 +2579,11 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
                         # Failed to start, reset to inactive
                         print("❌ Failed to restore real-time protection")
                         self.monitoring_enabled = False
-                        self.protection_status_label.setText(
-                            "❌ Failed to restore")
+                        self.protection_status_label.setText("❌ Failed to restore")
                         color = self.get_status_color("error")
                         self.protection_status_label.setStyleSheet(
-                            f"color: {color}; font-weight: bold; font-size: 16px; padding: 5px;")
+                            f"color: {color}; font-weight: bold; font-size: 16px; padding: 5px;"
+                        )
                         if hasattr(self, "protection_toggle_btn"):
                             self.protection_toggle_btn.setText("Start")
                         self.add_activity_message(
@@ -2440,7 +2599,8 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
                     self.protection_status_label.setText("🔴 Inactive")
                     color = self.get_status_color("error")
                     self.protection_status_label.setStyleSheet(
-                        f"color: {color}; font-weight: bold; font-size: 12px; padding: 5px;")
+                        f"color: {color}; font-weight: bold; font-size: 12px; padding: 5px;"
+                    )
                     if hasattr(self, "protection_toggle_btn"):
                         self.protection_toggle_btn.setText("Start")
 
@@ -2451,8 +2611,7 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
             print(f"❌ Failed to initialize monitoring: {e}")
             # Create a dummy monitor for UI purposes
             self.real_time_monitor = None
-            self.add_activity_message(
-                f"⚠️ Monitoring system offline: {str(e)}")
+            self.add_activity_message(f"⚠️ Monitoring system offline: {str(e)}")
 
             # Ensure status is never left as "Initializing..." - set to
             # inactive
@@ -2460,7 +2619,8 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
                 self.protection_status_label.setText("🔴 Inactive")
                 color = self.get_status_color("error")
                 self.protection_status_label.setStyleSheet(
-                    f"color: {color}; font-weight: bold; font-size: 12px; padding: 5px;")
+                    f"color: {color}; font-weight: bold; font-size: 12px; padding: 5px;"
+                )
                 if hasattr(self, "protection_toggle_btn"):
                     self.protection_toggle_btn.setText("Start")
                 print("✅ Status reset to Inactive after initialization failure")
@@ -2472,7 +2632,8 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
         try:
             # Create monitor configuration
             watch_paths = self.config.get(
-                "watch_paths", ["/home", "/opt", tempfile.gettempdir()])
+                "watch_paths", ["/home", "/opt", tempfile.gettempdir()]
+            )
             excluded_paths = self.config.get(
                 "excluded_paths", ["/proc", "/sys", "/dev"]
             )
@@ -2489,10 +2650,8 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
             self.real_time_monitor = RealTimeMonitor(monitor_config)
 
             # Set up callbacks
-            self.real_time_monitor.set_threat_detected_callback(
-                self.on_threat_detected)
-            self.real_time_monitor.set_scan_completed_callback(
-                self.on_scan_completed)
+            self.real_time_monitor.set_threat_detected_callback(self.on_threat_detected)
+            self.real_time_monitor.set_scan_completed_callback(self.on_scan_completed)
             self.real_time_monitor.set_error_callback(self.on_monitoring_error)
 
             # Set up timer to update statistics
@@ -2510,11 +2669,12 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
                 self.protection_status_label.setText("🔴 Inactive")
                 self.protection_status_label.setStyleSheet(
                     f"color: {
-                        self.get_theme_color('error')}; font-weight: bold; font-size: 12px; padding: 5px;")
+                        self.get_theme_color('error')
+                    }; font-weight: bold; font-size: 12px; padding: 5px;"
+                )
 
         except (ImportError, AttributeError, RuntimeError) as e:
-            self.add_activity_message(
-                f"❌ Failed to initialize monitoring: {e}")
+            self.add_activity_message(f"❌ Failed to initialize monitoring: {e}")
 
     def toggle_real_time_protection(self):
         """Toggle real-time protection on/off."""
@@ -2541,7 +2701,9 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
                 self.protection_status_label.setText("🛡️ Active")
                 self.protection_status_label.setStyleSheet(
                     f"color: {
-                        self.get_theme_color('success')}; font-weight: bold; font-size: 12px; padding: 5px;")
+                        self.get_theme_color('success')
+                    }; font-weight: bold; font-size: 12px; padding: 5px;"
+                )
                 self.protection_toggle_btn.setText("Stop")
                 self.add_activity_message("✅ Real-time protection started")
                 self.status_bar.showMessage("Real-time protection active")
@@ -2564,8 +2726,7 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
                     self.stats_timer.start(5000)  # Update every 5 seconds
                 else:
                     self.stats_timer = QTimer()
-                    self.stats_timer.timeout.connect(
-                        self.update_monitoring_statistics)
+                    self.stats_timer.timeout.connect(self.update_monitoring_statistics)
                     self.stats_timer.start(5000)
 
                 # Update statistics immediately to show current state
@@ -2574,11 +2735,12 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
                 self.protection_status_label.setText("❌ Failed")
                 self.protection_status_label.setStyleSheet(
                     f"color: {
-                        self.get_theme_color('error')}; font-weight: bold; font-size: 12px; padding: 5px;")
+                        self.get_theme_color('error')
+                    }; font-weight: bold; font-size: 12px; padding: 5px;"
+                )
                 # Keep button as "Start" since protection failed to start
                 self.protection_toggle_btn.setText("Start")
-                self.add_activity_message(
-                    "❌ Failed to start real-time protection")
+                self.add_activity_message("❌ Failed to start real-time protection")
 
                 # Make sure dashboard shows failure state
                 self.monitoring_enabled = False
@@ -2600,7 +2762,9 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
                 self.protection_status_label.setText("🔴 Inactive")
                 self.protection_status_label.setStyleSheet(
                     f"color: {
-                        self.get_theme_color('error')}; font-weight: bold; font-size: 12px; padding: 5px;")
+                        self.get_theme_color('error')
+                    }; font-weight: bold; font-size: 12px; padding: 5px;"
+                )
                 self.protection_toggle_btn.setText("Start")
                 self.add_activity_message("🛑 Real-time protection stopped")
                 self.status_bar.showMessage("🛑 Real-time protection stopped")
@@ -2636,7 +2800,9 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
             self.protection_status_label.setText("❌ Error")
             self.protection_status_label.setStyleSheet(
                 f"color: {
-                    self.get_theme_color('error')}; font-weight: bold; font-size: 12px; padding: 5px;")
+                    self.get_theme_color('error')
+                }; font-weight: bold; font-size: 12px; padding: 5px;"
+            )
 
     def on_threat_detected(self, file_path: str, threat_name: str):
         """Handle threat detection callback."""
@@ -2691,8 +2857,7 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
 
             # Keep only last 20 items on dashboard for brevity
             while self.dashboard_activity.count() > 20:
-                self.dashboard_activity.takeItem(
-                    self.dashboard_activity.count() - 1)
+                self.dashboard_activity.takeItem(self.dashboard_activity.count() - 1)
 
         # Save activity logs immediately when a new entry is added
         self.save_activity_logs()
@@ -2700,7 +2865,7 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
     def save_activity_logs(self):
         """Save current activity logs to persistent storage immediately."""
         try:
-            from utils.config import DATA_DIR
+            from app.utils.config import DATA_DIR
 
             activity_log_file = DATA_DIR / "activity_logs.json"
 
@@ -2711,9 +2876,7 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
             activity_messages = []
 
             # Primary activity list (Protection tab) has the full history
-            if hasattr(
-                    self,
-                    "activity_list") and self.activity_list.count() > 0:
+            if hasattr(self, "activity_list") and self.activity_list.count() > 0:
                 for i in range(min(self.activity_list.count(), retention)):
                     item = self.activity_list.item(i)
                     if item:
@@ -2744,7 +2907,7 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
     def load_activity_logs(self):
         """Load persisted activity logs on startup."""
         try:
-            from utils.config import DATA_DIR
+            from app.utils.config import DATA_DIR
 
             activity_log_file = DATA_DIR / "activity_logs.json"
 
@@ -2797,9 +2960,7 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
         """Get the current activity retention setting."""
         if hasattr(self, "settings_activity_retention_combo"):
             return int(self.settings_activity_retention_combo.currentText())
-        return self.config.get(
-            "ui_settings", {}).get(
-            "activity_log_retention", 100)
+        return self.config.get("ui_settings", {}).get("activity_log_retention", 100)
 
     def clear_activity_logs(self):
         """Clear all activity logs from both Protection tab and Dashboard."""
@@ -2824,7 +2985,7 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
 
                 # Remove the saved activity log file
                 try:
-                    from utils.config import DATA_DIR
+                    from app.utils.config import DATA_DIR
 
                     activity_log_file = DATA_DIR / "activity_logs.json"
                     if activity_log_file.exists():
@@ -2862,7 +3023,7 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
             # Use unified auto-save method
             print(f"💾 Auto-saving retention setting: {new_retention}")
             self.auto_save_settings()
-            print(f"✅ Retention setting saved")
+            print("✅ Retention setting saved")
 
         except ValueError:
             print(f"❌ Invalid retention value: {new_value}")
@@ -2921,7 +3082,7 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
                 self.settings_scan_type_combo.setStyleSheet(disabled_style)
 
             # Enable custom directory controls only if custom scan is selected
-            if hasattr(self, 'settings_custom_dir_edit'):
+            if hasattr(self, "settings_custom_dir_edit"):
                 is_custom = self.settings_scan_type_combo.currentData() == "custom"
                 self.settings_custom_dir_edit.setEnabled(enabled and is_custom)
                 self.settings_custom_dir_btn.setEnabled(enabled and is_custom)
@@ -2932,22 +3093,28 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
                 # Only start scheduler if initialization is complete
                 if self._initialization_complete:
                     try:
-                        if hasattr(self.scanner, 'start_scheduler'):
+                        if hasattr(self.scanner, "start_scheduler"):
                             self.scanner.start_scheduler()
                         else:
-                            print("⚠️ Scanner doesn't have scheduler capability yet - will retry when scanner is ready")
+                            print(
+                                "⚠️ Scanner doesn't have scheduler capability yet - will retry when scanner is ready"
+                            )
                     except Exception as e:
                         print(f"⚠️ Error starting scheduler: {e}")
-                        print("⚠️ Scheduler will be started when scanner is fully initialized")
+                        print(
+                            "⚠️ Scheduler will be started when scanner is fully initialized"
+                        )
                         # Do NOT disable the checkbox here - let the setting persist
                         # The scheduler will be started later when the scanner is ready
                 else:
-                    print("⏳ Scheduled scans enabled but waiting for initialization to complete")
+                    print(
+                        "⏳ Scheduled scans enabled but waiting for initialization to complete"
+                    )
             else:
                 self.settings_next_scan_label.setText("None scheduled")
                 # Stop scheduler
                 try:
-                    if hasattr(self.scanner, 'stop_scheduler'):
+                    if hasattr(self.scanner, "stop_scheduler"):
                         self.scanner.stop_scheduler()
                 except Exception as e:
                     print(f"Error stopping scheduler: {e}")
@@ -2955,11 +3122,12 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
             # Auto-save the scheduled scan settings
             print(f"💾 Auto-saving scheduled scan setting: {enabled}")
             self.auto_save_settings()
-            print(f"✅ Scheduled scan setting saved")
+            print("✅ Scheduled scan setting saved")
 
         except Exception as e:
             print(f"❌ Error in scheduled scan toggle: {e}")
             import traceback
+
             traceback.print_exc()
             # Do NOT reset the checkbox state automatically
             # Let the user know about the error but preserve their setting choice
@@ -2974,9 +3142,13 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
             self.settings_custom_dir_widget.setVisible(is_custom)
 
             # Enable/disable custom directory controls
-            if hasattr(self, 'settings_custom_dir_edit'):
-                self.settings_custom_dir_edit.setEnabled(is_custom and self.settings_enable_scheduled_cb.isChecked())
-                self.settings_custom_dir_btn.setEnabled(is_custom and self.settings_enable_scheduled_cb.isChecked())
+            if hasattr(self, "settings_custom_dir_edit"):
+                self.settings_custom_dir_edit.setEnabled(
+                    is_custom and self.settings_enable_scheduled_cb.isChecked()
+                )
+                self.settings_custom_dir_btn.setEnabled(
+                    is_custom and self.settings_enable_scheduled_cb.isChecked()
+                )
 
             # Update next scheduled scan display to reflect new type
             self.update_next_scheduled_scan_display()
@@ -2988,6 +3160,7 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
         except Exception as e:
             print(f"❌ Error in scheduled scan type change: {e}")
             import traceback
+
             traceback.print_exc()
 
     def select_scheduled_custom_directory(self):
@@ -3001,7 +3174,8 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
                 self,
                 "Select Directory for Scheduled Scans",
                 current_path,
-                QFileDialog.Option.ShowDirsOnly | QFileDialog.Option.DontResolveSymlinks
+                QFileDialog.Option.ShowDirsOnly
+                | QFileDialog.Option.DontResolveSymlinks,
             )
 
             if directory:
@@ -3018,6 +3192,7 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
         except Exception as e:
             print(f"❌ Error selecting scheduled custom directory: {e}")
             import traceback
+
             traceback.print_exc()
 
     def update_next_scheduled_scan_display(self):
@@ -3046,31 +3221,62 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
 
             # Calculate next scan time based on frequency
             from datetime import datetime, timedelta
+
             now = datetime.now()
             next_scan = None
 
             if frequency == "daily":
-                next_scan = now.replace(hour=scan_time.hour(), minute=scan_time.minute(), second=0, microsecond=0)
+                next_scan = now.replace(
+                    hour=scan_time.hour(),
+                    minute=scan_time.minute(),
+                    second=0,
+                    microsecond=0,
+                )
                 if next_scan <= now:
                     next_scan += timedelta(days=1)
             elif frequency == "weekly":
                 # Schedule for next Sunday
                 days_until_sunday = (6 - now.weekday()) % 7
                 if days_until_sunday == 0:  # It's Sunday
-                    next_scan = now.replace(hour=scan_time.hour(), minute=scan_time.minute(), second=0, microsecond=0)
+                    next_scan = now.replace(
+                        hour=scan_time.hour(),
+                        minute=scan_time.minute(),
+                        second=0,
+                        microsecond=0,
+                    )
                     if next_scan <= now:
                         days_until_sunday = 7
                     else:
                         next_scan = now + timedelta(days=days_until_sunday)
                 else:
                     next_scan = now + timedelta(days=days_until_sunday)
-                next_scan = next_scan.replace(hour=scan_time.hour(), minute=scan_time.minute(), second=0, microsecond=0)
+                next_scan = next_scan.replace(
+                    hour=scan_time.hour(),
+                    minute=scan_time.minute(),
+                    second=0,
+                    microsecond=0,
+                )
             elif frequency == "monthly":
                 # Schedule for first of next month
                 if now.month == 12:
-                    next_scan = now.replace(year=now.year + 1, month=1, day=1, hour=scan_time.hour(), minute=scan_time.minute(), second=0, microsecond=0)
+                    next_scan = now.replace(
+                        year=now.year + 1,
+                        month=1,
+                        day=1,
+                        hour=scan_time.hour(),
+                        minute=scan_time.minute(),
+                        second=0,
+                        microsecond=0,
+                    )
                 else:
-                    next_scan = now.replace(month=now.month + 1, day=1, hour=scan_time.hour(), minute=scan_time.minute(), second=0, microsecond=0)
+                    next_scan = now.replace(
+                        month=now.month + 1,
+                        day=1,
+                        hour=scan_time.hour(),
+                        minute=scan_time.minute(),
+                        second=0,
+                        microsecond=0,
+                    )
 
             if next_scan:
                 display_text = f"{next_scan.strftime('%Y-%m-%d %H:%M')} ({scan_type})"
@@ -3156,8 +3362,7 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
 
     def add_watch_path(self):
         """Add a new path to monitor."""
-        path = self.show_themed_file_dialog(
-            "directory", "Select Directory to Monitor")
+        path = self.show_themed_file_dialog("directory", "Select Directory to Monitor")
         if path and self.real_time_monitor:
             if self.real_time_monitor.add_watch_path(path):
                 self.update_paths_list()
@@ -3168,7 +3373,7 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
                 )
 
     def remove_watch_path(self):
-        """Remove a path from monitoring."""
+        """Remove a path from app.monitoring."""
         current_item = self.paths_list.currentItem()
         if current_item and self.real_time_monitor:
             path = current_item.text().replace("📁 ", "")
@@ -3201,7 +3406,9 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
         force_exit_action = QAction("Force Exit", self)
         force_exit_action.triggered.connect(self.force_quit_application)
         force_exit_action.setShortcut("Ctrl+Shift+Q")
-        force_exit_action.setToolTip("Force exit application ignoring minimize to tray setting")
+        force_exit_action.setToolTip(
+            "Force exit application ignoring minimize to tray setting"
+        )
         file_menu.addAction(force_exit_action)
 
         # View menu for theme selection
@@ -3215,20 +3422,17 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
         # Theme actions
         self.dark_theme_action = QAction("Dark Mode", self)
         self.dark_theme_action.setCheckable(True)
-        self.dark_theme_action.triggered.connect(
-            lambda: self.set_theme("dark"))
+        self.dark_theme_action.triggered.connect(lambda: self.set_theme("dark"))
         theme_menu.addAction(self.dark_theme_action)
 
         self.light_theme_action = QAction("Light Mode", self)
         self.light_theme_action.setCheckable(True)
-        self.light_theme_action.triggered.connect(
-            lambda: self.set_theme("light"))
+        self.light_theme_action.triggered.connect(lambda: self.set_theme("light"))
         theme_menu.addAction(self.light_theme_action)
 
         self.system_theme_action = QAction("System Default", self)
         self.system_theme_action.setCheckable(True)
-        self.system_theme_action.triggered.connect(
-            lambda: self.set_theme("system"))
+        self.system_theme_action.triggered.connect(lambda: self.set_theme("system"))
         theme_menu.addAction(self.system_theme_action)
 
         # Set initial theme state
@@ -3241,7 +3445,9 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
         # Setup Wizard menu item
         setup_wizard_action = QAction("🔧 Setup Wizard", self)
         setup_wizard_action.triggered.connect(self.show_setup_wizard)
-        setup_wizard_action.setStatusTip("Run the first-time setup wizard to install and configure security components")
+        setup_wizard_action.setStatusTip(
+            "Run the first-time setup wizard to install and configure security components"
+        )
         tools_menu.addAction(setup_wizard_action)
 
         # Help menu
@@ -3336,7 +3542,7 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
             protection_status = "Disabled"
 
             try:
-                from core.firewall_detector import get_firewall_status
+                from app.core.firewall_detector import get_firewall_status
 
                 firewall_status_dict = get_firewall_status()
                 firewall_active = firewall_status_dict.get("is_active", False)
@@ -3370,18 +3576,14 @@ System        {perf_status}"""
             self.tray_icon.setToolTip("S&D - Search & Destroy")
             print(f"Error updating tray tooltip: {e}")
 
-
-
     def setup_accessibility(self):
         """Set up accessibility features including keyboard shortcuts and ARIA-like labels."""
         # Keyboard shortcuts
         self.quick_scan_shortcut = QShortcut(QKeySequence("Ctrl+Q"), self)
         self.quick_scan_shortcut.activated.connect(self.quick_scan)
 
-        self.update_definitions_shortcut = QShortcut(
-            QKeySequence("Ctrl+U"), self)
-        self.update_definitions_shortcut.activated.connect(
-            self.update_definitions)
+        self.update_definitions_shortcut = QShortcut(QKeySequence("Ctrl+U"), self)
+        self.update_definitions_shortcut.activated.connect(self.update_definitions)
 
         # Tab navigation shortcuts
         self.dashboard_shortcut = QShortcut(QKeySequence("Ctrl+1"), self)
@@ -3390,8 +3592,7 @@ System        {perf_status}"""
         )
 
         self.scan_shortcut = QShortcut(QKeySequence("Ctrl+2"), self)
-        self.scan_shortcut.activated.connect(
-            lambda: self.tab_widget.setCurrentIndex(1))
+        self.scan_shortcut.activated.connect(lambda: self.tab_widget.setCurrentIndex(1))
 
         self.protection_shortcut = QShortcut(QKeySequence("Ctrl+3"), self)
         self.protection_shortcut.activated.connect(
@@ -3472,7 +3673,11 @@ System        {perf_status}"""
             self.icon_label.setPixmap(scaled_pixmap)
         else:
             # Fallback to colored circle if icon not found
-            fallback_color = get_theme_manager().get_color("muted_text") if current_theme == "dark" else get_theme_manager().get_color("accent")
+            fallback_color = (
+                get_theme_manager().get_color("muted_text")
+                if current_theme == "dark"
+                else get_theme_manager().get_color("accent")
+            )
             self.icon_label.setStyleSheet(
                 f"background-color: {fallback_color}; border-radius: 64px;"
             )
@@ -3506,19 +3711,15 @@ System        {perf_status}"""
 
                 # Create grayscale pixel maintaining alpha
                 gray_pixel = (
-                    (alpha << 24) | (
-                        luminance << 16) | (
-                        luminance << 8) | luminance)
+                    (alpha << 24) | (luminance << 16) | (luminance << 8) | luminance
+                )
                 image.setPixel(x, y, gray_pixel)
 
         return QPixmap.fromImage(image)
 
     def show_themed_file_dialog(
-            self,
-            dialog_type="directory",
-            title="Select",
-            default_path="",
-            file_filter=""):
+        self, dialog_type="directory", title="Select", default_path="", file_filter=""
+    ):
         """Show a file dialog with proper theming."""
         bg = self.get_theme_color("background")
         text = self.get_theme_color("primary_text")
@@ -3609,8 +3810,7 @@ System        {perf_status}"""
         if parent is None:
             parent = self
 
-        progress = QProgressDialog(
-            label_text, "Cancel", minimum, maximum, parent)
+        progress = QProgressDialog(label_text, "Cancel", minimum, maximum, parent)
         progress.setWindowTitle(title)
         progress.setWindowModality(Qt.WindowModality.WindowModal)
 
@@ -3667,14 +3867,15 @@ System        {perf_status}"""
 
     def setup_activity_list_styling(self):
         """Set up proper styling for the activity list with theme-aware colors."""
-        from gui.theme_manager import get_theme_manager
+        from app.gui.theme_manager import get_theme_manager
+
         bg = self.get_theme_color("background")
         secondary_bg = self.get_theme_color("secondary_bg")
         text = self.get_theme_color("primary_text")
         accent = self.get_theme_color("accent")
         border = self.get_theme_color("border")
         hover_bg = self.get_theme_color("hover_bg")
-        selection_bg = self.get_theme_color("selection_bg")
+        self.get_theme_color("selection_bg")
 
         # Get the activity font size
         activity_font_size = get_theme_manager().get_font_size("activity")
@@ -3746,13 +3947,15 @@ System        {perf_status}"""
             alignment_map = {
                 "Left Aligned": Qt.AlignmentFlag.AlignLeft,
                 "Centered": Qt.AlignmentFlag.AlignCenter,
-                "Right Aligned": Qt.AlignmentFlag.AlignRight
+                "Right Aligned": Qt.AlignmentFlag.AlignRight,
             }
 
-            alignment = alignment_map.get(orientation_text, Qt.AlignmentFlag.AlignCenter)
+            alignment = alignment_map.get(
+                orientation_text, Qt.AlignmentFlag.AlignCenter
+            )
 
             # Apply the alignment to the results text widget
-            if hasattr(self, 'results_text') and self.results_text:
+            if hasattr(self, "results_text") and self.results_text:
                 doc = self.results_text.document()
                 option = doc.defaultTextOption()
                 option.setAlignment(alignment)
@@ -3764,9 +3967,9 @@ System        {perf_status}"""
                 print(f"✅ Applied text orientation: {orientation_text}")
 
             # Auto-save the setting if it was changed via UI
-            if orientation_text and hasattr(self, 'text_orientation_combo'):
+            if orientation_text and hasattr(self, "text_orientation_combo"):
                 # Only auto-save if the timer is initialized
-                if hasattr(self, '_settings_save_timer'):
+                if hasattr(self, "_settings_save_timer"):
                     self.auto_save_settings()
 
         except Exception as e:
@@ -3790,11 +3993,14 @@ System        {perf_status}"""
 
             # Initialize the auto-updater with new system
             self.auto_updater = AutoUpdateSystem()
-            self.auto_updater.current_version = current_version  # Set version attribute for compatibility
+            self.auto_updater.current_version = (
+                current_version  # Set version attribute for compatibility
+            )
 
             # Add compatibility methods
             def get_last_check_time():
-                return getattr(self.auto_updater, 'last_check_time', None)
+                return getattr(self.auto_updater, "last_check_time", None)
+
             self.auto_updater.get_last_check_time = get_last_check_time
 
             # Initialize the update notifier (if available)
@@ -3806,79 +4012,100 @@ System        {perf_status}"""
 
             # Check for updates in the background if auto-check is enabled
             settings = self.load_settings()
-            auto_check = settings.get('auto_check_updates', True)
-            check_interval = settings.get('update_check_interval', 24)  # hours
+            auto_check = settings.get("auto_check_updates", True)
+            check_interval = settings.get("update_check_interval", 24)  # hours
 
             if auto_check:
                 # Set up periodic update checking
                 self.update_check_timer = QTimer()
-                self.update_check_timer.timeout.connect(self.update_notifier.check_for_updates_background)
-                self.update_check_timer.start(check_interval * 60 * 60 * 1000)  # Convert hours to milliseconds
+                self.update_check_timer.timeout.connect(
+                    self.update_notifier.check_for_updates_background
+                )
+                self.update_check_timer.start(
+                    check_interval * 60 * 60 * 1000
+                )  # Convert hours to milliseconds
 
                 # Do an initial check (delayed by 30 seconds to avoid blocking startup)
-                QTimer.singleShot(30000, self.update_notifier.check_for_updates_background)
+                QTimer.singleShot(
+                    30000, self.update_notifier.check_for_updates_background
+                )
 
             print("✅ Auto-updater initialized successfully")
 
             # Refresh the update check display in settings
-            QTimer.singleShot(1000, self.refresh_update_check_display)  # Delay to ensure UI is ready
+            QTimer.singleShot(
+                1000, self.refresh_update_check_display
+            )  # Delay to ensure UI is ready
 
         except Exception as e:
             print(f"❌ Error initializing auto-updater: {e}")
 
     def check_for_updates_manual(self):
         """Manually check for updates when user clicks Help menu item."""
-        if hasattr(self, 'auto_updater') and self.auto_updater:
+        if hasattr(self, "auto_updater") and self.auto_updater:
             try:
                 from PyQt6.QtWidgets import QMessageBox
 
                 # Check for updates directly
                 update_info = self.auto_updater.check_for_updates(force_check=True)
 
-                if update_info and update_info.get('available'):
+                if update_info and update_info.get("available"):
                     # Show update available dialog
-                    if hasattr(self, 'update_notifier') and self.update_notifier:
+                    if hasattr(self, "update_notifier") and self.update_notifier:
                         self.update_notifier.show_update_notification(update_info)
                     else:
                         # Fallback message
                         QMessageBox.information(
-                            self, "Update Available",
+                            self,
+                            "Update Available",
                             f"Update available: v{update_info.get('latest_version')}\n"
                             f"Current version: v{update_info.get('current_version')}\n"
-                            f"Release: {update_info.get('release_name', 'Unknown')}"
+                            f"Release: {update_info.get('release_name', 'Unknown')}",
                         )
                 else:
                     # No updates available
                     QMessageBox.information(
-                        self, "No Updates Available",
-                        f"You are running the latest version (v{self.auto_updater.current_version})."
+                        self,
+                        "No Updates Available",
+                        f"You are running the latest version (v{
+                            self.auto_updater.current_version
+                        }).",
                     )
 
             except Exception as e:
                 from PyQt6.QtWidgets import QMessageBox
+
                 QMessageBox.warning(
-                    self, "Update Check Failed",
-                    f"Failed to check for updates:\n{str(e)}"
+                    self,
+                    "Update Check Failed",
+                    f"Failed to check for updates:\n{str(e)}",
                 )
         else:
             from PyQt6.QtWidgets import QMessageBox
-            QMessageBox.warning(self, "Update Check",
-                              "Auto-updater is not initialized. Please restart the application.")
+
+            QMessageBox.warning(
+                self,
+                "Update Check",
+                "Auto-updater is not initialized. Please restart the application.",
+            )
 
     def get_update_settings(self):
         """Get current auto-update settings."""
         try:
             settings = self.load_settings()
-            return settings.get('auto_update_settings', {
-                'auto_check_updates': True,
-                'auto_download_updates': False,
-                'update_check_interval': 24
-            })
+            return settings.get(
+                "auto_update_settings",
+                {
+                    "auto_check_updates": True,
+                    "auto_download_updates": False,
+                    "update_check_interval": 24,
+                },
+            )
         except Exception:
             return {
-                'auto_check_updates': True,
-                'auto_download_updates': False,
-                'update_check_interval': 24
+                "auto_check_updates": True,
+                "auto_download_updates": False,
+                "update_check_interval": 24,
             }
 
     def load_settings(self):
@@ -3887,13 +4114,16 @@ System        {perf_status}"""
             return self.config
         except Exception:
             # Return defaults if config is not available
-            from utils.config import get_factory_defaults
+            from app.utils.config import get_factory_defaults
+
             return get_factory_defaults()
 
     def update_last_check_time(self):
         """Update the last update check time in the settings page."""
         try:
-            if hasattr(self, 'auto_updater') and hasattr(self, 'last_update_check_label'):
+            if hasattr(self, "auto_updater") and hasattr(
+                self, "last_update_check_label"
+            ):
                 last_check = self.auto_updater.get_last_check_time()
                 if last_check:
                     # Format the datetime as a readable string
@@ -3908,7 +4138,7 @@ System        {perf_status}"""
         """Refresh the update check display in settings - can be called from anywhere."""
         try:
             # This method can be called to refresh the display
-            if hasattr(self, 'last_update_check_label'):
+            if hasattr(self, "last_update_check_label"):
                 self.update_last_check_time()
         except Exception as e:
             print(f"Warning: Could not refresh update check display: {e}")
@@ -3916,12 +4146,13 @@ System        {perf_status}"""
     def open_update_dialog(self):
         """Open the update dialog for manual update checking."""
         try:
-            if hasattr(self, 'auto_updater'):
-                from gui.update_components import UpdateDialog
+            if hasattr(self, "auto_updater"):
+                from app.gui.update_components import UpdateDialog
+
                 # First argument must be the QWidget parent; second is current version string
-                current_version = getattr(self.auto_updater, 'current_version', '0.0.0')
+                current_version = getattr(self.auto_updater, "current_version", "0.0.0")
                 dialog = UpdateDialog(self, current_version)
-                result = dialog.exec()
+                dialog.exec()
 
                 # Update the last check time in settings after dialog closes
                 self.update_last_check_time()
@@ -3929,13 +4160,11 @@ System        {perf_status}"""
                 self.show_themed_message_box(
                     "warning",
                     "Updates",
-                    "Auto-updater is not initialized. Please restart the application."
+                    "Auto-updater is not initialized. Please restart the application.",
                 )
         except Exception as e:
             self.show_themed_message_box(
-                "warning",
-                "Error",
-                f"Could not open update dialog: {str(e)}"
+                "warning", "Error", f"Could not open update dialog: {str(e)}"
             )
 
     def set_scan_path(self, path):
@@ -3957,8 +4186,7 @@ System        {perf_status}"""
             )
 
     def select_scan_path(self):
-        path = self.show_themed_file_dialog(
-            "directory", "Select Directory to Scan")
+        path = self.show_themed_file_dialog("directory", "Select Directory to Scan")
         if path:
             self.set_scan_path(path)  # Use set_scan_path to handle all updates
 
@@ -3979,7 +4207,7 @@ System        {perf_status}"""
                 "• Thorough protection but takes longer to complete"
             )
         elif current_type == "CUSTOM":
-            if hasattr(self, 'scan_path') and self.scan_path:
+            if hasattr(self, "scan_path") and self.scan_path:
                 self.path_label.setText(
                     f"⚙️ Custom Scan: Selected path\n"
                     f"• {self.scan_path}\n"
@@ -3996,7 +4224,7 @@ System        {perf_status}"""
 
     def toggle_scan(self):
         """Toggle between starting and stopping scans based on current state."""
-        print(f"\n🔄 === TOGGLE_SCAN CALLED ===")
+        print("\n🔄 === TOGGLE_SCAN CALLED ===")
         print(f"DEBUG: Current scan running state: {self._scan_running}")
         print(f"DEBUG: Current scan state: {self._scan_state}")
 
@@ -4035,35 +4263,50 @@ System        {perf_status}"""
         self.scan_toggle_btn.setEnabled(True)
 
         # Reset RKHunter scan button
-        if hasattr(self, 'rkhunter_scan_btn'):
+        if hasattr(self, "rkhunter_scan_btn"):
             self.rkhunter_scan_btn.setEnabled(True)
             self.rkhunter_scan_btn.setText("🔍 RKHunter Scan")
 
         print("✅ All scan buttons reset successfully")
 
     def start_scan(self, quick_scan=False):
-        print(f"\n🔄 === START_SCAN CALLED ===")
+        print("\n🔄 === START_SCAN CALLED ===")
         print(f"DEBUG: start_scan() called with quick_scan={quick_scan}")
         print(f"DEBUG: Current scan state: {self._scan_state}")
         print(f"DEBUG: Current thread exists: {self.current_scan_thread is not None}")
-        print(f"DEBUG: Thread running: {self.current_scan_thread.isRunning() if self.current_scan_thread else 'N/A'}")
+        print(
+            f"DEBUG: Thread running: {
+                self.current_scan_thread.isRunning()
+                if self.current_scan_thread
+                else 'N/A'
+            }"
+        )
         print(f"DEBUG: Manual stop flag: {self._scan_manually_stopped}")
         print(f"DEBUG: Pending request: {self._pending_scan_request}")
         print(f"DEBUG: User wants restart: {self._stop_scan_user_wants_restart}")
 
         # Check if we're in a stopping state OR if there's a completion timer running
         # This provides a broader detection window for pending requests
-        if self._scan_state == "stopping" or (hasattr(self, '_stop_completion_timer') and self._stop_completion_timer.isActive()):
+        if self._scan_state == "stopping" or (
+            hasattr(self, "_stop_completion_timer")
+            and self._stop_completion_timer.isActive()
+        ):
             # Queue the scan request to execute after current scan finishes
-            print("DEBUG: ⏳ Scan is stopping OR completion timer active, queuing new scan request")
+            print(
+                "DEBUG: ⏳ Scan is stopping OR completion timer active, queuing new scan request"
+            )
             self._pending_scan_request = {"quick_scan": quick_scan}
-            self.status_bar.showMessage("⏳ New scan queued - waiting for current scan to finish...")
+            self.status_bar.showMessage(
+                "⏳ New scan queued - waiting for current scan to finish..."
+            )
             print(f"DEBUG: Queued request: {self._pending_scan_request}")
             return
 
         # NEW: Check if user recently stopped a scan and wants to restart
         if self._stop_scan_user_wants_restart:
-            print("DEBUG: 🔄 User previously stopped scan and wants restart - executing immediately")
+            print(
+                "DEBUG: 🔄 User previously stopped scan and wants restart - executing immediately"
+            )
             self._stop_scan_user_wants_restart = False  # Reset flag
             # Continue with normal scan start logic
 
@@ -4107,11 +4350,11 @@ System        {perf_status}"""
 
         print(f"DEBUG: ✅ Starting new scan, state set to: {self._scan_state}")
         print(f"DEBUG: Reset manual stop flag to: {self._scan_manually_stopped}")
-        print(f"DEBUG: Cleared pending request")
+        print("DEBUG: Cleared pending request")
 
         # Get scan type from UI if available, otherwise use parameter
         scan_type_data = None
-        if hasattr(self, 'scan_type_combo'):
+        if hasattr(self, "scan_type_combo"):
             scan_type_data = self.scan_type_combo.currentData()
 
         # Determine effective scan type
@@ -4128,7 +4371,7 @@ System        {perf_status}"""
             import tempfile
 
             # Check if we already have comprehensive paths from quick scan button
-            if hasattr(self, 'quick_scan_paths') and self.quick_scan_paths:
+            if hasattr(self, "quick_scan_paths") and self.quick_scan_paths:
                 # Use the comprehensive paths from the quick scan button
                 valid_paths = self.quick_scan_paths
                 self.scan_path = valid_paths
@@ -4142,15 +4385,12 @@ System        {perf_status}"""
                     os.path.expanduser("~/Pictures"),
                     os.path.expanduser("~/Videos"),
                     os.path.expanduser("~/Music"),
-
                     # Browser directories
                     os.path.expanduser("~/.mozilla"),
                     os.path.expanduser("~/.config/google-chrome"),
                     os.path.expanduser("~/.config/chromium"),
-
                     # System temporary
                     tempfile.gettempdir(),
-
                     # User application data
                     os.path.expanduser("~/.local/share"),
                     os.path.expanduser("~/.cache"),
@@ -4158,19 +4398,25 @@ System        {perf_status}"""
 
                 # Filter out non-existent paths
                 valid_paths = [
-                    path for path in quick_scan_paths
+                    path
+                    for path in quick_scan_paths
                     if path and os.path.exists(path) and os.path.isdir(path)
                 ]
 
                 if not valid_paths:
                     self.show_themed_message_box(
-                        "warning", "Warning", "No valid directories found for quick scan."
+                        "warning",
+                        "Warning",
+                        "No valid directories found for quick scan.",
                     )
                     return
 
-                # For Quick Scan, always use comprehensive scan paths regardless of previous selection
+                # For Quick Scan, always use comprehensive scan paths regardless of
+                # previous selection
                 self.scan_path = valid_paths
-                print(f"DEBUG: Quick scan using {len(valid_paths)} directories: {valid_paths[:3]}{'...' if len(valid_paths) > 3 else ''}")
+                print(
+                    f"DEBUG: Quick scan using {len(valid_paths)} directories: {valid_paths[:3]}{'...' if len(valid_paths) > 3 else ''}"
+                )
 
         elif effective_scan_type == "FULL":
             # Full scan targets the entire home directory
@@ -4180,7 +4426,9 @@ System        {perf_status}"""
             # Custom scan uses the user-selected path
             if not hasattr(self, "scan_path") or not self.scan_path:
                 self.show_themed_message_box(
-                    "warning", "Warning", "Please select a path to scan first.\n\nClick the 'Browse...' button below the scan type dropdown to choose a directory to scan."
+                    "warning",
+                    "Warning",
+                    "Please select a path to scan first.\n\nClick the 'Browse...' button below the scan type dropdown to choose a directory to scan.",
                 )
                 self._scan_state = "idle"  # Reset scan state
                 return
@@ -4188,23 +4436,29 @@ System        {perf_status}"""
             # Default fallback
             if not hasattr(self, "scan_path") or not self.scan_path:
                 self.show_themed_message_box(
-                    "warning", "Warning", "Please select a path to scan first.\n\nClick the 'Browse...' button to choose a directory to scan."
+                    "warning",
+                    "Warning",
+                    "Please select a path to scan first.\n\nClick the 'Browse...' button to choose a directory to scan.",
                 )
                 self._scan_state = "idle"  # Reset scan state
                 return
 
         # Get advanced options if available
         scan_options = {}
-        if hasattr(self, 'scan_depth_combo'):
-            scan_options['depth'] = self.scan_depth_combo.currentData()
-        if hasattr(self, 'file_filter_combo'):
-            scan_options['file_filter'] = self.file_filter_combo.currentData()
-        if hasattr(self, 'memory_limit_combo'):
-            scan_options['memory_limit'] = self.memory_limit_combo.currentData()
-        if hasattr(self, 'exclusion_text'):
+        if hasattr(self, "scan_depth_combo"):
+            scan_options["depth"] = self.scan_depth_combo.currentData()
+        if hasattr(self, "file_filter_combo"):
+            scan_options["file_filter"] = self.file_filter_combo.currentData()
+        if hasattr(self, "memory_limit_combo"):
+            scan_options["memory_limit"] = self.memory_limit_combo.currentData()
+        if hasattr(self, "exclusion_text"):
             exclusions = self.exclusion_text.toPlainText().strip()
             if exclusions:
-                scan_options['exclusions'] = [pattern.strip() for pattern in exclusions.split('\n') if pattern.strip()]
+                scan_options["exclusions"] = [
+                    pattern.strip()
+                    for pattern in exclusions.split("\n")
+                    if pattern.strip()
+                ]
 
         self.update_scan_button_state(True)  # Set to "Stop Scan" mode
         self.progress_bar.setValue(0)
@@ -4234,7 +4488,9 @@ System        {perf_status}"""
         )
 
         should_run_rkhunter_quick = (
-            (quick_scan or effective_scan_type == "QUICK")  # Check both parameter and effective type
+            (
+                quick_scan or effective_scan_type == "QUICK"
+            )  # Check both parameter and effective type
             and rkhunter_settings.get("enabled", False)
             and rkhunter_settings.get("run_with_quick_scan", False)
             and self._rkhunter_available()
@@ -4247,16 +4503,18 @@ System        {perf_status}"""
             and self._rkhunter_available()
         )
 
-        should_run_rkhunter = should_run_rkhunter_full or should_run_rkhunter_quick or should_run_rkhunter_custom
-
         # Don't display the initial scan message yet - wait for user decision on RKHunter
         # We'll display it after the dialog choices
 
         if should_run_rkhunter_full and effective_scan_type == "FULL":
             # Display initial scan info before showing dialog
-            self._append_with_autoscroll(f"🔍 <b>Starting {effective_scan_type.lower()} scan...</b>")
+            self._append_with_autoscroll(
+                f"🔍 <b>Starting {effective_scan_type.lower()} scan...</b>"
+            )
             self._append_with_autoscroll("")  # Add spacing
-            self._append_with_autoscroll(f"📁 <b>Target:</b> {self.format_target_display(self.scan_path)}")
+            self._append_with_autoscroll(
+                f"📁 <b>Target:</b> {self.format_target_display(self.scan_path)}"
+            )
             self._append_with_autoscroll("")  # Add spacing
             if scan_options:
                 friendly_options = self.format_scan_options_user_friendly(scan_options)
@@ -4275,21 +4533,29 @@ System        {perf_status}"""
                 "• ClamAV will scan for viruses, malware, and trojans\n"
                 "• RKHunter will scan for rootkits and system integrity issues\n\n"
                 "This will provide the most comprehensive security analysis.",
-                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
             )
 
             if reply == QMessageBox.StandardButton.Yes:
-                self._append_with_autoscroll("🔒 <b>Enhanced Security Scan</b> - RKHunter + ClamAV")
+                self._append_with_autoscroll(
+                    "🔒 <b>Enhanced Security Scan</b> - RKHunter + ClamAV"
+                )
                 self._append_with_autoscroll("")  # Add spacing
                 # Start combined scan with RKHunter first
                 self.start_combined_security_scan(quick_scan, scan_options)
                 return
 
-        elif should_run_rkhunter_quick and (quick_scan or effective_scan_type == "QUICK"):
+        elif should_run_rkhunter_quick and (
+            quick_scan or effective_scan_type == "QUICK"
+        ):
             # Display initial scan info before showing dialog
-            self._append_with_autoscroll(f"🔍 <b>Starting {effective_scan_type.lower()} scan...</b>")
+            self._append_with_autoscroll(
+                f"🔍 <b>Starting {effective_scan_type.lower()} scan...</b>"
+            )
             self._append_with_autoscroll("")  # Add spacing
-            self._append_with_autoscroll(f"📁 <b>Target:</b> {self.format_target_display(self.scan_path)}")
+            self._append_with_autoscroll(
+                f"📁 <b>Target:</b> {self.format_target_display(self.scan_path)}"
+            )
             self._append_with_autoscroll("")  # Add spacing
             if scan_options:
                 friendly_options = self.format_scan_options_user_friendly(scan_options)
@@ -4308,11 +4574,13 @@ System        {perf_status}"""
                 "• RKHunter will first check for rootkits and system issues\n"
                 "• ClamAV will then perform a quick malware scan\n\n"
                 "This will provide enhanced security coverage in your quick scan.",
-                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
             )
 
             if reply == QMessageBox.StandardButton.Yes:
-                self._append_with_autoscroll("🔒 <b>Enhanced Quick Security Scan</b> - RKHunter + ClamAV")
+                self._append_with_autoscroll(
+                    "🔒 <b>Enhanced Quick Security Scan</b> - RKHunter + ClamAV"
+                )
                 self._append_with_autoscroll("")  # Add spacing
                 # Start combined scan with RKHunter first - determine if this is truly a quick scan
                 is_quick_scan = quick_scan or effective_scan_type == "QUICK"
@@ -4325,9 +4593,13 @@ System        {perf_status}"""
 
         elif should_run_rkhunter_custom and effective_scan_type == "CUSTOM":
             # Display initial scan info before showing dialog
-            self._append_with_autoscroll(f"🔍 <b>Starting {effective_scan_type.lower()} scan...</b>")
+            self._append_with_autoscroll(
+                f"🔍 <b>Starting {effective_scan_type.lower()} scan...</b>"
+            )
             self._append_with_autoscroll("")  # Add spacing
-            self._append_with_autoscroll(f"📁 <b>Target:</b> {self.format_target_display(self.scan_path)}")
+            self._append_with_autoscroll(
+                f"📁 <b>Target:</b> {self.format_target_display(self.scan_path)}"
+            )
             self._append_with_autoscroll("")  # Add spacing
             if scan_options:
                 friendly_options = self.format_scan_options_user_friendly(scan_options)
@@ -4346,14 +4618,18 @@ System        {perf_status}"""
                 "• RKHunter will first perform rootkit detection\n"
                 "• ClamAV will then scan your selected directory for malware\n\n"
                 "This will provide comprehensive security analysis for your custom scan target.",
-                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
             )
 
             if reply == QMessageBox.StandardButton.Yes:
-                self._append_with_autoscroll("🔒 <b>Enhanced Custom Security Scan</b> - RKHunter + ClamAV")
+                self._append_with_autoscroll(
+                    "🔒 <b>Enhanced Custom Security Scan</b> - RKHunter + ClamAV"
+                )
                 self._append_with_autoscroll("")  # Add spacing
                 # Start combined scan with RKHunter first for custom scan
-                self.start_combined_security_scan(False, scan_options)  # Custom scans are not quick scans
+                self.start_combined_security_scan(
+                    False, scan_options
+                )  # Custom scans are not quick scans
                 return
             else:
                 # User chose No - just run regular ClamAV scan
@@ -4362,9 +4638,13 @@ System        {perf_status}"""
 
         else:
             # No RKHunter integration - display regular scan info
-            self._append_with_autoscroll(f"🔍 <b>Starting {effective_scan_type.lower()} scan...</b>")
+            self._append_with_autoscroll(
+                f"🔍 <b>Starting {effective_scan_type.lower()} scan...</b>"
+            )
             self._append_with_autoscroll("")  # Add spacing
-            self._append_with_autoscroll(f"📁 <b>Target:</b> {self.format_target_display(self.scan_path)}")
+            self._append_with_autoscroll(
+                f"📁 <b>Target:</b> {self.format_target_display(self.scan_path)}"
+            )
             self._append_with_autoscroll("")  # Add spacing
             if scan_options:
                 friendly_options = self.format_scan_options_user_friendly(scan_options)
@@ -4376,16 +4656,16 @@ System        {perf_status}"""
 
         # Start regular scan in separate thread with enhanced options
         self.current_scan_thread = ScanThread(
-            self.scanner, self.scan_path,
+            self.scanner,
+            self.scan_path,
             quick_scan=(effective_scan_type == "QUICK"),
-            scan_options=scan_options
+            scan_options=scan_options,
         )
-        self.current_scan_thread.progress_updated.connect(
-            self.progress_bar.setValue)
-        self.current_scan_thread.status_updated.connect(
-            self.status_label.setText)
+        self.current_scan_thread.progress_updated.connect(self.progress_bar.setValue)
+        self.current_scan_thread.status_updated.connect(self.status_label.setText)
         self.current_scan_thread.scan_detail_updated.connect(
-            self.handle_detailed_scan_progress)
+            self.handle_detailed_scan_progress
+        )
         self.current_scan_thread.scan_completed.connect(self.scan_completed)
         self.current_scan_thread.start()
 
@@ -4393,15 +4673,23 @@ System        {perf_status}"""
         """Start a combined security scan with RKHunter first, then ClamAV."""
         # Check if RKHunter should still run
         if not self._rkhunter_available():
-            self.results_text.append("❌ RKHunter not available, falling back to ClamAV only")
+            self.results_text.append(
+                "❌ RKHunter not available, falling back to ClamAV only"
+            )
             # Fall back to regular ClamAV scan
             self.current_scan_thread = ScanThread(
-                self.scanner, self.scan_path, quick_scan=quick_scan, scan_options=scan_options
+                self.scanner,
+                self.scan_path,
+                quick_scan=quick_scan,
+                scan_options=scan_options,
             )
-            self.current_scan_thread.progress_updated.connect(self.progress_bar.setValue)
+            self.current_scan_thread.progress_updated.connect(
+                self.progress_bar.setValue
+            )
             self.current_scan_thread.status_updated.connect(self.status_label.setText)
             self.current_scan_thread.scan_detail_updated.connect(
-                self.handle_detailed_scan_progress)
+                self.handle_detailed_scan_progress
+            )
             self.current_scan_thread.scan_completed.connect(self.scan_completed)
             self.current_scan_thread.start()
             return
@@ -4410,7 +4698,9 @@ System        {perf_status}"""
         self.status_label.setText("RKHunter scan starting...")
 
         # Add message for combined scans
-        self.results_text.append("\n🔍 Starting RKHunter scan (part of combined security scan)...")
+        self.results_text.append(
+            "\n🔍 Starting RKHunter scan (part of combined security scan)..."
+        )
 
         # Update button state to show scan is running
         self.update_scan_button_state(True)
@@ -4427,15 +4717,16 @@ System        {perf_status}"""
         self.current_rkhunter_thread.progress_value_updated.connect(
             self.progress_bar.setValue
         )
-        self.current_rkhunter_thread.output_updated.connect(
-            self.update_rkhunter_output
-        )
+        self.current_rkhunter_thread.output_updated.connect(self.update_rkhunter_output)
         # Store the scan parameters for the next phase
-        self._pending_clamav_scan = {"quick_scan": quick_scan, "scan_options": scan_options}
+        self._pending_clamav_scan = {
+            "quick_scan": quick_scan,
+            "scan_options": scan_options,
+        }
         # Ensure no leftover signal connections from other scan types
         try:
             self.current_rkhunter_thread.scan_completed.disconnect()
-        except:
+        except BaseException:
             pass  # No connections to disconnect
         self.current_rkhunter_thread.scan_completed.connect(
             self.rkhunter_scan_completed_start_clamav
@@ -4451,7 +4742,9 @@ System        {perf_status}"""
         self.results_text.append("\n" + "=" * 30 + "\n")
 
         # Retrieve the stored scan parameters
-        clamav_params = getattr(self, '_pending_clamav_scan', {"quick_scan": False, "scan_options": None})
+        clamav_params = getattr(
+            self, "_pending_clamav_scan", {"quick_scan": False, "scan_options": None}
+        )
         quick_scan = clamav_params.get("quick_scan", False)
         scan_options = clamav_params.get("scan_options", None)
 
@@ -4459,17 +4752,21 @@ System        {perf_status}"""
         self.status_label.setText("ClamAV scan starting...")
 
         self.current_scan_thread = ScanThread(
-            self.scanner, self.scan_path, quick_scan=quick_scan, scan_options=scan_options
+            self.scanner,
+            self.scan_path,
+            quick_scan=quick_scan,
+            scan_options=scan_options,
         )
-        self.current_scan_thread.progress_updated.connect(
-            self.progress_bar.setValue)
-        self.current_scan_thread.status_updated.connect(
-            self.status_label.setText)
+        self.current_scan_thread.progress_updated.connect(self.progress_bar.setValue)
+        self.current_scan_thread.status_updated.connect(self.status_label.setText)
         self.current_scan_thread.scan_detail_updated.connect(
-            self.handle_detailed_scan_progress)
+            self.handle_detailed_scan_progress
+        )
         self.current_scan_thread.scan_completed.connect(
             lambda clamav_result: self.combined_scan_completed_rkhunter_first(
-                rkhunter_result, clamav_result))
+                rkhunter_result, clamav_result
+            )
+        )
         self.current_scan_thread.start()
 
     def combined_scan_completed_rkhunter_first(
@@ -4483,17 +4780,27 @@ System        {perf_status}"""
         self.save_rkhunter_report(rkhunter_result)
 
         # Ensure ClamAV report is saved - backup in case FileScanner didn't save it
-        print(f"\n💾 === BACKUP CLAMAV REPORT SAVE ===")
+        print("\n💾 === BACKUP CLAMAV REPORT SAVE ===")
         try:
             # Create a proper ScanResult from the ClamAV result for saving
             if isinstance(clamav_result, dict):
                 # Extract data from dictionary format
-                scan_id = clamav_result.get('scan_id', datetime.now().strftime("%Y%m%d_%H%M%S_%f")[:-3])
-                start_time = clamav_result.get('start_time', datetime.now().isoformat())
-                total_files = clamav_result.get("total_files", clamav_result.get("files_scanned", 0))
-                scanned_files = clamav_result.get("scanned_files", clamav_result.get("files_scanned", 0))
-                threats_found = clamav_result.get("threats_found", len(clamav_result.get("threats", [])))
-                duration = clamav_result.get("duration", clamav_result.get("scan_time", 0))
+                scan_id = clamav_result.get(
+                    "scan_id", datetime.now().strftime("%Y%m%d_%H%M%S_%f")[:-3]
+                )
+                start_time = clamav_result.get("start_time", datetime.now().isoformat())
+                total_files = clamav_result.get(
+                    "total_files", clamav_result.get("files_scanned", 0)
+                )
+                scanned_files = clamav_result.get(
+                    "scanned_files", clamav_result.get("files_scanned", 0)
+                )
+                threats_found = clamav_result.get(
+                    "threats_found", len(clamav_result.get("threats", []))
+                )
+                duration = clamav_result.get(
+                    "duration", clamav_result.get("scan_time", 0)
+                )
                 threats_data = clamav_result.get("threats", [])
 
                 # Convert threat data to ThreatInfo objects
@@ -4501,10 +4808,20 @@ System        {perf_status}"""
                 for threat_data in threats_data:
                     if isinstance(threat_data, dict):
                         threat = ThreatInfo(
-                            file_path=threat_data.get("file_path", threat_data.get("file", "")),
-                            threat_name=threat_data.get("threat_name", threat_data.get("threat", "")),
-                            threat_type=threat_data.get("threat_type", threat_data.get("type", "virus")),
-                            threat_level=ThreatLevel.INFECTED if threats_found > 0 else ThreatLevel.CLEAN
+                            file_path=threat_data.get(
+                                "file_path", threat_data.get("file", "")
+                            ),
+                            threat_name=threat_data.get(
+                                "threat_name", threat_data.get("threat", "")
+                            ),
+                            threat_type=threat_data.get(
+                                "threat_type", threat_data.get("type", "virus")
+                            ),
+                            threat_level=(
+                                ThreatLevel.INFECTED
+                                if threats_found > 0
+                                else ThreatLevel.CLEAN
+                            ),
                         )
                         threats.append(threat)
 
@@ -4524,7 +4841,7 @@ System        {perf_status}"""
                     scan_settings={},
                     engine_version="ClamAV",
                     signature_version="Unknown",
-                    success=True
+                    success=True,
                 )
 
                 # Save using report manager
@@ -4534,10 +4851,11 @@ System        {perf_status}"""
         except Exception as e:
             print(f"DEBUG: ❌ Backup ClamAV report save failed: {e}")
             import traceback
+
             traceback.print_exc()
 
         # Debug: Check if ClamAV report directories exist and list files
-        print(f"\n🔍 === COMBINED SCAN DEBUG: CHECKING CLAMAV REPORTS ===")
+        print("\n🔍 === COMBINED SCAN DEBUG: CHECKING CLAMAV REPORTS ===")
         clamav_reports_dir = self.report_manager.daily_reports
         print(f"DEBUG: ClamAV reports directory: {clamav_reports_dir}")
         print(f"DEBUG: Directory exists: {clamav_reports_dir.exists()}")
@@ -4562,11 +4880,11 @@ System        {perf_status}"""
 
         # Prepare data for formatter
         rkhunter_data = {
-            'warnings': rkhunter_result.warnings_found,
-            'infections': rkhunter_result.infections_found,
-            'tests_run': getattr(rkhunter_result, 'tests_run', 0),
-            'total_tests': getattr(rkhunter_result, 'total_tests', 0),
-            'skipped_tests': getattr(rkhunter_result, 'skipped_tests', 0)
+            "warnings": rkhunter_result.warnings_found,
+            "infections": rkhunter_result.infections_found,
+            "tests_run": getattr(rkhunter_result, "tests_run", 0),
+            "total_tests": getattr(rkhunter_result, "total_tests", 0),
+            "skipped_tests": getattr(rkhunter_result, "skipped_tests", 0),
         }
 
         # Extract files scanned using same logic as display_scan_results
@@ -4575,26 +4893,38 @@ System        {perf_status}"""
         scan_duration = 0
 
         if isinstance(clamav_result, dict):
-            files_scanned = clamav_result.get("scanned_files", clamav_result.get("files_scanned", 0))
+            files_scanned = clamav_result.get(
+                "scanned_files", clamav_result.get("files_scanned", 0)
+            )
             total_files = clamav_result.get("total_files", files_scanned)
-            scan_duration = clamav_result.get("duration", clamav_result.get("scan_time", 0))
+            scan_duration = clamav_result.get(
+                "duration", clamav_result.get("scan_time", 0)
+            )
         else:
-            files_scanned = getattr(clamav_result, "scanned_files", getattr(clamav_result, "files_scanned", 0))
+            files_scanned = getattr(
+                clamav_result,
+                "scanned_files",
+                getattr(clamav_result, "files_scanned", 0),
+            )
             total_files = getattr(clamav_result, "total_files", files_scanned)
-            scan_duration = getattr(clamav_result, "duration", getattr(clamav_result, "scan_time", 0))
+            scan_duration = getattr(
+                clamav_result, "duration", getattr(clamav_result, "scan_time", 0)
+            )
 
         # Handle scan statistics inconsistencies and edge cases (same as display_scan_results)
-        if files_scanned == 0 and hasattr(self, '_scan_files_actually_processed'):
+        if files_scanned == 0 and hasattr(self, "_scan_files_actually_processed"):
             # Use the count from our progress tracking if FileScanner result is incorrect
-            files_scanned = getattr(self, '_scan_files_actually_processed', 0)
-            print(f"DEBUG: Combined scan using progress tracking count: {files_scanned} files")
+            files_scanned = getattr(self, "_scan_files_actually_processed", 0)
+            print(
+                f"DEBUG: Combined scan using progress tracking count: {files_scanned} files"
+            )
 
         # Ensure total_files is at least as large as files_scanned
         if total_files < files_scanned:
             total_files = files_scanned
 
         # Debug scan result accuracy
-        print(f"DEBUG: Combined scan result accuracy check:")
+        print("DEBUG: Combined scan result accuracy check:")
         print(f"  - ClamAV threats: {clamav_threats}")
         print(f"  - ClamAV files scanned: {files_scanned}")
         print(f"  - ClamAV total files: {total_files}")
@@ -4603,22 +4933,24 @@ System        {perf_status}"""
         print(f"  - RKHunter tests run: {getattr(rkhunter_result, 'tests_run', 0)}")
 
         clamav_data = {
-            'threats': clamav_threats,
-            'files_scanned': files_scanned,
-            'total_files': total_files,
-            'scan_duration': scan_duration
+            "threats": clamav_threats,
+            "files_scanned": files_scanned,
+            "total_files": total_files,
+            "scan_duration": scan_duration,
         }
 
         # Format combined summary
-        summary_lines = formatter.format_combined_scan_summary(rkhunter_data, clamav_data)
-        self.results_text.append('\n'.join(summary_lines))
+        summary_lines = formatter.format_combined_scan_summary(
+            rkhunter_data, clamav_data
+        )
+        self.results_text.append("\n".join(summary_lines))
 
         # Complete the scan
         self.scan_completed(clamav_result)
 
         # Clean up the stored parameters
-        if hasattr(self, '_pending_clamav_scan'):
-            delattr(self, '_pending_clamav_scan')
+        if hasattr(self, "_pending_clamav_scan"):
+            delattr(self, "_pending_clamav_scan")
 
     def install_rkhunter(self):
         """Install or configure RKHunter."""
@@ -4627,8 +4959,7 @@ System        {perf_status}"""
 
         # First check if RKHunter is actually installed but has permission
         # issues
-        if self.rkhunter.rkhunter_path and Path(
-                self.rkhunter.rkhunter_path).exists():
+        if self.rkhunter.rkhunter_path and Path(self.rkhunter.rkhunter_path).exists():
             # RKHunter is installed but may need configuration
             reply = self.show_themed_message_box(
                 "question",
@@ -4637,7 +4968,7 @@ System        {perf_status}"""
                 "This is normal for rootkit scanners as they need system-level access.\n"
                 "You will be prompted for your password when running scans.\n\n"
                 "Continue to enable RKHunter scanning?",
-                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
             )
 
             if reply == QMessageBox.StandardButton.Yes:
@@ -4664,8 +4995,7 @@ System        {perf_status}"""
                             "Run RKHunter rootkit detection scan\n(Configure scan categories in Settings → Scanning)"
                         )
                         self.rkhunter_scan_btn.clicked.disconnect()
-                        self.rkhunter_scan_btn.clicked.connect(
-                            self.start_rkhunter_scan)
+                        self.rkhunter_scan_btn.clicked.connect(self.start_rkhunter_scan)
                         self.rkhunter_scan_btn.setEnabled(True)
                         return
 
@@ -4682,7 +5012,7 @@ System        {perf_status}"""
             "Install RKHunter",
             "RKHunter will be installed to provide rootkit detection capabilities.\n\n"
             "This requires administrator privileges. Continue?",
-            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
         )
 
         if reply != QMessageBox.StandardButton.Yes:
@@ -4704,11 +5034,9 @@ System        {perf_status}"""
 
                 # Update button to scan mode
                 self.rkhunter_scan_btn.setText("🔍 RKHunter Scan")
-                self.rkhunter_scan_btn.setToolTip(
-                    "Run RKHunter rootkit detection scan")
+                self.rkhunter_scan_btn.setToolTip("Run RKHunter rootkit detection scan")
                 self.rkhunter_scan_btn.clicked.disconnect()
-                self.rkhunter_scan_btn.clicked.connect(
-                    self.start_rkhunter_scan)
+                self.rkhunter_scan_btn.clicked.connect(self.start_rkhunter_scan)
                 self.rkhunter_scan_btn.setEnabled(True)
 
             else:
@@ -4737,7 +5065,7 @@ System        {perf_status}"""
             "Install RKHunter",
             "RKHunter will be installed to provide rootkit detection capabilities.\n\n"
             "This requires administrator privileges. Continue?",
-            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
         )
 
         if reply != QMessageBox.StandardButton.Yes:
@@ -4748,7 +5076,8 @@ System        {perf_status}"""
             progress = self.show_themed_progress_dialog(
                 "Installing RKHunter",
                 "Installing RKHunter, please wait...",
-                0, 0  # Indeterminate progress
+                0,
+                0,  # Indeterminate progress
             )
             progress.setCancelButton(None)  # No cancel button
             progress.show()
@@ -4775,10 +5104,11 @@ System        {perf_status}"""
                     print(f"⚠️ Failed to reinitialize RKHunter wrapper: {e}")
 
                 # Update scan button if it exists
-                if hasattr(self, 'rkhunter_scan_btn'):
+                if hasattr(self, "rkhunter_scan_btn"):
                     self.rkhunter_scan_btn.setText("🔍 RKHunter Scan")
                     self.rkhunter_scan_btn.setToolTip(
-                        "Run RKHunter rootkit detection scan")
+                        "Run RKHunter rootkit detection scan"
+                    )
                     self.rkhunter_scan_btn.clicked.disconnect()
                     self.rkhunter_scan_btn.clicked.connect(self.start_rkhunter_scan)
                     self.rkhunter_scan_btn.setEnabled(True)
@@ -4804,13 +5134,14 @@ System        {perf_status}"""
     def start_rkhunter_scan(self):
         """Start an RKHunter rootkit scan."""
         # Check if already running
-        if (hasattr(self, 'current_rkhunter_thread') and
-            self.current_rkhunter_thread and
-            self.current_rkhunter_thread.isRunning()):
+        if (
+            hasattr(self, "current_rkhunter_thread")
+            and self.current_rkhunter_thread
+            and self.current_rkhunter_thread.isRunning()
+        ):
             self.show_themed_message_box(
-                "warning",
-                "Scan in Progress",
-                "RKHunter scan is already running.")
+                "warning", "Scan in Progress", "RKHunter scan is already running."
+            )
             return
 
         # Check if RKHunter is available (without authentication)
@@ -4826,7 +5157,8 @@ System        {perf_status}"""
                     "A secure GUI password dialog will appear during the scan and create a persistent session.\n\n"
                     "Would you like to:\n\n"
                     "• Continue and start the scan (GUI password dialog will appear)\n"
-                    "• Configure RKHunter setup first")
+                    "• Configure RKHunter setup first"
+                )
             else:
                 auth_method_text = (
                     "RKHunter requires elevated privileges to perform rootkit scans.\n\n"
@@ -4834,11 +5166,14 @@ System        {perf_status}"""
                     "You will be prompted for your administrator password in the terminal.\n\n"
                     "Would you like to:\n\n"
                     "• Continue and start the scan (terminal password prompt will appear)\n"
-                    "• Configure RKHunter setup first")
+                    "• Configure RKHunter setup first"
+                )
 
             reply = self.show_themed_message_box(
-                "question", "RKHunter Setup Required", auth_method_text,
-                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+                "question",
+                "RKHunter Setup Required",
+                auth_method_text,
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
             )
 
             if reply != QMessageBox.StandardButton.Yes:
@@ -4852,7 +5187,7 @@ System        {perf_status}"""
                 "Scan in Progress",
                 "A regular antivirus scan is currently running.\n\n"
                 "Do you want to continue with RKHunter scan in parallel?",
-                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
             )
             if reply != QMessageBox.StandardButton.Yes:
                 return
@@ -4906,7 +5241,7 @@ System        {perf_status}"""
             "question",
             "Ready to Start RKHunter Scan",
             auth_message,
-            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
         )
 
         if reply != QMessageBox.StandardButton.Yes:
@@ -4923,8 +5258,9 @@ System        {perf_status}"""
 
                 if not auth_success:
                     # Check what authentication methods are available as fallback
-                    from core.elevated_runner import _which
-                    pkexec_available = bool(_which("pkexec"))
+                    from app.core.elevated_runner import _which
+
+                    bool(_which("pkexec"))
                     sudo_available = bool(_which("sudo"))
                     display_available = bool(os.environ.get("DISPLAY"))
 
@@ -4955,17 +5291,18 @@ System        {perf_status}"""
                             "question",
                             "Pre-authentication Failed",
                             error_msg,
-                            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+                            QMessageBox.StandardButton.Yes
+                            | QMessageBox.StandardButton.No,
                         )
                         if reply != QMessageBox.StandardButton.Yes:
                             return
-                        print("🔄 Continuing with scan - authentication will be requested during scan...")
+                        print(
+                            "🔄 Continuing with scan - authentication will be requested during scan..."
+                        )
                     else:
                         # No authentication methods available
                         self.show_themed_message_box(
-                            "error",
-                            "Authentication Not Available",
-                            error_msg
+                            "error", "Authentication Not Available", error_msg
                         )
                         return
                 else:
@@ -4981,7 +5318,7 @@ System        {perf_status}"""
                 "Authentication Error",
                 f"An error occurred during pre-authentication:\n\n{str(e)}\n\n"
                 "Continue anyway? The scan will prompt for authentication when it starts.",
-                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
             )
             if reply != QMessageBox.StandardButton.Yes:
                 return
@@ -5012,9 +5349,7 @@ System        {perf_status}"""
         self.current_rkhunter_thread.progress_value_updated.connect(
             self.handle_rkhunter_progress_value
         )
-        self.current_rkhunter_thread.output_updated.connect(
-            self.update_rkhunter_output
-        )
+        self.current_rkhunter_thread.output_updated.connect(self.update_rkhunter_output)
         self.current_rkhunter_thread.scan_completed.connect(
             self.rkhunter_scan_completed
         )
@@ -5022,7 +5357,9 @@ System        {perf_status}"""
 
         # Update status - use a more appropriate initial message
         self.status_label.setText("RKHunter scan starting...")
-        self.results_text.append("\n🔍 RKHunter rootkit scan starting - please authenticate when prompted...\n")
+        self.results_text.append(
+            "\n🔍 RKHunter rootkit scan starting - please authenticate when prompted...\n"
+        )
 
     def update_rkhunter_progress(self, message):
         """Update progress display for RKHunter scan."""
@@ -5031,25 +5368,41 @@ System        {perf_status}"""
         current_status = self.status_label.text()
 
         # Don't override stage-specific messages with generic ones
-        if not any(stage in current_status for stage in [
-            "Checking system configuration", "Analyzing file properties",
-            "Scanning for rootkits", "additional rootkit checks",
-            "Checking filesystem", "Scanning for malware", "Checking network",
-            "Analyzing applications", "Generating system summary", "Verifying user account",
-            "Checking SSH", "Scanning for hidden"
-        ]):
+        if not any(
+            stage in current_status
+            for stage in [
+                "Checking system configuration",
+                "Analyzing file properties",
+                "Scanning for rootkits",
+                "additional rootkit checks",
+                "Checking filesystem",
+                "Scanning for malware",
+                "Checking network",
+                "Analyzing applications",
+                "Generating system summary",
+                "Verifying user account",
+                "Checking SSH",
+                "Scanning for hidden",
+            ]
+        ):
             self.status_label.setText(f"🔍 {message}")
 
     def handle_rkhunter_progress_value(self, value):
         """Handle progress value updates from RKHunter thread."""
         # Only update progress bar if scan has actually started
         # This prevents progress updates during authentication phase
-        if hasattr(self, '_rkhunter_scan_actually_started') and self._rkhunter_scan_actually_started:
+        if (
+            hasattr(self, "_rkhunter_scan_actually_started")
+            and self._rkhunter_scan_actually_started
+        ):
             # Only allow progress to increase, never decrease
             if value > self.progress_bar.value():
                 self.progress_bar.setValue(value)
         # If scan hasn't started yet, keep progress at 0
-        elif not hasattr(self, '_rkhunter_scan_actually_started') or not self._rkhunter_scan_actually_started:
+        elif (
+            not hasattr(self, "_rkhunter_scan_actually_started")
+            or not self._rkhunter_scan_actually_started
+        ):
             self.progress_bar.setValue(0)
 
     def handle_detailed_scan_progress(self, detail_info):
@@ -5064,35 +5417,49 @@ System        {perf_status}"""
                 total_files = detail_info.get("total_files", 0)
 
                 # Track actual files processed for statistics correction
-                if not hasattr(self, '_scan_files_actually_processed'):
+                if not hasattr(self, "_scan_files_actually_processed"):
                     self._scan_files_actually_processed = 0
                 self._scan_files_actually_processed = files_completed
 
                 # Initialize or get existing directory information
-                if not hasattr(self, '_scan_directories_info'):
+                if not hasattr(self, "_scan_directories_info"):
                     self._scan_directories_info = {}
                     self._last_displayed_directory = None
                     self._scanned_directories = []  # Use list to maintain order
-                    self._completed_directories = []  # Track truly completed directories
+                    self._completed_directories = (
+                        []
+                    )  # Track truly completed directories
 
                 # Track files by directory
                 if current_dir not in self._scan_directories_info:
                     self._scan_directories_info[current_dir] = {
                         "clean_files": [],
                         "infected_files": [],
-                        "total_files": 0
+                        "total_files": 0,
                     }
 
                 # Check if file has already been displayed (to prevent duplicates)
                 file_already_displayed = False
                 if scan_result == "clean":
-                    if current_file not in self._scan_directories_info[current_dir]["clean_files"]:
-                        self._scan_directories_info[current_dir]["clean_files"].append(current_file)
+                    if (
+                        current_file
+                        not in self._scan_directories_info[current_dir]["clean_files"]
+                    ):
+                        self._scan_directories_info[current_dir]["clean_files"].append(
+                            current_file
+                        )
                     else:
                         file_already_displayed = True
                 elif scan_result == "infected":
-                    if current_file not in self._scan_directories_info[current_dir]["infected_files"]:
-                        self._scan_directories_info[current_dir]["infected_files"].append(current_file)
+                    if (
+                        current_file
+                        not in self._scan_directories_info[current_dir][
+                            "infected_files"
+                        ]
+                    ):
+                        self._scan_directories_info[current_dir][
+                            "infected_files"
+                        ].append(current_file)
                     else:
                         file_already_displayed = True
 
@@ -5100,11 +5467,18 @@ System        {perf_status}"""
                 main_scan_dir = self._get_main_scan_directory(current_dir)
 
                 # Display directory header ONLY when switching to a new MAIN directory
-                last_main_dir = self._get_main_scan_directory(self._last_displayed_directory) if self._last_displayed_directory else None
+                last_main_dir = (
+                    self._get_main_scan_directory(self._last_displayed_directory)
+                    if self._last_displayed_directory
+                    else None
+                )
 
                 if last_main_dir != main_scan_dir:
                     # Mark previous main directory as completed (if there was one)
-                    if last_main_dir and last_main_dir not in self._completed_directories:
+                    if (
+                        last_main_dir
+                        and last_main_dir not in self._completed_directories
+                    ):
                         self._completed_directories.append(last_main_dir)
 
                     # Add current main directory to scanned list (if not already there)
@@ -5113,15 +5487,27 @@ System        {perf_status}"""
 
                     # Calculate accurate counts
                     completed_count = len(self._completed_directories)
-                    remaining_estimate = self._calculate_remaining_directories(files_remaining, total_files)
+                    remaining_estimate = self._calculate_remaining_directories(
+                        files_remaining, total_files
+                    )
 
                     self._append_with_autoscroll("")  # Add spacing
-                    short_dir = main_scan_dir.replace(str(Path.home()), "~") if str(Path.home()) in main_scan_dir else main_scan_dir
-                    self._append_with_autoscroll(f"📁 <b>Scanning Directory:</b> {short_dir}")
+                    short_dir = (
+                        main_scan_dir.replace(str(Path.home()), "~")
+                        if str(Path.home()) in main_scan_dir
+                        else main_scan_dir
+                    )
+                    self._append_with_autoscroll(
+                        f"📁 <b>Scanning Directory:</b> {short_dir}"
+                    )
 
                     # Show directory progress info (always show after first directory)
-                    if len(self._scanned_directories) > 1:  # Show from second directory onwards
-                        self._append_with_autoscroll(f"📊 <i>Directories scanned: {completed_count} | Remaining: {remaining_estimate}</i>")
+                    if (
+                        len(self._scanned_directories) > 1
+                    ):  # Show from second directory onwards
+                        self._append_with_autoscroll(
+                            f"📊 <i>Directories scanned: {completed_count} | Remaining: {remaining_estimate}</i>"
+                        )
 
                     self._last_displayed_directory = current_dir
 
@@ -5130,7 +5516,11 @@ System        {perf_status}"""
                     if scan_result == "clean":
                         self._append_with_autoscroll(f"    ✅ {current_file}")
                     elif scan_result == "infected":
-                        self.results_text.append(f"    🚨 <span style='color: {get_theme_manager().get_color('error')};'><b>INFECTED:</b></span> {current_file}")
+                        self.results_text.append(
+                            f"    🚨 <span style='color: {
+                                get_theme_manager().get_color('error')
+                            };'><b>INFECTED:</b></span> {current_file}"
+                        )
 
         except Exception as e:
             print(f"Error in detailed scan progress: {e}")
@@ -5140,7 +5530,10 @@ System        {perf_status}"""
         if files_remaining <= 0 or total_files <= 0:
             return 0
 
-        if not hasattr(self, '_completed_directories') or not self._completed_directories:
+        if (
+            not hasattr(self, "_completed_directories")
+            or not self._completed_directories
+        ):
             # For early estimation, use a conservative approach
             if files_remaining > 0 and total_files > 0:
                 # Estimate based on typical directory sizes (conservative estimate)
@@ -5154,11 +5547,15 @@ System        {perf_status}"""
 
         if completed_count > 0 and files_scanned > 0:
             # Get average files per completed directory
-            avg_files_per_dir = files_scanned / (completed_count + 1)  # +1 for current directory
+            avg_files_per_dir = files_scanned / (
+                completed_count + 1
+            )  # +1 for current directory
             if avg_files_per_dir > 0:
                 estimated = int(files_remaining / avg_files_per_dir)
                 # Apply reasonable bounds
-                return max(0, min(estimated, completed_count * 2))  # Cap at 2x completed directories
+                return max(
+                    0, min(estimated, completed_count * 2)
+                )  # Cap at 2x completed directories
 
         return 0
 
@@ -5173,8 +5570,16 @@ System        {perf_status}"""
 
         # Define main directories to group by
         main_directories = [
-            "Downloads", "Documents", "Pictures", "Videos", "Music",
-            "Desktop", "Public", "Templates", "tmp", "temp"
+            "Downloads",
+            "Documents",
+            "Pictures",
+            "Videos",
+            "Music",
+            "Desktop",
+            "Public",
+            "Templates",
+            "tmp",
+            "temp",
         ]
 
         # Check if this is under home directory
@@ -5190,11 +5595,17 @@ System        {perf_status}"""
 
                 # Check for browser data directories
                 if len(parts) >= 2:
-                    if parts[0] == ".config" and any(browser in parts[1] for browser in ["google-chrome", "firefox", "chromium"]):
+                    if parts[0] == ".config" and any(
+                        browser in parts[1]
+                        for browser in ["google-chrome", "firefox", "chromium"]
+                    ):
                         return str(home_path / parts[0] / parts[1])
                     elif parts[0] == ".mozilla" and "firefox" in str(rel_path):
                         return str(home_path / ".mozilla" / "firefox")
-                    elif parts[0] == ".cache" and any(browser in parts[1] for browser in ["google-chrome", "firefox", "chromium"]):
+                    elif parts[0] == ".cache" and any(
+                        browser in parts[1]
+                        for browser in ["google-chrome", "firefox", "chromium"]
+                    ):
                         return str(home_path / ".cache" / parts[1])
 
             except ValueError:
@@ -5216,7 +5627,9 @@ System        {perf_status}"""
         # If user scrolls up from the bottom, disable auto-scroll
         if value < max_value and value != self._last_scroll_position:
             # Check if this is a user-initiated scroll (not programmatic)
-            if abs(value - self._last_scroll_position) > 1:  # Threshold to ignore minor adjustments
+            if (
+                abs(value - self._last_scroll_position) > 1
+            ):  # Threshold to ignore minor adjustments
                 self._user_has_scrolled = True
 
         # If user scrolls back to bottom, re-enable auto-scroll
@@ -5244,19 +5657,22 @@ System        {perf_status}"""
         line_lower = output_line.lower()
 
         # Skip common grep warnings and noise
-        if any(skip_phrase in line_lower for skip_phrase in [
-            "grep: warning: stray",
-            "egrep: warning: egrep is obsolescent",
-            "invalid scriptdir configuration",
-            "sudo: a terminal is required",
-            "sudo: a password is required",
-            "info: starting",
-            "info: checking",
-            "info: end of",
-            "starting rkhunter update and scan sequence",
-            "starting rkhunter scan...",
-            "updating rkhunter database..."
-        ]):
+        if any(
+            skip_phrase in line_lower
+            for skip_phrase in [
+                "grep: warning: stray",
+                "egrep: warning: egrep is obsolescent",
+                "invalid scriptdir configuration",
+                "sudo: a terminal is required",
+                "sudo: a password is required",
+                "info: starting",
+                "info: checking",
+                "info: end of",
+                "starting rkhunter update and scan sequence",
+                "starting rkhunter scan...",
+                "updating rkhunter database...",
+            ]
+        ):
             return  # Don't display these lines
 
         # Clean and format the output line
@@ -5265,9 +5681,15 @@ System        {perf_status}"""
         # Fix missing emoji characters and clean up the text
         if "�" in formatted_line:
             # Replace missing emoji characters with appropriate ones based on content
-            if "Starting RKHunter update" in formatted_line or "update.*sequence" in formatted_line.lower():
+            if (
+                "Starting RKHunter update" in formatted_line
+                or "update.*sequence" in formatted_line.lower()
+            ):
                 formatted_line = formatted_line.replace("�", "🔄")
-            elif "Database update completed" in formatted_line or "update completed" in formatted_line.lower():
+            elif (
+                "Database update completed" in formatted_line
+                or "update completed" in formatted_line.lower()
+            ):
                 formatted_line = formatted_line.replace("�", "✅")
             elif "Starting RKHunter scan" in formatted_line:
                 formatted_line = formatted_line.replace("�", "🔍")
@@ -5283,65 +5705,106 @@ System        {perf_status}"""
             self._update_rkhunter_progress_from_output(formatted_line)
 
             # Handle timestamped messages with special formatting
-            if "[" in formatted_line and "]" in formatted_line and "2025-" in formatted_line:
+            if (
+                "[" in formatted_line
+                and "]" in formatted_line
+                and "2025-" in formatted_line
+            ):
                 # Extract timestamp and message
                 parts = formatted_line.split("]", 1)
                 if len(parts) == 2:
-                    timestamp = parts[0] + "]"
+                    parts[0] + "]"
                     message = parts[1].strip()
 
                     # Only show essential timestamped messages
-                    if "Database update completed" in message or "completed successfully" in message:
-                        self._append_with_autoscroll(f"✅ <span style='color: {get_theme_manager().get_color('success')};'><b>Database updated successfully</b></span>")
+                    if (
+                        "Database update completed" in message
+                        or "completed successfully" in message
+                    ):
+                        self._append_with_autoscroll(
+                            f"✅ <span style='color: {
+                                get_theme_manager().get_color('success')
+                            };'><b>Database updated successfully</b></span>"
+                        )
                         return
                     # Skip other timestamped messages to reduce clutter
                     return
 
             # Handle section headers and major operations
-            if formatted_line.startswith("Performing") or formatted_line.startswith("Starting"):
+            if formatted_line.startswith("Performing") or formatted_line.startswith(
+                "Starting"
+            ):
                 self._append_with_autoscroll("")  # Add spacing before new sections
                 self._append_with_autoscroll(f"📋 <b>{formatted_line}</b>")
                 self._append_with_autoscroll("─" * 50)
                 return
 
             # Handle system summary sections with better formatting
-            if (formatted_line == "System checks summary" or
-                formatted_line == "=" * len(formatted_line)):  # Handle separator lines
+            if (
+                formatted_line == "System checks summary"
+                or formatted_line == "=" * len(formatted_line)
+            ):  # Handle separator lines
                 if formatted_line == "System checks summary":
                     self._append_with_autoscroll("")  # Add spacing
-                    self._append_with_autoscroll(f"📊 <b>System Checks Summary</b>")
+                    self._append_with_autoscroll("📊 <b>System Checks Summary</b>")
                     self._append_with_autoscroll("─" * 40)
                 return
 
             # Handle scan statistics with proper icons and formatting
-            if any(stat in formatted_line for stat in [
-                "File properties checks", "Files checked:", "Suspect files:",
-                "Rootkit checks", "Rootkits checked", "Possible rootkits:",
-                "Applications checks", "All checks skipped",
-                "The system checks took:"
-            ]):
+            if any(
+                stat in formatted_line
+                for stat in [
+                    "File properties checks",
+                    "Files checked:",
+                    "Suspect files:",
+                    "Rootkit checks",
+                    "Rootkits checked",
+                    "Possible rootkits:",
+                    "Applications checks",
+                    "All checks skipped",
+                    "The system checks took:",
+                ]
+            ):
                 if "File properties checks" in formatted_line:
-                    self._append_with_autoscroll(f"  📂 <b>File Analysis:</b>")
+                    self._append_with_autoscroll("  📂 <b>File Analysis:</b>")
                 elif "Files checked:" in formatted_line:
                     count = formatted_line.split(":")[-1].strip()
-                    self._append_with_autoscroll(f"    📄 Files scanned: <b>{count}</b>")
+                    self._append_with_autoscroll(
+                        f"    📄 Files scanned: <b>{count}</b>"
+                    )
                 elif "Suspect files:" in formatted_line:
                     count = formatted_line.split(":")[-1].strip()
-                    color = get_theme_manager().get_color("error") if int(count) > 0 else get_theme_manager().get_color("success")
-                    self._append_with_autoscroll(f"    🔍 Suspicious files: <span style='color: {color};'><b>{count}</b></span>")
+                    color = (
+                        get_theme_manager().get_color("error")
+                        if int(count) > 0
+                        else get_theme_manager().get_color("success")
+                    )
+                    self._append_with_autoscroll(
+                        f"    🔍 Suspicious files: <span style='color: {color};'><b>{count}</b></span>"
+                    )
                 elif "Rootkit checks" in formatted_line:
-                    self._append_with_autoscroll(f"  🛡️  <b>Rootkit Detection:</b>")
+                    self._append_with_autoscroll("  🛡️  <b>Rootkit Detection:</b>")
                 elif "Rootkits checked" in formatted_line:
                     count = formatted_line.split(":")[-1].strip()
                     self.results_text.append(f"    📊 Rootkits checked: <b>{count}</b>")
                 elif "Possible rootkits:" in formatted_line:
                     count = formatted_line.split(":")[-1].strip()
-                    color = get_theme_manager().get_color("error") if int(count) > 0 else get_theme_manager().get_color("success")
-                    self.results_text.append(f"    🚨 Possible rootkits: <span style='color: {color};'><b>{count}</b></span>")
+                    color = (
+                        get_theme_manager().get_color("error")
+                        if int(count) > 0
+                        else get_theme_manager().get_color("success")
+                    )
+                    self.results_text.append(
+                        f"    🚨 Possible rootkits: <span style='color: {color};'><b>{count}</b></span>"
+                    )
                 elif "Applications checks" in formatted_line:
-                    self.results_text.append(f"  📱 <b>Application Checks:</b>")
+                    self.results_text.append("  📱 <b>Application Checks:</b>")
                 elif "All checks skipped" in formatted_line:
-                    self.results_text.append(f"    ⏭️  <span style='color: {get_theme_manager().get_color('muted_text')};'><i>All checks skipped</i></span>")
+                    self.results_text.append(
+                        f"    ⏭️  <span style='color: {
+                            get_theme_manager().get_color('muted_text')
+                        };'><i>All checks skipped</i></span>"
+                    )
                 elif "The system checks took:" in formatted_line:
                     duration = formatted_line.split(":")[-1].strip()
                     self.results_text.append("")  # Add spacing
@@ -5349,11 +5812,14 @@ System        {perf_status}"""
                 return
 
             # Handle log file references with better formatting
-            if "written to the log file:" in formatted_line or "check the log file" in formatted_line:
+            if (
+                "written to the log file:" in formatted_line
+                or "check the log file" in formatted_line
+            ):
                 if "written to the log file:" in formatted_line:
-                    self.results_text.append(f"  📝 <i>Results saved to system log</i>")
+                    self.results_text.append("  📝 <i>Results saved to system log</i>")
                 elif "check the log file" in formatted_line:
-                    self.results_text.append(f"  📋 <i>Check system log for details</i>")
+                    self.results_text.append("  📋 <i>Check system log for details</i>")
                 return
 
             # Handle check results with clear status indicators
@@ -5370,39 +5836,82 @@ System        {perf_status}"""
 
                     # Format based on result type
                     if "[ None found ]" in result_part or "[ OK ]" in result_part:
-                        self.results_text.append(f"  ✅ {check_desc} <span style='color: {get_theme_manager().get_color('success')};'><b>CLEAN</b></span>")
+                        self.results_text.append(
+                            f"  ✅ {check_desc} <span style='color: {
+                                get_theme_manager().get_color('success')
+                            };'><b>CLEAN</b></span>"
+                        )
                     elif "[ Found ]" in result_part:
-                        self.results_text.append(f"  🔍 {check_desc} <span style='color: {get_theme_manager().get_color('warning')};'><b>FOUND</b></span>")
+                        self.results_text.append(
+                            f"  🔍 {check_desc} <span style='color: {
+                                get_theme_manager().get_color('warning')
+                            };'><b>FOUND</b></span>"
+                        )
                     elif "[ Warning ]" in result_part or "[ WARN ]" in result_part:
-                        self.results_text.append(f"  ⚠️  {check_desc} <span style='color: {get_theme_manager().get_color('warning')};'><b>WARNING</b></span>")
+                        self.results_text.append(
+                            f"  ⚠️  {check_desc} <span style='color: {
+                                get_theme_manager().get_color('warning')
+                            };'><b>WARNING</b></span>"
+                        )
                     elif "[ Not found ]" in result_part:
-                        self.results_text.append(f"  ✅ {check_desc} <span style='color: {get_theme_manager().get_color('success')};'><b>NOT FOUND</b></span>")
+                        self.results_text.append(
+                            f"  ✅ {check_desc} <span style='color: {
+                                get_theme_manager().get_color('success')
+                            };'><b>NOT FOUND</b></span>"
+                        )
                     elif "[ Skipped ]" in result_part:
-                        self.results_text.append(f"  ⏭️  {check_desc} <span style='color: {get_theme_manager().get_color('muted_text')};'><i>SKIPPED</i></span>")
+                        self.results_text.append(
+                            f"  ⏭️  {check_desc} <span style='color: {
+                                get_theme_manager().get_color('muted_text')
+                            };'><i>SKIPPED</i></span>"
+                        )
                     else:
                         # Generic result formatting
-                        result_clean = result_part.replace("[", "").replace("]", "").strip()
-                        self.results_text.append(f"  🔍 {check_desc} <span style='color: #2196F3;'><b>{result_clean}</b></span>")
+                        result_clean = (
+                            result_part.replace("[", "").replace("]", "").strip()
+                        )
+                        self.results_text.append(
+                            f"  🔍 {check_desc} <span style='color: #2196F3;'><b>{result_clean}</b></span>"
+                        )
                     return
 
             # Handle specific types of messages with enhanced formatting
             if "WARNING" in formatted_line.upper() and ":" in formatted_line:
                 warning_text = formatted_line.split(":", 1)[-1].strip()
                 self.results_text.append("")  # Add spacing before warnings
-                self.results_text.append(f"⚠️  <span style='color: #FF9800;'><b>WARNING:</b></span> {warning_text}")
+                self.results_text.append(
+                    f"⚠️  <span style='color: #FF9800;'><b>WARNING:</b></span> {warning_text}"
+                )
                 return
             elif "ERROR" in formatted_line.upper():
-                self.results_text.append(f"  ❌ <span style='color: {get_theme_manager().get_color('error')};'><b>ERROR:</b></span> {formatted_line.replace('ERROR:', '').strip()}")
-            elif ("INFECTED" in formatted_line.upper() or
-                  ("ROOTKIT" in formatted_line.upper() and
-                   not formatted_line.lower().startswith("checking") and
-                   ("found" in formatted_line.lower() or "detected" in formatted_line.lower() or "positive" in formatted_line.lower()))):
+                self.results_text.append(
+                    f"  ❌ <span style='color: {
+                        get_theme_manager().get_color('error')
+                    };'><b>ERROR:</b></span> {
+                        formatted_line.replace('ERROR:', '').strip()
+                    }"
+                )
+            elif "INFECTED" in formatted_line.upper() or (
+                "ROOTKIT" in formatted_line.upper()
+                and not formatted_line.lower().startswith("checking")
+                and (
+                    "found" in formatted_line.lower()
+                    or "detected" in formatted_line.lower()
+                    or "positive" in formatted_line.lower()
+                )
+            ):
                 # Only show threat detected for actual detections, not status messages
-                self.results_text.append(f"  🚨 <span style='color: {get_theme_manager().get_color('error')};'><b>THREAT DETECTED:</b></span> {formatted_line}")
+                self.results_text.append(
+                    f"  🚨 <span style='color: {
+                        get_theme_manager().get_color('error')
+                    };'><b>THREAT DETECTED:</b></span> {formatted_line}"
+                )
             elif "INFO:" in formatted_line.upper():
                 info_msg = formatted_line.replace("INFO:", "").strip()
                 if info_msg:  # Only show if there's actual content
-                    self.results_text.append(f"  ℹ️  <span style='color: #2196F3;'>{info_msg}</span>")
+                    self.results_text.append(
+                        f"  ℹ️  <span style='color: #2196F3;'>{info_msg}</span>"
+                    )
             elif formatted_line.startswith("Checking"):
                 # Format ongoing checks with a more subtle appearance
                 check_item = formatted_line.replace("Checking", "").strip()
@@ -5417,14 +5926,16 @@ System        {perf_status}"""
                     # Don't show generic lines that don't add value
                     skip_lines = [
                         "please check the log file",
-                        "all results have been written"
+                        "all results have been written",
                     ]
                     if not any(skip in formatted_line.lower() for skip in skip_lines):
                         # Only show if it contains useful information
-                        if len(formatted_line.strip()) > 3:  # Avoid very short meaningless lines
+                        if (
+                            len(formatted_line.strip()) > 3
+                        ):  # Avoid very short meaningless lines
                             self.results_text.append(f"  ℹ️ {formatted_line}")
 
-        except Exception as e:
+        except Exception:
             # Fallback to basic formatting if parsing fails
             self.results_text.append(formatted_line)
 
@@ -5437,7 +5948,7 @@ System        {perf_status}"""
         """Update RKHunter scan progress based on actual scan output."""
         try:
             # Initialize progress tracking if it doesn't exist
-            if not hasattr(self, '_rkhunter_progress_stage'):
+            if not hasattr(self, "_rkhunter_progress_stage"):
                 self._rkhunter_progress_stage = 0
                 self._rkhunter_max_progress = 0
                 self._rkhunter_scan_actually_started = False
@@ -5450,10 +5961,12 @@ System        {perf_status}"""
                 scan_start_indicators = [
                     "Rootkit Hunter version",
                     "Starting to create file hashes",
-                    "Please wait while the file hash values are"
+                    "Please wait while the file hash values are",
                 ]
 
-                if any(indicator in formatted_line for indicator in scan_start_indicators):
+                if any(
+                    indicator in formatted_line for indicator in scan_start_indicators
+                ):
                     self._rkhunter_scan_actually_started = True
                     self._rkhunter_max_progress = 0  # Reset to ensure clean start
 
@@ -5467,33 +5980,67 @@ System        {perf_status}"""
             # Use more specific matching to avoid conflicts between similar stage names
             stage_map = {
                 # Initial system checks (5-20%) - Use exact matches to avoid conflicts
-                "Performing 'strings' command checks": (5, "🔤 Checking system commands..."),
-                "Performing 'shared libraries' checks": (10, "📚 Analyzing shared libraries..."),
-                "Performing file properties checks": (15, "📄 Analyzing file properties..."),
-
+                "Performing 'strings' command checks": (
+                    5,
+                    "🔤 Checking system commands...",
+                ),
+                "Performing 'shared libraries' checks": (
+                    10,
+                    "📚 Analyzing shared libraries...",
+                ),
+                "Performing file properties checks": (
+                    15,
+                    "📄 Analyzing file properties...",
+                ),
                 # Rootkit detection (20-40%) - Use more specific terms to avoid conflicts
-                "Performing check of known rootkit files and directories": (25, "🛡️ Scanning for known rootkits..."),
-                "Performing additional rootkit checks": (35, "🔍 Performing additional rootkit checks..."),
-
+                "Performing check of known rootkit files and directories": (
+                    25,
+                    "🛡️ Scanning for known rootkits...",
+                ),
+                "Performing additional rootkit checks": (
+                    35,
+                    "🔍 Performing additional rootkit checks...",
+                ),
                 # Security and malware checks (40-60%)
                 "Performing malware checks": (45, "🦠 Scanning for malware..."),
-                "Performing Linux specific checks": (55, "🐧 Running Linux-specific checks..."),
-
+                "Performing Linux specific checks": (
+                    55,
+                    "🐧 Running Linux-specific checks...",
+                ),
                 # Network and system checks (60-85%)
-                "Performing checks on the network ports": (65, "🌐 Checking network ports..."),
-                "Performing checks on the network interfaces": (70, "📡 Checking network interfaces..."),
-                "Performing system boot checks": (75, "🚀 Checking system boot configuration..."),
-                "Performing group and account checks": (80, "👥 Analyzing user accounts..."),
-                "Performing system configuration file checks": (85, "⚙️ Checking system configuration..."),
-                "Performing filesystem checks": (90, "💽 Checking filesystem integrity..."),
-
+                "Performing checks on the network ports": (
+                    65,
+                    "🌐 Checking network ports...",
+                ),
+                "Performing checks on the network interfaces": (
+                    70,
+                    "📡 Checking network interfaces...",
+                ),
+                "Performing system boot checks": (
+                    75,
+                    "🚀 Checking system boot configuration...",
+                ),
+                "Performing group and account checks": (
+                    80,
+                    "👥 Analyzing user accounts...",
+                ),
+                "Performing system configuration file checks": (
+                    85,
+                    "⚙️ Checking system configuration...",
+                ),
+                "Performing filesystem checks": (
+                    90,
+                    "💽 Checking filesystem integrity...",
+                ),
                 # Final summary (95%)
                 "System checks summary": (95, "📊 Generating scan summary..."),
             }
 
             # Sort stages by progress value to check most specific/highest progress first
             # This prevents lower progress stages from overriding higher ones
-            sorted_stages = sorted(stage_map.items(), key=lambda x: x[1][0], reverse=True)
+            sorted_stages = sorted(
+                stage_map.items(), key=lambda x: x[1][0], reverse=True
+            )
 
             # Check for major stage changes - use exact matching and check highest progress first
             for stage_text, (progress, description) in sorted_stages:
@@ -5505,17 +6052,26 @@ System        {perf_status}"""
                     # Additional validation to ensure we have the right stage
                     if stage_text == "Performing 'strings' command checks":
                         # Only match if it's specifically about strings command checks
-                        if "'strings'" in formatted_line and "command" in formatted_line.lower():
+                        if (
+                            "'strings'" in formatted_line
+                            and "command" in formatted_line.lower()
+                        ):
                             stage_found = True
                     elif stage_text == "Performing 'shared libraries' checks":
                         # Only match if it's specifically about shared libraries
-                        if "'shared libraries'" in formatted_line or "shared libraries" in formatted_line.lower():
+                        if (
+                            "'shared libraries'" in formatted_line
+                            or "shared libraries" in formatted_line.lower()
+                        ):
                             stage_found = True
                     elif stage_text == "Performing file properties checks":
                         # Only match if it's specifically about file properties
                         if "file properties" in formatted_line.lower():
                             stage_found = True
-                    elif stage_text == "Performing check of known rootkit files and directories":
+                    elif (
+                        stage_text
+                        == "Performing check of known rootkit files and directories"
+                    ):
                         # Only match if it's specifically about known rootkit files
                         if "known rootkit files" in formatted_line.lower():
                             stage_found = True
@@ -5525,7 +6081,10 @@ System        {perf_status}"""
                             stage_found = True
                     elif stage_text == "Performing malware checks":
                         # Only match if it's specifically about malware
-                        if "malware" in formatted_line.lower() and "additional" not in formatted_line.lower():
+                        if (
+                            "malware" in formatted_line.lower()
+                            and "additional" not in formatted_line.lower()
+                        ):
                             stage_found = True
                     elif stage_text == "Performing Linux specific checks":
                         # Only match if it's specifically about Linux checks
@@ -5565,7 +6124,11 @@ System        {perf_status}"""
                     return  # Exit after first match to avoid conflicts
 
             # Handle scan completion
-            if "scan completed" in formatted_line.lower() or "The system checks took:" in formatted_line or "Scan Duration:" in formatted_line:
+            if (
+                "scan completed" in formatted_line.lower()
+                or "The system checks took:" in formatted_line
+                or "Scan Duration:" in formatted_line
+            ):
                 if self._rkhunter_max_progress < 100:
                     self._rkhunter_max_progress = 100
                     self.status_label.setText("✅ Scan completed successfully!")
@@ -5574,8 +6137,14 @@ System        {perf_status}"""
 
             # Handle specific detailed checks for smoother progress
             # SSH configuration checks (within system config stage)
-            if "if SSH root access is allowed" in formatted_line or "if SSH protocol v1 is allowed" in formatted_line:
-                if self._rkhunter_max_progress >= 85 and self._rkhunter_max_progress < 87:
+            if (
+                "if SSH root access is allowed" in formatted_line
+                or "if SSH protocol v1 is allowed" in formatted_line
+            ):
+                if (
+                    self._rkhunter_max_progress >= 85
+                    and self._rkhunter_max_progress < 87
+                ):
                     self._rkhunter_max_progress = 87
                     self.status_label.setText("🔒 Checking SSH security settings...")
                     self.progress_bar.setValue(87)
@@ -5583,25 +6152,34 @@ System        {perf_status}"""
 
             # Hidden files check (within filesystem stage)
             if "for hidden files and directories" in formatted_line:
-                if self._rkhunter_max_progress >= 90 and self._rkhunter_max_progress < 93:
+                if (
+                    self._rkhunter_max_progress >= 90
+                    and self._rkhunter_max_progress < 93
+                ):
                     self._rkhunter_max_progress = 93
                     self.status_label.setText("RKHunter scan in progress...")
                     self.progress_bar.setValue(93)
                 return
 
             # Account security checks (within group/account stage)
-            if any(check in formatted_line for check in [
-                "for passwd file changes",
-                "for group file changes",
-                "for root equivalent"
-            ]):
-                if self._rkhunter_max_progress >= 80 and self._rkhunter_max_progress < 83:
+            if any(
+                check in formatted_line
+                for check in [
+                    "for passwd file changes",
+                    "for group file changes",
+                    "for root equivalent",
+                ]
+            ):
+                if (
+                    self._rkhunter_max_progress >= 80
+                    and self._rkhunter_max_progress < 83
+                ):
                     self._rkhunter_max_progress = 83
                     self.status_label.setText("🔐 Verifying account security...")
                     self.progress_bar.setValue(83)
                 return
 
-        except Exception as e:
+        except Exception:
             # Don't break the scan if progress update fails
             pass
 
@@ -5619,9 +6197,7 @@ System        {perf_status}"""
         self.progress_bar.setValue(100 if result.success else 0)
 
         if not result.success:
-            self.results_text.append(
-                f"❌ RKHunter scan failed: {
-                    result.error_message}")
+            self.results_text.append(f"❌ RKHunter scan failed: {result.error_message}")
             self.status_label.setText("RKHunter scan failed")
             return
 
@@ -5633,14 +6209,20 @@ System        {perf_status}"""
 
         # Set completion status message
         if result.infections_found > 0:
-            self.status_label.setText(f"✅ RKHunter scan completed - {result.infections_found} infections found")
+            self.status_label.setText(
+                f"✅ RKHunter scan completed - {result.infections_found} infections found"
+            )
         elif result.warnings_found > 0:
-            self.status_label.setText(f"✅ RKHunter scan completed - {result.warnings_found} warnings found")
+            self.status_label.setText(
+                f"✅ RKHunter scan completed - {result.warnings_found} warnings found"
+            )
         else:
             self.status_label.setText("✅ RKHunter scan completed successfully")
 
         # Add scan completion info
-        self.results_text.append("\n💡 Tip: Regular RKHunter scans help maintain system security.\n")
+        self.results_text.append(
+            "\n💡 Tip: Regular RKHunter scans help maintain system security.\n"
+        )
 
     def display_rkhunter_results(self, result: RKHunterScanResult):
         """Display modern, well-formatted RKHunter scan results."""
@@ -5649,7 +6231,7 @@ System        {perf_status}"""
 
         # Create separator for multiple scans
         if self.results_text.toPlainText().strip():
-            self.results_text.append("\n" + "="*60 + "\n")
+            self.results_text.append("\n" + "=" * 60 + "\n")
 
         # Calculate duration
         duration = (
@@ -5660,16 +6242,18 @@ System        {perf_status}"""
 
         # Format the header
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        header_lines = formatter.format_scan_header("RKHunter Rootkit Detection", timestamp)
+        header_lines = formatter.format_scan_header(
+            "RKHunter Rootkit Detection", timestamp
+        )
         for line in header_lines:
             self.results_text.append(line)
 
         # Format scan configuration if available
         scan_config = {
-            'options': {
-                'Scan Type': 'Comprehensive Rootkit Detection',
-                'Tests Run': result.tests_run,
-                'Scan ID': result.scan_id,
+            "options": {
+                "Scan Type": "Comprehensive Rootkit Detection",
+                "Tests Run": result.tests_run,
+                "Scan ID": result.scan_id,
             }
         }
         config_lines = formatter.format_scan_configuration(scan_config)
@@ -5677,7 +6261,7 @@ System        {perf_status}"""
             self.results_text.append(line)
 
         # Format the actual scan output if available
-        if hasattr(result, 'raw_output') and result.raw_output:
+        if hasattr(result, "raw_output") and result.raw_output:
             formatted_output = formatter.format_rkhunter_output(result.raw_output)
             for line in formatted_output:
                 self.results_text.append(line)
@@ -5692,7 +6276,12 @@ System        {perf_status}"""
         for line in completion_lines:
             self.results_text.append(line)
 
-    def _display_structured_rkhunter_results(self, result: RKHunterScanResult, formatter: ModernScanResultsFormatter, duration: float = 0):
+    def _display_structured_rkhunter_results(
+        self,
+        result: RKHunterScanResult,
+        formatter: ModernScanResultsFormatter,
+        duration: float = 0,
+    ):
         """Display structured RKHunter results when raw output is not available."""
         # Summary section
         self.results_text.append("� SCAN SUMMARY")
@@ -5703,10 +6292,14 @@ System        {perf_status}"""
             self.results_text.append("🚨 CRITICAL: Potential rootkits detected!")
             self.results_text.append("   Immediate security action required.")
         elif result.warnings_found > 0:
-            self.results_text.append("⚠️  ATTENTION: System configuration warnings found.")
+            self.results_text.append(
+                "⚠️  ATTENTION: System configuration warnings found."
+            )
             self.results_text.append("   Review and address security recommendations.")
         else:
-            self.results_text.append("✅ CLEAN: No rootkits or suspicious activity detected.")
+            self.results_text.append(
+                "✅ CLEAN: No rootkits or suspicious activity detected."
+            )
             self.results_text.append("   System appears secure.")
 
         self.results_text.append("")
@@ -5722,36 +6315,58 @@ System        {perf_status}"""
         # Detailed findings if available
         if result.findings:
             # Group findings by severity
-            infections = [f for f in result.findings if hasattr(f, 'result') and f.result.value == "infection"]
-            warnings = [f for f in result.findings if hasattr(f, 'result') and f.result.value == "warning"]
+            infections = [
+                f
+                for f in result.findings
+                if hasattr(f, "result") and f.result.value == "infection"
+            ]
+            warnings = [
+                f
+                for f in result.findings
+                if hasattr(f, "result") and f.result.value == "warning"
+            ]
 
             if infections:
                 self.results_text.append(f"🚨 INFECTIONS DETECTED ({len(infections)}):")
-                for i, finding in enumerate(infections[:5], 1):  # Limit to 5 for readability
+                for i, finding in enumerate(
+                    infections[:5], 1
+                ):  # Limit to 5 for readability
                     self.results_text.append(f"   {i}. {finding.test_name}")
-                    if hasattr(finding, 'description') and finding.description:
+                    if hasattr(finding, "description") and finding.description:
                         self.results_text.append(f"      📄 {finding.description}")
                 if len(infections) > 5:
-                    self.results_text.append(f"   ... and {len(infections)-5} more infections")
+                    self.results_text.append(
+                        f"   ... and {len(infections) - 5} more infections"
+                    )
                 self.results_text.append("")
 
             if warnings:
                 self.results_text.append(f"⚠️  WARNINGS DETECTED ({len(warnings)}):")
-                for i, finding in enumerate(warnings[:5], 1):  # Limit to 5 for readability
+                for i, finding in enumerate(
+                    warnings[:5], 1
+                ):  # Limit to 5 for readability
                     self.results_text.append(f"   {i}. {finding.test_name}")
-                    if hasattr(finding, 'description') and finding.description:
-                        clean_desc = finding.description.replace('[ Warning ]', '').strip()
+                    if hasattr(finding, "description") and finding.description:
+                        clean_desc = finding.description.replace(
+                            "[ Warning ]", ""
+                        ).strip()
                         self.results_text.append(f"      📄 {clean_desc}")
                 if len(warnings) > 5:
-                    self.results_text.append(f"   ... and {len(warnings)-5} more warnings")
+                    self.results_text.append(
+                        f"   ... and {len(warnings) - 5} more warnings"
+                    )
                 self.results_text.append("")
 
                 # Store findings for explanation button
                 self._current_rkhunter_findings = result.findings
 
                 self.results_text.append("📖 DETAILED EXPLANATIONS AVAILABLE:")
-                self.results_text.append("   Use the 'Explain Warnings' button below for")
-                self.results_text.append("   detailed analysis and remediation guidance.")
+                self.results_text.append(
+                    "   Use the 'Explain Warnings' button below for"
+                )
+                self.results_text.append(
+                    "   detailed analysis and remediation guidance."
+                )
                 self.results_text.append("")
 
         # Recommendations section
@@ -5770,19 +6385,25 @@ System        {perf_status}"""
             self.results_text.append("")
 
         # Performance and scan statistics
-        if hasattr(result, 'scan_stats') or duration > 0:
+        if hasattr(result, "scan_stats") or duration > 0:
             self.results_text.append("📈 SCAN STATISTICS:")
             if duration > 0:
                 tests_per_second = result.tests_run / duration if duration > 0 else 0
-                self.results_text.append(f"   ⚡ Performance: {tests_per_second:.1f} tests/second")
-            if hasattr(result, 'memory_usage'):
+                self.results_text.append(
+                    f"   ⚡ Performance: {tests_per_second:.1f} tests/second"
+                )
+            if hasattr(result, "memory_usage"):
                 self.results_text.append(f"   💾 Memory usage: {result.memory_usage}")
             self.results_text.append("")
 
         # Add helpful tip
         self.results_text.append("💡 TIP:")
-        self.results_text.append("   Regular RKHunter scans help detect rootkits and system integrity issues.")
-        self.results_text.append("   Consider scheduling automated scans for ongoing protection.")
+        self.results_text.append(
+            "   Regular RKHunter scans help detect rootkits and system integrity issues."
+        )
+        self.results_text.append(
+            "   Consider scheduling automated scans for ongoing protection."
+        )
 
         # Add explanation buttons for warnings if any exist
         self._add_warning_explanation_buttons(result)
@@ -5794,19 +6415,19 @@ System        {perf_status}"""
 
     def save_rkhunter_report(self, result: RKHunterScanResult):
         """Save RKHunter scan results to a report file."""
-        print(f"\n📄 === SAVE RKHUNTER REPORT ===")
-        print(f"DEBUG: save_rkhunter_report() called")
+        print("\n📄 === SAVE RKHUNTER REPORT ===")
+        print("DEBUG: save_rkhunter_report() called")
         print(f"DEBUG: RKHunter result scan_id: {result.scan_id}")
         print(f"DEBUG: RKHunter result has end_time: {result.end_time is not None}")
 
         try:
             reports_dir = (
-                Path.home() /
-                ".local/share/search-and-destroy/rkhunter_reports")
+                Path.home() / ".local/share/search-and-destroy/rkhunter_reports"
+            )
             print(f"DEBUG: 📁 RKHunter reports directory: {reports_dir}")
 
             reports_dir.mkdir(parents=True, exist_ok=True)
-            print(f"DEBUG: ✅ RKHunter reports directory created/verified")
+            print("DEBUG: ✅ RKHunter reports directory created/verified")
 
             report_file = reports_dir / f"rkhunter_scan_{result.scan_id}.json"
             print(f"DEBUG: 📝 Will save RKHunter report to: {report_file}")
@@ -5862,7 +6483,7 @@ System        {perf_status}"""
     def _add_warning_explanation_buttons(self, result: RKHunterScanResult):
         """Add a single button to view all warning explanations."""
         # Clear any existing warning buttons
-        if hasattr(self, '_warning_buttons_layout'):
+        if hasattr(self, "_warning_buttons_layout"):
             # Remove existing buttons
             while self._warning_buttons_layout.count():
                 child = self._warning_buttons_layout.takeAt(0)
@@ -5876,13 +6497,16 @@ System        {perf_status}"""
 
         # Find the results text widget's parent layout
         results_text_parent = self.results_text.parent()
-        if not hasattr(results_text_parent, 'layout') or not results_text_parent.layout():
+        if (
+            not hasattr(results_text_parent, "layout")
+            or not results_text_parent.layout()
+        ):
             return
 
         results_layout = results_text_parent.layout()
 
         # Create buttons layout if it doesn't exist
-        if not hasattr(self, '_warning_buttons_layout'):
+        if not hasattr(self, "_warning_buttons_layout"):
             from PyQt6.QtWidgets import QHBoxLayout, QPushButton
 
             self._warning_buttons_layout = QHBoxLayout()
@@ -5892,7 +6516,8 @@ System        {perf_status}"""
             warnings_count = len(warnings)
             btn = QPushButton(f"View All Warnings ({warnings_count})")
             btn.setObjectName("viewAllWarnings")
-            btn.setStyleSheet("""
+            btn.setStyleSheet(
+                """
                 QPushButton {
                     background-color: #FFA500;
                     color: white;
@@ -5908,7 +6533,8 @@ System        {perf_status}"""
                 QPushButton:pressed {
                     background-color: #FF7F00;
                 }
-            """)
+            """
+            )
             btn.clicked.connect(lambda: self._show_all_warnings_dialog())
             self._warning_buttons_layout.addWidget(btn)
 
@@ -5923,12 +6549,13 @@ System        {perf_status}"""
 
     def _show_all_warnings_dialog(self):
         """Show a comprehensive dialog with all warning explanations."""
-        if not hasattr(self, '_current_warnings') or not self._current_warnings:
+        if not hasattr(self, "_current_warnings") or not self._current_warnings:
             return
 
         # Try to use the full-featured warnings dialog first
         try:
             from .all_warnings_dialog import AllWarningsDialog
+
             dialog = AllWarningsDialog(self._current_warnings, self)
             dialog.exec()
         except ImportError as e:
@@ -5940,7 +6567,14 @@ System        {perf_status}"""
 
     def _show_simple_warnings_dialog(self):
         """Fallback simple warnings dialog using basic Qt widgets."""
-        from PyQt6.QtWidgets import QDialog, QVBoxLayout, QTextEdit, QPushButton, QLabel, QHBoxLayout
+        from PyQt6.QtWidgets import (
+            QDialog,
+            QHBoxLayout,
+            QLabel,
+            QPushButton,
+            QTextEdit,
+            QVBoxLayout,
+        )
 
         class SimpleWarningsDialog(QDialog):
             def __init__(self, warnings, parent=None):
@@ -5950,22 +6584,32 @@ System        {perf_status}"""
                 self.resize(800, 600)
 
                 # Apply dialog theme styling
-                if parent and hasattr(parent, 'get_theme_color'):
-                    bg_color = parent.get_theme_color('background')
-                    text_color = parent.get_theme_color('primary_text')
-                    self.setStyleSheet(f"""
+                if parent and hasattr(parent, "get_theme_color"):
+                    bg_color = parent.get_theme_color("background")
+                    text_color = parent.get_theme_color("primary_text")
+                    self.setStyleSheet(
+                        f"""
                         QDialog {{
                             background-color: {bg_color};
                             color: {text_color};
                         }}
-                    """)
+                    """
+                    )
 
                 layout = QVBoxLayout(self)
 
                 # Header
-                header = QLabel(f"Found {len(warnings)} security warnings that require attention:")
-                error_color = parent.get_theme_color('error') if parent and hasattr(parent, 'get_theme_color') else '#F14666'
-                header.setStyleSheet(f"font-weight: bold; color: {error_color}; margin-bottom: 10px;")
+                header = QLabel(
+                    f"Found {len(warnings)} security warnings that require attention:"
+                )
+                error_color = (
+                    parent.get_theme_color("error")
+                    if parent and hasattr(parent, "get_theme_color")
+                    else "#F14666"
+                )
+                header.setStyleSheet(
+                    f"font-weight: bold; color: {error_color}; margin-bottom: 10px;"
+                )
                 layout.addWidget(header)
 
                 # Text area with all warnings
@@ -5973,13 +6617,34 @@ System        {perf_status}"""
                 text_area.setReadOnly(True)
 
                 # Apply themed styling
-                bg_color = parent.get_theme_color('background') if parent and hasattr(parent, 'get_theme_color') else '#1E1E1E'
-                tertiary_bg = parent.get_theme_color('tertiary_bg') if parent and hasattr(parent, 'get_theme_color') else '#3a3a3a'
-                text_color = parent.get_theme_color('primary_text') if parent and hasattr(parent, 'get_theme_color') else '#FFFFFF'
-                border_color = parent.get_theme_color('border') if parent and hasattr(parent, 'get_theme_color') else '#444444'
-                accent_color = parent.get_theme_color('accent') if parent and hasattr(parent, 'get_theme_color') else '#F14666'
+                bg_color = (
+                    parent.get_theme_color("background")
+                    if parent and hasattr(parent, "get_theme_color")
+                    else "#1E1E1E"
+                )
+                tertiary_bg = (
+                    parent.get_theme_color("tertiary_bg")
+                    if parent and hasattr(parent, "get_theme_color")
+                    else "#3a3a3a"
+                )
+                text_color = (
+                    parent.get_theme_color("primary_text")
+                    if parent and hasattr(parent, "get_theme_color")
+                    else "#FFFFFF"
+                )
+                border_color = (
+                    parent.get_theme_color("border")
+                    if parent and hasattr(parent, "get_theme_color")
+                    else "#444444"
+                )
+                accent_color = (
+                    parent.get_theme_color("accent")
+                    if parent and hasattr(parent, "get_theme_color")
+                    else "#F14666"
+                )
 
-                text_area.setStyleSheet(f"""
+                text_area.setStyleSheet(
+                    f"""
                     QTextEdit {{
                         background-color: {tertiary_bg};
                         color: {text_color};
@@ -5991,27 +6656,30 @@ System        {perf_status}"""
                         selection-background-color: {accent_color};
                         selection-color: {bg_color};
                     }}
-                """)
+                """
+                )
 
                 # Build content
                 content = []
                 for i, warning in enumerate(warnings):
-                    content.append(f"{'='*30}")
-                    content.append(f"WARNING #{i+1}")
-                    content.append(f"{'='*30}")
+                    content.append(f"{'=' * 30}")
+                    content.append(f"WARNING #{i + 1}")
+                    content.append(f"{'=' * 30}")
 
-                    if hasattr(warning, 'description'):
+                    if hasattr(warning, "description"):
                         content.append(f"Description: {warning.description}")
-                    if hasattr(warning, 'check_name'):
+                    if hasattr(warning, "check_name"):
                         content.append(f"Check: {warning.check_name}")
-                    if hasattr(warning, 'file_path'):
+                    if hasattr(warning, "file_path"):
                         content.append(f"File/Path: {warning.file_path}")
 
                     content.append("")
                     content.append("RECOMMENDATIONS:")
                     content.append("• Review the warning details carefully")
                     content.append("• Check recent system changes and installations")
-                    content.append("• Verify the legitimacy of any flagged files or processes")
+                    content.append(
+                        "• Verify the legitimacy of any flagged files or processes"
+                    )
                     content.append("• Consider running additional security scans")
                     content.append("• Consult system logs for related events")
                     content.append("")
@@ -6023,7 +6691,8 @@ System        {perf_status}"""
                 button_layout = QHBoxLayout()
 
                 close_btn = QPushButton("Close")
-                close_btn.setStyleSheet("""
+                close_btn.setStyleSheet(
+                    """
                     QPushButton {
                         background-color: #6C757D;
                         color: white;
@@ -6033,7 +6702,8 @@ System        {perf_status}"""
                         font-weight: bold;
                     }
                     QPushButton:hover { background-color: #545B62; }
-                """)
+                """
+                )
                 close_btn.clicked.connect(self.accept)
 
                 button_layout.addStretch()
@@ -6046,7 +6716,9 @@ System        {perf_status}"""
 
     def _show_warning_explanation(self, warning_index: int):
         """Show explanation dialog for a specific warning."""
-        if not hasattr(self, '_current_warnings') or warning_index >= len(self._current_warnings):
+        if not hasattr(self, "_current_warnings") or warning_index >= len(
+            self._current_warnings
+        ):
             return
 
         warning = self._current_warnings[warning_index]
@@ -6057,7 +6729,7 @@ System        {perf_status}"""
                 "Warning Information",
                 f"Warning: {warning.description}\n\n"
                 f"This warning indicates a potential security concern that should be investigated. "
-                f"Consider checking recent system changes and consulting security documentation."
+                f"Consider checking recent system changes and consulting security documentation.",
             )
             return
 
@@ -6073,9 +6745,7 @@ System        {perf_status}"""
             from app.gui.warning_explanation_dialog import WarningExplanationDialog
 
             dialog = WarningExplanationDialog(
-                warning.description,
-                warning.explanation,
-                parent=self
+                warning.description, warning.explanation, parent=self
             )
 
             # Connect signals
@@ -6084,7 +6754,7 @@ System        {perf_status}"""
 
             dialog.exec()
 
-        except ImportError as e:
+        except ImportError:
             # Fallback to simple message box
             self.show_themed_message_box(
                 "information",
@@ -6094,23 +6764,28 @@ System        {perf_status}"""
                 f"Severity: {warning.explanation.severity.value.upper()}\n\n"
                 f"Description: {warning.explanation.description}\n\n"
                 f"Likely Cause: {warning.explanation.likely_cause}\n\n"
-                f"Recommended Action: {warning.explanation.recommended_action}"
+                f"Recommended Action: {warning.explanation.recommended_action}",
             )
 
     def _mark_warning_as_safe(self, warning_text: str):
         """Mark a warning as safe - add to ignore list."""
         try:
             # Get or create safe warnings list in config
-            safe_warnings = self.config_manager.get_setting('security.safe_warnings', [])
+            safe_warnings = self.config_manager.get_setting(
+                "security.safe_warnings", []
+            )
 
             # Create a hash of the warning for identification
             import hashlib
-            warning_hash = hashlib.md5(warning_text.encode()).hexdigest()[:16]
+
+            warning_hash = hashlib.md5(
+                warning_text.encode(), usedforsecurity=False
+            ).hexdigest()[:16]
 
             # Add to safe list if not already present
             if warning_hash not in safe_warnings:
                 safe_warnings.append(warning_hash)
-                self.config_manager.set_setting('security.safe_warnings', safe_warnings)
+                self.config_manager.set_setting("security.safe_warnings", safe_warnings)
                 self.config_manager.save_config()
 
                 self.show_themed_message_box(
@@ -6118,27 +6793,31 @@ System        {perf_status}"""
                     "Warning Marked as Safe",
                     f"Warning has been marked as safe and will be filtered in future scans.\n\n"
                     f"Warning ID: {warning_hash}\n\n"
-                    f"You can manage safe warnings in Settings > Security."
+                    f"You can manage safe warnings in Settings > Security.",
                 )
             else:
                 self.show_themed_message_box(
                     "information",
                     "Already Safe",
-                    "This warning is already marked as safe."
+                    "This warning is already marked as safe.",
                 )
         except Exception as e:
             self.logger.error(f"Error marking warning as safe: {e}")
             self.show_themed_message_box(
-                "warning",
-                "Error",
-                f"Could not mark warning as safe: {str(e)}"
+                "warning", "Error", f"Could not mark warning as safe: {str(e)}"
             )
 
     def _investigate_warning(self, warning_text: str):
         """Handle investigation request - provide helpful investigation guidance."""
         # Create investigation dialog
-        from PyQt6.QtWidgets import QDialog, QVBoxLayout, QTextEdit, QPushButton, QLabel, QHBoxLayout
-        from PyQt6.QtCore import Qt
+        from PyQt6.QtWidgets import (
+            QDialog,
+            QHBoxLayout,
+            QLabel,
+            QPushButton,
+            QTextEdit,
+            QVBoxLayout,
+        )
 
         dialog = QDialog(self)
         dialog.setWindowTitle("Warning Investigation Guide")
@@ -6204,7 +6883,9 @@ Common False Positives:
         button_layout = QHBoxLayout()
 
         mark_safe_btn = QPushButton("Mark as Safe")
-        mark_safe_btn.clicked.connect(lambda: (self._mark_warning_as_safe(warning_text), dialog.accept()))
+        mark_safe_btn.clicked.connect(
+            lambda: (self._mark_warning_as_safe(warning_text), dialog.accept())
+        )
 
         close_btn = QPushButton("Close")
         close_btn.clicked.connect(dialog.accept)
@@ -6220,11 +6901,7 @@ Common False Positives:
         """Get list of selected RKHunter test categories from settings."""
         if not hasattr(self, "settings_rkhunter_category_checkboxes"):
             # Return default categories if settings aren't loaded yet
-            return [
-                "system_commands",
-                "rootkits",
-                "network",
-                "system_integrity"]
+            return ["system_commands", "rootkits", "network", "system_integrity"]
 
         selected = []
         for category_id, checkbox in self.settings_rkhunter_category_checkboxes.items():
@@ -6247,11 +6924,7 @@ Common False Positives:
     def select_recommended_rkhunter_categories(self):
         """Select recommended RKHunter test categories."""
         if hasattr(self, "settings_rkhunter_category_checkboxes"):
-            recommended = {
-                "system_commands",
-                "rootkits",
-                "network",
-                "system_integrity"}
+            recommended = {"system_commands", "rootkits", "network", "system_integrity"}
             for (
                 category_id,
                 checkbox,
@@ -6311,7 +6984,7 @@ Common False Positives:
                 "warning",
                 "RKHunter Optimizer",
                 "RKHunter optimizer is not available.\n\n"
-                "This feature requires the RKHunter optimization module to be installed."
+                "This feature requires the RKHunter optimization module to be installed.",
             )
             return
 
@@ -6324,20 +6997,22 @@ Common False Positives:
                 "RKHunter is not installed on your system.\n\n"
                 "RKHunter optimization requires RKHunter to be installed first.\n\n"
                 "Would you like to install RKHunter now?",
-                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
             )
 
             if reply == QMessageBox.StandardButton.Yes:
                 # Launch installation helper
-                self.install_rkhunter_with_callback(lambda: self.run_rkhunter_optimization(optimization_type))
+                self.install_rkhunter_with_callback(
+                    lambda: self.run_rkhunter_optimization(optimization_type)
+                )
             return
 
         try:
             # Show progress
-            if hasattr(self, 'rkhunter_progress_bar'):
+            if hasattr(self, "rkhunter_progress_bar"):
                 self.rkhunter_progress_bar.setVisible(True)
                 self.rkhunter_progress_bar.setRange(0, 0)  # Indeterminate
-            if hasattr(self, 'rkhunter_progress_label'):
+            if hasattr(self, "rkhunter_progress_label"):
                 self.rkhunter_progress_label.setVisible(True)
                 self.rkhunter_progress_label.setText(f"Running {optimization_type}...")
 
@@ -6345,70 +7020,85 @@ Common False Positives:
             config = RKHunterConfig()
 
             # Set performance mode if available
-            if hasattr(self, 'rkhunter_perf_mode_combo'):
+            if hasattr(self, "rkhunter_perf_mode_combo"):
                 mode = self.rkhunter_perf_mode_combo.currentText().lower()
                 config.performance_mode = mode
 
             # Handle different optimization types
-            if optimization_type == 'update_mirrors':
+            if optimization_type == "update_mirrors":
                 config.update_mirrors = True
-                config.mirror_mode = 'auto'
-            elif optimization_type == 'update_baseline':
+                config.mirror_mode = "auto"
+            elif optimization_type == "update_baseline":
                 config.update_baseline = True
-            elif optimization_type == 'optimize_config':
+            elif optimization_type == "optimize_config":
                 config.optimize_performance = True
                 config.update_mirrors = True
                 config.update_baseline = True
 
             # Start optimization worker
-            if hasattr(self, 'rkhunter_optimization_worker') and self.rkhunter_optimization_worker:
+            if (
+                hasattr(self, "rkhunter_optimization_worker")
+                and self.rkhunter_optimization_worker
+            ):
                 if self.rkhunter_optimization_worker.isRunning():
                     return  # Already running
 
             self.rkhunter_optimization_worker = RKHunterOptimizationWorker(config)
-            self.rkhunter_optimization_worker.optimization_complete.connect(self.on_rkhunter_optimization_complete)
-            self.rkhunter_optimization_worker.status_updated.connect(self.on_rkhunter_status_updated)
-            self.rkhunter_optimization_worker.progress_updated.connect(self.on_rkhunter_progress_updated)
-            self.rkhunter_optimization_worker.error_occurred.connect(self.on_rkhunter_optimization_error)
+            self.rkhunter_optimization_worker.optimization_complete.connect(
+                self.on_rkhunter_optimization_complete
+            )
+            self.rkhunter_optimization_worker.status_updated.connect(
+                self.on_rkhunter_status_updated
+            )
+            self.rkhunter_optimization_worker.progress_updated.connect(
+                self.on_rkhunter_progress_updated
+            )
+            self.rkhunter_optimization_worker.error_occurred.connect(
+                self.on_rkhunter_optimization_error
+            )
             self.rkhunter_optimization_worker.start()
 
         except Exception as e:
             logging.error(f"Failed to start RKHunter optimization: {e}")
-            self.show_themed_message_box("critical", "Error", f"Failed to start optimization: {str(e)}")
+            self.show_themed_message_box(
+                "critical", "Error", f"Failed to start optimization: {str(e)}"
+            )
 
     def on_rkhunter_optimization_complete(self, report):
         """Handle completion of RKHunter optimization"""
         try:
             # Hide progress
-            if hasattr(self, 'rkhunter_progress_bar'):
+            if hasattr(self, "rkhunter_progress_bar"):
                 self.rkhunter_progress_bar.setVisible(False)
-            if hasattr(self, 'rkhunter_progress_label'):
+            if hasattr(self, "rkhunter_progress_label"):
                 self.rkhunter_progress_label.setVisible(False)
 
             # Display results
-            if hasattr(self, 'rkhunter_results_text') and report:
+            if hasattr(self, "rkhunter_results_text") and report:
                 results = []
-                results.append(f"Optimization completed at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+                results.append(
+                    f"Optimization completed at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
+                )
 
-                if hasattr(report, 'mirrors_updated') and report.mirrors_updated:
+                if hasattr(report, "mirrors_updated") and report.mirrors_updated:
                     results.append("✅ Mirrors updated successfully")
-                if hasattr(report, 'baseline_updated') and report.baseline_updated:
+                if hasattr(report, "baseline_updated") and report.baseline_updated:
                     results.append("✅ Baseline updated successfully")
-                if hasattr(report, 'config_optimized') and report.config_optimized:
+                if hasattr(report, "config_optimized") and report.config_optimized:
                     results.append("✅ Configuration optimized")
-                if hasattr(report, 'warnings') and report.warnings:
+                if hasattr(report, "warnings") and report.warnings:
                     results.append("⚠️ Warnings:")
                     for warning in report.warnings:
                         results.append(f"  • {warning}")
-                if hasattr(report, 'errors') and report.errors:
+                if hasattr(report, "errors") and report.errors:
                     results.append("❌ Errors:")
                     for error in report.errors:
                         results.append(f"  • {error}")
 
-                self.rkhunter_results_text.setText('\n'.join(results))
+                self.rkhunter_results_text.setText("\n".join(results))
 
             # Refresh status
-            if hasattr(self, 'rkhunter_status_widget'):
+            if hasattr(self, "rkhunter_status_widget"):
                 self.rkhunter_status_widget.refresh_status()
 
         except Exception as e:
@@ -6417,7 +7107,7 @@ Common False Positives:
     def on_rkhunter_status_updated(self, status):
         """Handle RKHunter status update"""
         try:
-            if hasattr(self, 'rkhunter_status_widget'):
+            if hasattr(self, "rkhunter_status_widget"):
                 self.rkhunter_status_widget.update_status(status)
         except Exception as e:
             logging.error(f"Error updating RKHunter status: {e}")
@@ -6425,7 +7115,7 @@ Common False Positives:
     def on_rkhunter_progress_updated(self, message):
         """Handle RKHunter progress update"""
         try:
-            if hasattr(self, 'rkhunter_progress_label'):
+            if hasattr(self, "rkhunter_progress_label"):
                 self.rkhunter_progress_label.setText(message)
         except Exception as e:
             logging.error(f"Error updating RKHunter progress: {e}")
@@ -6434,17 +7124,19 @@ Common False Positives:
         """Handle RKHunter optimization error"""
         try:
             # Hide progress
-            if hasattr(self, 'rkhunter_progress_bar'):
+            if hasattr(self, "rkhunter_progress_bar"):
                 self.rkhunter_progress_bar.setVisible(False)
-            if hasattr(self, 'rkhunter_progress_label'):
+            if hasattr(self, "rkhunter_progress_label"):
                 self.rkhunter_progress_label.setVisible(False)
 
             # Show error message
             QMessageBox.critical(self, "RKHunter Optimization Error", error_message)
 
             # Display error in results
-            if hasattr(self, 'rkhunter_results_text'):
-                error_text = f"❌ Optimization failed at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\nError: {error_message}"
+            if hasattr(self, "rkhunter_results_text"):
+                error_text = f"❌ Optimization failed at {
+                    datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                }\nError: {error_message}"
                 self.rkhunter_results_text.setText(error_text)
 
         except Exception as e:
@@ -6478,13 +7170,33 @@ Common False Positives:
             print(f"Warning: Could not configure platform dropdown behavior: {e}")
 
     def stop_scan(self):
-        print(f"\n🛑 === STOP_SCAN CALLED ===")
-        print(f"DEBUG: stop_scan() called")
+        print("\n🛑 === STOP_SCAN CALLED ===")
+        print("DEBUG: stop_scan() called")
         print(f"DEBUG: Current scan state: {self._scan_state}")
-        print(f"DEBUG: Current scan thread exists: {self.current_scan_thread is not None}")
-        print(f"DEBUG: Scan thread running: {self.current_scan_thread.isRunning() if self.current_scan_thread else 'N/A'}")
-        print(f"DEBUG: Current RKHunter thread exists: {hasattr(self, 'current_rkhunter_thread') and self.current_rkhunter_thread is not None}")
-        print(f"DEBUG: RKHunter thread running: {self.current_rkhunter_thread.isRunning() if hasattr(self, 'current_rkhunter_thread') and self.current_rkhunter_thread else 'N/A'}")
+        print(
+            f"DEBUG: Current scan thread exists: {self.current_scan_thread is not None}"
+        )
+        print(
+            f"DEBUG: Scan thread running: {
+                self.current_scan_thread.isRunning()
+                if self.current_scan_thread
+                else 'N/A'
+            }"
+        )
+        print(
+            f"DEBUG: Current RKHunter thread exists: {
+                hasattr(self, 'current_rkhunter_thread')
+                and self.current_rkhunter_thread is not None
+            }"
+        )
+        print(
+            f"DEBUG: RKHunter thread running: {
+                self.current_rkhunter_thread.isRunning()
+                if hasattr(self, 'current_rkhunter_thread')
+                and self.current_rkhunter_thread
+                else 'N/A'
+            }"
+        )
         print(f"DEBUG: Manual stop flag: {self._scan_manually_stopped}")
 
         # Check if any scan threads are running (with safe error handling)
@@ -6492,24 +7204,32 @@ Common False Positives:
         rkhunter_running = False
 
         try:
-            clamav_running = self.current_scan_thread and self.current_scan_thread.isRunning()
+            clamav_running = (
+                self.current_scan_thread and self.current_scan_thread.isRunning()
+            )
         except Exception as e:
             print(f"DEBUG: ⚠️ Error checking ClamAV thread state: {e}")
             # If we can't check state, assume it might be running
             clamav_running = self.current_scan_thread is not None
 
         try:
-            rkhunter_running = (hasattr(self, 'current_rkhunter_thread') and
-                              self.current_rkhunter_thread and
-                              self.current_rkhunter_thread.isRunning())
+            rkhunter_running = (
+                hasattr(self, "current_rkhunter_thread")
+                and self.current_rkhunter_thread
+                and self.current_rkhunter_thread.isRunning()
+            )
         except Exception as e:
             print(f"DEBUG: ⚠️ Error checking RKHunter thread state: {e}")
             # If we can't check state, assume it might be running
-            rkhunter_running = (hasattr(self, 'current_rkhunter_thread') and
-                              self.current_rkhunter_thread is not None)
+            rkhunter_running = (
+                hasattr(self, "current_rkhunter_thread")
+                and self.current_rkhunter_thread is not None
+            )
 
         if clamav_running or rkhunter_running:
-            print("DEBUG: 🔍 At least one thread is running, showing confirmation dialog")
+            print(
+                "DEBUG: 🔍 At least one thread is running, showing confirmation dialog"
+            )
 
             # Determine what type of scan is running
             if clamav_running and rkhunter_running:
@@ -6521,10 +7241,11 @@ Common False Positives:
 
             # Show confirmation dialog first
             reply = QMessageBox.question(
-                self, "Confirm Stop Scan",
+                self,
+                "Confirm Stop Scan",
                 f"Are you sure you want to stop the current {scan_type}?\n\nNote: The scan may take a few moments to finish safely.",
                 QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-                QMessageBox.StandardButton.Yes
+                QMessageBox.StandardButton.Yes,
             )
 
             if reply == QMessageBox.StandardButton.Yes:
@@ -6534,38 +7255,52 @@ Common False Positives:
                 self._scan_manually_stopped = True
                 self.is_quick_scan_running = False
 
-                print(f"DEBUG: 🔄 Scan stop requested, state set to: {self._scan_state}")
+                print(
+                    f"DEBUG: 🔄 Scan stop requested, state set to: {self._scan_state}"
+                )
                 print(f"DEBUG: Manual stop flag set to: {self._scan_manually_stopped}")
 
                 # Update UI to show stopping state
-                self.scan_toggle_btn.setEnabled(False)  # Disable during stopping process
-                self.progress_bar.setValue(100)  # Start progress bar at 100% for stop countdown
+                self.scan_toggle_btn.setEnabled(
+                    False
+                )  # Disable during stopping process
+                self.progress_bar.setValue(
+                    100
+                )  # Start progress bar at 100% for stop countdown
                 self.status_label.setText("🛑 Stopping scan - please wait...")
                 self.status_bar.showMessage("🛑 Stopping scan safely - please wait...")
 
                 # Add appropriate message based on what's running
                 if rkhunter_running:
-                    self.results_text.append("\n🛑 Scan stop requested - stopping RKHunter scan safely...")
+                    self.results_text.append(
+                        "\n🛑 Scan stop requested - stopping RKHunter scan safely..."
+                    )
                 else:
-                    self.results_text.append("\n🛑 Scan stop requested - finishing current files...")
+                    self.results_text.append(
+                        "\n🛑 Scan stop requested - finishing current files..."
+                    )
 
                 print("DEBUG: 📱 UI updated to stopping state")
 
                 # Stop threads in the right order - stop RKHunter first if running
                 if rkhunter_running:
                     print("DEBUG: 🛑 Stopping RKHunter thread first")
-                    if (hasattr(self, 'current_rkhunter_thread') and
-                        self.current_rkhunter_thread and
-                        hasattr(self.current_rkhunter_thread, 'stop_scan')):
+                    if (
+                        hasattr(self, "current_rkhunter_thread")
+                        and self.current_rkhunter_thread
+                        and hasattr(self.current_rkhunter_thread, "stop_scan")
+                    ):
                         self.current_rkhunter_thread.stop_scan()
-                    if (hasattr(self, 'current_rkhunter_thread') and
-                        self.current_rkhunter_thread):
+                    if (
+                        hasattr(self, "current_rkhunter_thread")
+                        and self.current_rkhunter_thread
+                    ):
                         self.current_rkhunter_thread.requestInterruption()
 
                 # Then stop ClamAV scan if running
                 if clamav_running:
                     print("DEBUG: 🛑 Stopping ClamAV thread")
-                    if hasattr(self.current_scan_thread, 'stop_scan'):
+                    if hasattr(self.current_scan_thread, "stop_scan"):
                         self.current_scan_thread.stop_scan()
                     self.current_scan_thread.requestInterruption()
 
@@ -6585,46 +7320,57 @@ Common False Positives:
         try:
             # Disconnect ClamAV scan signals
             if self.current_scan_thread:
-                if hasattr(self.current_scan_thread, 'scan_completed'):
+                if hasattr(self.current_scan_thread, "scan_completed"):
                     try:
-                        self.current_scan_thread.scan_completed.disconnect(self.scan_completed)
+                        self.current_scan_thread.scan_completed.disconnect(
+                            self.scan_completed
+                        )
                     except (TypeError, RuntimeError):
                         # Already disconnected or not connected to this slot
                         pass
-                if hasattr(self.current_scan_thread, 'progress_updated'):
+                if hasattr(self.current_scan_thread, "progress_updated"):
                     try:
-                        self.current_scan_thread.progress_updated.disconnect(self.progress_bar.setValue)
+                        self.current_scan_thread.progress_updated.disconnect(
+                            self.progress_bar.setValue
+                        )
                     except (TypeError, RuntimeError):
                         # Already disconnected or not connected to this slot
                         pass
-                if hasattr(self.current_scan_thread, 'status_updated'):
+                if hasattr(self.current_scan_thread, "status_updated"):
                     try:
-                        self.current_scan_thread.status_updated.disconnect(self.status_label.setText)
+                        self.current_scan_thread.status_updated.disconnect(
+                            self.status_label.setText
+                        )
                     except (TypeError, RuntimeError):
                         # Already disconnected or not connected to this slot
                         pass
-                if hasattr(self.current_scan_thread, 'scan_detail_updated'):
+                if hasattr(self.current_scan_thread, "scan_detail_updated"):
                     try:
-                        self.current_scan_thread.scan_detail_updated.disconnect(self.handle_detailed_scan_progress)
+                        self.current_scan_thread.scan_detail_updated.disconnect(
+                            self.handle_detailed_scan_progress
+                        )
                     except (TypeError, RuntimeError):
                         # Already disconnected or not connected to this slot
                         pass
 
             # Disconnect RKHunter scan signals
-            if hasattr(self, 'current_rkhunter_thread') and self.current_rkhunter_thread:
-                if hasattr(self.current_rkhunter_thread, 'scan_completed'):
+            if (
+                hasattr(self, "current_rkhunter_thread")
+                and self.current_rkhunter_thread
+            ):
+                if hasattr(self.current_rkhunter_thread, "scan_completed"):
                     try:
                         self.current_rkhunter_thread.scan_completed.disconnect()
                     except (TypeError, RuntimeError):
                         # Already disconnected
                         pass
-                if hasattr(self.current_rkhunter_thread, 'progress_updated'):
+                if hasattr(self.current_rkhunter_thread, "progress_updated"):
                     try:
                         self.current_rkhunter_thread.progress_updated.disconnect()
                     except (TypeError, RuntimeError):
                         # Already disconnected
                         pass
-                if hasattr(self.current_rkhunter_thread, 'progress_value_updated'):
+                if hasattr(self.current_rkhunter_thread, "progress_value_updated"):
                     try:
                         self.current_rkhunter_thread.progress_value_updated.disconnect()
                     except (TypeError, RuntimeError):
@@ -6637,15 +7383,16 @@ Common False Positives:
 
     def _start_stop_completion_timer(self):
         """Start a timer to monitor scan completion after stop request with faster checking"""
-        print(f"\n⏲️ === STARTING COMPLETION TIMER ===")
-        print(f"DEBUG: _start_stop_completion_timer() called")
+        print("\n⏲️ === STARTING COMPLETION TIMER ===")
+        print("DEBUG: _start_stop_completion_timer() called")
 
         # Initialize or reset the stop attempt counter
         self._stop_completion_attempts = 0
         self._stop_max_attempts = 5  # Reduced to 5 seconds for better user experience
 
-        if not hasattr(self, '_stop_completion_timer'):
+        if not hasattr(self, "_stop_completion_timer"):
             from PyQt6.QtCore import QTimer
+
             self._stop_completion_timer = QTimer()
             self._stop_completion_timer.timeout.connect(self._check_stop_completion)
             print("DEBUG: 🆕 Created new QTimer instance")
@@ -6656,52 +7403,83 @@ Common False Positives:
         self._stop_completion_timer.start(1000)
         print("DEBUG: ⏰ Started stop completion monitoring timer (1000ms interval)")
 
-
     def _check_stop_completion(self):
         """Check if the stopped scan has completed and handle cleanup"""
-        print(f"\n🔍 === CHECKING STOP COMPLETION ===")
-        print(f"DEBUG: _check_stop_completion() called")
-        print(f"DEBUG: Current scan thread exists: {self.current_scan_thread is not None}")
-        print(f"DEBUG: Scan thread running: {self.current_scan_thread.isRunning() if self.current_scan_thread else 'N/A'}")
-        print(f"DEBUG: Current RKHunter thread exists: {hasattr(self, 'current_rkhunter_thread') and self.current_rkhunter_thread is not None}")
-        print(f"DEBUG: RKHunter thread running: {self.current_rkhunter_thread.isRunning() if hasattr(self, 'current_rkhunter_thread') and self.current_rkhunter_thread else 'N/A'}")
+        print("\n🔍 === CHECKING STOP COMPLETION ===")
+        print("DEBUG: _check_stop_completion() called")
+        print(
+            f"DEBUG: Current scan thread exists: {self.current_scan_thread is not None}"
+        )
+        print(
+            f"DEBUG: Scan thread running: {
+                self.current_scan_thread.isRunning()
+                if self.current_scan_thread
+                else 'N/A'
+            }"
+        )
+        print(
+            f"DEBUG: Current RKHunter thread exists: {
+                hasattr(self, 'current_rkhunter_thread')
+                and self.current_rkhunter_thread is not None
+            }"
+        )
+        print(
+            f"DEBUG: RKHunter thread running: {
+                self.current_rkhunter_thread.isRunning()
+                if hasattr(self, 'current_rkhunter_thread')
+                and self.current_rkhunter_thread
+                else 'N/A'
+            }"
+        )
         print(f"DEBUG: Current state: {self._scan_state}")
 
         # Increment attempt counter
-        if not hasattr(self, '_stop_completion_attempts'):
+        if not hasattr(self, "_stop_completion_attempts"):
             self._stop_completion_attempts = 0
         self._stop_completion_attempts += 1
 
         # Use shorter timeout for better responsiveness - 5 seconds instead of 10-30
         max_attempts = 5
-        if not hasattr(self, '_stop_max_attempts'):
+        if not hasattr(self, "_stop_max_attempts"):
             self._stop_max_attempts = max_attempts
 
         # Update progress bar to show stop progress (reverse progress from 100% to 0%)
-        stop_progress = max(0, 100 - int((self._stop_completion_attempts / max_attempts) * 100))
+        stop_progress = max(
+            0, 100 - int((self._stop_completion_attempts / max_attempts) * 100)
+        )
         self.progress_bar.setValue(stop_progress)
 
         # Update status label and status bar to show stop progress
         remaining_time = max_attempts - self._stop_completion_attempts
         self.status_label.setText(f"🛑 Stopping scan... ({remaining_time}s remaining)")
-        self.status_bar.showMessage(f"🛑 Stopping scan... ({remaining_time}s remaining)")
-        print(f"DEBUG: 📊 Stop progress: {stop_progress}% (attempt {self._stop_completion_attempts}/{max_attempts})")
+        self.status_bar.showMessage(
+            f"🛑 Stopping scan... ({remaining_time}s remaining)"
+        )
+        print(
+            f"DEBUG: 📊 Stop progress: {stop_progress}% (attempt {
+                self._stop_completion_attempts
+            }/{max_attempts})"
+        )
 
         # Check current thread states with safe error handling
         clamav_running = False
         rkhunter_running = False
 
         try:
-            clamav_running = self.current_scan_thread and self.current_scan_thread.isRunning()
+            clamav_running = (
+                self.current_scan_thread and self.current_scan_thread.isRunning()
+            )
         except Exception as e:
             print(f"DEBUG: ⚠️ Error checking ClamAV thread state: {e}")
             # If we can't check, assume it's not running
             clamav_running = False
 
         try:
-            rkhunter_running = (hasattr(self, 'current_rkhunter_thread') and
-                               self.current_rkhunter_thread and
-                               self.current_rkhunter_thread.isRunning())
+            rkhunter_running = (
+                hasattr(self, "current_rkhunter_thread")
+                and self.current_rkhunter_thread
+                and self.current_rkhunter_thread.isRunning()
+            )
         except Exception as e:
             print(f"DEBUG: ⚠️ Error checking RKHunter thread state: {e}")
             # If we can't check, assume it's not running
@@ -6709,11 +7487,13 @@ Common False Positives:
 
         # Check for timeout - force completion after reduced timeout
         if self._stop_completion_attempts >= max_attempts:
-            print(f"DEBUG: ⏰ Stop timeout reached ({self._stop_completion_attempts} attempts)")
+            print(
+                f"DEBUG: ⏰ Stop timeout reached ({self._stop_completion_attempts} attempts)"
+            )
             print("DEBUG: 🚨 Forcing scan stop completion due to timeout")
 
             # Force cleanup regardless of thread state
-            if hasattr(self, '_stop_completion_timer'):
+            if hasattr(self, "_stop_completion_timer"):
                 self._stop_completion_timer.stop()
                 print("DEBUG: ⏰ Stopped completion timer (timeout)")
 
@@ -6731,9 +7511,11 @@ Common False Positives:
 
             # Show appropriate completion message
             if rkhunter_running or clamav_running:
-                self.results_text.append("🛑 Scan stop completed (forced after 5 seconds)\n\n"
-                                        "⚠️ Note: Some background processes may continue briefly "
-                                        "but will not affect the application.")
+                self.results_text.append(
+                    "🛑 Scan stop completed (forced after 5 seconds)\n\n"
+                    "⚠️ Note: Some background processes may continue briefly "
+                    "but will not affect the application."
+                )
             else:
                 self.results_text.append("🛑 Scan stop completed successfully")
 
@@ -6748,7 +7530,7 @@ Common False Positives:
             print("DEBUG: ✅ All threads have finished - starting cleanup process")
 
             # Stop the timer
-            if hasattr(self, '_stop_completion_timer'):
+            if hasattr(self, "_stop_completion_timer"):
                 self._stop_completion_timer.stop()
                 print("DEBUG: ⏰ Stopped completion timer")
 
@@ -6761,7 +7543,9 @@ Common False Positives:
             self._stop_scan_user_wants_restart = True
 
             print(f"DEBUG: 🔄 State set back to: {self._scan_state}")
-            print(f"DEBUG: 🔄 Reset _scan_manually_stopped flag to: {self._scan_manually_stopped}")
+            print(
+                f"DEBUG: 🔄 Reset _scan_manually_stopped flag to: {self._scan_manually_stopped}"
+            )
 
             # Reset UI to ready state
             self.reset_all_scan_buttons()  # Reset all scan buttons to default state
@@ -6781,7 +7565,13 @@ Common False Positives:
             if rkhunter_running:
                 threads_still_running.append("RKHunter")
 
-            print(f"DEBUG: ⏳ Still waiting for {', '.join(threads_still_running)} to finish... (attempt {self._stop_completion_attempts}/{max_attempts})")
+            print(
+                f"DEBUG: ⏳ Still waiting for {
+                    ', '.join(threads_still_running)
+                } to finish... (attempt {self._stop_completion_attempts}/{
+                    max_attempts
+                })"
+            )
 
     def _force_cleanup_threads(self):
         """Force cleanup of all scan threads"""
@@ -6795,7 +7585,9 @@ Common False Positives:
                     self.current_scan_thread.requestInterruption()
                     # Give it 1 more second
                     if not self.current_scan_thread.wait(1000):
-                        print("DEBUG: ⚠️ ClamAV thread did not stop gracefully, forcing cleanup")
+                        print(
+                            "DEBUG: ⚠️ ClamAV thread did not stop gracefully, forcing cleanup"
+                        )
             except Exception as e:
                 print(f"DEBUG: ⚠️ Error during force ClamAV thread cleanup: {e}")
             finally:
@@ -6803,15 +7595,17 @@ Common False Positives:
                 print("DEBUG: 🧹 Forced ClamAV thread cleanup completed")
 
         # Force cleanup RKHunter thread
-        if hasattr(self, 'current_rkhunter_thread') and self.current_rkhunter_thread:
+        if hasattr(self, "current_rkhunter_thread") and self.current_rkhunter_thread:
             try:
                 if self.current_rkhunter_thread.isRunning():
                     print("DEBUG: 🔧 Force terminating stuck RKHunter thread")
-                    if hasattr(self.current_rkhunter_thread, 'stop_scan'):
+                    if hasattr(self.current_rkhunter_thread, "stop_scan"):
                         self.current_rkhunter_thread.stop_scan()
                     # Give it 1 more second
                     if not self.current_rkhunter_thread.wait(1000):
-                        print("DEBUG: ⚠️ RKHunter thread did not stop gracefully, forcing cleanup")
+                        print(
+                            "DEBUG: ⚠️ RKHunter thread did not stop gracefully, forcing cleanup"
+                        )
             except Exception as e:
                 print(f"DEBUG: ⚠️ Error during force RKHunter thread cleanup: {e}")
             finally:
@@ -6844,7 +7638,9 @@ Common False Positives:
             finally:
                 self.current_rkhunter_thread = None
             self._stop_scan_user_wants_restart = True
-            print(f"DEBUG: 🔄 Set user wants restart flag to: {self._stop_scan_user_wants_restart}")
+            print(
+                f"DEBUG: 🔄 Set user wants restart flag to: {self._stop_scan_user_wants_restart}"
+            )
 
             # Reset UI to ready state with visual confirmation
             self.update_scan_button_state(False)  # Reset to "Start Scan" mode
@@ -6853,6 +7649,7 @@ Common False Positives:
             # Brief visual confirmation that stop completed (flash to 0% then reset)
             self.progress_bar.setValue(0)
             from PyQt6.QtCore import QTimer
+
             QTimer.singleShot(200, lambda: self.progress_bar.setValue(0))  # Keep at 0%
             print("DEBUG: 📱 UI reset to ready state")
 
@@ -6866,23 +7663,32 @@ Common False Positives:
 
             # Check if there's a pending scan request
             if self._pending_scan_request:
-                print(f"DEBUG: 🚀 Found pending scan request: {self._pending_scan_request}")
+                print(
+                    f"DEBUG: 🚀 Found pending scan request: {self._pending_scan_request}"
+                )
                 print("DEBUG: Executing queued scan request")
                 pending = self._pending_scan_request
                 self._pending_scan_request = None
                 print(f"DEBUG: Cleared pending request, will execute: {pending}")
                 # Execute the queued scan
                 from PyQt6.QtCore import QTimer
-                QTimer.singleShot(500, lambda: self.start_scan(pending.get("quick_scan", False)))
+
+                QTimer.singleShot(
+                    500, lambda: self.start_scan(pending.get("quick_scan", False))
+                )
                 print("DEBUG: 📅 Queued scan execution scheduled (500ms delay)")
             else:
                 print("DEBUG: ❌ No pending scan request found")
         else:
-            print(f"DEBUG: ⏳ Scan still running, continuing to monitor... (attempt {self._stop_completion_attempts}/{getattr(self, '_stop_max_attempts', 30)})")
+            print(
+                f"DEBUG: ⏳ Scan still running, continuing to monitor... (attempt {
+                    self._stop_completion_attempts
+                }/{getattr(self, '_stop_max_attempts', 30)})"
+            )
 
     def update_dashboard_cards(self):
         """Update all dashboard status cards with current information."""
-        print(f"\n📊 === UPDATE DASHBOARD CARDS ===")
+        print("\n📊 === UPDATE DASHBOARD CARDS ===")
         print("DEBUG: update_dashboard_cards() called")
 
         # Update Last Scan card
@@ -6891,8 +7697,8 @@ Common False Positives:
                 print("DEBUG: 🔍 Updating Last Scan card")
                 # Get the most recent scan report from the reports directory
                 reports_dir = (
-                    Path.home() /
-                    ".local/share/search-and-destroy/scan_reports/daily")
+                    Path.home() / ".local/share/search-and-destroy/scan_reports/daily"
+                )
                 print(f"DEBUG: Looking for reports in: {reports_dir}")
                 print(f"DEBUG: Reports directory exists: {reports_dir.exists()}")
 
@@ -6902,8 +7708,7 @@ Common False Positives:
                     print(f"DEBUG: Found {len(report_files)} report files")
                     if report_files:
                         # Get the most recent file
-                        latest_file = max(
-                            report_files, key=lambda p: p.stat().st_mtime)
+                        latest_file = max(report_files, key=lambda p: p.stat().st_mtime)
                         print(f"DEBUG: Latest report file: {latest_file}")
                         try:
                             with open(latest_file, "r", encoding="utf-8") as f:
@@ -6917,8 +7722,7 @@ Common False Positives:
                             # Clean up scan type (remove ScanType. prefix if
                             # present)
                             if scan_type.startswith("ScanType."):
-                                scan_type = scan_type.replace(
-                                    "ScanType.", "").lower()
+                                scan_type = scan_type.replace("ScanType.", "").lower()
 
                             # Format the scan type for display
                             scan_type_display = {
@@ -6960,8 +7764,7 @@ Common False Positives:
                                 status_text = "No threats found"
 
                             # Update the card
-                            for child in self.last_scan_card.findChildren(
-                                    QLabel):
+                            for child in self.last_scan_card.findChildren(QLabel):
                                 if child.objectName() == "cardValue":
                                     child.setText(formatted_display)
                                     child.setStyleSheet(
@@ -6969,12 +7772,12 @@ Common False Positives:
                                     )
                                 elif child.objectName() == "cardDescription":
                                     child.setText(
-                                        f"{scan_type_display} scan - {status_text}")
+                                        f"{scan_type_display} scan - {status_text}"
+                                    )
 
                             # Update Threats Found card
                             if hasattr(self, "threats_card"):
-                                for child in self.threats_card.findChildren(
-                                        QLabel):
+                                for child in self.threats_card.findChildren(QLabel):
                                     if child.objectName() == "cardValue":
                                         child.setText(str(threats_count))
                                         color = (
@@ -6983,7 +7786,8 @@ Common False Positives:
                                             else "#28a745"
                                         )
                                         child.setStyleSheet(
-                                            f"color: {color}; font-size: 20px; font-weight: bold;")
+                                            f"color: {color}; font-size: 20px; font-weight: bold;"
+                                        )
                                     elif child.objectName() == "cardDescription":
                                         child.setText(
                                             "Click to view quarantine"
@@ -6997,8 +7801,8 @@ Common False Positives:
                 print(f"Error updating dashboard cards: {e}")
 
     def scan_completed(self, result):
-        print(f"\n🏁 === SCAN_COMPLETED CALLED ===")
-        print(f"DEBUG: scan_completed() called")
+        print("\n🏁 === SCAN_COMPLETED CALLED ===")
+        print("DEBUG: scan_completed() called")
         print(f"DEBUG: Current scan state: {self._scan_state}")
         print(f"DEBUG: Manual stop flag: {self._scan_manually_stopped}")
         print(f"DEBUG: Current thread exists: {self.current_scan_thread is not None}")
@@ -7007,7 +7811,9 @@ Common False Positives:
 
         # If scan was manually stopped, ignore this signal to prevent crashes
         if self._scan_manually_stopped:
-            print("DEBUG: ❌ Ignoring scan_completed signal - scan was manually stopped")
+            print(
+                "DEBUG: ❌ Ignoring scan_completed signal - scan was manually stopped"
+            )
             return
 
         # Also ignore if the scan was cancelled
@@ -7045,7 +7851,9 @@ Common False Positives:
 
         # Reset quick scan button if it was started via Quick Scan button
         if hasattr(self, "_quick_scan_was_started") and self._quick_scan_was_started:
-            print("DEBUG: 🔄 Resetting Quick Scan button (was started via Quick Scan button)")
+            print(
+                "DEBUG: 🔄 Resetting Quick Scan button (was started via Quick Scan button)"
+            )
             self.reset_quick_scan_button()
         elif hasattr(self, "is_quick_scan_running") and self.is_quick_scan_running:
             print("DEBUG: 🔄 Resetting Quick Scan button (legacy check)")
@@ -7072,8 +7880,8 @@ Common False Positives:
 
         # Save the scan result to a report file
         try:
-            print(f"\n📊 === SCAN RESULT PROCESSING ===")
-            print(f"DEBUG: Processing scan result for reporting")
+            print("\n📊 === SCAN RESULT PROCESSING ===")
+            print("DEBUG: Processing scan result for reporting")
             print(f"DEBUG: Result type: {type(result)}")
 
             # Note: Report saving is now handled by the FileScanner itself to prevent duplicates
@@ -7096,7 +7904,9 @@ Common False Positives:
                 )
                 duration = result.get("duration", result.get("scan_time", 0))
                 threats_data = result.get("threats", [])
-                print(f"DEBUG: Extracted from dict - total_files: {total_files}, scanned: {scanned_files}, threats: {threats_found}, duration: {duration}")
+                print(
+                    f"DEBUG: Extracted from dict - total_files: {total_files}, scanned: {scanned_files}, threats: {threats_found}, duration: {duration}"
+                )
             else:
                 print("DEBUG: Result is object format")
                 # Assume it's already a proper result object
@@ -7105,13 +7915,17 @@ Common False Positives:
                 threats_found = getattr(result, "threats_found", 0)
                 duration = getattr(result, "duration", 0)
                 threats_data = getattr(result, "threats", [])
-                print(f"DEBUG: Extracted from object - total_files: {total_files}, scanned: {scanned_files}, threats: {threats_found}, duration: {duration}")
+                print(
+                    f"DEBUG: Extracted from object - total_files: {total_files}, scanned: {scanned_files}, threats: {threats_found}, duration: {duration}"
+                )
 
             print(f"DEBUG: Processing {len(threats_data)} threat entries")
             # Convert threat dictionaries to ThreatInfo objects if any
             threats = []
             for i, threat_data in enumerate(threats_data):
-                print(f"DEBUG: Processing threat {i+1}/{len(threats_data)}: {type(threat_data)}")
+                print(
+                    f"DEBUG: Processing threat {i + 1}/{len(threats_data)}: {type(threat_data)}"
+                )
                 if isinstance(threat_data, dict):
                     print(f"DEBUG: Threat dict keys: {list(threat_data.keys())}")
                     # Create ThreatInfo object from the dictionary
@@ -7140,29 +7954,36 @@ Common False Positives:
                 else:
                     # Already a ThreatInfo object
                     threat = threat_data
-                    print(f"DEBUG: Using existing ThreatInfo object")
+                    print("DEBUG: Using existing ThreatInfo object")
                 threats.append(threat)
-                print(f"DEBUG: Added threat: {threat.threat_name if hasattr(threat, 'threat_name') else 'unknown'}")
+                print(
+                    f"DEBUG: Added threat: {
+                        threat.threat_name
+                        if hasattr(threat, 'threat_name')
+                        else 'unknown'
+                    }"
+                )
 
             print(f"DEBUG: Converted {len(threats)} threats to ThreatInfo objects")
 
             # Create the ScanResult object with correct scan type
             # Determine scan type based on context
-            if hasattr(
-                    self,
-                    "is_quick_scan_running") and self.is_quick_scan_running:
+            if hasattr(self, "is_quick_scan_running") and self.is_quick_scan_running:
                 scan_type = ScanType.QUICK
                 print("DEBUG: Determined scan type: QUICK (from is_quick_scan_running)")
-            elif (isinstance(self.scan_path, str) and
-                  self.scan_path == os.path.expanduser("~")):
+            elif isinstance(
+                self.scan_path, str
+            ) and self.scan_path == os.path.expanduser("~"):
                 scan_type = ScanType.FULL
                 print("DEBUG: Determined scan type: FULL (from scan_path)")
             else:
                 scan_type = ScanType.CUSTOM
-                print(f"DEBUG: Determined scan type: CUSTOM (scan_path: {self.scan_path})")
+                print(
+                    f"DEBUG: Determined scan type: CUSTOM (scan_path: {self.scan_path})"
+                )
 
             print(f"DEBUG: Creating ScanResult object with scan_type: {scan_type}")
-            scan_result = ScanResult(
+            ScanResult(
                 scan_id=scan_id,
                 scan_type=scan_type,
                 start_time=datetime.now().isoformat(),
@@ -7179,20 +8000,27 @@ Common False Positives:
                 signature_version="1.0",
                 success=True,
             )
-            print(f"DEBUG: ScanResult created successfully: ID={scan_id}, type={scan_type}, files={scanned_files}/{total_files}, threats={threats_found}")
+            print(
+                f"DEBUG: ScanResult created successfully: ID={scan_id}, type={scan_type}, files={scanned_files}/{total_files}, threats={threats_found}"
+            )
 
             # Save the scan result
             # Note: Commented out to prevent duplicate reports - FileScanner handles this
             # self.report_manager.save_scan_result(scan_result)
-            print("DEBUG: Report saving skipped (handled by FileScanner to prevent duplicates)")
+            print(
+                "DEBUG: Report saving skipped (handled by FileScanner to prevent duplicates)"
+            )
 
             # Always refresh the reports list after a scan completes
             # This ensures reports show up regardless of which tab is currently active
             # Use a more reliable approach than QTimer
             print("DEBUG: Preparing to refresh reports after completion")
+
             def delayed_refresh():
                 try:
-                    print("DEBUG: About to call update_dashboard_cards() after scan completion")
+                    print(
+                        "DEBUG: About to call update_dashboard_cards() after scan completion"
+                    )
                     self.update_dashboard_cards()
                     print("DEBUG: About to refresh reports")
 
@@ -7200,15 +8028,20 @@ Common False Positives:
                     clamav_reports_dir = self.report_manager.daily_reports
                     if clamav_reports_dir.exists():
                         clamav_files = list(clamav_reports_dir.glob("scan_*.json"))
-                        print(f"DEBUG: Before refresh - Found {len(clamav_files)} ClamAV report files")
+                        print(
+                            f"DEBUG: Before refresh - Found {len(clamav_files)} ClamAV report files"
+                        )
                     else:
-                        print(f"DEBUG: Before refresh - ClamAV reports directory doesn't exist")
+                        print(
+                            "DEBUG: Before refresh - ClamAV reports directory doesn't exist"
+                        )
 
                     self.refresh_reports()
                     print("DEBUG: Reports refreshed after scan completion")
                 except Exception as e:
                     print(f"DEBUG: Error refreshing reports: {e}")
                     import traceback
+
                     traceback.print_exc()
 
             from PyQt6.QtCore import QTimer
@@ -7228,9 +8061,13 @@ Common False Positives:
             threats_found = getattr(result, "threats_found", 0)
 
         if threats_found > 0:
-            self.status_bar.showMessage(f"✅ Scan completed - {threats_found} threats found")
+            self.status_bar.showMessage(
+                f"✅ Scan completed - {threats_found} threats found"
+            )
         else:
-            self.status_bar.showMessage("✅ Scan completed successfully - No threats found")
+            self.status_bar.showMessage(
+                "✅ Scan completed successfully - No threats found"
+            )
 
         # Update dashboard cards with new scan information
         print("DEBUG: About to call update_dashboard_cards() after scan completion")
@@ -7242,12 +8079,13 @@ Common False Positives:
         except Exception as e:
             print(f"DEBUG: Error updating dashboard cards: {e}")
             import traceback
+
             traceback.print_exc()
 
     def _setup_enhanced_effects(self):
         """Setup enhanced Qt effects for all interactive widgets."""
         try:
-            from .theme_manager import setup_widget_effects, apply_button_effects
+            from .theme_manager import apply_button_effects, setup_widget_effects
 
             # Apply effects to all buttons in the main window
             buttons = self.findChildren(QPushButton)
@@ -7293,7 +8131,7 @@ Common False Positives:
         self.results_text.clear()
 
         # Initialize formatter for consistent styling
-        formatter = ModernScanResultsFormatter()
+        ModernScanResultsFormatter()
 
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
@@ -7308,7 +8146,7 @@ Common False Positives:
             "⏳ Initializing scan engine...",
             "🔧 Configuring security modules...",
             "🛡️  Loading threat definitions...",
-            ""
+            "",
         ]
 
         for line in header_lines:
@@ -7318,8 +8156,8 @@ Common False Positives:
         self._scan_start_time = datetime.now()
 
         # Reset file tracking for accurate statistics
-        if hasattr(self, '_scan_files_actually_processed'):
-            delattr(self, '_scan_files_actually_processed')
+        if hasattr(self, "_scan_files_actually_processed"):
+            delattr(self, "_scan_files_actually_processed")
 
     def format_target_display(self, scan_path):
         """Format the scan target for user-friendly display."""
@@ -7329,12 +8167,18 @@ Common False Positives:
                 # Show individual paths for small lists
                 formatted_paths = []
                 for path in scan_path:
-                    display_path = path.replace(str(Path.home()), "~") if str(Path.home()) in str(path) else str(path)
+                    display_path = (
+                        path.replace(str(Path.home()), "~")
+                        if str(Path.home()) in str(path)
+                        else str(path)
+                    )
                     formatted_paths.append(display_path)
                 return ", ".join(formatted_paths)
             else:
                 # Show count for large lists
-                home_dirs = sum(1 for path in scan_path if str(Path.home()) in str(path))
+                home_dirs = sum(
+                    1 for path in scan_path if str(Path.home()) in str(path)
+                )
                 system_dirs = len(scan_path) - home_dirs
 
                 parts = []
@@ -7358,73 +8202,111 @@ Common False Positives:
         friendly_options = []
 
         # Format scan depth
-        if 'depth' in scan_options:
-            depth = scan_options['depth']
+        if "depth" in scan_options:
+            depth = scan_options["depth"]
             try:
                 depth_int = int(depth)
             except (TypeError, ValueError):
                 depth_int = None
             if depth == 1:
-                friendly_options.append("&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;📏 <b>Depth:</b> Shallow (top-level files only)")
+                friendly_options.append(
+                    "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;📏 <b>Depth:</b> Shallow (top-level files only)"
+                )
             elif depth == 2:
-                friendly_options.append("&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;📏 <b>Depth:</b> Medium (2 folder levels)")
+                friendly_options.append(
+                    "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;📏 <b>Depth:</b> Medium (2 folder levels)"
+                )
             elif depth == 3:
-                friendly_options.append("&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;📏 <b>Depth:</b> Deep (3 folder levels)")
+                friendly_options.append(
+                    "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;📏 <b>Depth:</b> Deep (3 folder levels)"
+                )
             elif isinstance(depth_int, int) and depth_int >= 4:
-                friendly_options.append("&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;📏 <b>Depth:</b> Very Deep (all subfolders)")
+                friendly_options.append(
+                    "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;📏 <b>Depth:</b> Very Deep (all subfolders)"
+                )
             else:
-                friendly_options.append(f"&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;📏 <b>Depth:</b> {depth} levels")
+                friendly_options.append(
+                    f"&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;📏 <b>Depth:</b> {depth} levels"
+                )
 
         # Format file filter
-        if 'file_filter' in scan_options:
-            file_filter = scan_options['file_filter']
-            if file_filter == 'all':
-                friendly_options.append("&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;📄 <b>Files:</b> All file types")
-            elif file_filter == 'executables':
-                friendly_options.append("&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;📄 <b>Files:</b> Executable files only")
-            elif file_filter == 'documents':
-                friendly_options.append("&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;📄 <b>Files:</b> Document files only")
-            elif file_filter == 'archives':
-                friendly_options.append("&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;📄 <b>Files:</b> Archive files only")
+        if "file_filter" in scan_options:
+            file_filter = scan_options["file_filter"]
+            if file_filter == "all":
+                friendly_options.append(
+                    "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;📄 <b>Files:</b> All file types"
+                )
+            elif file_filter == "executables":
+                friendly_options.append(
+                    "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;📄 <b>Files:</b> Executable files only"
+                )
+            elif file_filter == "documents":
+                friendly_options.append(
+                    "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;📄 <b>Files:</b> Document files only"
+                )
+            elif file_filter == "archives":
+                friendly_options.append(
+                    "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;📄 <b>Files:</b> Archive files only"
+                )
             else:
-                friendly_options.append(f"&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;📄 <b>Files:</b> {file_filter}")
+                friendly_options.append(
+                    f"&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;📄 <b>Files:</b> {file_filter}"
+                )
 
         # Format memory limit
-        if 'memory_limit' in scan_options:
-            memory_mb = scan_options['memory_limit']
+        if "memory_limit" in scan_options:
+            memory_mb = scan_options["memory_limit"]
             try:
                 mem_int = int(memory_mb)
             except (TypeError, ValueError):
                 mem_int = None
             if mem_int is not None:
                 if mem_int < 512:
-                    friendly_options.append(f"&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;💾 <b>Memory:</b> Low usage ({mem_int}MB)")
+                    friendly_options.append(
+                        f"&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;💾 <b>Memory:</b> Low usage ({mem_int}MB)"
+                    )
                 elif mem_int < 1024:
-                    friendly_options.append(f"&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;💾 <b>Memory:</b> Medium usage ({mem_int}MB)")
+                    friendly_options.append(
+                        f"&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;💾 <b>Memory:</b> Medium usage ({mem_int}MB)"
+                    )
                 elif mem_int < 2048:
-                    friendly_options.append(f"&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;💾 <b>Memory:</b> High usage ({mem_int}MB)")
+                    friendly_options.append(
+                        f"&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;💾 <b>Memory:</b> High usage ({mem_int}MB)"
+                    )
                 else:
-                    friendly_options.append(f"&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;💾 <b>Memory:</b> Very high usage ({mem_int}MB)")
+                    friendly_options.append(
+                        f"&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;💾 <b>Memory:</b> Very high usage ({mem_int}MB)"
+                    )
 
         # Format exclusions
-        if 'exclusions' in scan_options:
-            exclusions = scan_options['exclusions']
+        if "exclusions" in scan_options:
+            exclusions = scan_options["exclusions"]
             if exclusions:
                 count = len(exclusions)
-                friendly_options.append(f"&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;🚫 <b>Exclusions:</b> {count} pattern{'s' if count != 1 else ''}")
+                friendly_options.append(
+                    f"&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;🚫 <b>Exclusions:</b> {count} pattern{'s' if count != 1 else ''}"
+                )
 
         # Handle any other custom options
         for key, value in scan_options.items():
-            if key not in ['depth', 'file_filter', 'memory_limit', 'exclusions']:
-                friendly_options.append(f"&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;⚙️ <b>{key.replace('_', ' ').title()}:</b> {value}")
+            if key not in ["depth", "file_filter", "memory_limit", "exclusions"]:
+                friendly_options.append(
+                    f"&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;⚙️ <b>{
+                        key.replace('_', ' ').title()
+                    }:</b> {value}"
+                )
 
-        return "<br>".join(friendly_options) if friendly_options else "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b>Default settings</b>"
+        return (
+            "<br>".join(friendly_options)
+            if friendly_options
+            else "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b>Default settings</b>"
+        )
 
     def display_scan_results(self, result):
         """Display comprehensive scan results with detailed information."""
         # Create a separator for multiple scans
         if self.results_text.toPlainText().strip():
-            self.results_text.append("\n" + "="*30 + "\n")
+            self.results_text.append("\n" + "=" * 30 + "\n")
 
         # Header with scan completion status
         if isinstance(result, dict) and result.get("status") == "error":
@@ -7433,7 +8315,9 @@ Common False Positives:
             return
         elif isinstance(result, dict) and result.get("status") == "cancelled":
             self.results_text.append("🛑 Scan Cancelled")
-            self.results_text.append(f"Reason: {result.get('message', 'User cancelled')}")
+            self.results_text.append(
+                f"Reason: {result.get('message', 'User cancelled')}"
+            )
             return
 
         # Handle both dictionary and dataclass result formats
@@ -7448,13 +8332,15 @@ Common False Positives:
             errors = result.get("errors", [])
 
             # Debug the scan statistics to identify issues
-            print(f"DEBUG: Scan result dictionary analysis:")
+            print("DEBUG: Scan result dictionary analysis:")
             print(f"  - scanned_files: {result.get('scanned_files', 'NOT_FOUND')}")
             print(f"  - files_scanned: {result.get('files_scanned', 'NOT_FOUND')}")
             print(f"  - total_files: {result.get('total_files', 'NOT_FOUND')}")
             print(f"  - duration: {result.get('duration', 'NOT_FOUND')}")
             print(f"  - scan_time: {result.get('scan_time', 'NOT_FOUND')}")
-            print(f"  - Final values: files_scanned={files_scanned}, total_files={total_files}, scan_time={scan_time}")
+            print(
+                f"  - Final values: files_scanned={files_scanned}, total_files={total_files}, scan_time={scan_time}"
+            )
         else:
             # Assume it's a dataclass-like object
             files_scanned = getattr(result, "scanned_files", 0)
@@ -7467,16 +8353,22 @@ Common False Positives:
             errors = getattr(result, "errors", [])
 
             # Debug the scan statistics for object format
-            print(f"DEBUG: Scan result object analysis:")
-            print(f"  - scanned_files attr: {getattr(result, 'scanned_files', 'NOT_FOUND')}")
-            print(f"  - total_files attr: {getattr(result, 'total_files', 'NOT_FOUND')}")
+            print("DEBUG: Scan result object analysis:")
+            print(
+                f"  - scanned_files attr: {getattr(result, 'scanned_files', 'NOT_FOUND')}"
+            )
+            print(
+                f"  - total_files attr: {getattr(result, 'total_files', 'NOT_FOUND')}"
+            )
             print(f"  - duration attr: {getattr(result, 'duration', 'NOT_FOUND')}")
-            print(f"  - Final values: files_scanned={files_scanned}, total_files={total_files}, scan_time={scan_time}")
+            print(
+                f"  - Final values: files_scanned={files_scanned}, total_files={total_files}, scan_time={scan_time}"
+            )
 
         # Handle scan statistics inconsistencies and edge cases
-        if files_scanned == 0 and hasattr(self, '_scan_files_actually_processed'):
+        if files_scanned == 0 and hasattr(self, "_scan_files_actually_processed"):
             # Use the count from our progress tracking if FileScanner result is incorrect
-            files_scanned = getattr(self, '_scan_files_actually_processed', 0)
+            files_scanned = getattr(self, "_scan_files_actually_processed", 0)
             print(f"DEBUG: Using progress tracking count: {files_scanned} files")
 
         # Ensure total_files is at least as large as files_scanned
@@ -7487,19 +8379,23 @@ Common False Positives:
         # Handle scan_time default to avoid "Unknown" in final display
         if scan_time == "Unknown" or scan_time == 0:
             # Calculate actual duration from our tracked start time
-            if hasattr(self, '_scan_start_time'):
-                actual_duration = (datetime.now() - self._scan_start_time).total_seconds()
+            if hasattr(self, "_scan_start_time"):
+                actual_duration = (
+                    datetime.now() - self._scan_start_time
+                ).total_seconds()
                 scan_time = actual_duration
                 self._last_scan_duration = actual_duration
-                print(f"DEBUG: Calculated actual scan duration: {scan_time:.1f} seconds")
+                print(
+                    f"DEBUG: Calculated actual scan duration: {scan_time:.1f} seconds"
+                )
             else:
-                scan_time = getattr(self, '_last_scan_duration', 0)
+                scan_time = getattr(self, "_last_scan_duration", 0)
                 print(f"DEBUG: Using fallback scan duration: {scan_time}")
 
         # Also fix the path consistency issue for better display
         if isinstance(scan_path, str) and scan_path == "Unknown":
             # Fallback to the actual scan path that was used
-            scan_path = getattr(self, 'scan_path', 'Unknown')
+            scan_path = getattr(self, "scan_path", "Unknown")
             print(f"DEBUG: Using fallback scan path: {scan_path}")
 
         # Format scan time nicely
@@ -7516,7 +8412,9 @@ Common False Positives:
         # Main result header
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         if threats_found > 0:
-            self.results_text.append(f"⚠️  SCAN COMPLETED - {threats_found} THREATS FOUND")
+            self.results_text.append(
+                f"⚠️  SCAN COMPLETED - {threats_found} THREATS FOUND"
+            )
         else:
             self.results_text.append("✅ SCAN COMPLETED - NO THREATS FOUND")
 
@@ -7528,7 +8426,7 @@ Common False Positives:
 
         # Format scan type
         if scan_type != "Unknown":
-            if hasattr(scan_type, 'value'):  # Handle enum
+            if hasattr(scan_type, "value"):  # Handle enum
                 type_display = scan_type.value.title()
             else:
                 type_display = str(scan_type).replace("_", " ").title()
@@ -7541,12 +8439,16 @@ Common False Positives:
                     path_display = self.format_target_display(scan_path[0])
                     self.results_text.append(f"   📁 Target: {path_display}")
                 else:
-                    self.results_text.append(f"   📁 Targets: {len(scan_path)} directories")
+                    self.results_text.append(
+                        f"   📁 Targets: {len(scan_path)} directories"
+                    )
                     for i, path in enumerate(scan_path[:5]):  # Show first 5
                         path_display = self.format_target_display(path)
-                        self.results_text.append(f"      {i+1}. {path_display}")
+                        self.results_text.append(f"      {i + 1}. {path_display}")
                     if len(scan_path) > 5:
-                        self.results_text.append(f"      ... and {len(scan_path)-5} more")
+                        self.results_text.append(
+                            f"      ... and {len(scan_path) - 5} more"
+                        )
             else:
                 path_display = self.format_target_display(scan_path)
                 self.results_text.append(f"   📁 Target: {path_display}")
@@ -7563,9 +8465,15 @@ Common False Positives:
             for i, threat in enumerate(threats, 1):
                 if isinstance(threat, dict):
                     file_path = threat.get("file_path", threat.get("file", "Unknown"))
-                    threat_name = threat.get("threat_name", threat.get("threat", "Unknown"))
-                    threat_type = threat.get("threat_type", threat.get("type", "Unknown"))
-                    action_taken = threat.get("action_taken", threat.get("action", "detected"))
+                    threat_name = threat.get(
+                        "threat_name", threat.get("threat", "Unknown")
+                    )
+                    threat_type = threat.get(
+                        "threat_type", threat.get("type", "Unknown")
+                    )
+                    action_taken = threat.get(
+                        "action_taken", threat.get("action", "detected")
+                    )
                 else:
                     file_path = getattr(threat, "file_path", "Unknown")
                     threat_name = getattr(threat, "threat_name", "Unknown")
@@ -7593,19 +8501,25 @@ Common False Positives:
             for i, error in enumerate(errors[:10], 1):  # Show first 10 errors
                 self.results_text.append(f"   {i}. {error}")
             if len(errors) > 10:
-                self.results_text.append(f"   ... and {len(errors)-10} more warnings")
+                self.results_text.append(f"   ... and {len(errors) - 10} more warnings")
             self.results_text.append("")
 
         # Summary and recommendations
         if threats_found > 0:
             self.results_text.append("🔧 RECOMMENDED ACTIONS:")
             self.results_text.append("   • Review detected threats carefully")
-            self.results_text.append("   • Consider quarantining or removing infected files")
-            self.results_text.append("   • Run additional scans to ensure complete cleanup")
+            self.results_text.append(
+                "   • Consider quarantining or removing infected files"
+            )
+            self.results_text.append(
+                "   • Run additional scans to ensure complete cleanup"
+            )
             self.results_text.append("   • Update your antivirus definitions regularly")
         else:
             self.results_text.append("💡 RECOMMENDATIONS:")
-            self.results_text.append("   • Schedule regular scans for ongoing protection")
+            self.results_text.append(
+                "   • Schedule regular scans for ongoing protection"
+            )
             self.results_text.append("   • Keep your antivirus definitions up to date")
             self.results_text.append("   • Enable real-time protection if available")
 
@@ -7632,31 +8546,32 @@ Common False Positives:
         # Comprehensive quick scan paths - ordered by infection risk priority
         quick_scan_paths = [
             # Primary infection vectors (highest priority)
-            os.path.expanduser("~/Downloads"),     # Downloads - most common infection vector
-            os.path.expanduser("~/Desktop"),       # Desktop - user accessible files
-
+            os.path.expanduser(
+                "~/Downloads"
+            ),  # Downloads - most common infection vector
+            os.path.expanduser("~/Desktop"),  # Desktop - user accessible files
             # User content directories (medium-high priority)
-            os.path.expanduser("~/Documents"),     # Documents - user documents and files
-            os.path.expanduser("~/Pictures"),      # Pictures - image files, potential threats
-            os.path.expanduser("~/Videos"),        # Videos - media files
-            os.path.expanduser("~/Music"),         # Music - audio files
-
+            os.path.expanduser("~/Documents"),  # Documents - user documents and files
+            os.path.expanduser(
+                "~/Pictures"
+            ),  # Pictures - image files, potential threats
+            os.path.expanduser("~/Videos"),  # Videos - media files
+            os.path.expanduser("~/Music"),  # Music - audio files
             # Web browser directories (medium priority)
-            os.path.expanduser("~/.mozilla"),      # Firefox profile
+            os.path.expanduser("~/.mozilla"),  # Firefox profile
             os.path.expanduser("~/.config/google-chrome"),  # Chrome config
-            os.path.expanduser("~/.config/chromium"),       # Chromium config
-
+            os.path.expanduser("~/.config/chromium"),  # Chromium config
             # System and temporary directories (medium priority)
-            tempfile.gettempdir(),                 # System temporary files
-
+            tempfile.gettempdir(),  # System temporary files
             # User application directories (lower priority but still important)
             os.path.expanduser("~/.local/share"),  # User application data
-            os.path.expanduser("~/.cache"),        # User cache files
+            os.path.expanduser("~/.cache"),  # User cache files
         ]
 
         # Filter out non-existent paths and None values
         valid_paths = [
-            path for path in quick_scan_paths
+            path
+            for path in quick_scan_paths
             if path and os.path.exists(path) and os.path.isdir(path)
         ]
 
@@ -7674,7 +8589,8 @@ Common False Positives:
 
         if not valid_paths:
             self.show_themed_message_box(
-                "warning", "Warning", "No valid directories found for quick scan.")
+                "warning", "Warning", "No valid directories found for quick scan."
+            )
             self.reset_quick_scan_button()
             return
 
@@ -7685,9 +8601,13 @@ Common False Positives:
         # Update UI to show comprehensive scan
         self.path_label.setText(
             f"Comprehensive Quick Scan\n"
-            f"Scanning {len(valid_paths)} directories:\n" +
-            "\n".join([f"• {os.path.basename(path)}" for path in valid_paths[:5]]) +
-            (f"\n• ...and {len(valid_paths) - 5} more" if len(valid_paths) > 5 else "")
+            f"Scanning {len(valid_paths)} directories:\n"
+            + "\n".join([f"• {os.path.basename(path)}" for path in valid_paths[:5]])
+            + (
+                f"\n• ...and {len(valid_paths) - 5} more"
+                if len(valid_paths) > 5
+                else ""
+            )
         )
 
         # Update button state
@@ -7718,7 +8638,9 @@ Common False Positives:
                 # Wait up to 3 seconds for graceful exit
                 self.current_scan_thread.wait(3000)
                 if self.current_scan_thread.isRunning():
-                    print("Warning: scan thread still running after cooperative cancellation window")
+                    print(
+                        "Warning: scan thread still running after cooperative cancellation window"
+                    )
 
                 self.scan_completed(
                     {"status": "cancelled", "message": "Quick scan cancelled by user"}
@@ -7743,7 +8665,10 @@ Common False Positives:
                 QMessageBox.warning(self, "Warning", "File scanner is not initialized.")
                 return
 
-            if not hasattr(self.scanner, 'clamav_wrapper') or not self.scanner.clamav_wrapper:
+            if (
+                not hasattr(self.scanner, "clamav_wrapper")
+                or not self.scanner.clamav_wrapper
+            ):
                 QMessageBox.warning(self, "Warning", "ClamAV wrapper is not available.")
                 return
 
@@ -7752,7 +8677,8 @@ Common False Positives:
 
             # Create and show progress dialog
             progress_dialog = self.show_themed_progress_dialog(
-                "Updating Virus Definitions", "Checking virus definitions...", 0, 100)
+                "Updating Virus Definitions", "Checking virus definitions...", 0, 100
+            )
             progress_dialog.setValue(0)
             progress_dialog.show()
 
@@ -7864,11 +8790,11 @@ Common False Positives:
                                     "Virus definitions updated successfully!",
                                 )
                                 self.status_bar.showMessage(
-                                    "Virus definitions updated successfully", 5000)
+                                    "Virus definitions updated successfully", 5000
+                                )
                                 # Refresh the definition status display with a
                                 # small delay
-                                QTimer.singleShot(
-                                    500, self.update_definition_status)
+                                QTimer.singleShot(500, self.update_definition_status)
                             else:
                                 self.show_themed_message_box(
                                     "warning",
@@ -7900,7 +8826,7 @@ Common False Positives:
             self.quarantine_list.clear()
 
             # Get quarantine directory from config
-            from utils.config import QUARANTINE_DIR
+            from app.utils.config import QUARANTINE_DIR
 
             # Verify the directory exists
             if not QUARANTINE_DIR.exists():
@@ -7940,13 +8866,13 @@ Common False Positives:
                 "warning",
                 "User Manual Error",
                 f"Could not open the user manual: {str(e)}\n\n"
-                "Please ensure the user manual file is available in the docs/user/ directory."
+                "Please ensure the user manual file is available in the docs/user/ directory.",
             )
 
     def toggle_theme(self):
         """Toggle between light and dark themes (activated by F12 shortcut)."""
         try:
-            from gui.theme_manager import toggle_theme, get_theme_manager
+            from app.gui.theme_manager import get_theme_manager, toggle_theme
 
             # Toggle the theme
             new_theme = toggle_theme()
@@ -7959,15 +8885,13 @@ Common False Positives:
             self.show_themed_message_box(
                 "information",
                 "Theme Changed",
-                f"Theme switched to {theme_name}.\n\nPress F12 to toggle between themes."
+                f"Theme switched to {theme_name}.\n\nPress F12 to toggle between themes.",
             )
 
         except Exception as e:
             print(f"Error toggling theme: {e}")
             self.show_themed_message_box(
-                "warning",
-                "Theme Switch Error",
-                f"Could not switch theme: {str(e)}"
+                "warning", "Theme Switch Error", f"Could not switch theme: {str(e)}"
             )
 
     def show_setup_wizard(self):
@@ -7983,7 +8907,7 @@ Common False Positives:
                     "information",
                     "Setup Complete",
                     "Security components have been configured. "
-                    "The application will now refresh to reflect the changes."
+                    "The application will now refresh to reflect the changes.",
                 )
                 # Optionally refresh the main window components
                 self.refresh_components()
@@ -7993,7 +8917,7 @@ Common False Positives:
             self.show_themed_message_box(
                 "warning",
                 "Setup Wizard Error",
-                f"Could not open the setup wizard: {str(e)}"
+                f"Could not open the setup wizard: {str(e)}",
             )
 
     def update_security_status(self):
@@ -8021,11 +8945,11 @@ Common False Positives:
             self.update_definition_status()
 
             # Refresh quarantine view if it exists
-            if hasattr(self, 'refresh_quarantine'):
+            if hasattr(self, "refresh_quarantine"):
                 self.refresh_quarantine()
 
             # Update status bar
-            if hasattr(self, 'status_bar'):
+            if hasattr(self, "status_bar"):
                 self.status_bar.showMessage("Security components refreshed", 3000)
 
         except Exception as e:
@@ -8052,7 +8976,11 @@ Common False Positives:
 
         try:
             # Check if scanner and clamav_wrapper are available
-            if not self.scanner or not hasattr(self.scanner, 'clamav_wrapper') or not self.scanner.clamav_wrapper:
+            if (
+                not self.scanner
+                or not hasattr(self.scanner, "clamav_wrapper")
+                or not self.scanner.clamav_wrapper
+            ):
                 self.last_update_label.setText("Status: ClamAV unavailable")
                 return
 
@@ -8060,9 +8988,7 @@ Common False Positives:
 
             # Handle error cases gracefully
             if freshness.get("error"):
-                print(
-                    f"Warning: Error checking definitions: {
-                        freshness['error']}")
+                print(f"Warning: Error checking definitions: {freshness['error']}")
                 self.last_update_label.setText("Status: Check failed")
                 return
 
@@ -8136,47 +9062,69 @@ Common False Positives:
 
         try:
             if not NON_INVASIVE_MONITORING_AVAILABLE:
-                print("⚠️ Non-invasive monitoring not available, falling back to basic update")
-                if hasattr(self, 'last_checked_label'):
-                    self.last_checked_label.setText(f"Last checked: {formatted_checked}")
-                if hasattr(self, 'last_update_label'):
-                    self.last_update_label.setText("Status: Non-invasive monitoring unavailable")
+                print(
+                    "⚠️ Non-invasive monitoring not available, falling back to basic update"
+                )
+                if hasattr(self, "last_checked_label"):
+                    self.last_checked_label.setText(
+                        f"Last checked: {formatted_checked}"
+                    )
+                if hasattr(self, "last_update_label"):
+                    self.last_update_label.setText(
+                        "Status: Non-invasive monitoring unavailable"
+                    )
                 return
 
             # Update last checked timestamp
-            if hasattr(self, 'last_checked_label'):
+            if hasattr(self, "last_checked_label"):
                 self.last_checked_label.setText(f"Last checked: {formatted_checked}")
 
             # Get comprehensive system status without sudo requirements
             system_status = get_system_status()
 
             # Update virus definitions display
-            if hasattr(self, 'last_update_label'):
+            if hasattr(self, "last_update_label"):
                 if system_status.virus_definitions_age >= 0:
                     if system_status.virus_definitions_age == 0:
                         self.last_update_label.setText("Status: Up to date")
                     elif system_status.virus_definitions_age <= 3:
-                        self.last_update_label.setText(f"Status: {system_status.virus_definitions_age} days old (good)")
+                        self.last_update_label.setText(
+                            f"Status: {system_status.virus_definitions_age} days old (good)"
+                        )
                     elif system_status.virus_definitions_age <= 7:
-                        self.last_update_label.setText(f"Status: {system_status.virus_definitions_age} days old (update recommended)")
+                        self.last_update_label.setText(
+                            f"Status: {
+                                system_status.virus_definitions_age
+                            } days old (update recommended)"
+                        )
                     else:
-                        self.last_update_label.setText(f"Status: {system_status.virus_definitions_age} days old (update needed)")
+                        self.last_update_label.setText(
+                            f"Status: {system_status.virus_definitions_age} days old (update needed)"
+                        )
                 else:
                     if system_status.clamav_available:
-                        self.last_update_label.setText("Status: Definitions age unknown")
+                        self.last_update_label.setText(
+                            "Status: Definitions age unknown"
+                        )
                     else:
                         self.last_update_label.setText("Status: ClamAV not available")
 
             # Update any other system status displays
-            print(f"✅ System status updated non-invasively:")
-            print(f"   - ClamAV: {'Available' if system_status.clamav_available else 'Not available'}")
-            print(f"   - Virus definitions: {system_status.virus_definitions_age} days old")
+            print("✅ System status updated non-invasively:")
+            print(
+                f"   - ClamAV: {'Available' if system_status.clamav_available else 'Not available'}"
+            )
+            print(
+                f"   - Virus definitions: {system_status.virus_definitions_age} days old"
+            )
             print(f"   - Firewall: {system_status.firewall_status}")
-            print(f"   - Active services: {len([s for s in system_status.system_services.values() if s == 'active'])}")
+            print(
+                f"   - Active services: {len([s for s in system_status.system_services.values() if s == 'active'])}"
+            )
 
         except Exception as e:
             print(f"⚠️ Error updating system status non-invasively: {e}")
-            if hasattr(self, 'last_update_label'):
+            if hasattr(self, "last_update_label"):
                 self.last_update_label.setText("Status: Error checking (non-invasive)")
 
     def tray_icon_activated(self, reason):
@@ -8289,7 +9237,9 @@ Common False Positives:
 
             # User confirmed exit - stop real-time protection
             try:
-                print("🛑 Stopping real-time protection due to force application exit...")
+                print(
+                    "🛑 Stopping real-time protection due to force application exit..."
+                )
                 self.stop_real_time_protection()
                 print("✅ Real-time protection stopped successfully")
             except Exception as e:
@@ -8325,7 +9275,7 @@ Common False Positives:
         minimize_to_tray = ui_settings.get("minimize_to_tray", True)
 
         # If we're force quitting, don't minimize to tray or show notification
-        if hasattr(self, '_force_quitting') and self._force_quitting:
+        if hasattr(self, "_force_quitting") and self._force_quitting:
             # Skip minimize to tray behavior during force quit
             self._cleanup_before_exit(event)
             return
@@ -8394,7 +9344,8 @@ Common False Positives:
 
         # Clean up authentication session
         try:
-            from core.elevated_runner import cleanup_auth_session
+            from app.core.elevated_runner import cleanup_auth_session
+
             cleanup_auth_session()
             print("🔐 Authentication session cleaned up")
         except Exception as e:
@@ -8420,7 +9371,7 @@ Common False Positives:
 
     def refresh_reports(self):
         """Load and display scan reports in the reports list."""
-        print(f"\n📋 === REFRESH REPORTS ===")
+        print("\n📋 === REFRESH REPORTS ===")
         print("DEBUG: refresh_reports() called")
 
         try:
@@ -8434,8 +9385,7 @@ Common False Positives:
 
             # Get RKHunter reports directory
             rkhunter_reports_dir = (
-                Path.home() /
-                ".local/share/search-and-destroy/rkhunter_reports"
+                Path.home() / ".local/share/search-and-destroy/rkhunter_reports"
             )
             print(f"DEBUG: 📁 RKHunter reports directory: {rkhunter_reports_dir}")
 
@@ -8454,16 +9404,23 @@ Common False Positives:
                         # Extract scan ID from filename
                         scan_id = report_file.stem.replace("scan_", "")
 
-                        all_reports.append({
-                            'type': 'clamav',
-                            'file_path': report_file,
-                            'scan_id': scan_id,
-                            'data': data,
-                            'start_time': data.get('start_time', 'Unknown'),
-                            'scan_type': data.get('scan_type', 'Unknown'),
-                            'threats': data.get('threats_found', 0)
-                        })
-                    except (OSError, IOError, PermissionError, json.JSONDecodeError) as e:
+                        all_reports.append(
+                            {
+                                "type": "clamav",
+                                "file_path": report_file,
+                                "scan_id": scan_id,
+                                "data": data,
+                                "start_time": data.get("start_time", "Unknown"),
+                                "scan_type": data.get("scan_type", "Unknown"),
+                                "threats": data.get("threats_found", 0),
+                            }
+                        )
+                    except (
+                        OSError,
+                        IOError,
+                        PermissionError,
+                        json.JSONDecodeError,
+                    ) as e:
                         print(f"Error loading ClamAV report {report_file}: {e}")
 
             # Load RKHunter reports
@@ -8479,17 +9436,28 @@ Common False Positives:
                         # Extract scan ID from filename
                         scan_id = report_file.stem
 
-                        all_reports.append({
-                            'type': 'rkhunter',
-                            'file_path': report_file,
-                            'scan_id': scan_id,
-                            'data': data,
-                            'start_time': data.get('start_time', 'Unknown'),
-                            'scan_type': data.get('scan_type', 'Unknown'),
-                            'warnings': data.get('statistics', {}).get('warnings_found', 0),
-                            'infections': data.get('statistics', {}).get('infections_found', 0)
-                        })
-                    except (OSError, IOError, PermissionError, json.JSONDecodeError) as e:
+                        all_reports.append(
+                            {
+                                "type": "rkhunter",
+                                "file_path": report_file,
+                                "scan_id": scan_id,
+                                "data": data,
+                                "start_time": data.get("start_time", "Unknown"),
+                                "scan_type": data.get("scan_type", "Unknown"),
+                                "warnings": data.get("statistics", {}).get(
+                                    "warnings_found", 0
+                                ),
+                                "infections": data.get("statistics", {}).get(
+                                    "infections_found", 0
+                                ),
+                            }
+                        )
+                    except (
+                        OSError,
+                        IOError,
+                        PermissionError,
+                        json.JSONDecodeError,
+                    ) as e:
                         print(f"Error loading RKHunter report {report_file}: {e}")
 
             # Check if no reports found
@@ -8547,24 +9515,26 @@ Common False Positives:
                 return
 
             # Sort reports by start time (newest first)
-            all_reports.sort(key=lambda x: x['start_time'], reverse=True)
+            all_reports.sort(key=lambda x: x["start_time"], reverse=True)
 
             # Add to list widget
             for report in all_reports:
                 try:
-                    data = report['data']
+                    data = report["data"]
 
                     # Create item text with type indicator
-                    if report['type'] == 'clamav':
+                    if report["type"] == "clamav":
                         type_icon = "🦠"  # Virus icon for ClamAV
-                        scan_type = data.get('scan_type', 'Unknown')
-                        threats = report['threats']
-                        status = f" - {threats} threats found" if threats else " - Clean"
+                        scan_type = data.get("scan_type", "Unknown")
+                        threats = report["threats"]
+                        status = (
+                            f" - {threats} threats found" if threats else " - Clean"
+                        )
                     else:  # rkhunter
                         type_icon = "🔍"  # Magnifying glass for RKHunter
                         scan_type = "RKHunter Rootkit Scan"
-                        warnings = report['warnings']
-                        infections = report['infections']
+                        warnings = report["warnings"]
+                        infections = report["infections"]
                         if infections > 0:
                             status = f" - {infections} infections, {warnings} warnings"
                         elif warnings > 0:
@@ -8573,14 +9543,17 @@ Common False Positives:
                             status = " - Clean"
 
                     # Format timestamp
-                    start_time = report['start_time']
-                    if start_time != 'Unknown':
+                    start_time = report["start_time"]
+                    if start_time != "Unknown":
                         try:
                             # Parse ISO format and format for display
                             from datetime import datetime
-                            dt = datetime.fromisoformat(start_time.replace('Z', '+00:00'))
+
+                            dt = datetime.fromisoformat(
+                                start_time.replace("Z", "+00:00")
+                            )
                             formatted_time = dt.strftime("%Y-%m-%d %H:%M:%S")
-                        except:
+                        except BaseException:
                             formatted_time = start_time
                     else:
                         formatted_time = start_time
@@ -8590,15 +9563,20 @@ Common False Positives:
                     # Create and add the item
                     item = QListWidgetItem(item_text)
                     # Store report info for loading
-                    item.setData(Qt.ItemDataRole.UserRole, {
-                        'type': report['type'],
-                        'scan_id': report['scan_id'],
-                        'file_path': str(report['file_path'])
-                    })
+                    item.setData(
+                        Qt.ItemDataRole.UserRole,
+                        {
+                            "type": report["type"],
+                            "scan_id": report["scan_id"],
+                            "file_path": str(report["file_path"]),
+                        },
+                    )
                     self.reports_list.addItem(item)
 
                 except Exception as e:
-                    print(f"Error processing report {report.get('file_path', 'unknown')}: {e}")
+                    print(
+                        f"Error processing report {report.get('file_path', 'unknown')}: {e}"
+                    )
 
             if get_theme_manager().get_current_theme() == "dark":
                 select_report_html = """
@@ -8710,17 +9688,17 @@ Common False Positives:
 
             # Handle new format with report type and file path
             if isinstance(report_info, dict):
-                report_type = report_info.get('type')
-                file_path_str = report_info.get('file_path')
+                report_type = report_info.get("type")
+                file_path_str = report_info.get("file_path")
                 if not file_path_str:
                     self._show_report_error("No file path available for this report.")
                     return
                 file_path = Path(file_path_str)
 
-                if report_type == 'clamav':
-                    self._load_clamav_report(file_path, report_info.get('scan_id'))
-                elif report_type == 'rkhunter':
-                    self._load_rkhunter_report(file_path, report_info.get('scan_id'))
+                if report_type == "clamav":
+                    self._load_clamav_report(file_path, report_info.get("scan_id"))
+                elif report_type == "rkhunter":
+                    self._load_rkhunter_report(file_path, report_info.get("scan_id"))
                 else:
                     self._show_report_error(f"Unknown report type: {report_type}")
                 return
@@ -8839,13 +9817,11 @@ Common False Positives:
             output = f"<h2>Scan Report: {scan_id}</h2>"
             output += f"<p><b>Date:</b> {scan_result.start_time}</p>"
             output += f"<p><b>Scan Type:</b> {scan_result.scan_type.value}</p>"
-            output += f"<p><b>Duration:</b> {
-                scan_result.duration:.2f} seconds</p>"
-            output += f"<p><b>Files Scanned:</b> {
-                scan_result.scanned_files}/{
-                scan_result.total_files}</p>"
-            output += f"<p><b>Threats Found:</b> {
-                scan_result.threats_found}</p>"
+            output += f"<p><b>Duration:</b> {scan_result.duration:.2f} seconds</p>"
+            output += f"<p><b>Files Scanned:</b> {scan_result.scanned_files}/{
+                scan_result.total_files
+            }</p>"
+            output += f"<p><b>Threats Found:</b> {scan_result.threats_found}</p>"
 
             # Add paths that were scanned
             output += "<h3>Scanned Paths:</h3><ul>"
@@ -9135,10 +10111,8 @@ Common False Positives:
                 QComboBox,
                 QDateEdit,
                 QDialog,
-                QFileDialog,
                 QHBoxLayout,
                 QLabel,
-                QMessageBox,
                 QPushButton,
                 QVBoxLayout,
             )
@@ -9227,8 +10201,7 @@ Common False Positives:
             start_date_label = QLabel("Start Date:")
             start_date = QDateEdit()
             start_date.setCalendarPopup(True)
-            start_date.setDate(
-                QDate.currentDate().addDays(-30))  # Last 30 days
+            start_date.setDate(QDate.currentDate().addDays(-30))  # Last 30 days
             start_date_layout.addWidget(start_date_label)
             start_date_layout.addWidget(start_date)
             date_layout.addLayout(start_date_layout)
@@ -9358,12 +10331,13 @@ Common False Positives:
 
                     # Delete RKHunter reports from their separate directory
                     rkhunter_reports_dir = (
-                        Path.home() /
-                        ".local/share/search-and-destroy/rkhunter_reports"
+                        Path.home() / ".local/share/search-and-destroy/rkhunter_reports"
                     )
                     if rkhunter_reports_dir.exists():
                         # Delete all RKHunter report files
-                        for report_file in rkhunter_reports_dir.glob("rkhunter_scan_*.json"):
+                        for report_file in rkhunter_reports_dir.glob(
+                            "rkhunter_scan_*.json"
+                        ):
                             report_file.unlink()
                             deleted_count += 1
 
@@ -9439,7 +10413,7 @@ Common False Positives:
             self.settings_show_notifications_cb.setChecked(show_notifications)
 
             # Set text orientation if combo exists
-            if hasattr(self, 'text_orientation_combo'):
+            if hasattr(self, "text_orientation_combo"):
                 self.text_orientation_combo.setCurrentText(text_orientation)
                 # Apply the loaded text orientation setting
                 self.apply_text_orientation_setting(text_orientation)
@@ -9447,18 +10421,19 @@ Common False Positives:
             # Load font size settings
             font_sizes = ui_settings.get("font_sizes", {})
             if font_sizes:
-                from gui.theme_manager import get_theme_manager
+                from app.gui.theme_manager import get_theme_manager
+
                 # Apply saved font sizes to theme manager
                 for element_type, size in font_sizes.items():
                     get_theme_manager().set_font_size(element_type, size)
 
                 # Update font size spinboxes if they exist
                 font_spinbox_map = {
-                    'base': 'base_font_spin',
-                    'scan_results': 'scan_results_font_spin',
-                    'reports': 'reports_font_spin',
-                    'headers': 'headers_font_spin',
-                    'small': 'small_font_spin'
+                    "base": "base_font_spin",
+                    "scan_results": "scan_results_font_spin",
+                    "reports": "reports_font_spin",
+                    "headers": "headers_font_spin",
+                    "small": "small_font_spin",
                 }
 
                 for element_type, spinbox_attr in font_spinbox_map.items():
@@ -9575,63 +10550,70 @@ Common False Positives:
 
             # Load scan time
             from PyQt6.QtCore import QTime
+
             time_obj = QTime.fromString(time_str, "HH:mm")
             if time_obj.isValid():
                 self.settings_scan_time_edit.setTime(time_obj)
 
             # Auto-update settings
             auto_update_settings = self.config.get("auto_update_settings", {})
-            if hasattr(self, 'settings_auto_check_updates_cb'):
+            if hasattr(self, "settings_auto_check_updates_cb"):
                 auto_check = auto_update_settings.get("auto_check_updates", True)
                 self.settings_auto_check_updates_cb.setChecked(auto_check)
 
-            if hasattr(self, 'settings_auto_download_updates_cb'):
+            if hasattr(self, "settings_auto_download_updates_cb"):
                 auto_download = auto_update_settings.get("auto_download_updates", False)
                 self.settings_auto_download_updates_cb.setChecked(auto_download)
 
-            if hasattr(self, 'settings_update_check_interval_spin'):
+            if hasattr(self, "settings_update_check_interval_spin"):
                 check_interval = auto_update_settings.get("update_check_interval", 24)
                 self.settings_update_check_interval_spin.setValue(check_interval)
 
             # Firewall settings
             firewall_settings = self.config.get("firewall_settings", {})
-            if hasattr(self, 'settings_firewall_auto_detect_cb'):
+            if hasattr(self, "settings_firewall_auto_detect_cb"):
                 auto_detect = firewall_settings.get("auto_detect", True)
                 self.settings_firewall_auto_detect_cb.setChecked(auto_detect)
 
-            if hasattr(self, 'settings_firewall_notify_changes_cb'):
+            if hasattr(self, "settings_firewall_notify_changes_cb"):
                 notify_changes = firewall_settings.get("notify_changes", True)
                 self.settings_firewall_notify_changes_cb.setChecked(notify_changes)
 
-            if hasattr(self, 'settings_preferred_firewall_combo'):
-                preferred_firewall = firewall_settings.get("preferred_firewall", "Auto-detect (Recommended)")
-                self.settings_preferred_firewall_combo.setCurrentText(preferred_firewall)
+            if hasattr(self, "settings_preferred_firewall_combo"):
+                preferred_firewall = firewall_settings.get(
+                    "preferred_firewall", "Auto-detect (Recommended)"
+                )
+                self.settings_preferred_firewall_combo.setCurrentText(
+                    preferred_firewall
+                )
 
-            if hasattr(self, 'settings_firewall_confirm_enable_cb'):
+            if hasattr(self, "settings_firewall_confirm_enable_cb"):
                 confirm_enable = firewall_settings.get("confirm_enable", True)
                 self.settings_firewall_confirm_enable_cb.setChecked(confirm_enable)
 
-            if hasattr(self, 'settings_firewall_confirm_disable_cb'):
+            if hasattr(self, "settings_firewall_confirm_disable_cb"):
                 confirm_disable = firewall_settings.get("confirm_disable", True)
                 self.settings_firewall_confirm_disable_cb.setChecked(confirm_disable)
 
-            if hasattr(self, 'settings_firewall_auth_timeout_spin'):
+            if hasattr(self, "settings_firewall_auth_timeout_spin"):
                 auth_timeout = firewall_settings.get("auth_timeout", 300)
                 self.settings_firewall_auth_timeout_spin.setValue(auth_timeout)
 
-            if hasattr(self, 'settings_firewall_enable_fallbacks_cb'):
+            if hasattr(self, "settings_firewall_enable_fallbacks_cb"):
                 enable_fallbacks = firewall_settings.get("enable_fallbacks", True)
                 self.settings_firewall_enable_fallbacks_cb.setChecked(enable_fallbacks)
 
-            if hasattr(self, 'settings_firewall_auto_load_modules_cb'):
+            if hasattr(self, "settings_firewall_auto_load_modules_cb"):
                 auto_load_modules = firewall_settings.get("auto_load_modules", True)
-                self.settings_firewall_auto_load_modules_cb.setChecked(auto_load_modules)
+                self.settings_firewall_auto_load_modules_cb.setChecked(
+                    auto_load_modules
+                )
 
-            if hasattr(self, 'settings_firewall_check_interval_spin'):
+            if hasattr(self, "settings_firewall_check_interval_spin"):
                 check_interval = firewall_settings.get("check_interval", 30)
                 self.settings_firewall_check_interval_spin.setValue(check_interval)
 
-            if hasattr(self, 'settings_firewall_debug_logging_cb'):
+            if hasattr(self, "settings_firewall_debug_logging_cb"):
                 debug_logging = firewall_settings.get("debug_logging", False)
                 self.settings_firewall_debug_logging_cb.setChecked(debug_logging)
 
@@ -9651,7 +10633,7 @@ Common False Positives:
         """Reset all settings to their default values."""
         try:
             # Import the default config
-            from utils.config import get_factory_defaults
+            from app.utils.config import get_factory_defaults
 
             # Get default configuration
             default_config = get_factory_defaults()
@@ -9668,11 +10650,13 @@ Common False Positives:
             self.show_themed_message_box(
                 "information",
                 "Settings",
-                "Settings have been reset to defaults and saved.")
+                "Settings have been reset to defaults and saved.",
+            )
 
         except Exception as e:
             print(f"❌ Error loading default settings: {e}")
             import traceback
+
             traceback.print_exc()
             self.show_themed_message_box(
                 "warning", "Error", f"Could not reset settings: {str(e)}"
@@ -9681,13 +10665,13 @@ Common False Positives:
     def auto_save_settings(self):
         """Schedule a debounced settings save to reduce disk writes."""
         # 300ms debounce window groups rapid UI changes
-        if hasattr(self, '_settings_save_timer'):
+        if hasattr(self, "_settings_save_timer"):
             self._settings_save_timer.start(300)
 
     def _auto_save_settings_commit(self):
         """Commit the pending settings to disk (invoked after debounce)."""
         try:
-            from utils.config import update_multiple_settings
+            from app.utils.config import update_multiple_settings
 
             # Collect all settings in one batch for efficient saving
             settings_updates = {
@@ -9702,7 +10686,11 @@ Common False Positives:
                         self.settings_activity_retention_combo.currentText()
                     ),
                     "theme": get_theme_manager().get_current_theme(),
-                    "text_orientation": self.text_orientation_combo.currentText() if hasattr(self, 'text_orientation_combo') else "Centered",
+                    "text_orientation": (
+                        self.text_orientation_combo.currentText()
+                        if hasattr(self, "text_orientation_combo")
+                        else "Centered"
+                    ),
                 },
                 "security_settings": {
                     "auto_update_definitions": self.settings_auto_update_cb.isChecked(),
@@ -9735,30 +10723,100 @@ Common False Positives:
                     "custom_directory": self.settings_custom_dir_edit.text(),
                 },
                 "auto_update_settings": {
-                    "auto_check_updates": getattr(self, 'settings_auto_check_updates_cb', None) and self.settings_auto_check_updates_cb.isChecked() if hasattr(self, 'settings_auto_check_updates_cb') else True,
-                    "auto_download_updates": getattr(self, 'settings_auto_download_updates_cb', None) and self.settings_auto_download_updates_cb.isChecked() if hasattr(self, 'settings_auto_download_updates_cb') else False,
-                    "update_check_interval": getattr(self, 'settings_update_check_interval_spin', None) and self.settings_update_check_interval_spin.value() if hasattr(self, 'settings_update_check_interval_spin') else 24,
+                    "auto_check_updates": (
+                        getattr(self, "settings_auto_check_updates_cb", None)
+                        and self.settings_auto_check_updates_cb.isChecked()
+                        if hasattr(self, "settings_auto_check_updates_cb")
+                        else True
+                    ),
+                    "auto_download_updates": (
+                        getattr(self, "settings_auto_download_updates_cb", None)
+                        and self.settings_auto_download_updates_cb.isChecked()
+                        if hasattr(self, "settings_auto_download_updates_cb")
+                        else False
+                    ),
+                    "update_check_interval": (
+                        getattr(self, "settings_update_check_interval_spin", None)
+                        and self.settings_update_check_interval_spin.value()
+                        if hasattr(self, "settings_update_check_interval_spin")
+                        else 24
+                    ),
                 },
                 "firewall_settings": {
-                    "auto_detect": getattr(self, 'settings_firewall_auto_detect_cb', None) and self.settings_firewall_auto_detect_cb.isChecked() if hasattr(self, 'settings_firewall_auto_detect_cb') else True,
-                    "notify_changes": getattr(self, 'settings_firewall_notify_changes_cb', None) and self.settings_firewall_notify_changes_cb.isChecked() if hasattr(self, 'settings_firewall_notify_changes_cb') else True,
-                    "preferred_firewall": getattr(self, 'settings_preferred_firewall_combo', None) and self.settings_preferred_firewall_combo.currentText() if hasattr(self, 'settings_preferred_firewall_combo') else "Auto-detect (Recommended)",
-                    "confirm_enable": getattr(self, 'settings_firewall_confirm_enable_cb', None) and self.settings_firewall_confirm_enable_cb.isChecked() if hasattr(self, 'settings_firewall_confirm_enable_cb') else True,
-                    "confirm_disable": getattr(self, 'settings_firewall_confirm_disable_cb', None) and self.settings_firewall_confirm_disable_cb.isChecked() if hasattr(self, 'settings_firewall_confirm_disable_cb') else True,
-                    "auth_timeout": getattr(self, 'settings_firewall_auth_timeout_spin', None) and self.settings_firewall_auth_timeout_spin.value() if hasattr(self, 'settings_firewall_auth_timeout_spin') else 300,
-                    "enable_fallbacks": getattr(self, 'settings_firewall_enable_fallbacks_cb', None) and self.settings_firewall_enable_fallbacks_cb.isChecked() if hasattr(self, 'settings_firewall_enable_fallbacks_cb') else True,
-                    "auto_load_modules": getattr(self, 'settings_firewall_auto_load_modules_cb', None) and self.settings_firewall_auto_load_modules_cb.isChecked() if hasattr(self, 'settings_firewall_auto_load_modules_cb') else True,
-                    "check_interval": getattr(self, 'settings_firewall_check_interval_spin', None) and self.settings_firewall_check_interval_spin.value() if hasattr(self, 'settings_firewall_check_interval_spin') else 30,
-                    "debug_logging": getattr(self, 'settings_firewall_debug_logging_cb', None) and self.settings_firewall_debug_logging_cb.isChecked() if hasattr(self, 'settings_firewall_debug_logging_cb') else False,
+                    "auto_detect": (
+                        getattr(self, "settings_firewall_auto_detect_cb", None)
+                        and self.settings_firewall_auto_detect_cb.isChecked()
+                        if hasattr(self, "settings_firewall_auto_detect_cb")
+                        else True
+                    ),
+                    "notify_changes": (
+                        getattr(self, "settings_firewall_notify_changes_cb", None)
+                        and self.settings_firewall_notify_changes_cb.isChecked()
+                        if hasattr(self, "settings_firewall_notify_changes_cb")
+                        else True
+                    ),
+                    "preferred_firewall": (
+                        getattr(self, "settings_preferred_firewall_combo", None)
+                        and self.settings_preferred_firewall_combo.currentText()
+                        if hasattr(self, "settings_preferred_firewall_combo")
+                        else "Auto-detect (Recommended)"
+                    ),
+                    "confirm_enable": (
+                        getattr(self, "settings_firewall_confirm_enable_cb", None)
+                        and self.settings_firewall_confirm_enable_cb.isChecked()
+                        if hasattr(self, "settings_firewall_confirm_enable_cb")
+                        else True
+                    ),
+                    "confirm_disable": (
+                        getattr(self, "settings_firewall_confirm_disable_cb", None)
+                        and self.settings_firewall_confirm_disable_cb.isChecked()
+                        if hasattr(self, "settings_firewall_confirm_disable_cb")
+                        else True
+                    ),
+                    "auth_timeout": (
+                        getattr(self, "settings_firewall_auth_timeout_spin", None)
+                        and self.settings_firewall_auth_timeout_spin.value()
+                        if hasattr(self, "settings_firewall_auth_timeout_spin")
+                        else 300
+                    ),
+                    "enable_fallbacks": (
+                        getattr(self, "settings_firewall_enable_fallbacks_cb", None)
+                        and self.settings_firewall_enable_fallbacks_cb.isChecked()
+                        if hasattr(self, "settings_firewall_enable_fallbacks_cb")
+                        else True
+                    ),
+                    "auto_load_modules": (
+                        getattr(self, "settings_firewall_auto_load_modules_cb", None)
+                        and self.settings_firewall_auto_load_modules_cb.isChecked()
+                        if hasattr(self, "settings_firewall_auto_load_modules_cb")
+                        else True
+                    ),
+                    "check_interval": (
+                        getattr(self, "settings_firewall_check_interval_spin", None)
+                        and self.settings_firewall_check_interval_spin.value()
+                        if hasattr(self, "settings_firewall_check_interval_spin")
+                        else 30
+                    ),
+                    "debug_logging": (
+                        getattr(self, "settings_firewall_debug_logging_cb", None)
+                        and self.settings_firewall_debug_logging_cb.isChecked()
+                        if hasattr(self, "settings_firewall_debug_logging_cb")
+                        else False
+                    ),
                 },
             }
 
             # Add RKHunter categories if available
             if hasattr(self, "settings_rkhunter_category_checkboxes"):
                 rkhunter_categories = {}
-                for category_id, checkbox in self.settings_rkhunter_category_checkboxes.items():
+                for (
+                    category_id,
+                    checkbox,
+                ) in self.settings_rkhunter_category_checkboxes.items():
                     rkhunter_categories[category_id] = checkbox.isChecked()
-                settings_updates["rkhunter_settings"]["categories"] = rkhunter_categories
+                settings_updates["rkhunter_settings"][
+                    "categories"
+                ] = rkhunter_categories
 
             # Save all settings in one operation for efficiency
             success = update_multiple_settings(self.config, settings_updates)
@@ -9771,20 +10829,23 @@ Common False Positives:
                         # Update real-time monitor settings if it's running
                         pass  # Could add real-time settings update here if needed
                     except Exception as monitor_error:
-                        print(f"⚠️ Could not update real-time monitor settings: {monitor_error}")
+                        print(
+                            f"⚠️ Could not update real-time monitor settings: {monitor_error}"
+                        )
             else:
-                print(f"❌ Failed to auto-save settings")
+                print("❌ Failed to auto-save settings")
 
         except Exception as e:
             print(f"❌ Error auto-saving settings: {e}")
             import traceback
+
             traceback.print_exc()
 
     def _run_startup_self_check(self):
         """Perform basic integrity & permission checks; log warnings only."""
         try:
             # Use cached system status first, then refresh in background
-            cached_status = self.system_cache.get_system_status('startup_check')
+            cached_status = self.system_cache.get_system_status("startup_check")
 
             if cached_status:
                 # Use cached data immediately, no blocking
@@ -9800,7 +10861,7 @@ Common False Positives:
     def _perform_lightweight_startup_check(self):
         """Perform lightweight startup check and cache results."""
         try:
-            from utils.config import CONFIG_DIR, DATA_DIR, QUARANTINE_DIR, LOG_DIR
+            from app.utils.config import CONFIG_DIR, DATA_DIR, LOG_DIR, QUARANTINE_DIR
 
             # Quick directory existence checks only
             dirs = {
@@ -9817,12 +10878,14 @@ Common False Positives:
 
             # Cache the results
             check_result = {
-                'timestamp': time.time(),
-                'issues': quick_issues,
-                'status': 'good' if not quick_issues else 'issues_found'
+                "timestamp": time.time(),
+                "issues": quick_issues,
+                "status": "good" if not quick_issues else "issues_found",
             }
 
-            self.system_cache.set_system_status('startup_check', check_result, ttl=300)  # 5 min cache
+            self.system_cache.set_system_status(
+                "startup_check", check_result, ttl=300
+            )  # 5 min cache
 
             if quick_issues:
                 print(f"⚠️ Startup issues found: {len(quick_issues)} items")
@@ -9838,7 +10901,7 @@ Common False Positives:
     def _detailed_startup_check_background(self):
         """Perform detailed startup check in background."""
         try:
-            from utils.config import CONFIG_DIR, DATA_DIR, QUARANTINE_DIR, LOG_DIR
+            from app.utils.config import CONFIG_DIR, DATA_DIR, LOG_DIR, QUARANTINE_DIR
 
             dirs = {
                 "config": CONFIG_DIR,
@@ -9862,31 +10925,47 @@ Common False Positives:
                         if name == "quarantine":
                             try:
                                 d.chmod(0o700)
-                                print(f"✅ Fixed quarantine directory permissions: {oct(mode)} → 0o700")
+                                print(
+                                    f"✅ Fixed quarantine directory permissions: {oct(mode)} → 0o700"
+                                )
                                 continue
                             except (OSError, PermissionError) as e:
-                                detailed_issues.append(f"Weak permissions on {name} ({oct(mode)}); expected 0o700 - Failed to fix: {e}")
+                                detailed_issues.append(
+                                    f"Weak permissions on {name} ({
+                                        oct(mode)
+                                    }); expected 0o700 - Failed to fix: {e}"
+                                )
                                 continue
-                        detailed_issues.append(f"Weak permissions on {name} ({oct(mode)}); expected 0o700")
+                        detailed_issues.append(
+                            f"Weak permissions on {name} ({oct(mode)}); expected 0o700"
+                        )
 
             # Config sanity checks
-            expected_sections = ["scan_settings", "advanced_settings", "security_settings"]
+            expected_sections = [
+                "scan_settings",
+                "advanced_settings",
+                "security_settings",
+            ]
             for sec in expected_sections:
                 if sec not in self.config:
                     detailed_issues.append(f"Config missing section: {sec}")
 
             # Update cache with detailed results
             detailed_result = {
-                'timestamp': time.time(),
-                'issues': detailed_issues,
-                'status': 'good' if not detailed_issues else 'issues_found',
-                'detailed': True
+                "timestamp": time.time(),
+                "issues": detailed_issues,
+                "status": "good" if not detailed_issues else "issues_found",
+                "detailed": True,
             }
 
-            self.system_cache.set_system_status('startup_check', detailed_result, ttl=1800)  # 30 min cache
+            self.system_cache.set_system_status(
+                "startup_check", detailed_result, ttl=1800
+            )  # 30 min cache
 
             if detailed_issues:
-                msg = "Background startup check warnings:\n" + "\n".join(detailed_issues)
+                msg = "Background startup check warnings:\n" + "\n".join(
+                    detailed_issues
+                )
                 print(msg)
             else:
                 print("✅ Detailed background startup check completed successfully")
@@ -9897,42 +10976,43 @@ Common False Positives:
     def block_settings_signals(self, block):
         """Block or unblock signals from settings controls to prevent auto-save during loading."""
         try:
-            # Block signals from controls that have early connections or need to be blocked during loading
+            # Block signals from controls that have early connections or need to be
+            # blocked during loading
             controls_to_block = [
-                'settings_activity_retention_combo',
-                'settings_enable_scheduled_cb',
-                'settings_scan_frequency_combo',
-                'settings_scan_time_edit',
-                'settings_scan_type_combo',
-                'settings_custom_dir_edit',
-                'scan_depth_combo',
-                'file_filter_combo',
-                'memory_limit_combo',
-                'exclusion_text',
-                'settings_max_threads_spin',
-                'settings_timeout_spin',
-                'settings_minimize_to_tray_cb',
-                'settings_show_notifications_cb',
-                'settings_auto_update_cb',
-                'settings_scan_archives_cb',
-                'settings_follow_symlinks_cb',
-                'settings_monitor_modifications_cb',
-                'settings_monitor_new_files_cb',
-                'settings_scan_modified_cb',
-                'settings_enable_rkhunter_cb',
-                'settings_run_rkhunter_with_full_scan_cb',
-                'settings_rkhunter_auto_update_cb',
+                "settings_activity_retention_combo",
+                "settings_enable_scheduled_cb",
+                "settings_scan_frequency_combo",
+                "settings_scan_time_edit",
+                "settings_scan_type_combo",
+                "settings_custom_dir_edit",
+                "scan_depth_combo",
+                "file_filter_combo",
+                "memory_limit_combo",
+                "exclusion_text",
+                "settings_max_threads_spin",
+                "settings_timeout_spin",
+                "settings_minimize_to_tray_cb",
+                "settings_show_notifications_cb",
+                "settings_auto_update_cb",
+                "settings_scan_archives_cb",
+                "settings_follow_symlinks_cb",
+                "settings_monitor_modifications_cb",
+                "settings_monitor_new_files_cb",
+                "settings_scan_modified_cb",
+                "settings_enable_rkhunter_cb",
+                "settings_run_rkhunter_with_full_scan_cb",
+                "settings_rkhunter_auto_update_cb",
                 # Firewall settings controls
-                'settings_firewall_auto_detect_cb',
-                'settings_firewall_notify_changes_cb',
-                'settings_preferred_firewall_combo',
-                'settings_firewall_confirm_enable_cb',
-                'settings_firewall_confirm_disable_cb',
-                'settings_firewall_auth_timeout_spin',
-                'settings_firewall_enable_fallbacks_cb',
-                'settings_firewall_auto_load_modules_cb',
-                'settings_firewall_check_interval_spin',
-                'settings_firewall_debug_logging_cb',
+                "settings_firewall_auto_detect_cb",
+                "settings_firewall_notify_changes_cb",
+                "settings_preferred_firewall_combo",
+                "settings_firewall_confirm_enable_cb",
+                "settings_firewall_confirm_disable_cb",
+                "settings_firewall_auth_timeout_spin",
+                "settings_firewall_enable_fallbacks_cb",
+                "settings_firewall_auto_load_modules_cb",
+                "settings_firewall_check_interval_spin",
+                "settings_firewall_debug_logging_cb",
             ]
 
             for control_name in controls_to_block:
@@ -9941,12 +11021,14 @@ Common False Positives:
                     control.blockSignals(block)
 
             # Also block RKHunter category checkboxes
-            if hasattr(self, 'settings_rkhunter_category_checkboxes'):
+            if hasattr(self, "settings_rkhunter_category_checkboxes"):
                 for checkbox in self.settings_rkhunter_category_checkboxes.values():
                     checkbox.blockSignals(block)
 
             action = "Blocked" if block else "Unblocked"
-            print(f"🔧 {action} signals for {len(controls_to_block)} controls during settings loading")
+            print(
+                f"🔧 {action} signals for {len(controls_to_block)} controls during settings loading"
+            )
 
         except Exception as e:
             print(f"❌ Error blocking/unblocking signals: {e}")
@@ -9961,9 +11043,11 @@ Common False Positives:
             self.settings_scan_type_combo.setEnabled(scheduled_enabled)
 
             # Update custom directory controls based on scan type and enabled state
-            if hasattr(self, 'settings_scan_type_combo'):
+            if hasattr(self, "settings_scan_type_combo"):
                 is_custom = self.settings_scan_type_combo.currentData() == "custom"
-                self.settings_custom_dir_edit.setEnabled(scheduled_enabled and is_custom)
+                self.settings_custom_dir_edit.setEnabled(
+                    scheduled_enabled and is_custom
+                )
                 self.settings_custom_dir_btn.setEnabled(scheduled_enabled and is_custom)
                 self.settings_custom_dir_widget.setVisible(is_custom)
 
@@ -9971,7 +11055,7 @@ Common False Positives:
             if scheduled_enabled:
                 self.update_next_scheduled_scan_display()
             else:
-                if hasattr(self, 'settings_next_scan_label'):
+                if hasattr(self, "settings_next_scan_label"):
                     self.settings_next_scan_label.setText("None scheduled")
 
             # Add other dependent UI state updates here as needed
@@ -9989,7 +11073,8 @@ Common False Positives:
             value: New value for the setting
         """
         try:
-            from utils.config import update_config_setting
+            from app.utils.config import update_config_setting
+
             success = update_config_setting(self.config, section, key, value)
 
             if not success:
@@ -10010,7 +11095,8 @@ Common False Positives:
             The setting value or default
         """
         try:
-            from utils.config import get_config_setting
+            from app.utils.config import get_config_setting
+
             return get_config_setting(self.config, section, key, default)
         except Exception as e:
             print(f"❌ Error getting setting {section}.{key}: {e}")
@@ -10019,22 +11105,23 @@ Common False Positives:
     # Example usage methods for specific setting updates
     def on_theme_changed(self, new_theme):
         """Called when theme is changed in UI."""
-        self.update_single_setting('ui_settings', 'theme', new_theme)
+        self.update_single_setting("ui_settings", "theme", new_theme)
 
     def on_max_threads_changed(self, value):
         """Called when max threads setting is changed."""
-        self.update_single_setting('scan_settings', 'max_threads', value)
+        self.update_single_setting("scan_settings", "max_threads", value)
 
     def on_real_time_protection_toggled(self, enabled):
         """Called when real-time protection is toggled."""
         updates = {
-            'realtime_protection': {
-                'monitor_modifications': enabled,
-                'monitor_new_files': enabled,
+            "realtime_protection": {
+                "monitor_modifications": enabled,
+                "monitor_new_files": enabled,
             }
         }
         try:
-            from utils.config import update_multiple_settings
+            from app.utils.config import update_multiple_settings
+
             update_multiple_settings(self.config, updates)
         except Exception as e:
             print(f"❌ Error updating real-time protection: {e}")
@@ -10051,7 +11138,7 @@ Common False Positives:
             self.settings_show_notifications_cb.toggled.connect(self.auto_save_settings)
 
             # Combo box controls - UI Settings
-            if hasattr(self, 'text_orientation_combo'):
+            if hasattr(self, "text_orientation_combo"):
                 # Note: We don't connect to auto_save_settings here because the combo already
                 # calls apply_text_orientation_setting which calls auto_save_settings
                 pass
@@ -10064,25 +11151,40 @@ Common False Positives:
             self.settings_follow_symlinks_cb.toggled.connect(self.auto_save_settings)
 
             # Checkbox controls - Real-time Protection
-            self.settings_monitor_modifications_cb.toggled.connect(self.auto_save_settings)
+            self.settings_monitor_modifications_cb.toggled.connect(
+                self.auto_save_settings
+            )
             self.settings_monitor_new_files_cb.toggled.connect(self.auto_save_settings)
             self.settings_scan_modified_cb.toggled.connect(self.auto_save_settings)
 
             # Checkbox controls - RKHunter Settings
             self.settings_enable_rkhunter_cb.toggled.connect(self.auto_save_settings)
-            self.settings_run_rkhunter_with_full_scan_cb.toggled.connect(self.auto_save_settings)
-            self.settings_run_rkhunter_with_quick_scan_cb.toggled.connect(self.auto_save_settings)
-            self.settings_run_rkhunter_with_custom_scan_cb.toggled.connect(self.auto_save_settings)
+            self.settings_run_rkhunter_with_full_scan_cb.toggled.connect(
+                self.auto_save_settings
+            )
+            self.settings_run_rkhunter_with_quick_scan_cb.toggled.connect(
+                self.auto_save_settings
+            )
+            self.settings_run_rkhunter_with_custom_scan_cb.toggled.connect(
+                self.auto_save_settings
+            )
 
             # RKHunter auto-update checkbox - ensure it's always connected
             try:
-                self.settings_rkhunter_auto_update_cb.toggled.connect(self.auto_save_settings)
+                self.settings_rkhunter_auto_update_cb.toggled.connect(
+                    self.auto_save_settings
+                )
                 print("✅ RKHunter auto-update checkbox connected to auto-save")
             except AttributeError:
-                print("⚠️ RKHunter auto-update checkbox not found during connection setup")
+                print(
+                    "⚠️ RKHunter auto-update checkbox not found during connection setup"
+                )
 
-            # NOTE: Scheduled Scans checkbox connected to on_scheduled_scan_toggled() which calls auto_save_settings()
-            self.settings_enable_scheduled_cb.toggled.connect(self.on_scheduled_scan_toggled)
+            # NOTE: Scheduled Scans checkbox connected to on_scheduled_scan_toggled()
+            # which calls auto_save_settings()
+            self.settings_enable_scheduled_cb.toggled.connect(
+                self.on_scheduled_scan_toggled
+            )
 
             # Combo box controls - Advanced Settings
             self.scan_depth_combo.currentTextChanged.connect(self.auto_save_settings)
@@ -10093,8 +11195,12 @@ Common False Positives:
             # Do NOT add duplicate connection to avoid double auto-save calls
 
             # Combo box controls - Scheduled Settings
-            self.settings_scan_frequency_combo.currentTextChanged.connect(self.auto_save_settings)
-            self.settings_scan_type_combo.currentTextChanged.connect(self.auto_save_settings)
+            self.settings_scan_frequency_combo.currentTextChanged.connect(
+                self.auto_save_settings
+            )
+            self.settings_scan_type_combo.currentTextChanged.connect(
+                self.auto_save_settings
+            )
 
             # Time edit control
             self.settings_scan_time_edit.timeChanged.connect(self.auto_save_settings)
@@ -10103,34 +11209,61 @@ Common False Positives:
             self.exclusion_text.textChanged.connect(self.auto_save_settings)
 
             # RKHunter category checkboxes - connect them to auto-save
-            if hasattr(self, 'settings_rkhunter_category_checkboxes'):
-                for category_id, checkbox in self.settings_rkhunter_category_checkboxes.items():
+            if hasattr(self, "settings_rkhunter_category_checkboxes"):
+                for (
+                    category_id,
+                    checkbox,
+                ) in self.settings_rkhunter_category_checkboxes.items():
                     checkbox.toggled.connect(self.auto_save_settings)
-                print(f"✅ Connected {len(self.settings_rkhunter_category_checkboxes)} RKHunter category checkboxes to auto-save")
+                print(
+                    f"✅ Connected {len(self.settings_rkhunter_category_checkboxes)} RKHunter category checkboxes to auto-save"
+                )
             else:
-                print("⚠️ RKHunter category checkboxes not found during connection setup")
+                print(
+                    "⚠️ RKHunter category checkboxes not found during connection setup"
+                )
 
             # Firewall settings auto-save connections
-            if hasattr(self, 'settings_firewall_auto_detect_cb'):
-                self.settings_firewall_auto_detect_cb.toggled.connect(self.auto_save_settings)
-            if hasattr(self, 'settings_firewall_notify_changes_cb'):
-                self.settings_firewall_notify_changes_cb.toggled.connect(self.auto_save_settings)
-            if hasattr(self, 'settings_preferred_firewall_combo'):
-                self.settings_preferred_firewall_combo.currentTextChanged.connect(self.auto_save_settings)
-            if hasattr(self, 'settings_firewall_confirm_enable_cb'):
-                self.settings_firewall_confirm_enable_cb.toggled.connect(self.auto_save_settings)
-            if hasattr(self, 'settings_firewall_confirm_disable_cb'):
-                self.settings_firewall_confirm_disable_cb.toggled.connect(self.auto_save_settings)
-            if hasattr(self, 'settings_firewall_auth_timeout_spin'):
-                self.settings_firewall_auth_timeout_spin.valueChanged.connect(self.auto_save_settings)
-            if hasattr(self, 'settings_firewall_enable_fallbacks_cb'):
-                self.settings_firewall_enable_fallbacks_cb.toggled.connect(self.auto_save_settings)
-            if hasattr(self, 'settings_firewall_auto_load_modules_cb'):
-                self.settings_firewall_auto_load_modules_cb.toggled.connect(self.auto_save_settings)
-            if hasattr(self, 'settings_firewall_check_interval_spin'):
-                self.settings_firewall_check_interval_spin.valueChanged.connect(self.auto_save_settings)
-            if hasattr(self, 'settings_firewall_debug_logging_cb'):
-                self.settings_firewall_debug_logging_cb.toggled.connect(self.auto_save_settings)
+            if hasattr(self, "settings_firewall_auto_detect_cb"):
+                self.settings_firewall_auto_detect_cb.toggled.connect(
+                    self.auto_save_settings
+                )
+            if hasattr(self, "settings_firewall_notify_changes_cb"):
+                self.settings_firewall_notify_changes_cb.toggled.connect(
+                    self.auto_save_settings
+                )
+            if hasattr(self, "settings_preferred_firewall_combo"):
+                self.settings_preferred_firewall_combo.currentTextChanged.connect(
+                    self.auto_save_settings
+                )
+            if hasattr(self, "settings_firewall_confirm_enable_cb"):
+                self.settings_firewall_confirm_enable_cb.toggled.connect(
+                    self.auto_save_settings
+                )
+            if hasattr(self, "settings_firewall_confirm_disable_cb"):
+                self.settings_firewall_confirm_disable_cb.toggled.connect(
+                    self.auto_save_settings
+                )
+            if hasattr(self, "settings_firewall_auth_timeout_spin"):
+                self.settings_firewall_auth_timeout_spin.valueChanged.connect(
+                    self.auto_save_settings
+                )
+            if hasattr(self, "settings_firewall_enable_fallbacks_cb"):
+                self.settings_firewall_enable_fallbacks_cb.toggled.connect(
+                    self.auto_save_settings
+                )
+            if hasattr(self, "settings_firewall_auto_load_modules_cb"):
+                self.settings_firewall_auto_load_modules_cb.toggled.connect(
+                    self.auto_save_settings
+                )
+            if hasattr(self, "settings_firewall_check_interval_spin"):
+                self.settings_firewall_check_interval_spin.valueChanged.connect(
+                    self.auto_save_settings
+                )
+            if hasattr(self, "settings_firewall_debug_logging_cb"):
+                self.settings_firewall_debug_logging_cb.toggled.connect(
+                    self.auto_save_settings
+                )
 
             print("✅ Auto-save connections set up successfully")
             print("📌 Enhanced RKHunter settings auto-save connections")
@@ -10147,24 +11280,38 @@ Common False Positives:
             # Convert to scan result format for display
             class MockScanResult:
                 def __init__(self, data):
-                    self.start_time = data.get('start_time', 'Unknown')
-                    self.scan_type = type('obj', (object,), {'value': data.get('scan_type', 'Unknown')})
-                    self.duration = data.get('duration', 0)
-                    self.scanned_files = data.get('scanned_files', 0)
-                    self.total_files = data.get('total_files', 0)
-                    self.threats_found = data.get('threats_found', 0)
-                    self.scanned_paths = data.get('scanned_paths', [])
+                    self.start_time = data.get("start_time", "Unknown")
+                    self.scan_type = type(
+                        "obj", (object,), {"value": data.get("scan_type", "Unknown")}
+                    )
+                    self.duration = data.get("duration", 0)
+                    self.scanned_files = data.get("scanned_files", 0)
+                    self.total_files = data.get("total_files", 0)
+                    self.threats_found = data.get("threats_found", 0)
+                    self.scanned_paths = data.get("scanned_paths", [])
                     self.threats = []
-                    self.errors = data.get('errors', [])
+                    self.errors = data.get("errors", [])
 
                     # Convert threats to objects if present
-                    for threat_data in data.get('threats', []):
-                        threat = type('obj', (object,), {
-                            'file_path': threat_data.get('file_path', ''),
-                            'threat_name': threat_data.get('threat_name', ''),
-                            'threat_level': type('obj', (object,), {'value': threat_data.get('threat_level', 'unknown')}),
-                            'action_taken': threat_data.get('action_taken', '')
-                        })
+                    for threat_data in data.get("threats", []):
+                        threat = type(
+                            "obj",
+                            (object,),
+                            {
+                                "file_path": threat_data.get("file_path", ""),
+                                "threat_name": threat_data.get("threat_name", ""),
+                                "threat_level": type(
+                                    "obj",
+                                    (object,),
+                                    {
+                                        "value": threat_data.get(
+                                            "threat_level", "unknown"
+                                        )
+                                    },
+                                ),
+                                "action_taken": threat_data.get("action_taken", ""),
+                            },
+                        )
                         self.threats.append(threat)
 
             scan_result = MockScanResult(data)
@@ -10203,14 +11350,24 @@ Common False Positives:
         # Add threats if any were found
         if scan_result.threats_found > 0:
             output += "<h3>Detected Threats:</h3><table border='1' cellpadding='3'>"
-            output += "<tr><th>File</th><th>Threat</th><th>Level</th><th>Action</th></tr>"
+            output += (
+                "<tr><th>File</th><th>Threat</th><th>Level</th><th>Action</th></tr>"
+            )
 
             for threat in scan_result.threats:
                 threat_level_class = (
-                    "error" if threat.threat_level.value == "error"
-                    else ("infected" if threat.threat_level.value == "infected"
-                          else ("suspicious" if threat.threat_level.value == "suspicious"
-                                else "clean")))
+                    "error"
+                    if threat.threat_level.value == "error"
+                    else (
+                        "infected"
+                        if threat.threat_level.value == "infected"
+                        else (
+                            "suspicious"
+                            if threat.threat_level.value == "suspicious"
+                            else "clean"
+                        )
+                    )
+                )
 
                 output += f"<tr class='{threat_level_class}'>"
                 output += f"<td>{threat.file_path}</td>"
@@ -10240,10 +11397,12 @@ Common False Positives:
         output += f"<p><b>Date:</b> {data.get('start_time', 'Unknown')}</p>"
         output += f"<p><b>Scan Type:</b> {data.get('scan_type', 'Unknown')}</p>"
         output += f"<p><b>Duration:</b> {data.get('duration', 0):.2f} seconds</p>"
-        output += f"<p><b>Success:</b> {'Yes' if data.get('success', False) else 'No'}</p>"
+        output += (
+            f"<p><b>Success:</b> {'Yes' if data.get('success', False) else 'No'}</p>"
+        )
 
         # Statistics
-        stats = data.get('statistics', {})
+        stats = data.get("statistics", {})
         output += "<h3>Scan Statistics:</h3>"
         output += f"<p><b>Total Tests:</b> {stats.get('total_tests', 0)}</p>"
         output += f"<p><b>Tests Run:</b> {stats.get('tests_run', 0)}</p>"
@@ -10252,29 +11411,33 @@ Common False Positives:
         output += f"<p><b>Skipped Tests:</b> {stats.get('skipped_tests', 0)}</p>"
 
         # Overall status
-        infections = stats.get('infections_found', 0)
-        warnings = stats.get('warnings_found', 0)
+        infections = stats.get("infections_found", 0)
+        warnings = stats.get("warnings_found", 0)
 
         if infections > 0:
             output += "<h3 style='color: #F14666;'>🚨 CRITICAL: Potential rootkits detected!</h3>"
         elif warnings > 0:
-            output += "<h3 style='color: #FFA500;'>⚠️ Warnings found - review carefully</h3>"
+            output += (
+                "<h3 style='color: #FFA500;'>⚠️ Warnings found - review carefully</h3>"
+            )
         else:
             output += "<h3 style='color: #4CAF50;'>✅ No rootkits detected</h3>"
 
         # Detailed findings
-        findings = data.get('findings', [])
+        findings = data.get("findings", [])
         if findings:
             output += "<h3>Detailed Findings:</h3>"
             output += "<table border='1' cellpadding='3'>"
             output += "<tr><th>Test</th><th>Result</th><th>Severity</th><th>Description</th></tr>"
 
             for finding in findings:
-                result_value = finding.get('result', 'unknown')
+                result_value = finding.get("result", "unknown")
                 status_icon = "🚨" if result_value == "infected" else "⚠️"
 
-                output += f"<tr>"
-                output += f"<td>{status_icon} {finding.get('test_name', 'Unknown')}</td>"
+                output += "<tr>"
+                output += (
+                    f"<td>{status_icon} {finding.get('test_name', 'Unknown')}</td>"
+                )
                 output += f"<td>{result_value.upper()}</td>"
                 output += f"<td>{finding.get('severity', 'unknown').upper()}</td>"
                 output += f"<td>{finding.get('description', 'No description')}</td>"
@@ -10283,7 +11446,7 @@ Common False Positives:
             output += "</table>"
 
         # Recommendations
-        recommendations = data.get('recommendations', [])
+        recommendations = data.get("recommendations", [])
         if recommendations:
             output += "<h3>Recommendations:</h3><ul>"
             for rec in recommendations:
@@ -10291,12 +11454,12 @@ Common False Positives:
             output += "</ul>"
 
         # Summary
-        summary = data.get('summary', '')
+        summary = data.get("summary", "")
         if summary:
             output += f"<h3>Summary:</h3><p>{summary}</p>"
 
         # Error message if any
-        error_message = data.get('error_message')
+        error_message = data.get("error_message")
         if error_message:
             output += f"<h3>Error:</h3><p style='color: #F14666;'>{error_message}</p>"
 
@@ -10519,50 +11682,60 @@ Common False Positives:
 
     def refresh_firewall_info(self):
         """Refresh firewall status information in settings page."""
-        if not hasattr(self, 'firewall_name_display'):
+        if not hasattr(self, "firewall_name_display"):
             return
 
         try:
-            from core.firewall_detector import get_firewall_status
+            from app.core.firewall_detector import get_firewall_status
+
             status = get_firewall_status()
 
             # Update firewall name display
-            fw_name = status.get('firewall_name', 'Unknown')
-            if status.get('firewall_type'):
+            fw_name = status.get("firewall_name", "Unknown")
+            if status.get("firewall_type"):
                 fw_name += f" ({status['firewall_type']})"
             self.firewall_name_display.setText(fw_name)
 
             # Update status display with color coding
-            is_active = status.get('is_active', False)
+            is_active = status.get("is_active", False)
             if is_active:
                 self.firewall_status_display.setText("Active")
-                self.firewall_status_display.setStyleSheet("font-weight: bold; color: #27ae60;")
+                self.firewall_status_display.setStyleSheet(
+                    "font-weight: bold; color: #27ae60;"
+                )
             else:
                 self.firewall_status_display.setText("Inactive")
-                self.firewall_status_display.setStyleSheet("font-weight: bold; color: #e74c3c;")
+                self.firewall_status_display.setStyleSheet(
+                    "font-weight: bold; color: #e74c3c;"
+                )
 
         except Exception as e:
             self.firewall_name_display.setText("Error")
             self.firewall_status_display.setText("Failed to detect")
-            self.firewall_status_display.setStyleSheet("font-weight: bold; color: #f39c12;")
+            self.firewall_status_display.setStyleSheet(
+                "font-weight: bold; color: #f39c12;"
+            )
             print(f"Error refreshing firewall info: {e}")
 
     def test_firewall_connection(self):
         """Test firewall connection and control capability."""
         try:
-            from core.firewall_detector import get_firewall_status, firewall_detector
+            from app.core.firewall_detector import (
+                firewall_detector,
+                get_firewall_status,
+            )
 
             # Test detection
             status = get_firewall_status()
-            fw_type = status.get('firewall_type')
-            fw_name = status.get('firewall_name')
+            fw_type = status.get("firewall_type")
+            fw_name = status.get("firewall_name")
 
             if not fw_type:
                 self.show_themed_message_box(
                     "warning",
                     "Firewall Test",
                     "No supported firewall detected on your system.\n\n"
-                    "Supported firewalls: UFW, firewalld, iptables, nftables"
+                    "Supported firewalls: UFW, firewalld, iptables, nftables",
                 )
                 return
 
@@ -10574,7 +11747,7 @@ Common False Positives:
                     "Firewall Test",
                     f"Firewall detected: {fw_name} ({fw_type})\n\n"
                     "❌ Administrative privileges not available\n"
-                    "No GUI authentication helpers (ksshaskpass/zenity/kdialog) or sudo found on system"
+                    "No GUI authentication helpers (ksshaskpass/zenity/kdialog) or sudo found on system",
                 )
                 return
 
@@ -10587,14 +11760,12 @@ Common False Positives:
                 f"Detected Firewall: {fw_name} ({fw_type})\n"
                 f"Administrative Method: {admin_method}\n"
                 f"Status: {'Active' if status.get('is_active') else 'Inactive'}\n\n"
-                "Your firewall can be controlled from this application."
+                "Your firewall can be controlled from this application.",
             )
 
         except Exception as e:
             self.show_themed_message_box(
-                "critical",
-                "Firewall Test",
-                f"❌ Firewall test failed:\n{str(e)}"
+                "critical", "Firewall Test", f"❌ Firewall test failed:\n{str(e)}"
             )
 
     def reset_firewall_settings(self):
@@ -10604,30 +11775,33 @@ Common False Positives:
             "Reset Firewall Settings",
             "This will reset all firewall settings to their default values.\n\n"
             "Continue?",
-            buttons=self.QMessageBox.StandardButton.Yes | self.QMessageBox.StandardButton.No
+            buttons=self.QMessageBox.StandardButton.Yes
+            | self.QMessageBox.StandardButton.No,
         )
 
         if reply == self.QMessageBox.StandardButton.Yes:
             # Reset all firewall-related settings to defaults
-            if hasattr(self, 'settings_firewall_auto_detect_cb'):
+            if hasattr(self, "settings_firewall_auto_detect_cb"):
                 self.settings_firewall_auto_detect_cb.setChecked(True)
-            if hasattr(self, 'settings_firewall_notify_changes_cb'):
+            if hasattr(self, "settings_firewall_notify_changes_cb"):
                 self.settings_firewall_notify_changes_cb.setChecked(True)
-            if hasattr(self, 'settings_preferred_firewall_combo'):
-                self.settings_preferred_firewall_combo.setCurrentText("Auto-detect (Recommended)")
-            if hasattr(self, 'settings_firewall_confirm_enable_cb'):
+            if hasattr(self, "settings_preferred_firewall_combo"):
+                self.settings_preferred_firewall_combo.setCurrentText(
+                    "Auto-detect (Recommended)"
+                )
+            if hasattr(self, "settings_firewall_confirm_enable_cb"):
                 self.settings_firewall_confirm_enable_cb.setChecked(True)
-            if hasattr(self, 'settings_firewall_confirm_disable_cb'):
+            if hasattr(self, "settings_firewall_confirm_disable_cb"):
                 self.settings_firewall_confirm_disable_cb.setChecked(True)
-            if hasattr(self, 'settings_firewall_auth_timeout_spin'):
+            if hasattr(self, "settings_firewall_auth_timeout_spin"):
                 self.settings_firewall_auth_timeout_spin.setValue(300)
-            if hasattr(self, 'settings_firewall_enable_fallbacks_cb'):
+            if hasattr(self, "settings_firewall_enable_fallbacks_cb"):
                 self.settings_firewall_enable_fallbacks_cb.setChecked(True)
-            if hasattr(self, 'settings_firewall_auto_load_modules_cb'):
+            if hasattr(self, "settings_firewall_auto_load_modules_cb"):
                 self.settings_firewall_auto_load_modules_cb.setChecked(True)
-            if hasattr(self, 'settings_firewall_check_interval_spin'):
+            if hasattr(self, "settings_firewall_check_interval_spin"):
                 self.settings_firewall_check_interval_spin.setValue(30)
-            if hasattr(self, 'settings_firewall_debug_logging_cb'):
+            if hasattr(self, "settings_firewall_debug_logging_cb"):
                 self.settings_firewall_debug_logging_cb.setChecked(False)
 
             # Save the default settings
@@ -10636,5 +11810,5 @@ Common False Positives:
             self.show_themed_message_box(
                 "information",
                 "Settings Reset",
-                "Firewall settings have been reset to default values."
+                "Firewall settings have been reset to default values.",
             )

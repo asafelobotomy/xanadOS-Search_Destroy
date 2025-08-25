@@ -5,6 +5,7 @@ This document explains how the xanadOS Search & Destroy application handles CSS 
 ## Problem: Unsupported CSS Properties
 
 Qt's stylesheet system doesn't support modern CSS properties like:
+
 - `transition` - CSS animations
 - `transform` - CSS transforms (translateY, scale, rotate, etc.)
 - `box-shadow` - Drop shadows
@@ -19,6 +20,7 @@ The `ThemeManager` now includes a CSS preprocessor and Qt-native effects system:
 ### 1. CSS Preprocessing
 
 The `_process_qt_stylesheet()` method automatically:
+
 - Removes unsupported CSS properties to eliminate warnings
 - Cleans up whitespace and formatting
 - Provides fallbacks where possible
@@ -27,8 +29,9 @@ The `_process_qt_stylesheet()` method automatically:
 
 #### Button Hover/Press Effects (replaces CSS transforms)
 
-**Original CSS:**
-```css
+### Original CSS
+
+```CSS
 QPushButton:hover {
     transform: translateY(-1px);
     transition: all 0.12s ease-out;
@@ -36,100 +39,122 @@ QPushButton:hover {
 QPushButton:pressed {
     transform: translateY(1px);
 }
-```
 
-**Qt Alternative:**
-```python
+```text
+
+### Qt Alternative
+
+```Python
 from app.gui.theme_manager import apply_button_effects
 
 button = QPushButton("My Button")
 apply_button_effects(button)  # Adds smooth animations
-```
+
+```text
 
 This creates smooth geometry animations using `QPropertyAnimation`.
 
 #### Drop Shadows (replaces CSS box-shadow)
 
-**Original CSS:**
-```css
+### Original CSS 2
+
+```CSS
 QDialog {
     box-shadow: 0 0 0 2px #rgba(255,255,255,0.3);
 }
-```
 
-**Qt Alternative:**
-```python
+```text
+
+### Qt Alternative 2
+
+```Python
 from app.gui.theme_manager import apply_shadow_effect
 
 dialog = QDialog()
 apply_shadow_effect(dialog)  # Adds QGraphicsDropShadowEffect
-```
+
+```text
 
 #### Auto-Setup for Widgets
 
-**Automatic Effect Application:**
-```python
+### Automatic Effect Application
+
+```Python
 from app.gui.theme_manager import setup_widget_effects
 
-# Automatically applies appropriate effects based on widget type
+## Automatically applies appropriate effects based on widget type
+
 setup_widget_effects(my_widget)
-```
+
+```text
 
 ## Usage Examples
 
 ### 1. Enhanced Buttons
 
-```python
+```Python
 from PyQt6.QtWidgets import QPushButton
 from app.gui.theme_manager import apply_button_effects
 
 button = QPushButton("Click Me")
 apply_button_effects(button)
 
-# Button now has:
-# - Smooth hover animations (moves up 1px)
-# - Press feedback (moves down 1px)
-# - Easing curves for natural motion
-```
+## Button now has
+
+## - Smooth hover animations (moves up 1px)
+
+## - Press feedback (moves down 1px)
+
+## - Easing curves for natural motion
+
+```text
 
 ### 2. Dialogs with Shadows
 
-```python
+```Python
 from PyQt6.QtWidgets import QDialog
 from app.gui.theme_manager import apply_shadow_effect
 
 dialog = QDialog()
 apply_shadow_effect(dialog)
 
-# Dialog now has:
-# - Subtle drop shadow
-# - Theme-aware shadow color
-# - Proper alpha blending
-```
+## Dialog now has
+
+## - Subtle drop shadow
+
+## - Theme-aware shadow color
+
+## - Proper alpha blending
+
+```text
 
 ### 3. Auto-Setup During Widget Creation
 
-```python
+```Python
 from app.gui.theme_manager import setup_widget_effects
 
 class MyCustomWidget(QWidget):
-    def __init__(self):
-        super().__init__()
+    def **init**(self):
+        super().**init**()
         self.setup_ui()
 
-        # Automatically apply effects based on widget types
+## Automatically apply effects based on widget types
+
         setup_widget_effects(self)
 
-        # Or apply to specific child widgets
+## Or apply to specific child widgets
+
         for button in self.findChildren(QPushButton):
             setup_widget_effects(button)
-```
+
+```text
 
 ## Technical Details
 
 ### Animation System
 
 The button effects use Qt's `QPropertyAnimation` with:
+
 - **Duration**: 150ms (matches original CSS timing)
 - **Easing**: `QEasingCurve.Type.OutCubic` (smooth deceleration)
 - **Property**: `geometry` (for position changes)
@@ -137,6 +162,7 @@ The button effects use Qt's `QPropertyAnimation` with:
 ### Shadow System
 
 Drop shadows use `QGraphicsDropShadowEffect` with:
+
 - **Blur Radius**: 8px
 - **Offset**: (2, 2) pixels
 - **Color**: Theme-aware shadow color with transparency
@@ -145,6 +171,7 @@ Drop shadows use `QGraphicsDropShadowEffect` with:
 ### CSS Preprocessing
 
 The preprocessor uses regex patterns to:
+
 1. Remove unsupported properties
 2. Clean up formatting
 3. Preserve all supported Qt stylesheet features
@@ -160,13 +187,14 @@ No changes needed! The CSS preprocessing happens automatically when themes are a
 
 Add effect setup in widget constructors:
 
-```python
+```Python
 class MyWidget(QWidget):
-    def __init__(self):
-        super().__init__()
+    def **init**(self):
+        super().**init**()
         self.setup_ui()
         setup_widget_effects(self)  # Add this line
-```
+
+```text
 
 ### Performance Considerations
 
@@ -179,8 +207,9 @@ class MyWidget(QWidget):
 Run the effects demo to see the system in action:
 
 ```bash
-python dev/qt_effects_demo.py
-```
+Python dev/qt_effects_demo.py
+
+```text
 
 ## Benefits
 
@@ -201,7 +230,7 @@ python dev/qt_effects_demo.py
 
 ### Theme Manager Methods
 
-- `_process_qt_stylesheet(css)` - Preprocess CSS to remove unsupported properties
+- `_process_qt_stylesheet(CSS)` - Preprocess CSS to remove unsupported properties
 - `apply_qt_effects(widget, effect_type)` - Apply specific effect types
 - `_setup_button_effects(button)` - Internal button animation setup
 - `_setup_shadow_effect(widget)` - Internal shadow effect setup

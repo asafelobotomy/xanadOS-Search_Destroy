@@ -12,10 +12,10 @@ applyTo: "**/te- Implement chaos engineering practices for distributed systems t
 ## Preferred Testing Frameworks (per language)
 
 - **Python**: Use `pytest` for all unit and integration tests.
-- **JavaScript/TypeScript**: Use `vitest` for new projects, `jest` for existing projects.
+- **JavaScript/TypeScript**: Use `vitest`for new projects,`jest` for existing projects.
 - **Java**: Use `JUnit 5` for unit and integration tests.
 - **Go**: Use Go's built-in testing package with table-driven tests.
-- **.NET**: Use `xUnit` or `NUnit` as per repo standard.
+- **.NET**: Use `xUnit`or`NUnit` as per repo standard.
 - **Ruby**: Use `RSpec`.
 - **Rust**: Use Rust's built-in test framework.
 
@@ -39,12 +39,12 @@ applyTo: "**/te- Implement chaos engineering practices for distributed systems t
 - Use mutation testing to verify test coverage quality, not just line coverage
 - Implement chaos engineering practices for distributed systems testing
 
-## Preferred Testing Frameworks (per language)
+## Preferred Testing Frameworks (per language) 2
 
 - **Python**: Use `pytest` for all unit and integration tests.
-- **JavaScript/TypeScript**: Use `vitest` for new projects, `jest` for existing projects.
+- **JavaScript/TypeScript**: Use `vitest`for new projects,`jest` for existing projects.
 - **Java**: Use `JUnit 5` for unit and integration tests.
 - **Go**: Use Go’s built-in testing package with table-driven tests.
-- **.NET**: Use `xUnit` or `NUnit` as per repo standard.
+- **.NET**: Use `xUnit`or`NUnit` as per repo standard.
 - **Ruby**: Use `RSpec`.
 - **Rust**: Use Rust’s built-in test framework.

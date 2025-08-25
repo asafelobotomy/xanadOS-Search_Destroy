@@ -1,5 +1,6 @@
 ---
 applyTo: "**/*.{js,ts,py,rb,go,java,php,cs,rs,kt,swift}"
+
 ---
 
 # Security Guidelines for All Code Files
@@ -7,10 +8,15 @@ applyTo: "**/*.{js,ts,py,rb,go,java,php,cs,rs,kt,swift}"
 ## Copilot usage quick cues
 
 - When to Ask: threat modeling questions, quick risk checks, or small policy clarifications.
+
   Keep prompts short, request checklists or concrete diffs.
+
 - When to Edit: you’re fixing a specific file. Paste only the minimal snippet and say
+
   exactly what to change (sanitization, auth/ACL, secrets removal).
+
 - When to Agent: multi-file/security-hardening tasks. Allow running the existing tools
+
   and require a validation summary (commands run + PASS/FAIL).
 
 ### Model routing
@@ -34,14 +40,12 @@ applyTo: "**/*.{js,ts,py,rb,go,java,php,cs,rs,kt,swift}"
 - **Sanitize output**: Escape data before rendering in web contexts
 - **Validate file uploads**: Check file types, sizes, and scan for malware
 
-
 ### Authentication & Authorization
 
 - **Multi-factor authentication**: Implement MFA for sensitive operations
 - **Role-based access control**: Use principle of least privilege
 - **Session management**: Secure session handling with proper timeouts
 - **JWT security**: Use secure algorithms and proper token validation
-
 
 ### Data Protection
 
@@ -50,7 +54,6 @@ applyTo: "**/*.{js,ts,py,rb,go,java,php,cs,rs,kt,swift}"
 - **Key management**: Use proper key rotation and secure storage
 - **PII handling**: Follow GDPR/CCPA compliance requirements
 
-
 ### Code Security Practices
 
 - **Dependency scanning**: Regular security audits of third-party libraries
@@ -58,21 +61,30 @@ applyTo: "**/*.{js,ts,py,rb,go,java,php,cs,rs,kt,swift}"
 - **Secret management**: Never commit credentials or API keys
 - **Error handling**: Avoid exposing sensitive information in error messages
 
-
 ### Security Testing Requirements
 
 - **Automated security scanning**: Use `./scripts/tools/security/security-scan.sh` for
+
   comprehensive analysis
+
 - **Dependency vulnerability monitoring**: Use
+
   `./scripts/tools/dependencies/dependency-manager.sh --security-only`
+
 - **Container security scanning**: Use
-  `./scripts/tools/containers/docker-manager.sh --security-scan`
+
+  `./scripts/tools/containers/Docker-manager.sh --security-scan`
+
 - **Pre-commit security gates**: Use `./scripts/tools/hooks/setup-pre-commit.sh` for
+
   automated security checks
+
 - **Penetration testing**: Required for production deployments
 - **Security code review**: Mandatory for security-critical changes
 - **Vulnerability assessment**: Regular automated security scans with SAST, dependency
+
   scanning, and IaC analysis
+
 - **OWASP compliance**: Follow OWASP Top 10 guidelines
 
 ### Automated Security Tools Integration

@@ -2,6 +2,7 @@
 applyTo: "**/mobile/**/*.{swift,kt,java,dart,m,mm,tsx,jsx}"
 priority: 90
 category: "domain-specific"
+
 ---
 
 # Mobile Development-specific Copilot Instructions

@@ -6,6 +6,7 @@ priority: 95
 category: 'Deep Reasoning'
 reasoning: 'Mathematical'
 specialized_for: 'Complex algorithms, mathematical computing, and sophisticated problem analysis'
+
 ---
 
 # o1-Preview Deep Reasoning Specialist
@@ -40,49 +41,55 @@ optimization problems, and complex system analysis.
 
 **Response Structure**:
 
-```python
+```Python
 
-# o1-Preview Enhanced Graph Traversal Optimization
+## o1-Preview Enhanced Graph Traversal Optimization
 
 from collections import deque
 from typing import Set, Dict, List
 import heapq
 
 class OptimizedGraphTraversal:
-    def __init__(self, graph: Dict[int, List[int]]):
+    def **init**(self, graph: Dict[int, List[int]]):
         self.graph = graph
         self.memo = {}  # Memoization for repeated subproblems
 
     def optimized_bfs(self, start: int, target: int) -> List[int]:
         """
         Mathematical Analysis:
-        - Time Complexity: O(V + E) where V = vertices, E = edges
-        - Space Complexity: O(V) for visited set and queue
-        - Optimization: Bidirectional search reduces to O(b^(d/2))
-        """
-        if start == target:
-            return [start]
 
-        # Bidirectional BFS for O(b^(d/2)) complexity
-        forward_queue = deque([(start, [start])])
-        backward_queue = deque([(target, [target])])
-        forward_visited = {start}
-        backward_visited = {target}
+- Time Complexity: O(V + E) where V = vertices, E = edges
+- Space Complexity: O(V) for visited set and queue
+- Optimization: Bidirectional search reduces to O(b^(d/2))
 
-        while forward_queue and backward_queue:
-            # Expand smaller frontier first (optimization)
-            if len(forward_queue) <= len(backward_queue):
-                path = self._expand_frontier(forward_queue, forward_visited,
-                                           backward_visited, True)
-            else:
-                path = self._expand_frontier(backward_queue, backward_visited,
-                                           forward_visited, False)
+  """
+  if start == target:
+  return [start]
 
-            if path:
-                return path
+## Bidirectional BFS for O(b^(d/2)) complexity
 
-        return []  # No path found
-```markdown
+      forward_queue = deque([(start, [start])])
+      backward_queue = deque([(target, [target])])
+      forward_visited = {start}
+      backward_visited = {target}
+
+      while forward_queue and backward_queue:
+
+## Expand smaller frontier first (optimization)
+
+      if len(forward_queue) <= len(backward_queue):
+      path = self._expand_frontier(forward_queue, forward_visited,
+      backward_visited, True)
+      else:
+      path = self._expand_frontier(backward_queue, backward_visited,
+      forward_visited, False)
+
+      if path:
+      return path
+
+      return []  # No path found
+
+```Markdown
 
 ### Example 2: Mathematical Problem Analysis
 
@@ -90,16 +97,16 @@ class OptimizedGraphTraversal:
 
 **Response Structure**:
 
-```markdown
+```Markdown
 
-# Resource Allocation Optimization Analysis
-
+## Resource Allocation Optimization Analysis
 
 ## Mathematical Formulation
 
 Let x_i = amount of resource allocated to task i
 Objective: Maximize Σ(utility_i * x_i)
 Subject to:
+
 - Σ(x_i) ≤ total_resources
 - x_i ≥ 0 for all i
 - capacity_constraints_i(x_i) ≤ max_capacity_i
@@ -112,7 +119,8 @@ Subject to:
 
 ## Implementation
 
-```python
+```Python
+
 import cvxpy as cp
 import numpy as np
 
@@ -127,7 +135,8 @@ def optimize_resource_allocation(utilities, constraints, total_resources):
     result = problem.solve()
 
     return x.value, result
-```markdown
+
+```Markdown
 
 ## Constraints
 
@@ -214,14 +223,14 @@ def optimize_resource_allocation(utilities, constraints, total_resources):
 
 ## o1-Preview Specialized Domains
 
-### Advanced Algorithms
+### Advanced Algorithms 2
 
 - **Graph Algorithms**: Shortest path, network flow, matching, and graph coloring
 - **Dynamic Programming**: Complex DP solutions and optimization problems
 - **Greedy Algorithms**: Sophisticated greedy strategies and approximation algorithms
 - **Divide and Conquer**: Advanced recursive problem-solving techniques
 
-### Mathematical Computing
+### Mathematical Computing 2
 
 - **Linear Algebra**: Matrix operations, eigenvalue problems, and numerical linear algebra
 - **Calculus and Analysis**: Numerical integration, differentiation, and equation solving

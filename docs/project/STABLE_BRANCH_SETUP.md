@@ -2,7 +2,8 @@
 
 ## Overview
 
-The S&D - Search & Destroy application now supports automatic updates from a dedicated `stable` branch. This approach provides better control over release stability by separating development work from production updates.
+The S&D - Search & Destroy application now supports automatic updates from a dedicated `stable` branch.
+This approach provides better control over release stability by separating development work from production updates.
 
 ## Branch Structure
 
@@ -13,9 +14,9 @@ The S&D - Search & Destroy application now supports automatic updates from a ded
 
 ### 1. Auto-Update Configuration
 
-The auto-updater is configured via `/config/update_config.json`:
+The auto-updater is configured via `/config/update_config.JSON`:
 
-```json
+```JSON
 {
     "update_branch": "stable",
     "repo_owner": "asafelobotomy",
@@ -25,7 +26,8 @@ The auto-updater is configured via `/config/update_config.json`:
     "include_prereleases": false,
     "description": "Auto-update configuration for S&D - Search & Destroy application"
 }
-```
+
+```text
 
 ### 2. Release Process
 
@@ -49,57 +51,72 @@ The auto-updater is configured via `/config/update_config.json`:
 #### Creating a Stable Release
 
 1. **Test thoroughly on master**:
-   ```bash
-   git checkout master
-   # Test all functionality
-   ```
+
+  ```bash
+  Git checkout master
+
+## Test all functionality
+
+```text
 
 2. **Merge to stable**:
-   ```bash
-   git checkout stable
-   git merge master
-   ```
+
+  ```bash
+  Git checkout stable
+  Git merge master
+```text
 
 3. **Create and push tag**:
-   ```bash
-   git tag -a v2.7.2 -m "Release version 2.7.2"
-   git push origin stable
-   git push origin v2.7.2
-   ```
+
+  ```bash
+  Git tag -a v2.7.2 -m "Release version 2.7.2"
+  Git push origin stable
+  Git push origin v2.7.2
+
+```text
 
 4. **Create GitHub Release**:
-   - Go to GitHub repository
-   - Create new release from the `v2.7.2` tag
-   - Target the `stable` branch
-   - Add release notes
+- Go to GitHub repository
+- Create new release from the `v2.7.2` tag
+- Target the `stable` branch
+- Add release notes
 
-#### Emergency Hotfix to Stable
+### Emergency Hotfix to Stable
 
 ```bash
-git checkout stable
-# Make minimal fix
-git add .
-git commit -m "Hotfix: Critical security update"
-git tag -a v2.7.3 -m "Hotfix release 2.7.3"
-git push origin stable
-git push origin v2.7.3
-# Create GitHub release
-```
+
+Git checkout stable
+
+## Make minimal fix
+
+Git add .
+Git commit -m "Hotfix: Critical security update"
+Git tag -a v2.7.3 -m "Hotfix release 2.7.3"
+Git push origin stable
+Git push origin v2.7.3
+
+## Create GitHub release
+
+```text
 
 ### For Users
 
 #### Automatic Updates
+
 - Updates check every 24 hours by default
 - Only stable, tested releases are downloaded
 - User can control update frequency in Settings > Updates
 
 #### Manual Update Check
-- **Help Menu** → **Check for Updates**
+
+- **Help Menu**→**Check for Updates**
 - Forces immediate check regardless of timer
 - Shows current vs. available version
 
 #### Update Configuration
-Users can modify `/config/update_config.json` to:
+
+Users can modify `/config/update_config.JSON` to:
+
 - Change update branch (stable/master/custom)
 - Enable/disable prereleases
 - Adjust check frequency
@@ -110,24 +127,22 @@ Users can modify `/config/update_config.json` to:
 ### Core Components
 
 1. **AutoUpdater Class** (`app/core/auto_updater.py`)
-   - Handles GitHub API communication
-   - Manages version comparison
-   - Downloads and applies updates
-
-2. **Update Configuration** (`config/update_config.json`)
-   - Centralizes update settings
-   - Allows easy customization
-   - Supports multiple environments
-
+- Handles GitHub API communication
+- Manages version comparison
+- Downloads and applies updates
+2. **Update Configuration** (`config/update_config.JSON`)
+- Centralizes update settings
+- Allows easy customization
+- Supports multiple environments
 3. **Branch Validation**
-   - Verifies releases exist on target branch
-   - Prevents downloading from wrong branch
-   - Maintains release integrity
+- Verifies releases exist on target branch
+- Prevents downloading from wrong branch
+- Maintains release integrity
 
 ### API Endpoints Used
 
 - `GET /repos/{owner}/{repo}/releases` - List all releases
-- `GET /repos/{owner}/{repo}/git/refs/tags/{tag}` - Verify tag exists
+- `GET /repos/{owner}/{repo}/Git/refs/tags/{tag}` - Verify tag exists
 - `GET /repos/{owner}/{repo}/commits?sha={branch}` - Get branch commits
 - `GET /archive/refs/heads/{branch}.zip` - Download stable branch
 
@@ -140,13 +155,15 @@ Users can modify `/config/update_config.json` to:
 
 ## Benefits
 
-### For Developers
+### For Developers 2
+
 - **Clean separation** of development and production
 - **Better testing control** before stable releases
 - **Reduced user complaints** from unstable features
 - **Easier hotfix deployment** to stable only
 
-### For Users
+### For Users 2
+
 - **More reliable updates** from tested code only
 - **Reduced crash risk** from experimental features
 - **Predictable update schedule** and quality
@@ -155,11 +172,13 @@ Users can modify `/config/update_config.json` to:
 ## Configuration Options
 
 ### Update Branch Options
+
 - `"stable"` - Production releases only (recommended)
 - `"master"` - Latest development (for testers)
 - `"beta"` - Beta testing branch (if created)
 
 ### Safety Options
+
 - `"include_prereleases": false` - Skip alpha/beta releases
 - `"auto_download": false` - Require user confirmation
 - `"check_interval_hours": 24` - Update check frequency
@@ -167,11 +186,13 @@ Users can modify `/config/update_config.json` to:
 ## Migration Notes
 
 ### Existing Installations
+
 - Existing users automatically switch to stable branch updates
 - No manual configuration required
 - Settings preserved during update
 
 ### Repository Setup
+
 - `stable` branch created and pushed
 - Auto-updater updated to use stable branch
 - Configuration file added for customization
@@ -187,40 +208,51 @@ Users can modify `/config/update_config.json` to:
 ## Troubleshooting
 
 ### No Updates Found
+
 - Check internet connection
 - Verify `stable` branch has tagged releases
 - Check GitHub repository accessibility
 
 ### Update Download Fails
+
 - Check disk space for temporary files
 - Verify write permissions to app directory
 - Check firewall/antivirus blocking downloads
 
 ### Configuration Issues
-- Verify `config/update_config.json` syntax
+
+- Verify `config/update_config.JSON` syntax
 - Check file permissions
 - Restore from backup if corrupted
 
 ## Command Reference
 
 ```bash
-# View current branch
-git branch
 
-# Switch to stable
-git checkout stable
+## View current branch
 
-# View recent tags
-git tag -l --sort=-version:refname | head -5
+Git branch
 
-# Check tag on branch
-git tag --merged stable
+## Switch to stable
 
-# Create release tag
-git tag -a v2.7.2 -m "Release 2.7.2"
+Git checkout stable
 
-# Push everything
-git push origin stable --tags
-```
+## View recent tags
+
+Git tag -l --sort=-version:refname | head -5
+
+## Check tag on branch
+
+Git tag --merged stable
+
+## Create release tag
+
+Git tag -a v2.7.2 -m "Release 2.7.2"
+
+## Push everything
+
+Git push origin stable --tags
+
+```text
 
 This setup provides a robust, configurable auto-update system that prioritizes stability while maintaining flexibility for different use cases and environments.

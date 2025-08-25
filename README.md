@@ -1,8 +1,8 @@
 # 🚀 GitHub Copilot Enhancement Framework
 
-[![CI](https://github.com/asafelobotomy/agent-instructions-co-pilot/actions/workflows/ci.yml/badge.svg)](https://github.com/asafelobotomy/agent-instructions-co-pilot/actions/workflows/ci.yml)
-[![Spellcheck](https://github.com/asafelobotomy/agent-instructions-co-pilot/actions/workflows/spellcheck.yml/badge.svg)](https://github.com/asafelobotomy/agent-instructions-co-pilot/actions/workflows/spellcheck.yml)
-[![Link Check](https://github.com/asafelobotomy/agent-instructions-co-pilot/actions/workflows/link-check.yml/badge.svg)](https://github.com/asafelobotomy/agent-instructions-co-pilot/actions/workflows/link-check.yml)
+[![CI](HTTPS://GitHub.com/asafelobotomy/agent-instructions-co-pilot/actions/workflows/ci.yml/badge.svg)](HTTPS://GitHub.com/asafelobotomy/agent-instructions-co-pilot/actions/workflows/ci.yml)
+[![Spellcheck](HTTPS://GitHub.com/asafelobotomy/agent-instructions-co-pilot/actions/workflows/spellcheck.yml/badge.svg)](HTTPS://GitHub.com/asafelobotomy/agent-instructions-co-pilot/actions/workflows/spellcheck.yml)
+[![Link Check](HTTPS://GitHub.com/asafelobotomy/agent-instructions-co-pilot/actions/workflows/link-check.yml/badge.svg)](HTTPS://GitHub.com/asafelobotomy/agent-instructions-co-pilot/actions/workflows/link-check.yml)
 
 **A comprehensive enterprise-grade system for AI-assisted development with specialized
 chatmodes, prompt templates, and advanced instructions.**
@@ -11,8 +11,8 @@ _Quality Score: **98.9%** | Enterprise Excellence Level | Production Ready_
 
 ## Start here
 
-- Read first: `.github/instructions/agent-workflow.instructions.md`
-- Instruction map: `.github/instructions/INDEX.md`
+- Read first: `.GitHub/instructions/agent-workflow.instructions.md`
+- Instruction map: `.GitHub/instructions/INDEX.md`
 - Toolshed overview: `scripts/tools/README.md`
 - Validate quickly: `npm run quick:validate`
 - Placeholder log: `docs/reports/PLACEHOLDERS.md`
@@ -25,18 +25,24 @@ Copilot agents should ALWAYS use instead of recreating functionality.**
 ### 🔧 **Essential Tools for Immediate Use:**
 
 ```bash
-# Repository setup with industry standards (instead of manual setup)
-./scripts/tools/git/setup-repository.sh
 
-# Comprehensive validation (instead of custom checks)
+## Repository setup with industry standards (instead of manual setup)
+
+./scripts/tools/Git/setup-repository.sh
+
+## Comprehensive validation (instead of custom checks)
+
 ./scripts/tools/validation/validate-structure.sh
 
-# Code quality with auto-fix (instead of manual review)
+## Code quality with auto-fix (instead of manual review)
+
 ./scripts/tools/quality/check-quality.sh --fix
 
-# Deploy complete toolshed to any repository
+## Deploy complete toolshed to any repository
+
 ./scripts/tools/implement-toolshed.sh
-```
+
+```text
 
 **📖 Complete Tool Catalog**: `scripts/tools/README.md` (20+ tools across 6 categories)
 
@@ -51,18 +57,24 @@ documentation.**
 ### 📖 **Essential Documentation for Immediate Use:**
 
 ```bash
-# Framework overview and capabilities (instead of creating new guides)
+
+## Framework overview and capabilities (instead of creating new guides)
+
 cat /docs/guides/ENHANCEMENTS.md
 
-# Repository structure documentation (instead of custom structure docs)
+## Repository structure documentation (instead of custom structure docs)
+
 cat /docs/guides/PROJECT_STRUCTURE.md
 
-# Enterprise deployment guide (instead of setup instructions)
+## Enterprise deployment guide (instead of setup instructions)
+
 cat /docs/guides/organization-custom-instructions.md
 
-# AI model targeting guide (instead of model-specific docs)
+## AI model targeting guide (instead of model-specific docs)
+
 cat /docs/guides/model-targeting-guide.md
-```
+
+```text
 
 **📚 Complete Documentation Index**: `/docs/README.md` (6+ guides, templates, reports)
 
@@ -75,6 +87,7 @@ cat /docs/guides/model-targeting-guide.md
 This framework transforms your GitHub Copilot experience by providing:
 
 - **11 Specialized Chatmodes** - From architect to security specialist,
+
   each optimized for specific development tasks
 
 - **7 Professional Prompt Templates** - Reusable, battle-tested prompts for common scenarios
@@ -82,6 +95,7 @@ This framework transforms your GitHub Copilot experience by providing:
 - **Enterprise Validation System** - Comprehensive quality assurance with automated testing
 - **Complete Script Toolshed** - 20+ pre-built tools for common development tasks
 - **Advanced Model Support** - Optimized for GitHub Copilot 2025, GPT-5, Claude Sonnet 4,
+
   and Gemini Pro
 
 ## 🏗️ Repository Structure
@@ -90,7 +104,7 @@ This framework transforms your GitHub Copilot experience by providing:
 
 ```text
 📦 agent-instructions-co-pilot/
-├── 🤖 .github/                    # GitHub Copilot Enhancement Framework
+├── 🤖 .GitHub/                    # GitHub Copilot Enhancement Framework
 │   ├── 💬 chatmodes/             # 11 Specialized interaction modes
 │   ├── 🎯 prompts/               # 7 Reusable prompt templates
 │   ├── 📋 instructions/          # Path-specific development guidance
@@ -108,12 +122,13 @@ This framework transforms your GitHub Copilot experience by providing:
 ├── 📚 docs/                      # Comprehensive documentation
 ├── 🗄️ archive/                   # Historical files and backups
 └── 📋 repo-template/             # Ready-to-deploy template
-```
+
+```text
 
 ### 🎯 Chatmode System
 
 ```text
-.github/chatmodes/
+.GitHub/chatmodes/
 ├── architect.chatmode.md          # System design and architecture
 ├── elite-engineer.chatmode.md     # Advanced coding and optimization
 ├── security.chatmode.md           # Security analysis and hardening
@@ -125,30 +140,33 @@ This framework transforms your GitHub Copilot experience by providing:
 ├── gemini-pro-specialist.chatmode.md     # Gemini Pro specialization
 ├── o1-preview-reasoning.chatmode.md      # Advanced reasoning mode
 └── advanced-task-planner.chatmode.md    # Complex task planning
-```
+
+```text
 
 ### 🎯 Prompt Templates
 
 ```text
-.github/prompts/
+.GitHub/prompts/
 ├── security-review.prompt.md      # Comprehensive security analysis
 ├── performance-optimization.prompt.md  # System performance enhancement
 ├── tdd-implementation.prompt.md   # Test-driven development
 ├── code-refactoring.prompt.md     # Code improvement strategies
-├── api-design.prompt.md           # RESTful API design patterns
+├── API-design.prompt.md           # RESTful API design patterns
 ├── database-optimization.prompt.md # Database performance tuning
 └── deployment-strategy.prompt.md  # Production deployment planning
-```
+
+```text
 
 ### 📋 Advanced Instructions
 
 ```text
-.github/instructions/
+.GitHub/instructions/
 ├── security.instructions.md       # Security-first development (all code files)
 ├── testing.instructions.md        # Testing excellence (test files)
 └── debugging.instructions.md      # Comprehensive debugging guidance
 └── 3 more instruction sets...
-```
+
+```text
 
 ## 🚀 Quick Start
 
@@ -156,15 +174,15 @@ This framework transforms your GitHub Copilot experience by providing:
 
 #### Basic Installation (Core Instructions Only)
 
-[![Open in VS Code](https://img.shields.io/badge/VS_Code-Basic_Install-0098FF?style=flat-square&logo=visualstudiocode&logoColor=white)](https://vscode.dev/redirect?url=vscode%3Achat-instructions%2Finstall%3Furl%3Dhttps%3A%2F%2Fraw.githubusercontent.com%2Fasafelobotomy%2Fagent-instructions-co-pilot%2Fmain%2F.github%2Fcopilot-instructions.md)
-[![Open in VS Code Insiders](https://img.shields.io/badge/VS_Code_Insiders-Basic_Install-24bfa5?style=flat-square&logo=visualstudiocode&logoColor=white)](https://insiders.vscode.dev/redirect?url=vscode-insiders%3Achat-instructions%2Finstall%3Furl%3Dhttps%3A%2F%2Fraw.githubusercontent.com%2Fasafelobotomy%2Fagent-instructions-co-pilot%2Fmain%2F.github%2Fcopilot-instructions.md)
+[![Open in VS Code](HTTPS://img.shields.io/badge/VS_Code-Basic_Install-0098FF?style=flat-square&logo=visualstudiocode&logoColor=white)](HTTPS://VS Code.dev/redirect?URL=VS Code%3Achat-instructions%2Finstall%3Furl%3Dhttps%3A%2F%2Fraw.githubusercontent.com%2Fasafelobotomy%2Fagent-instructions-co-pilot%2Fmain%2F.GitHub%2Fcopilot-instructions.md)
+[![Open in VS Code Insiders](HTTPS://img.shields.io/badge/VS_Code_Insiders-Basic_Install-24bfa5?style=flat-square&logo=visualstudiocode&logoColor=white)](HTTPS://insiders.VS Code.dev/redirect?URL=VS Code-insiders%3Achat-instructions%2Finstall%3Furl%3Dhttps%3A%2F%2Fraw.githubusercontent.com%2Fasafelobotomy%2Fagent-instructions-co-pilot%2Fmain%2F.GitHub%2Fcopilot-instructions.md)
 
 #### Complete Framework Installation (Recommended)
 
-[![Open in VS Code](https://img.shields.io/badge/VS_Code-Complete_Framework-FF6B6B?style=flat-square&logo=visualstudiocode&logoColor=white)](https://vscode.dev/redirect?url=vscode%3Achat-instructions%2Finstall%3Furl%3Dhttps%3A%2F%2Fraw.githubusercontent.com%2Fasafelobotomy%2Fagent-instructions-co-pilot%2Fmain%2F.github%2Fcopilot-instructions-complete.md)
-[![Open in VS Code Insiders](https://img.shields.io/badge/VS_Code_Insiders-Complete_Framework-FF6B6B?style=flat-square&logo=visualstudiocode&logoColor=white)](https://insiders.vscode.dev/redirect?url=vscode-insiders%3Achat-instructions%2Finstall%3Furl%3Dhttps%3A%2F%2Fraw.githubusercontent.com%2Fasafelobotomy%2Fagent-instructions-co-pilot%2Fmain%2F.github%2Fcopilot-instructions-complete.md)
+[![Open in VS Code](HTTPS://img.shields.io/badge/VS_Code-Complete_Framework-FF6B6B?style=flat-square&logo=visualstudiocode&logoColor=white)](HTTPS://VS Code.dev/redirect?URL=VS Code%3Achat-instructions%2Finstall%3Furl%3Dhttps%3A%2F%2Fraw.githubusercontent.com%2Fasafelobotomy%2Fagent-instructions-co-pilot%2Fmain%2F.GitHub%2Fcopilot-instructions-complete.md)
+[![Open in VS Code Insiders](HTTPS://img.shields.io/badge/VS_Code_Insiders-Complete_Framework-FF6B6B?style=flat-square&logo=visualstudiocode&logoColor=white)](HTTPS://insiders.VS Code.dev/redirect?URL=VS Code-insiders%3Achat-instructions%2Finstall%3Furl%3Dhttps%3A%2F%2Fraw.githubusercontent.com%2Fasafelobotomy%2Fagent-instructions-co-pilot%2Fmain%2F.GitHub%2Fcopilot-instructions-complete.md)
 
-**Complete Framework includes:**
+### Complete Framework includes
 
 - ✅ Core repository instructions
 - ✅ 11 specialized instruction sets (security, testing, docs, etc.)
@@ -172,7 +190,7 @@ This framework transforms your GitHub Copilot experience by providing:
 - ✅ Validation systems and quality checks
 - ✅ Toolshed integration and usage guidance
 
-[![Open in Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/asafelobotomy/agent-instructions-co-pilot)
+[![Open in Codespaces](HTTPS://GitHub.com/codespaces/badge.svg)](HTTPS://codespaces.new/asafelobotomy/agent-instructions-co-pilot)
 
 ### Alternative Setup Methods
 
@@ -181,10 +199,11 @@ This framework transforms your GitHub Copilot experience by providing:
 **For the most comprehensive setup**, run our installation script that copies all components:
 
 ```bash
-git clone https://github.com/asafelobotomy/agent-instructions-co-pilot.git
+Git clone <HTTPS://GitHub.com/asafelobotomy/agent-instructions-co-pilot.Git>
 cd agent-instructions-co-pilot
-./scripts/tools/setup/install-copilot-framework.sh
-```
+./scripts/tools/setup/install-Copilot-framework.sh
+
+```text
 
 This installs:
 
@@ -203,54 +222,64 @@ This installs:
 
 1. **Clone or access this repository**:
 
-   ```bash
-   git clone https://github.com/asafelobotomy/agent-instructions-co-pilot.git
-   cd agent-instructions-co-pilot
-   ```
+  ```bash
+  Git clone <HTTPS://GitHub.com/asafelobotomy/agent-instructions-co-pilot.Git>
+  cd agent-instructions-co-pilot
+
+```text
 
 2. **Install via GitHub Copilot Chat**:
-   - Open VS Code in this repository directory
-   - Open GitHub Copilot Chat (`Ctrl+Shift+I` or `Cmd+Shift+I`)
-   - Type: `@github use .github/copilot-instructions.md`
-   - Copilot will automatically load the repository's custom instructions
+- Open VS Code in this repository directory
+- Open GitHub Copilot Chat (`Ctrl+Shift+I`or`Cmd+Shift+I`)
+- Type: `@GitHub use .GitHub/Copilot-instructions.md`
+- Copilot will automatically load the repository's custom instructions
 
 #### Option 2: Manual File Installation
 
 1. **Copy the main instructions file**:
 
-   ```bash
-   # Copy to VS Code settings directory
-   cp .github/copilot-instructions.md ~/.vscode/copilot-instructions.md
-   ```
+  ```bash
+
+## Copy to VS Code settings directory
+
+  cp .GitHub/Copilot-instructions.md ~/.VS Code/Copilot-instructions.md
+```text
 
 2. **Or use VS Code command palette**:
-   - Open VS Code in this repository
-   - Press `Ctrl+Shift+P` (or `Cmd+Shift+P` on Mac)
-   - Type "GitHub Copilot: Add instruction file"
-   - Select `.github/copilot-instructions.md`
+- Open VS Code in this repository
+- Press `Ctrl+Shift+P`(or`Cmd+Shift+P` on Mac)
+- Type "GitHub Copilot: Add instruction file"
+- Select `.GitHub/Copilot-instructions.md`
 
-#### Option 3: GitHub Codespaces (Automatic Setup)
+### Option 3: GitHub Codespaces (Automatic Setup)
 
 - Click the "Open in Codespaces" button above
 - Codespaces will automatically configure the GitHub Copilot instructions
 - No manual setup required!
 
-**For existing projects (copy essential files only):**
+### For existing projects (copy essential files only)
 
 ```bash
-# Copy essential files to current directory
-curl -sSL https://git.io/copilot-setup | bash -s -- --essential-only
-```
+
+## Copy essential files to current directory
+
+curl -sSL <HTTPS://Git.io/Copilot-setup> | bash -s -- --essential-only
+
+```text
 
 ### ✅ **Validate Setup**
 
 ```bash
-# Quick lint + validation
+
+## Quick lint + validation
+
 npm run quick:validate
 
-# Or run structure validator directly
+## Or run structure validator directly
+
 ./scripts/validation/validate-structure.sh
-```
+
+```text
 
 Tip:
 
@@ -264,11 +293,11 @@ Tip:
 
 ### 🎯 **Start Using Chatmodes**
 
-   1. **Open VS Code** to your project directory
-   2. **Navigate** to `.github/chatmodes/` in the Explorer
-   3. **Copy content** from any `.chatmode.md` file
-   4. **Paste into GitHub Copilot Chat** in VS Code
-   5. **Start developing** with enhanced AI assistance!
+1. **Open VS Code** to your project directory
+2. **Navigate** to `.GitHub/chatmodes/` in the Explorer
+3. **Copy content** from any `.chatmode.md` file
+4. **Paste into GitHub Copilot Chat** in VS Code
+5. **Start developing** with enhanced AI assistance!
 
 ### Usage Examples
 
@@ -276,28 +305,31 @@ Tip:
 
 ```text
 Perfect for: API design, database schema, microservices planning
-```
+
+```text
 
 #### Security Analysis (security.chatmode.md)
 
 ```text
 Perfect for: Vulnerability assessment, secure coding, compliance
-```
+
+```text
 
 #### Code Optimization (elite-engineer.chatmode.md)
 
 ```text
 Perfect for: Performance tuning, refactoring, advanced algorithms
-```
+
+```text
 
 ## 📚 Documentation
 
 - 📖 [Complete Documentation](docs/README.md) — guides and references
 - 🚀 [Project Structure Guide](docs/guides/PROJECT_STRUCTURE.md) — repository layout
-- 🔧 [Copilot Instructions Guide](docs/guides/COPILOT-INSTRUCTIONS-GUIDE.md) — setup
+- 🔧 [Copilot Instructions Guide](docs/guides/Copilot-INSTRUCTIONS-GUIDE.md) — setup
 - 🛠️ [Toolshed Reference](docs/guides/TOOLSHED-REFERENCE.md) — tools and utilities
 - 🧪 [MCP Examples Index](docs/guides/MCP-EXAMPLES.md) — offline MCP demos
-- 📘 [Agent Runbooks](.github/runbooks/) — step-by-step workflows
+- 📘 [Agent Runbooks](.GitHub/runbooks/) — step-by-step workflows
 
 ## 🏆 Enterprise Features
 
@@ -347,4 +379,4 @@ This project is open source and available under standard licensing terms.
 
 **🎯 Ready to enhance your GitHub Copilot experience?** Start with the
 [Project Structure Guide](docs/guides/PROJECT_STRUCTURE.md) or explore our
-[specialized chatmodes](.github/chatmodes/).
+[specialized chatmodes](.GitHub/chatmodes/).

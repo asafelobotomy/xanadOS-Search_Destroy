@@ -11,7 +11,7 @@
 
 ### ✅ Policy Creation
 
-- **File**: `.github/instructions/docs-policy.instructions.md`
+- **File**: `.GitHub/instructions/docs-policy.instructions.md`
 - **Size**: 142 lines of comprehensive documentation standards
 - **Classification**: MANDATORY policy for all GitHub Copilot agents
 - **Scope**: All repositories with documentation content
@@ -102,7 +102,7 @@
 
 ### Compliance Verification
 
-- ✅ Policy follows markdown formatting standards
+- ✅ Policy follows Markdown formatting standards
 - ✅ Integrates with existing instruction framework
 - ✅ Provides comprehensive implementation guidance
 - ✅ Includes automated validation tools

@@ -4,19 +4,19 @@ This document outlines the organized repository structure for the GitHub Copilot
 
 ## 📁 Repository Organization
 
-```markdown
+```Markdown
 agent-instructions-co-pilot/
-├── 📁 .github/                    # GitHub-specific configurations
+├── 📁 .GitHub/                    # GitHub-specific configurations
 │   ├── 📁 chatmodes/              # Chat mode templates (.chatmode.md)
 │   ├── 📁 instructions/           # Custom instructions (.instructions.md)
 │   ├── 📁 prompts/                # Reusable prompts (.prompt.md)
 │   ├── 📁 validation/             # Validation system and tests
 │   ├── 📁 workflows/              # GitHub Actions workflows
 │   ├── 📁 mcp/                    # Model Context Protocol configurations
-│   └── 📄 copilot-instructions.md # Main Copilot instructions
-├── 📁 .vscode/                    # VS Code workspace configuration
-│   ├── 📄 settings.json           # Enhanced VS Code settings
-│   └── 📄 extensions.json         # Recommended extensions
+│   └── 📄 Copilot-instructions.md # Main Copilot instructions
+├── 📁 .VS Code/                    # VS Code workspace configuration
+│   ├── 📄 settings.JSON           # Enhanced VS Code settings
+│   └── 📄 extensions.JSON         # Recommended extensions
 ├── 📁 ci/                         # Continuous Integration configurations
 ├── 📁 docs/                       # Documentation (standard GitHub convention)
 │   ├── 📄 README.md               # Documentation index
@@ -26,12 +26,12 @@ agent-instructions-co-pilot/
 │   │   └── 📄 organization-custom-instructions.md
 │   ├── 📁 analysis/               # Research and analysis reports
 │   │   ├── 📄 COMPETITIVE-ANALYSIS-REPORT.md
-│   │   ├── 📄 COPILOT-INSTRUCTIONS-ANALYSIS.md
-│   │   └── 📄 COPILOT-REVIEW-REPORT.md
+│   │   ├── 📄 Copilot-INSTRUCTIONS-ANALYSIS.md
+│   │   └── 📄 Copilot-REVIEW-REPORT.md
 │   ├── 📁 implementation-reports/ # Technical implementation docs
 │   │   ├── 📄 SYSTEM-INTEGRITY-FIXES.md
 │   │   ├── 📄 VS_CODE_ENHANCEMENTS.md
-│   │   ├── 📄 COPILOT-OPTIMIZATION-SUMMARY.md
+│   │   ├── 📄 Copilot-OPTIMIZATION-SUMMARY.md
 │   │   ├── 📄 BACKEND-IMPROVEMENTS.md
 │   │   ├── 📄 CRITICAL-FIXES-SUMMARY.md
 │   │   ├── 📄 PHASE-2-REPORT.md
@@ -41,7 +41,7 @@ agent-instructions-co-pilot/
 │   └── 📄 ENHANCEMENTS.md         # Enhancement overview
 ├── 📁 examples/                   # Usage examples and templates
 │   └── 📁 project-templates/      # Project setup templates
-│       └── 📁 github-copilot-setup/ # Template for new projects
+│       └── 📁 GitHub-Copilot-setup/ # Template for new projects
 ├── 📁 scripts/                    # Automation and utility scripts
 │   ├── 📄 update-readme.js        # README generation script
 │   └── 📄 install-link-generator.js # Install badge generator
@@ -52,16 +52,17 @@ agent-instructions-co-pilot/
 ├── 📄 CONTRIBUTING.md             # Contribution guidelines
 ├── 📄 IMPLEMENTATION_SUMMARY.md   # Executive implementation summary
 ├── 📄 README.md                   # Main project documentation
-├── 📄 package.json               # Node.js project configuration
-└── 📄 package-lock.json          # Dependency lock file
-```markdown
+├── 📄 package.JSON               # Node.js project configuration
+└── 📄 package-lock.JSON          # Dependency lock file
+
+```Markdown
 
 ## 🎯 Directory Purposes
 
 ### Core Framework Files
 
-- **`.github/`** - Contains all GitHub Copilot templates and configurations
-- **`.vscode/`** - VS Code workspace optimization settings
+- **`.GitHub/`** - Contains all GitHub Copilot templates and configurations
+- **`.VS Code/`** - VS Code workspace optimization settings
 - **`scripts/`** - Automation tools for maintenance and generation
 
 ### Documentation Structure
@@ -80,9 +81,9 @@ agent-instructions-co-pilot/
 
 ### Template Files
 
-- **Chat Modes**: `*.chatmode.md` (e.g., `elite-engineer.chatmode.md`)
-- **Prompts**: `*.prompt.md` (e.g., `api-design.prompt.md`)
-- **Instructions**: `*.instructions.md` (e.g., `security.instructions.md`)
+- **Chat Modes**: `*.chatmode.md`(e.g.,`elite-engineer.chatmode.md`)
+- **Prompts**: `*.prompt.md`(e.g.,`API-design.prompt.md`)
+- **Instructions**: `*.instructions.md`(e.g.,`security.instructions.md`)
 
 ### Documentation Files
 
@@ -94,15 +95,15 @@ agent-instructions-co-pilot/
 
 ### Essential Configurations
 
-- **`package.json`** - Project metadata and scripts
+- **`package.JSON`** - Project metadata and scripts
 - **`.editorconfig`** - Cross-editor consistency
 - **`.gitattributes`** - Git behavior configuration
 - **`.gitignore`** - Version control exclusions
 
 ### VS Code Integration
 
-- **`.vscode/settings.json`** - Enhanced Copilot settings
-- **`.vscode/extensions.json`** - Recommended extensions
+- **`.VS Code/settings.JSON`** - Enhanced Copilot settings
+- **`.VS Code/extensions.JSON`** - Recommended extensions
 
 ## 🚀 Automation Scripts
 
@@ -113,7 +114,7 @@ agent-instructions-co-pilot/
 
 ### Validation System
 
-- **`.github/validation/`** - Comprehensive validation framework
+- **`.GitHub/validation/`** - Comprehensive validation framework
 - Automatic template discovery and validation
 - Quality assurance and testing
 
@@ -122,11 +123,11 @@ agent-instructions-co-pilot/
 | Need | Location | Key Files |
 |------|----------|-----------|
 | **Quick Start** | Root directory | `README.md`, `IMPLEMENTATION_SUMMARY.md` |
-| **Templates** | `.github/` subdirectories | `*.chatmode.md`, `*.prompt.md`, `*.instructions.md` |
-| **User Guides** | `docs/guides/` | `model-targeting-guide.md`, `INSTALL_LINKS.md` |
+| **Templates** | `.GitHub/`subdirectories |`_.chatmode.md`, `_.prompt.md`, `*.instructions.md` |
+| **User Guides** | `docs/guides/`|`model-targeting-guide.md`, `INSTALL_LINKS.md` |
 | **Technical Docs** | `docs/implementation-reports/` | Implementation and analysis reports |
 | **Examples** | `examples/` | Project templates and usage examples |
-| **Development** | `scripts/`, `.vscode/` | Automation scripts and VS Code settings |
+| **Development** | `scripts/`, `.VS Code/` | Automation scripts and VS Code settings |
 
 ## 🎨 Benefits of This Organization
 

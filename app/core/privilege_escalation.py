@@ -3,6 +3,7 @@
 Secure privilege escalation module for xanadOS Search & Destroy
 Handles elevation requests through polkit for secure operations
 """
+
 import logging
 import os
 import subprocess
@@ -62,6 +63,7 @@ class PrivilegeEscalationManager:
         """Check if polkit is available on the system."""
         try:
             from .secure_subprocess import run_secure
+
             result = run_secure(["pkcheck", "--version"], timeout=5)
             return result.returncode == 0
         except (subprocess.TimeoutExpired, FileNotFoundError):
@@ -79,20 +81,23 @@ class PrivilegeEscalationManager:
             True if authorized, False otherwise
         """
         if not self._polkit_available:
-            self.logger.warning(
-                "Polkit not available, falling back to basic checks")
+            self.logger.warning("Polkit not available, falling back to basic checks")
             return os.geteuid() == 0  # Fallback to root check
 
         try:
             from .secure_subprocess import run_secure
-            result = run_secure([
-                "pkcheck",
-                "--action-id",
-                operation.value,
-                "--process",
-                str(os.getpid()),
-                "--allow-user-interaction",
-            ], timeout=30)
+
+            result = run_secure(
+                [
+                    "pkcheck",
+                    "--action-id",
+                    operation.value,
+                    "--process",
+                    str(os.getpid()),
+                    "--allow-user-interaction",
+                ],
+                timeout=30,
+            )
             return result.returncode == 0
 
         except subprocess.TimeoutExpired:
@@ -113,9 +118,7 @@ class PrivilegeEscalationManager:
             True if command is safe, False otherwise
         """
         # Check for dangerous shell metacharacters that could enable injection
-        dangerous_patterns = [
-            ';', '&&', '||', '`', '$', '|', '>', '<', '&', '\n', '\r'
-        ]
+        dangerous_patterns = [";", "&&", "||", "`", "$", "|", ">", "<", "&", "\n", "\r"]
 
         for arg in command:
             # Check for dangerous patterns in arguments
@@ -123,13 +126,16 @@ class PrivilegeEscalationManager:
                 if pattern in arg:
                     self.logger.warning(
                         "Potentially dangerous pattern '%s' found in command argument: %s",
-                        pattern, arg[:50]  # Limit log output
+                        pattern,
+                        arg[:50],  # Limit log output
                     )
                     return False
 
         return True
 
-    def _safe_log_error(self, operation: str, error: Exception, include_type: bool = True) -> None:
+    def _safe_log_error(
+        self, operation: str, error: Exception, include_type: bool = True
+    ) -> None:
         """
         Log errors safely without exposing sensitive information.
 
@@ -156,8 +162,7 @@ class PrivilegeEscalationManager:
             Path to the wrapper script
         """
         # Create temporary script with secure permissions
-        fd, script_path = tempfile.mkstemp(
-            suffix=".sh", prefix="xanados_secure_")
+        fd, script_path = tempfile.mkstemp(suffix=".sh", prefix="xanados_secure_")
 
         try:
             with os.fdopen(fd, "w") as f:
@@ -177,14 +182,14 @@ class PrivilegeEscalationManager:
                 if request.environment:
                     for key, value in request.environment.items():
                         # Sanitize environment variables
-                        safe_key = "".join(
-                            c for c in key if c.isalnum() or c == "_")
+                        safe_key = "".join(c for c in key if c.isalnum() or c == "_")
                         safe_value = value.replace("'", "'\"'\"'")
                         f.write(f"export {safe_key}='{safe_value}'\n")
 
                 # Execute the command with timeout
                 # Use shlex.quote for proper shell escaping to prevent injection
                 import shlex
+
                 escaped_args = [shlex.quote(arg) for arg in request.command]
                 cmd_str = " ".join(escaped_args)
                 f.write(f"\ntimeout {request.timeout} {cmd_str}\n")
@@ -198,8 +203,7 @@ class PrivilegeEscalationManager:
             os.unlink(script_path)
             raise
 
-    def request_elevation(
-            self, request: ElevationRequest) -> Tuple[bool, str, str]:
+    def request_elevation(self, request: ElevationRequest) -> Tuple[bool, str, str]:
         """
         Request privilege escalation for a specific operation.
 
@@ -219,8 +223,8 @@ class PrivilegeEscalationManager:
         # Check authorization first
         if not self._check_authorization(request.operation):
             raise SecureElevationError(
-                f"Authorization denied for operation: {
-                    request.operation.value}")
+                f"Authorization denied for operation: {request.operation.value}"
+            )
 
         # Validate command arguments
         if not request.command or not all(
@@ -230,12 +234,15 @@ class PrivilegeEscalationManager:
 
         # Additional security validation for command arguments
         if not self._validate_command_security(request.command):
-            raise SecureElevationError("Command contains potentially dangerous patterns")
+            raise SecureElevationError(
+                "Command contains potentially dangerous patterns"
+            )
 
         script_path = None
         try:
             script_path = self._create_secure_wrapper_script(request)
             from .elevated_runner import elevated_run
+
             result = elevated_run([script_path], timeout=request.timeout + 30, gui=True)
 
             success = result.returncode == 0
@@ -244,8 +251,8 @@ class PrivilegeEscalationManager:
 
             if success:
                 self.logger.info(
-                    "Elevation successful for operation: %s",
-                    request.operation.value)
+                    "Elevation successful for operation: %s", request.operation.value
+                )
             else:
                 self.logger.error(
                     "Elevation failed for operation: %s, return code: %d",
@@ -261,11 +268,19 @@ class PrivilegeEscalationManager:
             raise SecureElevationError(error_msg)
 
         except Exception as e:
-            self._safe_log_error(f"elevation for operation {request.operation.value}", e)
-            raise SecureElevationError(f"Elevation failed for operation: {request.operation.value}")
+            self._safe_log_error(
+                f"elevation for operation {request.operation.value}", e
+            )
+            raise SecureElevationError(
+                f"Elevation failed for operation: {request.operation.value}"
+            )
 
         finally:
-            if 'script_path' in locals() and script_path and os.path.exists(script_path):
+            if (
+                "script_path" in locals()
+                and script_path
+                and os.path.exists(script_path)
+            ):
                 try:
                     os.unlink(script_path)
                 except OSError as e:
@@ -333,8 +348,7 @@ class PrivilegeEscalationManager:
 
         return self.request_elevation(request)
 
-    def manage_quarantine(
-            self, action: str, file_path: str) -> Tuple[bool, str, str]:
+    def manage_quarantine(self, action: str, file_path: str) -> Tuple[bool, str, str]:
         """
         Request elevation to manage quarantined files.
 
@@ -388,7 +402,7 @@ class PrivilegeEscalationManager:
                     ["cp", str(self._policy_file), str(policy_dest)],
                     timeout=30,
                     session_type="policy_install",
-                    operation="install_policy_file"
+                    operation="install_policy_file",
                 )
 
                 if result1.returncode != 0:
@@ -398,7 +412,7 @@ class PrivilegeEscalationManager:
                     ["chmod", "644", str(policy_dest)],
                     timeout=10,
                     session_type="policy_install",
-                    operation="set_policy_permissions"
+                    operation="set_policy_permissions",
                 )
 
                 if result2.returncode != 0:
@@ -408,11 +422,17 @@ class PrivilegeEscalationManager:
                 # Fallback to elevated_run if auth_manager not available (same method as RKHunter)
                 from .elevated_runner import elevated_run
 
-                result1 = elevated_run(["cp", str(self._policy_file), str(policy_dest)], timeout=30, gui=True)
+                result1 = elevated_run(
+                    ["cp", str(self._policy_file), str(policy_dest)],
+                    timeout=30,
+                    gui=True,
+                )
                 if result1.returncode != 0:
                     raise subprocess.CalledProcessError(result1.returncode, ["cp"])
 
-                result2 = elevated_run(["chmod", "644", str(policy_dest)], timeout=10, gui=True)
+                result2 = elevated_run(
+                    ["chmod", "644", str(policy_dest)], timeout=10, gui=True
+                )
                 if result2.returncode != 0:
                     raise subprocess.CalledProcessError(result2.returncode, ["chmod"])
 

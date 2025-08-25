@@ -7,6 +7,7 @@ All files in this directory are **DEPRECATED** and should not be used in current
 ## Purpose
 
 This directory contains files that:
+
 - Are no longer maintained
 - Have known issues or limitations
 - Are scheduled for removal
@@ -14,13 +15,14 @@ This directory contains files that:
 
 ## Organization
 
-```markdown
+```Markdown
 deprecated/
 ├── README.md                 # This file
 ├── 2025-08-22/              # Files deprecated on this date
 ├── 2025-07-15/              # Files deprecated on this date
 └── [YYYY-MM-DD]/            # Additional deprecation dates
-```markdown
+
+```Markdown
 
 ## Archive Process
 
@@ -40,19 +42,23 @@ deprecated/
 ### Metadata Format
 
 Each deprecated file includes:
-```yaml
+
+```YAML
+
 ---
 deprecated_date: "YYYY-MM-DD"
 deprecation_reason: "Reason for deprecation"
 replacement: "Path to replacement or 'none'"
 security_issues: "Yes/No"
 removal_date: "YYYY-MM-DD or 'TBD'"
+
 ---
-```markdown
+
+```Markdown
 
 ## Current Deprecated Items
 
-*No items currently in deprecated archive.*
+_No items currently in deprecated archive._
 
 ## Retention Policy
 
@@ -90,6 +96,7 @@ If you're currently using deprecated content:
 ## Support
 
 For help with deprecated content:
+
 - Check replacement guidance in file metadata
 - Review migration documentation
 - Contact maintainers for historical context
@@ -97,4 +104,6 @@ For help with deprecated content:
 
 ---
 
-**Remember: Deprecated content may contain security vulnerabilities or outdated practices. Use only for reference purposes.**
+## Remember: Deprecated content may contain security vulnerabilities or outdated practices
+
+Use only for reference purposes.

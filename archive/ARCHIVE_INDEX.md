@@ -6,7 +6,8 @@ This index tracks deprecated, legacy, and superseded content per the archive pol
 - Category: legacy-versions — older release notes kept under docs/releases
 
 For policy and structure, see `archive/README.md`.
-# Archive Index
+
+## Archive Index 2
 
 ## Overview
 
@@ -15,17 +16,19 @@ organized by category and chronology for easy discovery and reference.
 
 ## 📊 Archive Statistics
 
-- **Total Archived Items**: 8
-- **Deprecated Items**: 0
+- **Total Archived Items**: 16
+- **Deprecated Items**: 2
 - **Legacy Versions**: 0
 - **Superseded Items**: 8
-- **Last Updated**: 2025-08-24
+- **Performance/Monitoring Data**: 6
+- **Last Updated**: 2025-08-25
 
 ## 🗂️ Archive Categories
 
 ### Deprecated Content
 
-No deprecated content currently archived.
+- `tests/test_implementation.py` — Archived 2025-08-25 (umbrella legacy test superseded by focused pytest suites)
+- `app/core/elevated_runner_simple.py` — Archived 2025-08-25 (deprecated simple elevated runner; use `app/core/elevated_runner.py`)
 
 ### Legacy Versions
 
@@ -43,13 +46,27 @@ No legacy versions currently archived.
 - `BUG_REPORT_2025-08-23.md` - Date-specific report superseded by completion
 - `COMPREHENSIVE_FIX_REPORT_2025-08-23.md` - Date-specific report superseded by completion
 - `version-control-validation-2025-08-23.md` - Date-specific validation superseded by completion
-- `config/org.xanados.searchanddestroy.policy` - Superseded by `config/io.github.asafelobotomy.searchanddestroy.policy`
-- `config/org.xanados.searchanddestroy.hardened.policy` - Superseded by `config/io.github.asafelobotomy.searchanddestroy.hardened.policy`
-- `config/org.xanados.searchanddestroy.rkhunter.policy` - Superseded by `config/io.github.asafelobotomy.searchanddestroy.rkhunter.policy`
+- `config/org.xanados.searchanddestroy.policy`- Superseded by`config/io.GitHub.asafelobotomy.searchanddestroy.policy`
+- `config/org.xanados.searchanddestroy.hardened.policy`- Superseded by`config/io.GitHub.asafelobotomy.searchanddestroy.hardened.policy`
+- `config/org.xanados.searchanddestroy.rkhunter.policy`- Superseded by`config/io.GitHub.asafelobotomy.searchanddestroy.rkhunter.policy`
+
+### Performance and Monitoring Data
+
+**Recent Archives (2025-08-25)**:
+
+- `performance-monitoring/` - Performance monitoring data from security assessment
+- `logs/` - Application logs from development and testing
+- `latest_monitoring_dir.txt` - Outdated monitoring directory reference
 
 ## 📅 Chronological Index
 
 ### 2025
+
+**August 25, 2025** - Repository organization cleanup:
+
+- Archived performance monitoring data
+- Archived application logs
+- Moved security and performance reports to docs/reports/
 
 **August 24, 2025** - Major archival of superseded reports:
 
@@ -80,12 +97,13 @@ No legacy versions currently archived.
 
 When adding new archived content, use this template:
 
-```markdown
+```Markdown
 
 ### [File Name] - [Archive Date]
 
 - **Type**: deprecated|legacy-version|superseded
 - **Original Location**: `path/to/original/file`
+
 - **Archive Location**: `archive/category/date/filename`
 - **Archive Reason**: Brief reason for archiving
 - **Replacement**: Link to replacement or "None"
@@ -94,7 +112,8 @@ When adding new archived content, use this template:
 - **Migration Notes**: Brief migration guidance or "N/A"
 
 ---
-```markdown
+
+```Markdown
 
 ## 🔄 Maintenance Schedule
 

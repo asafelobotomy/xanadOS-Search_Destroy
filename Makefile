@@ -38,7 +38,7 @@ setup: ## Set up development environment
 	$(VENV_DIR)/bin/pip install -r requirements.txt
 	$(VENV_DIR)/bin/pip install -r requirements-dev.txt 2>/dev/null || true
 	@echo "$(BLUE)Setting up development tools...$(NC)"
-	./tools/setup.sh
+	./dev/setup.sh
 	@echo "$(GREEN)Development environment ready!$(NC)"
 	@echo "$(YELLOW)Activate with: source $(VENV_DIR)/bin/activate$(NC)"
 

@@ -1,0 +1,265 @@
+# Top Processes Report - Mon 25 Aug 09:25:32 BST 2025
+## 2025-08-25 09:25:32
+    PID    PPID CMD                         %MEM %CPU
+   1690    1621 /opt/visual-studio-code/cod  4.1 11.4
+   1657    1618 /opt/visual-studio-code/cod  1.7  9.4
+    872     868 /usr/bin/kwin_wayland --way  2.5  3.5
+   1905    1615 /proc/self/exe --type=utili  9.0  2.5
+    978     872 /usr/bin/Xwayland :1 -auth   1.0  2.0
+   1074     809 /usr/bin/plasmashell --no-r  4.2  1.7
+   1872    1615 /proc/self/exe --type=utili  1.5  0.9
+    694       1 /usr/sbin/clamd --foregroun 17.0  0.8
+   3120    3109 python app/main.py           3.1  0.7
+   1615     809 /opt/visual-studio-code/cod  3.0  0.6
+   1748    1615 /proc/self/exe --type=utili  1.8  0.5
+   2202    1905 /opt/visual-studio-code/cod  3.9  0.3
+   2231    1905 /opt/visual-studio-code/cod  1.8  0.3
+   1889    1615 /proc/self/exe --type=utili  1.5  0.2
+   1130     809 /usr/bin/ksystemstats        0.3  0.2
+    167       2 [kworker/2:2-i915-unordered  0.0  0.1
+   2546     809 /usr/bin/konsole --workdir   1.1  0.1
+    693       1 /usr/bin/NetworkManager --n  0.3  0.1
+   2463     809 /usr/bin/dolphin             1.3  0.0
+
+## 2025-08-25 09:25:37
+    PID    PPID CMD                         %MEM %CPU
+   1690    1621 /opt/visual-studio-code/cod  4.1 11.4
+   1657    1618 /opt/visual-studio-code/cod  1.7  9.5
+   9074     809 /usr/lib/kf6/kioworker /usr  2.3  4.4
+    872     868 /usr/bin/kwin_wayland --way  2.5  3.5
+   1905    1615 /proc/self/exe --type=utili  8.8  2.5
+    978     872 /usr/bin/Xwayland :1 -auth   1.0  2.0
+   1074     809 /usr/bin/plasmashell --no-r  4.2  1.7
+   1872    1615 /proc/self/exe --type=utili  1.5  0.9
+    694       1 /usr/sbin/clamd --foregroun 17.0  0.8
+   3120    3109 python app/main.py           3.1  0.7
+   1615     809 /opt/visual-studio-code/cod  3.0  0.6
+   1748    1615 /proc/self/exe --type=utili  1.8  0.5
+   9078     809 /usr/lib/kf6/kioworker /usr  0.3  0.4
+   9076     809 /usr/lib/kf6/kioworker /usr  0.3  0.4
+   2202    1905 /opt/visual-studio-code/cod  3.9  0.3
+   2231    1905 /opt/visual-studio-code/cod  1.8  0.3
+   1889    1615 /proc/self/exe --type=utili  1.5  0.2
+   1130     809 /usr/bin/ksystemstats        0.3  0.2
+    167       2 [kworker/2:2-i915-unordered  0.0  0.1
+
+## 2025-08-25 09:25:42
+    PID    PPID CMD                         %MEM %CPU
+   1690    1621 /opt/visual-studio-code/cod  4.1 11.4
+   1657    1618 /opt/visual-studio-code/cod  1.7  9.5
+    872     868 /usr/bin/kwin_wayland --way  2.5  3.5
+   1905    1615 /proc/self/exe --type=utili  8.8  2.5
+    978     872 /usr/bin/Xwayland :1 -auth   1.0  2.0
+   9074     809 /usr/lib/kf6/kioworker /usr  2.3  2.0
+   1074     809 /usr/bin/plasmashell --no-r  4.2  1.7
+   1872    1615 /proc/self/exe --type=utili  1.5  0.9
+    694       1 /usr/sbin/clamd --foregroun 17.0  0.8
+   3120    3109 python app/main.py           3.1  0.7
+   1615     809 /opt/visual-studio-code/cod  3.0  0.6
+   1748    1615 /proc/self/exe --type=utili  1.8  0.5
+   2202    1905 /opt/visual-studio-code/cod  3.9  0.3
+   2231    1905 /opt/visual-studio-code/cod  1.8  0.3
+   8873       2 [kworker/u17:0-i915_flip]    0.0  0.2
+   1889    1615 /proc/self/exe --type=utili  1.5  0.2
+   9078     809 /usr/lib/kf6/kioworker /usr  0.3  0.2
+   9076     809 /usr/lib/kf6/kioworker /usr  0.3  0.2
+   1130     809 /usr/bin/ksystemstats        0.3  0.2
+
+## 2025-08-25 09:25:47
+    PID    PPID CMD                         %MEM %CPU
+   1690    1621 /opt/visual-studio-code/cod  4.1 11.4
+   1657    1618 /opt/visual-studio-code/cod  1.7  9.5
+    872     868 /usr/bin/kwin_wayland --way  2.5  3.5
+   1905    1615 /proc/self/exe --type=utili  8.0  2.5
+    978     872 /usr/bin/Xwayland :1 -auth   1.0  2.0
+   1074     809 /usr/bin/plasmashell --no-r  4.2  1.7
+   9074     809 /usr/lib/kf6/kioworker /usr  2.3  1.3
+   1872    1615 /proc/self/exe --type=utili  1.5  0.9
+    694       1 /usr/sbin/clamd --foregroun 17.0  0.8
+   3120    3109 python app/main.py           3.1  0.7
+   1615     809 /opt/visual-studio-code/cod  3.0  0.6
+   1748    1615 /proc/self/exe --type=utili  1.8  0.5
+   2202    1905 /opt/visual-studio-code/cod  3.9  0.3
+   2231    1905 /opt/visual-studio-code/cod  1.8  0.3
+   8873       2 [kworker/u17:0-i915_flip]    0.0  0.3
+   1889    1615 /proc/self/exe --type=utili  1.5  0.2
+   1130     809 /usr/bin/ksystemstats        0.3  0.2
+    167       2 [kworker/2:2-i915-unordered  0.0  0.2
+   9078     809 /usr/lib/kf6/kioworker /usr  0.3  0.1
+
+## 2025-08-25 09:25:52
+    PID    PPID CMD                         %MEM %CPU
+   1690    1621 /opt/visual-studio-code/cod  4.1 11.4
+   1657    1618 /opt/visual-studio-code/cod  1.7  9.6
+    872     868 /usr/bin/kwin_wayland --way  2.5  3.5
+   1905    1615 /proc/self/exe --type=utili  7.9  2.5
+    978     872 /usr/bin/Xwayland :1 -auth   1.0  2.0
+   1074     809 /usr/bin/plasmashell --no-r  4.2  1.7
+   9074     809 /usr/lib/kf6/kioworker /usr  2.3  0.9
+   1872    1615 /proc/self/exe --type=utili  1.5  0.9
+    694       1 /usr/sbin/clamd --foregroun 17.0  0.8
+   3120    3109 python app/main.py           3.1  0.7
+   1615     809 /opt/visual-studio-code/cod  3.0  0.6
+   1748    1615 /proc/self/exe --type=utili  1.8  0.5
+   2202    1905 /opt/visual-studio-code/cod  3.9  0.3
+   2231    1905 /opt/visual-studio-code/cod  1.8  0.3
+   8873       2 [kworker/u17:0-i915_flip]    0.0  0.3
+   1889    1615 /proc/self/exe --type=utili  1.5  0.2
+   1130     809 /usr/bin/ksystemstats        0.3  0.2
+    167       2 [kworker/2:2-i915-unordered  0.0  0.2
+   9078     809 /usr/lib/kf6/kioworker /usr  0.3  0.1
+
+## 2025-08-25 09:25:57
+    PID    PPID CMD                         %MEM %CPU
+   1690    1621 /opt/visual-studio-code/cod  4.1 11.4
+   1657    1618 /opt/visual-studio-code/cod  1.7  9.6
+    872     868 /usr/bin/kwin_wayland --way  2.5  3.5
+   1905    1615 /proc/self/exe --type=utili  7.9  2.5
+    978     872 /usr/bin/Xwayland :1 -auth   1.0  2.0
+   1074     809 /usr/bin/plasmashell --no-r  4.2  1.7
+   1872    1615 /proc/self/exe --type=utili  1.5  0.9
+    694       1 /usr/sbin/clamd --foregroun 17.0  0.8
+   9074     809 /usr/lib/kf6/kioworker /usr  2.3  0.7
+   3120    3109 python app/main.py           3.1  0.7
+   1615     809 /opt/visual-studio-code/cod  3.0  0.6
+   1748    1615 /proc/self/exe --type=utili  1.8  0.5
+   2202    1905 /opt/visual-studio-code/cod  3.9  0.3
+   2231    1905 /opt/visual-studio-code/cod  1.8  0.3
+   8873       2 [kworker/u17:0-i915_flip]    0.0  0.3
+   1889    1615 /proc/self/exe --type=utili  1.5  0.2
+   1130     809 /usr/bin/ksystemstats        0.3  0.2
+    167       2 [kworker/2:2-i915-unordered  0.0  0.2
+   2546     809 /usr/bin/konsole --workdir   1.1  0.1
+
+## 2025-08-25 09:26:03
+    PID    PPID CMD                         %MEM %CPU
+   1690    1621 /opt/visual-studio-code/cod  4.1 11.4
+   1657    1618 /opt/visual-studio-code/cod  1.7  9.6
+    872     868 /usr/bin/kwin_wayland --way  2.5  3.5
+   1905    1615 /proc/self/exe --type=utili  7.9  2.5
+    978     872 /usr/bin/Xwayland :1 -auth   1.0  2.0
+   1074     809 /usr/bin/plasmashell --no-r  4.2  1.7
+   1872    1615 /proc/self/exe --type=utili  1.5  0.9
+    694       1 /usr/sbin/clamd --foregroun 17.0  0.8
+   3120    3109 python app/main.py           3.1  0.7
+   1615     809 /opt/visual-studio-code/cod  3.0  0.6
+   9074     809 /usr/lib/kf6/kioworker /usr  2.3  0.6
+   1748    1615 /proc/self/exe --type=utili  1.8  0.5
+   2202    1905 /opt/visual-studio-code/cod  3.9  0.3
+   2231    1905 /opt/visual-studio-code/cod  1.8  0.3
+   8873       2 [kworker/u17:0+i915_flip]    0.0  0.3
+   1889    1615 /proc/self/exe --type=utili  1.5  0.2
+   1130     809 /usr/bin/ksystemstats        0.3  0.2
+    167       2 [kworker/2:2-i915-unordered  0.0  0.2
+   2546     809 /usr/bin/konsole --workdir   1.1  0.1
+
+## 2025-08-25 09:26:08
+    PID    PPID CMD                         %MEM %CPU
+   1690    1621 /opt/visual-studio-code/cod  4.1 11.4
+   1657    1618 /opt/visual-studio-code/cod  1.7  9.7
+    872     868 /usr/bin/kwin_wayland --way  2.5  3.5
+   1905    1615 /proc/self/exe --type=utili  8.0  2.5
+    978     872 /usr/bin/Xwayland :1 -auth   1.0  2.0
+   1074     809 /usr/bin/plasmashell --no-r  4.2  1.7
+   1872    1615 /proc/self/exe --type=utili  1.5  0.9
+    694       1 /usr/sbin/clamd --foregroun 17.0  0.8
+   3120    3109 python app/main.py           3.1  0.7
+   1615     809 /opt/visual-studio-code/cod  3.0  0.6
+   9074     809 /usr/lib/kf6/kioworker /usr  2.3  0.5
+   1748    1615 /proc/self/exe --type=utili  1.8  0.5
+   2202    1905 /opt/visual-studio-code/cod  3.9  0.3
+   2231    1905 /opt/visual-studio-code/cod  1.8  0.3
+   8873       2 [kworker/u17:0-i915_flip]    0.0  0.3
+   1889    1615 /proc/self/exe --type=utili  1.5  0.2
+   1130     809 /usr/bin/ksystemstats        0.3  0.2
+    167       2 [kworker/2:2-i915-unordered  0.0  0.2
+   2546     809 /usr/bin/konsole --workdir   1.1  0.1
+
+## 2025-08-25 09:26:13
+    PID    PPID CMD                         %MEM %CPU
+   1690    1621 /opt/visual-studio-code/cod  4.1 11.4
+   1657    1618 /opt/visual-studio-code/cod  1.7  9.7
+    872     868 /usr/bin/kwin_wayland --way  2.5  3.5
+   1905    1615 /proc/self/exe --type=utili  8.0  2.5
+    978     872 /usr/bin/Xwayland :1 -auth   1.0  2.0
+   1074     809 /usr/bin/plasmashell --no-r  4.2  1.7
+   1872    1615 /proc/self/exe --type=utili  1.5  0.9
+    694       1 /usr/sbin/clamd --foregroun 17.0  0.8
+   3120    3109 python app/main.py           3.1  0.7
+   1615     809 /opt/visual-studio-code/cod  3.0  0.6
+   1748    1615 /proc/self/exe --type=utili  1.8  0.5
+   9074     809 /usr/lib/kf6/kioworker /usr  2.3  0.4
+   2202    1905 /opt/visual-studio-code/cod  3.9  0.3
+   8873       2 [kworker/u17:0-i915_flip]    0.0  0.3
+   2231    1905 /opt/visual-studio-code/cod  1.8  0.3
+   1889    1615 /proc/self/exe --type=utili  1.5  0.2
+   1130     809 /usr/bin/ksystemstats        0.3  0.2
+    167       2 [kworker/2:2-i915-unordered  0.0  0.2
+   2546     809 /usr/bin/konsole --workdir   1.1  0.1
+
+## 2025-08-25 09:26:18
+    PID    PPID CMD                         %MEM %CPU
+   1690    1621 /opt/visual-studio-code/cod  4.1 11.4
+   1657    1618 /opt/visual-studio-code/cod  1.7  9.7
+    872     868 /usr/bin/kwin_wayland --way  2.5  3.5
+   1905    1615 /proc/self/exe --type=utili  8.0  2.5
+    978     872 /usr/bin/Xwayland :1 -auth   1.0  2.0
+   1074     809 /usr/bin/plasmashell --no-r  4.2  1.7
+   1872    1615 /proc/self/exe --type=utili  1.5  0.9
+    694       1 /usr/sbin/clamd --foregroun 17.0  0.8
+   3120    3109 python app/main.py           3.1  0.7
+   1615     809 /opt/visual-studio-code/cod  3.0  0.6
+   1748    1615 /proc/self/exe --type=utili  1.8  0.5
+   9074     809 /usr/lib/kf6/kioworker /usr  2.3  0.4
+   2202    1905 /opt/visual-studio-code/cod  3.9  0.3
+   2231    1905 /opt/visual-studio-code/cod  1.8  0.3
+   8873       2 [kworker/u17:0+i915_flip]    0.0  0.3
+   1889    1615 /proc/self/exe --type=utili  1.5  0.2
+   1130     809 /usr/bin/ksystemstats        0.3  0.2
+    167       2 [kworker/2:2-i915-unordered  0.0  0.2
+    693       1 /usr/bin/NetworkManager --n  0.3  0.1
+
+## 2025-08-25 09:26:23
+    PID    PPID CMD                         %MEM %CPU
+   1690    1621 /opt/visual-studio-code/cod  4.1 11.4
+   1657    1618 /opt/visual-studio-code/cod  1.7  9.7
+    872     868 /usr/bin/kwin_wayland --way  2.5  3.5
+   1905    1615 /proc/self/exe --type=utili  8.0  2.5
+    978     872 /usr/bin/Xwayland :1 -auth   1.0  2.1
+   1074     809 /usr/bin/plasmashell --no-r  4.2  1.7
+   1872    1615 /proc/self/exe --type=utili  1.5  0.9
+    694       1 /usr/sbin/clamd --foregroun 17.0  0.7
+   3120    3109 python app/main.py           3.1  0.7
+   1615     809 /opt/visual-studio-code/cod  3.0  0.6
+   1748    1615 /proc/self/exe --type=utili  1.8  0.5
+   9074     809 /usr/lib/kf6/kioworker /usr  2.3  0.3
+   2202    1905 /opt/visual-studio-code/cod  3.9  0.3
+   2231    1905 /opt/visual-studio-code/cod  1.8  0.3
+   8873       2 [kworker/u17:0-i915_flip]    0.0  0.3
+   1889    1615 /proc/self/exe --type=utili  1.5  0.2
+   1130     809 /usr/bin/ksystemstats        0.3  0.2
+    167       2 [kworker/2:2-events]         0.0  0.2
+    693       1 /usr/bin/NetworkManager --n  0.3  0.1
+
+## 2025-08-25 09:26:28
+    PID    PPID CMD                         %MEM %CPU
+   1690    1621 /opt/visual-studio-code/cod  4.1 11.4
+   1657    1618 /opt/visual-studio-code/cod  1.7  9.8
+    872     868 /usr/bin/kwin_wayland --way  2.5  3.5
+   1905    1615 /proc/self/exe --type=utili  8.0  2.5
+    978     872 /usr/bin/Xwayland :1 -auth   1.0  2.1
+   1074     809 /usr/bin/plasmashell --no-r  4.2  1.7
+   1872    1615 /proc/self/exe --type=utili  1.5  0.9
+    694       1 /usr/sbin/clamd --foregroun 17.0  0.7
+   3120    3109 python app/main.py           3.1  0.7
+   1615     809 /opt/visual-studio-code/cod  3.0  0.6
+   1748    1615 /proc/self/exe --type=utili  1.8  0.5
+   2202    1905 /opt/visual-studio-code/cod  3.9  0.3
+   9074     809 /usr/lib/kf6/kioworker /usr  2.3  0.3
+   8873       2 [kworker/u17:0-i915_flip]    0.0  0.3
+   2231    1905 /opt/visual-studio-code/cod  1.8  0.3
+   1889    1615 /proc/self/exe --type=utili  1.5  0.2
+   1130     809 /usr/bin/ksystemstats        0.3  0.2
+    167       2 [kworker/2:2-i915-unordered  0.0  0.2
+    693       1 /usr/bin/NetworkManager --n  0.3  0.1
+

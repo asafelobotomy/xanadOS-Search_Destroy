@@ -1,6 +1,8 @@
 # Modern Test Suite for xanadOS Search & Destroy
 
-This comprehensive test suite provides modern, future-proof testing for the xanadOS Search & Destroy application with coverage for functionality, performance, security, and future compatibility.
+This comprehensive test suite provides modern,
+future-proof testing for the xanadOS Search & Destroy application with coverage for functionality,
+performance, security, and future compatibility.
 
 ## 🎯 **Test Suite Overview**
 
@@ -25,38 +27,53 @@ This comprehensive test suite provides modern, future-proof testing for the xana
 ## 🚀 **Quick Start**
 
 ### **Run All Tests**
-```bash
-# Full comprehensive test suite
-cd tests/
-python run_modern_tests.py
 
-# Quick validation only
-python run_modern_tests.py --quick
-```
+```bash
+
+## Full comprehensive test suite
+
+cd tests/
+Python run_modern_tests.py
+
+## Quick validation only
+
+Python run_modern_tests.py --quick
+
+```text
 
 ### **Run Individual Test Categories**
+
 ```bash
-# Core functionality tests
-python -m pytest test_comprehensive_suite.py -v
 
-# Security validation
-python -m pytest test_security_validation.py -v
+## Core functionality tests
 
-# Performance benchmarks
-python -m pytest test_performance_benchmarks.py -v
+Python -m pytest test_comprehensive_suite.py -v
 
-# Legacy unit tests
-python -m pytest test_gui.py test_monitoring.py -v
-```
+## Security validation
+
+Python -m pytest test_security_validation.py -v
+
+## Performance benchmarks
+
+Python -m pytest test_performance_benchmarks.py -v
+
+## Legacy unit tests
+
+Python -m pytest test_gui.py test_monitoring.py -v
+
+```text
 
 ### **Run Tests with Coverage**
+
 ```bash
-python -m pytest --cov=app --cov-report=html --cov-report=term
-```
+Python -m pytest --cov=app --cov-report=HTML --cov-report=term
+
+```text
 
 ## 📊 **Test Configuration**
 
 ### **Performance Limits**
+
 - **Startup Time:** < 5.0 seconds
 - **Memory Usage:** < 200MB baseline
 - **CPU Usage:** < 50% idle
@@ -64,6 +81,7 @@ python -m pytest --cov=app --cov-report=html --cov-report=term
 - **UI Response:** < 0.1 seconds
 
 ### **Security Coverage**
+
 - ✅ Path traversal prevention
 - ✅ Command injection prevention
 - ✅ SQL injection prevention
@@ -74,6 +92,7 @@ python -m pytest --cov=app --cov-report=html --cov-report=term
 - ✅ Cryptographic security
 
 ### **Performance Testing**
+
 - ✅ Startup performance
 - ✅ Memory leak detection
 - ✅ Concurrent operations
@@ -84,15 +103,21 @@ python -m pytest --cov=app --cov-report=html --cov-report=term
 ## 🔧 **Setup and Requirements**
 
 ### **Install Test Dependencies**
+
 ```bash
-# Install test requirements
+
+## Install test requirements
+
 pip install -r tests/requirements-test.txt
 
-# Or install specific testing tools
+## Or install specific testing tools
+
 pip install pytest pytest-asyncio pytest-timeout pytest-mock psutil
-```
+
+```text
 
 ### **System Requirements**
+
 - Python 3.8+
 - 2GB+ RAM for performance tests
 - Linux/Windows/macOS support
@@ -101,7 +126,9 @@ pip install pytest pytest-asyncio pytest-timeout pytest-mock psutil
 ## 📋 **Test Results and Reporting**
 
 ### **Test Reports**
+
 Test results are saved to `test_results/` with detailed JSON reports including:
+
 - Test execution times
 - Memory usage statistics
 - System information
@@ -109,10 +136,11 @@ Test results are saved to `test_results/` with detailed JSON reports including:
 - Recommendations
 
 ### **Sample Output**
-```
+
+```text
 🚀 Starting Comprehensive Modern Test Suite
 ================================================================================
-Platform: linux
+Platform: Linux
 Python: 3.11.0
 CPUs: 8
 Memory: 16.0GB
@@ -120,13 +148,15 @@ Memory: 16.0GB
 
 🧪 Running: Unit Tests
 📋 Basic functionality and unit tests
-------------------------------------------------------------
+
+---
 ✅ PASSED in 12.3s
 Tests: 15 run, 15 passed, 0 failed
 
 🧪 Running: Comprehensive Suite
 📋 Core functionality, integration, and future-proofing
-------------------------------------------------------------
+
+---
 ✅ PASSED in 45.2s
 Tests: 47 run, 45 passed, 2 failed
 
@@ -152,11 +182,13 @@ Tests: 47 run, 45 passed, 2 failed
   🚀 Application is ready for deployment
   📊 Consider running performance tests regularly
   🔒 Security validation completed successfully
-```
+
+```text
 
 ## 🧪 **Test Details**
 
 ### **Functionality Tests** (`test_comprehensive_suite.py`)
+
 - **Application Startup:** Module loading, initialization
 - **Configuration:** Settings persistence, loading
 - **File Operations:** Scanner initialization, monitoring
@@ -164,6 +196,7 @@ Tests: 47 run, 45 passed, 2 failed
 - **Future Compatibility:** API versioning, plugin readiness
 
 ### **Security Tests** (`test_security_validation.py`)
+
 - **Input Validation:** Filename, path, command sanitization
 - **Privilege Management:** User permissions, elevation handling
 - **Cryptography:** Hash functions, secure random generation
@@ -171,6 +204,7 @@ Tests: 47 run, 45 passed, 2 failed
 - **Data Protection:** Sensitive data handling, memory cleanup
 
 ### **Performance Tests** (`test_performance_benchmarks.py`)
+
 - **Speed Tests:** Import speed, initialization time
 - **Memory Tests:** Usage monitoring, leak detection
 - **Concurrency:** Threading, async operations
@@ -180,125 +214,173 @@ Tests: 47 run, 45 passed, 2 failed
 ## 🔍 **Advanced Usage**
 
 ### **Custom Test Markers**
+
 ```bash
-# Run only security tests
-python -m pytest -m security
 
-# Run only performance tests
-python -m pytest -m performance
+## Run only security tests
 
-# Skip slow tests
-python -m pytest -m "not slow"
+Python -m pytest -m security
 
-# Run critical tests only
-python -m pytest tests/ -k "critical"
-```
+## Run only performance tests
+
+Python -m pytest -m performance
+
+## Skip slow tests
+
+Python -m pytest -m "not slow"
+
+## Run critical tests only
+
+Python -m pytest tests/ -k "critical"
+
+```text
 
 ### **Parallel Test Execution**
-```bash
-# Run tests in parallel (if pytest-xdist installed)
-python -m pytest -n auto
 
-# Run with specific worker count
-python -m pytest -n 4
-```
+```bash
+
+## Run tests in parallel (if pytest-xdist installed)
+
+Python -m pytest -n auto
+
+## Run with specific worker count
+
+Python -m pytest -n 4
+
+```text
 
 ### **Memory Profiling**
-```bash
-# Run with memory profiling
-python -m pytest --profile
 
-# Generate memory usage report
-mprof run python -m pytest test_performance_benchmarks.py
+```bash
+
+## Run with memory profiling
+
+Python -m pytest --profile
+
+## Generate memory usage report
+
+mprof run Python -m pytest test_performance_benchmarks.py
 mprof plot
-```
+
+```text
 
 ### **Test Environment Variables**
+
 ```bash
-# Set test timeouts
+
+## Set test timeouts
+
 export PYTEST_TIMEOUT=60
 
-# Enable verbose logging
+## Enable verbose logging
+
 export TEST_LOG_LEVEL=DEBUG
 
-# Set performance limits
+## Set performance limits
+
 export TEST_MEMORY_LIMIT_MB=300
 export TEST_PERFORMANCE_THRESHOLD=2.0
-```
+
+```text
 
 ## 🛠️ **Troubleshooting**
 
 ### **Common Issues**
 
-**Qt/GUI Import Errors:**
+### Qt/GUI Import Errors
+
 - Solution: Tests automatically mock PyQt6 for headless execution
 - The mocking allows tests to run without GUI dependencies
 
-**Permission Errors:**
+### Permission Errors
+
 - Solution: Tests include privilege escalation mocking
 - Run tests as regular user, not root
 
-**Timeout Errors:**
+### Timeout Errors
+
 - Solution: Increase timeout with `--timeout=60`
 - Check system performance during test execution
 
-**Memory Issues:**
+### Memory Issues
+
 - Solution: Run tests individually if system has limited RAM
-- Use `python -m pytest tests/test_gui.py` for basic tests only
+- Use `Python -m pytest tests/test_gui.py` for basic tests only
 
 ### **Test Debugging**
+
 ```bash
-# Run with detailed output
-python -m pytest -vvv --tb=long
 
-# Run single test with debugging
-python -m pytest tests/test_comprehensive_suite.py::TestCoreFunctionality::test_application_startup -vvv
+## Run with detailed output
 
-# Capture print statements
-python -m pytest -s
+Python -m pytest -vvv --tb=long
 
-# Run with PDB debugger
-python -m pytest --pdb
-```
+## Run single test with debugging
+
+Python -m pytest tests/test_comprehensive_suite.py::TestCoreFunctionality::test_application_startup -vvv
+
+## Capture print statements
+
+Python -m pytest -s
+
+## Run with PDB debugger
+
+Python -m pytest --pdb
+
+```text
 
 ## 🔄 **Continuous Integration**
 
 ### **GitHub Actions Example**
-```yaml
+
+```YAML
 name: Test Suite
 on: [push, pull_request]
 jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
-    - uses: actions/setup-python@v4
-      with:
-        python-version: '3.11'
-    - name: Install dependencies
-      run: |
-        pip install -r requirements.txt
-        pip install -r tests/requirements-test.txt
-    - name: Run tests
-      run: |
-        cd tests/
-        python run_modern_tests.py
-```
+
+- uses: actions/checkout@v3
+- uses: actions/setup-Python@v4
+
+  with:
+  Python-version: '3.11'
+
+- name: Install dependencies
+
+  run: |
+  pip install -r requirements.txt
+  pip install -r tests/requirements-test.txt
+
+- name: Run tests
+
+  run: |
+  cd tests/
+  Python run_modern_tests.py
+
+```text
 
 ### **Pre-commit Hook**
+
 ```bash
-# Install pre-commit hook
+
+## Install pre-commit hook
+
 pip install pre-commit
 pre-commit install
 
-# Run tests before commit
-echo "cd tests/ && python run_modern_tests.py --quick" > .git/hooks/pre-commit
-chmod +x .git/hooks/pre-commit
-```
+## Run tests before commit
+
+echo "cd tests/ && Python run_modern_tests.py --quick" > .Git/hooks/pre-commit
+chmod +x .Git/hooks/pre-commit
+
+```text
 
 ## 🎯 **Test Maintenance**
 
 ### **Adding New Tests**
+
 1. Add tests to appropriate module (`test_*.py`)
 2. Use proper test markers (`@pytest.mark.unit`, etc.)
 3. Include performance assertions where relevant
@@ -306,14 +388,18 @@ chmod +x .git/hooks/pre-commit
 5. Update test documentation
 
 ### **Performance Baselines**
+
 Performance thresholds are configurable in:
-- `test_comprehensive_suite.py` - `TestConfig` class
-- `test_performance_benchmarks.py` - `PerformanceConfig` class
+
+- `test_comprehensive_suite.py`-`TestConfig` class
+- `test_performance_benchmarks.py`-`PerformanceConfig` class
 
 Update baselines as application performance improves.
 
 ### **Security Test Updates**
+
 Keep security tests current with:
+
 - Latest vulnerability patterns
 - New attack vectors
 - Updated security best practices
@@ -322,6 +408,7 @@ Keep security tests current with:
 ## 📈 **Future Enhancements**
 
 ### **Planned Improvements**
+
 - [ ] Visual regression testing for UI
 - [ ] API contract testing
 - [ ] Database migration testing
@@ -330,6 +417,7 @@ Keep security tests current with:
 - [ ] Internationalization testing
 
 ### **Integration Opportunities**
+
 - [ ] SonarQube integration for code quality
 - [ ] Grafana dashboards for performance metrics
 - [ ] Slack/email notifications for test failures
@@ -340,9 +428,11 @@ Keep security tests current with:
 ## 📞 **Support**
 
 For test suite issues or questions:
+
 1. Check the troubleshooting section above
 2. Review test output and logs in `test_results/`
 3. Run individual test modules to isolate issues
 4. Use `--tb=long` for detailed error information
 
-The test suite is designed to be robust and informative, providing clear feedback on application health and readiness for deployment.
+The test suite is designed to be robust and informative,
+providing clear feedback on application health and readiness for deployment.

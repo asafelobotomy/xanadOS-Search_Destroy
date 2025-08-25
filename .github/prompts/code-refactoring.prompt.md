@@ -1,6 +1,7 @@
 # Code Refactoring Prompt
 
-You are conducting systematic code refactoring to improve code quality, maintainability, and performance without changing external behavior. Follow this comprehensive approach to identify refactoring opportunities and implement improvements safely.
+You are conducting systematic code refactoring to improve code quality, maintainability, and performance without changing external behavior.
+Follow this comprehensive approach to identify refactoring opportunities and implement improvements safely.
 
 ## Refactoring Methodology
 
@@ -16,8 +17,9 @@ You are conducting systematic code refactoring to improve code quality, maintain
 
 #### Performance Profiling
 
-```python
-# Example: Performance profiling before refactoring
+```Python
+
+## Example: Performance profiling before refactoring
 
 import cProfile
 import pstats
@@ -35,48 +37,58 @@ def profile_performance(func):
         stats = pstats.Stats(profiler)
         stats.sort_stats('cumulative')
 
-        # Log performance data
-        print(f"Performance profile for {func.__name__}:")
+## Log performance data
+
+        print(f"Performance profile for {func.**name**}:")
         stats.print_stats(10)  # Top 10 slowest operations
 
         return result
     return wrapper
 
-# Usage: Profile methods before refactoring
+## Usage: Profile methods before refactoring
 
 @profile_performance
 def complex_business_logic(data):
-    # Complex logic to be refactored
-    pass
-```markdown
 
-#### Test Coverage Verification
+## Complex logic to be refactored
+
+    pass
+
+```Markdown
+
+### Test Coverage Verification
 
 ```bash
-# Ensure comprehensive test coverage before refactoring
 
-pytest --cov=src --cov-report=html --cov-report=term-missing
+## Ensure comprehensive test coverage before refactoring
+
+pytest --cov=src --cov-report=HTML --cov-report=term-missing
 coverage report --fail-under=85
 
-# Generate baseline coverage report
+## Generate baseline coverage report
 
-coverage html -d coverage_baseline/
-```markdown
+coverage HTML -d coverage_baseline/
+
+```Markdown
 
 ### 2. Refactoring Catalog
 
 #### Extract Method Refactoring
 
-```python
-# Before: Long method with multiple responsibilities
+```Python
+
+## Before: Long method with multiple responsibilities
 
 def process_user_registration(user_data):
-    # Email validation
+
+## Email validation
+
     email = user_data.get('email', '').strip().lower()
     if not re.match(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$', email):
         raise ValueError('Invalid email format')
 
-    # Password validation
+## Password validation
+
     password = user_data.get('password', '')
     if len(password) < 8:
         raise ValueError('Password too short')
@@ -87,7 +99,8 @@ def process_user_registration(user_data):
     if not any(c.isdigit() for c in password):
         raise ValueError('Password needs digit')
 
-    # Database operations
+## Database operations
+
     if database.email_exists(email):
         raise ValueError('Email already exists')
 
@@ -97,7 +110,8 @@ def process_user_registration(user_data):
         'name': user_data.get('name', '').strip()
     })
 
-    # Email notification
+## Email notification
+
     try:
         send_welcome_email(email, user_data.get('name', ''))
     except EmailError:
@@ -105,7 +119,7 @@ def process_user_registration(user_data):
 
     return user_id
 
-# After: Extracted methods with single responsibilities
+## After: Extracted methods with single responsibilities
 
 def process_user_registration(user_data):
     """Process user registration with validation and notification"""
@@ -170,49 +184,63 @@ def _send_welcome_notification(self, user_data):
         )
     except EmailError as e:
         self.logger.warning(f'Failed to send welcome email to {user_data["email"]}: {e}')
-```markdown
 
-#### Extract Class Refactoring
+```Markdown
 
-```python
-# Before: God class with multiple responsibilities
+### Extract Class Refactoring
+
+```Python
+
+## Before: God class with multiple responsibilities
 
 class UserManager:
-    def __init__(self):
+    def **init**(self):
         self.database = Database()
         self.email_service = EmailService()
         self.logger = Logger()
 
     def register_user(self, user_data):
-        # User registration logic
+
+## User registration logic
+
         pass
 
     def authenticate_user(self, email, password):
-        # Authentication logic
+
+## Authentication logic
+
         pass
 
     def update_user_profile(self, user_id, profile_data):
-        # Profile update logic
+
+## Profile update logic
+
         pass
 
     def send_password_reset(self, email):
-        # Password reset logic
+
+## Password reset logic
+
         pass
 
     def generate_user_report(self, filters):
-        # Reporting logic
+
+## Reporting logic
+
         pass
 
     def export_user_data(self, format):
-        # Data export logic
+
+## Data export logic
+
         pass
 
-# After: Extracted classes with single responsibilities
+## After: Extracted classes with single responsibilities
 
 class UserRegistrationService:
     """Handles user registration and account creation"""
 
-    def __init__(self, database, email_service, validator):
+    def **init**(self, database, email_service, validator):
         self.database = database
         self.email_service = email_service
         self.validator = validator
@@ -226,7 +254,7 @@ class UserRegistrationService:
 class UserAuthenticationService:
     """Handles user authentication and session management"""
 
-    def __init__(self, database, session_manager):
+    def **init**(self, database, session_manager):
         self.database = database
         self.session_manager = session_manager
 
@@ -239,7 +267,7 @@ class UserAuthenticationService:
 class UserProfileService:
     """Handles user profile management"""
 
-    def __init__(self, database, validator):
+    def **init**(self, database, validator):
         self.database = database
         self.validator = validator
 
@@ -250,7 +278,7 @@ class UserProfileService:
 class UserReportingService:
     """Handles user data reporting and analytics"""
 
-    def __init__(self, database, report_generator):
+    def **init**(self, database, report_generator):
         self.database = database
         self.report_generator = report_generator
 
@@ -258,20 +286,23 @@ class UserReportingService:
         user_data = self.database.get_users_by_filters(filters)
         return self.report_generator.create_report(user_data)
 
-# Facade to maintain existing interface
+## Facade to maintain existing interface
 
 class UserManager:
     """Facade for user management operations"""
 
-    def __init__(self):
-        # Initialize all services
+    def **init**(self):
+
+## Initialize all services
+
         self.database = Database()
         self.email_service = EmailService()
         self.validator = UserValidator()
         self.session_manager = SessionManager()
         self.report_generator = ReportGenerator()
 
-        # Initialize specialized services
+## Initialize specialized services
+
         self.registration_service = UserRegistrationService(
             self.database, self.email_service, self.validator
         )
@@ -296,12 +327,14 @@ class UserManager:
 
     def generate_user_report(self, filters):
         return self.reporting_service.generate_user_report(filters)
-```markdown
 
-#### Replace Conditional with Polymorphism
+```Markdown
 
-```python
-# Before: Complex conditional logic
+### Replace Conditional with Polymorphism
+
+```Python
+
+## Before: Complex conditional logic
 
 def calculate_shipping_cost(order, shipping_type):
     if shipping_type == 'standard':
@@ -328,7 +361,7 @@ def calculate_shipping_cost(order, shipping_type):
     else:
         raise ValueError(f'Unknown shipping type: {shipping_type}')
 
-# After: Polymorphic shipping calculators
+## After: Polymorphic shipping calculators
 
 from abc import ABC, abstractmethod
 
@@ -377,11 +410,13 @@ class OvernightShippingCalculator(ShippingCalculator):
     def calculate_cost(self, order) -> float:
         base_cost = 29.99
 
-        # Weight surcharge
+## Weight surcharge
+
         if order.weight > 1:
             base_cost += (order.weight - 1) * 5.00
 
-        # Fragile item surcharge
+## Fragile item surcharge
+
         if order.is_fragile:
             base_cost += 10.00
 
@@ -393,7 +428,7 @@ class OvernightShippingCalculator(ShippingCalculator):
 class ShippingService:
     """Service for calculating shipping costs using strategy pattern"""
 
-    def __init__(self):
+    def **init**(self):
         self.calculators = {
             'standard': StandardShippingCalculator(),
             'express': ExpressShippingCalculator(),
@@ -428,12 +463,14 @@ class ShippingService:
             })
 
         return sorted(options, key=lambda x: x['cost'])
-```markdown
 
-#### Replace Magic Numbers/Strings with Constants
+```Markdown
 
-```python
-# Before: Magic numbers and strings scattered throughout code
+### Replace Magic Numbers/Strings with Constants
+
+```Python
+
+## Before: Magic numbers and strings scattered throughout code
 
 def validate_user_input(user_data):
     if len(user_data['password']) < 8:
@@ -459,9 +496,9 @@ def calculate_subscription_price(plan, duration):
     else:
         discount = 0.0
 
-    return monthly_price * duration * (1 - discount)
+    return monthly_price _duration_ (1 - discount)
 
-# After: Extracted constants and configuration
+## After: Extracted constants and configuration
 
 class UserValidationConstants:
     MIN_PASSWORD_LENGTH = 8
@@ -489,17 +526,20 @@ class UserValidator:
     def validate_user_input(user_data):
         errors = []
 
-        # Password validation
+## Password validation 2
+
         password = user_data.get('password', '')
         if len(password) < UserValidationConstants.MIN_PASSWORD_LENGTH:
             errors.append(f'Password must be at least {UserValidationConstants.MIN_PASSWORD_LENGTH} characters')
 
-        # Username validation
+## Username validation
+
         username = user_data.get('username', '')
         if len(username) > UserValidationConstants.MAX_USERNAME_LENGTH:
             errors.append(f'Username cannot exceed {UserValidationConstants.MAX_USERNAME_LENGTH} characters')
 
-        # Role validation
+## Role validation
+
         role = user_data.get('role', '')
         if role not in UserValidationConstants.VALID_ROLES:
             errors.append(f'Role must be one of: {", ".join(UserValidationConstants.VALID_ROLES)}')
@@ -512,7 +552,8 @@ class SubscriptionPricing:
     @staticmethod
     def calculate_price(plan, duration_months):
         if plan not in SubscriptionConfig.PLANS:
-            raise ValueError(f'Invalid plan: {plan}. Available plans: {list(SubscriptionConfig.PLANS.keys())}')
+            raise ValueError(f'Invalid plan: {plan}.
+Available plans: {list(SubscriptionConfig.PLANS.keys())}')
 
         monthly_price = SubscriptionConfig.PLANS[plan]
         discount = SubscriptionConfig.DURATION_DISCOUNTS.get(duration_months, SubscriptionConfig.DEFAULT_DISCOUNT)
@@ -528,14 +569,16 @@ class SubscriptionPricing:
             'discount_amount': discount_amount,
             'total': subtotal - discount_amount
         }
-```markdown
+
+```Markdown
 
 ### 3. Refactoring Safety Measures
 
 #### Automated Testing Safety Net
 
-```python
-# Test suite to verify refactoring doesn't break functionality
+```Python
+
+## Test suite to verify refactoring doesn't break functionality
 
 import pytest
 from unittest.mock import Mock
@@ -558,49 +601,61 @@ class TestRefactoringSafety:
             try:
                 test()
             except Exception as e:
-                pytest.fail(f"Refactoring broke original behavior in {test.__name__}: {e}")
+                pytest.fail(f"Refactoring broke original behavior in {test.**name**}: {e}")
 
     @pytest.mark.parametrize("test_data,expected_result", [
         (
             {'email': 'test@example.com', 'password': 'SecurePass123!', 'name': 'Test User'},
             {'success': True, 'user_id': 12345}
         ),
-        # Add more test cases
+
+## Add more test cases
+
     ])
     def test_user_registration_behavior_preserved(self, test_data, expected_result):
         """Verify user registration behavior is preserved after refactoring"""
-        # Test both old and new implementations produce same results
+
+## Test both old and new implementations produce same results
+
         pass
 
-# Regression testing framework
+## Regression testing framework
 
 def create_regression_test_suite():
     """Create comprehensive regression test suite before refactoring"""
 
     test_cases = [
-        # Input/output pairs for all public methods
+
+## Input/output pairs for all public methods
+
         {
             'method': 'register_user',
             'inputs': [
                 {'email': 'test@example.com', 'password': 'SecurePass123!', 'name': 'Test User'},
                 {'email': 'invalid-email', 'password': 'weak', 'name': ''},
-                # ... more test cases
+
+## ... more test cases
+
             ],
             'expected_outputs': [
                 {'success': True, 'user_id': 12345},
                 {'success': False, 'error': 'Invalid email format'},
-                # ... corresponding expected outputs
+
+## ... corresponding expected outputs
+
             ]
         }
     ]
 
     return test_cases
-```markdown
 
-#### Code Metrics Monitoring
+```Markdown
 
-```python
-# Code quality metrics monitoring
+### Code Metrics Monitoring
+
+```Python
+
+## Code quality metrics monitoring
 
 import ast
 import os
@@ -609,7 +664,7 @@ from typing import Dict, List
 class CodeMetrics:
     """Monitor code quality metrics during refactoring"""
 
-    def __init__(self, source_directory):
+    def **init**(self, source_directory):
         self.source_directory = source_directory
 
     def calculate_cyclomatic_complexity(self, file_path) -> Dict[str, int]:
@@ -642,7 +697,9 @@ class CodeMetrics:
 
     def measure_code_duplication(self) -> Dict[str, List[str]]:
         """Identify potential code duplication"""
-        # Implementation for duplicate code detection
+
+## Implementation for duplicate code detection
+
         pass
 
     def generate_metrics_report(self) -> Dict:
@@ -662,22 +719,26 @@ class CodeMetrics:
 
         return report
 
-# Usage: Monitor metrics before and after refactoring
+## Usage: Monitor metrics before and after refactoring
 
 def monitor_refactoring_impact():
     metrics = CodeMetrics('src/')
 
-    # Baseline metrics
+## Baseline metrics
+
     baseline_report = metrics.generate_metrics_report()
 
-    # ... perform refactoring ...
+## ... perform refactoring 
 
-    # Post-refactoring metrics
+## Post-refactoring metrics
+
     post_refactoring_report = metrics.generate_metrics_report()
 
-    # Compare and validate improvements
+## Compare and validate improvements
+
     return compare_metrics(baseline_report, post_refactoring_report)
-```markdown
+
+```Markdown
 
 ### 4. Refactoring Checklist
 
@@ -708,10 +769,9 @@ def monitor_refactoring_impact():
 
 ### 5. Refactoring Report Template
 
-```markdown
+```Markdown
 
-# Code Refactoring Report - [Module/Component Name]
-
+## Code Refactoring Report - [Module/Component Name]
 
 ## Summary
 
@@ -774,6 +834,9 @@ def monitor_refactoring_impact():
 - [ ] Code review completed
 - [ ] Performance testing passed
 - [ ] Documentation updated
-```markdown
 
-Remember: Refactoring is an ongoing process of continuous improvement. Small, frequent refactoring efforts are more effective and less risky than large, infrequent refactoring projects. Always maintain test coverage and measure the impact of your changes.
+```Markdown
+
+Remember: Refactoring is an ongoing process of continuous improvement.
+Small, frequent refactoring efforts are more effective and less risky than large, infrequent refactoring projects
+Always maintain test coverage and measure the impact of your changes.

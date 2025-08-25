@@ -3,22 +3,26 @@
 ## Investigation Results
 
 ### Platform & UI Framework Details
+
 - **Operating System**: Linux
 - **Qt Style**: Breeze (KDE theme)
 - **Dropdown Implementation**: QListView inside QFrame container
 - **Root Cause**: QFrame container using native borders that don't respect custom themes
 
 ### Dropdown Widget Hierarchy
-```
+
+```text
 QComboBox
 └── QFrame (popup container) ← SOURCE OF WHITE BORDERS
     └── QListView (dropdown items)
         ├── QScrollBar (horizontal)
         ├── QScrollBar (vertical)
         └── QStyledItemDelegate (item rendering)
-```
+
+```text
 
 ### Frame Properties Causing Issues
+
 - **Frame Style**: 22 (includes borders)
 - **Frame Shape**: 6 (box frame)
 - **Frame Shadow**: 16 (raised shadow)
@@ -28,15 +32,16 @@ QComboBox
 ### 1. CSS Styling Enhancements
 
 #### Dark Theme
-```css
-/* Target the frame container */
+
+```CSS
+/_Target the frame container_/
 QComboBox QFrame {
     background-color: #2a2a2a;
     border: 1px solid #EE8980;
     border-radius: 4px;
 }
 
-/* Target the list view */
+/_Target the list view_/
 QComboBox QListView {
     background-color: #2a2a2a;
     border: 1px solid #EE8980;
@@ -47,24 +52,26 @@ QComboBox QListView {
     outline: none;
 }
 
-/* Enhanced item styling */
+/_Enhanced item styling_/
 QComboBox QAbstractItemView::item:selected {
     background-color: #F14666;
     color: #ffffff;
     border: none;
 }
-```
+
+```text
 
 #### Light Theme
-```css
-/* Target the frame container */
+
+```CSS
+/_Target the frame container_/
 QComboBox QFrame {
     background-color: #ffffff;
     border: 1px solid #75BDE0;
     border-radius: 4px;
 }
 
-/* Target the list view */
+/_Target the list view_/
 QComboBox QListView {
     background-color: #ffffff;
     border: 1px solid #75BDE0;
@@ -75,38 +82,44 @@ QComboBox QListView {
     outline: none;
 }
 
-/* Enhanced item styling */
+/_Enhanced item styling_/
 QComboBox QAbstractItemView::item:selected {
     background-color: #F8BC9B;
     color: #2c2c2c;
     border: none;
 }
-```
+
+```text
 
 ### 2. Programmatic Frame Configuration
 
 Added `_configure_combo_box_styling()` method that:
 
-```python
+```Python
 def _configure_combo_box_styling(self, combo_box):
     """Configure a combo box to ensure proper dropdown styling."""
     view = combo_box.view()
     if view:
-        # Configure view properties
+
+## Configure view properties
+
         view.setProperty("showDropIndicator", False)
         view.setAlternatingRowColors(False)
 
-        # Remove native frame styling
+## Remove native frame styling
+
         frame = view.parent()
         if frame and hasattr(frame, 'setFrameStyle'):
             frame.setFrameStyle(0)    # No frame
             frame.setLineWidth(0)     # No line width
             frame.setMidLineWidth(0)  # No mid line width
-```
+
+```text
 
 ### 3. Applied to All Combo Boxes
 
 Enhanced all dropdown widgets in the application:
+
 - ✅ `scan_type_combo` - Main scan type selector
 - ✅ `scan_depth_combo` - Scan thoroughness
 - ✅ `file_filter_combo` - File type filtering
@@ -132,11 +145,13 @@ Enhanced all dropdown widgets in the application:
 ## Testing Results
 
 ### Before Fix
+
 - White borders visible at top/bottom of dropdowns
 - Native frame styling overriding custom themes
 - Inconsistent appearance across light/dark modes
 
 ### After Fix
+
 - ✅ No white borders
 - ✅ Consistent theme colors
 - ✅ Proper selection highlighting
@@ -146,7 +161,9 @@ Enhanced all dropdown widgets in the application:
 ## Verification Commands
 
 ```bash
-# Test styling system
+
+## Test styling system
+
 python3 -c "
 from PyQt6.QtWidgets import QApplication, QComboBox
 app = QApplication([])
@@ -157,11 +174,13 @@ frame.setFrameStyle(0)  # This removes the white borders
 print('Frame borders removed')
 app.quit()
 "
-```
+
+```text
 
 ## Summary
 
 The white borders in dropdown menus were caused by:
+
 1. **QFrame container** using native Breeze style borders
 2. **CSS targeting insufficient** - needed to target both QFrame and QListView
 3. **Native styling override** - required programmatic configuration

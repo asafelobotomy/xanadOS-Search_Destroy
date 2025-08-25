@@ -28,90 +28,119 @@ This guide covers installation methods for **S&D - Search & Destroy** on Linux s
 Flatpak provides the most secure and isolated installation method.
 
 ```bash
-# Install Flatpak if not present
+
+## Install Flatpak if not present
+
 sudo apt install flatpak
 
-# Clone repository
-git clone https://github.com/asafelobotomy/xanadOS-Search_Destroy.git
+## Clone repository
+
+Git clone <HTTPS://GitHub.com/asafelobotomy/xanadOS-Search_Destroy.Git>
 cd xanadOS-Search_Destroy
 
-# Build and install
+## Build and install
+
 ./scripts/prepare-build.sh
 make build-flatpak
 make install-flatpak
 
-# Run the application
+## Run the application
+
 make run-flatpak
-```
+
+```text
 
 ### Method 2: Python Virtual Environment
 
 For development or custom installations.
 
 ```bash
-# Clone repository
-git clone https://github.com/asafelobotomy/xanadOS-Search_Destroy.git
+
+## Clone repository 2
+
+Git clone <HTTPS://GitHub.com/asafelobotomy/xanadOS-Search_Destroy.Git>
 cd xanadOS-Search_Destroy
 
-# Automated setup
+## Automated setup
+
 ./scripts/prepare-build.sh
 
-# Install dependencies
-$(pwd)/.venv/bin/python -m pip install -r requirements.txt  # uses current directory
+## Install dependencies
 
-# Run application
+$(pwd)/.venv/bin/Python -m pip install -r requirements.txt  # uses current directory
+
+## Run application
+
 ./run.sh
-```
+
+```text
 
 ### Method 3: Direct Python Installation
 
 For testing environments only.
 
 ```bash
-# Clone repository
-git clone https://github.com/asafelobotomy/xanadOS-Search_Destroy.git
+
+## Clone repository 3
+
+Git clone <HTTPS://GitHub.com/asafelobotomy/xanadOS-Search_Destroy.Git>
 cd xanadOS-Search_Destroy
 
-# Install dependencies
+## Install dependencies 2
+
 pip install -r requirements.txt
 
-# Run application
-python app/main.py
-```
+## Run application 2
+
+Python app/main.py
+
+```text
 
 ## Post-Installation Setup
 
 ### 1. Update Virus Definitions
 
 ```bash
-# Update ClamAV virus definitions
+
+## Update ClamAV virus definitions
+
 sudo freshclam
 
-# Update RKHunter definitions (if installed)
+## Update RKHunter definitions (if installed)
+
 sudo rkhunter --update
-```
+
+```text
 
 ### 2. Configure Security Policies
 
 The application includes security policies for privileged operations:
 
 ```bash
-# Install security policies (optional)
+
+## Install security policies (optional)
+
 ./scripts/setup-security.sh
-```
+
+```text
 
 ### 3. Verify Installation
 
 ```bash
-# Check ClamAV installation
+
+## Check ClamAV installation
+
 clamscan --version
 
-# Check RKHunter installation (optional)
+## Check RKHunter installation (optional)
+
 rkhunter --version
 
-# Test application launch
+## Test application launch
+
 ./run.sh
-```
+
+```text
 
 ## Troubleshooting Installation
 
@@ -120,49 +149,66 @@ rkhunter --version
 #### ClamAV Not Found
 
 ```bash
-# Install ClamAV
+
+## Install ClamAV
+
 sudo apt update
 sudo apt install clamav clamav-daemon
 
-# Start ClamAV service
+## Start ClamAV service
+
 sudo systemctl enable clamav-freshclam
 sudo systemctl start clamav-freshclam
-```
 
-#### Permission Denied Errors
+```text
+
+### Permission Denied Errors
 
 ```bash
-# Check file permissions
+
+## Check file permissions
+
 ls -la ./run.sh
 
-# Make scripts executable
+## Make scripts executable
+
 chmod +x ./run.sh
 chmod +x ./scripts/*.sh
-```
 
-#### Python Dependencies Missing
+```text
+
+### Python Dependencies Missing
 
 ```bash
-# Install Python development headers
+
+## Install Python development headers
+
 sudo apt install python3-dev python3-venv
 
-# Reinstall dependencies
-pip install --force-reinstall -r requirements.txt
-```
+## Reinstall dependencies
 
-#### Flatpak Build Failures
+pip install --force-reinstall -r requirements.txt
+
+```text
+
+### Flatpak Build Failures
 
 ```bash
-# Install flatpak-builder
+
+## Install flatpak-builder
+
 sudo apt install flatpak-builder
 
-# Verify all dependencies
+## Verify all dependencies
+
 ./scripts/verify-build.sh
 
-# Clean and rebuild
+## Clean and rebuild
+
 make clean-flatpak
 make build-flatpak
-```
+
+```text
 
 ### Getting Help
 
@@ -171,34 +217,45 @@ If you encounter issues during installation:
 1. **Check the [Troubleshooting Guide](../../README.md#troubleshooting)**
 2. **Review system logs**: `/var/log/syslog` for system-level issues
 3. **Check application logs**: `data/logs/` for application-specific errors
-4. **Report issues**: [GitHub Issues](https://github.com/asafelobotomy/xanadOS-Search_Destroy/issues)
+
+4.
+**Report issues**: [GitHub Issues](HTTPS://GitHub.com/asafelobotomy/xanadOS-Search_Destroy/issues)
 
 ## Uninstallation
 
 ### Flatpak Uninstall
 
 ```bash
-# Remove Flatpak application
-flatpak uninstall io.github.asafelobotomy.SearchAndDestroy
 
-# Remove user data (optional)
+## Remove Flatpak application
+
+flatpak uninstall io.GitHub.asafelobotomy.SearchAndDestroy
+
+## Remove user data (optional)
+
 rm -rf ~/.local/share/xanados-search-destroy
 rm -rf ~/.config/xanados-search-destroy
-```
+
+```text
 
 ### Manual Uninstall
 
 ```bash
-# Remove application files
+
+## Remove application files
+
 rm -rf /path/to/xanadOS-Search_Destroy
 
-# Remove user data (optional)
+## Remove user data (optional) 2
+
 rm -rf ~/.local/share/xanados-search-destroy
 rm -rf ~/.config/xanados-search-destroy
 
-# Remove virtual environment
+## Remove virtual environment
+
 rm -rf .venv
-```
+
+```text
 
 ---
 

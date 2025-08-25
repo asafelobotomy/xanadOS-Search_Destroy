@@ -2,7 +2,6 @@
 """
 Modern Splash Screen for xanadOS Search & Destroy
 Progressive loading with real-time progress tracking (2025)
-
 Features:
 - Official xanadOS Search & Destroy logo display
 - Progressive loading phases with visual feedback
@@ -11,13 +10,12 @@ Features:
 - Fallback handling for missing logo files
 """
 
-import os
-import sys
-from typing import Optional, Callable
-from PyQt6.QtWidgets import QSplashScreen, QProgressBar, QLabel, QVBoxLayout, QWidget
-from PyQt6.QtCore import Qt, QTimer, pyqtSignal, QThread
-from PyQt6.QtGui import QPixmap, QPainter, QFont, QColor, QPen, QBrush
 from pathlib import Path
+
+from PyQt6.QtCore import Qt, QTimer, pyqtSignal
+from PyQt6.QtGui import QColor, QFont, QPainter, QPen, QPixmap
+from PyQt6.QtWidgets import QSplashScreen
+
 
 class ModernSplashScreen(QSplashScreen):
     """
@@ -35,9 +33,9 @@ class ModernSplashScreen(QSplashScreen):
 
         # Set splash screen flags for modern behavior
         self.setWindowFlags(
-            Qt.WindowType.SplashScreen |
-            Qt.WindowType.FramelessWindowHint |
-            Qt.WindowType.WindowStaysOnTopHint
+            Qt.WindowType.SplashScreen
+            | Qt.WindowType.FramelessWindowHint
+            | Qt.WindowType.WindowStaysOnTopHint
         )
 
         # Initialize progress tracking
@@ -48,7 +46,7 @@ class ModernSplashScreen(QSplashScreen):
             "cache_init": {"progress": 40, "message": "Initializing cache system..."},
             "system_check": {"progress": 60, "message": "Checking system status..."},
             "dashboard_load": {"progress": 80, "message": "Loading dashboard..."},
-            "finalization": {"progress": 100, "message": "Finalizing startup..."}
+            "finalization": {"progress": 100, "message": "Finalizing startup..."},
         }
 
         # Connect signals
@@ -71,7 +69,12 @@ class ModernSplashScreen(QSplashScreen):
         try:
             # Get the project root directory
             current_dir = Path(__file__).parent.parent.parent
-            logo_path = current_dir / "packaging" / "icons" / "io.github.asafelobotomy.SearchAndDestroy.png"
+            logo_path = (
+                current_dir
+                / "packaging"
+                / "icons"
+                / "io.github.asafelobotomy.SearchAndDestroy.png"
+            )
 
             if logo_path.exists():
                 logo_pixmap = QPixmap(str(logo_path))
@@ -79,9 +82,10 @@ class ModernSplashScreen(QSplashScreen):
                     # Scale logo to appropriate size (64x64 for splash screen)
                     logo_size = 64
                     scaled_logo = logo_pixmap.scaled(
-                        logo_size, logo_size,
+                        logo_size,
+                        logo_size,
                         Qt.AspectRatioMode.KeepAspectRatio,
-                        Qt.TransformationMode.SmoothTransformation
+                        Qt.TransformationMode.SmoothTransformation,
                     )
 
                     # Center the logo horizontally, place it at the top
@@ -98,7 +102,7 @@ class ModernSplashScreen(QSplashScreen):
                 # Fallback if logo file doesn't exist
                 title_y_offset = 50
 
-        except Exception as e:
+        except Exception:
             # Fallback if there's any error loading the logo
             title_y_offset = 50
 
@@ -106,22 +110,40 @@ class ModernSplashScreen(QSplashScreen):
         title_font = QFont("Arial", 24, QFont.Weight.Bold)
         painter.setFont(title_font)
         painter.setPen(QColor(255, 255, 255))  # White text
-        painter.drawText(0, title_y_offset, width, 50, Qt.AlignmentFlag.AlignCenter,
-                        "xanadOS Search & Destroy")
+        painter.drawText(
+            0,
+            title_y_offset,
+            width,
+            50,
+            Qt.AlignmentFlag.AlignCenter,
+            "xanadOS Search & Destroy",
+        )
 
         # Subtitle (adjusted position)
         subtitle_font = QFont("Arial", 12)
         painter.setFont(subtitle_font)
         painter.setPen(QColor(224, 224, 224))  # Light gray
-        painter.drawText(0, title_y_offset + 50, width, 30, Qt.AlignmentFlag.AlignCenter,
-                        "Advanced Malware Detection & System Protection")
+        painter.drawText(
+            0,
+            title_y_offset + 50,
+            width,
+            30,
+            Qt.AlignmentFlag.AlignCenter,
+            "Advanced Malware Detection & System Protection",
+        )
 
         # Version info (adjusted position)
         version_font = QFont("Arial", 10)
         painter.setFont(version_font)
         painter.setPen(QColor(229, 115, 115))  # Coral accent
-        painter.drawText(0, title_y_offset + 80, width, 20, Qt.AlignmentFlag.AlignCenter,
-                        "Version 2.9.0 - Professional Edition")
+        painter.drawText(
+            0,
+            title_y_offset + 80,
+            width,
+            20,
+            Qt.AlignmentFlag.AlignCenter,
+            "Version 2.9.0 - Professional Edition",
+        )
 
         # Draw accent line (adjusted position)
         accent_line_y = title_y_offset + 110
@@ -147,7 +169,7 @@ class ModernSplashScreen(QSplashScreen):
         self.showMessage(
             f"{message} ({progress}%)",
             Qt.AlignmentFlag.AlignBottom | Qt.AlignmentFlag.AlignHCenter,
-            QColor(255, 255, 255)
+            QColor(255, 255, 255),
         )
 
     def drawContents(self, painter: QPainter):
@@ -156,19 +178,23 @@ class ModernSplashScreen(QSplashScreen):
 
         # Draw progress bar at bottom
         progress_rect_y = self.height() - 60
-        progress_rect = painter.fontMetrics().boundingRect(
-            20, progress_rect_y, self.width() - 40, 20,
-            Qt.AlignmentFlag.AlignLeft, "Progress"
+        painter.fontMetrics().boundingRect(
+            20,
+            progress_rect_y,
+            self.width() - 40,
+            20,
+            Qt.AlignmentFlag.AlignLeft,
+            "Progress",
         )
 
         # Background progress bar
-        painter.fillRect(20, progress_rect_y, self.width() - 40, 8,
-                        QColor(64, 64, 64))
+        painter.fillRect(20, progress_rect_y, self.width() - 40, 8, QColor(64, 64, 64))
 
         # Progress fill
         progress_width = int((self.width() - 40) * (self.current_progress / 100))
-        painter.fillRect(20, progress_rect_y, progress_width, 8,
-                        QColor(229, 115, 115))  # Coral progress
+        painter.fillRect(
+            20, progress_rect_y, progress_width, 8, QColor(229, 115, 115)
+        )  # Coral progress
 
         # Status message
         painter.setPen(QColor(255, 255, 255))
@@ -198,11 +224,13 @@ class StartupProgressTracker:
     def start_tracking(self):
         """Start tracking startup time."""
         import time
+
         self.start_time = time.time()
 
     def complete_phase(self, phase: str):
         """Mark a phase as complete and update splash."""
         import time
+
         if self.start_time:
             self.phase_times[phase] = time.time() - self.start_time
 
@@ -212,6 +240,7 @@ class StartupProgressTracker:
     def get_total_time(self) -> float:
         """Get total startup time."""
         import time
+
         if self.start_time:
             return time.time() - self.start_time
         return 0.0
@@ -219,7 +248,7 @@ class StartupProgressTracker:
     def print_summary(self):
         """Print startup performance summary."""
         total_time = self.get_total_time()
-        print(f"\n🚀 Startup Performance Summary:")
+        print("\n🚀 Startup Performance Summary:")
         print(f"Total startup time: {total_time:.2f}s")
         for phase, time_taken in self.phase_times.items():
             print(f"  {phase}: {time_taken:.2f}s")

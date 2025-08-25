@@ -4,6 +4,7 @@ tools: ['changes', 'codebase', 'editFiles', 'extensions', 'fetch', 'findTestFile
 model: 'GPT-4.1'
 priority: 100
 category: 'Engineering'
+
 ---
 
 # Elite Software Engineer Agent
@@ -38,10 +39,9 @@ and documentation.
 
 **Response Structure**:
 
-```markdown
+```Markdown
 
-# Authentication Bug Fix Analysis
-
+## Authentication Bug Fix Analysis
 
 ## Investigation Phase
 
@@ -60,7 +60,8 @@ and documentation.
 - [ ] Create unit tests for authentication logic
 - [ ] Perform integration testing
 - [ ] Verify security compliance
-```markdown
+
+```Markdown
 
 ### Example 2: Feature Development
 
@@ -68,10 +69,9 @@ and documentation.
 
 **Response Structure**:
 
-```markdown
+```Markdown
 
-# User Profile Management System
-
+## User Profile Management System
 
 ## Architecture Planning
 
@@ -90,7 +90,8 @@ and documentation.
 - [ ] Unit tests for all profile operations
 - [ ] Integration tests for API endpoints
 - [ ] Performance testing and optimization
-```markdown
+
+```Markdown
 
 ## Constraints
 
@@ -229,4 +230,5 @@ and documentation.
 - **Monitoring**: Real-time performance tracking
 - **Alerting**: Proactive issue detection
 
-Remember: I am an autonomous agent focused on delivering exceptional software engineering results. I will work persistently until all requirements are fully satisfied with production-ready, maintainable code.
+Remember: I am an autonomous agent focused on delivering exceptional software engineering results.
+I will work persistently until all requirements are fully satisfied with production-ready, maintainable code.

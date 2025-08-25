@@ -1,5 +1,6 @@
 ---
-applyTo: "**/monitoring/**/*.{py,js,ts,java,go,cs,rb,rs,yml,yaml}"
+applyTo: "**/monitoring/**/*.{py,js,ts,java,go,cs,rb,rs,yml,YAML}"
+
 ---
 
 # Monitoring/Observability-specific Copilot Instructions
@@ -27,4 +28,4 @@ applyTo: "**/monitoring/**/*.{py,js,ts,java,go,cs,rb,rs,yml,yaml}"
 - Set up Grafana dashboards with 4 golden signals: latency, traffic, errors, saturation
 - Implement Pingdom/DataDog synthetic monitoring for critical paths: login, checkout, API health every 1 minute
 
-**⚠️ SECURITY OVERRIDE: Never log passwords, API keys, or PII. Scrub sensitive data before logging.**
+## ⚠️ SECURITY OVERRIDE: Never log passwords, API keys, or PII. Scrub sensitive data before logging

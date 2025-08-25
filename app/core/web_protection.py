@@ -3,9 +3,7 @@
 Web Protection System for S&D
 Provides real-time web threat protection, URL filtering, and browser integration.
 """
-import asyncio
-import hashlib
-import ipaddress
+
 import json
 import logging
 import re
@@ -14,13 +12,11 @@ import sqlite3
 import ssl
 import threading
 import time
-from collections import defaultdict
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from enum import Enum
-from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Set, Tuple
-from urllib.parse import urljoin, urlparse
+from urllib.parse import urlparse
 
 import aiohttp
 import dns.resolver
@@ -104,9 +100,7 @@ class WebProtectionConfig:
     custom_blocked_domains: Set[str] = field(default_factory=set)
     custom_allowed_domains: Set[str] = field(default_factory=set)
     threat_intelligence_feeds: List[str] = field(default_factory=list)
-    dns_servers: List[str] = field(
-        default_factory=lambda: [
-            "8.8.8.8", "1.1.1.1"])
+    dns_servers: List[str] = field(default_factory=lambda: ["8.8.8.8", "1.1.1.1"])
     request_timeout: float = 10.0
     cache_ttl_hours: int = 24
     max_redirects: int = 5
@@ -118,10 +112,7 @@ class WebProtectionSystem:
     threat detection, and browser security integration.
     """
 
-    def __init__(
-            self,
-            config: WebProtectionConfig = None,
-            database_path: str = None):
+    def __init__(self, config: WebProtectionConfig = None, database_path: str = None):
         self.logger = logging.getLogger(__name__)
         self.config = config or WebProtectionConfig()
 
@@ -153,10 +144,8 @@ class WebProtectionSystem:
         }
 
         # Callbacks
-        self.threat_detected_callback: Optional[Callable[[
-            WebThreat], None]] = None
-        self.request_blocked_callback: Optional[Callable[[
-            str, str], None]] = None
+        self.threat_detected_callback: Optional[Callable[[WebThreat], None]] = None
+        self.request_blocked_callback: Optional[Callable[[str, str], None]] = None
         self.suspicious_activity_callback: Optional[
             Callable[[str, Dict[str, Any]], None]
         ] = None
@@ -244,8 +233,7 @@ class WebProtectionSystem:
                 conn.commit()
 
         except Exception as e:
-            self.logger.error(
-                "Failed to initialize web protection database: %s", e)
+            self.logger.error("Failed to initialize web protection database: %s", e)
 
     def _load_default_threat_lists(self):
         """Load default threat intelligence lists."""
@@ -284,10 +272,11 @@ class WebProtectionSystem:
             self.trusted_domains.update(default_trusted)
 
             self.logger.info(
-                "Loaded threat lists: %d malware, %d phishing, %d trusted domains", len(
-                    self.malware_domains), len(
-                    self.phishing_domains), len(
-                    self.trusted_domains), )
+                "Loaded threat lists: %d malware, %d phishing, %d trusted domains",
+                len(self.malware_domains),
+                len(self.phishing_domains),
+                len(self.trusted_domains),
+            )
 
         except Exception as e:
             self.logger.error("Error loading threat lists: %s", e)
@@ -370,10 +359,7 @@ class WebProtectionSystem:
 
         self.logger.info("Web protection system stopped")
 
-    async def analyze_url(
-            self,
-            url: str,
-            force_refresh: bool = False) -> URLAnalysis:
+    async def analyze_url(self, url: str, force_refresh: bool = False) -> URLAnalysis:
         """
         Analyze a URL for threats and reputation.
 
@@ -412,9 +398,7 @@ class WebProtectionSystem:
             if domain_reputation:
                 reputation = domain_reputation["reputation"]
                 risk_score = domain_reputation["risk_score"]
-                threat_indicators.extend(
-                    domain_reputation.get(
-                        "indicators", []))
+                threat_indicators.extend(domain_reputation.get("indicators", []))
 
             # DNS analysis
             ip_addresses = await self._resolve_domain_ips(domain)
@@ -438,15 +422,13 @@ class WebProtectionSystem:
             if blacklist_result:
                 reputation = blacklist_result["reputation"]
                 risk_score = max(risk_score, blacklist_result["risk_score"])
-                threat_indicators.append(
-                    f"blacklist_{blacklist_result['source']}")
+                threat_indicators.append(f"blacklist_{blacklist_result['source']}")
 
             # Heuristic analysis
             if self.session and reputation == URLReputation.UNKNOWN:
                 heuristic_result = await self._heuristic_url_analysis(normalized_url)
                 if heuristic_result:
-                    threat_indicators.extend(
-                        heuristic_result.get("indicators", []))
+                    threat_indicators.extend(heuristic_result.get("indicators", []))
                     risk_score = max(
                         risk_score, heuristic_result.get("risk_score", 0.0)
                     )
@@ -594,15 +576,13 @@ class WebProtectionSystem:
                     try:
                         self.threat_detected_callback(threat)
                     except Exception as e:
-                        self.logger.error(
-                            "Error in threat detected callback: %s", e)
+                        self.logger.error("Error in threat detected callback: %s", e)
 
                 if should_block and self.request_blocked_callback:
                     try:
                         self.request_blocked_callback(url, block_reason)
                     except Exception as e:
-                        self.logger.error(
-                            "Error in request blocked callback: %s", e)
+                        self.logger.error("Error in request blocked callback: %s", e)
 
             return not should_block, threat
 
@@ -610,8 +590,7 @@ class WebProtectionSystem:
             self.logger.error("Error checking URL safety %s: %s", url, e)
             return True, None  # Default to safe on error
 
-    async def _check_domain_reputation(
-            self, domain: str) -> Optional[Dict[str, Any]]:
+    async def _check_domain_reputation(self, domain: str) -> Optional[Dict[str, Any]]:
         """Check domain reputation against known threat lists."""
         try:
             # Check malware domains
@@ -671,7 +650,8 @@ class WebProtectionSystem:
                     "reputation": URLReputation(reputation_str),
                     "risk_score": risk_score,
                     "indicators": (
-                        json.loads(threat_categories) if threat_categories else []),
+                        json.loads(threat_categories) if threat_categories else []
+                    ),
                     "source": source,
                 }
 
@@ -717,7 +697,7 @@ class WebProtectionSystem:
                 context = ssl.create_default_context()
                 context.check_hostname = True
                 context.verify_mode = ssl.CERT_REQUIRED
-                
+
                 with socket.create_connection((domain, 443), timeout=10) as sock:
                     with context.wrap_socket(sock, server_hostname=domain) as ssock:
                         cert = ssock.getpeercert()
@@ -729,7 +709,7 @@ class WebProtectionSystem:
                     context = ssl.create_default_context()
                     context.check_hostname = False
                     context.verify_mode = ssl.CERT_NONE
-                    
+
                     with socket.create_connection((domain, 443), timeout=10) as sock:
                         with context.wrap_socket(sock, server_hostname=domain) as ssock:
                             cert = ssock.getpeercert()
@@ -737,35 +717,32 @@ class WebProtectionSystem:
                             ssl_info["verification_failed"] = True
                 except (ssl.SSLError, OSError):
                     # If even unverified connection fails, return empty result
-                    return {"ssl_available": False, "suspicious": True, "suspicious_reason": "ssl_connection_failed"}
+                    return {
+                        "ssl_available": False,
+                        "suspicious": True,
+                        "suspicious_reason": "ssl_connection_failed",
+                    }
 
             # Analyze the certificate if we got one
             if cert:
-                ssl_info.update({
-                    "ssl_available": True,
-                    "subject": dict(
-                        x[0] for x in cert.get(
-                            "subject",
-                            [])),
-                    "issuer": dict(
-                        x[0] for x in cert.get(
-                            "issuer",
-                            [])),
-                    "version": cert.get("version"),
-                    "serial_number": cert.get("serialNumber"),
-                    "not_before": cert.get("notBefore"),
-                    "not_after": cert.get("notAfter"),
-                    "subject_alt_names": [
-                        x[1] for x in cert.get(
-                            "subjectAltName",
-                            [])],
-                    "suspicious": False,
-                })
+                ssl_info.update(
+                    {
+                        "ssl_available": True,
+                        "subject": dict(x[0] for x in cert.get("subject", [])),
+                        "issuer": dict(x[0] for x in cert.get("issuer", [])),
+                        "version": cert.get("version"),
+                        "serial_number": cert.get("serialNumber"),
+                        "not_before": cert.get("notBefore"),
+                        "not_after": cert.get("notAfter"),
+                        "subject_alt_names": [
+                            x[1] for x in cert.get("subjectAltName", [])
+                        ],
+                        "suspicious": False,
+                    }
+                )
 
                 # Check for suspicious characteristics
-                issuer_cn = ssl_info.get(
-                    "issuer", {}).get(
-                    "commonName", "")
+                issuer_cn = ssl_info.get("issuer", {}).get("commonName", "")
 
                 # Self-signed certificates
                 if ssl_info.get("subject") == ssl_info.get("issuer"):
@@ -783,8 +760,7 @@ class WebProtectionSystem:
                 ]
 
                 if any(
-                    suspicious in issuer_cn.lower()
-                    for suspicious in suspicious_issuers
+                    suspicious in issuer_cn.lower() for suspicious in suspicious_issuers
                 ):
                     ssl_info["suspicious"] = True
                     ssl_info["suspicious_reason"] = "suspicious_issuer"
@@ -824,24 +800,20 @@ class WebProtectionSystem:
 
             # Check for suspicious URL patterns
             suspicious_patterns = [
-                (r"[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}",
-                 "ip_address_url"),
-                (r"[a-f0-9]{8,}\.",
-                 "hex_subdomain"),
-                (r"-{2,}",
-                 "multiple_hyphens"),
-                (r"\.tk$|\.ml$|\.ga$|\.cf$",
-                 "suspicious_tld"),
-                (r"[0-9]{4,}",
-                 "numeric_subdomain"),
-                (r"(secure|bank|paypal|amazon|microsoft|google|apple)-[a-z0-9]+\.",
+                (r"[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}", "ip_address_url"),
+                (r"[a-f0-9]{8,}\.", "hex_subdomain"),
+                (r"-{2,}", "multiple_hyphens"),
+                (r"\.tk$|\.ml$|\.ga$|\.cf$", "suspicious_tld"),
+                (r"[0-9]{4,}", "numeric_subdomain"),
+                (
+                    r"(secure|bank|paypal|amazon|microsoft|google|apple)-[a-z0-9]+\.",
                     "brand_impersonation",
-                 ),
-                (r"(login|signin|verify|confirm|update|secure).*\.(tk|ml|ga|cf|bit\.ly)",
+                ),
+                (
+                    r"(login|signin|verify|confirm|update|secure).*\.(tk|ml|ga|cf|bit\.ly)",
                     "phishing_pattern",
-                 ),
-                (r"[a-zA-Z0-9]{20,}\.",
-                 "long_random_subdomain"),
+                ),
+                (r"[a-zA-Z0-9]{20,}\.", "long_random_subdomain"),
             ]
 
             for pattern, indicator in suspicious_patterns:
@@ -904,8 +876,7 @@ class WebProtectionSystem:
             self.logger.error("Error checking blacklists: %s", e)
             return None
 
-    async def _heuristic_url_analysis(
-            self, url: str) -> Optional[Dict[str, Any]]:
+    async def _heuristic_url_analysis(self, url: str) -> Optional[Dict[str, Any]]:
         """Perform heuristic analysis by fetching URL content."""
         try:
             if not self.session:
@@ -919,7 +890,6 @@ class WebProtectionSystem:
                 async with self.session.get(
                     url, allow_redirects=True, max_redirects=self.config.max_redirects
                 ) as response:
-
                     # Check response headers
                     headers = response.headers
 
@@ -937,7 +907,8 @@ class WebProtectionSystem:
                     ]
 
                     missing_headers = sum(
-                        1 for header in security_headers if header not in headers)
+                        1 for header in security_headers if header not in headers
+                    )
                     if missing_headers >= 3:
                         indicators.append("missing_security_headers")
                         risk_score += 0.2
@@ -992,11 +963,7 @@ class WebProtectionSystem:
                 risk_score += 0.1
 
             if indicators:
-                return {
-                    "indicators": indicators,
-                    "risk_score": min(
-                        risk_score,
-                        1.0)}
+                return {"indicators": indicators, "risk_score": min(risk_score, 1.0)}
 
             return None
 
@@ -1037,8 +1004,7 @@ class WebProtectionSystem:
         with self.lock:
             if url in self.url_cache:
                 # Check if cache entry is still valid
-                if url in self.cache_expiry and datetime.now(
-                ) < self.cache_expiry[url]:
+                if url in self.cache_expiry and datetime.now() < self.cache_expiry[url]:
                     return self.url_cache[url]
                 else:
                     # Remove expired entry
@@ -1059,9 +1025,8 @@ class WebProtectionSystem:
             if len(self.url_cache) > 10000:
                 # Remove oldest entries
                 oldest_urls = sorted(
-                    self.cache_expiry.keys(),
-                    key=lambda u: self.cache_expiry[u])[
-                    :1000]
+                    self.cache_expiry.keys(), key=lambda u: self.cache_expiry[u]
+                )[:1000]
 
                 for url_to_remove in oldest_urls:
                     self.url_cache.pop(url_to_remove, None)
@@ -1161,8 +1126,7 @@ class WebProtectionSystem:
                     self.logger.debug("Would update from feed: %s", feed_url)
                     updated_domains += 1
                 except Exception as e:
-                    self.logger.error(
-                        "Error updating from feed %s: %s", feed_url, e)
+                    self.logger.error("Error updating from feed %s: %s", feed_url, e)
 
             self.logger.info(
                 "Threat intelligence update completed: %d feeds processed",
@@ -1173,10 +1137,8 @@ class WebProtectionSystem:
             self.logger.error("Error updating threat intelligence: %s", e)
 
     def add_blocked_domain(
-            self,
-            domain: str,
-            threat_category: ThreatCategory,
-            source: str = "manual"):
+        self, domain: str, threat_category: ThreatCategory, source: str = "manual"
+    ):
         """Add domain to blocked list."""
         try:
             # Add to appropriate in-memory list
@@ -1286,13 +1248,11 @@ class WebProtectionSystem:
         ]
 
     # Callback setters
-    def set_threat_detected_callback(
-            self, callback: Callable[[WebThreat], None]):
+    def set_threat_detected_callback(self, callback: Callable[[WebThreat], None]):
         """Set callback for threat detection."""
         self.threat_detected_callback = callback
 
-    def set_request_blocked_callback(
-            self, callback: Callable[[str, str], None]):
+    def set_request_blocked_callback(self, callback: Callable[[str, str], None]):
         """Set callback for blocked requests."""
         self.request_blocked_callback = callback
 

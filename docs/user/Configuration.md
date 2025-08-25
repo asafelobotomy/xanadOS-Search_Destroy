@@ -8,12 +8,13 @@ This guide covers advanced configuration options for **S&D - Search & Destroy** 
 
 S&D uses a hierarchical configuration system:
 
-```
+```text
 config/
-├── default_config.json     # Default application settings
-├── user_config.json        # User-specific overrides
-└── security_policy.json    # Security and scanning policies
-```
+├── default_config.JSON     # Default application settings
+├── user_config.JSON        # User-specific overrides
+└── security_policy.JSON    # Security and scanning policies
+
+```text
 
 ### Environment Variables
 
@@ -24,7 +25,8 @@ export XANADOS_SD_CONFIG_PATH="/path/to/config"     # Custom config directory
 export XANADOS_SD_LOG_LEVEL="DEBUG"                # Logging verbosity
 export XANADOS_SD_QUARANTINE_PATH="/secure/path"   # Quarantine location
 export XANADOS_SD_TEMP_PATH="/tmp/sd_temp"         # Temporary files
-```
+
+```text
 
 ## User Interface Configuration
 
@@ -32,7 +34,7 @@ export XANADOS_SD_TEMP_PATH="/tmp/sd_temp"         # Temporary files
 
 Configure application appearance:
 
-```json
+```JSON
 {
   "ui": {
     "theme": "dark",           # Options: "light", "dark", "auto"
@@ -45,13 +47,14 @@ Configure application appearance:
     "window_position": "center"
   }
 }
-```
+
+```text
 
 ### Language and Localization
 
 Set interface language:
 
-```json
+```JSON
 {
   "localization": {
     "language": "en",          # Language code (en, es, fr, de, etc.)
@@ -60,7 +63,8 @@ Set interface language:
     "number_format": "1,234.56"
   }
 }
-```
+
+```text
 
 ## Scanning Configuration
 
@@ -68,7 +72,7 @@ Set interface language:
 
 Configure standard scan behavior:
 
-```json
+```JSON
 {
   "scanning": {
     "default_scan_type": "quick",     # Options: "quick", "full", "custom"
@@ -86,13 +90,14 @@ Configure standard scan behavior:
     "detect_pua": true                # Detect potentially unwanted applications
   }
 }
-```
+
+```text
 
 ### File Type Filters
 
 Control which files are scanned:
 
-```json
+```JSON
 {
   "file_filters": {
     "included_extensions": [
@@ -102,19 +107,20 @@ Control which files are scanned:
       ".mp3", ".mp4", ".avi", ".mkv", ".iso"
     ],
     "excluded_directories": [
-      "/proc", "/sys", "/dev", "node_modules", ".git"
+      "/proc", "/sys", "/dev", "node_modules", ".Git"
     ],
     "scan_hidden_files": false,       # Scan files starting with '.'
     "scan_system_files": false        # Include system directories
   }
 }
-```
+
+```text
 
 ### Performance Settings
 
 Optimize scanning performance:
 
-```json
+```JSON
 {
   "performance": {
     "max_memory_usage": "1GB",        # Memory limit for scanning
@@ -125,7 +131,8 @@ Optimize scanning performance:
     "progress_update_interval": 100   # Progress update frequency (files)
   }
 }
-```
+
+```text
 
 ## Security Configuration
 
@@ -133,7 +140,7 @@ Optimize scanning performance:
 
 Configure threat quarantine:
 
-```json
+```JSON
 {
   "quarantine": {
     "enabled": true,
@@ -144,13 +151,14 @@ Configure threat quarantine:
     "password_protected": false       # Require password for access
   }
 }
-```
+
+```text
 
 ### Automatic Threat Response
 
 Define actions for detected threats:
 
-```json
+```JSON
 {
   "threat_response": {
     "default_action": "quarantine",   # Options: "quarantine", "delete", "ignore"
@@ -165,13 +173,14 @@ Define actions for detected threats:
     "desktop_notifications": true
   }
 }
-```
+
+```text
 
 ### Privilege Management
 
 Configure authentication requirements:
 
-```json
+```JSON
 {
   "security": {
     "require_auth_for_system_scan": true,
@@ -181,7 +190,8 @@ Configure authentication requirements:
     "polkit_integration": true        # Use polkit for privilege escalation
   }
 }
-```
+
+```text
 
 ## Real-time Monitoring
 
@@ -189,7 +199,7 @@ Configure authentication requirements:
 
 Configure real-time protection:
 
-```json
+```JSON
 {
   "real_time_monitoring": {
     "enabled": false,                 # Enable real-time monitoring
@@ -198,7 +208,7 @@ Configure real-time protection:
       "~/Documents"
     ],
     "exclude_patterns": [
-      "*.tmp", "*.log", "*~"
+      "_.tmp", "_.log", "*~"
     ],
     "scan_on_access": true,           # Scan files when accessed
     "scan_on_modify": true,           # Scan files when modified
@@ -206,13 +216,14 @@ Configure real-time protection:
     "auto_quarantine_threats": true   # Automatically quarantine threats
   }
 }
-```
+
+```text
 
 ### Event Processing
 
 Configure monitoring behavior:
 
-```json
+```JSON
 {
   "event_processing": {
     "event_queue_size": 1000,         # Maximum events in queue
@@ -222,7 +233,8 @@ Configure monitoring behavior:
     "ignore_temp_files": true         # Skip temporary files
   }
 }
-```
+
+```text
 
 ## Reporting Configuration
 
@@ -230,25 +242,26 @@ Configure monitoring behavior:
 
 Configure scan reports:
 
-```json
+```JSON
 {
   "reporting": {
     "auto_generate": true,            # Generate reports automatically
     "save_location": "~/Documents/S&D_Reports",
-    "report_formats": ["pdf", "json", "csv"],
+    "report_formats": ["pdf", "JSON", "csv"],
     "include_clean_files": false,     # Include clean files in reports
     "include_system_info": true,      # Include system information
     "include_performance_data": true, # Include performance metrics
     "report_retention_days": 90       # Days to keep reports
   }
 }
-```
+
+```text
 
 ### Export Settings
 
 Configure report export options:
 
-```json
+```JSON
 {
   "export": {
     "pdf_settings": {
@@ -267,7 +280,8 @@ Configure report export options:
     }
   }
 }
-```
+
+```text
 
 ## Network Configuration
 
@@ -275,7 +289,7 @@ Configure report export options:
 
 Configure virus definition updates:
 
-```json
+```JSON
 {
   "updates": {
     "auto_update": true,              # Automatic updates
@@ -286,18 +300,19 @@ Configure virus definition updates:
     "retry_attempts": 3               # Number of retry attempts
   }
 }
-```
+
+```text
 
 ### Proxy Configuration
 
 Configure network proxy settings:
 
-```json
+```JSON
 {
   "network": {
     "proxy": {
       "enabled": false,
-      "type": "http",                 # Options: "http", "socks5"
+      "type": "HTTP",                 # Options: "HTTP", "socks5"
       "host": "proxy.example.com",
       "port": 8080,
       "username": "",
@@ -308,7 +323,8 @@ Configure network proxy settings:
     "connection_timeout": 30          # Connection timeout (seconds)
   }
 }
-```
+
+```text
 
 ## Logging Configuration
 
@@ -316,7 +332,7 @@ Configure network proxy settings:
 
 Configure application logging:
 
-```json
+```JSON
 {
   "logging": {
     "level": "INFO",                  # Options: DEBUG, INFO, WARNING, ERROR
@@ -328,13 +344,14 @@ Configure application logging:
     "date_format": "%Y-%m-%d %H:%M:%S"
   }
 }
-```
+
+```text
 
 ### Debug Options
 
 Configure debugging features:
 
-```json
+```JSON
 {
   "debug": {
     "enabled": false,                 # Enable debug mode
@@ -344,7 +361,8 @@ Configure debugging features:
     "save_debug_reports": false       # Save debug information
   }
 }
-```
+
+```text
 
 ## Advanced Configuration
 
@@ -352,7 +370,7 @@ Configure debugging features:
 
 Override ClamAV configuration:
 
-```json
+```JSON
 {
   "clamav": {
     "database_path": "/var/lib/clamav",
@@ -364,13 +382,14 @@ Override ClamAV configuration:
     "pcre_recmatch_limit": 5000       # PCRE recursion match limit
   }
 }
-```
+
+```text
 
 ### RKHunter Integration
 
 Configure rootkit scanning:
 
-```json
+```JSON
 {
   "rkhunter": {
     "enabled": true,
@@ -385,7 +404,8 @@ Configure rootkit scanning:
     ]
   }
 }
-```
+
+```text
 
 ## Configuration Management
 
@@ -394,35 +414,46 @@ Configure rootkit scanning:
 Backup your configuration:
 
 ```bash
-# Backup current configuration
+
+## Backup current configuration
+
 cp -r ~/.config/xanados-search-destroy ~/sd-config-backup
 
-# Restore configuration
+## Restore configuration
+
 cp -r ~/sd-config-backup ~/.config/xanados-search-destroy
-```
+
+```text
 
 ### Reset to Defaults
 
 Reset configuration to defaults:
 
 ```bash
-# Remove user configuration
+
+## Remove user configuration
+
 rm -rf ~/.config/xanados-search-destroy
 
-# Application will recreate default configuration on next launch
-```
+## Application will recreate default configuration on next launch
+
+```text
 
 ### Validation
 
 Validate configuration files:
 
 ```bash
-# Check configuration syntax
-python -m json.tool config/user_config.json
 
-# Test configuration loading
+## Check configuration syntax
+
+Python -m JSON.tool config/user_config.JSON
+
+## Test configuration loading
+
 ./run.sh --validate-config
-```
+
+```text
 
 ---
 

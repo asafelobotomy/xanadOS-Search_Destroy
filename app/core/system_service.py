@@ -3,22 +3,18 @@
 System Service Integration for S&D
 Provides system service management, startup integration, and daemon capabilities.
 """
-import grp
-import json
+
 import logging
 import os
-import pwd
 import signal
-import socket
 import subprocess
-import sys
 import threading
 import time
 from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional
+from typing import Callable, Dict, List, Optional
 
 
 class ServiceState(Enum):
@@ -110,8 +106,9 @@ class SystemServiceManager:
         self.monitor_running = False
 
         # Callbacks
-        self.state_changed_callback: Optional[Callable[[
-            ServiceState, str], None]] = (None)
+        self.state_changed_callback: Optional[Callable[[ServiceState, str], None]] = (
+            None
+        )
         self.error_callback: Optional[Callable[[str], None]] = None
 
     def _detect_init_system(self) -> ServiceType:
@@ -284,9 +281,7 @@ class SystemServiceManager:
 
         except Exception as e:
             self.logger.error("Error getting service status: %s", e)
-            return ServiceStatus(
-                state=ServiceState.UNKNOWN,
-                error_message=str(e))
+            return ServiceStatus(state=ServiceState.UNKNOWN, error_message=str(e))
 
     def enable_auto_start(self) -> bool:
         """Enable automatic service startup."""
@@ -398,9 +393,8 @@ class SystemServiceManager:
 
         self.monitor_running = True
         self.monitor_thread = threading.Thread(
-            target=self._service_monitor_loop,
-            daemon=True,
-            name="ServiceMonitor")
+            target=self._service_monitor_loop, daemon=True, name="ServiceMonitor"
+        )
         self.monitor_thread.start()
         self.logger.info("Service monitoring started")
 
@@ -428,6 +422,7 @@ class SystemServiceManager:
 
             # Reload systemd
             from .secure_subprocess import run_secure
+
             run_secure(["systemctl", "daemon-reload"], check=True)
 
             # Enable if configured
@@ -632,6 +627,7 @@ exec /usr/bin/python3 {self.config.executable_path} --daemon
 
             # Reload systemd
             from .secure_subprocess import run_secure
+
             run_secure(["systemctl", "daemon-reload"], check=True)
 
             self.logger.info("Systemd service uninstalled")
@@ -680,6 +676,7 @@ exec /usr/bin/python3 {self.config.executable_path} --daemon
         """Execute systemctl action."""
         try:
             from .secure_subprocess import run_secure
+
             result = run_secure(["systemctl", action, self.config.service_name])
             return result.returncode == 0
         except Exception:
@@ -710,6 +707,7 @@ exec /usr/bin/python3 {self.config.executable_path} --daemon
                 return False
 
             from .secure_subprocess import run_secure
+
             result = run_secure(cmd)
             return result.returncode == 0
         except Exception:
@@ -737,12 +735,19 @@ exec /usr/bin/python3 {self.config.executable_path} --daemon
             if pid:
                 try:
                     from .safe_kill import kill_sequence
+
                     result = kill_sequence(pid, escalate=False)
                     if result.success:
-                        self.logger.info("Manual stop sent signals: %s", ','.join(result.attempts))
+                        self.logger.info(
+                            "Manual stop sent signals: %s", ",".join(result.attempts)
+                        )
                         return True
                     else:
-                        self.logger.warning("Manual stop failed attempts=%s error=%s", result.attempts, result.error)
+                        self.logger.warning(
+                            "Manual stop failed attempts=%s error=%s",
+                            result.attempts,
+                            result.error,
+                        )
                         return False
                 except Exception as e:
                     self.logger.error("Manual stop kill_sequence error: %s", e)
@@ -755,6 +760,7 @@ exec /usr/bin/python3 {self.config.executable_path} --daemon
         """Enable service with chkconfig."""
         try:
             from .secure_subprocess import run_secure
+
             result = run_secure(["chkconfig", self.config.service_name, "on"])
             return result.returncode == 0
         except Exception:
@@ -764,6 +770,7 @@ exec /usr/bin/python3 {self.config.executable_path} --daemon
         """Disable service with chkconfig."""
         try:
             from .secure_subprocess import run_secure
+
             result = run_secure(["chkconfig", self.config.service_name, "off"])
             return result.returncode == 0
         except Exception:
@@ -774,7 +781,10 @@ exec /usr/bin/python3 {self.config.executable_path} --daemon
         try:
             if self.service_type == ServiceType.SYSTEMD:
                 from .secure_subprocess import run_secure
-                result = run_secure(["systemctl", "is-active", self.config.service_name])
+
+                result = run_secure(
+                    ["systemctl", "is-active", self.config.service_name]
+                )
                 if result.returncode == 0:
                     status = result.stdout.strip()
                     if status == "active":
@@ -816,6 +826,7 @@ exec /usr/bin/python3 {self.config.executable_path} --daemon
         """Check if process is running."""
         try:
             from .safe_kill import _process_exists  # type: ignore
+
             return _process_exists(pid)
         except OSError:
             return False
@@ -824,7 +835,7 @@ exec /usr/bin/python3 {self.config.executable_path} --daemon
         """Get process memory and CPU statistics."""
         try:
             # Read from /proc/pid/stat and /proc/pid/status
-            stat_file = Path(f"/proc/{pid}/stat")
+            Path(f"/proc/{pid}/stat")
             status_file = Path(f"/proc/{pid}/status")
 
             memory_mb = 0.0
@@ -913,7 +924,6 @@ exec /usr/bin/python3 {self.config.executable_path} --daemon
                     and self.config.restart_on_failure
                     and self.restart_count < self.config.max_restart_attempts
                 ):
-
                     self.logger.warning(
                         "Service failed, attempting restart (%d/%d)",
                         self.restart_count + 1,
@@ -940,9 +950,8 @@ exec /usr/bin/python3 {self.config.executable_path} --daemon
             self.current_state = new_state
 
             self.logger.info(
-                "Service state changed: %s -> %s",
-                old_state.value,
-                new_state.value)
+                "Service state changed: %s -> %s", old_state.value, new_state.value
+            )
 
             if self.state_changed_callback:
                 try:
@@ -955,14 +964,17 @@ exec /usr/bin/python3 {self.config.executable_path} --daemon
         try:
             if self.service_type == ServiceType.SYSTEMD:
                 from .secure_subprocess import run_secure
-                result = run_secure([
-                    "journalctl",
-                    "-u",
-                    self.config.service_name,
-                    "-n",
-                    str(lines),
-                    "--no-pager",
-                ])
+
+                result = run_secure(
+                    [
+                        "journalctl",
+                        "-u",
+                        self.config.service_name,
+                        "-n",
+                        str(lines),
+                        "--no-pager",
+                    ]
+                )
                 if result.returncode == 0:
                     return result.stdout.split("\n")
 
@@ -990,8 +1002,7 @@ exec /usr/bin/python3 {self.config.executable_path} --daemon
                 script_file = Path(f"/etc/init.d/{self.config.service_name}")
                 return script_file.exists()
             elif self.service_type == ServiceType.UPSTART:
-                config_file = Path(
-                    f"/etc/init/{self.config.service_name}.conf")
+                config_file = Path(f"/etc/init/{self.config.service_name}.conf")
                 return config_file.exists()
             else:
                 return False
@@ -1004,10 +1015,14 @@ exec /usr/bin/python3 {self.config.executable_path} --daemon
         try:
             if self.service_type == ServiceType.SYSTEMD:
                 from .secure_subprocess import run_secure
-                result = run_secure(["systemctl", "is-enabled", self.config.service_name])
+
+                result = run_secure(
+                    ["systemctl", "is-enabled", self.config.service_name]
+                )
                 return result.returncode == 0 and result.stdout.strip() == "enabled"
             elif self.service_type == ServiceType.SYSV_INIT:
                 from .secure_subprocess import run_secure
+
                 result = run_secure(["chkconfig", "--list", self.config.service_name])
                 return result.returncode == 0 and ":on" in result.stdout
             elif self.service_type == ServiceType.UPSTART:
@@ -1020,8 +1035,7 @@ exec /usr/bin/python3 {self.config.executable_path} --daemon
             return False
 
     # Callback setters
-    def set_state_changed_callback(
-            self, callback: Callable[[ServiceState, str], None]):
+    def set_state_changed_callback(self, callback: Callable[[ServiceState, str], None]):
         """Set callback for service state changes."""
         self.state_changed_callback = callback
 

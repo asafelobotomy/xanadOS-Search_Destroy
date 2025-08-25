@@ -3,16 +3,14 @@
 File system watcher for real-time monitoring
 Uses inotify on Linux for efficient file system event detection
 """
+
 import logging
 import os
-import select
-import struct
 import tempfile
 import threading
 import time
 from dataclasses import dataclass
 from enum import Enum
-from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Set
 
 # Try to import inotify, fallback to polling if not available
@@ -111,8 +109,7 @@ class FileSystemWatcher:
             self.logger.info("Using inotify for file system monitoring")
             self._use_inotify = True
         else:
-            self.logger.warning(
-                "inotify not available, using polling fallback")
+            self.logger.warning("inotify not available, using polling fallback")
             self._use_inotify = False
 
     def start_watching(self):
@@ -127,12 +124,10 @@ class FileSystemWatcher:
             if isinstance(path, str) and os.path.exists(path):
                 valid_paths.append(path)
             else:
-                self.logger.warning(
-                    "Invalid or non-existent watch path: %s", path)
+                self.logger.warning("Invalid or non-existent watch path: %s", path)
 
         if not valid_paths:
-            self.logger.error(
-                "No valid watch paths found, cannot start watcher")
+            self.logger.error("No valid watch paths found, cannot start watcher")
             return
 
         self.paths_to_watch = valid_paths
@@ -141,9 +136,8 @@ class FileSystemWatcher:
 
         if self._use_inotify:
             self.watch_thread = threading.Thread(
-                target=self._inotify_watch_loop,
-                daemon=True,
-                name="FileSystemWatcher")
+                target=self._inotify_watch_loop, daemon=True, name="FileSystemWatcher"
+            )
         else:
             self.watch_thread = threading.Thread(
                 target=self._polling_watch_loop,
@@ -153,8 +147,8 @@ class FileSystemWatcher:
 
         self.watch_thread.start()
         self.logger.info(
-            "File system watcher started for %d paths", len(
-                self.paths_to_watch))
+            "File system watcher started for %d paths", len(self.paths_to_watch)
+        )
 
     def stop_watching(self):
         """Stop monitoring file system events."""
@@ -195,11 +189,11 @@ class FileSystemWatcher:
                                 | inotify.constants.IN_CLOSE_WRITE
                             ),
                         )
-                        self.logger.info(
-                            "Added inotify watch for: %s", watch_path)
+                        self.logger.info("Added inotify watch for: %s", watch_path)
                     except Exception as e:
                         self.logger.warning(
-                            "Failed to add inotify watch for %s: %s", watch_path, e)
+                            "Failed to add inotify watch for %s: %s", watch_path, e
+                        )
                 else:
                     self.logger.warning(
                         "Watch path does not exist, skipping: %s", watch_path
@@ -272,8 +266,7 @@ class FileSystemWatcher:
             self._handle_event(watch_event)
 
         except Exception as e:
-            self.logger.error(
-                "Error creating watch event for %s: %s", full_path, e)
+            self.logger.error("Error creating watch event for %s: %s", full_path, e)
 
     def _polling_watch_loop(self):
         """Fallback polling-based watching."""
@@ -343,8 +336,7 @@ class FileSystemWatcher:
                                 )
 
                 # Check for deleted files
-                for old_path in set(file_states.keys()) - \
-                        set(current_states.keys()):
+                for old_path in set(file_states.keys()) - set(current_states.keys()):
                     event = WatchEvent(
                         event_type=WatchEventType.FILE_DELETED,
                         file_path=old_path,
@@ -456,9 +448,8 @@ class FileSystemWatcher:
 
             # Log event (debug level to avoid spam)
             self.logger.debug(
-                "File system event: %s - %s",
-                event.event_type.value,
-                event.file_path)
+                "File system event: %s - %s", event.event_type.value, event.file_path
+            )
 
             # Call event callback
             if self.event_callback:

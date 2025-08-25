@@ -6,16 +6,16 @@ Quick Scan Button Fix Summary
 This document summarizes the fixes applied to resolve the Quick Scan button
 text truncation issue in the xanadOS Search & Destroy application.
 
-Issue: When the Quick Scan button was clicked, it changed to "Stop Quick Scan" 
+Issue: When the Quick Scan button was clicked, it changed to "Stop Quick Scan"
 but the text was cut off due to insufficient button width.
 
-Author: GitHub Copilot  
+Author: GitHub Copilot
 Date: August 17, 2025
 """
 
 def generate_fix_summary():
     """Generate a summary of the Quick Scan button fixes."""
-    
+
     summary = """
 # QUICK SCAN BUTTON FIX REPORT
 
@@ -33,12 +33,12 @@ def generate_fix_summary():
 # Before:
 self.quick_scan_btn.setMinimumSize(120, 40)  # Too narrow
 
-# After:  
+# After:
 self.quick_scan_btn.setMinimumSize(150, 40)  # Wider to accommodate text
 ```
 **Impact:** Provides more space for button text in both states
 
-### 2. Added Preferred Size Policy ✅  
+### 2. Added Preferred Size Policy ✅
 **File Modified:** `app/gui/main_window.py` (line ~662)
 **Change:**
 ```python
@@ -63,7 +63,7 @@ self.quick_scan_btn.setText("Stop Scan")  # 9 characters
 
 ### Button State Management:
 - **Default State:** "Quick Scan" (10 characters)
-- **Active State:** "Stop Scan" (9 characters)  
+- **Active State:** "Stop Scan" (9 characters)
 - **Minimum Width:** 150px (was 120px)
 - **Size Policy:** Preferred width, Fixed height
 
@@ -76,7 +76,7 @@ self.quick_scan_btn.setText("Stop Scan")  # 9 characters
 
 ### Visual Appearance:
 - ✅ "Quick Scan" text displays fully without truncation
-- ✅ "Stop Scan" text displays fully without truncation  
+- ✅ "Stop Scan" text displays fully without truncation
 - ✅ Button maintains consistent appearance in both states
 - ✅ No layout disruption in header area
 
@@ -122,7 +122,7 @@ self.quick_scan_btn.setText("Stop Scan")  # 9 characters
 
 ### Testing Recommendations:
 - Test with different system fonts and DPI settings
-- Verify behavior on different screen resolutions  
+- Verify behavior on different screen resolutions
 - Test rapid clicking to ensure state management is robust
 - Validate with screen readers for accessibility
 
@@ -139,12 +139,10 @@ and preserve existing behavior while solving the text truncation problem.
 """
     return summary
 
-
 def main():
     """Generate and display the fix summary."""
     summary = generate_fix_summary()
     print(summary)
-
 
 if __name__ == "__main__":
     main()

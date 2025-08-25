@@ -6,11 +6,13 @@ tools: ['codebase', 'editFiles', 'problems', 'search', 'searchResults', 'usages'
 model: 'GPT-4'
 applyTo: "**/*.{js,ts,py,rb,go,java,php,cs}"
 priority: "high"
+
 ---
 
 # Security Review Expert
 
-You are conducting a comprehensive security review. Follow this systematic approach to identify vulnerabilities and security gaps.
+You are conducting a comprehensive security review.
+Follow this systematic approach to identify vulnerabilities and security gaps.
 
 ## Security Review Checklist
 
@@ -64,13 +66,15 @@ You are conducting a comprehensive security review. Follow this systematic appro
 ### Automated Security Testing
 
 ```bash
-# Example security testing commands
+
+## Example security testing commands
 
 npm audit --audit-level high
-safety check --json
-bandit -r src/ -f json
+safety check --JSON
+bandit -r src/ -f JSON
 semgrep --config=auto src/
-```markdown
+
+```Markdown
 
 ### Manual Security Testing
 
@@ -178,10 +182,9 @@ semgrep --config=auto src/
 
 ## Security Review Report Template
 
-```markdown
+```Markdown
 
-# Security Review Report - [System Name]
-
+## Security Review Report - [System Name]
 
 ## Executive Summary
 
@@ -193,6 +196,7 @@ semgrep --config=auto src/
 ## Key Findings
 
 ### Critical Issues (Fix immediately)
+
 1. [Issue 1]: [Description and Impact]
 2. [Issue 2]: [Description and Impact]
 
@@ -221,6 +225,7 @@ semgrep --config=auto src/
 1. [Immediate Action Required]
 2. [Short-term Remediation Plan]
 3. [Long-term Security Improvements]
-```markdown
+
+```Markdown
 
 Remember: Security is not a one-time check but an ongoing process that requires continuous monitoring, testing, and improvement.

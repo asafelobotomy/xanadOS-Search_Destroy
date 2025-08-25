@@ -3,12 +3,12 @@
 Security input validation module for S&D - Search & Destroy
 Provides comprehensive input validation and security checks
 """
-import hashlib
+
 import logging
 import os
 import stat
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, Optional, Tuple
 
 # Maximum file sizes (in bytes)
 MAX_FILE_SIZE = 100 * 1024 * 1024  # 100MB
@@ -22,7 +22,7 @@ FORBIDDEN_PATHS = [
     "/sys",
     "/dev",
     "/run",
-    "/tmp/systemd-private-*",
+    "/tmp/systemd-private-*",  # nosec B108 - path validation list, not temp file creation
     "/etc/shadow",
     "/etc/passwd",
     "/etc/sudoers",
@@ -110,8 +110,7 @@ class PathValidator:
 
                 # Estimate directory size (basic check)
                 try:
-                    file_count = sum(
-                        1 for _ in path_obj.rglob("*") if _.is_file())
+                    file_count = sum(1 for _ in path_obj.rglob("*") if _.is_file())
                     if file_count > MAX_FILES_PER_SCAN:
                         return (
                             False,
@@ -120,8 +119,7 @@ class PathValidator:
                 except (OSError, PermissionError):
                     # If we can't count files, it might be too large or
                     # inaccessible
-                    logger.warning(
-                        f"Could not count files in directory: {path}")
+                    logger.warning(f"Could not count files in directory: {path}")
 
             return True, ""
 
@@ -160,15 +158,16 @@ class PathValidator:
                 if self._is_archive(file_obj):
                     if file_size > MAX_ARCHIVE_SIZE:
                         return (
-                            False, f"Archive too large: {file_size} bytes > {MAX_ARCHIVE_SIZE}", )
+                            False,
+                            f"Archive too large: {file_size} bytes > {MAX_ARCHIVE_SIZE}",
+                        )
 
             except OSError as e:
                 return False, f"Could not check file size: {e}"
 
             # Check for suspicious file characteristics
             if self._is_suspicious_file(file_obj):
-                logger.warning(
-                    f"Suspicious file characteristics detected: {file_path}")
+                logger.warning(f"Suspicious file characteristics detected: {file_path}")
                 # Don't block, but log for review
 
             return True, ""
@@ -178,14 +177,7 @@ class PathValidator:
 
     def _is_archive(self, file_path: Path) -> bool:
         """Check if file is an archive format."""
-        archive_extensions = {
-            ".zip",
-            ".rar",
-            ".7z",
-            ".tar",
-            ".gz",
-            ".bz2",
-            ".xz"}
+        archive_extensions = {".zip", ".rar", ".7z", ".tar", ".gz", ".bz2", ".xz"}
         return file_path.suffix.lower() in archive_extensions
 
     def _is_suspicious_file(self, file_path: Path) -> bool:
@@ -198,8 +190,7 @@ class PathValidator:
         try:
             file_stat = file_path.stat()
             if file_stat.st_mode & stat.S_IXUSR:
-                if file_path.suffix.lower() not in {
-                        ".sh", ".py", ".pl", ".rb"}:
+                if file_path.suffix.lower() not in {".sh", ".py", ".pl", ".rb"}:
                     return True
         except OSError:
             pass
@@ -244,10 +235,11 @@ class InputSanitizer:
             "&",  # Background process
             "(",  # Subshell
             ")",  # Subshell
-            "\n", # Newline
-            "\r", # Carriage return
-            "\t", # Tab
-            "\x00"]  # Null byte
+            "\n",  # Newline
+            "\r",  # Carriage return
+            "\t",  # Tab
+            "\x00",
+        ]  # Null byte
 
         sanitized = filename
         for char in dangerous_chars:
@@ -296,21 +288,20 @@ class FileSizeMonitor:
             # Check individual file size
             if file_size > MAX_FILE_SIZE:
                 logger.warning(
-                    f"File too large to process: {file_path} ({file_size} bytes)")
+                    f"File too large to process: {file_path} ({file_size} bytes)"
+                )
                 return False
 
             # Check total processed size
             if self.processed_size + file_size > self.max_total_size:
                 logger.warning(
-                    f"Total scan size limit reached: {
-                        self.processed_size + file_size}")
+                    f"Total scan size limit reached: {self.processed_size + file_size}"
+                )
                 return False
 
             # Check file count
             if self.processed_files >= MAX_FILES_PER_SCAN:
-                logger.warning(
-                    f"Maximum file count reached: {
-                        self.processed_files}")
+                logger.warning(f"Maximum file count reached: {self.processed_files}")
                 return False
 
             return True
@@ -334,9 +325,10 @@ class FileSizeMonitor:
 
 
 def validate_scan_request(
-        scan_path: str,
-        max_depth: Optional[int] = None,
-        additional_options: Optional[Dict[str, str]] = None) -> dict:
+    scan_path: str,
+    max_depth: Optional[int] = None,
+    additional_options: Optional[Dict[str, str]] = None,
+) -> dict:
     """
     Comprehensive validation of scan requests.
 
@@ -365,8 +357,7 @@ def validate_scan_request(
 
     # Depth validation
     if max_depth is not None and max_depth > MAX_SCAN_DEPTH:
-        result["errors"].append(
-            f"Scan depth too deep: {max_depth} > {MAX_SCAN_DEPTH}")
+        result["errors"].append(f"Scan depth too deep: {max_depth} > {MAX_SCAN_DEPTH}")
         return result
 
     # Validate additional options for security
@@ -419,13 +410,13 @@ def _validate_option_security(key: str, value: str) -> bool:
         True if safe, False if potentially dangerous
     """
     # Check for dangerous characters in keys
-    if not key.replace('_', '').replace('-', '').isalnum():
+    if not key.replace("_", "").replace("-", "").isalnum():
         return False
-    
+
     # Check for injection patterns in values
-    dangerous_patterns = [';', '&&', '||', '`', '$', '|', '\n', '\r', '../']
+    dangerous_patterns = [";", "&&", "||", "`", "$", "|", "\n", "\r", "../"]
     for pattern in dangerous_patterns:
         if pattern in value:
             return False
-    
+
     return True

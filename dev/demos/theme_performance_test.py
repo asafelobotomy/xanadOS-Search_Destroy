@@ -3,12 +3,14 @@
 Theme Performance Comparison
 Compare the performance of old vs new theme system.
 """
+import os
 
 import sys
 import time
-import gc
-import os
-from PyQt6.QtWidgets import QApplication, QMainWindow, QPushButton, QVBoxLayout, QWidget
+
+from PyQt6.QtWidgets import (QApplication, QMainWindow, QPushButton,
+                             import gc
+                             QVBoxLayout, QWidget)
 
 # Add the project directory to the path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))

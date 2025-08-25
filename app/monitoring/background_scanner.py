@@ -3,7 +3,7 @@
 Background scanner for continuous monitoring
 Performs scheduled scans and processes file system events
 """
-import asyncio
+
 import logging
 import tempfile
 import threading
@@ -17,7 +17,7 @@ from typing import Any, Callable, Dict, List, Optional, Set
 import schedule
 
 try:
-    from core.clamav_wrapper import ClamAVWrapper
+    from app.core.clamav_wrapper import ClamAVWrapper
 except ImportError:
     # Fallback for development/testing
     class ClamAVWrapper:  # type: ignore[no-redef]
@@ -110,7 +110,14 @@ class BackgroundScanner:
         # Configuration
         self.scan_timeout = 30.0  # seconds
         self.max_concurrent_scans = 3
-        self.immediate_scan_extensions: Set[str] = {".exe", ".dll", ".bat", ".sh", ".py", ".jar"}
+        self.immediate_scan_extensions: Set[str] = {
+            ".exe",
+            ".dll",
+            ".bat",
+            ".sh",
+            ".py",
+            ".jar",
+        }
 
         self._setup_scheduled_tasks()
 
@@ -126,22 +133,18 @@ class BackgroundScanner:
         # Start worker threads
         for i in range(self.num_workers):
             thread = threading.Thread(
-                target=self._worker_loop,
-                daemon=True,
-                name=f"BackgroundScanner-{i}")
+                target=self._worker_loop, daemon=True, name=f"BackgroundScanner-{i}"
+            )
             thread.start()
             self.worker_threads.append(thread)
 
         # Start scheduler thread
         self.scheduler_thread = threading.Thread(
-            target=self._scheduler_loop,
-            daemon=True,
-            name="BackgroundScanner-Scheduler")
+            target=self._scheduler_loop, daemon=True, name="BackgroundScanner-Scheduler"
+        )
         self.scheduler_thread.start()
 
-        self.logger.info(
-            "Background scanner started with %d workers",
-            self.num_workers)
+        self.logger.info("Background scanner started with %d workers", self.num_workers)
 
     def stop(self):
         """Stop the background scanner."""
@@ -189,9 +192,8 @@ class BackgroundScanner:
             if event.file_path not in self.active_scans:
                 self.scan_queue.put(task)
                 self.logger.debug(
-                    "Queued scan for %s (priority: %s)",
-                    event.file_path,
-                    priority.name)
+                    "Queued scan for %s (priority: %s)", event.file_path, priority.name
+                )
 
         except Exception as e:
             self.logger.error(
@@ -208,10 +210,7 @@ class BackgroundScanner:
             file_path: Path to file to scan
             priority: Scan priority
         """
-        task = ScanTask(
-            file_path=file_path,
-            priority=priority,
-            timestamp=time.time())
+        task = ScanTask(file_path=file_path, priority=priority, timestamp=time.time())
 
         self.scan_queue.put(task)
         self.logger.info("Scheduled manual scan for %s", file_path)
@@ -393,9 +392,7 @@ class BackgroundScanner:
             del self.scan_results[path]
 
         if old_results:
-            self.logger.info(
-                "Cleaned up %d old scan results",
-                len(old_results))
+            self.logger.info("Cleaned up %d old scan results", len(old_results))
 
     def get_statistics(self) -> Dict[str, Any]:
         """Get scanner performance statistics."""

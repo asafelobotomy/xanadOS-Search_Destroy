@@ -1,12 +1,13 @@
 ---
 applyTo: "**/*.{cpp,c,h,hpp,cs,hlsl,glsl,vert,frag,lua,gd}"
+
 ---
 
 # Gaming Development-specific Copilot Instructions
 
 ## Performance Optimization
 
-**⚠️ SECURITY NOTE: Validate all performance optimizations for security implications**
+## ⚠️ SECURITY NOTE: Validate all performance optimizations for security implications
 
 - Profile early and often; use platform-specific profilers (Unity Profiler, Unreal Insights, PIX)
 - Minimize memory allocations during gameplay; use object pooling for frequently created/destroyed objects
@@ -19,7 +20,7 @@ applyTo: "**/*.{cpp,c,h,hpp,cs,hlsl,glsl,vert,frag,lua,gd}"
 - Implement efficient audio streaming and compression for large audio assets
 - Use coroutines or async operations for non-critical operations to avoid frame drops
 
-**⚠️ SECURITY OVERRIDE: Never cache user input or sensitive data in performance optimizations**
+## ⚠️ SECURITY OVERRIDE: Never cache user input or sensitive data in performance optimizations
 
 ## Memory Management
 

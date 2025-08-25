@@ -1,5 +1,6 @@
 ---
 applyTo: "**/*"
+
 ---
 
 # Placeholder/TODO Tracking - MANDATORY
@@ -11,8 +12,8 @@ applyTo: "**/*"
 
 Add entries when you must introduce a placeholder/stub:
 
-- ID: short identifier (e.g., `docs-api-cleanup`)
-- Location: file path and line/context (e.g., `docs/api/script-api.md: L12`)
+- ID: short identifier (e.g., `docs-API-cleanup`)
+- Location: file path and line/context (e.g., `docs/API/script-API.md: L12`)
 - Marker: copy the exact TODO/PLACEHOLDER line
 - Issue: link to tracking issue (if any)
 - ETA: target date for removal
@@ -20,7 +21,7 @@ Add entries when you must introduce a placeholder/stub:
 ## Current entries
 
 - ID: monitoring-mcp-custom-metrics
-	- Location: `.github/mcp/servers/monitoring-mcp/index.js` (method `getCustomMetrics`)
-	- Marker: `// Placeholder for custom metrics integration`
-	- Issue: `docs/reports/issues/issue-monitoring-mcp-custom-metrics.md`
-	- ETA: 2025-09-07 (proposed)
+- Location: `.GitHub/mcp/servers/monitoring-mcp/index.js`(method`getCustomMetrics`)
+- Marker: `// Placeholder for custom metrics integration`
+- Issue: `docs/reports/issues/issue-monitoring-mcp-custom-metrics.md`
+- ETA: 2025-09-07 (proposed)
