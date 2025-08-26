@@ -15,6 +15,10 @@ from pathlib import Path
 from PyQt6.QtCore import Qt, QTimer, pyqtSignal
 from PyQt6.QtGui import QColor, QFont, QPainter, QPen, QPixmap
 from PyQt6.QtWidgets import QSplashScreen
+import time
+
+# Import centralized version
+from app import __version__
 
 
 class ModernSplashScreen(QSplashScreen):
@@ -26,8 +30,8 @@ class ModernSplashScreen(QSplashScreen):
     progress_updated = pyqtSignal(int, str)  # progress, message
     phase_completed = pyqtSignal(str)  # phase_name
 
-    def __init__(self, width=600, height=400):
-        # Create a modern splash pixmap
+    def __init__(self, width=600, height=480):
+        # Create a modern splash pixmap (increased height to accommodate large 128x128 icon)
         pixmap = self.create_modern_pixmap(width, height)
         super().__init__(pixmap)
 
@@ -70,10 +74,7 @@ class ModernSplashScreen(QSplashScreen):
             # Get the project root directory
             current_dir = Path(__file__).parent.parent.parent
             logo_path = (
-                current_dir
-                / "packaging"
-                / "icons"
-                / "io.github.asafelobotomy.SearchAndDestroy.png"
+                current_dir / "packaging" / "icons" / "io.github.asafelobotomy.SearchAndDestroy.png"
             )
 
             if logo_path.exists():
@@ -142,13 +143,50 @@ class ModernSplashScreen(QSplashScreen):
             width,
             20,
             Qt.AlignmentFlag.AlignCenter,
-            "Version 2.9.0 - Professional Edition",
+            f"Version {__version__} - Professional Edition",
         )
 
         # Draw accent line (adjusted position)
         accent_line_y = title_y_offset + 110
         painter.setPen(QPen(QColor(229, 115, 115), 2))
         painter.drawLine(100, accent_line_y, width - 100, accent_line_y)
+
+        # Add larger Search & Destroy icon between accent line and progress bar
+        try:
+            # Try to load a larger icon (128x128 or fallback to the main icon)
+            large_logo_paths = [
+                current_dir / "packaging" / "icons" / "io.github.asafelobotomy.SearchAndDestroy-128.png",
+                current_dir / "packaging" / "icons" / "org.xanados.SearchAndDestroy-128.png",
+                current_dir / "packaging" / "icons" / "io.github.asafelobotomy.SearchAndDestroy.png",
+                current_dir / "packaging" / "icons" / "org.xanados.SearchAndDestroy.png",
+            ]
+
+            large_logo_pixmap = None
+            for large_logo_path in large_logo_paths:
+                if large_logo_path.exists():
+                    large_logo_pixmap = QPixmap(str(large_logo_path))
+                    if not large_logo_pixmap.isNull():
+                        break
+
+            if large_logo_pixmap and not large_logo_pixmap.isNull():
+                # Scale the large logo to full 128x128 size for the splash screen
+                large_logo_size = 128
+                scaled_large_logo = large_logo_pixmap.scaled(
+                    large_logo_size,
+                    large_logo_size,
+                    Qt.AspectRatioMode.KeepAspectRatio,
+                    Qt.TransformationMode.SmoothTransformation,
+                )
+
+                # Position the large logo between the accent line and progress bar
+                # Center horizontally, place it with some padding from the accent line
+                large_logo_x = (width - large_logo_size) // 2
+                large_logo_y = accent_line_y + 30  # 30 pixels below the accent line
+                painter.drawPixmap(large_logo_x, large_logo_y, scaled_large_logo)
+
+        except Exception as e:
+            # If there's any error loading the large logo, continue without it
+            print(f"Note: Could not load large splash logo: {e}")
 
         painter.end()
         return pixmap
@@ -176,8 +214,9 @@ class ModernSplashScreen(QSplashScreen):
         """Custom drawing for modern progress display."""
         super().drawContents(painter)
 
-        # Draw progress bar at bottom
-        progress_rect_y = self.height() - 60
+        # Draw progress bar at bottom (adjusted to accommodate large icon)
+        # Position it further down to leave space for the large icon
+        progress_rect_y = self.height() - 80  # Moved down from -60 to -80
         painter.fontMetrics().boundingRect(
             20,
             progress_rect_y,
@@ -223,13 +262,11 @@ class StartupProgressTracker:
 
     def start_tracking(self):
         """Start tracking startup time."""
-        import time
 
         self.start_time = time.time()
 
     def complete_phase(self, phase: str):
         """Mark a phase as complete and update splash."""
-        import time
 
         if self.start_time:
             self.phase_times[phase] = time.time() - self.start_time
@@ -239,7 +276,6 @@ class StartupProgressTracker:
 
     def get_total_time(self) -> float:
         """Get total startup time."""
-        import time
 
         if self.start_time:
             return time.time() - self.start_time

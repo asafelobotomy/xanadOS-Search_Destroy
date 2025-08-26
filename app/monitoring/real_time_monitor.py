@@ -21,6 +21,9 @@ from .file_watcher import FileSystemWatcher, WatchEvent
 
 try:
     from app.core.clamav_wrapper import ClamAVWrapper
+    from app.utils.config import QUARANTINE_DIR
+    import hashlib
+    import json
 except ImportError:
     # Fallback for development/testing
     class ClamAVWrapper:  # type: ignore[no-redef]
@@ -287,13 +290,9 @@ class RealTimeMonitor:
             if file_path.exists():
                 # Determine quarantine destination (reuse configured path if available)
                 try:
-                    from app.utils.config import QUARANTINE_DIR
-
                     quarantine_dir = QUARANTINE_DIR
                 except Exception:
-                    quarantine_dir = (
-                        Path.home() / ".local/share/search-and-destroy/quarantine"
-                    )
+                    quarantine_dir = Path.home() / ".local/share/search-and-destroy/quarantine"
                 quarantine_dir.mkdir(parents=True, exist_ok=True)
                 # Hard permission on directory
                 if os.name == "posix":
@@ -309,8 +308,6 @@ class RealTimeMonitor:
                     # Compute hash before moving
                     sha256 = None
                     try:
-                        import hashlib
-
                         h = hashlib.sha256()
                         with file_path.open("rb") as f_in:
                             for chunk in iter(lambda: f_in.read(8192), b""):
@@ -332,8 +329,6 @@ class RealTimeMonitor:
                     )
                     # Write metadata JSON
                     try:
-                        import json
-
                         meta = {
                             "original_path": str(file_path),
                             "quarantine_path": str(dest),
@@ -346,24 +341,22 @@ class RealTimeMonitor:
                         ) as m_out:
                             json.dump(meta, m_out, indent=2, sort_keys=True)
                     except Exception as m_err:
-                        self.logger.error(
-                            "Failed writing quarantine metadata: %s", m_err
-                        )
+                        self.logger.error("Failed writing quarantine metadata: %s", m_err)
                     with self.lock:
                         self.files_quarantined += 1
                     if self.file_quarantined_callback:
                         try:
                             self.file_quarantined_callback(str(dest))
                         except Exception as cb_err:
-                            self.logger.error(
-                                "Error in quarantine callback: %s", cb_err
-                            )
+                            self.logger.error("Error in quarantine callback: %s", cb_err)
                 except OSError as move_err:
                     self.logger.error("Failed moving file to quarantine: %s", move_err)
 
         except Exception as e:
             self.logger.error(
-                "Error quarantining file %s: %s", event.original_event.file_path, e
+                "Error quarantining file %s: %s",
+                event.original_event.file_path,
+                e,
             )
 
     def _block_file(self, event: ProcessedEvent):
@@ -382,7 +375,9 @@ class RealTimeMonitor:
 
         except Exception as e:
             self.logger.error(
-                "Error blocking file %s: %s", event.original_event.file_path, e
+                "Error blocking file %s: %s",
+                event.original_event.file_path,
+                e,
             )
 
     def _on_alert(self, file_path: str, message: str):

@@ -72,16 +72,12 @@ class WarningExplanationDialog(ThemedDialog):
         # Color based on severity - using theme colors where appropriate
         colors = {
             SeverityLevel.LOW: get_theme_manager().get_color("success"),  # Green
-            SeverityLevel.MEDIUM: get_theme_manager().get_color(
-                "warning"
-            ),  # Yellow/Orange
+            SeverityLevel.MEDIUM: get_theme_manager().get_color("warning"),  # Yellow/Orange
             SeverityLevel.HIGH: get_theme_manager().get_color("warning"),  # Orange
             SeverityLevel.CRITICAL: get_theme_manager().get_color("error"),  # Red
         }
 
-        color = colors.get(
-            self.explanation.severity, get_theme_manager().get_color("muted_text")
-        )
+        color = colors.get(self.explanation.severity, get_theme_manager().get_color("muted_text"))
         badge.setStyleSheet(
             f"""
             QLabel {{

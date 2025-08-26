@@ -13,6 +13,10 @@ from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
+from .secure_subprocess import run_secure
+import shlex
+from .elevated_runner import elevated_run
+from .auth_session_manager import auth_manager
 
 
 class PrivilegeOperation(Enum):
@@ -62,8 +66,6 @@ class PrivilegeEscalationManager:
     def _check_polkit_availability(self) -> bool:
         """Check if polkit is available on the system."""
         try:
-            from .secure_subprocess import run_secure
-
             result = run_secure(["pkcheck", "--version"], timeout=5)
             return result.returncode == 0
         except (subprocess.TimeoutExpired, FileNotFoundError):
@@ -85,8 +87,6 @@ class PrivilegeEscalationManager:
             return os.geteuid() == 0  # Fallback to root check
 
         try:
-            from .secure_subprocess import run_secure
-
             result = run_secure(
                 [
                     "pkcheck",
@@ -133,9 +133,7 @@ class PrivilegeEscalationManager:
 
         return True
 
-    def _safe_log_error(
-        self, operation: str, error: Exception, include_type: bool = True
-    ) -> None:
+    def _safe_log_error(self, operation: str, error: Exception, include_type: bool = True) -> None:
         """
         Log errors safely without exposing sensitive information.
 
@@ -149,7 +147,11 @@ class PrivilegeEscalationManager:
         else:
             error_info = "Error occurred"
 
-        self.logger.error("Operation '%s' failed: %s", operation, error_info)
+        self.logerror(
+            "Operation '%s' failed: %s".replace("%s", "{operation, error_info}").replace(
+                "%d", "{operation, error_info}"
+            )
+        )
 
     def _create_secure_wrapper_script(self, request: ElevationRequest) -> str:
         """
@@ -188,7 +190,6 @@ class PrivilegeEscalationManager:
 
                 # Execute the command with timeout
                 # Use shlex.quote for proper shell escaping to prevent injection
-                import shlex
 
                 escaped_args = [shlex.quote(arg) for arg in request.command]
                 cmd_str = " ".join(escaped_args)
@@ -216,8 +217,10 @@ class PrivilegeEscalationManager:
         Raises:
             SecureElevationError: If elevation fails or is denied
         """
-        self.logger.info(
-            "Requesting elevation for operation: %s", request.operation.value
+        self.loginfo(
+            "Requesting elevation for operation: %s".replace(
+                "%s", "{request.operation.value}"
+            ).replace("%d", "{request.operation.value}")
         )
 
         # Check authorization first
@@ -227,21 +230,16 @@ class PrivilegeEscalationManager:
             )
 
         # Validate command arguments
-        if not request.command or not all(
-            isinstance(arg, str) for arg in request.command
-        ):
+        if not request.command or not all(isinstance(arg, str) for arg in request.command):
             raise SecureElevationError("Invalid command arguments")
 
         # Additional security validation for command arguments
         if not self._validate_command_security(request.command):
-            raise SecureElevationError(
-                "Command contains potentially dangerous patterns"
-            )
+            raise SecureElevationError("Command contains potentially dangerous patterns")
 
         script_path = None
         try:
             script_path = self._create_secure_wrapper_script(request)
-            from .elevated_runner import elevated_run
 
             result = elevated_run([script_path], timeout=request.timeout + 30, gui=True)
 
@@ -250,8 +248,10 @@ class PrivilegeEscalationManager:
             stderr = result.stderr or ""
 
             if success:
-                self.logger.info(
-                    "Elevation successful for operation: %s", request.operation.value
+                self.loginfo(
+                    "Elevation successful for operation: %s".replace(
+                        "%s", "{request.operation.value}"
+                    ).replace("%d", "{request.operation.value}")
                 )
             else:
                 self.logger.error(
@@ -268,23 +268,19 @@ class PrivilegeEscalationManager:
             raise SecureElevationError(error_msg)
 
         except Exception as e:
-            self._safe_log_error(
-                f"elevation for operation {request.operation.value}", e
-            )
-            raise SecureElevationError(
-                f"Elevation failed for operation: {request.operation.value}"
-            )
+            self._safe_log_error(f"elevation for operation {request.operation.value}", e)
+            raise SecureElevationError(f"Elevation failed for operation: {request.operation.value}")
 
         finally:
-            if (
-                "script_path" in locals()
-                and script_path
-                and os.path.exists(script_path)
-            ):
+            if "script_path" in locals() and script_path and os.path.exists(script_path):
                 try:
                     os.unlink(script_path)
-                except OSError as e:
-                    self.logger.warning("Failed to clean up wrapper script: %s", e)
+                except OSError:
+                    self.logwarning(
+                        "Failed to clean up wrapper script: %s".replace("%s", "{e}").replace(
+                            "%d", "{e}"
+                        )
+                    )
 
     def scan_system_directories(
         self, scan_paths: List[str], scan_options: Optional[Dict[str, str]] = None
@@ -306,7 +302,9 @@ class PrivilegeEscalationManager:
             if path_obj.exists():
                 validated_paths.append(str(path_obj))
             else:
-                self.logger.warning("Skipping non-existent path: %s", path)
+                self.logwarning(
+                    "Skipping non-existent path: %s".replace("%s", "{path}").replace("%d", "{path}")
+                )
 
         if not validated_paths:
             raise SecureElevationError("No valid scan paths provided")
@@ -385,7 +383,11 @@ class PrivilegeEscalationManager:
             True if successful, False otherwise
         """
         if not self._policy_file.exists():
-            self.logger.error("Policy file not found: %s", self._policy_file)
+            self.logerror(
+                "Policy file not found: %s".replace("%s", "{self._policy_file}").replace(
+                    "%d", "{self._policy_file}"
+                )
+            )
             return False
 
         policy_dest = Path(
@@ -395,8 +397,6 @@ class PrivilegeEscalationManager:
         try:
             # Use unified authentication session manager for policy installation
             try:
-                from .auth_session_manager import auth_manager
-
                 # Copy policy file with proper permissions using session management
                 result1 = auth_manager.execute_elevated_command(
                     ["cp", str(self._policy_file), str(policy_dest)],
@@ -420,7 +420,6 @@ class PrivilegeEscalationManager:
 
             except ImportError:
                 # Fallback to elevated_run if auth_manager not available (same method as RKHunter)
-                from .elevated_runner import elevated_run
 
                 result1 = elevated_run(
                     ["cp", str(self._policy_file), str(policy_dest)],
@@ -430,20 +429,24 @@ class PrivilegeEscalationManager:
                 if result1.returncode != 0:
                     raise subprocess.CalledProcessError(result1.returncode, ["cp"])
 
-                result2 = elevated_run(
-                    ["chmod", "644", str(policy_dest)], timeout=10, gui=True
-                )
+                result2 = elevated_run(["chmod", "644", str(policy_dest)], timeout=10, gui=True)
                 if result2.returncode != 0:
                     raise subprocess.CalledProcessError(result2.returncode, ["chmod"])
 
             self.logger.info("Policy file installed successfully")
             return True
 
-        except subprocess.CalledProcessError as e:
-            self.logger.error("Failed to install policy file: %s", e)
+        except subprocess.CalledProcessError:
+            self.logerror(
+                "Failed to install policy file: %s".replace("%s", "{e}").replace("%d", "{e}")
+            )
             return False
-        except Exception as e:
-            self.logger.error("Unexpected error installing policy file: %s", e)
+        except Exception:
+            self.logerror(
+                "Unexpected error installing policy file: %s".replace("%s", "{e}").replace(
+                    "%d", "{e}"
+                )
+            )
             return False
 
 

@@ -20,6 +20,9 @@ from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
 from typing import Dict, Optional, Tuple
+import json
+from .secure_subprocess import run_secure
+import ipaddress
 
 
 class NetworkSecurityLevel(Enum):
@@ -120,8 +123,6 @@ class SecureNetworkManager:
         if not self.PIN_FILE.exists():
             return
         try:
-            import json
-
             try:
                 mode = self.PIN_FILE.stat().st_mode & 0o777
                 if mode & 0o077:
@@ -142,20 +143,18 @@ class SecureNetworkManager:
                     continue
                 if host in self.CLAMAV_ENDPOINTS:
                     self.CLAMAV_ENDPOINTS[host].certificate_fingerprint = candidate
-        except Exception as e:  # pragma: no cover - best effort logging
-            self.logger.debug("Failed to load certificate pins: %s", e)
+        except Exception:  # pragma: no cover - best effort logging
+            self.logdebug(
+                "Failed to load certificate pins: %s".replace("%s", "{e}").replace("%d", "{e}")
+            )
 
     def refresh_pins(self) -> bool:
         """Reload pins at runtime. Returns True if any pin changed.
 
         Ignores pin files with insecure permissions (group/other access)."""
-        before = {
-            h: ep.certificate_fingerprint for h, ep in self.CLAMAV_ENDPOINTS.items()
-        }
+        before = {h: ep.certificate_fingerprint for h, ep in self.CLAMAV_ENDPOINTS.items()}
         self._load_certificate_pins()
-        after = {
-            h: ep.certificate_fingerprint for h, ep in self.CLAMAV_ENDPOINTS.items()
-        }
+        after = {h: ep.certificate_fingerprint for h, ep in self.CLAMAV_ENDPOINTS.items()}
         return before != after
 
     def _verify_certificate_fingerprint(
@@ -181,7 +180,11 @@ class SecureNetworkManager:
 
             # Validate certificate data
             if cert_der is None:
-                self.logger.error("No certificate data received from %s", hostname)
+                self.logerror(
+                    "No certificate data received from %s".replace("%s", "{hostname}").replace(
+                        "%d", "{hostname}"
+                    )
+                )
                 return False
 
             # Calculate fingerprint
@@ -190,8 +193,12 @@ class SecureNetworkManager:
 
             return actual_fingerprint == expected_fingerprint
 
-        except Exception as e:
-            self.logger.error("Certificate verification failed for %s: %s", hostname, e)
+        except Exception:
+            self.logerror(
+                "Certificate verification failed for %s: %s".replace("%s", "{hostname, e}").replace(
+                    "%d", "{hostname, e}"
+                )
+            )
             return False
 
     def _create_secure_request(
@@ -228,9 +235,7 @@ class SecureNetworkManager:
         request = urllib.request.Request(url, headers=secure_headers)
         return request
 
-    def _validate_response(
-        self, response, expected_content_type: Optional[str] = None
-    ) -> bool:
+    def _validate_response(self, response, expected_content_type: Optional[str] = None) -> bool:
         """
         Validate HTTP response for security issues.
 
@@ -245,7 +250,11 @@ class SecureNetworkManager:
         if expected_content_type:
             content_type = response.headers.get("Content-Type", "")
             if not content_type.startswith(expected_content_type):
-                self.logger.warning("Unexpected content type: %s", content_type)
+                self.logwarning(
+                    "Unexpected content type: %s".replace("%s", "{content_type}").replace(
+                        "%d", "{content_type}"
+                    )
+                )
                 return False
 
         # Check content length
@@ -254,7 +263,11 @@ class SecureNetworkManager:
             try:
                 length = int(content_length)
                 if length > 100 * 1024 * 1024:  # 100MB limit
-                    self.logger.error("Response too large: %d bytes", length)
+                    self.logerror(
+                        "Response too large: %d bytes".replace("%s", "{length}").replace(
+                            "%d", "{length}"
+                        )
+                    )
                     return False
             except ValueError:
                 self.logger.warning("Invalid Content-Length header")
@@ -269,7 +282,11 @@ class SecureNetworkManager:
         for header, expected_value in security_headers.items():
             actual_value = response.headers.get(header)
             if expected_value and actual_value != expected_value:
-                self.logger.warning("Missing or incorrect security header: %s", header)
+                self.logwarning(
+                    "Missing or incorrect security header: %s".replace("%s", "{header}").replace(
+                        "%d", "{header}"
+                    )
+                )
 
         return True
 
@@ -290,7 +307,11 @@ class SecureNetworkManager:
         Returns:
             Tuple of (success, file_path_or_error_message)
         """
-        self.logger.info("Starting secure download from: %s", endpoint.url)
+        self.loginfo(
+            "Starting secure download from: %s".replace("%s", "{endpoint.url}").replace(
+                "%d", "{endpoint.url}"
+            )
+        )
 
         # Parse URL for certificate verification
         parsed_url = urllib.parse.urlparse(endpoint.url)
@@ -328,8 +349,10 @@ class SecureNetworkManager:
             # Perform download with retries
             for attempt in range(endpoint.max_retries):
                 try:
-                    self.logger.debug(
-                        "Download attempt %d/%d", attempt + 1, endpoint.max_retries
+                    self.logdebug(
+                        "Download attempt %d/%d".replace(
+                            "%s", "{attempt + 1, endpoint.max_retries}"
+                        ).replace("%d", "{attempt + 1, endpoint.max_retries}")
                     )
 
                     with opener.open(request) as response:
@@ -362,7 +385,11 @@ class SecureNetworkManager:
 
                                 f.write(chunk)
 
-                        self.logger.info("Download completed: %d bytes", total_size)
+                        self.loginfo(
+                            "Download completed: %d bytes".replace("%s", "{total_size}").replace(
+                                "%d", "{total_size}"
+                            )
+                        )
 
                         # Verify file signature if requested
                         if verify_signature:
@@ -373,20 +400,22 @@ class SecureNetworkManager:
                         return True, str(dest_path)
 
                 except urllib.error.URLError as e:
-                    self.logger.warning(
-                        "Download attempt %d failed: %s", attempt + 1, e
+                    self.logwarning(
+                        "Download attempt %d failed: %s".replace("%s", "{attempt + 1, e}").replace(
+                            "%d", "{attempt + 1, e}"
+                        )
                     )
                     if attempt == endpoint.max_retries - 1:
                         return (
                             False,
-                            f"Download failed after {endpoint.max_retries} attempts: {
-                                e
-                            }",
+                            f"Download failed after {endpoint.max_retries} attempts: {e}",
                         )
                     time.sleep(2**attempt)  # Exponential backoff
 
         except Exception as e:
-            self.logger.error("Unexpected error during download: %s", e)
+            self.logerror(
+                "Unexpected error during download: %s".replace("%s", "{e}").replace("%d", "{e}")
+            )
             return False, f"Download error: {e}"
 
         finally:
@@ -414,25 +443,22 @@ class SecureNetworkManager:
             if not sig_file.exists():
                 # This would need to be implemented based on the actual
                 # signature URL
-                self.logger.info(
-                    "Signature verification not implemented for this file type"
-                )
+                self.logger.info("Signature verification not implemented for this file type")
                 return True  # Skip verification for now
 
             # Verify signature using GPG or similar
-            from .secure_subprocess import run_secure
 
-            result = run_secure(
-                ["gpg", "--verify", str(sig_file), str(file_path)], timeout=30
-            )
+            result = run_secure(["gpg", "--verify", str(sig_file), str(file_path)], timeout=30)
 
             return result.returncode == 0
 
         except (subprocess.TimeoutExpired, FileNotFoundError):
             self.logger.warning("GPG not available, skipping signature verification")
             return True  # Skip if GPG not available
-        except Exception as e:
-            self.logger.error("Signature verification failed: %s", e)
+        except Exception:
+            self.logerror(
+                "Signature verification failed: %s".replace("%s", "{e}").replace("%d", "{e}")
+            )
             return False
 
     def update_clamav_database(self, database_dir: str) -> Tuple[bool, str]:
@@ -468,13 +494,13 @@ class SecureNetworkManager:
                 )
 
                 dest_file = db_path / db_file
-                success, result = self.secure_download(
-                    download_endpoint, str(dest_file)
-                )
+                success, result = self.secure_download(download_endpoint, str(dest_file))
 
                 if success:
-                    self.logger.info(
-                        "Successfully downloaded %s from %s", db_file, endpoint_name
+                    self.loginfo(
+                        "Successfully downloaded %s from %s".replace(
+                            "%s", "{db_file, endpoint_name}"
+                        ).replace("%d", "{db_file, endpoint_name}")
                     )
                     success_count += 1
                     break
@@ -515,8 +541,10 @@ class SecureNetworkManager:
         for host, port in test_hosts:
             try:
                 socket.create_connection((host, port), timeout=5)
-                self.logger.debug(
-                    "Network connectivity confirmed via %s:%d", host, port
+                self.logdebug(
+                    "Network connectivity confirmed via %s:%d".replace(
+                        "%s", "{host, port}"
+                    ).replace("%d", "{host, port}")
                 )
                 return True
             except (socket.error, socket.timeout):
@@ -544,7 +572,11 @@ class SecureNetworkManager:
 
             # Prefer HTTPS
             if parsed.scheme == "http":
-                self.logger.warning("Using insecure HTTP protocol for %s", url)
+                self.logwarning(
+                    "Using insecure HTTP protocol for %s".replace("%s", "{url}").replace(
+                        "%d", "{url}"
+                    )
+                )
 
             # Check hostname
             if not parsed.hostname:
@@ -552,8 +584,6 @@ class SecureNetworkManager:
 
             # Block private IP ranges (basic check)
             try:
-                import ipaddress
-
                 ip = ipaddress.ip_address(parsed.hostname)
                 if ip.is_private or ip.is_loopback:
                     return False, "Private/loopback IP addresses not allowed"

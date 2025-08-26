@@ -1,0 +1,74 @@
+# GitHub Dependabot Configuration
+# Automates dependency updates for security and maintenance
+
+version: 2
+updates:
+  # Python dependencies
+  - package-ecosystem: "pip"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+    open-pull-requests-limit: 10
+    assignees:
+      - "asafelobotomy"
+    labels:
+      - "dependencies"
+      - "python"
+    commit-message:
+      prefix: "chore"
+      prefix-development: "chore"
+      include: "scope"
+    # Group related updates together
+    groups:
+      development-dependencies:
+        patterns:
+          - "pytest*"
+          - "mypy*"
+          - "black*"
+          - "ruff*"
+          - "pre-commit*"
+          - "bandit*"
+          - "safety*"
+        update-types:
+          - "minor"
+          - "patch"
+
+  # GitHub Actions workflows
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:30"
+    open-pull-requests-limit: 5
+    assignees:
+      - "asafelobotomy"
+    labels:
+      - "dependencies"
+      - "github-actions"
+    commit-message:
+      prefix: "chore"
+      include: "scope"
+
+  # NPM dependencies (for markdownlint and other dev tools)
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "10:00"
+    open-pull-requests-limit: 5
+    assignees:
+      - "asafelobotomy"
+    labels:
+      - "dependencies"
+      - "npm"
+    commit-message:
+      prefix: "chore"
+      include: "scope"
+    # Only update dev dependencies for npm
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]

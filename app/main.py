@@ -1,19 +1,19 @@
 #!/usr/bin/env python3
+"""Application entry point for xanadOS Search & Destroy (PyQt6 GUI)."""
+
 import os
 import sys
 from pathlib import Path
 
-from gui import APP_VERSION
-from PyQt6.QtWidgets import QApplication
+from PyQt6.QtWidgets import QApplication  # pylint: disable=no-name-in-module
+
+# Ensure package imports resolve whether run via `python -m app.main` or script
+app_dir = Path(__file__).parent
+project_root = app_dir.parent
+if str(project_root) not in sys.path:
+    sys.path.insert(0, str(project_root))
 
 from app.core.single_instance import SingleInstanceManager
-from app.gui.main_window import MainWindow
-from app.gui.setup_wizard import show_setup_wizard
-from app.gui.splash_screen import ModernSplashScreen, StartupProgressTracker
-
-# Add app directory to Python path for proper imports
-app_dir = Path(__file__).parent
-sys.path.insert(0, str(app_dir))
 
 # Import version info
 
@@ -23,6 +23,7 @@ if os.environ.get("XDG_SESSION_TYPE") == "wayland":
 
 
 def main():
+    """Launch the application with single-instance guard and splash workflow."""
     # Check for existing instance before creating QApplication
     instance_manager = SingleInstanceManager()
 
@@ -34,9 +35,26 @@ def main():
     # Create QApplication first
     app = QApplication(sys.argv)
     app.setApplicationName("S&D - Search & Destroy")
-    app.setApplicationVersion(APP_VERSION)
+    # Prefer VERSION file from project root to avoid fragile app.__init__ coupling
+    try:
+        with open(project_root / "VERSION", "r", encoding="utf-8") as vf:
+            version = vf.read().strip()
+    except Exception:
+        version = "dev"
+    app.setApplicationVersion(version)
     app.setOrganizationName("xanadOS")
     app.setOrganizationDomain("xanados.org")
+
+    # Import GUI modules only AFTER QApplication is constructed
+    from app.gui.splash_screen import ModernSplashScreen, StartupProgressTracker
+    from app.gui.setup_wizard import show_setup_wizard
+    from app.gui.main_window import MainWindow
+    from app.core.telemetry import (
+        initialize_telemetry,
+        shutdown_telemetry,
+        record_error,
+    )  # pylint: disable=import-outside-toplevel
+    from app.utils.config import load_config  # pylint: disable=import-outside-toplevel
 
     # Create and show splash screen immediately
     splash = ModernSplashScreen()
@@ -52,8 +70,6 @@ def main():
     app.processEvents()
 
     # Initialize telemetry early
-    from app.core.telemetry import initialize_telemetry, shutdown_telemetry
-    from app.utils.config import load_config
 
     config = load_config()
     initialize_telemetry(config)
@@ -90,8 +106,6 @@ def main():
     try:
         exit_code = app.exec()
     except Exception as e:
-        from app.core.telemetry import record_error
-
         record_error("app_crash", "main", str(e))
         raise
     finally:

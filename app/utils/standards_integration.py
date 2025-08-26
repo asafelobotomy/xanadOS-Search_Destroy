@@ -23,6 +23,9 @@ from .performance_standards import PERFORMANCE_OPTIMIZER, PerformanceLevel
 from .process_management import PROCESS_MANAGER, ProcessConfig
 from .security_standards import SecurityLevel, SecurityStandards
 from .system_paths import ApplicationPaths, SystemPaths
+import platform
+import sys
+from .performance_standards import optimize_for_scanning
 
 
 class ConfigurationLevel(Enum):
@@ -168,11 +171,17 @@ class StandardsManager:
             with open(config_file, "w", encoding="utf-8") as f:
                 json.dump(config, f, indent=2, default=str)
 
-            self.logger.info("Configuration saved to %s", config_file)
+            self.loginfo(
+                "Configuration saved to %s".replace("%s", "{config_file}").replace(
+                    "%d", "{config_file}"
+                )
+            )
             return True
 
-        except Exception as e:
-            self.logger.error("Failed to save configuration: %s", e)
+        except Exception:
+            self.logerror(
+                "Failed to save configuration: %s".replace("%s", "{e}").replace("%d", "{e}")
+            )
             return False
 
     def load_config(self, config_type: str = "main") -> Dict[str, Any]:
@@ -192,11 +201,17 @@ class StandardsManager:
             with open(config_file, "r", encoding="utf-8") as f:
                 config = json.load(f)
 
-            self.logger.info("Configuration loaded from %s", config_file)
+            self.loginfo(
+                "Configuration loaded from %s".replace("%s", "{config_file}").replace(
+                    "%d", "{config_file}"
+                )
+            )
             return config
 
-        except Exception as e:
-            self.logger.error("Failed to load configuration: %s", e)
+        except Exception:
+            self.logerror(
+                "Failed to load configuration: %s".replace("%s", "{e}").replace("%d", "{e}")
+            )
             return self.get_unified_config()
 
     def validate_paths(self) -> Dict[str, bool]:
@@ -239,8 +254,6 @@ class StandardsManager:
 
     def get_system_compatibility_info(self) -> Dict[str, Any]:
         """Get system compatibility information"""
-        import platform
-        import sys
 
         return {
             "platform": {
@@ -331,15 +344,11 @@ class StandardsManager:
 
         # Check for old security settings
         if "allowed_commands" in old_config:
-            migration_steps.append(
-                "Migrate allowed_commands to new ALLOWED_BINARIES format"
-            )
+            migration_steps.append("Migrate allowed_commands to new ALLOWED_BINARIES format")
 
         # Check for old performance settings
         if "max_workers" in old_config:
-            migration_steps.append(
-                "Migrate max_workers to performance-based thread management"
-            )
+            migration_steps.append("Migrate max_workers to performance-based thread management")
 
         return migration_steps
 
@@ -370,7 +379,6 @@ def execute_secure_command(command: Union[str, list], timeout: int = 300):
 
 def optimize_performance(file_count: int = 1000):
     """Optimize performance for scanning operation"""
-    from .performance_standards import optimize_for_scanning
 
     return optimize_for_scanning(file_count)
 

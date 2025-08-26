@@ -90,12 +90,45 @@ class EventProcessor:
         # Load default rules
         self._load_default_rules()
 
+    # --- Logger helper methods (avoid attribute errors in tests and unify usage) ---
+    def _log(self, fn: Callable[[str], None], msg: str, *args, **kwargs) -> None:
+        """Internal safe logger call that tolerates odd format strings.
+
+        - If args/kwargs provided, pass them through to the logger.
+        - Otherwise, log the message as-is (stringified), without extra formatting.
+        """
+        try:
+            if args or kwargs:
+                fn(msg, *args, **kwargs)
+            else:
+                fn(str(msg))
+        except Exception:
+            # Last-resort fallback to avoid raising from logging
+            try:
+                fn(str(msg))
+            except Exception:
+                pass
+
+    def loginfo(self, msg: str, *args, **kwargs) -> None:
+        self._log(self.logger.info, msg, *args, **kwargs)
+
+    def logdebug(self, msg: str, *args, **kwargs) -> None:
+        self._log(self.logger.debug, msg, *args, **kwargs)
+
+    def logwarning(self, msg: str, *args, **kwargs) -> None:
+        self._log(self.logger.warning, msg, *args, **kwargs)
+
+    def logerror(self, msg: str, *args, **kwargs) -> None:
+        self._log(self.logger.error, msg, *args, **kwargs)
+
     def add_rule(self, rule: EventRule):
         """Add an event processing rule."""
         with self.lock:
             self.rules.append(rule)
             self.rules.sort(key=lambda r: r.priority, reverse=True)
-        self.logger.info("Added event rule: %s", rule.name)
+        self.loginfo(
+            "Added event rule: %s".replace("%s", "{rule.name}").replace("%d", "{rule.name}")
+        )
 
     def remove_rule(self, rule_name: str) -> bool:
         """Remove an event processing rule."""
@@ -103,7 +136,11 @@ class EventProcessor:
             for i, rule in enumerate(self.rules):
                 if rule.name == rule_name:
                     del self.rules[i]
-                    self.logger.info("Removed event rule: %s", rule_name)
+                    self.loginfo(
+                        "Removed event rule: %s".replace("%s", "{rule_name}").replace(
+                            "%d", "{rule_name}"
+                        )
+                    )
                     return True
         return False
 
@@ -124,7 +161,11 @@ class EventProcessor:
 
             # Check event rate limiting
             if not self._check_event_rate(event):
-                self.logger.debug("Event rate limit exceeded for %s", event.file_path)
+                self.logdebug(
+                    "Event rate limit exceeded for %s".replace("%s", "{event.file_path}").replace(
+                        "%d", "{event.file_path}"
+                    )
+                )
                 return None
 
             # Find matching rule
@@ -159,8 +200,10 @@ class EventProcessor:
             if self.event_callback:
                 try:
                     self.event_callback(processed)
-                except Exception as e:
-                    self.logger.error("Error in event callback: %s", e)
+                except Exception:
+                    self.logerror(
+                        "Error in event callback: %s".replace("%s", "{e}").replace("%d", "{e}")
+                    )
 
             if rule.action == EventAction.ALERT and self.alert_callback:
                 try:
@@ -168,8 +211,10 @@ class EventProcessor:
                         event.file_path,
                         f"Alert triggered by rule: {rule.name}",
                     )
-                except Exception as e:
-                    self.logger.error("Error in alert callback: %s", e)
+                except Exception:
+                    self.logerror(
+                        "Error in alert callback: %s".replace("%s", "{e}").replace("%d", "{e}")
+                    )
 
             self.logger.debug(
                 "Processed event: %s -> %s (%s)",
@@ -180,8 +225,12 @@ class EventProcessor:
 
             return processed
 
-        except Exception as e:
-            self.logger.error("Error processing event for %s: %s", event.file_path, e)
+        except Exception:
+            self.logerror(
+                "Error processing event for %s: %s".replace("%s", "{event.file_path, e}").replace(
+                    "%d", "{event.file_path, e}"
+                )
+            )
             return None
 
     def _should_process_event(self, event: WatchEvent) -> bool:
@@ -325,9 +374,11 @@ class EventProcessor:
                 }
             )
 
-        except Exception as e:
-            self.logger.warning(
-                "Error extracting metadata for %s: %s", event.file_path, e
+        except Exception:
+            self.logwarning(
+                "Error extracting metadata for %s: %s".replace(
+                    "%s", "{event.file_path, e}"
+                ).replace("%d", "{event.file_path, e}")
             )
 
         return metadata

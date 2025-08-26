@@ -2,7 +2,14 @@
 """
 Setup Wizard for xanadOS Search & Destroy
 First-time setup experience for installing and configuring required packages.
+
+Notes
+-----
+- This module is large due to UI/widget definitions and styling consolidated in one place.
+    A future refactor can split it, but for now we prefer stability over risky changes.
 """
+
+# pylint: disable=too-many-lines  # UI-heavy module; tracked for later decomposition
 
 import subprocess
 import sys
@@ -35,6 +42,12 @@ from app.utils.config import load_config, save_config
 try:
     from app.gui.theme_manager import get_theme_manager
     from app.gui.themed_widgets import ThemedDialog
+    from app.core.elevated_runner import (
+        elevated_run,
+    )  # pylint: disable=import-outside-toplevel
+    from app.core.rkhunter_monitor_non_invasive import (
+        rkhunter_monitor,
+    )  # pylint: disable=import-outside-toplevel
 
     THEMING_AVAILABLE = True
 except ImportError:
@@ -42,11 +55,12 @@ except ImportError:
     ThemedDialog = QDialog
 
     def get_theme_manager():
+        """Fallback theme manager getter when theming is unavailable."""
         return None
 
 
 @dataclass
-class PackageInfo:
+class PackageInfo:  # pylint: disable=too-many-instance-attributes
     """Information about a required package"""
 
     name: str
@@ -60,21 +74,30 @@ class PackageInfo:
     is_critical: bool = True
 
 
-class InstallationWorker(QThread):
-    """Worker thread for package installation"""
+class InstallationWorker(QThread):  # pylint: disable=too-many-instance-attributes
+    """Worker thread for package installation.
+
+    Handles elevated installs, post-install steps, and service start.
+    Many attributes are inherent to the worker lifecycle (progress, outputs, etc.).
+    """
 
     progress_updated = pyqtSignal(str, int)  # message, progress
     installation_finished = pyqtSignal(str, bool)  # package_name, success
     output_updated = pyqtSignal(str)
 
     def __init__(self, package_info: PackageInfo, distro: str):
+        """Initialize the worker with package metadata and target distro."""
         super().__init__()
         self.package_info = package_info
         self.distro = distro
         self.should_stop = False
 
-    def run(self):
-        """Run the installation process"""
+    def run(self):  # pylint: disable=too-many-branches,too-many-statements,R1702
+        """Run the installation process."""
+        # pylint: disable=too-many-nested-blocks
+        # Justification: This method orchestrates a multi-step install with
+        # guarded flows (auth/UI/process/service). Splitting further risks user-visible
+        # regressions; nesting is acceptable at this UI boundary.
         try:
             # Get installation command for this distribution
             if self.distro not in self.package_info.install_commands:
@@ -87,23 +110,18 @@ class InstallationWorker(QThread):
             install_cmd = self.package_info.install_commands[self.distro]
 
             # Update progress
-            self.progress_updated.emit(
-                f"Installing {self.package_info.display_name}...", 25
-            )
+            self.progress_updated.emit(f"Installing {self.package_info.display_name}...", 25)
             self.output_updated.emit(f"Running: {install_cmd}")
 
             success = False
 
             try:
                 # Use elevated_run for package installation with GUI authentication
-                from app.core.elevated_runner import elevated_run  # pylint: disable=import-outside-toplevel
 
                 # Parse the command properly for elevated execution
                 if install_cmd.startswith("pkexec sh -c"):
                     # Extract shell command from pkexec wrapper
-                    shell_cmd = install_cmd.split('"')[
-                        1
-                    ]  # Extract the command between quotes
+                    shell_cmd = install_cmd.split('"')[1]  # Extract the command between quotes
                     # Execute using shell with elevated_run
                     install_result = elevated_run(
                         ["sh", "-c", shell_cmd],
@@ -142,14 +160,12 @@ class InstallationWorker(QThread):
             except subprocess.TimeoutExpired:
                 self.output_updated.emit("Command timed out after 10 minutes")
                 success = False
-            except Exception as e:  # pylint: disable=broad-except
+            except Exception as e:  # pylint: disable=broad-exception-caught
                 self.output_updated.emit(f"Error running command: {e}")
                 success = False
 
             if success:
-                self.progress_updated.emit(
-                    f"Configuring {self.package_info.display_name}...", 75
-                )
+                self.progress_updated.emit(f"Configuring {self.package_info.display_name}...", 75)
 
                 # Run post-installation commands if any
                 if self.package_info.post_install_commands:
@@ -193,11 +209,9 @@ class InstallationWorker(QThread):
                             self.output_updated.emit(
                                 f"Note: Could not start service: {service_result.stderr}"
                             )
-                    except Exception as e:  # pylint: disable=broad-except
+                    except Exception as e:  # pylint: disable=broad-exception-caught
                         # elevated_run can surface diverse OS/auth/Qt errors; keep UX stable
-                        self.output_updated.emit(
-                            f"Note: Could not start service: {e}"
-                        )
+                        self.output_updated.emit(f"Note: Could not start service: {e}")
 
                 self.progress_updated.emit(
                     f"{self.package_info.display_name} installed successfully!", 100
@@ -207,7 +221,7 @@ class InstallationWorker(QThread):
 
             self.installation_finished.emit(self.package_info.name, success)
 
-        except Exception as e:  # pylint: disable=broad-except
+        except Exception as e:  # pylint: disable=broad-exception-caught
             self.output_updated.emit(f"Error during installation: {str(e)}")
             self.installation_finished.emit(self.package_info.name, False)
 
@@ -272,9 +286,7 @@ class PackageCard(QFrame):
 
         # Install checkbox (only if not installed)
         if not self.is_installed:
-            self.install_checkbox = QCheckBox(
-                f"Install {self.package_info.display_name}"
-            )
+            self.install_checkbox = QCheckBox(f"Install {self.package_info.display_name}")
             if self.package_info.is_critical:
                 self.install_checkbox.setChecked(True)
                 self.install_checkbox.setText(
@@ -298,10 +310,11 @@ class PackageCard(QFrame):
         )
 
 
-class SetupWizard(ThemedDialog):
-    """Main setup wizard dialog"""
+class SetupWizard(ThemedDialog):  # pylint: disable=too-many-instance-attributes
+    """Main setup wizard dialog."""
 
     def __init__(self, parent=None):
+        """Build the wizard UI, detect distro, and prepare package catalog."""
         super().__init__(parent)
         self.setWindowTitle("S&D - First Time Setup")
         self.setModal(True)
@@ -316,12 +329,17 @@ class SetupWizard(ThemedDialog):
             "clamav": PackageInfo(
                 name="clamav",
                 display_name="ClamAV Antivirus",
-                description="Open-source antivirus engine for detecting trojans, viruses, malware & other malicious threats.",
-                purpose="Core virus scanning and real-time protection capabilities",
+                description=(
+                    "Open-source antivirus engine for detecting trojans, viruses, "
+                    "malware & other malicious threats."
+                ),
+                purpose=("Core virus scanning and real-time protection capabilities"),
                 install_commands={
-                    "arch": 'sh -c "rm -f /var/lib/pacman/db.lck && pacman -S --noconfirm clamav"',
-                    "ubuntu": 'sh -c "apt update && apt install -y clamav clamav-daemon"',
-                    "debian": 'sh -c "apt update && apt install -y clamav clamav-daemon"',
+                    "arch": (
+                        'sh -c "rm -f /var/lib/pacman/db.lck && pacman -S --noconfirm clamav"'
+                    ),
+                    "ubuntu": ('sh -c "apt update && apt install -y clamav clamav-daemon"'),
+                    "debian": ('sh -c "apt update && apt install -y clamav clamav-daemon"'),
                     "fedora": "dnf install -y clamav clamav-update",
                     "opensuse": "zypper install -y clamav",
                 },
@@ -333,10 +351,13 @@ class SetupWizard(ThemedDialog):
             "ufw": PackageInfo(
                 name="ufw",
                 display_name="UFW Firewall",
-                description="Uncomplicated Firewall (UFW) provides a user-friendly interface for managing iptables firewall rules.",
+                description=(
+                    "Uncomplicated Firewall (UFW) provides a user-friendly interface "
+                    "for managing iptables firewall rules."
+                ),
                 purpose="Network security and firewall management",
                 install_commands={
-                    "arch": 'sh -c "rm -f /var/lib/pacman/db.lck && pacman -S --noconfirm ufw"',
+                    "arch": ('sh -c "rm -f /var/lib/pacman/db.lck && pacman -S --noconfirm ufw"'),
                     "ubuntu": 'sh -c "apt update && apt install -y ufw"',
                     "debian": 'sh -c "apt update && apt install -y ufw"',
                     "fedora": "dnf install -y ufw",
@@ -350,10 +371,15 @@ class SetupWizard(ThemedDialog):
             "rkhunter": PackageInfo(
                 name="rkhunter",
                 display_name="RKHunter",
-                description="Rootkit Hunter scans for rootkits, backdoors, and possible local exploits on your system.",
-                purpose="Advanced rootkit detection and system integrity checking",
+                description=(
+                    "Rootkit Hunter scans for rootkits, backdoors, and possible "
+                    "local exploits on your system."
+                ),
+                purpose=("Advanced rootkit detection and system integrity checking"),
                 install_commands={
-                    "arch": 'sh -c "rm -f /var/lib/pacman/db.lck && pacman -S --noconfirm rkhunter"',
+                    "arch": (
+                        'sh -c "rm -f /var/lib/pacman/db.lck && pacman -S --noconfirm rkhunter"'
+                    ),
                     "ubuntu": 'sh -c "apt update && apt install -y rkhunter"',
                     "debian": 'sh -c "apt update && apt install -y rkhunter"',
                     "fedora": "dnf install -y rkhunter",
@@ -383,7 +409,7 @@ class SetupWizard(ThemedDialog):
         self.check_if_setup_needed()
 
     def apply_theme_manager_styling(self):
-        """Apply theming using the application's theme manager"""
+        """Apply theming using the application's theme manager."""
         if not THEMING_AVAILABLE:
             return
 
@@ -585,13 +611,13 @@ class SetupWizard(ThemedDialog):
                 """
                 )
 
-        except Exception as e:  # pylint: disable=broad-except
+        except Exception as e:  # pylint: disable=broad-exception-caught
             print(f"Warning: Could not apply theme manager styling: {e}")
             # Fallback to basic dark theme
             self.apply_fallback_styling()
 
     def apply_fallback_styling(self):
-        """Apply fallback styling if theme manager is not available"""
+        """Apply fallback styling if theme manager is not available."""
         self.setStyleSheet(
             """
             QDialog {
@@ -647,24 +673,24 @@ class SetupWizard(ThemedDialog):
         )
 
     def detect_distribution(self) -> str:
-        """Detect the Linux distribution"""
+        """Detect the Linux distribution."""
         try:
             # Try to read os-release file
             with open("/etc/os-release", "r", encoding="utf-8") as f:
                 content = f.read().lower()
 
+            detected = "unknown"
             if "arch" in content:
-                return "arch"
+                detected = "arch"
             elif "ubuntu" in content:
-                return "ubuntu"
+                detected = "ubuntu"
             elif "debian" in content:
-                return "debian"
+                detected = "debian"
             elif "fedora" in content:
-                return "fedora"
+                detected = "fedora"
             elif "opensuse" in content or "suse" in content:
-                return "opensuse"
-            else:
-                return "unknown"
+                detected = "opensuse"
+            return detected
         except OSError:
             return "unknown"
 
@@ -709,7 +735,7 @@ class SetupWizard(ThemedDialog):
         return True
 
     def setup_ui(self):
-        """Setup the wizard UI"""
+        """Setup the wizard UI."""
         layout = QVBoxLayout()
 
         # Welcome header
@@ -721,6 +747,9 @@ class SetupWizard(ThemedDialog):
         # Package installation tab
         self.create_package_tab(tab_widget)
 
+        # Python dependencies tab (optional features)
+        self.create_python_deps_tab(tab_widget)
+
         # Information tab
         self.create_info_tab(tab_widget)
 
@@ -731,8 +760,109 @@ class SetupWizard(ThemedDialog):
 
         self.setLayout(layout)
 
+    def _detect_python_dep(self, module_name: str) -> bool:
+        """Return True if importable in current environment."""
+        try:
+            __import__(module_name)
+            return True
+        except Exception:  # pylint: disable=broad-exception-caught
+            return False
+
+    def _pip_install_user(self, package: str) -> tuple[bool, str]:
+        """Attempt pip --user install for a package; return (success, output)."""
+        try:
+            # Prefer running pip as a module of current interpreter
+            cmd = [sys.executable, "-m", "pip", "install", "--user", package]
+            result = subprocess.run(cmd, capture_output=True, text=True, check=False, timeout=900)
+            output = (result.stdout or "") + ("\n" + result.stderr if result.stderr else "")
+            return result.returncode == 0, output.strip()
+        except Exception as e:  # pylint: disable=broad-exception-caught
+            return False, str(e)
+
+    def create_python_deps_tab(self, tab_widget):  # pylint: disable=too-many-locals
+        """Create an optional Python dependencies installer tab."""
+        widget = QWidget()
+        layout = QVBoxLayout()
+
+        title = QLabel("Optional Python Features")
+        font = QFont()
+        font.setBold(True)
+        font.setPointSize(14)
+        title.setFont(font)
+        layout.addWidget(title)
+
+        desc = QLabel(
+            "Install optional Python packages to enable scheduling and enhanced file watching.\n"
+            "These install to your user site (no root). For system-wide installs, use your distro packages."
+        )
+        desc.setWordWrap(True)
+        layout.addWidget(desc)
+
+        # Catalog of optional Python deps
+        py_deps = [
+            ("schedule", "Task scheduling for background scans"),
+            ("inotify", "Linux inotify helpers (alt: watchdog)"),
+            ("watchdog", "Cross-platform file system watching"),
+        ]
+
+        # Status area
+        status_box = QTextEdit()
+        status_box.setReadOnly(True)
+        status_box.setMinimumHeight(140)
+
+        cards = []
+        for name, purpose in py_deps:
+            row = QHBoxLayout()
+            chk = QCheckBox(f"Install {name}")
+            installed = self._detect_python_dep(name)
+            lbl = QLabel("✅ Installed" if installed else "❌ Not Installed")
+            lbl.setStyleSheet("color: #27ae60;" if installed else "color: #e74c3c;")
+            row.addWidget(QLabel(f"{name}: {purpose}"))
+            row.addStretch(1)
+            row.addWidget(lbl)
+            if not installed:
+                row.addWidget(chk)
+            layout.addLayout(row)
+            cards.append((name, chk if not installed else None, lbl))
+
+        def do_install():  # noqa: D401 - small inline handler
+            installed_any = False
+            for name, chk, lbl in cards:
+                if chk is None or not chk.isChecked():
+                    continue
+                ok, out = self._pip_install_user(name)
+                status_box.append(f"$ pip install --user {name}\n{out}\n")
+                if ok:
+                    lbl.setText("✅ Installed")
+                    lbl.setStyleSheet("color: #27ae60;")
+                    installed_any = True
+            if installed_any:
+                QMessageBox.information(
+                    self,
+                    "Python packages installed",
+                    "Optional Python dependencies installed. Some features may require app restart.",
+                )
+
+        btn_install = QPushButton("Install Selected (pip --user)")
+        btn_install.clicked.connect(do_install)
+        layout.addWidget(btn_install)
+        layout.addWidget(status_box)
+
+        # Distro help
+        help_lbl = QLabel(
+            "Prefer system packages? Example commands:\n"
+            "Ubuntu/Debian: sudo apt install python3-schedule python3-watchdog\n"
+            "Fedora: sudo dnf install python3-schedule python3-watchdog\n"
+            "Arch: sudo pacman -S python-schedule python-watchdog"
+        )
+        help_lbl.setWordWrap(True)
+        layout.addWidget(help_lbl)
+
+        widget.setLayout(layout)
+        tab_widget.addTab(widget, "🐍 Python Dependencies")
+
     def create_welcome_header(self, layout):
-        """Create welcome header section"""
+        """Create welcome header section."""
         header_frame = QFrame()
         header_frame.setObjectName("welcome_header")  # For CSS styling
 
@@ -761,14 +891,15 @@ class SetupWizard(ThemedDialog):
         layout.addWidget(header_frame)
 
     def create_package_tab(self, tab_widget):
-        """Create the package installation tab"""
+        """Create the package installation tab."""
         package_widget = QWidget()
         layout = QVBoxLayout()
 
         # Instructions
         instructions = QLabel(
             "The following security components will enhance your system protection. "
-            "Critical components are pre-selected, while optional components can improve security further."
+            "Critical components are pre-selected, while optional components can "
+            "improve security further."
         )
         instructions.setObjectName("instructions")  # For CSS styling
         instructions.setWordWrap(True)
@@ -804,7 +935,7 @@ class SetupWizard(ThemedDialog):
         tab_widget.addTab(package_widget, "📦 Package Installation")
 
     def create_info_tab(self, tab_widget):
-        """Create the information/education tab"""
+        """Create the information/education tab."""
         info_widget = QWidget()
         layout = QVBoxLayout()
 
@@ -819,6 +950,8 @@ class SetupWizard(ThemedDialog):
         # Information text
         info_text = QTextEdit()
         info_text.setReadOnly(True)
+        # Long HTML content; wrapping would hurt readability. Safe to suppress line length here.
+        # pylint: disable=line-too-long
         info_text.setHtml(
             """
         <h3>🛡️ Security Layer Overview</h3>
@@ -859,13 +992,14 @@ class SetupWizard(ThemedDialog):
         <p><b>Together, they provide defense-in-depth security that's greater than the sum of its parts.</b></p>
         """
         )
+        # pylint: enable=line-too-long
         layout.addWidget(info_text)
 
         info_widget.setLayout(layout)
         tab_widget.addTab(info_widget, "📚 Learn More")
 
     def create_action_buttons(self, layout):
-        """Create action buttons at the bottom"""
+        """Create action buttons at the bottom."""
         button_layout = QHBoxLayout()
 
         # Skip setup button
@@ -884,7 +1018,7 @@ class SetupWizard(ThemedDialog):
         layout.addLayout(button_layout)
 
     def skip_setup(self):
-        """Skip the setup process"""
+        """Skip the setup process."""
         reply = QMessageBox.question(
             self,
             "Skip Setup",
@@ -912,7 +1046,7 @@ class SetupWizard(ThemedDialog):
             self.reject()
 
     def start_installation(self):
-        """Start the installation process"""
+        """Start the installation process."""
         # Get list of packages to install
         packages_to_install = [
             name for name, card in self.package_cards.items() if card.should_install()
@@ -927,9 +1061,7 @@ class SetupWizard(ThemedDialog):
             return
 
         # Confirm installation
-        package_names = [
-            self.packages[name].display_name for name in packages_to_install
-        ]
+        package_names = [self.packages[name].display_name for name in packages_to_install]
         reply = QMessageBox.question(
             self,
             "Confirm Installation",
@@ -944,17 +1076,15 @@ class SetupWizard(ThemedDialog):
             self.show_installation_dialog(packages_to_install)
 
     def show_installation_dialog(self, packages_to_install: List[str]):
-        """Show installation progress dialog"""
+        """Show installation progress dialog."""
         self.installation_dialog = InstallationDialog(
             packages_to_install, self.packages, self.distro, self
         )
-        self.installation_dialog.installation_complete.connect(
-            self.on_installation_complete
-        )
+        self.installation_dialog.installation_complete.connect(self.on_installation_complete)
         self.installation_dialog.exec()
 
     def on_installation_complete(self, results: Dict[str, bool]):
-        """Handle installation completion"""
+        """Handle installation completion."""
         successful = [name for name, success in results.items() if success]
         failed = [name for name, success in results.items() if not success]
 
@@ -973,7 +1103,7 @@ class SetupWizard(ThemedDialog):
             if "packages_installed" not in config["setup"]:
                 config["setup"]["packages_installed"] = {}
 
-            for package_name in self.packages.keys():
+            for package_name in self.packages:
                 config["setup"]["packages_installed"][package_name] = results.get(
                     package_name, False
                 )
@@ -985,7 +1115,6 @@ class SetupWizard(ThemedDialog):
         # Force refresh of system status in main application
         try:
             # Clear RKHunter cache to force fresh detection
-            from app.core.rkhunter_monitor_non_invasive import rkhunter_monitor  # pylint: disable=import-outside-toplevel
 
             rkhunter_monitor.get_status_non_invasive(force_refresh=True)
             print("✅ Forced RKHunter status refresh")
@@ -1001,7 +1130,7 @@ class SetupWizard(ThemedDialog):
                     cache_file.unlink()
                     print(f"✅ Cleared cache file: {cache_file.name}")
 
-        except Exception as e:  # pylint: disable=broad-except
+        except Exception as e:  # pylint: disable=broad-exception-caught
             print(f"Warning: Could not refresh system status: {e}")
 
         message = []
@@ -1023,14 +1152,16 @@ class SetupWizard(ThemedDialog):
             elif hasattr(parent_window, "force_refresh_status"):
                 print("🔄 Requesting main window force refresh...")
                 parent_window.force_refresh_status()
-        except Exception as e:
+        except Exception as e:  # pylint: disable=broad-exception-caught
+            # UI boundary: parent may not implement these or can raise unexpectedly;
+            # keep user flow stable and log the issue instead of crashing the wizard.
             print(f"Warning: Could not refresh parent window status: {e}")
 
         self.accept()
 
 
-class InstallationDialog(QDialog):
-    """Dialog showing installation progress"""
+class InstallationDialog(QDialog):  # pylint: disable=too-many-instance-attributes
+    """Dialog showing installation progress."""
 
     installation_complete = pyqtSignal(dict)  # {package_name: success}
 
@@ -1041,6 +1172,7 @@ class InstallationDialog(QDialog):
         distro: str,
         parent=None,
     ):
+        """Initialize dialog with package queue and theming from parent."""
         super().__init__(parent)
         self.packages_to_install = packages_to_install
         self.package_info = package_info
@@ -1062,7 +1194,7 @@ class InstallationDialog(QDialog):
         self.start_next_installation()
 
     def apply_installation_dialog_theming(self):
-        """Apply theming to installation dialog"""
+        """Apply theming to installation dialog."""
         try:
             theme_manager = get_theme_manager()
             if theme_manager:
@@ -1111,12 +1243,12 @@ class InstallationDialog(QDialog):
                     }}
                 """
                 )
-        except Exception:  # pylint: disable=broad-except
+        except Exception:  # pylint: disable=broad-exception-caught
             # Non-critical theming application failure; continue with defaults
             pass
 
     def setup_ui(self):
-        """Setup the installation dialog UI"""
+        """Setup the installation dialog UI."""
         layout = QVBoxLayout()
 
         # Current package label
@@ -1149,7 +1281,7 @@ class InstallationDialog(QDialog):
         self.setLayout(layout)
 
     def start_next_installation(self):
-        """Start installing the next package"""
+        """Start installing the next package."""
         if self.current_package_index >= len(self.packages_to_install):
             # All installations complete
             self.installation_complete.emit(self.results)
@@ -1159,9 +1291,7 @@ class InstallationDialog(QDialog):
         package_name = self.packages_to_install[self.current_package_index]
         package_info = self.package_info[package_name]
 
-        self.current_package_label.setText(
-            f"Installing {package_info.display_name}..."
-        )
+        self.current_package_label.setText(f"Installing {package_info.display_name}...")
         self.progress_bar.setValue(0)
 
         # Start installation worker
@@ -1172,25 +1302,23 @@ class InstallationDialog(QDialog):
         self.worker.start()
 
     def update_progress(self, message: str, progress: int):
-        """Update progress bar and message"""
+        """Update progress bar and message."""
         self.current_package_label.setText(message)
         self.progress_bar.setValue(progress)
 
     def update_output(self, text: str):
-        """Update output text"""
+        """Update output text."""
         self.output_text.append(text)
         # Auto-scroll to bottom
         scrollbar = self.output_text.verticalScrollBar()
         scrollbar.setValue(scrollbar.maximum())
 
     def on_package_finished(self, package_name: str, success: bool):
-        """Handle package installation completion"""
+        """Handle package installation completion."""
         self.results[package_name] = success
 
         if success:
-            self.update_output(
-                f"✅ {package_name} installation completed successfully!"
-            )
+            self.update_output(f"✅ {package_name} installation completed successfully!")
         else:
             self.update_output(f"❌ {package_name} installation failed!")
 
@@ -1200,7 +1328,7 @@ class InstallationDialog(QDialog):
         QTimer.singleShot(1000, self.start_next_installation)
 
     def cancel_installation(self):
-        """Cancel the installation process"""
+        """Cancel the installation process."""
         if hasattr(self, "worker") and self.worker.isRunning():
             self.worker.stop()
             self.worker.wait(3000)  # Wait up to 3 seconds
@@ -1209,7 +1337,7 @@ class InstallationDialog(QDialog):
 
 
 def needs_setup() -> bool:
-    """Check if first-time setup is needed"""
+    """Check if first-time setup is needed."""
     try:
         config = load_config()
 
@@ -1232,14 +1360,20 @@ def needs_setup() -> bool:
             )
             if ver_result.returncode == 0:
                 return False  # At least one critical package is available
-        except (FileNotFoundError, PermissionError, subprocess.SubprocessError, OSError, ValueError):
+        except (
+            FileNotFoundError,
+            PermissionError,
+            subprocess.SubprocessError,
+            OSError,
+            ValueError,
+        ):
             continue
 
     return True  # No critical packages found
 
 
 def show_setup_wizard(parent=None) -> bool:
-    """Show setup wizard and return True if setup was completed"""
+    """Show setup wizard and return True if setup was completed."""
     if not needs_setup():
         return True
 

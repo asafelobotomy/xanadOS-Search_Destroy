@@ -1,0 +1,276 @@
+[project]
+name = "xanadOS-Search_Destroy"
+version = "2.11.2"
+description = "xanadOS Security Scanner and System Protection Suite"
+readme = "README.md"
+license = {file = "LICENSE"}
+authors = [
+    {name = "xanadOS Development Team"}
+]
+maintainers = [
+    {name = "xanadOS Development Team"}
+]
+keywords = ["security", "antivirus", "malware", "scanner", "protection"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: Console",
+    "Environment :: X11 Applications :: Qt",
+    "Intended Audience :: End Users/Desktop",
+    "Intended Audience :: System Administrators",
+    "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
+    "Operating System :: POSIX :: Linux",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Security",
+    "Topic :: System :: Systems Administration",
+    "Topic :: Utilities"
+]
+requires-python = ">=3.11"
+dependencies = [
+    # Core dependencies from requirements.txt
+    "PyQt6>=6.4.0",
+    "requests>=2.25.0",
+    "psutil>=5.9.0",
+    "cryptography>=3.4.0",
+    "pyyaml>=6.0",
+    "click>=8.0.0",
+    "rich>=12.0.0",
+    "colorama>=0.4.4",
+    "tabulate>=0.9.0"
+]
+
+[project.optional-dependencies]
+dev = [
+    # Development dependencies from requirements-dev.txt
+    "pytest>=7.0.0",
+    "pytest-cov>=4.0.0",
+    "pytest-mock>=3.10.0",
+    "pytest-qt>=4.2.0",
+    "black>=23.0.0",
+    "ruff>=0.1.0",
+    "mypy>=1.5.0",
+    "pre-commit>=3.0.0",
+    "build>=0.10.0",
+    "twine>=4.0.0"
+]
+docs = [
+    "mkdocs>=1.5.0",
+    "mkdocs-material>=9.0.0",
+    "mkdocs-mermaid2-plugin>=1.0.0"
+]
+packaging = [
+    "build>=0.10.0",
+    "twine>=4.0.0",
+    "wheel>=0.40.0"
+]
+
+[project.urls]
+"Homepage" = "https://github.com/asafelobotomy/xanadOS-Search_Destroy"
+"Bug Tracker" = "https://github.com/asafelobotomy/xanadOS-Search_Destroy/issues"
+"Documentation" = "https://github.com/asafelobotomy/xanadOS-Search_Destroy/docs"
+"Source Code" = "https://github.com/asafelobotomy/xanadOS-Search_Destroy"
+"Changelog" = "https://github.com/asafelobotomy/xanadOS-Search_Destroy/blob/master/CHANGELOG.md"
+
+[project.scripts]
+xanados-search-destroy = "app.main:main"
+search-and-destroy = "app.main:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+# =============================================================================
+# Tool Configuration - Consolidated from multiple config files
+# =============================================================================
+
+[tool.ruff]
+# Consolidates: .flake8, .pylintrc, and provides modern linting/formatting
+target-version = "py311"
+line-length = 88
+indent-width = 4
+
+exclude = [
+    ".bzr",
+    ".direnv",
+    ".eggs",
+    ".git",
+    ".git-rewrite",
+    ".hg",
+    ".mypy_cache",
+    ".nox",
+    ".pants.d",
+    ".pytype",
+    ".ruff_cache",
+    ".svn",
+    ".tox",
+    ".venv",
+    ".vscode",
+    "__pypackages__",
+    "_build",
+    "buck-out",
+    "build",
+    "dist",
+    "node_modules",
+    "venv",
+    "archive",
+    "logs",
+    "packaging/icons",
+    "dev/node"
+]
+
+[tool.ruff.lint]
+# Enable comprehensive linting rules
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # pyflakes
+    "I",   # isort
+    "B",   # flake8-bugbear
+    "C4",  # flake8-comprehensions
+    "UP",  # pyupgrade
+    "S",   # flake8-bandit (security)
+    "N",   # pep8-naming
+    "D",   # pydocstyle
+    "PL",  # pylint
+    "RUF", # ruff-specific rules
+]
+
+ignore = [
+    "D100",  # Missing docstring in public module
+    "D101",  # Missing docstring in public class
+    "D102",  # Missing docstring in public method
+    "D103",  # Missing docstring in public function
+    "D104",  # Missing docstring in public package
+    "D105",  # Missing docstring in magic method
+    "D107",  # Missing docstring in __init__
+    "E501",  # Line too long (handled by formatter)
+    "S101",  # Use of assert (acceptable in tests)
+    "PLR0913", # Too many arguments to function call
+    "PLR0915", # Too many statements
+]
+
+# Allow autofix for all enabled rules
+fixable = ["ALL"]
+unfixable = []
+
+# Allow unused variables when underscore-prefixed
+dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
+
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["E402", "F401"]
+"tests/**/*" = ["S101", "D", "PLR2004"]
+"dev/**/*" = ["S101", "D", "PLR2004"]
+"scripts/**/*" = ["S101", "D"]
+# PyQt6 modules - ignore missing imports and unused imports
+"app/gui/**/*" = ["F401"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.ruff.format]
+# Use Black-compatible formatting
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+line-ending = "auto"
+docstring-code-format = true
+
+[tool.black]
+# Black configuration (if still needed alongside Ruff)
+line-length = 88
+target-version = ['py311']
+include = '\.pyi?$'
+extend-exclude = '''
+/(
+  \.eggs
+  | \.git
+  | \.hg
+  | \.mypy_cache
+  | \.tox
+  | \.venv
+  | _build
+  | buck-out
+  | build
+  | dist
+  | archive
+  | logs
+)/
+'''
+
+[tool.mypy]
+# Type checking configuration
+python_version = "3.11"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+disallow_untyped_decorators = true
+no_implicit_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_no_return = true
+warn_unreachable = true
+strict_equality = true
+
+exclude = [
+    "archive/",
+    "logs/",
+    "dev/",
+    "packaging/",
+]
+
+# Handle PyQt6 dynamic attributes (from legacy .pylintrc)
+[[tool.mypy.overrides]]
+module = [
+    "PyQt6.*",
+]
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+# Test configuration
+minversion = "7.0"
+addopts = [
+    "-ra",
+    "--strict-markers",
+    "--strict-config",
+    "--cov=app",
+    "--cov-report=term-missing",
+    "--cov-report=html",
+    "--cov-report=xml",
+]
+testpaths = ["tests"]
+python_files = ["test_*.py", "*_test.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+    "integration: marks tests as integration tests",
+    "unit: marks tests as unit tests",
+    "gui: marks tests as GUI tests",
+]
+
+[tool.coverage.run]
+source = ["app"]
+omit = [
+    "*/tests/*",
+    "*/test_*",
+    "*/dev/*",
+    "*/archive/*",
+    "*/logs/*",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "if self.debug:",
+    "if settings.DEBUG",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if 0:",
+    "if __name__ == .__main__.:",
+    "class .*\\bProtocol\\):",
+    "@(abc\\.)?abstractmethod",
+]

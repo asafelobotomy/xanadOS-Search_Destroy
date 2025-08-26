@@ -5,6 +5,7 @@ Provides automatic theming for all GUI components without manual application.
 """
 
 from typing import Any, Dict, Optional
+import re
 
 from PyQt6.QtCore import QEasingCurve, QObject, QPropertyAnimation, QRect, pyqtSignal
 from PyQt6.QtGui import QColor, QPalette
@@ -282,8 +283,7 @@ class ThemeManager(QObject):
     def get_available_themes(self) -> Dict[str, str]:
         """Get available themes as {theme_id: display_name}."""
         return {
-            theme_id: theme_data["name"]
-            for theme_id, theme_data in self._theme_definitions.items()
+            theme_id: theme_data["name"] for theme_id, theme_data in self._theme_definitions.items()
         }
 
     def get_theme_display_name(self, theme_id: str) -> str:
@@ -296,17 +296,13 @@ class ThemeManager(QObject):
     def get_color(self, color_key: str, theme: Optional[str] = None) -> str:
         """Get a color value from the current or specified theme."""
         theme_name = theme or self._current_theme
-        theme_data = self._theme_definitions.get(
-            theme_name, self._theme_definitions["dark"]
-        )
+        theme_data = self._theme_definitions.get(theme_name, self._theme_definitions["dark"])
         return theme_data["colors"].get(color_key, "#FFFFFF")
 
     def get_font_property(self, font_key: str, theme: Optional[str] = None) -> Any:
         """Get a font property from the current or specified theme."""
         theme_name = theme or self._current_theme
-        theme_data = self._theme_definitions.get(
-            theme_name, self._theme_definitions["dark"]
-        )
+        theme_data = self._theme_definitions.get(theme_name, self._theme_definitions["dark"])
         return theme_data["fonts"].get(font_key, 11)
 
     def set_font_size(self, element_type: str, size: int):
@@ -324,10 +320,7 @@ class ThemeManager(QObject):
         }
 
         font_key = font_key_map.get(element_type)
-        if (
-            font_key
-            and font_key in self._theme_definitions[self._current_theme]["fonts"]
-        ):
+        if font_key and font_key in self._theme_definitions[self._current_theme]["fonts"]:
             self._theme_definitions[self._current_theme]["fonts"][font_key] = size
             # Also update other themes to maintain consistency
             for theme_name in self._theme_definitions:
@@ -374,7 +367,6 @@ class ThemeManager(QObject):
         """
         Process CSS to remove unsupported properties and add Qt-compatible alternatives.
         """
-        import re
 
         # Remove unsupported CSS properties that cause warnings
         unsupported_patterns = [
@@ -1299,34 +1291,22 @@ class ThemeManager(QObject):
             return QColor(hex_color)
 
         # Base colors
-        palette.setColor(
-            QPalette.ColorRole.Window, hex_to_qcolor(self.get_color("background"))
-        )
+        palette.setColor(QPalette.ColorRole.Window, hex_to_qcolor(self.get_color("background")))
         palette.setColor(
             QPalette.ColorRole.WindowText, hex_to_qcolor(self.get_color("primary_text"))
         )
-        palette.setColor(
-            QPalette.ColorRole.Base, hex_to_qcolor(self.get_color("secondary_bg"))
-        )
+        palette.setColor(QPalette.ColorRole.Base, hex_to_qcolor(self.get_color("secondary_bg")))
         palette.setColor(
             QPalette.ColorRole.AlternateBase,
             hex_to_qcolor(self.get_color("tertiary_bg")),
         )
-        palette.setColor(
-            QPalette.ColorRole.Text, hex_to_qcolor(self.get_color("primary_text"))
-        )
-        palette.setColor(
-            QPalette.ColorRole.Button, hex_to_qcolor(self.get_color("secondary_bg"))
-        )
+        palette.setColor(QPalette.ColorRole.Text, hex_to_qcolor(self.get_color("primary_text")))
+        palette.setColor(QPalette.ColorRole.Button, hex_to_qcolor(self.get_color("secondary_bg")))
         palette.setColor(
             QPalette.ColorRole.ButtonText, hex_to_qcolor(self.get_color("primary_text"))
         )
-        palette.setColor(
-            QPalette.ColorRole.BrightText, hex_to_qcolor(self.get_color("accent"))
-        )
-        palette.setColor(
-            QPalette.ColorRole.Link, hex_to_qcolor(self.get_color("accent"))
-        )
+        palette.setColor(QPalette.ColorRole.BrightText, hex_to_qcolor(self.get_color("accent")))
+        palette.setColor(QPalette.ColorRole.Link, hex_to_qcolor(self.get_color("accent")))
         palette.setColor(
             QPalette.ColorRole.Highlight, hex_to_qcolor(self.get_color("selection_bg"))
         )
@@ -1423,9 +1403,7 @@ def create_themed_message_box(
     parent: QWidget, msg_type: str, title: str, text: str, buttons=None
 ) -> QMessageBox:
     """Create a themed message box (convenience function)."""
-    return get_theme_manager().create_themed_message_box(
-        parent, msg_type, title, text, buttons
-    )
+    return get_theme_manager().create_themed_message_box(parent, msg_type, title, text, buttons)
 
 
 def toggle_theme():

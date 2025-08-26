@@ -16,12 +16,12 @@ organized by category and chronology for easy discovery and reference.
 
 ## 📊 Archive Statistics
 
-- **Total Archived Items**: 16
+- **Total Archived Items**: 19
 - **Deprecated Items**: 2
 - **Legacy Versions**: 0
-- **Superseded Items**: 8
+- **Superseded Items**: 11
 - **Performance/Monitoring Data**: 6
-- **Last Updated**: 2025-08-25
+- **Last Updated**: 2025-08-26
 
 ## 🗂️ Archive Categories
 
@@ -29,6 +29,7 @@ organized by category and chronology for easy discovery and reference.
 
 - `tests/test_implementation.py` — Archived 2025-08-25 (umbrella legacy test superseded by focused pytest suites)
 - `app/core/elevated_runner_simple.py` — Archived 2025-08-25 (deprecated simple elevated runner; use `app/core/elevated_runner.py`)
+- `app/core/elevated_runner_simple.py` — Archived 2025-08-26 (deprecated simple elevated runner; replacement `app/core/elevated_runner.py`)
 
 ### Legacy Versions
 
@@ -36,7 +37,13 @@ No legacy versions currently archived.
 
 ### Superseded Content
 
-**Recent Archives (2025-08-24)**:
+**Recent Archives (2025-08-26)**:
+
+- `.flake8` - Legacy linting config superseded by `[tool.ruff.lint]` in `pyproject.toml`
+- `.pylintrc` - Legacy pylint config superseded by `[tool.ruff.lint]` in `pyproject.toml`
+- `.ruff.toml` - Standalone Ruff config superseded by `[tool.ruff]` in `pyproject.toml`
+
+**Previous Archives (2025-08-24)**:
 
 - `PROFESSIONAL_PLAN_90_PERCENT_QUALITY.md` - Planning document superseded by completion
 - `PROFESSIONAL_SUCCESS_REPORT.md` - Intermediate success report superseded by completion

@@ -15,6 +15,7 @@ from typing import Any, Dict, List, Optional, Tuple
 
 from PyQt6.QtCore import QCoreApplication, QTranslator
 from PyQt6.QtWidgets import QApplication
+import math
 
 
 class SupportedLanguage(Enum):
@@ -141,8 +142,10 @@ class MultiLanguageSupport:
 
             self.logger.info("Language directories initialized")
 
-        except Exception as e:
-            self.logger.error("Error initializing directories: %s", e)
+        except Exception:
+            self.logerror(
+                "Error initializing directories: %s".replace("%s", "{e}").replace("%d", "{e}")
+            )
 
     def _load_system_locale(self):
         """Detect and load system locale."""
@@ -160,10 +163,16 @@ class MultiLanguageSupport:
             # Set preferences based on detected language
             self._update_preferences_for_language(self.current_language)
 
-            self.logger.info("System locale detected: %s", system_locale)
+            self.loginfo(
+                "System locale detected: %s".replace("%s", "{system_locale}").replace(
+                    "%d", "{system_locale}"
+                )
+            )
 
-        except Exception as e:
-            self.logger.warning("Error detecting system locale: %s", e)
+        except Exception:
+            self.logwarning(
+                "Error detecting system locale: %s".replace("%s", "{e}").replace("%d", "{e}")
+            )
             # Fall back to English
             self.current_language = SupportedLanguage.ENGLISH
 
@@ -216,9 +225,7 @@ class MultiLanguageSupport:
                 },
             }
 
-            prefs = format_preferences.get(
-                language, format_preferences[SupportedLanguage.ENGLISH]
-            )
+            prefs = format_preferences.get(language, format_preferences[SupportedLanguage.ENGLISH])
 
             self.preferences.primary_language = language
             self.preferences.date_format = prefs["date_format"]
@@ -227,8 +234,10 @@ class MultiLanguageSupport:
             self.preferences.currency_symbol = prefs["currency_symbol"]
             self.preferences.text_direction = prefs["text_direction"]
 
-        except Exception as e:
-            self.logger.error("Error updating language preferences: %s", e)
+        except Exception:
+            self.logerror(
+                "Error updating language preferences: %s".replace("%s", "{e}").replace("%d", "{e}")
+            )
 
     def set_language(self, language: SupportedLanguage) -> bool:
         """
@@ -241,7 +250,11 @@ class MultiLanguageSupport:
             True if language was set successfully
         """
         try:
-            self.logger.info("Setting language to %s", language.english_name)
+            self.loginfo(
+                "Setting language to %s".replace("%s", "{language.english_name}").replace(
+                    "%d", "{language.english_name}"
+                )
+            )
 
             # Update current language
             old_language = self.current_language
@@ -260,18 +273,24 @@ class MultiLanguageSupport:
                 # Trigger UI update
                 self._notify_language_change(old_language, language)
 
-                self.logger.info(
-                    "Language successfully changed to %s", language.english_name
+                self.loginfo(
+                    "Language successfully changed to %s".replace(
+                        "%s", "{language.english_name}"
+                    ).replace("%d", "{language.english_name}")
                 )
                 return True
             else:
                 # Revert on failure
                 self.current_language = old_language
-                self.logger.error("Failed to set language to %s", language.english_name)
+                self.logerror(
+                    "Failed to set language to %s".replace("%s", "{language.english_name}").replace(
+                        "%d", "{language.english_name}"
+                    )
+                )
                 return False
 
-        except Exception as e:
-            self.logger.error("Error setting language: %s", e)
+        except Exception:
+            self.logerror("Error setting language: %s".replace("%s", "{e}").replace("%d", "{e}"))
             return False
 
     def get_available_languages(self) -> List[Tuple[str, str, str]]:
@@ -281,10 +300,7 @@ class MultiLanguageSupport:
         Returns:
             List of tuples (code, native_name, english_name)
         """
-        return [
-            (lang.code, lang.native_name, lang.english_name)
-            for lang in SupportedLanguage
-        ]
+        return [(lang.code, lang.native_name, lang.english_name) for lang in SupportedLanguage]
 
     def translate(
         self,
@@ -318,8 +334,10 @@ class MultiLanguageSupport:
 
             return translation
 
-        except Exception as e:
-            self.logger.warning("Error translating '%s': %s", key, e)
+        except Exception:
+            self.logwarning(
+                "Error translating '%s': %s".replace("%s", "{key, e}").replace("%d", "{key, e}")
+            )
             return default or key
 
     def translate_plural(
@@ -354,8 +372,12 @@ class MultiLanguageSupport:
 
             return translation
 
-        except Exception as e:
-            self.logger.warning("Error translating plural '%s': %s", key, e)
+        except Exception:
+            self.logwarning(
+                "Error translating plural '%s': %s".replace("%s", "{key, e}").replace(
+                    "%d", "{key, e}"
+                )
+            )
             return f"{key} ({count})"
 
     def format_date(self, date_obj, format_type: str = "default") -> str:
@@ -383,8 +405,8 @@ class MultiLanguageSupport:
 
             return date_obj.strftime(format_str)
 
-        except Exception as e:
-            self.logger.error("Error formatting date: %s", e)
+        except Exception:
+            self.logerror("Error formatting date: %s".replace("%s", "{e}").replace("%d", "{e}"))
             return str(date_obj)
 
     def format_time(self, time_obj, include_seconds: bool = True) -> str:
@@ -405,8 +427,8 @@ class MultiLanguageSupport:
 
             return time_obj.strftime(format_str)
 
-        except Exception as e:
-            self.logger.error("Error formatting time: %s", e)
+        except Exception:
+            self.logerror("Error formatting time: %s".replace("%s", "{e}").replace("%d", "{e}"))
             return str(time_obj)
 
     def format_number(self, number: float, decimal_places: int = 2) -> str:
@@ -424,9 +446,7 @@ class MultiLanguageSupport:
             if self.current_language == SupportedLanguage.GERMAN:
                 # German format: 1.234,56
                 formatted = f"{number:,.{decimal_places}f}"
-                formatted = (
-                    formatted.replace(",", "X").replace(".", ",").replace("X", ".")
-                )
+                formatted = formatted.replace(",", "X").replace(".", ",").replace("X", ".")
             elif self.current_language == SupportedLanguage.FRENCH:
                 # French format: 1 234,56
                 formatted = f"{number:,.{decimal_places}f}"
@@ -437,8 +457,8 @@ class MultiLanguageSupport:
 
             return formatted
 
-        except Exception as e:
-            self.logger.error("Error formatting number: %s", e)
+        except Exception:
+            self.logerror("Error formatting number: %s".replace("%s", "{e}").replace("%d", "{e}"))
             return str(number)
 
     def format_file_size(self, size_bytes: int) -> str:
@@ -463,14 +483,10 @@ class MultiLanguageSupport:
                 SupportedLanguage.RUSSIAN: ["Б", "КБ", "МБ", "ГБ", "ТБ"],
             }
 
-            unit_list = units.get(
-                self.current_language, units[SupportedLanguage.ENGLISH]
-            )
+            unit_list = units.get(self.current_language, units[SupportedLanguage.ENGLISH])
 
             if size_bytes == 0:
                 return f"0 {unit_list[0]}"
-
-            import math
 
             size = abs(size_bytes)
             unit_index = min(int(math.floor(math.log(size, 1024))), len(unit_list) - 1)
@@ -479,14 +495,14 @@ class MultiLanguageSupport:
                 return f"{size_bytes} {unit_list[0]}"
 
             converted_size = size / (1024**unit_index)
-            formatted_size = self.format_number(
-                converted_size, 1 if converted_size < 100 else 0
-            )
+            formatted_size = self.format_number(converted_size, 1 if converted_size < 100 else 0)
 
             return f"{formatted_size} {unit_list[unit_index]}"
 
-        except Exception as e:
-            self.logger.error("Error formatting file size: %s", e)
+        except Exception:
+            self.logerror(
+                "Error formatting file size: %s".replace("%s", "{e}").replace("%d", "{e}")
+            )
             return f"{size_bytes} B"
 
     def get_text_direction(self) -> str:
@@ -531,9 +547,7 @@ class MultiLanguageSupport:
                 for key, translation_data in strings.items():
                     # Include string if not completed or if include_completed
                     # is True
-                    if include_completed or not translation_data.get(
-                        "completed", False
-                    ):
+                    if include_completed or not translation_data.get("completed", False):
                         export_data["translations"][category][key] = {
                             "original": translation_data["default_text"],
                             "context": translation_data.get("context", ""),
@@ -550,11 +564,17 @@ class MultiLanguageSupport:
             with open(output_file, "w", encoding="utf-8") as f:
                 json.dump(export_data, f, indent=2, ensure_ascii=False)
 
-            self.logger.info("Translations exported to %s", output_file)
+            self.loginfo(
+                "Translations exported to %s".replace("%s", "{output_file}").replace(
+                    "%d", "{output_file}"
+                )
+            )
             return True
 
-        except Exception as e:
-            self.logger.error("Error exporting translations: %s", e)
+        except Exception:
+            self.logerror(
+                "Error exporting translations: %s".replace("%s", "{e}").replace("%d", "{e}")
+            )
             return False
 
     def import_completed_translations(
@@ -579,9 +599,9 @@ class MultiLanguageSupport:
             # Process translations by category
             for category, translations in import_data.get("translations", {}).items():
                 for key, translation_data in translations.items():
-                    if translation_data.get(
-                        "completed", False
-                    ) and translation_data.get("translation"):
+                    if translation_data.get("completed", False) and translation_data.get(
+                        "translation"
+                    ):
                         # Store translation
                         self._store_translation(
                             target_language,
@@ -601,13 +621,13 @@ class MultiLanguageSupport:
             )
             return True
 
-        except Exception as e:
-            self.logger.error("Error importing translations: %s", e)
+        except Exception:
+            self.logerror(
+                "Error importing translations: %s".replace("%s", "{e}").replace("%d", "{e}")
+            )
             return False
 
-    def validate_translation_coverage(
-        self, language: SupportedLanguage
-    ) -> Dict[str, Any]:
+    def validate_translation_coverage(self, language: SupportedLanguage) -> Dict[str, Any]:
         """
         Validate translation coverage for a language.
 
@@ -653,8 +673,12 @@ class MultiLanguageSupport:
 
             return report
 
-        except Exception as e:
-            self.logger.error("Error validating translation coverage: %s", e)
+        except Exception:
+            self.logerror(
+                "Error validating translation coverage: %s".replace("%s", "{e}").replace(
+                    "%d", "{e}"
+                )
+            )
             return {}
 
     # Private methods
@@ -685,8 +709,8 @@ msgstr ""
             with open(po_file, "w", encoding="utf-8") as f:
                 f.write(po_content)
 
-        except Exception as e:
-            self.logger.error("Error creating PO file: %s", e)
+        except Exception:
+            self.logerror("Error creating PO file: %s".replace("%s", "{e}").replace("%d", "{e}"))
 
     def _load_translations(self, language: SupportedLanguage) -> bool:
         """Load translations for specified language."""
@@ -718,8 +742,12 @@ msgstr ""
                 self.translations_cache[cache_key] = gettext.NullTranslations()
                 return False
 
-        except Exception as e:
-            self.logger.error("Error loading translations for %s: %s", language.code, e)
+        except Exception:
+            self.logerror(
+                "Error loading translations for %s: %s".replace("%s", "{language.code, e}").replace(
+                    "%d", "{language.code, e}"
+                )
+            )
             return False
 
     def _update_qt_translators(self, language: SupportedLanguage):
@@ -749,8 +777,10 @@ msgstr ""
             if self.app_translator.load(app_translation_file, str(self.languages_dir)):
                 app.installTranslator(self.app_translator)
 
-        except Exception as e:
-            self.logger.error("Error updating Qt translators: %s", e)
+        except Exception:
+            self.logerror(
+                "Error updating Qt translators: %s".replace("%s", "{e}").replace("%d", "{e}")
+            )
 
     def _notify_language_change(
         self, old_language: SupportedLanguage, new_language: SupportedLanguage
@@ -769,8 +799,10 @@ msgstr ""
                 new_language.english_name,
             )
 
-        except Exception as e:
-            self.logger.error("Error notifying language change: %s", e)
+        except Exception:
+            self.logerror(
+                "Error notifying language change: %s".replace("%s", "{e}").replace("%d", "{e}")
+            )
 
     def _get_translation(self, key: str, default: str) -> str:
         """Get translation from cache."""
@@ -813,8 +845,12 @@ msgstr ""
             else:
                 return template
 
-        except Exception as e:
-            self.logger.warning("Error formatting string '%s': %s", template, e)
+        except Exception:
+            self.logwarning(
+                "Error formatting string '%s': %s".replace("%s", "{template, e}").replace(
+                    "%d", "{template, e}"
+                )
+            )
             return template
 
     def _collect_translatable_strings(self) -> Dict[str, Dict[str, Any]]:
@@ -865,9 +901,7 @@ msgstr ""
             },
         }
 
-    def _load_language_translations(
-        self, language: SupportedLanguage
-    ) -> Dict[str, str]:
+    def _load_language_translations(self, language: SupportedLanguage) -> Dict[str, str]:
         """Load existing translations for a language."""
         # This would load from PO/MO files
         # For now, return empty dict
@@ -903,9 +937,7 @@ def get_translation_system() -> Optional[MultiLanguageSupport]:
     return _translation_system
 
 
-def _(
-    text: str, category: TranslationCategory = TranslationCategory.UI_GENERAL, **kwargs
-) -> str:
+def _(text: str, category: TranslationCategory = TranslationCategory.UI_GENERAL, **kwargs) -> str:
     """
     Quick translation function.
 
@@ -1083,9 +1115,7 @@ def demonstrate_translations():
         print(f"Scan: {_('scan')}")
         print(f"Settings: {_('settings')}")
         print(
-            f"Files scanned: {
-                _('files_scanned', TranslationCategory.SCAN_OPERATIONS, count=150)
-            }"
+            f"Files scanned: {_('files_scanned', TranslationCategory.SCAN_OPERATIONS, count=150)}"
         )
         print(f"File size: {format_file_size(1024 * 1024 * 2.5)}")
         print(f"Number: {format_number(1234.56)}")

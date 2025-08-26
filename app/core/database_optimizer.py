@@ -238,7 +238,11 @@ class QueryOptimizer:
         if cache_key and self._should_cache_query(query):
             with self.cache_lock:
                 if cache_key in self.query_cache:
-                    self.logger.debug("Cache hit for query: %s...", query[:50])
+                    self.logdebug(
+                        "Cache hit for query: %s...".replace("%s", "{query[:50]}").replace(
+                            "%d", "{query[:50]}"
+                        )
+                    )
                     return self.query_cache[cache_key]
 
         # Execute query
@@ -249,9 +253,7 @@ class QueryOptimizer:
 
                 # Cache results if appropriate
                 if (
-                    cache_key
-                    and self._should_cache_query(query)
-                    and len(results) < 1000
+                    cache_key and self._should_cache_query(query) and len(results) < 1000
                 ):  # Don't cache large result sets
                     with self.cache_lock:
                         # Implement LRU eviction
@@ -271,7 +273,7 @@ class QueryOptimizer:
 
         except Exception:
             self.logger.exception("Query execution failed")
-            self.logger.debug("Failed query: %s", query)
+            self.logdebug("Failed query: %s".replace("%s", "{query}").replace("%d", "{query}"))
             raise
 
     def execute_transaction(self, queries: List[tuple]) -> bool:
@@ -543,7 +545,11 @@ class ScanResultsDB:
                 conn.execute(query, (total_files, infected_files, errors, session_id))
                 conn.commit()
 
-            self.logger.info("Completed scan session %d", session_id)
+            self.loginfo(
+                "Completed scan session %d".replace("%s", "{session_id}").replace(
+                    "%d", "{session_id}"
+                )
+            )
 
         except Exception:
             self.logger.exception("Failed to finish scan session")
@@ -594,8 +600,10 @@ class ScanResultsDB:
         ]
 
         if self.query_optimizer.execute_transaction(cleanup_queries):
-            self.logger.info(
-                "Cleaned up scan data older than %d days", days_to_keep
+            self.loginfo(
+                "Cleaned up scan data older than %d days".replace("%s", "{days_to_keep}").replace(
+                    "%d", "{days_to_keep}"
+                )
             )
         else:
             self.logger.error("Failed to clean up old scan data")

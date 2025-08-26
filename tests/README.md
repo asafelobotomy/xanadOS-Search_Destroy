@@ -38,7 +38,8 @@ Demonstration scripts for showcasing features:
 - `test_monitoring.py` - System monitoring tests
 - `conftest.py` - PyTest configuration
 
-Note: The legacy umbrella test `test_implementation.py` has been archived to `archive/deprecated/2025-08-25/tests/` and removed from active tests.
+Note: The legacy umbrella test `test_implementation.py` has been archived to
+`archive/deprecated/2025-08-25/tests/` and removed from active tests.
 
 ## Running Tests
 

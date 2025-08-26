@@ -56,28 +56,79 @@
   "editor.formatOnSave": true,
   "files.trimTrailingWhitespace": true,
   "files.insertFinalNewline": true,
-  "files.trimFinalNewlines": true
-  ,
-  // Exclude backup/archives from Problems and search
+  "files.trimFinalNewlines": true,
+  // Exclude backup/archives and performance-heavy dirs from Problems and search
   "files.exclude": {
     "**/.python-backups/**": true,
     "**/.markdown-backups/**": true,
-    "**/archive/**": false
+    "**/archive/**": false,
+    "**/__pycache__/**": true,
+    "**/node_modules/**": true,
+    "**/.venv/**": true,
+    "**/.python-env/**": true,
+    "**/venv/**": true
   },
   "search.exclude": {
     "**/.python-backups/**": true,
     "**/.markdown-backups/**": true,
-    "**/archive/**": false
+    "**/archive/**": false,
+    "**/__pycache__/**": true,
+    "**/node_modules/**": true,
+    "**/.venv/**": true,
+    "**/.python-env/**": true,
+    "**/venv/**": true,
+    "dev/node/**": true,
+    "dev/performance-analysis/**": true,
+    "packaging/**": true
   },
-  // Python analysis excludes
+  // Python analysis excludes - optimized for large workspace performance
   "python.analysis.exclude": [
     "**/.python-backups/**",
     "**/.markdown-backups/**",
-    "archive/**"
+    "archive/**",
+    "**/__pycache__/**",
+    "**/node_modules/**",
+    "**/.venv/**",
+    "**/.python-env/**",
+    "**/venv/**",
+    "dev/node/**",
+    "dev/performance-analysis/**",
+    "dev/testing/**",
+    "dev/debug/**",
+    "dev/docs-archive/**",
+    "examples/**",
+    "packaging/**",
+    "releases/**"
   ],
+  // Pylance performance optimization settings
+  "python.analysis.autoImportCompletions": true,
+  "python.analysis.indexing": true,
+  "python.analysis.packageIndexDepths": [
+    { "name": "", "depth": 2, "includeAllSymbols": false }
+  ],
+  "python.analysis.userFileIndexingLimit": 2000,
   // Ruff extension excludes (if present)
   "ruff.lint.args": [
     "--exclude",
-    ".python-backups,.markdown-backups,archive,node_modules,.venv,venv"
-  ]
+    ".python-backups,.markdown-backups,archive,node_modules,.venv,venv,.python-env,__pycache__"
+  ],
+  // Additional performance optimizations
+  "files.watcherExclude": {
+    "**/__pycache__/**": true,
+    "**/node_modules/**": true,
+    "**/.venv/**": true,
+    "**/.python-env/**": true,
+    "**/venv/**": true,
+    "**/.git/**": true,
+    "**/archive/**": true,
+    "**/dev/node/**": true,
+    "**/packaging/**": true
+  },
+  // Typescript/JavaScript performance (for node modules)
+  "typescript.preferences.includePackageJsonAutoImports": "off",
+  "typescript.suggest.autoImports": false,
+  // Pylance performance settings
+  "python.analysis.indexing": true,
+  "python.analysis.autoSearchPaths": false,
+  "python.defaultInterpreterPath": "./.venv/bin/python"
 }

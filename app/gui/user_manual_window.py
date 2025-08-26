@@ -4,7 +4,10 @@ User Manual Window - Display the comprehensive user manual in a scrollable dialo
 
 from pathlib import Path
 
-import markdown
+try:
+    import markdown  # optional
+except Exception:  # pragma: no cover - optional dependency
+    markdown = None
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import (
     QFrame,
@@ -19,6 +22,10 @@ from PyQt6.QtWidgets import (
 )
 
 from .themed_widgets import ThemedDialog
+from .theme_manager import get_theme_manager
+
+# Import centralized version
+from app import __version__
 
 
 class UserManualWindow(ThemedDialog):
@@ -32,9 +39,7 @@ class UserManualWindow(ThemedDialog):
         # Match main application window size for consistency
         self.setMinimumSize(1000, 750)
         self.resize(1200, 850)  # Same as main application window
-        self.setModal(
-            False
-        )  # Allow user to interact with main window while manual is open
+        self.setModal(False)  # Allow user to interact with main window while manual is open
 
         # Load the user manual content
         self.manual_content = self._load_manual_content()
@@ -47,8 +52,6 @@ class UserManualWindow(ThemedDialog):
 
         # Connect to theme manager for automatic theme updates
         try:
-            from .theme_manager import get_theme_manager
-
             theme_manager = get_theme_manager()
             theme_manager.theme_changed.connect(self._on_theme_changed)
         except Exception as e:
@@ -64,13 +67,9 @@ class UserManualWindow(ThemedDialog):
         """Set up the user interface."""
         # Main layout with minimal margins to maximize content space
         main_layout = QVBoxLayout(self)
-        main_layout.setContentsMargins(
-            8, 8, 8, 8
-        )  # Reduced margins for more content space
+        main_layout.setContentsMargins(8, 8, 8, 8)  # Reduced margins for more content space
         main_layout.setSpacing(5)  # Minimal spacing between header, content, and footer
-        main_layout.setContentsMargins(
-            5, 5, 5, 5
-        )  # Reduce margins to maximize content space
+        main_layout.setContentsMargins(5, 5, 5, 5)  # Reduce margins to maximize content space
         main_layout.setSpacing(5)  # Reduce spacing between elements
 
         # Header with minimal height
@@ -97,26 +96,20 @@ class UserManualWindow(ThemedDialog):
 
         # Create splitter layout with optimized proportions
         self.splitter = QSplitter(Qt.Orientation.Horizontal)
-        self.splitter.setChildrenCollapsible(
-            False
-        )  # Prevent sections from collapsing completely
+        self.splitter.setChildrenCollapsible(False)  # Prevent sections from collapsing completely
         self.splitter.setHandleWidth(6)  # Make the handle easier to grab
 
         # Table of contents with adjustable width
         self.toc_tree = QTreeWidget()
         self.toc_tree.setHeaderLabel("Contents")
         self.toc_tree.setMinimumWidth(150)  # Minimum size to keep it functional
-        self.toc_tree.setMaximumWidth(
-            400
-        )  # Maximum to prevent it from taking too much space
+        self.toc_tree.setMaximumWidth(400)  # Maximum to prevent it from taking too much space
         self.toc_tree.itemClicked.connect(self.on_toc_item_clicked)
 
         # Content area with maximum space allocation
         self.content_area = QTextEdit()
         self.content_area.setReadOnly(True)
-        self.content_area.setMinimumWidth(
-            300
-        )  # Ensure content area has reasonable minimum
+        self.content_area.setMinimumWidth(300)  # Ensure content area has reasonable minimum
 
         self.splitter.addWidget(self.toc_tree)
         self.splitter.addWidget(self.content_area)
@@ -127,9 +120,7 @@ class UserManualWindow(ThemedDialog):
 
         # Configure stretch factors for responsive resizing
         self.splitter.setStretchFactor(0, 0)  # TOC doesn't auto-stretch
-        self.splitter.setStretchFactor(
-            1, 1
-        )  # Content area gets extra space when window resizes
+        self.splitter.setStretchFactor(1, 1)  # Content area gets extra space when window resizes
 
         main_layout.addWidget(self.splitter)
 
@@ -139,7 +130,7 @@ class UserManualWindow(ThemedDialog):
         footer_layout = QHBoxLayout(footer_frame)
         footer_layout.setContentsMargins(10, 2, 10, 2)
 
-        version_label = QLabel("User Manual v2.9.0 - Last Updated: August 22, 2025")
+        version_label = QLabel(f"User Manual v{__version__} - Last Updated: August 22, 2025")
         version_label.setStyleSheet("color: gray; font-size: 9px;")
         footer_layout.addWidget(version_label)
 
@@ -161,9 +152,7 @@ class UserManualWindow(ThemedDialog):
         """Load the user manual content from the markdown file."""
         try:
             # Get the manual file path relative to the app directory
-            manual_path = (
-                Path(__file__).parent.parent.parent / "docs" / "user" / "User_Manual.md"
-            )
+            manual_path = Path(__file__).parent.parent.parent / "docs" / "user" / "User_Manual.md"
 
             if manual_path.exists():
                 with open(manual_path, "r", encoding="utf-8") as f:
@@ -254,15 +243,11 @@ Customize S&D to meet your specific security needs through the comprehensive set
             item = QTreeWidgetItem()
 
             # Add appropriate emoji based on section content
-            if any(
-                keyword in title.lower() for keyword in ["getting started", "start"]
-            ):
+            if any(keyword in title.lower() for keyword in ["getting started", "start"]):
                 item.setText(0, f"🚀 {title}")
             elif any(keyword in title.lower() for keyword in ["scan", "threat"]):
                 item.setText(0, f"🔍 {title}")
-            elif any(
-                keyword in title.lower() for keyword in ["protection", "security"]
-            ):
+            elif any(keyword in title.lower() for keyword in ["protection", "security"]):
                 item.setText(0, f"🛡️ {title}")
             elif any(keyword in title.lower() for keyword in ["report", "analysis"]):
                 item.setText(0, f"📊 {title}")
@@ -322,12 +307,19 @@ Customize S&D to meet your specific security needs through the comprehensive set
     def _convert_markdown_to_html(self, markdown_content):
         """Convert markdown content to HTML for display."""
         try:
-            # Use markdown library if available
-            html = markdown.markdown(
-                markdown_content,
-                extensions=["tables", "toc", "codehilite"],
-                extension_configs={"codehilite": {"css_class": "highlight"}},
-            )
+            # Use markdown library if available, otherwise naive fallback
+            if markdown is not None:
+                html = markdown.markdown(
+                    markdown_content,
+                    extensions=["tables", "toc", "codehilite"],
+                    extension_configs={"codehilite": {"css_class": "highlight"}},
+                )
+            else:
+                # Minimal fallback: escape and wrap line breaks
+                import html as _html
+
+                escaped = _html.escape(markdown_content)
+                html = "<pre>" + escaped + "</pre>"
 
             # Get theme-appropriate colors for HTML styling
             if hasattr(self, "get_theme_color"):

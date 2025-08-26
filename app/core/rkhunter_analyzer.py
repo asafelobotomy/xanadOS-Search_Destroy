@@ -283,9 +283,7 @@ class RKHunterWarningAnalyzer:
         }
         return icons.get(severity, "❓")
 
-    def format_explanation(
-        self, explanation: WarningExplanation, warning_text: str
-    ) -> str:
+    def format_explanation(self, explanation: WarningExplanation, warning_text: str) -> str:
         """Format explanation as readable text."""
         icon = self.get_severity_icon(explanation.severity)
 

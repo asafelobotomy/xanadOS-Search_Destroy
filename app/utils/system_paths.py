@@ -16,6 +16,7 @@ import tempfile
 from enum import Enum
 from pathlib import Path
 from typing import List, Optional
+import shutil
 
 
 class PathType(Enum):
@@ -64,18 +65,10 @@ class SystemPaths:
     }
 
     # XDG Base Directory Specification
-    XDG_CONFIG_HOME = Path(
-        os.environ.get("XDG_CONFIG_HOME", os.path.expanduser("~/.config"))
-    )
-    XDG_DATA_HOME = Path(
-        os.environ.get("XDG_DATA_HOME", os.path.expanduser("~/.local/share"))
-    )
-    XDG_CACHE_HOME = Path(
-        os.environ.get("XDG_CACHE_HOME", os.path.expanduser("~/.cache"))
-    )
-    XDG_STATE_HOME = Path(
-        os.environ.get("XDG_STATE_HOME", os.path.expanduser("~/.local/state"))
-    )
+    XDG_CONFIG_HOME = Path(os.environ.get("XDG_CONFIG_HOME", os.path.expanduser("~/.config")))
+    XDG_DATA_HOME = Path(os.environ.get("XDG_DATA_HOME", os.path.expanduser("~/.local/share")))
+    XDG_CACHE_HOME = Path(os.environ.get("XDG_CACHE_HOME", os.path.expanduser("~/.cache")))
+    XDG_STATE_HOME = Path(os.environ.get("XDG_STATE_HOME", os.path.expanduser("~/.local/state")))
 
     # Safe PATH for subprocess execution
     SAFE_PATH = "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
@@ -173,7 +166,6 @@ class SystemPaths:
     @classmethod
     def get_executable_path(cls, executable: str) -> Optional[str]:
         """Get full path to executable with security validation"""
-        import shutil
 
         # First try shutil.which for standard PATH lookup
         which_result = shutil.which(executable)

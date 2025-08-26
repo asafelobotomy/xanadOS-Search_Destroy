@@ -108,6 +108,11 @@ ssh_config
 .npm/
 .yarn/
 
+# Log files and directories
+logs/
+*.log
+*.log.*
+
 # Generated documentation (if any)
 # docs/generated/
 

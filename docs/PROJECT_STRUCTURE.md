@@ -85,8 +85,8 @@ xanadOS-Search_Destroy/
 ├── tests/                        # 🧪 Unit and integration tests
 │   ├── **init**.py
 │   ├── conftest.py               # Test configuration
-	│   ├── test_gui.py               # GUI tests
-	│   └── test_monitoring.py        # Monitoring tests
+│   │   ├── test_gui.py               # GUI tests
+│   │   └── test_monitoring.py        # Monitoring tests
 ├── tools/                        # 🛠️ External tools
 │   └── flatpak-pip-generator     # Flatpak dependency generator
 ├── .GitHub/                      # 🔄 GitHub workflows

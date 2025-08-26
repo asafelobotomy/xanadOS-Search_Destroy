@@ -16,12 +16,11 @@ def get_version():
 
         if version_file.exists():
             return version_file.read_text().strip()
-        else:
-            # Fallback version if VERSION file doesn't exist
-            return "2.10.0"
+        # Fallback version if VERSION file doesn't exist
+        return "2.11.2"
     except (OSError, IOError, FileNotFoundError):
         # Fallback version in case of any file reading errors
-        return "2.10.0"
+        return "2.11.2"
 
 
 __version__ = get_version()

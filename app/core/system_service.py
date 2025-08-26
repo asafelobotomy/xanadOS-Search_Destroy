@@ -15,6 +15,18 @@ from datetime import datetime
 from enum import Enum
 from pathlib import Path
 from typing import Callable, Dict, List, Optional
+from .secure_subprocess import run_secure
+from .secure_subprocess import run_secure
+from .secure_subprocess import run_secure
+from .secure_subprocess import run_secure
+from .safe_kill import kill_sequence
+from .secure_subprocess import run_secure
+from .secure_subprocess import run_secure
+from .secure_subprocess import run_secure
+from .safe_kill import _process_exists  # type: ignore
+from .secure_subprocess import run_secure
+from .secure_subprocess import run_secure
+from .secure_subprocess import run_secure
 
 
 class ServiceState(Enum):
@@ -88,7 +100,11 @@ class SystemServiceManager:
 
         # Detect init system
         self.service_type = self._detect_init_system()
-        self.logger.info("Detected init system: %s", self.service_type.value)
+        self.loginfo(
+            "Detected init system: %s".replace("%s", "{self.service_type.value}").replace(
+                "%d", "{self.service_type.value}"
+            )
+        )
 
         # Service state
         self.current_state = ServiceState.UNKNOWN
@@ -106,9 +122,7 @@ class SystemServiceManager:
         self.monitor_running = False
 
         # Callbacks
-        self.state_changed_callback: Optional[Callable[[ServiceState, str], None]] = (
-            None
-        )
+        self.state_changed_callback: Optional[Callable[[ServiceState, str], None]] = None
         self.error_callback: Optional[Callable[[str], None]] = None
 
     def _detect_init_system(self) -> ServiceType:
@@ -129,8 +143,10 @@ class SystemServiceManager:
             # Fallback to manual
             return ServiceType.MANUAL
 
-        except Exception as e:
-            self.logger.error("Error detecting init system: %s", e)
+        except Exception:
+            self.logerror(
+                "Error detecting init system: %s".replace("%s", "{e}").replace("%d", "{e}")
+            )
             return ServiceType.MANUAL
 
     def install_service(self) -> bool:
@@ -145,13 +161,11 @@ class SystemServiceManager:
             elif self.service_type == ServiceType.UPSTART:
                 return self._install_upstart_service()
             else:
-                self.logger.warning(
-                    "Manual service management - no automatic installation"
-                )
+                self.logger.warning("Manual service management - no automatic installation")
                 return True
 
         except Exception as e:
-            self.logger.error("Failed to install service: %s", e)
+            self.logerror("Failed to install service: %s".replace("%s", "{e}").replace("%d", "{e}"))
             if self.error_callback:
                 self.error_callback(f"Service installation failed: {e}")
             return False
@@ -173,8 +187,10 @@ class SystemServiceManager:
             else:
                 return True
 
-        except Exception as e:
-            self.logger.error("Failed to uninstall service: %s", e)
+        except Exception:
+            self.logerror(
+                "Failed to uninstall service: %s".replace("%s", "{e}").replace("%d", "{e}")
+            )
             return False
 
     def start_service(self) -> bool:
@@ -199,7 +215,7 @@ class SystemServiceManager:
             return result
 
         except Exception as e:
-            self.logger.error("Failed to start service: %s", e)
+            self.logerror("Failed to start service: %s".replace("%s", "{e}").replace("%d", "{e}"))
             self._set_state(ServiceState.FAILED, str(e))
             return False
 
@@ -223,8 +239,8 @@ class SystemServiceManager:
 
             return result
 
-        except Exception as e:
-            self.logger.error("Failed to stop service: %s", e)
+        except Exception:
+            self.logerror("Failed to stop service: %s".replace("%s", "{e}").replace("%d", "{e}"))
             return False
 
     def restart_service(self) -> bool:
@@ -249,8 +265,8 @@ class SystemServiceManager:
 
             return result
 
-        except Exception as e:
-            self.logger.error("Failed to restart service: %s", e)
+        except Exception:
+            self.logerror("Failed to restart service: %s".replace("%s", "{e}").replace("%d", "{e}"))
             return False
 
     def get_service_status(self) -> ServiceStatus:
@@ -280,7 +296,9 @@ class SystemServiceManager:
             )
 
         except Exception as e:
-            self.logger.error("Error getting service status: %s", e)
+            self.logerror(
+                "Error getting service status: %s".replace("%s", "{e}").replace("%d", "{e}")
+            )
             return ServiceStatus(state=ServiceState.UNKNOWN, error_message=str(e))
 
     def enable_auto_start(self) -> bool:
@@ -297,8 +315,10 @@ class SystemServiceManager:
                 self.logger.warning("Manual mode - auto-start not supported")
                 return False
 
-        except Exception as e:
-            self.logger.error("Failed to enable auto-start: %s", e)
+        except Exception:
+            self.logerror(
+                "Failed to enable auto-start: %s".replace("%s", "{e}").replace("%d", "{e}")
+            )
             return False
 
     def disable_auto_start(self) -> bool:
@@ -314,8 +334,10 @@ class SystemServiceManager:
             else:
                 return False
 
-        except Exception as e:
-            self.logger.error("Failed to disable auto-start: %s", e)
+        except Exception:
+            self.logerror(
+                "Failed to disable auto-start: %s".replace("%s", "{e}").replace("%d", "{e}")
+            )
             return False
 
     def start_daemon_mode(self, main_function: Callable[[], None]) -> bool:
@@ -354,8 +376,10 @@ class SystemServiceManager:
             self.logger.info("Daemon mode started")
             return True
 
-        except Exception as e:
-            self.logger.error("Failed to start daemon mode: %s", e)
+        except Exception:
+            self.logerror(
+                "Failed to start daemon mode: %s".replace("%s", "{e}").replace("%d", "{e}")
+            )
             return False
 
     def stop_daemon_mode(self):
@@ -383,8 +407,10 @@ class SystemServiceManager:
             self._set_state(ServiceState.STOPPED)
             self.logger.info("Daemon mode stopped")
 
-        except Exception as e:
-            self.logger.error("Error stopping daemon mode: %s", e)
+        except Exception:
+            self.logerror(
+                "Error stopping daemon mode: %s".replace("%s", "{e}").replace("%d", "{e}")
+            )
 
     def start_service_monitoring(self):
         """Start service health monitoring."""
@@ -409,9 +435,7 @@ class SystemServiceManager:
         """Install systemd service unit."""
         try:
             service_content = self._generate_systemd_unit()
-            service_file = Path(
-                f"/etc/systemd/system/{self.config.service_name}.service"
-            )
+            service_file = Path(f"/etc/systemd/system/{self.config.service_name}.service")
 
             # Write service file
             with service_file.open("w") as f:
@@ -421,7 +445,6 @@ class SystemServiceManager:
             service_file.chmod(0o644)
 
             # Reload systemd
-            from .secure_subprocess import run_secure
 
             run_secure(["systemctl", "daemon-reload"], check=True)
 
@@ -429,11 +452,17 @@ class SystemServiceManager:
             if self.config.auto_start:
                 self.enable_auto_start()
 
-            self.logger.info("Systemd service installed: %s", service_file)
+            self.loginfo(
+                "Systemd service installed: %s".replace("%s", "{service_file}").replace(
+                    "%d", "{service_file}"
+                )
+            )
             return True
 
-        except Exception as e:
-            self.logger.error("Failed to install systemd service: %s", e)
+        except Exception:
+            self.logerror(
+                "Failed to install systemd service: %s".replace("%s", "{e}").replace("%d", "{e}")
+            )
             return False
 
     def _generate_systemd_unit(self) -> str:
@@ -488,11 +517,17 @@ WantedBy=multi-user.target
             if self.config.auto_start:
                 self.enable_auto_start()
 
-            self.logger.info("SysV init script installed: %s", script_file)
+            self.loginfo(
+                "SysV init script installed: %s".replace("%s", "{script_file}").replace(
+                    "%d", "{script_file}"
+                )
+            )
             return True
 
-        except Exception as e:
-            self.logger.error("Failed to install SysV service: %s", e)
+        except Exception:
+            self.logerror(
+                "Failed to install SysV service: %s".replace("%s", "{e}").replace("%d", "{e}")
+            )
             return False
 
     def _generate_sysv_script(self) -> str:
@@ -586,11 +621,17 @@ exit $?
             # Set permissions
             config_file.chmod(0o644)
 
-            self.logger.info("Upstart service installed: %s", config_file)
+            self.loginfo(
+                "Upstart service installed: %s".replace("%s", "{config_file}").replace(
+                    "%d", "{config_file}"
+                )
+            )
             return True
 
-        except Exception as e:
-            self.logger.error("Failed to install Upstart service: %s", e)
+        except Exception:
+            self.logerror(
+                "Failed to install Upstart service: %s".replace("%s", "{e}").replace("%d", "{e}")
+            )
             return False
 
     def _generate_upstart_config(self) -> str:
@@ -614,9 +655,7 @@ exec /usr/bin/python3 {self.config.executable_path} --daemon
     def _uninstall_systemd_service(self) -> bool:
         """Uninstall systemd service."""
         try:
-            service_file = Path(
-                f"/etc/systemd/system/{self.config.service_name}.service"
-            )
+            service_file = Path(f"/etc/systemd/system/{self.config.service_name}.service")
 
             # Disable service
             self.disable_auto_start()
@@ -626,15 +665,16 @@ exec /usr/bin/python3 {self.config.executable_path} --daemon
                 service_file.unlink()
 
             # Reload systemd
-            from .secure_subprocess import run_secure
 
             run_secure(["systemctl", "daemon-reload"], check=True)
 
             self.logger.info("Systemd service uninstalled")
             return True
 
-        except Exception as e:
-            self.logger.error("Failed to uninstall systemd service: %s", e)
+        except Exception:
+            self.logerror(
+                "Failed to uninstall systemd service: %s".replace("%s", "{e}").replace("%d", "{e}")
+            )
             return False
 
     def _uninstall_sysv_service(self) -> bool:
@@ -652,8 +692,10 @@ exec /usr/bin/python3 {self.config.executable_path} --daemon
             self.logger.info("SysV service uninstalled")
             return True
 
-        except Exception as e:
-            self.logger.error("Failed to uninstall SysV service: %s", e)
+        except Exception:
+            self.logerror(
+                "Failed to uninstall SysV service: %s".replace("%s", "{e}").replace("%d", "{e}")
+            )
             return False
 
     def _uninstall_upstart_service(self) -> bool:
@@ -668,15 +710,15 @@ exec /usr/bin/python3 {self.config.executable_path} --daemon
             self.logger.info("Upstart service uninstalled")
             return True
 
-        except Exception as e:
-            self.logger.error("Failed to uninstall Upstart service: %s", e)
+        except Exception:
+            self.logerror(
+                "Failed to uninstall Upstart service: %s".replace("%s", "{e}").replace("%d", "{e}")
+            )
             return False
 
     def _systemctl_action(self, action: str) -> bool:
         """Execute systemctl action."""
         try:
-            from .secure_subprocess import run_secure
-
             result = run_secure(["systemctl", action, self.config.service_name])
             return result.returncode == 0
         except Exception:
@@ -706,8 +748,6 @@ exec /usr/bin/python3 {self.config.executable_path} --daemon
             else:
                 return False
 
-            from .secure_subprocess import run_secure
-
             result = run_secure(cmd)
             return result.returncode == 0
         except Exception:
@@ -734,12 +774,11 @@ exec /usr/bin/python3 {self.config.executable_path} --daemon
             pid = self._get_service_pid()
             if pid:
                 try:
-                    from .safe_kill import kill_sequence
-
                     result = kill_sequence(pid, escalate=False)
                     if result.success:
                         self.logger.info(
-                            "Manual stop sent signals: %s", ",".join(result.attempts)
+                            "Manual stop sent signals: %s",
+                            ",".join(result.attempts),
                         )
                         return True
                     else:
@@ -759,8 +798,6 @@ exec /usr/bin/python3 {self.config.executable_path} --daemon
     def _chkconfig_enable(self) -> bool:
         """Enable service with chkconfig."""
         try:
-            from .secure_subprocess import run_secure
-
             result = run_secure(["chkconfig", self.config.service_name, "on"])
             return result.returncode == 0
         except Exception:
@@ -769,8 +806,6 @@ exec /usr/bin/python3 {self.config.executable_path} --daemon
     def _chkconfig_disable(self) -> bool:
         """Disable service with chkconfig."""
         try:
-            from .secure_subprocess import run_secure
-
             result = run_secure(["chkconfig", self.config.service_name, "off"])
             return result.returncode == 0
         except Exception:
@@ -780,11 +815,7 @@ exec /usr/bin/python3 {self.config.executable_path} --daemon
         """Update current service state."""
         try:
             if self.service_type == ServiceType.SYSTEMD:
-                from .secure_subprocess import run_secure
-
-                result = run_secure(
-                    ["systemctl", "is-active", self.config.service_name]
-                )
+                result = run_secure(["systemctl", "is-active", self.config.service_name])
                 if result.returncode == 0:
                     status = result.stdout.strip()
                     if status == "active":
@@ -805,8 +836,10 @@ exec /usr/bin/python3 {self.config.executable_path} --daemon
                 else:
                     self.current_state = ServiceState.STOPPED
 
-        except Exception as e:
-            self.logger.error("Error updating service state: %s", e)
+        except Exception:
+            self.logerror(
+                "Error updating service state: %s".replace("%s", "{e}").replace("%d", "{e}")
+            )
             self.current_state = ServiceState.UNKNOWN
 
     def _get_service_pid(self) -> Optional[int]:
@@ -825,8 +858,6 @@ exec /usr/bin/python3 {self.config.executable_path} --daemon
     def _is_process_running(self, pid: int) -> bool:
         """Check if process is running."""
         try:
-            from .safe_kill import _process_exists  # type: ignore
-
             return _process_exists(pid)
         except OSError:
             return False
@@ -868,10 +899,12 @@ exec /usr/bin/python3 {self.config.executable_path} --daemon
             with pid_file.open("w") as f:
                 f.write(str(os.getpid()))
 
-            self.logger.debug("PID file created: %s", pid_file)
+            self.logdebug(
+                "PID file created: %s".replace("%s", "{pid_file}").replace("%d", "{pid_file}")
+            )
 
-        except Exception as e:
-            self.logger.error("Failed to create PID file: %s", e)
+        except Exception:
+            self.logerror("Failed to create PID file: %s".replace("%s", "{e}").replace("%d", "{e}"))
 
     def _remove_pid_file(self):
         """Remove PID file."""
@@ -879,13 +912,15 @@ exec /usr/bin/python3 {self.config.executable_path} --daemon
             pid_file = Path(self.config.pid_file)
             if pid_file.exists():
                 pid_file.unlink()
-                self.logger.debug("PID file removed: %s", pid_file)
-        except Exception as e:
-            self.logger.error("Failed to remove PID file: %s", e)
+                self.logdebug(
+                    "PID file removed: %s".replace("%s", "{pid_file}").replace("%d", "{pid_file}")
+                )
+        except Exception:
+            self.logerror("Failed to remove PID file: %s".replace("%s", "{e}").replace("%d", "{e}"))
 
     def _signal_handler(self, signum, frame):
         """Handle system signals."""
-        self.logger.info("Received signal %d", signum)
+        self.loginfo("Received signal %d".replace("%s", "{signum}").replace("%d", "{signum}"))
 
         if signum in [signal.SIGTERM, signal.SIGINT]:
             self.stop_daemon_mode()
@@ -908,7 +943,7 @@ exec /usr/bin/python3 {self.config.executable_path} --daemon
             self.logger.info("Daemon main loop finished")
 
         except Exception as e:
-            self.logger.error("Error in daemon main loop: %s", e)
+            self.logerror("Error in daemon main loop: %s".replace("%s", "{e}").replace("%d", "{e}"))
             self._set_state(ServiceState.FAILED, str(e))
 
     def _service_monitor_loop(self):
@@ -939,8 +974,10 @@ exec /usr/bin/python3 {self.config.executable_path} --daemon
 
                 time.sleep(30)  # Check every 30 seconds
 
-            except Exception as e:
-                self.logger.error("Error in service monitor: %s", e)
+            except Exception:
+                self.logerror(
+                    "Error in service monitor: %s".replace("%s", "{e}").replace("%d", "{e}")
+                )
                 time.sleep(60)
 
     def _set_state(self, new_state: ServiceState, message: str = ""):
@@ -949,22 +986,26 @@ exec /usr/bin/python3 {self.config.executable_path} --daemon
             old_state = self.current_state
             self.current_state = new_state
 
-            self.logger.info(
-                "Service state changed: %s -> %s", old_state.value, new_state.value
+            self.loginfo(
+                "Service state changed: %s -> %s".replace(
+                    "%s", "{old_state.value, new_state.value}"
+                ).replace("%d", "{old_state.value, new_state.value}")
             )
 
             if self.state_changed_callback:
                 try:
                     self.state_changed_callback(new_state, message)
-                except Exception as e:
-                    self.logger.error("Error in state change callback: %s", e)
+                except Exception:
+                    self.logerror(
+                        "Error in state change callback: %s".replace("%s", "{e}").replace(
+                            "%d", "{e}"
+                        )
+                    )
 
     def get_service_logs(self, lines: int = 100) -> List[str]:
         """Get recent service logs."""
         try:
             if self.service_type == ServiceType.SYSTEMD:
-                from .secure_subprocess import run_secure
-
                 result = run_secure(
                     [
                         "journalctl",
@@ -987,16 +1028,16 @@ exec /usr/bin/python3 {self.config.executable_path} --daemon
             return []
 
         except Exception as e:
-            self.logger.error("Error getting service logs: %s", e)
+            self.logerror(
+                "Error getting service logs: %s".replace("%s", "{e}").replace("%d", "{e}")
+            )
             return [f"Error reading logs: {e}"]
 
     def is_service_installed(self) -> bool:
         """Check if service is installed."""
         try:
             if self.service_type == ServiceType.SYSTEMD:
-                service_file = Path(
-                    f"/etc/systemd/system/{self.config.service_name}.service"
-                )
+                service_file = Path(f"/etc/systemd/system/{self.config.service_name}.service")
                 return service_file.exists()
             elif self.service_type == ServiceType.SYSV_INIT:
                 script_file = Path(f"/etc/init.d/{self.config.service_name}")
@@ -1014,15 +1055,9 @@ exec /usr/bin/python3 {self.config.executable_path} --daemon
         """Check if service is enabled for auto-start."""
         try:
             if self.service_type == ServiceType.SYSTEMD:
-                from .secure_subprocess import run_secure
-
-                result = run_secure(
-                    ["systemctl", "is-enabled", self.config.service_name]
-                )
+                result = run_secure(["systemctl", "is-enabled", self.config.service_name])
                 return result.returncode == 0 and result.stdout.strip() == "enabled"
             elif self.service_type == ServiceType.SYSV_INIT:
-                from .secure_subprocess import run_secure
-
                 result = run_secure(["chkconfig", "--list", self.config.service_name])
                 return result.returncode == 0 and ":on" in result.stdout
             elif self.service_type == ServiceType.UPSTART:

@@ -35,11 +35,16 @@ USE_ISORT=true
 USE_AUTOPEP8=true
 USE_RUFF=true  # Enhanced: Now uses ruff for comprehensive fixes
 RUFF_AUTO_FIX=true  # New: Enable ruff auto-fixes
-MAX_LINE_LENGTH=88  # Black default (was 100)
+MAX_LINE_LENGTH=100  # Default aligned with repo docs; override with --line-length
 REMOVE_UNUSED_IMPORTS=true  # New: Remove F401 errors
 REMOVE_UNUSED_VARIABLES=true  # New: Remove F841 errors
 FIX_FSTRING_ISSUES=true  # New: Fix F541 errors
 APPLY_AGGRESSIVE_FIXES=false  # New: For complex issues
+
+# Optional checks
+RUN_PYLINT=true
+PYLINT_FAIL_UNDER="7.0"
+SECURITY_WARN=true
 
 # Colors for output
 RED='\033[0;31m'
@@ -53,6 +58,7 @@ NC='\033[0m'
 FILES_PROCESSED=0
 FIXES_APPLIED=0
 ERRORS_FOUND=0
+declare -a PROCESSED_FILES=()
 
 # Logging functions
 log_info() {
@@ -202,7 +208,7 @@ find_python_files() {
     # Find .py files excluding common directories to avoid
     while IFS= read -r -d '' file; do
         # Skip if file is in excluded directories
-        if [[ "$file" =~ (/__pycache__/|/\.git/|/\.venv/|/venv/|/node_modules/|/\.pytest_cache/) ]]; then
+        if [[ "$file" =~ (/__pycache__/|/\.git/|/\.venv/|/venv/|/node_modules/|/\.pytest_cache/|/archive/|/\.python-backups/|/\.markdown-backups/) ]]; then
             continue
         fi
 
@@ -282,12 +288,18 @@ fix_with_ruff() {
 
         # Run ruff with auto-fix
         if [[ -n "$RUFF_CMD" ]]; then
-            if $RUFF_CMD check --fix --select="$ruff_fixes" --line-length="$MAX_LINE_LENGTH" "$file" 2>/dev/null; then
-                log_debug "Applied ruff auto-fixes to $file"
-                changes_made=true
+            # Run ruff check but don't abort on non-zero (common when diagnostics exist)
+            set +e
+            if [[ "$RUFF_AUTO_FIX" == "true" ]]; then
+                $RUFF_CMD check --fix --select="$ruff_fixes" --line-length="$MAX_LINE_LENGTH" "$file" 2>/dev/null
+            else
+                $RUFF_CMD check --select="$ruff_fixes" --line-length="$MAX_LINE_LENGTH" "$file" 2>/dev/null
             fi
+            local rc_check=$?
+            set -e
+            [[ $rc_check -eq 0 ]] && { log_debug "Applied ruff fixes to $file"; changes_made=true; }
 
-            # Run ruff format for comprehensive formatting
+            # Run ruff format (usually returns 0)
             if $RUFF_CMD format --line-length="$MAX_LINE_LENGTH" "$file" 2>/dev/null; then
                 log_debug "Applied ruff formatting to $file"
                 changes_made=true
@@ -331,7 +343,15 @@ fix_mass_issues() {
             # E501 (1495), F401 (228), F541 (85), F841 (37)
             local mass_fixes="E501,F401,F541,F841,E502,E731,W291,W292,W293,C401,F811,F821,N802,N806"
 
-            if $RUFF_CMD check --fix --select="$mass_fixes" --line-length="$MAX_LINE_LENGTH" "$file" 2>/dev/null; then
+            set +e
+            if [[ "$RUFF_AUTO_FIX" == "true" ]]; then
+                $RUFF_CMD check --fix --select="$mass_fixes" --line-length="$MAX_LINE_LENGTH" "$file" 2>/dev/null
+            else
+                $RUFF_CMD check --select="$mass_fixes" --line-length="$MAX_LINE_LENGTH" "$file" 2>/dev/null
+            fi
+            local rc_mass=$?
+            set -e
+            if [[ $rc_mass -eq 0 ]]; then
                 log_debug "Applied mass ruff fixes to $file"
                 changes_made=true
             fi
@@ -343,7 +363,15 @@ fix_mass_issues() {
             fi
 
             # Second pass for remaining issues
-            if $RUFF_CMD check --fix --select="E,W,F" --line-length="$MAX_LINE_LENGTH" "$file" 2>/dev/null; then
+            set +e
+            if [[ "$RUFF_AUTO_FIX" == "true" ]]; then
+                $RUFF_CMD check --fix --select="E,W,F" --line-length="$MAX_LINE_LENGTH" "$file" 2>/dev/null
+            else
+                $RUFF_CMD check --select="E,W,F" --line-length="$MAX_LINE_LENGTH" "$file" 2>/dev/null
+            fi
+            local rc_second=$?
+            set -e
+            if [[ $rc_second -eq 0 ]]; then
                 log_debug "Applied second-pass fixes to $file"
                 changes_made=true
             fi
@@ -375,9 +403,22 @@ fix_comprehensive_issues() {
         # First, apply all basic ruff fixes
         if [[ -n "$RUFF_CMD" ]]; then
             # Apply extensive ruff fixes covering most issues
-            local comprehensive_fixes="E,W,F,C,N,B,A,COM,D,EM,EXE,ICN,INP,PIE,PT,Q,RET,SIM,TID,UP,YTT"
+            local comprehensive_fixes
+            if [[ "$APPLY_AGGRESSIVE_FIXES" == "true" ]]; then
+                comprehensive_fixes="E,W,F,C,N,B,A,COM,D,EM,EXE,ICN,INP,PIE,PT,Q,RET,SIM,TID,UP,YTT"
+            else
+                comprehensive_fixes="E,W,F,C,N"
+            fi
 
-            if $RUFF_CMD check --fix --select="$comprehensive_fixes" --line-length="$MAX_LINE_LENGTH" "$file" 2>/dev/null; then
+            set +e
+            if [[ "$RUFF_AUTO_FIX" == "true" ]]; then
+                $RUFF_CMD check --fix --select="$comprehensive_fixes" --line-length="$MAX_LINE_LENGTH" "$file" 2>/dev/null
+            else
+                $RUFF_CMD check --select="$comprehensive_fixes" --line-length="$MAX_LINE_LENGTH" "$file" 2>/dev/null
+            fi
+            local rc_comp=$?
+            set -e
+            if [[ $rc_comp -eq 0 ]]; then
                 log_debug "Applied comprehensive ruff fixes to $file"
                 changes_made=true
             fi
@@ -451,9 +492,29 @@ except:
             fi
 
             # Final cleanup pass
-            if $RUFF_CMD check --fix --select="E,W,F" --line-length="$MAX_LINE_LENGTH" "$file" 2>/dev/null; then
+            set +e
+            if [[ "$RUFF_AUTO_FIX" == "true" ]]; then
+                $RUFF_CMD check --fix --select="E,W,F" --line-length="$MAX_LINE_LENGTH" "$file" 2>/dev/null
+            else
+                $RUFF_CMD check --select="E,W,F" --line-length="$MAX_LINE_LENGTH" "$file" 2>/dev/null
+            fi
+            local rc_final=$?
+            set -e
+            if [[ $rc_final -eq 0 ]]; then
                 log_debug "Applied final cleanup fixes to $file"
                 changes_made=true
+            fi
+        fi
+    fi
+
+    # Optionally run pylint for additional diagnostics
+    if [[ "$RUN_PYLINT" == "true" ]] && [[ "$DRY_RUN" == "false" ]]; then
+        if command -v pylint >/dev/null 2>&1; then
+            # Respect exclusions
+            if [[ "$file" =~ (/archive/|/\.python-backups/|/\.venv/|/venv/) ]]; then
+                : # skip
+            else
+                pylint --score=y "$file" >/dev/null 2>&1 || true
             fi
         fi
     fi
@@ -826,7 +887,13 @@ process_file() {
         "imports-only")
             if [[ "$USE_RUFF" == "true" ]] && [[ "$REMOVE_UNUSED_IMPORTS" == "true" ]]; then
                 # Use ruff for import fixes
-                $RUFF_CMD check --fix --select="F401,F811" "$file" 2>/dev/null || true
+                set +e
+                if [[ "$RUFF_AUTO_FIX" == "true" ]]; then
+                    $RUFF_CMD check --fix --select="F401,F811" "$file" 2>/dev/null
+                else
+                    $RUFF_CMD check --select="F401,F811" "$file" 2>/dev/null
+                fi
+                set -e
             else
                 [[ "$FIX_IMPORTS" == "true" ]] && fix_imports "$file"
             fi
@@ -842,6 +909,9 @@ process_file() {
 
     FILES_PROCESSED=$((FILES_PROCESSED + 1))
 
+    # Security hygiene warnings (no changes applied)
+    warn_insecure_subprocess "$file"
+
     return 0
 }
 
@@ -856,7 +926,7 @@ process_python_files() {
     local files=()
     while IFS= read -r -d '' file; do
         # Skip if file is in excluded directories
-        if [[ "$file" =~ (/__pycache__/|/\.git/|/\.venv/|/venv/|/node_modules/|/\.pytest_cache/) ]]; then
+        if [[ "$file" =~ (/__pycache__/|/\.git/|/\.venv/|/venv/|/node_modules/|/\.pytest_cache/|/archive/|/\.python-backups/|/\.markdown-backups/) ]]; then
             continue
         fi
         files+=("$file")
@@ -879,6 +949,7 @@ process_python_files() {
     for file in "${files[@]}"; do
         log_debug "Processing file: $file"
         process_file "$file"
+        PROCESSED_FILES+=("$file")
     done
 
     log_success "Python processing completed successfully"
@@ -898,6 +969,61 @@ cleanup() {
     rm -rf "$TEMP_DIR" 2>/dev/null || true
 }
 
+# Run pylint on processed files with repo configuration
+run_pylint_check() {
+    [[ "$RUN_PYLINT" != "true" ]] && return 0
+
+    if ! command -v pylint >/dev/null 2>&1; then
+        log_warning "pylint is not installed; skipping pylint check"
+        return 0
+    fi
+
+    if [[ ${#PROCESSED_FILES[@]} -eq 0 ]]; then
+        log_info "No files processed; skipping pylint check"
+        return 0
+    fi
+
+    local pylintrc="$WORKSPACE_ROOT/.pylintrc"
+    [[ -f "$pylintrc" ]] || pylintrc=""
+    local report_file="$LOG_DIR/pylint-report.txt"
+    mkdir -p "$LOG_DIR"
+
+    log_info "Running pylint on ${#PROCESSED_FILES[@]} files${pylintrc:+ using $(basename "$pylintrc")}"
+
+    if [[ -n "$pylintrc" ]]; then
+        printf '%s\n' "${PROCESSED_FILES[@]}" | xargs -r pylint --rcfile "$pylintrc" | tee "$report_file" || true
+    else
+        printf '%s\n' "${PROCESSED_FILES[@]}" | xargs -r pylint | tee "$report_file" || true
+    fi
+
+    # Parse final score if present
+    local score
+    score=$(grep -Eo "rated at [0-9]+\.[0-9]+/10" "$report_file" | tail -1 | awk '{print $3}' | cut -d'/' -f1 || true)
+    if [[ -n "$score" ]]; then
+        log_info "pylint score: $score/10"
+        if [[ -n "$PYLINT_FAIL_UNDER" ]]; then
+            awk -v s="$score" -v t="$PYLINT_FAIL_UNDER" 'BEGIN {exit (s+0 < t+0) ? 1 : 0}' >/dev/null || {
+                log_error "pylint score $score is below threshold $PYLINT_FAIL_UNDER"
+            }
+        fi
+    else
+        log_warning "Could not parse pylint score; see $report_file"
+    fi
+}
+
+# Optional: warn about insecure subprocess usage patterns (no modifications)
+warn_insecure_subprocess() {
+    local file="$1"
+    [[ "$SECURITY_WARN" != "true" ]] && return 0
+
+    if grep -nE "subprocess\.(Popen|call|run)\(.*shell=\s*True" "$file" >/dev/null 2>&1; then
+        log_warning "$file: Potential insecure subprocess usage (shell=True). Prefer allowlist + no shell."
+    fi
+    if grep -nE "subprocess\.(Popen|call|run)\(" "$file" | grep -vq "timeout=" >/dev/null 2>&1; then
+        log_warning "$file: subprocess call without timeout detected; add a timeout and error handling."
+    fi
+}
+
 # Show usage information
 show_usage() {
     cat << EOF
@@ -913,18 +1039,21 @@ This tool provides comprehensive Python code quality fixes including:
 - Pylance compatibility fixes
 
 Options:
-    -h, --help              Show this help message
-    -v, --verbose           Enable verbose output
-    -d, --dry-run          Preview changes without applying them
-    -t, --target DIR       Target directory (default: current directory)
-    -s, --strategy STRAT   Fix strategy: safe, aggressive, mass, comprehensive, imports-only, format-only
-    --no-backup            Disable backup creation
-    --no-imports           Skip import fixes
-    --no-formatting        Skip code formatting
-    --no-linting          Skip linting fixes
-    --line-length N       Maximum line length (default: 100)
-    --use-ruff            Prefer ruff over other tools
-    --version             Show version information
+    -h, --help               Show this help message
+    -v, --verbose            Enable verbose output
+    -d, --dry-run            Preview changes without applying them
+    -t, --target DIR         Target directory (default: current directory)
+    -s, --strategy STRAT     Fix strategy: safe, aggressive, mass, comprehensive, imports-only, format-only
+    --no-backup              Disable backup creation
+    --no-imports             Skip import fixes
+    --no-formatting          Skip code formatting
+    --no-linting             Skip linting fixes
+    --line-length N          Maximum line length (default: 100)
+    --use-ruff               Prefer ruff over other tools
+    --pylint                 Run pylint after fixes using repo .pylintrc
+    --pylint-fail-under N    Fail if pylint score is below N (e.g., 9.5)
+    --no-security-warn       Disable insecure subprocess warnings
+    --version                Show version information
 
 Strategies:
     safe               Only apply safe formatting fixes (default)
@@ -1010,6 +1139,18 @@ parse_arguments() {
                 USE_ISORT=false
                 shift
                 ;;
+            --pylint)
+                RUN_PYLINT=true
+                shift
+                ;;
+            --pylint-fail-under)
+                PYLINT_FAIL_UNDER="$2"
+                shift 2
+                ;;
+            --no-security-warn)
+                SECURITY_WARN=false
+                shift
+                ;;
             --version)
                 echo "$TOOL_NAME version $TOOL_VERSION"
                 exit 0
@@ -1061,6 +1202,9 @@ main() {
 
     # Process Python files
     process_python_files
+
+    # Optional pylint validation
+    run_pylint_check
 
     # Show summary
     echo

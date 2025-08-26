@@ -49,10 +49,7 @@ class WatchEvent:
         """Validate the event data."""
         self.timestamp = self.timestamp or time.time()
         # Simple path validation to avoid import issues
-        if (
-            not os.path.exists(self.file_path)
-            and self.event_type != WatchEventType.FILE_DELETED
-        ):
+        if not os.path.exists(self.file_path) and self.event_type != WatchEventType.FILE_DELETED:
             # Only warn for non-delete events
             pass  # File might be deleted quickly after creation
 
@@ -146,9 +143,7 @@ class FileSystemWatcher:
             )
 
         self.watch_thread.start()
-        self.logger.info(
-            "File system watcher started for %d paths", len(self.paths_to_watch)
-        )
+        self.logger.info("File system watcher started for %d paths", len(self.paths_to_watch))
 
     def stop_watching(self):
         """Stop monitoring file system events."""
@@ -191,13 +186,9 @@ class FileSystemWatcher:
                         )
                         self.logger.info("Added inotify watch for: %s", watch_path)
                     except Exception as e:
-                        self.logger.warning(
-                            "Failed to add inotify watch for %s: %s", watch_path, e
-                        )
+                        self.logger.warning("Failed to add inotify watch for %s: %s", watch_path, e)
                 else:
-                    self.logger.warning(
-                        "Watch path does not exist, skipping: %s", watch_path
-                    )
+                    self.logger.warning("Watch path does not exist, skipping: %s", watch_path)
 
             for event in self.inotify_adapter.event_gen(yield_nones=False):
                 if not self.watching:
@@ -288,9 +279,7 @@ class FileSystemWatcher:
 
                         # Filter directories
                         dirs[:] = [
-                            d
-                            for d in dirs
-                            if self._should_process_path(os.path.join(root, d))
+                            d for d in dirs if self._should_process_path(os.path.join(root, d))
                         ]
 
                         for file in files:
@@ -331,9 +320,7 @@ class FileSystemWatcher:
                                     self._handle_event(event)
 
                             except (OSError, IOError) as e:
-                                self.logger.debug(
-                                    "Error accessing file %s: %s", full_path, e
-                                )
+                                self.logger.debug("Error accessing file %s: %s", full_path, e)
 
                 # Check for deleted files
                 for old_path in set(file_states.keys()) - set(current_states.keys()):
@@ -387,8 +374,7 @@ class FileSystemWatcher:
 
             if (
                 event_key in self.last_event_time
-                and current_time - self.last_event_time[event_key]
-                < self.throttle_duration
+                and current_time - self.last_event_time[event_key] < self.throttle_duration
             ):
                 return
 
@@ -414,9 +400,7 @@ class FileSystemWatcher:
         if self.debounce_timer:
             self.debounce_timer.cancel()
 
-        self.debounce_timer = threading.Timer(
-            self.debounce_delay, self._process_debounced_events
-        )
+        self.debounce_timer = threading.Timer(self.debounce_delay, self._process_debounced_events)
         self.debounce_timer.start()
 
     def _process_debounced_events(self):
@@ -447,9 +431,7 @@ class FileSystemWatcher:
             self.events_processed += 1
 
             # Log event (debug level to avoid spam)
-            self.logger.debug(
-                "File system event: %s - %s", event.event_type.value, event.file_path
-            )
+            self.logger.debug("File system event: %s - %s", event.event_type.value, event.file_path)
 
             # Call event callback
             if self.event_callback:

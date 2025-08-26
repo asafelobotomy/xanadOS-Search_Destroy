@@ -1,0 +1,96 @@
+# Pre-commit Configuration for Python Repository
+# Based on 2025 best practices for Python development
+
+repos:
+  # Ruff for linting and formatting (modern replacement for flake8, black, isort)
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.1.0
+    hooks:
+      - id: ruff
+        name: "🔧 ruff · Lint Python code"
+        args: [--fix, --exit-non-zero-on-fix]
+      - id: ruff-format
+        name: "🎨 ruff · Format Python code"
+
+  # MyPy for type checking
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.5.0
+    hooks:
+      - id: mypy
+        name: "🔍 mypy · Type checking"
+        additional_dependencies: [types-requests, types-PyYAML]
+        args: [--strict, --ignore-missing-imports]
+        exclude: ^(tests/|dev/|archive/)
+
+  # Bandit for security scanning
+  - repo: https://github.com/PyCQA/bandit
+    rev: 1.7.5
+    hooks:
+      - id: bandit
+        name: "🛡️ bandit · Security scanning"
+        args: ["-r", "app/", "-ll"]
+        exclude: ^(tests/|dev/|archive/)
+
+  # Safety for dependency vulnerability scanning
+  - repo: https://github.com/pyupio/safety
+    rev: 2.3.4
+    hooks:
+      - id: safety
+        name: "🔒 safety · Dependency vulnerability scan"
+        args: [--short-report]
+
+  # Standard pre-commit hooks for general file quality
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.4.0
+    hooks:
+      - id: trailing-whitespace
+        name: "🧹 Trim trailing whitespace"
+      - id: end-of-file-fixer
+        name: "📄 Fix end of files"
+      - id: check-yaml
+        name: "📋 Check YAML syntax"
+      - id: check-toml
+        name: "📋 Check TOML syntax"
+      - id: check-json
+        name: "📋 Check JSON syntax"
+      - id: check-merge-conflict
+        name: "🔀 Check for merge conflicts"
+      - id: check-added-large-files
+        name: "📦 Check for large files"
+        args: [--maxkb=1000]
+
+  # Markdown linting for documentation
+  - repo: https://github.com/igorshubovych/markdownlint-cli
+    rev: v0.37.0
+    hooks:
+      - id: markdownlint
+        name: "📝 markdownlint · Lint Markdown files"
+        args: [--fix]
+
+  # Python-specific file checks
+  - repo: https://github.com/pre-commit/pygrep-hooks
+    rev: v1.10.0
+    hooks:
+      - id: python-use-type-annotations
+        name: "📝 Enforce type annotations"
+      - id: python-check-blanket-noqa
+        name: "🔍 Check blanket noqa"
+      - id: python-check-mock-methods
+        name: "🧪 Check mock methods"
+
+# Configuration for pre-commit itself
+default_stages: [commit]
+fail_fast: false
+
+# Local configuration
+ci:
+  autofix_commit_msg: |
+    chore(pre-commit): auto fixes from pre-commit hooks
+
+    for more information, see https://pre-commit.ci
+  autofix_prs: true
+  autoupdate_branch: ''
+  autoupdate_commit_msg: 'chore(deps): pre-commit autoupdate'
+  autoupdate_schedule: weekly
+  skip: []
+  submodules: false

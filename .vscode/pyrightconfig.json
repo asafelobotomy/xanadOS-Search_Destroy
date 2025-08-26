@@ -1,0 +1,53 @@
+{
+  "include": [
+    "app/**",
+    "tests/**",
+    "scripts/**"
+  ],
+  "exclude": [
+    "**/__pycache__/**",
+    "**/node_modules/**",
+    "**/.venv/**",
+    "**/.python-env/**",
+    "**/venv/**",
+    "archive/**",
+    "dev/node/**",
+    "dev/performance-analysis/**",
+    "dev/testing/**",
+    "dev/debug/**",
+    "dev/docs-archive/**",
+    "examples/**",
+    "packaging/**",
+    "releases/**",
+    "**/.python-backups/**",
+    "**/.markdown-backups/**"
+  ],
+  "extraPaths": [
+    "app",
+    "tests"
+  ],
+  "defineConstant": {
+    "DEBUG": false
+  },
+  "strictListInference": true,
+  "strictDictionaryInference": true,
+  "strictSetInference": true,
+  "reportMissingImports": "warning",
+  "reportMissingTypeStubs": "none",
+  "reportGeneralTypeIssues": "warning",
+  "reportOptionalMemberAccess": "warning",
+  "reportOptionalSubscript": "warning",
+  "reportPrivateImportUsage": "none",
+  "pythonVersion": "3.11",
+  "pythonPlatform": "Linux",
+  "executionEnvironments": [
+    {
+      "root": "app",
+      "pythonVersion": "3.11",
+      "pythonPlatform": "Linux",
+      "extraPaths": [
+        "."
+      ]
+    }
+  ]
+}

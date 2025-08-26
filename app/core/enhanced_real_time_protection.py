@@ -97,9 +97,7 @@ class LightweightMLDetector:
         self.max_file_size_mb = 50  # Skip files larger than 50MB
         self.analysis_timeout = 2.0  # Max 2 seconds per file
 
-    def predict_threat(
-        self, file_path: str, file_content: bytes
-    ) -> ThreatDetectionResult:
+    def predict_threat(self, file_path: str, file_content: bytes) -> ThreatDetectionResult:
         """Predict threat level using lightweight ML model."""
         start_time = time.time()
 
@@ -152,9 +150,7 @@ class LightweightMLDetector:
                 processing_time_ms=(time.time() - start_time) * 1000,
             )
 
-    def _extract_features_fast(
-        self, file_path: str, content: bytes
-    ) -> Dict[str, float]:
+    def _extract_features_fast(self, file_path: str, content: bytes) -> Dict[str, float]:
         """Fast feature extraction optimized for real-time processing."""
         features = {}
 
@@ -254,9 +250,7 @@ class LightweightMLDetector:
             features["suspicious_strings"] = min(keyword_count / 3.0, 1.0)
 
             # URL/IP patterns (simple regex-free detection)
-            features["has_urls"] = (
-                1.0 if ("http://" in text or "https://" in text) else 0.0
-            )
+            features["has_urls"] = 1.0 if ("http://" in text or "https://" in text) else 0.0
 
             # Long strings (potential obfuscation)
             words = text.split()
@@ -381,10 +375,7 @@ class AdaptiveResourceManager:
         avg_memory = sum(m.memory_percent for m in recent_metrics) / len(recent_metrics)
 
         # Check if we're on battery power (performance mode)
-        if (
-            recent_metrics[-1].battery_level is not None
-            and recent_metrics[-1].battery_level < 20
-        ):
+        if recent_metrics[-1].battery_level is not None and recent_metrics[-1].battery_level < 20:
             return ProtectionMode.PERFORMANCE
 
         # High resource usage - switch to performance mode
@@ -472,9 +463,7 @@ class EnhancedRealTimeProtection:
         # Worker pool for parallel processing
         self.executor = ThreadPoolExecutor(max_workers=2, thread_name_prefix="RTP")
 
-        self.logger.info(
-            "Enhanced Real-Time Protection initialized with 2025 optimizations"
-        )
+        self.logger.info("Enhanced Real-Time Protection initialized with 2025 optimizations")
 
     async def start_protection(self) -> bool:
         """Start the enhanced real-time protection system."""
@@ -526,9 +515,7 @@ class EnhancedRealTimeProtection:
                 self.stats["uptime_seconds"] += 1.0
 
                 # Sleep based on current mode
-                scan_params = self.resource_manager.get_scan_parameters(
-                    self._active_mode
-                )
+                scan_params = self.resource_manager.get_scan_parameters(self._active_mode)
                 await asyncio.sleep(scan_params["scan_interval"])
 
             except asyncio.CancelledError:
@@ -584,8 +571,7 @@ class EnhancedRealTimeProtection:
             # Update timing statistics
             if self.stats["files_scanned"] > 0:
                 self.stats["avg_processing_time_ms"] = (
-                    self.stats["avg_processing_time_ms"]
-                    * (self.stats["files_scanned"] - 1)
+                    self.stats["avg_processing_time_ms"] * (self.stats["files_scanned"] - 1)
                     + result.processing_time_ms
                 ) / self.stats["files_scanned"]
 
@@ -606,15 +592,11 @@ class EnhancedRealTimeProtection:
 
         return {
             **self.stats,
-            "current_mode": getattr(
-                self, "_active_mode", ProtectionMode.BALANCED
-            ).value,
+            "current_mode": getattr(self, "_active_mode", ProtectionMode.BALANCED).value,
             "system_cpu": current_metrics.cpu_percent,
             "system_memory": current_metrics.memory_percent,
             "cache_size": len(self.threat_cache),
-            "queue_size": (
-                self.event_queue.qsize() if hasattr(self.event_queue, "qsize") else 0
-            ),
+            "queue_size": (self.event_queue.qsize() if hasattr(self.event_queue, "qsize") else 0),
         }
 
     def set_protection_mode(self, mode: ProtectionMode):

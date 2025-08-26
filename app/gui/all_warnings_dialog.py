@@ -6,11 +6,9 @@ Part of xanadOS Search & Destroy
 
 try:
     from PyQt6.QtCore import Qt
-    from PyQt6.QtGui import QFont, QIcon
     from PyQt6.QtWidgets import (
         QDialog,
         QFileDialog,
-        QFrame,
         QGroupBox,
         QHBoxLayout,
         QLabel,
@@ -18,12 +16,11 @@ try:
         QListWidgetItem,
         QMessageBox,
         QPushButton,
-        QScrollArea,
         QSplitter,
         QTextEdit,
         QVBoxLayout,
-        QWidget,
     )
+    from datetime import datetime
 
     PYQT6_AVAILABLE = True
 except ImportError:
@@ -32,51 +29,48 @@ except ImportError:
 
     # Create dummy classes to prevent import errors
     class QDialog:
-        pass
+        """Stub QDialog used when PyQt6 is unavailable."""
 
     class QVBoxLayout:
-        pass
+        """Stub QVBoxLayout used when PyQt6 is unavailable."""
 
     class QHBoxLayout:
-        pass
+        """Stub QHBoxLayout used when PyQt6 is unavailable."""
 
     class QLabel:
-        pass
+        """Stub QLabel used when PyQt6 is unavailable."""
 
     class QPushButton:
-        pass
+        """Stub QPushButton used when PyQt6 is unavailable."""
 
     class QTextEdit:
-        pass
+        """Stub QTextEdit used when PyQt6 is unavailable."""
 
     class QSplitter:
-        pass
+        """Stub QSplitter used when PyQt6 is unavailable."""
 
     class QListWidget:
-        pass
+        """Stub QListWidget used when PyQt6 is unavailable."""
 
     class QListWidgetItem:
-        pass
+        """Stub QListWidgetItem used when PyQt6 is unavailable."""
 
     class QGroupBox:
-        pass
+        """Stub QGroupBox used when PyQt6 is unavailable."""
 
     class QMessageBox:
-        pass
+        """Stub QMessageBox used when PyQt6 is unavailable."""
 
     class QFileDialog:
-        pass
+        """Stub QFileDialog used when PyQt6 is unavailable."""
 
     class Qt:
+        """Stub Qt namespace used when PyQt6 is unavailable."""
+
         class Orientation:
+            """Stub Orientation enum for layout direction."""
+
             Horizontal = 1
-
-
-#!/usr/bin/env python3
-"""
-All Warnings Dialog - Comprehensive view of all scan warnings
-Part of xanadOS Search & Destroy
-"""
 
 
 class AllWarningsDialog(QDialog):
@@ -101,8 +95,6 @@ class AllWarningsDialog(QDialog):
         self.warning_list = None
         self.warning_title = None
         self.warning_details = None
-        self.investigate_btn = None
-        self.mark_safe_single_btn = None
 
         try:
             self._setup_ui()
@@ -118,7 +110,9 @@ class AllWarningsDialog(QDialog):
             if self.warnings and self.warning_list:
                 self.warning_list.setCurrentRow(0)
                 self._show_warning_details(0)
-        except Exception as e:
+        except Exception as e:  # pylint: disable=broad-exception-caught
+            # UI boundary: we must catch any error to present a user-facing message
+            # and avoid crashing the application during dialog construction.
             # If UI setup fails, show simple error dialog
             QMessageBox.critical(
                 parent,
@@ -138,9 +132,7 @@ class AllWarningsDialog(QDialog):
         layout.addWidget(header_label)
 
         # Summary info
-        summary_label = QLabel(
-            f"Found {len(self.warnings)} warnings that require attention"
-        )
+        summary_label = QLabel(f"Found {len(self.warnings)} warnings that require attention")
         summary_label.setObjectName("summaryLabel")  # For themed styling
         layout.addWidget(summary_label)
 
@@ -360,8 +352,8 @@ class AllWarningsDialog(QDialog):
         # Action buttons for current warning
         action_layout = QHBoxLayout()
 
-        self.investigate_btn = QPushButton("🔍 Investigate This Warning")
-        self.investigate_btn.setStyleSheet(
+        investigate_btn = QPushButton("🔍 Investigate This Warning")
+        investigate_btn.setStyleSheet(
             """
             QPushButton {
                 background-color: #FFC107;
@@ -374,11 +366,11 @@ class AllWarningsDialog(QDialog):
             QPushButton:hover { background-color: #E0A800; }
         """
         )
-        self.investigate_btn.clicked.connect(self._investigate_current_warning)
-        action_layout.addWidget(self.investigate_btn)
+        investigate_btn.clicked.connect(self._investigate_current_warning)
+        action_layout.addWidget(investigate_btn)
 
-        self.mark_safe_single_btn = QPushButton("✓ Mark as Safe")
-        self.mark_safe_single_btn.setStyleSheet(
+        mark_safe_single_btn = QPushButton("✓ Mark as Safe")
+        mark_safe_single_btn.setStyleSheet(
             """
             QPushButton {
                 background-color: #28A745;
@@ -391,8 +383,8 @@ class AllWarningsDialog(QDialog):
             QPushButton:hover { background-color: #218838; }
         """
         )
-        self.mark_safe_single_btn.clicked.connect(self._mark_current_warning_as_safe)
-        action_layout.addWidget(self.mark_safe_single_btn)
+        mark_safe_single_btn.clicked.connect(self._mark_current_warning_as_safe)
+        action_layout.addWidget(mark_safe_single_btn)
 
         action_layout.addStretch()
         layout.addLayout(action_layout)
@@ -453,64 +445,7 @@ class AllWarningsDialog(QDialog):
         details.append("")
 
         # Detailed explanation
-        if hasattr(warning, "explanation") and warning.explanation:
-            details.append("📖 DETAILED EXPLANATION")
-            details.append("=" * 50)
-
-            # Handle WarningExplanation object properly
-            try:
-                if hasattr(warning.explanation, "description"):
-                    # It's a WarningExplanation object
-                    explanation_obj = warning.explanation
-                    details.append(
-                        f"Category: {
-                            explanation_obj.category.value
-                            if hasattr(explanation_obj.category, 'value')
-                            else str(explanation_obj.category)
-                        }"
-                    )
-                    details.append(
-                        f"Severity: {
-                            explanation_obj.severity.value
-                            if hasattr(explanation_obj.severity, 'value')
-                            else str(explanation_obj.severity)
-                        }"
-                    )
-                    details.append(f"Title: {explanation_obj.title}")
-                    details.append("")
-                    details.append(f"Description: {explanation_obj.description}")
-                    details.append("")
-                    details.append(f"Likely Cause: {explanation_obj.likely_cause}")
-                    details.append("")
-                    if (
-                        hasattr(explanation_obj, "technical_details")
-                        and explanation_obj.technical_details
-                    ):
-                        details.append(
-                            f"Technical Details: {explanation_obj.technical_details}"
-                        )
-                        details.append("")
-                    if (
-                        hasattr(explanation_obj, "remediation_steps")
-                        and explanation_obj.remediation_steps
-                    ):
-                        details.append("Remediation Steps:")
-                        for step in explanation_obj.remediation_steps:
-                            details.append(f"  • {str(step)}")
-                        details.append("")
-                else:
-                    # It's a string explanation or other type
-                    details.append(str(warning.explanation))
-            except Exception as e:
-                # Fallback to string conversion if anything goes wrong
-                details.append(f"Explanation: {str(warning.explanation)}")
-                details.append(f"(Note: Error processing explanation details: {e})")
-            details.append("")
-        else:
-            details.append("📖 GENERAL GUIDANCE")
-            details.append("=" * 50)
-            details.append(self._get_generic_warning_explanation(warning))
-            details.append("")
+        details.extend(self._build_explanation_section(warning))
 
         # Recommendations
         details.append("💡 RECOMMENDED ACTIONS")
@@ -522,7 +457,7 @@ class AllWarningsDialog(QDialog):
         # Set the details text
         self.warning_details.setPlainText("\n".join(details))
 
-    def _get_generic_warning_explanation(self, warning):
+    def _get_generic_warning_explanation(self, _warning):
         """Get generic explanation for warnings without specific explanations."""
         return (
             "This warning indicates a potential security concern that requires attention.\n\n"
@@ -553,7 +488,7 @@ class AllWarningsDialog(QDialog):
                 ):
                     for step in warning.explanation.remediation_steps:
                         recommendations.append(str(step))
-        except Exception as e:
+        except Exception as e:  # pylint: disable=broad-exception-caught
             # Log error but continue with fallback recommendations
             print(f"Warning: Error extracting specific recommendations: {e}")
 
@@ -578,22 +513,78 @@ class AllWarningsDialog(QDialog):
                 elif "process" in check_name:
                     recommendations.insert(-2, "Check process origin and behavior")
                 elif "network" in check_name:
-                    recommendations.insert(
-                        -2, "Monitor network connections and traffic"
-                    )
-        except Exception as e:
+                    recommendations.insert(-2, "Monitor network connections and traffic")
+        except Exception as e:  # pylint: disable=broad-exception-caught
             # Continue without type-specific recommendations if there's an error
             print(f"Warning: Error adding type-specific recommendations: {e}")
 
         # Ensure all recommendations are strings
         return [str(rec) for rec in recommendations]
 
+    def _build_explanation_section(self, warning):
+        """Build the explanation section for a warning as a list of lines.
+
+        Handles both structured WarningExplanation objects and simple string explanations,
+        falling back gracefully on any processing errors.
+        """
+        lines: list[str] = []
+        if hasattr(warning, "explanation") and warning.explanation:
+            lines.append("📖 DETAILED EXPLANATION")
+            lines.append("=" * 50)
+            try:
+                if hasattr(warning.explanation, "description"):
+                    explanation_obj = warning.explanation
+                    category = (
+                        explanation_obj.category.value
+                        if hasattr(explanation_obj.category, "value")
+                        else str(explanation_obj.category)
+                    )
+                    severity = (
+                        explanation_obj.severity.value
+                        if hasattr(explanation_obj.severity, "value")
+                        else str(explanation_obj.severity)
+                    )
+                    lines.append(f"Category: {category}")
+                    lines.append(f"Severity: {severity}")
+                    lines.append(f"Title: {explanation_obj.title}")
+                    lines.append("")
+                    lines.append(f"Description: {explanation_obj.description}")
+                    lines.append("")
+                    lines.append(f"Likely Cause: {explanation_obj.likely_cause}")
+                    lines.append("")
+                    if (
+                        hasattr(explanation_obj, "technical_details")
+                        and explanation_obj.technical_details
+                    ):
+                        lines.append(f"Technical Details: {explanation_obj.technical_details}")
+                        lines.append("")
+                    if (
+                        hasattr(explanation_obj, "remediation_steps")
+                        and explanation_obj.remediation_steps
+                    ):
+                        lines.append("Remediation Steps:")
+                        for step in explanation_obj.remediation_steps:
+                            lines.append(f"  • {str(step)}")
+                        lines.append("")
+                else:
+                    lines.append(str(warning.explanation))
+            except Exception as e:  # pylint: disable=broad-exception-caught
+                lines.append(f"Explanation: {str(warning.explanation)}")
+                lines.append(f"(Note: Error processing explanation details: {e})")
+            lines.append("")
+        else:
+            lines.append("📖 GENERAL GUIDANCE")
+            lines.append("=" * 50)
+            lines.append(self._get_generic_warning_explanation(warning))
+            lines.append("")
+        return lines
+
     def _investigate_current_warning(self):
         """Provide investigation guidance for current warning."""
         if self.current_warning_index >= len(self.warnings):
             return
 
-        self.warnings[self.current_warning_index]
+        # Current warning exists; we present investigation guidance to the user
 
         # Create investigation dialog
         if hasattr(self.parent_window, "show_themed_message_box"):
@@ -691,15 +682,13 @@ class AllWarningsDialog(QDialog):
                 reply2 = self.parent_window.show_themed_message_box(
                     "question",
                     "Final Confirmation",
-                    "This is your final confirmation.\n\n"
-                    "Mark all warnings as false positives?",
+                    "This is your final confirmation.\n\nMark all warnings as false positives?",
                 )
             else:
                 reply2 = QMessageBox.question(
                     self,
                     "Final Confirmation",
-                    "This is your final confirmation.\n\n"
-                    "Mark all warnings as false positives?",
+                    "This is your final confirmation.\n\nMark all warnings as false positives?",
                     QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
                     QMessageBox.StandardButton.No,
                 )
@@ -722,9 +711,7 @@ class AllWarningsDialog(QDialog):
 
     def _export_warnings_report(self):
         """Export warnings to a detailed report file."""
-        from datetime import datetime
-
-        from PyQt6.QtWidgets import QFileDialog
+        # datetime and QFileDialog imported at module level
 
         # Get save location
         default_name = f"warnings_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt"
@@ -732,20 +719,18 @@ class AllWarningsDialog(QDialog):
             self,
             "Export Warnings Report",
             default_name,
-            "Text Files (*.txt);;JSON Files (*.json);;All Files (*)",
+            "Text Files (*.txt);;All Files (*)",
         )
 
         if not file_path:
             return
 
-        try:
+        try:  # noqa: SIM105
             # Generate report content
-            report_lines = []
+            report_lines: list[str] = []
             report_lines.append("SECURITY WARNINGS REPORT")
             report_lines.append("=" * 50)
-            report_lines.append(
-                f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
-            )
+            report_lines.append(f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
             report_lines.append(f"Total Warnings: {len(self.warnings)}")
             report_lines.append("")
 
@@ -780,13 +765,11 @@ class AllWarningsDialog(QDialog):
                     "Report Exported",
                     f"Warnings report has been exported to:\n{file_path}",
                 )
-
-        except Exception as e:
+        except Exception as e:  # pylint: disable=broad-exception-caught
+            # UI boundary: ensure we surface a message rather than crash on export errors
             if hasattr(self.parent_window, "show_themed_message_box"):
                 self.parent_window.show_themed_message_box(
                     "critical", "Export Error", f"Failed to export report:\n{str(e)}"
                 )
             else:
-                QMessageBox.critical(
-                    self, "Export Error", f"Failed to export report:\n{str(e)}"
-                )
+                QMessageBox.critical(self, "Export Error", f"Failed to export report:\n{str(e)}")

@@ -20,6 +20,8 @@ from PyQt6.QtWidgets import (
 )
 
 from .themed_widgets import ThemedDialog
+import subprocess
+import sys
 
 
 class UpdateDownloadThread(QThread):
@@ -223,9 +225,6 @@ class UpdateDialog(ThemedDialog):
     def restart_application(self):
         """Restart the application to apply updates."""
         try:
-            import subprocess
-            import sys
-
             # Get the current script path
             script_path = sys.argv[0]
 

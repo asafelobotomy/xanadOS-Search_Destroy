@@ -3,9 +3,11 @@
 Scan report management for S&D - Search & Destroy
 """
 
+import csv
+
 import json
 from dataclasses import asdict, dataclass
-from datetime import datetime
+from datetime import datetime, timedelta
 from enum import Enum
 from pathlib import Path
 from typing import Any, Dict, List, Optional
@@ -116,8 +118,10 @@ class ScanReportManager:
 
             return str(report_file)
 
-        except (IOError, OSError) as e:
-            self.logger.error("Failed to save scan result: %s", e)
+        except (IOError, OSError):
+            self.logerror(
+                "Failed to save scan result: %s".replace("%s", "{e}").replace("%d", "{e}")
+            )
             return ""
 
     def _save_threat_summary(self, result: ScanResult) -> None:
@@ -171,9 +175,7 @@ class ScanReportManager:
         # Track threat types
         for threat in result.threats:
             threat_type = threat.threat_type
-            summary["threat_types"][threat_type] = (
-                summary["threat_types"].get(threat_type, 0) + 1
-            )
+            summary["threat_types"][threat_type] = summary["threat_types"].get(threat_type, 0) + 1
 
         # Add scan summary
         summary["scans"].append(
@@ -191,8 +193,10 @@ class ScanReportManager:
         try:
             with open(summary_file, "w", encoding="utf-8") as f:
                 json.dump(summary, f, indent=2, default=str)
-        except (IOError, OSError) as e:
-            self.logger.error("Failed to update daily summary: %s", e)
+        except (IOError, OSError):
+            self.logerror(
+                "Failed to update daily summary: %s".replace("%s", "{e}").replace("%d", "{e}")
+            )
 
     def load_scan_result(self, scan_id: str) -> Optional[ScanResult]:
         """Load scan result by ID."""
@@ -211,9 +215,7 @@ class ScanReportManager:
                 # Handle ThreatLevel conversion
                 if isinstance(threat_data.get("threat_level"), str):
                     try:
-                        threat_data["threat_level"] = ThreatLevel(
-                            threat_data["threat_level"]
-                        )
+                        threat_data["threat_level"] = ThreatLevel(threat_data["threat_level"])
                     except ValueError:
                         threat_data["threat_level"] = ThreatLevel.ERROR
 
@@ -247,8 +249,12 @@ class ScanReportManager:
 
             return ScanResult(**data)
 
-        except (json.JSONDecodeError, IOError, TypeError, ValueError) as e:
-            self.logger.error("Failed to load scan result %s: %s", scan_id, e)
+        except (json.JSONDecodeError, IOError, TypeError, ValueError):
+            self.logerror(
+                "Failed to load scan result %s: %s".replace("%s", "{scan_id, e}").replace(
+                    "%d", "{scan_id, e}"
+                )
+            )
             return None
 
     def get_recent_scans(self, limit: int = 10) -> List[Dict[str, Any]]:
@@ -277,9 +283,11 @@ class ScanReportManager:
                 }
                 recent_scans.append(summary)
 
-            except (json.JSONDecodeError, IOError, KeyError) as e:
-                self.logger.warning(
-                    "Failed to read scan summary from %s: %s", scan_file, e
+            except (json.JSONDecodeError, IOError, KeyError):
+                self.logwarning(
+                    "Failed to read scan summary from %s: %s".replace(
+                        "%s", "{scan_file, e}"
+                    ).replace("%d", "{scan_file, e}")
                 )
                 continue
 
@@ -287,7 +295,6 @@ class ScanReportManager:
 
     def get_threat_statistics(self, days: int = 30) -> Dict[str, Any]:
         """Get threat statistics for the last N days."""
-        from datetime import timedelta
 
         end_date = datetime.now()
         start_date = end_date - timedelta(days=days)
@@ -308,9 +315,7 @@ class ScanReportManager:
                     data = json.load(f)
 
                 # Check if within date range
-                scan_date = datetime.fromisoformat(
-                    data["timestamp"].replace("Z", "+00:00")
-                )
+                scan_date = datetime.fromisoformat(data["timestamp"].replace("Z", "+00:00"))
                 if start_date <= scan_date <= end_date:
                     for threat in data["threats"]:
                         stats["total_threats"] += 1
@@ -329,9 +334,7 @@ class ScanReportManager:
 
                         # Count by day
                         day_key = scan_date.strftime("%Y-%m-%d")
-                        stats["daily_counts"][day_key] = (
-                            stats["daily_counts"].get(day_key, 0) + 1
-                        )
+                        stats["daily_counts"][day_key] = stats["daily_counts"].get(day_key, 0) + 1
 
                         # Track infected paths
                         path_parent = str(Path(threat["file_path"]).parent)
@@ -339,9 +342,11 @@ class ScanReportManager:
                             stats["most_infected_paths"].get(path_parent, 0) + 1
                         )
 
-            except (json.JSONDecodeError, IOError, KeyError, ValueError) as e:
-                self.logger.warning(
-                    "Failed to process threat file %s: %s", threat_file, e
+            except (json.JSONDecodeError, IOError, KeyError, ValueError):
+                self.logwarning(
+                    "Failed to process threat file %s: %s".replace(
+                        "%s", "{threat_file, e}"
+                    ).replace("%d", "{threat_file, e}")
                 )
                 continue
 
@@ -349,7 +354,6 @@ class ScanReportManager:
 
     def cleanup_old_reports(self, days_to_keep: int = 90) -> None:
         """Clean up old report files."""
-        from datetime import timedelta
 
         cutoff_date = datetime.now() - timedelta(days=days_to_keep)
         deleted_count = 0
@@ -357,19 +361,22 @@ class ScanReportManager:
         for report_dir in [self.daily_reports, self.threat_logs, self.summary_reports]:
             for report_file in report_dir.glob("*.json"):
                 try:
-                    if (
-                        datetime.fromtimestamp(report_file.stat().st_mtime)
-                        < cutoff_date
-                    ):
+                    if datetime.fromtimestamp(report_file.stat().st_mtime) < cutoff_date:
                         report_file.unlink()
                         deleted_count += 1
-                except (OSError, IOError) as e:
-                    self.logger.warning(
-                        "Failed to delete old report %s: %s", report_file, e
+                except (OSError, IOError):
+                    self.logwarning(
+                        "Failed to delete old report %s: %s".replace(
+                            "%s", "{report_file, e}"
+                        ).replace("%d", "{report_file, e}")
                     )
 
         if deleted_count > 0:
-            self.logger.info("Cleaned up %d old report files", deleted_count)
+            self.loginfo(
+                "Cleaned up %d old report files".replace("%s", "{deleted_count}").replace(
+                    "%d", "{deleted_count}"
+                )
+            )
 
     def export_reports(
         self,
@@ -408,9 +415,7 @@ class ScanReportManager:
                     # Date filtering if specified
                     if start_date or end_date:
                         scan_date = datetime.fromisoformat(scan_data["start_time"])
-                        if start_date and scan_date < datetime.fromisoformat(
-                            start_date
-                        ):
+                        if start_date and scan_date < datetime.fromisoformat(start_date):
                             continue
                         if end_date and scan_date > datetime.fromisoformat(end_date):
                             continue
@@ -435,14 +440,22 @@ class ScanReportManager:
             elif format_type.lower() == "html":
                 self._export_html(export_data, output_path)
             else:
-                self.logger.error("Unsupported export format: %s", format_type)
+                self.logerror(
+                    "Unsupported export format: %s".replace("%s", "{format_type}").replace(
+                        "%d", "{format_type}"
+                    )
+                )
                 return False
 
-            self.logger.info("Reports exported to %s", output_path)
+            self.loginfo(
+                "Reports exported to %s".replace("%s", "{output_path}").replace(
+                    "%d", "{output_path}"
+                )
+            )
             return True
 
-        except (IOError, OSError) as e:
-            self.logger.error("Failed to export reports: %s", e)
+        except (IOError, OSError):
+            self.logerror("Failed to export reports: %s".replace("%s", "{e}").replace("%d", "{e}"))
             return False
 
     def _export_json(self, export_data: dict, output_path: str) -> None:
@@ -452,7 +465,6 @@ class ScanReportManager:
 
     def _export_csv(self, export_data: dict, output_path: str) -> None:
         """Export data to CSV format."""
-        import csv
 
         # Create threats CSV
         threats_csv_path = output_path.replace(".csv", "_threats.csv")
@@ -493,23 +505,36 @@ class ScanReportManager:
 
     def _export_html(self, export_data: dict, output_path: str) -> None:
         """Export data to HTML format."""
+        total_scans = len(export_data["scans"])
+        total_threats = len(export_data["threats"])
+        files_scanned = sum(scan.get("scanned_files", 0) for scan in export_data["scans"])
+
+        # Build CSS in small chunks to keep source lines short for pylint C0301
+        style_lines = [
+            "body { font-family: Arial, sans-serif; margin: 20px; }",
+            "h1, h2 { color: #2196F3; }",
+            "table { border-collapse: collapse; width: 100%; margin-bottom: 20px; }",
+            "th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }",
+            "th { background-color: #f2f2f2; }",
+            "tr:nth-child(even) { background-color: #f9f9f9; }",
+            ".threat-infected { background-color: #ffebee; }",
+            ".threat-suspicious { background-color: #fff8e1; }",
+            ".stats { display: flex; justify-content: space-around; }",
+            (
+                ".stat-box { border: 1px solid #ddd; padding: 15px; "
+                "border-radius: 5px; text-align: center; }"
+            ),
+            ".stat-value { font-size: 24px; font-weight: bold; color: #2196F3; }",
+        ]
+        style_block = "\n".join(style_lines)
+
         html_content = f"""
         <!DOCTYPE html>
         <html>
         <head>
             <title>S&D Scan Reports</title>
             <style>
-                body {{ font-family: Arial, sans-serif; margin: 20px; }}
-                h1, h2 {{ color: #2196F3; }}
-                table {{ border-collapse: collapse; width: 100%; margin-bottom: 20px; }}
-                th, td {{ border: 1px solid #ddd; padding: 8px; text-align: left; }}
-                th {{ background-color: #f2f2f2; }}
-                tr:nth-child(even) {{ background-color: #f9f9f9; }}
-                .threat-infected {{ background-color: #ffebee; }}
-                .threat-suspicious {{ background-color: #fff8e1; }}
-                .stats {{ display: flex; justify-content: space-around; }}
-                .stat-box {{ border: 1px solid #ddd; padding: 15px; border-radius: 5px; text-align: center; }}
-                .stat-value {{ font-size: 24px; font-weight: bold; color: #2196F3; }}
+                {style_block}
             </style>
         </head>
         <body>
@@ -518,15 +543,15 @@ class ScanReportManager:
 
             <div class="stats">
                 <div class="stat-box">
-                    <div class="stat-value">{len(export_data["scans"])}</div>
+                    <div class="stat-value">{total_scans}</div>
                     <div>Total Scans</div>
                 </div>
                 <div class="stat-box">
-                    <div class="stat-value">{len(export_data["threats"])}</div>
+                    <div class="stat-value">{total_threats}</div>
                     <div>Threats Found</div>
                 </div>
                 <div class="stat-box">
-                    <div class="stat-value">{sum(scan.get("scanned_files", 0) for scan in export_data["scans"])}</div>
+                    <div class="stat-value">{files_scanned}</div>
                     <div>Files Scanned</div>
                 </div>
             </div>

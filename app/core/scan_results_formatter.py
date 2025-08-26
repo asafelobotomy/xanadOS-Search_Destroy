@@ -8,6 +8,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
 from typing import Any, Dict, List, Optional
+import os
 
 
 class ScanResultType(Enum):
@@ -65,9 +66,7 @@ class ModernScanResultsFormatter:
             "footer": 7,
         }
 
-    def format_scan_header(
-        self, scan_type: str, timestamp: Optional[str] = None
-    ) -> List[str]:
+    def format_scan_header(self, scan_type: str, timestamp: Optional[str] = None) -> List[str]:
         """Create a clean, professional scan header."""
         if not timestamp:
             timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -153,9 +152,7 @@ class ModernScanResultsFormatter:
                 # Save previous section
                 if current_section and section_items:
                     formatted_lines.extend(
-                        self._format_check_section(
-                            current_section, section_items, stats
-                        )
+                        self._format_check_section(current_section, section_items, stats)
                     )
                     section_items = []
 
@@ -233,9 +230,7 @@ class ModernScanResultsFormatter:
         # Show warnings next
         if grouped[ScanResultType.WARNING]:
             section_lines.append("⚠️  WARNINGS FOUND:")
-            for item in grouped[ScanResultType.WARNING][
-                :5
-            ]:  # Limit to 5 for readability
+            for item in grouped[ScanResultType.WARNING][:5]:  # Limit to 5 for readability
                 section_lines.append(f"   • {item}")
             if len(grouped[ScanResultType.WARNING]) > 5:
                 section_lines.append(
@@ -403,7 +398,6 @@ class ModernScanResultsFormatter:
 
     def _format_path(self, path: str) -> str:
         """Format file paths for better readability."""
-        import os
 
         path_str = str(path)
 

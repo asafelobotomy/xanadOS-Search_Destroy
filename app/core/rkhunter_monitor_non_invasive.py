@@ -91,9 +91,7 @@ class RKHunterMonitorNonInvasive:
                 cache_time = data.get("cache_time", 0)
                 if time.time() - cache_time < self.cache_duration:
                     status_data = data["status"]
-                    status_data["timestamp"] = datetime.fromisoformat(
-                        status_data["timestamp"]
-                    )
+                    status_data["timestamp"] = datetime.fromisoformat(status_data["timestamp"])
                     if status_data.get("last_scan_attempt"):
                         status_data["last_scan_attempt"] = datetime.fromisoformat(
                             status_data["last_scan_attempt"]
@@ -115,9 +113,7 @@ class RKHunterMonitorNonInvasive:
                 status_dict = asdict(self._status_cache)
                 status_dict["timestamp"] = status_dict["timestamp"].isoformat()
                 if status_dict.get("last_scan_attempt"):
-                    status_dict["last_scan_attempt"] = status_dict[
-                        "last_scan_attempt"
-                    ].isoformat()
+                    status_dict["last_scan_attempt"] = status_dict["last_scan_attempt"].isoformat()
 
                 cache_data = {"cache_time": self._cache_time, "status": status_dict}
 
@@ -126,9 +122,7 @@ class RKHunterMonitorNonInvasive:
         except Exception as e:
             print(f"⚠️ Error saving RKHunter cache: {e}")
 
-    def get_status_non_invasive(
-        self, force_refresh: bool = False
-    ) -> RKHunterStatusNonInvasive:
+    def get_status_non_invasive(self, force_refresh: bool = False) -> RKHunterStatusNonInvasive:
         """
         Get RKHunter status using only non-invasive methods
 
@@ -227,9 +221,7 @@ class RKHunterMonitorNonInvasive:
         """Check if RKHunter is available without elevated privileges"""
         try:
             # Method 1: Check if binary exists in PATH
-            result = run_secure(
-                ["which", "rkhunter"], capture_output=True, text=True, timeout=5
-            )
+            result = run_secure(["which", "rkhunter"], capture_output=True, text=True, timeout=5)
             if result.returncode != 0:
                 return False, "Not installed", "not_installed"
 
@@ -318,10 +310,7 @@ class RKHunterMonitorNonInvasive:
                         try:
                             lines = f.readlines()
                             for line in reversed(lines[-100:]):  # Check last 100 lines
-                                if (
-                                    "Starting system scan" in line
-                                    or "System check" in line
-                                ):
+                                if "Starting system scan" in line or "System check" in line:
                                     # Try to parse timestamp from log line
                                     # This is a basic implementation - could be enhanced
                                     break

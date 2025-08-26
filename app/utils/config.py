@@ -11,6 +11,10 @@ import shutil
 import tempfile
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
+import time
+
+# Import centralized version
+from app import __version__
 
 # XDG Base Directory specification paths
 XDG_CONFIG_HOME = os.environ.get("XDG_CONFIG_HOME", os.path.expanduser("~/.config"))
@@ -38,9 +42,7 @@ def _ensure_secure_dir(path: Path):
             if current_mode != 0o700:
                 path.chmod(0o700)
     except OSError as e:
-        logging.getLogger(APP_NAME).warning(
-            "Could not set secure permissions on %s: %s", path, e
-        )
+        logging.getLogger(APP_NAME).warning("Could not set secure permissions on %s: %s", path, e)
 
 
 _ensure_secure_dir(CONFIG_DIR)
@@ -78,8 +80,6 @@ def setup_logging():
                 self._last: dict[tuple[str, int], float] = {}
 
             def filter(self, record: logging.LogRecord) -> bool:
-                import time
-
                 key = (record.getMessage()[:120], record.levelno)
                 now = time.time()
                 last = self._last.get(key, 0)
@@ -96,9 +96,7 @@ def setup_logging():
 
         # File handler with rotation
         log_file = LOG_DIR / "application.log"
-        file_handler = RotatingFileHandler(
-            log_file, maxBytes=10 * 1024 * 1024, backupCount=5
-        )
+        file_handler = RotatingFileHandler(log_file, maxBytes=10 * 1024 * 1024, backupCount=5)
         file_handler.setFormatter(formatter)
         file_handler.setLevel(logging.INFO)
 
@@ -107,15 +105,11 @@ def setup_logging():
         console_handler.setFormatter(formatter)
         console_handler.setLevel(logging.WARNING)
 
-        # Optional structured logging
-        from .config import CONFIG_FILE  # circular safe inside function
-
+        # Optional structured logging: avoid circular import by using module-level CONFIG_FILE
         try:
             with open(CONFIG_FILE, "r", encoding="utf-8") as cf:
                 cfg_json = json.load(cf)
-            structured = cfg_json.get("advanced_settings", {}).get(
-                "structured_logging", False
-            )
+            structured = cfg_json.get("advanced_settings", {}).get("structured_logging", False)
         except Exception:
             structured = False
         if structured:
@@ -173,9 +167,7 @@ def _atomic_write_json(config_path: Path, config_data):
     tmp_path = None
     try:
         _ensure_secure_dir(config_path.parent)
-        tmp_fd, tmp_path = tempfile.mkstemp(
-            prefix=".config.", dir=str(config_path.parent)
-        )
+        tmp_fd, tmp_path = tempfile.mkstemp(prefix=".config.", dir=str(config_path.parent))
         with os.fdopen(tmp_fd, "w", encoding="utf-8") as tmp_file:
             json.dump(config_data, tmp_file, indent=4, sort_keys=True)
             tmp_file.flush()
@@ -234,9 +226,7 @@ def update_config_setting(config_dict, section, key, value, file_path=None):
         return True
 
     except Exception as e:
-        logging.getLogger(APP_NAME).error(
-            "Failed to update setting %s.%s: %s", section, key, e
-        )
+        logging.getLogger(APP_NAME).error("Failed to update setting %s.%s: %s", section, key, e)
         return False
 
 
@@ -402,7 +392,7 @@ def create_initial_config():
         },
         "setup": {
             "first_time_setup_completed": False,
-            "setup_version": "2.9.0",
+            "setup_version": __version__,
             "packages_installed": {"clamav": False, "ufw": False, "rkhunter": False},
             "last_setup_check": None,
         },

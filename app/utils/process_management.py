@@ -144,7 +144,8 @@ class SecureProcessManager:
                 "timeout": config.timeout,
             }
 
-            result = subprocess.run(full_command, **popen_kwargs)
+            # Explicitly set check to False to avoid exceptions on non-zero exit
+            result = subprocess.run(full_command, check=False, **popen_kwargs)
 
             execution_time = time.time() - start_time
 
@@ -154,11 +155,7 @@ class SecureProcessManager:
                 stdout=result.stdout or "",
                 stderr=result.stderr or "",
                 execution_time=execution_time,
-                state=(
-                    ProcessState.COMPLETED
-                    if result.returncode == 0
-                    else ProcessState.FAILED
-                ),
+                state=(ProcessState.COMPLETED if result.returncode == 0 else ProcessState.FAILED),
                 pid=None,  # subprocess.run doesn't provide PID after completion
             )
 
@@ -220,9 +217,7 @@ class SecureProcessManager:
         results = []
 
         with ThreadPoolExecutor(max_workers=max_concurrent) as executor:
-            futures = [
-                executor.submit(self.execute_command, cmd, config) for cmd in commands
-            ]
+            futures = [executor.submit(self.execute_command, cmd, config) for cmd in commands]
 
             for future in as_completed(futures):
                 try:
@@ -242,9 +237,7 @@ class SecureProcessManager:
 
         return results
 
-    def _prepare_environment(
-        self, extra_env: Optional[Dict[str, str]] = None
-    ) -> Dict[str, str]:
+    def _prepare_environment(self, extra_env: Optional[Dict[str, str]] = None) -> Dict[str, str]:
         """Prepare secure environment for subprocess"""
         env = {
             "PATH": SystemPaths.SAFE_PATH,
@@ -262,12 +255,7 @@ class SecureProcessManager:
         # Add extra environment variables with validation
         if extra_env:
             for key, value in extra_env.items():
-                if (
-                    key.isupper()
-                    and len(key) < 64
-                    and len(value) < 512
-                    and ".." not in value
-                ):
+                if key.isupper() and len(key) < 64 and len(value) < 512 and ".." not in value:
                     env[key] = value
 
         return env
@@ -328,9 +316,7 @@ class ProcessMonitor:
             return
 
         self._monitoring = True
-        self._monitor_thread = threading.Thread(
-            target=self._monitor_loop, args=(interval,)
-        )
+        self._monitor_thread = threading.Thread(target=self._monitor_loop, args=(interval,))
         self._monitor_thread.start()
 
     def stop_monitoring(self):
@@ -459,13 +445,9 @@ def execute_with_privilege(
             state=(ProcessState.COMPLETED if result.returncode == 0 else ProcessState.FAILED),
         )
     elif method == "pkexec":
-        elevated_command = ["pkexec"] + (
-            command if isinstance(command, list) else [command]
-        )
+        elevated_command = ["pkexec"] + (command if isinstance(command, list) else [command])
     elif method == "sudo":
-        elevated_command = ["sudo"] + (
-            command if isinstance(command, list) else [command]
-        )
+        elevated_command = ["sudo"] + (command if isinstance(command, list) else [command])
     else:
         raise ValueError(f"Unknown privilege escalation method: {method}")
 

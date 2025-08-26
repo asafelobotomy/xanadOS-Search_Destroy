@@ -97,9 +97,7 @@ class PathValidator:
             # Check for suspicious symbolic links
             if path_obj.is_symlink():
                 target = path_obj.readlink()
-                if target.is_absolute() and str(target).startswith(
-                    ("/proc", "/sys", "/dev")
-                ):
+                if target.is_absolute() and str(target).startswith(("/proc", "/sys", "/dev")):
                     return False, f"Suspicious symlink to system path: {target}"
 
             # Additional checks for directories
@@ -287,16 +285,12 @@ class FileSizeMonitor:
 
             # Check individual file size
             if file_size > MAX_FILE_SIZE:
-                logger.warning(
-                    f"File too large to process: {file_path} ({file_size} bytes)"
-                )
+                logger.warning(f"File too large to process: {file_path} ({file_size} bytes)")
                 return False
 
             # Check total processed size
             if self.processed_size + file_size > self.max_total_size:
-                logger.warning(
-                    f"Total scan size limit reached: {self.processed_size + file_size}"
-                )
+                logger.warning(f"Total scan size limit reached: {self.processed_size + file_size}")
                 return False
 
             # Check file count
@@ -377,19 +371,13 @@ def validate_scan_request(
         elif path_obj.is_dir():
             files = list(path_obj.rglob("*"))
             result["estimated_files"] = len([f for f in files if f.is_file()])
-            result["estimated_size"] = sum(
-                f.stat().st_size for f in files if f.is_file()
-            )
+            result["estimated_size"] = sum(f.stat().st_size for f in files if f.is_file())
 
             # Add warnings for large scans
             if result["estimated_files"] > 1000:
-                result["warnings"].append(
-                    f"Large scan: {result['estimated_files']} files"
-                )
+                result["warnings"].append(f"Large scan: {result['estimated_files']} files")
             if result["estimated_size"] > 100 * 1024 * 1024:  # 100MB
-                result["warnings"].append(
-                    f"Large data size: {result['estimated_size']} bytes"
-                )
+                result["warnings"].append(f"Large data size: {result['estimated_size']} bytes")
 
     except (OSError, PermissionError) as e:
         result["warnings"].append(f"Could not estimate scan size: {e}")

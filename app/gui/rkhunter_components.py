@@ -4,6 +4,7 @@ RKHunter scan dialog and thread components for S&D - Search & Destroy
 """
 
 import logging
+import threading
 from typing import List, Optional
 
 from PyQt6.QtCore import QThread, pyqtSignal
@@ -20,6 +21,7 @@ from PyQt6.QtWidgets import (
 )
 
 from app.core.rkhunter_wrapper import RKHunterWrapper
+from app.core.elevated_runner import validate_auth_session
 
 from .thread_cancellation import CooperativeCancellationMixin
 
@@ -51,9 +53,7 @@ class RKHunterScanDialog(QDialog):
 
         # Title
         title_label = QLabel("Configure RKHunter Rootkit Scan")
-        title_label.setStyleSheet(
-            "font-size: 16px; font-weight: bold; margin-bottom: 10px;"
-        )
+        title_label.setStyleSheet("font-size: 16px; font-weight: bold; margin-bottom: 10px;")
         layout.addWidget(title_label)
 
         # Description
@@ -183,9 +183,7 @@ class RKHunterScanDialog(QDialog):
         start_btn.setDefault(True)
         start_btn.setStyleSheet(
             f"QPushButton {{ background-color: {
-                self.get_theme_color('success')
-                if hasattr(self, 'get_theme_color')
-                else '#007bff'
+                self.get_theme_color('success') if hasattr(self, 'get_theme_color') else '#007bff'
             }; "
             f"color: {
                 self.get_theme_color('primary_text')
@@ -194,9 +192,7 @@ class RKHunterScanDialog(QDialog):
             }; "
             "font-weight: bold; padding: 8px 20px; border-radius: 4px; }"
             f"QPushButton:hover {{ background-color: {
-                self.get_theme_color('hover_bg')
-                if hasattr(self, 'get_theme_color')
-                else '#0056b3'
+                self.get_theme_color('hover_bg') if hasattr(self, 'get_theme_color') else '#0056b3'
             }; }}"
         )
 
@@ -254,9 +250,7 @@ class RKHunterScanDialog(QDialog):
     def apply_theme(self, theme_name: str):
         """Apply theme styling to the dialog (supports light & dark)."""
         is_light = theme_name == "light"
-        if is_light and not (
-            self.parent_window and hasattr(self.parent_window, "get_theme_color")
-        ):
+        if is_light and not (self.parent_window and hasattr(self.parent_window, "get_theme_color")):
             # Provide light palette fallback
             palette = {
                 "background": "#ffffff",
@@ -372,9 +366,7 @@ class RKHunterScanThread(QThread, CooperativeCancellationMixin):
     output_updated = pyqtSignal(str)  # Real-time command output
     scan_completed = pyqtSignal(object)  # RKHunterScanResult
 
-    def __init__(
-        self, rkhunter: RKHunterWrapper, test_categories: Optional[List[str]] = None
-    ):
+    def __init__(self, rkhunter: RKHunterWrapper, test_categories: Optional[List[str]] = None):
         super().__init__()
         self.rkhunter = rkhunter
         self.test_categories = test_categories
@@ -420,7 +412,6 @@ class RKHunterScanThread(QThread, CooperativeCancellationMixin):
                         "⚠️ Waiting for authentication... Please enter your password in the terminal."
                     )
                 # Don't update progress bar during authentication wait
-                import time
 
                 time.sleep(1)
 
@@ -433,14 +424,9 @@ class RKHunterScanThread(QThread, CooperativeCancellationMixin):
             # Only start emitting progress once we know scan started successfully
 
             # Import here to avoid import delays
-            import threading
-            import time
-            from typing import Any
 
             scan_completed = threading.Event()
-            scan_result: list[Any] = [
-                None
-            ]  # Use list to allow modification from inner function
+            scan_result: list[Any] = [None]  # Use list to allow modification from inner function
             scan_error: list[Any] = [None]
             scan_started = threading.Event()  # Track when scan actually starts
 
@@ -468,9 +454,7 @@ class RKHunterScanThread(QThread, CooperativeCancellationMixin):
                         if not scan_started.is_set():
                             scan_started.set()
                             # Don't emit progress value here - let main window handle all progress
-                            self.progress_updated.emit(
-                                "RKHunter scan is now running..."
-                            )
+                            self.progress_updated.emit("RKHunter scan is now running...")
 
             def run_scan():
                 try:
@@ -482,20 +466,16 @@ class RKHunterScanThread(QThread, CooperativeCancellationMixin):
                     # Simple authentication check
                     self.logger.info("Checking authentication for scan thread...")
                     try:
-                        from app.core.elevated_runner import validate_auth_session
-
                         session_valid = validate_auth_session()
                         if session_valid:
                             self.logger.info("Authentication validated for scan thread")
                         else:
-                            self.logger.warning(
-                                "Authentication validation failed in scan thread"
-                            )
+                            self.logger.warning("Authentication validation failed in scan thread")
                             self.signals.message.emit("Authentication failed")
                             return
                     except Exception as e:
                         self.logger.warning(
-                            "Could not check auth session in scan thread: %s", e
+                            "Could not check auth session in scan thread: %s", str(e)
                         )
 
                     result = self.rkhunter.scan_system_with_output_callback(
@@ -511,7 +491,9 @@ class RKHunterScanThread(QThread, CooperativeCancellationMixin):
 
                     scan_result[0] = result
                 except Exception as e:
-                    self.logger.error("Error in RKHunter scan execution: %s", e)
+                    self.logger.error(
+                        "Error in RKHunter scan execution: %s", str(e)
+                    )
                     scan_error[0] = e
                 finally:
                     scan_completed.set()
@@ -585,12 +567,13 @@ class RKHunterScanThread(QThread, CooperativeCancellationMixin):
             self.scan_completed.emit(result)
 
         except Exception as e:
-            self.logger.error("Error in RKHunter scan thread: %s", e)
+            self.logger.error(
+                "Error in RKHunter scan thread: %s", str(e)
+            )
             self.progress_value_updated.emit(0)  # Reset progress on error
 
             # Create error result
             from datetime import datetime
-
             from app.core.rkhunter_wrapper import RKHunterScanResult
 
             error_result = RKHunterScanResult(

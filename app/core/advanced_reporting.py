@@ -305,17 +305,11 @@ class AdvancedReportingSystem:
 
             # Collect data based on report type
             if config.report_type == ReportType.SECURITY_SUMMARY:
-                report_data = await self._generate_security_summary(
-                    start_date, end_date, config
-                )
+                report_data = await self._generate_security_summary(start_date, end_date, config)
             elif config.report_type == ReportType.THREAT_ANALYSIS:
-                report_data = await self._generate_threat_analysis(
-                    start_date, end_date, config
-                )
+                report_data = await self._generate_threat_analysis(start_date, end_date, config)
             elif config.report_type == ReportType.SCAN_PERFORMANCE:
-                report_data = await self._generate_scan_performance(
-                    start_date, end_date, config
-                )
+                report_data = await self._generate_scan_performance(start_date, end_date, config)
             elif config.report_type == ReportType.WEB_PROTECTION:
                 report_data = await self._generate_web_protection_report(
                     start_date, end_date, config
@@ -325,13 +319,9 @@ class AdvancedReportingSystem:
                     start_date, end_date, config
                 )
             elif config.report_type == ReportType.EXECUTIVE_SUMMARY:
-                report_data = await self._generate_executive_summary(
-                    start_date, end_date, config
-                )
+                report_data = await self._generate_executive_summary(start_date, end_date, config)
             elif config.report_type == ReportType.DETAILED_TECHNICAL:
-                report_data = await self._generate_technical_report(
-                    start_date, end_date, config
-                )
+                report_data = await self._generate_technical_report(start_date, end_date, config)
             else:
                 raise ValueError(f"Unsupported report type: {config.report_type}")
 
@@ -358,8 +348,8 @@ class AdvancedReportingSystem:
 
             return report_data
 
-        except Exception as e:
-            self.logger.error("Error generating report: %s", e)
+        except Exception:
+            self.logerror("Error generating report: %s".replace("%s", "{e}").replace("%d", "{e}"))
             raise
 
     async def export_report(
@@ -377,7 +367,11 @@ class AdvancedReportingSystem:
             True if export successful
         """
         try:
-            self.logger.info("Exporting report to %s", output_path)
+            self.loginfo(
+                "Exporting report to %s".replace("%s", "{output_path}").replace(
+                    "%d", "{output_path}"
+                )
+            )
 
             if config.format == ReportFormat.HTML:
                 await self._export_html(report_data, config, output_path)
@@ -392,11 +386,15 @@ class AdvancedReportingSystem:
             else:
                 raise ValueError(f"Unsupported format: {config.format}")
 
-            self.logger.info("Report exported successfully to %s", output_path)
+            self.loginfo(
+                "Report exported successfully to %s".replace("%s", "{output_path}").replace(
+                    "%d", "{output_path}"
+                )
+            )
             return True
 
-        except Exception as e:
-            self.logger.error("Error exporting report: %s", e)
+        except Exception:
+            self.logerror("Error exporting report: %s".replace("%s", "{e}").replace("%d", "{e}"))
             return False
 
     async def _generate_security_summary(
@@ -430,9 +428,7 @@ class AdvancedReportingSystem:
             }
 
             # Recent threats table
-            recent_threats = await self._get_recent_threats(
-                start_date, end_date, limit=20
-            )
+            recent_threats = await self._get_recent_threats(start_date, end_date, limit=20)
             report_data.tables["recent_threats"] = recent_threats
 
             # Threat breakdown by type
@@ -446,8 +442,10 @@ class AdvancedReportingSystem:
 
             return report_data
 
-        except Exception as e:
-            self.logger.error("Error generating security summary: %s", e)
+        except Exception:
+            self.logerror(
+                "Error generating security summary: %s".replace("%s", "{e}").replace("%d", "{e}")
+            )
             raise
 
     async def _generate_threat_analysis(
@@ -459,9 +457,7 @@ class AdvancedReportingSystem:
 
             # Threat detection analysis
             threat_detections = await self._get_threat_detections(start_date, end_date)
-            heuristic_analysis = await self._get_heuristic_analysis(
-                start_date, end_date
-            )
+            heuristic_analysis = await self._get_heuristic_analysis(start_date, end_date)
 
             # Threat trends over time
             threat_trends = await self._get_threat_trends(start_date, end_date)
@@ -472,9 +468,7 @@ class AdvancedReportingSystem:
             report_data.metrics["threat_sources"] = threat_sources
 
             # File type analysis
-            file_type_analysis = await self._analyze_threat_file_types(
-                start_date, end_date
-            )
+            file_type_analysis = await self._analyze_threat_file_types(start_date, end_date)
             report_data.metrics["file_type_analysis"] = file_type_analysis
 
             # Risk assessment
@@ -490,9 +484,7 @@ class AdvancedReportingSystem:
             # Summary
             report_data.summary = {
                 "total_threats": len(threat_detections),
-                "unique_threat_types": len(
-                    set(t.get("threat_type") for t in threat_detections)
-                ),
+                "unique_threat_types": len(set(t.get("threat_type") for t in threat_detections)),
                 "high_risk_threats": len(
                     [t for t in threat_detections if t.get("risk_level") == "high"]
                 ),
@@ -506,8 +498,10 @@ class AdvancedReportingSystem:
 
             return report_data
 
-        except Exception as e:
-            self.logger.error("Error generating threat analysis: %s", e)
+        except Exception:
+            self.logerror(
+                "Error generating threat analysis: %s".replace("%s", "{e}").replace("%d", "{e}")
+            )
             raise
 
     async def _generate_scan_performance(
@@ -521,15 +515,11 @@ class AdvancedReportingSystem:
             perf_metrics = await self._get_performance_metrics(start_date, end_date)
 
             # Scan duration analysis
-            scan_durations = await self._get_scan_duration_analysis(
-                start_date, end_date
-            )
+            scan_durations = await self._get_scan_duration_analysis(start_date, end_date)
             report_data.metrics["scan_durations"] = scan_durations
 
             # Throughput analysis
-            throughput_analysis = await self._get_throughput_analysis(
-                start_date, end_date
-            )
+            throughput_analysis = await self._get_throughput_analysis(start_date, end_date)
             report_data.metrics["throughput"] = throughput_analysis
 
             # Resource utilization
@@ -559,8 +549,12 @@ class AdvancedReportingSystem:
 
             return report_data
 
-        except Exception as e:
-            self.logger.error("Error generating scan performance report: %s", e)
+        except Exception:
+            self.logerror(
+                "Error generating scan performance report: %s".replace("%s", "{e}").replace(
+                    "%d", "{e}"
+                )
+            )
             raise
 
     async def _generate_web_protection_report(
@@ -578,21 +572,15 @@ class AdvancedReportingSystem:
             report_data.metrics["url_analysis"] = url_analysis
 
             # Blocked domains analysis
-            blocked_domains = await self._get_blocked_domains_analysis(
-                start_date, end_date
-            )
+            blocked_domains = await self._get_blocked_domains_analysis(start_date, end_date)
             report_data.metrics["blocked_domains"] = blocked_domains
 
             # Threat categories breakdown
-            threat_categories = await self._get_web_threat_categories(
-                start_date, end_date
-            )
+            threat_categories = await self._get_web_threat_categories(start_date, end_date)
             report_data.metrics["threat_categories"] = threat_categories
 
             # Geographic analysis (if available)
-            geo_analysis = await self._get_geographic_threat_analysis(
-                start_date, end_date
-            )
+            geo_analysis = await self._get_geographic_threat_analysis(start_date, end_date)
             report_data.metrics["geographic_analysis"] = geo_analysis
 
             # Tables
@@ -603,22 +591,20 @@ class AdvancedReportingSystem:
             report_data.summary = {
                 "total_requests_analyzed": url_analysis.get("total_requests", 0),
                 "threats_blocked": len(web_threats),
-                "unique_blocked_domains": len(
-                    set(t.get("domain") for t in web_threats)
-                ),
-                "malware_blocks": len(
-                    [t for t in web_threats if t.get("category") == "malware"]
-                ),
-                "phishing_blocks": len(
-                    [t for t in web_threats if t.get("category") == "phishing"]
-                ),
+                "unique_blocked_domains": len(set(t.get("domain") for t in web_threats)),
+                "malware_blocks": len([t for t in web_threats if t.get("category") == "malware"]),
+                "phishing_blocks": len([t for t in web_threats if t.get("category") == "phishing"]),
                 "cache_hit_rate": url_analysis.get("cache_hit_rate", 0),
             }
 
             return report_data
 
-        except Exception as e:
-            self.logger.error("Error generating web protection report: %s", e)
+        except Exception:
+            self.logerror(
+                "Error generating web protection report: %s".replace("%s", "{e}").replace(
+                    "%d", "{e}"
+                )
+            )
             raise
 
     async def _generate_executive_summary(
@@ -627,23 +613,17 @@ class AdvancedReportingSystem:
         """Generate executive summary report."""
         try:
             # Combine data from all protection components
-            security_data = await self._generate_security_summary(
-                start_date, end_date, config
-            )
+            security_data = await self._generate_security_summary(start_date, end_date, config)
 
             # Create executive-focused summary
             report_data = ReportData(metadata={}, summary={}, metrics={})
 
             # High-level metrics
             report_data.summary = {
-                "security_posture": self._calculate_security_posture_score(
-                    security_data
-                ),
+                "security_posture": self._calculate_security_posture_score(security_data),
                 "threats_mitigated": security_data.summary.get("threats_blocked", 0),
                 "system_uptime": 99.5,  # Would calculate from actual data
-                "protection_effectiveness": self._calculate_protection_effectiveness(
-                    security_data
-                ),
+                "protection_effectiveness": self._calculate_protection_effectiveness(security_data),
                 "risk_level": self._assess_overall_risk_level(security_data),
             }
 
@@ -651,9 +631,7 @@ class AdvancedReportingSystem:
             report_data.metrics = {
                 "security_incidents": security_data.summary.get("threats_detected", 0),
                 "response_time": "< 1 second",  # Real-time protection
-                "false_positive_rate": self._calculate_false_positive_rate(
-                    security_data
-                ),
+                "false_positive_rate": self._calculate_false_positive_rate(security_data),
                 "coverage": "100%",  # File system coverage
             }
 
@@ -666,14 +644,14 @@ class AdvancedReportingSystem:
             report_data.tables["critical_threats"] = critical_threats[:10]
 
             # Strategic recommendations
-            report_data.recommendations = self._generate_executive_recommendations(
-                security_data
-            )
+            report_data.recommendations = self._generate_executive_recommendations(security_data)
 
             return report_data
 
-        except Exception as e:
-            self.logger.error("Error generating executive summary: %s", e)
+        except Exception:
+            self.logerror(
+                "Error generating executive summary: %s".replace("%s", "{e}").replace("%d", "{e}")
+            )
             raise
 
     async def _generate_technical_report(
@@ -711,18 +689,16 @@ class AdvancedReportingSystem:
             if config.include_raw_data:
                 report_data.raw_data = {
                     "scan_results": await self._get_raw_scan_data(start_date, end_date),
-                    "threat_detections": await self._get_raw_threat_data(
-                        start_date, end_date
-                    ),
-                    "system_metrics": await self._get_raw_system_metrics(
-                        start_date, end_date
-                    ),
+                    "threat_detections": await self._get_raw_threat_data(start_date, end_date),
+                    "system_metrics": await self._get_raw_system_metrics(start_date, end_date),
                 }
 
             return report_data
 
-        except Exception as e:
-            self.logger.error("Error generating technical report: %s", e)
+        except Exception:
+            self.logerror(
+                "Error generating technical report: %s".replace("%s", "{e}").replace("%d", "{e}")
+            )
             raise
 
     async def _generate_charts(self, report_data: ReportData, config: ReportConfig):
@@ -766,8 +742,8 @@ class AdvancedReportingSystem:
 
             report_data.charts = charts
 
-        except Exception as e:
-            self.logger.error("Error generating charts: %s", e)
+        except Exception:
+            self.logerror("Error generating charts: %s".replace("%s", "{e}").replace("%d", "{e}"))
 
     async def _create_line_chart(
         self, data: Dict[str, Any], title: str, xlabel: str, ylabel: str
@@ -783,8 +759,7 @@ class AdvancedReportingSystem:
             if dates and values:
                 # Convert dates to datetime objects
                 date_objects = [
-                    datetime.fromisoformat(d) if isinstance(d, str) else d
-                    for d in dates
+                    datetime.fromisoformat(d) if isinstance(d, str) else d for d in dates
                 ]
 
                 ax.plot(
@@ -819,12 +794,10 @@ class AdvancedReportingSystem:
             return {"title": title, "type": "line", "image": img_base64}
 
         except Exception as e:
-            self.logger.error("Error creating line chart: %s", e)
+            self.logerror("Error creating line chart: %s".replace("%s", "{e}").replace("%d", "{e}"))
             return {"title": title, "type": "line", "error": str(e)}
 
-    async def _create_pie_chart(
-        self, data: List[Dict[str, Any]], title: str
-    ) -> Dict[str, Any]:
+    async def _create_pie_chart(self, data: List[Dict[str, Any]], title: str) -> Dict[str, Any]:
         """Create pie chart from data."""
         try:
             fig, ax = plt.subplots(figsize=self.chart_config["figure_size"])
@@ -859,7 +832,7 @@ class AdvancedReportingSystem:
             return {"title": title, "type": "pie", "image": img_base64}
 
         except Exception as e:
-            self.logger.error("Error creating pie chart: %s", e)
+            self.logerror("Error creating pie chart: %s".replace("%s", "{e}").replace("%d", "{e}"))
             return {"title": title, "type": "pie", "error": str(e)}
 
     async def _create_bar_chart(
@@ -912,12 +885,10 @@ class AdvancedReportingSystem:
             return {"title": title, "type": "bar", "image": img_base64}
 
         except Exception as e:
-            self.logger.error("Error creating bar chart: %s", e)
+            self.logerror("Error creating bar chart: %s".replace("%s", "{e}").replace("%d", "{e}"))
             return {"title": title, "type": "bar", "error": str(e)}
 
-    async def _create_stacked_bar_chart(
-        self, data: Dict[str, Any], title: str
-    ) -> Dict[str, Any]:
+    async def _create_stacked_bar_chart(self, data: Dict[str, Any], title: str) -> Dict[str, Any]:
         """Create stacked bar chart from data."""
         try:
             fig, ax = plt.subplots(figsize=self.chart_config["figure_size"])
@@ -959,12 +930,12 @@ class AdvancedReportingSystem:
             return {"title": title, "type": "stacked_bar", "image": img_base64}
 
         except Exception as e:
-            self.logger.error("Error creating stacked bar chart: %s", e)
+            self.logerror(
+                "Error creating stacked bar chart: %s".replace("%s", "{e}").replace("%d", "{e}")
+            )
             return {"title": title, "type": "stacked_bar", "error": str(e)}
 
-    async def _export_html(
-        self, report_data: ReportData, config: ReportConfig, output_path: str
-    ):
+    async def _export_html(self, report_data: ReportData, config: ReportConfig, output_path: str):
         """Export report as HTML."""
         try:
             template = self.templates.get(config.report_type)
@@ -1002,13 +973,13 @@ class AdvancedReportingSystem:
             with open(output_path, "w", encoding="utf-8") as f:
                 f.write(html_content)
 
-        except Exception as e:
-            self.logger.error("Error exporting HTML report: %s", e)
+        except Exception:
+            self.logerror(
+                "Error exporting HTML report: %s".replace("%s", "{e}").replace("%d", "{e}")
+            )
             raise
 
-    async def _export_pdf(
-        self, report_data: ReportData, config: ReportConfig, output_path: str
-    ):
+    async def _export_pdf(self, report_data: ReportData, config: ReportConfig, output_path: str):
         """Export report as PDF."""
         try:
             # First generate HTML
@@ -1060,9 +1031,7 @@ class AdvancedReportingSystem:
 
                         ax.imshow(img)
                         ax.axis("off")
-                        ax.set_title(
-                            chart_data["title"], fontsize=16, fontweight="bold"
-                        )
+                        ax.set_title(chart_data["title"], fontsize=16, fontweight="bold")
 
                         pdf.savefig(fig, bbox_inches="tight")
                         plt.close(fig)
@@ -1071,8 +1040,10 @@ class AdvancedReportingSystem:
             if Path(html_path).exists():
                 Path(html_path).unlink()
 
-        except Exception as e:
-            self.logger.error("Error exporting PDF report: %s", e)
+        except Exception:
+            self.logerror(
+                "Error exporting PDF report: %s".replace("%s", "{e}").replace("%d", "{e}")
+            )
             raise
 
     async def _export_json(self, report_data: ReportData, output_path: str):
@@ -1097,8 +1068,10 @@ class AdvancedReportingSystem:
             with open(output_path, "w", encoding="utf-8") as f:
                 json.dump(json_data, f, indent=2, default=str)
 
-        except Exception as e:
-            self.logger.error("Error exporting JSON report: %s", e)
+        except Exception:
+            self.logerror(
+                "Error exporting JSON report: %s".replace("%s", "{e}").replace("%d", "{e}")
+            )
             raise
 
     async def _export_csv(self, report_data: ReportData, output_path: str):
@@ -1131,8 +1104,10 @@ class AdvancedReportingSystem:
 
                     writer.writerow([])  # Empty row
 
-        except Exception as e:
-            self.logger.error("Error exporting CSV report: %s", e)
+        except Exception:
+            self.logerror(
+                "Error exporting CSV report: %s".replace("%s", "{e}").replace("%d", "{e}")
+            )
             raise
 
     async def _export_excel(self, report_data: ReportData, output_path: str):
@@ -1172,8 +1147,10 @@ class AdvancedReportingSystem:
                         metrics_df = pd.DataFrame(metrics_data)
                         metrics_df.to_excel(writer, sheet_name="Metrics", index=False)
 
-        except Exception as e:
-            self.logger.error("Error exporting Excel report: %s", e)
+        except Exception:
+            self.logerror(
+                "Error exporting Excel report: %s".replace("%s", "{e}").replace("%d", "{e}")
+            )
             raise
 
     # Helper methods for data collection and formatting
@@ -1200,9 +1177,7 @@ class AdvancedReportingSystem:
         else:
             return now - timedelta(days=7), now  # Default to last 7 days
 
-    def _get_period_description(
-        self, period: ReportPeriod, start_date: str, end_date: str
-    ) -> str:
+    def _get_period_description(self, period: ReportPeriod, start_date: str, end_date: str) -> str:
         """Get human-readable period description."""
         if period == ReportPeriod.CUSTOM:
             start = datetime.fromisoformat(start_date).strftime("%Y-%m-%d")
@@ -1270,20 +1245,14 @@ class AdvancedReportingSystem:
 
         # Threat recommendations
         if threat_stats.get("false_positives", 0) > 5:
-            recommendations.append(
-                "Review and tune detection rules to reduce false positives"
-            )
+            recommendations.append("Review and tune detection rules to reduce false positives")
 
         if threat_stats.get("high_risk_threats", 0) > 0:
-            recommendations.append(
-                "Immediate attention required for high-risk threats detected"
-            )
+            recommendations.append("Immediate attention required for high-risk threats detected")
 
         # Web protection recommendations
         if web_stats.get("threats_blocked", 0) > 20:
-            recommendations.append(
-                "Consider implementing additional web filtering policies"
-            )
+            recommendations.append("Consider implementing additional web filtering policies")
 
         if not recommendations:
             recommendations.append("Security posture is good - continue monitoring")
@@ -1319,9 +1288,7 @@ class AdvancedReportingSystem:
         for threat in threat_breakdown:
             risk_level = threat.get("risk_level", "unknown").lower()
             risk_class = (
-                f"{risk_level}-risk"
-                if risk_level in ["high", "medium", "low"]
-                else "unknown-risk"
+                f"{risk_level}-risk" if risk_level in ["high", "medium", "low"] else "unknown-risk"
             )
 
             formatted.append(
@@ -1403,9 +1370,7 @@ class AdvancedReportingSystem:
         threats_blocked = security_data.summary.get("threats_blocked", 0)
         threats_detected = security_data.summary.get("threats_detected", 1)
 
-        effectiveness = (
-            (threats_blocked / threats_detected) * 100 if threats_detected > 0 else 100
-        )
+        effectiveness = (threats_blocked / threats_detected) * 100 if threats_detected > 0 else 100
 
         if effectiveness >= 95:
             return "Excellent"
@@ -1421,9 +1386,7 @@ class AdvancedReportingSystem:
         threats_blocked = security_data.summary.get("threats_blocked", 0)
         threats_detected = security_data.summary.get("threats_detected", 1)
 
-        return (
-            (threats_blocked / threats_detected) * 100 if threats_detected > 0 else 100
-        )
+        return (threats_blocked / threats_detected) * 100 if threats_detected > 0 else 100
 
     def _assess_overall_risk_level(self, security_data: ReportData) -> str:
         """Assess overall risk level."""
@@ -1443,9 +1406,7 @@ class AdvancedReportingSystem:
 
         return (false_positives / total_detections) * 100 if total_detections > 0 else 0
 
-    def _generate_executive_recommendations(
-        self, security_data: ReportData
-    ) -> List[str]:
+    def _generate_executive_recommendations(self, security_data: ReportData) -> List[str]:
         """Generate strategic recommendations for executives."""
         recommendations = []
 
@@ -1471,9 +1432,7 @@ class AdvancedReportingSystem:
 
     # Additional placeholder methods would be implemented here for complete
     # functionality
-    async def _get_threat_trends(
-        self, start_date: datetime, end_date: datetime
-    ) -> Dict[str, Any]:
+    async def _get_threat_trends(self, start_date: datetime, end_date: datetime) -> Dict[str, Any]:
         return {"dates": [], "values": []}
 
     async def _analyze_threat_sources(
@@ -1506,9 +1465,7 @@ class AdvancedReportingSystem:
     ) -> Dict[str, Any]:
         return {}
 
-    async def _get_resource_usage(
-        self, start_date: datetime, end_date: datetime
-    ) -> Dict[str, Any]:
+    async def _get_resource_usage(self, start_date: datetime, end_date: datetime) -> Dict[str, Any]:
         return {}
 
     async def _get_scan_error_analysis(
@@ -1573,9 +1530,7 @@ class AdvancedReportingSystem:
     async def _analyze_configuration(self) -> List[Dict[str, Any]]:
         return []
 
-    async def _get_raw_scan_data(
-        self, start_date: datetime, end_date: datetime
-    ) -> Dict[str, Any]:
+    async def _get_raw_scan_data(self, start_date: datetime, end_date: datetime) -> Dict[str, Any]:
         return {}
 
     async def _get_raw_threat_data(
@@ -1619,9 +1574,7 @@ except ImportError:
             pass
 
     plt = MockMatplotlib()
-    mdates = type(
-        "", (), {"DateFormatter": lambda x: None, "DayLocator": lambda **x: None}
-    )()
+    mdates = type("", (), {"DateFormatter": lambda x: None, "DayLocator": lambda **x: None})()
 
     def PdfPages(x):
         return type(

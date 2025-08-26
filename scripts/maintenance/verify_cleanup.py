@@ -11,10 +11,10 @@ from pathlib import Path
 def check_repository_structure():
     """Verify the repository structure is clean and organized."""
     print("🔍 Verifying Repository Structure...")
-    
+
     # Determine base directory dynamically (two levels up from this script if run from dev/)
     base_dir = Path(__file__).resolve().parent.parent
-    
+
     # Check for cache directories in application code
     app_cache_dirs = list(base_dir.glob("app/**/__pycache__"))
     if app_cache_dirs:
@@ -22,20 +22,20 @@ def check_repository_structure():
         return False
     else:
         print("✅ No cache directories found in application code")
-    
+
     # Check for proper directory structure
     required_dirs = ["app", "docs", "scripts", "config", "tests", "archive", "dev"]
     missing_dirs = []
     for dir_name in required_dirs:
         if not (base_dir / dir_name).exists():
             missing_dirs.append(dir_name)
-    
+
     if missing_dirs:
         print(f"❌ Missing required directories: {missing_dirs}")
         return False
     else:
         print("✅ All required directories present")
-    
+
     # Check for documentation organization
     impl_docs = base_dir / "docs" / "implementation"
     if (impl_docs / "SECURITY_IMPROVEMENTS.md").exists() and (impl_docs / "scan_methods_audit.md").exists():
@@ -43,17 +43,17 @@ def check_repository_structure():
     else:
         print("❌ Documentation files not properly organized")
         return False
-    
+
     return True
 
 def check_application_imports():
     """Verify that the application can be imported without errors."""
     print("\n🔍 Verifying Application Imports...")
-    
+
     try:
         # Add the app directory to Python path
-    sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "app"))
-        
+        sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "app"))
+
         # Try importing core modules
         import core.rkhunter_wrapper
         import gui.main_window
@@ -71,10 +71,10 @@ def main():
     """Run all verification checks."""
     print("🧹 xanadOS Search & Destroy - Repository Cleanup Verification")
     print("=" * 60)
-    
+
     structure_ok = check_repository_structure()
     imports_ok = check_application_imports()
-    
+
     print("\n" + "=" * 60)
     if structure_ok and imports_ok:
         print("🎉 Repository cleanup verification PASSED!")

@@ -78,9 +78,7 @@ class ResponsiveUI(QObject):
         self.show_notification.connect(self._handle_notification)
         self.task_completed.connect(self._handle_task_completion)
 
-    def schedule_task(
-        self, task_id: str, callback: Callable, *args, priority: int = 1, **kwargs
-    ):
+    def schedule_task(self, task_id: str, callback: Callable, *args, priority: int = 1, **kwargs):
         """
         Schedule a background task.
 
@@ -104,7 +102,11 @@ class ResponsiveUI(QObject):
         if not inserted:
             self.pending_tasks.append(task)
 
-        self.logger.debug("Scheduled task '%s' with priority %d", task_id, priority)
+        self.logdebug(
+            "Scheduled task '%s' with priority %d".replace("%s", "{task_id, priority}").replace(
+                "%d", "{task_id, priority}"
+            )
+        )
 
     def _process_background_tasks(self):
         """Process queued background tasks."""
@@ -119,15 +121,21 @@ class ResponsiveUI(QObject):
             result = task.callback(*task.args, **task.kwargs)
             execution_time = time.time() - start_time
 
-            self.logger.debug(
-                "Completed task '%s' in %.3fs", task.task_id, execution_time
+            self.logdebug(
+                "Completed task '%s' in %.3fs".replace(
+                    "%s", "{task.task_id, execution_time}"
+                ).replace("%d", "{task.task_id, execution_time}")
             )
 
             # Emit completion signal
             self.task_completed.emit(task.task_id, result)
 
-        except Exception as e:
-            self.logger.error("Task '%s' failed: %s", task.task_id, e)
+        except Exception:
+            self.logerror(
+                "Task '%s' failed: %s".replace("%s", "{task.task_id, e}").replace(
+                    "%d", "{task.task_id, e}"
+                )
+            )
             self.task_completed.emit(task.task_id, None)
 
     def _process_ui_updates(self):
@@ -146,9 +154,7 @@ class ResponsiveUI(QObject):
             elif animation["type"] == "pulse":
                 self._update_pulse_animation(widget_id, animation, current_time)
 
-    def _update_progress_animation(
-        self, widget_id: str, animation: dict, current_time: float
-    ):
+    def _update_progress_animation(self, widget_id: str, animation: dict, current_time: float):
         """Update smooth progress bar animation."""
         widget = animation.get("widget")
         if not widget:
@@ -169,9 +175,7 @@ class ResponsiveUI(QObject):
 
             widget.setValue(new_value)
 
-    def _update_pulse_animation(
-        self, widget_id: str, animation: dict, current_time: float
-    ):
+    def _update_pulse_animation(self, widget_id: str, animation: dict, current_time: float):
         """Update pulsing animation."""
         widget = animation.get("widget")
         if not widget:
@@ -249,12 +253,20 @@ class ResponsiveUI(QObject):
 
     def _handle_notification(self, title: str, message: str):
         """Handle notification display."""
-        self.logger.info("Notification: %s - %s", title, message)
+        self.loginfo(
+            "Notification: %s - %s".replace("%s", "{title, message}").replace(
+                "%d", "{title, message}"
+            )
+        )
         # Could integrate with system notifications here
 
     def _handle_task_completion(self, task_id: str, result: Any):
         """Handle task completion."""
-        self.logger.debug("Task '%s' completed with result: %s", task_id, result)
+        self.logdebug(
+            "Task '%s' completed with result: %s".replace("%s", "{task_id, result}").replace(
+                "%d", "{task_id, result}"
+            )
+        )
 
 
 class ScanProgressManager(QObject):
@@ -296,7 +308,11 @@ class ScanProgressManager(QObject):
         self.errors = 0
         self.start_time = time.time()
 
-        self.logger.info("Started scan progress tracking for %d files", total_files)
+        self.loginfo(
+            "Started scan progress tracking for %d files".replace("%s", "{total_files}").replace(
+                "%d", "{total_files}"
+            )
+        )
         self._emit_progress_update()
 
     def update_progress(
@@ -374,7 +390,9 @@ class ScanProgressManager(QObject):
         }
 
         self.scan_completed.emit(final_stats)
-        self.logger.info("Scan completed: %s", final_stats)
+        self.loginfo(
+            "Scan completed: %s".replace("%s", "{final_stats}").replace("%d", "{final_stats}")
+        )
 
     def report_error(self, error_message: str):
         """
@@ -385,7 +403,9 @@ class ScanProgressManager(QObject):
         """
         self.errors += 1
         self.error_occurred.emit(error_message)
-        self.logger.error("Scan error: %s", error_message)
+        self.logerror(
+            "Scan error: %s".replace("%s", "{error_message}").replace("%d", "{error_message}")
+        )
 
 
 class LoadingIndicator(QObject):
@@ -425,7 +445,11 @@ class LoadingIndicator(QObject):
         if self.main_window and hasattr(self.main_window, "status_label"):
             self.main_window.status_label.setText(message)
 
-        self.logger.debug("Started loading for operation '%s'", operation_id)
+        self.logdebug(
+            "Started loading for operation '%s'".replace("%s", "{operation_id}").replace(
+                "%d", "{operation_id}"
+            )
+        )
 
     def stop_loading(self, operation_id: str):
         """
@@ -440,7 +464,11 @@ class LoadingIndicator(QObject):
             QApplication.restoreOverrideCursor()
             self.busy_cursor_active = False
 
-        self.logger.debug("Stopped loading for operation '%s'", operation_id)
+        self.logdebug(
+            "Stopped loading for operation '%s'".replace("%s", "{operation_id}").replace(
+                "%d", "{operation_id}"
+            )
+        )
 
     def is_loading(self, operation_id: Optional[str] = None) -> bool:
         """

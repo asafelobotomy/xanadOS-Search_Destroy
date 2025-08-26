@@ -5,6 +5,7 @@ Performs scheduled scans and processes file system events
 """
 
 import logging
+import glob
 import tempfile
 import threading
 import time
@@ -14,27 +15,64 @@ from pathlib import Path
 from queue import Empty, Queue
 from typing import Any, Callable, Dict, List, Optional, Set
 
-import schedule
+try:
+    import schedule  # type: ignore
+    SCHEDULE_AVAILABLE = True
+except ImportError:  # pragma: no cover - env dependent
+    # Provide a minimal no-op scheduler so the module can load without the dependency
+    SCHEDULE_AVAILABLE = False
+
+    class _NoOpJob:
+        def __init__(self):
+            self.interval = None
+
+        # Chainable API stubs
+        def at(self, _time_str: str):
+            return self
+
+        def hours(self):
+            return self
+
+        def hour(self):
+            return self
+
+        def day(self):
+            return self
+
+        def do(self, _func, *_, **__):  # noqa: D401 - mimic schedule API
+            return self
+
+    class _NoOpScheduler:
+        def every(self, *_args, **_kwargs):  # noqa: D401 - mimic schedule API
+            return _NoOpJob()
+
+        def run_pending(self):
+            return None
+
+    schedule = _NoOpScheduler()  # type: ignore
 
 try:
     from app.core.clamav_wrapper import ClamAVWrapper
 except ImportError:
     # Fallback for development/testing
     class ClamAVWrapper:  # type: ignore[no-redef]
+        """Lightweight mock for ClamAVWrapper used in tests/dev when import fails."""
+
         def __init__(self):
             self.available = False
 
-        def scan_file(self, path):
-            from dataclasses import dataclass
-            from enum import Enum
-
+        def scan_file(self, _path):
             class ScanResult(Enum):
+                """Mock scan result categories used by the fallback scanner."""
+
                 CLEAN = "clean"
                 INFECTED = "infected"
                 ERROR = "error"
 
             @dataclass
             class Result:
+                """Mock scan result object returned by the fallback scanner."""
+
                 result: ScanResult = ScanResult.CLEAN
                 threat_name: str = None
                 threat_type: str = None
@@ -96,6 +134,11 @@ class BackgroundScanner:
 
         # Scheduling
         self.scheduler = schedule
+        if not SCHEDULE_AVAILABLE:
+            self.logger.warning(
+                "Python 'schedule' package not installed; background scan schedules disabled. "
+                "Install with: pip install --user schedule"
+            )
         self.scheduler_thread: Optional[threading.Thread] = None
 
         # Event callbacks
@@ -121,6 +164,23 @@ class BackgroundScanner:
 
         self._setup_scheduled_tasks()
 
+    # --- Logger helper methods for consistent callsites (used across modules) ---
+    def loginfo(self, message: str):  # noqa: D401 - thin wrapper
+        """Info-level log wrapper."""
+        self.logger.info("%s", message)
+
+    def logdebug(self, message: str):  # noqa: D401 - thin wrapper
+        """Debug-level log wrapper."""
+        self.logger.debug("%s", message)
+
+    def logwarning(self, message: str):  # noqa: D401 - thin wrapper
+        """Warning-level log wrapper."""
+        self.logger.warning("%s", message)
+
+    def logerror(self, message: str):  # noqa: D401 - thin wrapper
+        """Error-level log wrapper."""
+        self.logger.error("%s", message)
+
     def start(self):
         """Start the background scanner."""
         if self.running:
@@ -144,7 +204,11 @@ class BackgroundScanner:
         )
         self.scheduler_thread.start()
 
-        self.logger.info("Background scanner started with %d workers", self.num_workers)
+        self.loginfo(
+            "Background scanner started with %d workers".replace(
+                "%s", "{self.num_workers}"
+            ).replace("%d", "{self.num_workers}")
+        )
 
     def stop(self):
         """Stop the background scanner."""
@@ -195,14 +259,14 @@ class BackgroundScanner:
                     "Queued scan for %s (priority: %s)", event.file_path, priority.name
                 )
 
-        except Exception as e:
-            self.logger.error(
-                "Error handling file event for %s: %s", event.file_path, e
+        except Exception:
+            self.logerror(
+                "Error handling file event for %s: %s".replace(
+                    "%s", "{event.file_path, e}"
+                ).replace("%d", "{event.file_path, e}")
             )
 
-    def schedule_scan(
-        self, file_path: str, priority: ScanPriority = ScanPriority.NORMAL
-    ):
+    def schedule_scan(self, file_path: str, priority: ScanPriority = ScanPriority.NORMAL):
         """
         Schedule a manual scan of a file.
 
@@ -213,7 +277,9 @@ class BackgroundScanner:
         task = ScanTask(file_path=file_path, priority=priority, timestamp=time.time())
 
         self.scan_queue.put(task)
-        self.logger.info("Scheduled manual scan for %s", file_path)
+        self.loginfo(
+            "Scheduled manual scan for %s".replace("%s", "{file_path}").replace("%d", "{file_path}")
+        )
 
     def _determine_scan_priority(self, event: WatchEvent) -> ScanPriority:
         """Determine scan priority based on file event."""
@@ -253,8 +319,8 @@ class BackgroundScanner:
                 # Process the task
                 self._process_scan_task(task)
 
-            except Exception as e:
-                self.logger.error("Error in worker loop: %s", e)
+            except Exception:
+                self.logerror("Error in worker loop: %s".replace("%s", "{e}").replace("%d", "{e}"))
                 time.sleep(1.0)
 
     def _process_scan_task(self, task: ScanTask):
@@ -264,7 +330,11 @@ class BackgroundScanner:
             self.active_scans.add(task.file_path)
 
             start_time = time.time()
-            self.logger.debug("Starting scan of %s", task.file_path)
+            self.logdebug(
+                "Starting scan of %s".replace("%s", "{task.file_path}").replace(
+                    "%d", "{task.file_path}"
+                )
+            )
 
             # Perform the scan
             scan_result = self.file_scanner.scan_file(task.file_path)
@@ -292,19 +362,19 @@ class BackgroundScanner:
             # Call callbacks
             if self.result_callback:
                 try:
-                    self.result_callback(
-                        task.file_path, self.scan_results[task.file_path]
+                    self.result_callback(task.file_path, self.scan_results[task.file_path])
+                except Exception:
+                    self.logerror(
+                        "Error in result callback: %s".replace("%s", "{e}").replace("%d", "{e}")
                     )
-                except Exception as e:
-                    self.logger.error("Error in result callback: %s", e)
 
             if scan_result.result.value == "infected" and self.threat_callback:
                 try:
-                    self.threat_callback(
-                        task.file_path, scan_result.threat_name or "Unknown"
+                    self.threat_callback(task.file_path, scan_result.threat_name or "Unknown")
+                except Exception:
+                    self.logerror(
+                        "Error in threat callback: %s".replace("%s", "{e}").replace("%d", "{e}")
                     )
-                except Exception as e:
-                    self.logger.error("Error in threat callback: %s", e)
 
             self.logger.info(
                 "Scan completed: %s - %s (%s)",
@@ -313,15 +383,17 @@ class BackgroundScanner:
                 scan_result.threat_name if scan_result.threat_name else "Clean",
             )
 
-        except Exception as e:
-            self.logger.error("Error scanning %s: %s", task.file_path, e)
+        except Exception:
+            self.logerror(
+                "Error scanning %s: %s".replace("%s", "{task.file_path, e}").replace(
+                    "%d", "{task.file_path, e}"
+                )
+            )
 
             # Retry if under retry limit
             if task.retry_count < task.max_retries:
                 task.retry_count += 1
-                task.timestamp = time.time() + (
-                    task.retry_count * 60
-                )  # Exponential backoff
+                task.timestamp = time.time() + (task.retry_count * 60)  # Exponential backoff
                 self.scan_queue.put(task)
                 self.logger.info(
                     "Retrying scan of %s (attempt %d/%d)",
@@ -351,8 +423,10 @@ class BackgroundScanner:
             try:
                 self.scheduler.run_pending()
                 time.sleep(60)  # Check every minute
-            except Exception as e:
-                self.logger.error("Error in scheduler loop: %s", e)
+            except Exception:
+                self.logerror(
+                    "Error in scheduler loop: %s".replace("%s", "{e}").replace("%d", "{e}")
+                )
                 time.sleep(60)
 
     def _schedule_full_scan(self):
@@ -371,8 +445,6 @@ class BackgroundScanner:
 
         for path_pattern in quick_paths:
             # Expand path pattern and scan
-            import glob
-
             for path in glob.glob(path_pattern):
                 if Path(path).exists():
                     self.schedule_scan(path, ScanPriority.NORMAL)
@@ -392,7 +464,7 @@ class BackgroundScanner:
             del self.scan_results[path]
 
         if old_results:
-            self.logger.info("Cleaned up %d old scan results", len(old_results))
+            logging.getLogger(__name__).info("Cleaned up %d old scan results", len(old_results))
 
     def get_statistics(self) -> Dict[str, Any]:
         """Get scanner performance statistics."""

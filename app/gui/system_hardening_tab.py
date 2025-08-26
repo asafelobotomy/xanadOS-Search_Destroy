@@ -111,23 +111,17 @@ class SecurityScoreWidget(ThemedWidgetMixin, QWidget):
         score_layout.addWidget(self.progress_bar)
 
         self.compliance_label = QLabel("No Assessment")
-        self.compliance_label.setObjectName(
-            "cardTitle"
-        )  # Use global card title styling
+        self.compliance_label.setObjectName("cardTitle")  # Use global card title styling
         self.compliance_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(self.score_frame)
 
         # Last updated
         self.updated_label = QLabel("Last Updated: Never")
         self.updated_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.updated_label.setObjectName(
-            "secondary"
-        )  # Use global secondary text styling
+        self.updated_label.setObjectName("secondary")  # Use global secondary text styling
         layout.addWidget(self.updated_label)
 
-    def update_score(
-        self, score: int, max_score: int, compliance_level: str, timestamp: str
-    ):
+    def update_score(self, score: int, max_score: int, compliance_level: str, timestamp: str):
         """Update the security score display"""
         self.score = score
         self.max_score = max_score
@@ -321,9 +315,7 @@ class SecurityFeatureTable(QTableWidget):
             "low": ("#155724", "🟢 Low"),  # Dark green
         }
 
-        color, display = severity_colors.get(
-            severity.lower(), ("#6c757d", "❓ Unknown")
-        )
+        color, display = severity_colors.get(severity.lower(), ("#6c757d", "❓ Unknown"))
         return display, color
 
     def _get_combined_description_recommendation(self, feature: SecurityFeature) -> str:
@@ -401,9 +393,7 @@ class SecurityFeatureTable(QTableWidget):
         """Provide clear, actionable recommendations"""
         if feature.enabled:
             if "properly configured" in feature.recommendation:
-                return (
-                    "✅ No action needed - this security feature is working correctly."
-                )
+                return "✅ No action needed - this security feature is working correctly."
             else:
                 return f"✅ Active and protecting your system. {feature.recommendation}"
 
@@ -455,9 +445,7 @@ class HardeningRecommendationsWidget(ThemedWidgetMixin, QWidget):
     def update_recommendations(self, recommendations: List[str]):
         """Update the recommendations display"""
         if not recommendations:
-            self.recommendations_text.setHtml(
-                "<i>No specific recommendations at this time.</i>"
-            )
+            self.recommendations_text.setHtml("<i>No specific recommendations at this time.</i>")
             return
 
         html_content = "<ul>"
@@ -492,26 +480,20 @@ class SystemHardeningTab(ThemedWidgetMixin, QWidget):
 
         # Button container for proper spacing
         button_layout = QHBoxLayout()
-        button_layout.setSpacing(
-            15
-        )  # Increased spacing between buttons to prevent overlap
+        button_layout.setSpacing(15)  # Increased spacing between buttons to prevent overlap
         button_layout.setContentsMargins(0, 0, 10, 0)  # Add right margin for safety
 
         self.refresh_button = QPushButton("Run Assessment")
         self.refresh_button.setFixedWidth(150)  # Fixed width prevents overlap
         self.refresh_button.setFixedHeight(32)  # Set consistent button height
-        self.refresh_button.setObjectName(
-            "primaryButton"
-        )  # Use global primary button styling
+        self.refresh_button.setObjectName("primaryButton")  # Use global primary button styling
         button_layout.addWidget(self.refresh_button)
 
         # Add Fix Issues button
         self.fix_button = QPushButton("Fix Issues")
         self.fix_button.setFixedWidth(120)  # Fixed width prevents overlap
         self.fix_button.setFixedHeight(32)  # Set consistent button height
-        self.fix_button.setObjectName(
-            "warningButton"
-        )  # Use warning styling for fix actions
+        self.fix_button.setObjectName("warningButton")  # Use warning styling for fix actions
         self.fix_button.setEnabled(False)  # Disabled until assessment is run
         button_layout.addWidget(self.fix_button)
 
@@ -571,9 +553,7 @@ class SystemHardeningTab(ThemedWidgetMixin, QWidget):
         main_layout.addWidget(scroll_area)
 
         # Initial state
-        self.progress_label.setText(
-            "Click 'Run Assessment' to start system hardening evaluation"
-        )
+        self.progress_label.setText("Click 'Run Assessment' to start system hardening evaluation")
 
     def setup_connections(self):
         """Set up signal connections"""
@@ -809,19 +789,13 @@ Do you want to proceed?"""
                 msg_box.exec()
         else:
             result_message = "Failed to apply any fixes:\\n" + "\\n".join(failed_fixes)
-            msg_box = create_themed_message_box(
-                self, "critical", "Fixes Failed", result_message
-            )
+            msg_box = create_themed_message_box(self, "critical", "Fixes Failed", result_message)
             msg_box.exec()
 
         # Reset button state
         self.fix_button.setText("Fix Issues")
-        self.fix_button.setEnabled(
-            len(self._get_fixable_issues(self.current_report)) > 0
-        )
-        self.progress_label.setText(
-            "Fixes completed. Run assessment again to verify changes."
-        )
+        self.fix_button.setEnabled(len(self._get_fixable_issues(self.current_report)) > 0)
+        self.progress_label.setText("Fixes completed. Run assessment again to verify changes.")
 
     def _apply_single_fix(self, issue: SecurityFeature) -> bool:
         """Apply a single security fix"""
@@ -876,9 +850,7 @@ Do you want to proceed?"""
                     return False
 
                 if expected_value not in safe_params[param_name]:
-                    logger.error(
-                        f"Invalid value {expected_value} for parameter {param_name}"
-                    )
+                    logger.error(f"Invalid value {expected_value} for parameter {param_name}")
                     return False
 
                 # Apply sysctl setting with validation
@@ -887,12 +859,12 @@ Do you want to proceed?"""
 
                 if result.returncode == 0:
                     # Make it persistent by adding to sysctl.conf
-                    sysctl_line = f"# xanadOS Search & Destroy hardening\n{param_name} = {expected_value}"
+                    sysctl_line = (
+                        f"# xanadOS Search & Destroy hardening\n{param_name} = {expected_value}"
+                    )
 
                     # Check if config directory exists, create if needed
-                    config_dir_result = elevated_run(
-                        ["mkdir", "-p", "/etc/sysctl.d"], gui=True
-                    )
+                    config_dir_result = elevated_run(["mkdir", "-p", "/etc/sysctl.d"], gui=True)
                     if config_dir_result.returncode != 0:
                         logger.error("Failed to create sysctl.d directory")
                         return False
@@ -998,9 +970,7 @@ Click 'No' for confidentiality mode (maximum security)"""
                     QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
                 )
                 level_box.button(QMessageBox.StandardButton.Yes).setText("Integrity")
-                level_box.button(QMessageBox.StandardButton.No).setText(
-                    "Confidentiality"
-                )
+                level_box.button(QMessageBox.StandardButton.No).setText("Confidentiality")
 
                 lockdown_mode = (
                     "integrity"
@@ -1049,9 +1019,7 @@ Current status: {current_status}"""
                 return False
 
             # Check if lockdown parameter already exists
-            check_result = elevated_run(
-                ["grep", "-q", "lockdown=", grub_file], gui=True
-            )
+            check_result = elevated_run(["grep", "-q", "lockdown=", grub_file], gui=True)
 
             if check_result.returncode == 0:
                 # Update existing lockdown parameter
@@ -1213,28 +1181,18 @@ The system will boot with enhanced kernel security protection."""
 
                 # Install AppArmor packages
                 packages = ["apparmor", "apparmor-utils", "apparmor-profiles"]
-                install_result = elevated_run(
-                    ["apt", "install", "-y"] + packages, gui=True
-                )
+                install_result = elevated_run(["apt", "install", "-y"] + packages, gui=True)
                 install_success = install_result.returncode == 0
 
-            elif (
-                "fedora" in distro_info
-                or "rhel" in distro_info
-                or "centos" in distro_info
-            ):
+            elif "fedora" in distro_info or "rhel" in distro_info or "centos" in distro_info:
                 # Install AppArmor packages for Red Hat family
                 packages = ["apparmor", "apparmor-utils"]
-                install_result = elevated_run(
-                    ["dnf", "install", "-y"] + packages, gui=True
-                )
+                install_result = elevated_run(["dnf", "install", "-y"] + packages, gui=True)
                 install_success = install_result.returncode == 0
 
             elif "arch" in distro_info:
                 # AppArmor installation on Arch
-                install_result = elevated_run(
-                    ["pacman", "-S", "--noconfirm", "apparmor"], gui=True
-                )
+                install_result = elevated_run(["pacman", "-S", "--noconfirm", "apparmor"], gui=True)
                 install_success = install_result.returncode == 0
 
             elif "opensuse" in distro_info or "suse" in distro_info:
@@ -1344,9 +1302,7 @@ Some applications may require reboot to fully activate AppArmor protection."""
             for profile_dir in profile_dirs:
                 if os.path.exists(profile_dir):
                     # Load profiles from directory
-                    load_result = elevated_run(
-                        ["aa-enforce", f"{profile_dir}/*"], gui=True
-                    )
+                    load_result = elevated_run(["aa-enforce", f"{profile_dir}/*"], gui=True)
                     if load_result.returncode == 0:
                         logger.info(f"Loaded AppArmor profiles from {profile_dir}")
 
@@ -1413,9 +1369,7 @@ class FixSelectionDialog(ThemedWidgetMixin, QDialog):
 
         # Title and description
         title_label = QLabel("Select Security Fixes to Apply")
-        title_label.setStyleSheet(
-            "font-size: 16px; font-weight: bold; padding: 10px 0;"
-        )
+        title_label.setStyleSheet("font-size: 16px; font-weight: bold; padding: 10px 0;")
         layout.addWidget(title_label)
 
         description_label = QLabel(
@@ -1656,13 +1610,9 @@ class HardeningDetailsDialog(ThemedWidgetMixin, QDialog):
         html_content = "<h3>Security Recommendations</h3>"
 
         if self.report.critical_issues:
-            html_content += (
-                f"<h4 style='color: {error_color};'>Critical Issues</h4><ul>"
-            )
+            html_content += f"<h4 style='color: {error_color};'>Critical Issues</h4><ul>"
             for issue in self.report.critical_issues:
-                html_content += (
-                    f"<li style='color: {error_color};'><strong>{issue}</strong></li>"
-                )
+                html_content += f"<li style='color: {error_color};'><strong>{issue}</strong></li>"
             html_content += "</ul>"
 
         if self.report.recommendations:
@@ -1676,7 +1626,9 @@ class HardeningDetailsDialog(ThemedWidgetMixin, QDialog):
         if disabled_features:
             html_content += "<h4>Feature-Specific Recommendations</h4><ul>"
             for feature in disabled_features:
-                html_content += f"<li><strong>{feature.name}:</strong> {feature.recommendation}</li>"
+                html_content += (
+                    f"<li><strong>{feature.name}:</strong> {feature.recommendation}</li>"
+                )
             html_content += "</ul>"
 
         recommendations_text.setHtml(html_content)

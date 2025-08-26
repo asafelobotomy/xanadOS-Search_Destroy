@@ -2,7 +2,7 @@
 
 import logging
 
-from PyQt6.QtCore import Qt, QThread, QTime, pyqtSignal
+from PyQt6.QtCore import Qt, QThread, QTime, QTimer, pyqtSignal
 from PyQt6.QtGui import QFont
 from PyQt6.QtWidgets import (
     QCheckBox,
@@ -22,6 +22,7 @@ from PyQt6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
+from app.gui.theme_manager import get_theme_manager
 
 try:
     from app.core.rkhunter_optimizer import (
@@ -49,6 +50,7 @@ logger = logging.getLogger(__name__)
 
 # Expect host MainWindow to provide helper widget classes:
 # NoWheelComboBox, NoWheelSpinBox, NoWheelTimeEdit
+from app.gui import APP_VERSION
 
 
 class RKHunterOptimizationWorker(QThread):
@@ -252,8 +254,6 @@ def build_scheduling_page(host):
     if not hasattr(host, "settings_custom_dir_widget"):
         host._build_custom_dir_widget()
     if not hasattr(host, "settings_next_scan_label"):
-        from PyQt6.QtWidgets import QLabel
-
         host.settings_next_scan_label = QLabel("None scheduled")
     form.addRow(host.settings_enable_scheduled_cb)
     form.addRow("Scan Frequency:", host.settings_scan_frequency_combo)
@@ -358,28 +358,20 @@ def build_firewall_page(host):
                 "nftables",
             ]
         )
-        host.settings_preferred_firewall_combo.setCurrentText(
-            "Auto-detect (Recommended)"
-        )
+        host.settings_preferred_firewall_combo.setCurrentText("Auto-detect (Recommended)")
         host.settings_preferred_firewall_combo.setToolTip(
             "Choose which firewall to prefer when multiple are available"
         )
-    behavior_layout.addRow(
-        "Preferred Firewall:", host.settings_preferred_firewall_combo
-    )
+    behavior_layout.addRow("Preferred Firewall:", host.settings_preferred_firewall_combo)
 
     # Confirmation dialogs
     if not hasattr(host, "settings_firewall_confirm_enable_cb"):
-        host.settings_firewall_confirm_enable_cb = QCheckBox(
-            "Confirm before enabling firewall"
-        )
+        host.settings_firewall_confirm_enable_cb = QCheckBox("Confirm before enabling firewall")
         host.settings_firewall_confirm_enable_cb.setChecked(True)
     behavior_layout.addRow(host.settings_firewall_confirm_enable_cb)
 
     if not hasattr(host, "settings_firewall_confirm_disable_cb"):
-        host.settings_firewall_confirm_disable_cb = QCheckBox(
-            "Confirm before disabling firewall"
-        )
+        host.settings_firewall_confirm_disable_cb = QCheckBox("Confirm before disabling firewall")
         host.settings_firewall_confirm_disable_cb.setChecked(True)
     behavior_layout.addRow(host.settings_firewall_confirm_disable_cb)
 
@@ -388,17 +380,13 @@ def build_firewall_page(host):
         host.settings_firewall_auth_timeout_spin = (
             host.NoWheelSpinBox() if hasattr(host, "NoWheelSpinBox") else QSpinBox()
         )
-        host.settings_firewall_auth_timeout_spin.setRange(
-            30, 600
-        )  # 30 seconds to 10 minutes
+        host.settings_firewall_auth_timeout_spin.setRange(30, 600)  # 30 seconds to 10 minutes
         host.settings_firewall_auth_timeout_spin.setValue(300)  # Default 5 minutes
         host.settings_firewall_auth_timeout_spin.setSuffix(" seconds")
         host.settings_firewall_auth_timeout_spin.setToolTip(
             "Timeout for authentication dialogs when controlling firewall"
         )
-    behavior_layout.addRow(
-        "Authentication Timeout:", host.settings_firewall_auth_timeout_spin
-    )
+    behavior_layout.addRow("Authentication Timeout:", host.settings_firewall_auth_timeout_spin)
 
     layout.addWidget(behavior_group)
 
@@ -409,9 +397,7 @@ def build_firewall_page(host):
 
     # Fallback methods
     if not hasattr(host, "settings_firewall_enable_fallbacks_cb"):
-        host.settings_firewall_enable_fallbacks_cb = QCheckBox(
-            "Enable fallback methods"
-        )
+        host.settings_firewall_enable_fallbacks_cb = QCheckBox("Enable fallback methods")
         host.settings_firewall_enable_fallbacks_cb.setChecked(True)
         host.settings_firewall_enable_fallbacks_cb.setToolTip(
             "Try alternative methods if primary firewall control fails"
@@ -434,17 +420,13 @@ def build_firewall_page(host):
         host.settings_firewall_check_interval_spin = (
             host.NoWheelSpinBox() if hasattr(host, "NoWheelSpinBox") else QSpinBox()
         )
-        host.settings_firewall_check_interval_spin.setRange(
-            5, 300
-        )  # 5 seconds to 5 minutes
+        host.settings_firewall_check_interval_spin.setRange(5, 300)  # 5 seconds to 5 minutes
         host.settings_firewall_check_interval_spin.setValue(30)  # Default 30 seconds
         host.settings_firewall_check_interval_spin.setSuffix(" seconds")
         host.settings_firewall_check_interval_spin.setToolTip(
             "How often to check firewall status for changes"
         )
-    advanced_layout.addRow(
-        "Status Check Interval:", host.settings_firewall_check_interval_spin
-    )
+    advanced_layout.addRow("Status Check Interval:", host.settings_firewall_check_interval_spin)
 
     # Debug logging
     if not hasattr(host, "settings_firewall_debug_logging_cb"):
@@ -466,9 +448,7 @@ def build_firewall_page(host):
     if not hasattr(host, "firewall_test_btn"):
         host.firewall_test_btn = QPushButton("Test Firewall Connection")
         host.firewall_test_btn.setMinimumHeight(35)
-        host.firewall_test_btn.setToolTip(
-            "Test if firewall can be controlled successfully"
-        )
+        host.firewall_test_btn.setToolTip("Test if firewall can be controlled successfully")
         host.firewall_test_btn.clicked.connect(host.test_firewall_connection)
     controls_layout.addWidget(host.firewall_test_btn)
 
@@ -476,9 +456,7 @@ def build_firewall_page(host):
     if not hasattr(host, "firewall_refresh_btn"):
         host.firewall_refresh_btn = QPushButton("Refresh Status")
         host.firewall_refresh_btn.setMinimumHeight(35)
-        host.firewall_refresh_btn.setToolTip(
-            "Manually refresh firewall status information"
-        )
+        host.firewall_refresh_btn.setToolTip("Manually refresh firewall status information")
         host.firewall_refresh_btn.clicked.connect(host.refresh_firewall_info)
     controls_layout.addWidget(host.firewall_refresh_btn)
 
@@ -486,9 +464,7 @@ def build_firewall_page(host):
     if not hasattr(host, "firewall_reset_defaults_btn"):
         host.firewall_reset_defaults_btn = QPushButton("Reset to Defaults")
         host.firewall_reset_defaults_btn.setMinimumHeight(35)
-        host.firewall_reset_defaults_btn.setToolTip(
-            "Reset all firewall settings to default values"
-        )
+        host.firewall_reset_defaults_btn.setToolTip("Reset all firewall settings to default values")
         host.firewall_reset_defaults_btn.clicked.connect(host.reset_firewall_settings)
     controls_layout.addWidget(host.firewall_reset_defaults_btn)
 
@@ -543,9 +519,7 @@ def build_rkhunter_page(host):
     if not hasattr(host, "settings_enable_rkhunter_cb"):
         host.settings_enable_rkhunter_cb = QCheckBox("Enable RKHunter Integration")
         host.settings_enable_rkhunter_cb.setChecked(False)
-        host.settings_enable_rkhunter_cb.setStyleSheet(
-            "font-weight: bold; font-size: 14px;"
-        )
+        host.settings_enable_rkhunter_cb.setStyleSheet("font-weight: bold; font-size: 14px;")
     basic_group_layout.addWidget(host.settings_enable_rkhunter_cb)
 
     # Auto-update setting
@@ -812,9 +786,7 @@ def build_rkhunter_page(host):
     if not hasattr(host, "rkhunter_results_text"):
         host.rkhunter_results_text = QTextEdit()
         host.rkhunter_results_text.setMaximumHeight(200)
-        host.rkhunter_results_text.setPlaceholderText(
-            "Optimization results will appear here..."
-        )
+        host.rkhunter_results_text.setPlaceholderText("Optimization results will appear here...")
 
     results_layout.addWidget(host.rkhunter_results_text)
     opt_layout.addWidget(results_group)
@@ -848,7 +820,6 @@ def build_rkhunter_page(host):
 def build_interface_page(host):
     page = QWidget()
     layout = QVBoxLayout(page)
-    from app.gui.theme_manager import get_theme_manager
 
     # Text Orientation Group
     orientation_group = QGroupBox("Text Orientation")
@@ -859,20 +830,12 @@ def build_interface_page(host):
         host.text_orientation_combo = (
             host.NoWheelComboBox() if hasattr(host, "NoWheelComboBox") else QComboBox()
         )
-        host.text_orientation_combo.addItems(
-            ["Left Aligned", "Centered", "Right Aligned"]
-        )
-        host.text_orientation_combo.setCurrentText(
-            "Centered"
-        )  # Default to current behavior
+        host.text_orientation_combo.addItems(["Left Aligned", "Centered", "Right Aligned"])
+        host.text_orientation_combo.setCurrentText("Centered")  # Default to current behavior
         # Connect to apply changes immediately (this also triggers auto-save)
-        host.text_orientation_combo.currentTextChanged.connect(
-            host.apply_text_orientation_setting
-        )
+        host.text_orientation_combo.currentTextChanged.connect(host.apply_text_orientation_setting)
 
-    orientation_layout.addRow(
-        "Scan Results Text Orientation:", host.text_orientation_combo
-    )
+    orientation_layout.addRow("Scan Results Text Orientation:", host.text_orientation_combo)
 
     # Font Size Group
     font_group = QGroupBox("Font Sizes")
@@ -888,9 +851,7 @@ def build_interface_page(host):
 
     for attr_name, label, element_type in font_elements:
         if not hasattr(host, attr_name):
-            spin = (
-                host.NoWheelSpinBox() if hasattr(host, "NoWheelSpinBox") else QSpinBox()
-            )
+            spin = host.NoWheelSpinBox() if hasattr(host, "NoWheelSpinBox") else QSpinBox()
             spin.setRange(8, 24)  # Reasonable font size range
             spin.setValue(get_theme_manager().get_font_size(element_type))
             spin.setSuffix(" px")
@@ -908,9 +869,7 @@ def build_interface_page(host):
                     host.save_config()
 
                     # Special handling for activity font size - refresh activity list styling
-                    if element_type == "activity" and hasattr(
-                        host, "setup_activity_list_styling"
-                    ):
+                    if element_type == "activity" and hasattr(host, "setup_activity_list_styling"):
                         host.setup_activity_list_styling()
 
                 return handle_change
@@ -934,10 +893,7 @@ def build_interface_page(host):
                     if elem_type == element_type and hasattr(host, attr_name):
                         getattr(host, attr_name).setValue(default_size)
             # Clear config
-            if (
-                "ui_settings" in host.config
-                and "font_sizes" in host.config["ui_settings"]
-            ):
+            if "ui_settings" in host.config and "font_sizes" in host.config["ui_settings"]:
                 del host.config["ui_settings"]["font_sizes"]
                 host.save_config()
 
@@ -963,9 +919,7 @@ def build_updates_page(host):
 
     # Auto-check setting
     if not hasattr(host, "settings_auto_check_updates_cb"):
-        host.settings_auto_check_updates_cb = QCheckBox(
-            "Automatically check for updates"
-        )
+        host.settings_auto_check_updates_cb = QCheckBox("Automatically check for updates")
         host.settings_auto_check_updates_cb.setChecked(True)
     form.addRow(host.settings_auto_check_updates_cb)
 
@@ -981,17 +935,13 @@ def build_updates_page(host):
 
     # Auto-download setting
     if not hasattr(host, "settings_auto_download_updates_cb"):
-        host.settings_auto_download_updates_cb = QCheckBox(
-            "Automatically download updates"
-        )
+        host.settings_auto_download_updates_cb = QCheckBox("Automatically download updates")
         host.settings_auto_download_updates_cb.setChecked(False)
     form.addRow(host.settings_auto_download_updates_cb)
 
     # Auto-install setting (with warning)
     if not hasattr(host, "settings_auto_install_updates_cb"):
-        host.settings_auto_install_updates_cb = QCheckBox(
-            "Automatically install updates"
-        )
+        host.settings_auto_install_updates_cb = QCheckBox("Automatically install updates")
         host.settings_auto_install_updates_cb.setChecked(False)
         host.settings_auto_install_updates_cb.setToolTip(
             "Not recommended for security applications - manual review is safer"
@@ -1006,8 +956,6 @@ def build_updates_page(host):
 
     # Current version display
     if not hasattr(host, "current_version_label"):
-        from gui import APP_VERSION
-
         host.current_version_label = QLabel(f"v{APP_VERSION}")
         host.current_version_label.setStyleSheet("font-weight: bold;")
     version_form.addRow("Current Version:", host.current_version_label)
@@ -1028,10 +976,8 @@ def build_updates_page(host):
             except Exception as e:
                 print(f"Warning: Could not load initial last check time: {e}")
 
-        # Delay loading to ensure auto_updater is initialized
-        from PyQt6.QtCore import QTimer
-
-        QTimer.singleShot(2000, load_initial_check_time)
+    # Delay loading to ensure auto_updater is initialized
+    QTimer.singleShot(2000, load_initial_check_time)
 
     version_form.addRow("Last Update Check:", host.last_update_check_label)
 

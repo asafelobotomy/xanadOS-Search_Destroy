@@ -1,0 +1,30 @@
+[MASTER]
+ignore=.git, node_modules, __pycache__, .venv, venv, env
+ignore-patterns=.*\.bak, .*\.backup, .*\.orig
+ignore-paths=
+    ^archive/,
+    ^\.python-backups/,
+    ^\.markdown-backups/
+
+[TYPECHECK]
+# PyQt6 is a C-extension package with dynamic attributes; let pylint know to avoid
+# false positives like E0611 (no-name-in-module) and E1101 (no-member).
+extension-pkg-allow-list=
+    PyQt6,
+    PyQt6.QtCore,
+    PyQt6.QtGui,
+    PyQt6.QtWidgets
+ignored-modules=
+    PyQt6,
+    PyQt6.QtCore,
+    PyQt6.QtGui,
+    PyQt6.QtWidgets
+# Common dynamically created members/signals in PyQt6
+generated-members=
+    pyqtSignal,
+    pyqtSlot
+
+[MESSAGES CONTROL]
+disable=
+    C0103,  # invalid-name
+    R0903   # too-few-public-methods

@@ -15,6 +15,9 @@ from dataclasses import asdict, dataclass
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any, Dict, Optional
+from app.utils.config import CACHE_DIR
+import tempfile
+import platform
 
 
 @dataclass
@@ -39,8 +42,6 @@ class PrivacyManager:
         """Get or create a consistent salt for hashing."""
         if self._salt is None:
             try:
-                from app.utils.config import CACHE_DIR
-
                 salt_file = Path(CACHE_DIR) / "telemetry_salt"
 
                 if salt_file.exists():
@@ -66,9 +67,7 @@ class PrivacyManager:
         p = Path(path)
 
         # Hash the directory structure but keep file extension
-        dir_hash = hashlib.sha256(
-            (str(p.parent) + self.get_salt()).encode()
-        ).hexdigest()[:8]
+        dir_hash = hashlib.sha256((str(p.parent) + self.get_salt()).encode()).hexdigest()[:8]
 
         extension = p.suffix.lower() if p.suffix else ""
 
@@ -119,13 +118,10 @@ class TelemetryCollector:
 
         # Storage path
         try:
-            from app.utils.config import CACHE_DIR
-
             self.storage_path = Path(CACHE_DIR) / "telemetry"
             self.storage_path.mkdir(exist_ok=True)
         except ImportError:
             # Use secure temp directory
-            import tempfile
 
             self.storage_path = Path(tempfile.gettempdir()) / "xanados_telemetry"
             self.storage_path.mkdir(exist_ok=True, mode=0o700)  # Secure permissions
@@ -140,9 +136,7 @@ class TelemetryCollector:
             "gui_interactions": 0,
         }
 
-        self.logger.info(
-            f"Telemetry initialized - enabled: {enabled}, privacy: {privacy_level}"
-        )
+        self.logger.info(f"Telemetry initialized - enabled: {enabled}, privacy: {privacy_level}")
 
     def record_event(
         self,
@@ -299,8 +293,6 @@ class TelemetryCollector:
         }
 
         try:
-            import platform
-
             info["platform"] = platform.system()
             info["python_version"] = platform.python_version()
 
@@ -331,9 +323,7 @@ class TelemetryManager:
 
         # Initialize telemetry based on configuration
         enabled = self.config.get("telemetry", {}).get("enabled", True)
-        privacy_level = self.config.get("telemetry", {}).get(
-            "privacy_level", "anonymous"
-        )
+        privacy_level = self.config.get("telemetry", {}).get("privacy_level", "anonymous")
 
         self.collector = TelemetryCollector(enabled, privacy_level)
         self.logger = logging.getLogger(__name__)
@@ -361,9 +351,7 @@ class TelemetryManager:
                 "duration_seconds": round(duration, 2),
                 "threats_found": threats_found,
                 "errors": errors,
-                "files_per_second": (
-                    round(file_count / duration, 2) if duration > 0 else 0
-                ),
+                "files_per_second": (round(file_count / duration, 2) if duration > 0 else 0),
             },
         )
 
@@ -376,9 +364,7 @@ class TelemetryManager:
 
     def record_gui_interaction(self, component: str, action: str):
         """Record a GUI interaction event."""
-        self.collector.record_event(
-            "gui_interaction", {"component": component, "action": action}
-        )
+        self.collector.record_event("gui_interaction", {"component": component, "action": action})
 
     def record_performance_metrics(self, metrics: Dict[str, Any]):
         """Record performance metrics."""
