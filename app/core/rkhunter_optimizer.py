@@ -27,7 +27,7 @@ from typing import Any, Dict, List, Optional, Tuple
 logger = logging.getLogger(__name__)
 
 try:
-    from contextlib import nullcontext
+    from contextlib import nullcontext as _nullcontext  # noqa: F401
 
     from .auth_session_manager import auth_manager, session_context
     from .elevated_runner import elevated_run
@@ -40,10 +40,10 @@ except ImportError:
     class MockAuthManager:
         def session_context(self, *args, **kwargs):
             try:
-                from contextlib import nullcontext as _nullcontext
-            except Exception:
+                _nullcontext  # type: ignore[name-defined]
+            except NameError:
 
-                class _nullcontext:
+                class _nullcontext:  # type: ignore[dead-code]
                     def __enter__(self):
                         return None
 

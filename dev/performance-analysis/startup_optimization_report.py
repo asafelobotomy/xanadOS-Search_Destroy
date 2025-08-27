@@ -8,10 +8,11 @@ Author: GitHub Copilot
 """
 import datetime
 
+
 def generate_optimization_report():
     """Generate a comprehensive optimization report."""
 
-    report = f"""
+    report = """
 # STARTUP PERFORMANCE OPTIMIZATION REPORT
 Generated: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
 
@@ -185,10 +186,12 @@ future performance improvements.
 """
     return report
 
+
 def main():
     """Generate and display the optimization report."""
     report = generate_optimization_report()
     print(report)
+
 
 if __name__ == "__main__":
     main()

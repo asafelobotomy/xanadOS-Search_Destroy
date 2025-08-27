@@ -7,7 +7,7 @@ Check all files for version consistency and provide a comprehensive summary.
 import os
 import re
 import sys
-from pathlib import Path
+
 
 def find_version_patterns():
     """Find all version patterns in the codebase."""
@@ -17,46 +17,58 @@ def find_version_patterns():
     patterns = [
         r'["\']?[Vv]ersion["\']?\s*[:=]?\s*["\']?([0-9]+\.[0-9]+\.[0-9]+)["\']?',
         r'["\']([0-9]+\.[0-9]+\.[0-9]+)["\']',
-        r'v([0-9]+\.[0-9]+\.[0-9]+)',
-        r'Version\s+([0-9]+\.[0-9]+\.[0-9]+)',
+        r"v([0-9]+\.[0-9]+\.[0-9]+)",
+        r"Version\s+([0-9]+\.[0-9]+\.[0-9]+)",
     ]
 
     # Directories to search
     search_dirs = [
-        'app/',
-        'packaging/',
-        'docs/',
-        'scripts/',
+        "app/",
+        "packaging/",
+        "docs/",
+        "scripts/",
     ]
 
     # Files to search in root
     root_files = [
-        'VERSION',
-        'CHANGELOG.md',
-        'README.md',
-        'package.json',
+        "VERSION",
+        "CHANGELOG.md",
+        "README.md",
+        "package.json",
     ]
 
     for directory in search_dirs:
         if os.path.exists(directory):
             for root, dirs, files in os.walk(directory):
                 for file in files:
-                    if file.endswith(('.py', '.md', '.json', '.xml', '.txt', '.yaml', '.yml')):
+                    if file.endswith(
+                        (".py", ".md", ".json", ".xml", ".txt", ".yaml", ".yml")
+                    ):
                         file_path = os.path.join(root, file)
                         try:
-                            with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
+                            with open(
+                                file_path, "r", encoding="utf-8", errors="ignore"
+                            ) as f:
                                 content = f.read()
-                                for i, line in enumerate(content.split('\n'), 1):
+                                for i, line in enumerate(content.split("\n"), 1):
                                     for pattern in patterns:
-                                        matches = re.finditer(pattern, line, re.IGNORECASE)
+                                        matches = re.finditer(
+                                            pattern, line, re.IGNORECASE
+                                        )
                                         for match in matches:
-                                            version_patterns.append({
-                                                'file': file_path,
-                                                'line': i,
-                                                'version': match.group(1) if match.groups() else match.group(0),
-                                                'context': line.strip(),
-                                                'pattern': pattern
-                                            })
+                                            version_patterns.append(
+                                                {
+                                                    "file": file_path,
+                                                    "line": i,
+                                                    "version": (
+                                                        match.group(1)
+                                                        if match.groups()
+                                                        else match.group(0)
+                                                    ),
+                                                    "context": line.strip(),
+                                                    "pattern": pattern,
+                                                }
+                                            )
                         except Exception as e:
                             print(f"Error reading {file_path}: {e}")
 
@@ -64,31 +76,39 @@ def find_version_patterns():
     for file in root_files:
         if os.path.exists(file):
             try:
-                with open(file, 'r', encoding='utf-8', errors='ignore') as f:
+                with open(file, "r", encoding="utf-8", errors="ignore") as f:
                     content = f.read()
-                    for i, line in enumerate(content.split('\n'), 1):
+                    for i, line in enumerate(content.split("\n"), 1):
                         for pattern in patterns:
                             matches = re.finditer(pattern, line, re.IGNORECASE)
                             for match in matches:
-                                version_patterns.append({
-                                    'file': file,
-                                    'line': i,
-                                    'version': match.group(1) if match.groups() else match.group(0),
-                                    'context': line.strip(),
-                                    'pattern': pattern
-                                })
+                                version_patterns.append(
+                                    {
+                                        "file": file,
+                                        "line": i,
+                                        "version": (
+                                            match.group(1)
+                                            if match.groups()
+                                            else match.group(0)
+                                        ),
+                                        "context": line.strip(),
+                                        "pattern": pattern,
+                                    }
+                                )
             except Exception as e:
                 print(f"Error reading {file}: {e}")
 
     return version_patterns
 
+
 def get_current_version():
     """Get the current version from VERSION file."""
     try:
-        with open('VERSION', 'r') as f:
+        with open("VERSION", "r") as f:
             return f.read().strip()
     except FileNotFoundError:
         return "Unknown"
+
 
 def main():
     """Main function to analyze version consistency."""
@@ -100,8 +120,9 @@ def main():
 
     # Test centralized version system
     try:
-        sys.path.insert(0, '.')
+        sys.path.insert(0, ".")
         from app import __version__
+
         print(f"📋 Centralized version system: {__version__}")
 
         if current_version == __version__:
@@ -117,12 +138,14 @@ def main():
     # Group by version
     version_groups = {}
     for pattern in patterns:
-        version = pattern['version']
+        version = pattern["version"]
         if version not in version_groups:
             version_groups[version] = []
         version_groups[version].append(pattern)
 
-    print(f"\n📊 Found {len(patterns)} version references in {len(version_groups)} different versions:")
+    print(
+        f"\n📊 Found {len(patterns)} version references in {len(version_groups)} different versions:"
+    )
 
     for version, occurrences in sorted(version_groups.items()):
         status = "✅" if version == current_version else "⚠️"
@@ -133,22 +156,25 @@ def main():
             print(f"       {occ['context'][:80]}...")
 
     # Summary
-    print(f"\n📋 Summary:")
+    print("\n📋 Summary:")
     print(f"   Current version: {current_version}")
     print(f"   Total version references: {len(patterns)}")
     print(f"   Different versions found: {len(version_groups)}")
 
-    outdated_count = sum(len(occs) for ver, occs in version_groups.items() if ver != current_version)
+    outdated_count = sum(
+        len(occs) for ver, occs in version_groups.items() if ver != current_version
+    )
     if outdated_count > 0:
         print(f"   ⚠️  Outdated references: {outdated_count}")
         print("\n🔧 Files that may need updating:")
         for version, occurrences in version_groups.items():
             if version != current_version:
-                files = set(occ['file'] for occ in occurrences)
+                files = set(occ["file"] for occ in occurrences)
                 for file in files:
                     print(f"      📄 {file} (contains version {version})")
     else:
         print("   ✅ All versions are up to date!")
+
 
 if __name__ == "__main__":
     main()

@@ -662,7 +662,7 @@ class FileScanner:
                         }
                         self.detailed_progress_callback(detail_info)
 
-            except Exception:
+            except Exception as e:
                 self.logger.error("Error during scan execution: %s", str(e))
                 self._scan_cancelled = True
             finally:
@@ -670,7 +670,7 @@ class FileScanner:
                 if "executor" in locals():
                     try:
                         executor.shutdown(wait=False)  # Don't wait for completion
-                    except Exception:
+                    except Exception as e:
                         self.logger.warning("Error shutting down executor: %s", str(e))
 
             # Check if scan was cancelled - return early without saving

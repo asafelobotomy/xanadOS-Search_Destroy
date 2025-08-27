@@ -319,6 +319,9 @@ def cleanup_auth_session() -> None:
     Clean up authentication session using GUI authentication manager.
     """
     try:
+        # Lazy import to avoid circular imports
+        from .gui_auth_manager import get_gui_auth_manager  # type: ignore
+
         manager = get_gui_auth_manager()
         manager.cleanup_session()
         logger.info("GUI authentication session cleaned up")
@@ -336,6 +339,9 @@ def validate_auth_session() -> bool:
         True if authentication works, False otherwise
     """
     try:
+        # Lazy import to avoid circular imports
+        from .gui_auth_manager import get_gui_auth_manager  # type: ignore
+
         manager = get_gui_auth_manager()
         session_info = manager.get_session_info()
         if session_info["active"]:

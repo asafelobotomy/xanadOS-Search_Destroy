@@ -7,6 +7,7 @@ This script demonstrates the enhanced security hardening capabilities
 with comprehensive safety validation and user guidance.
 """
 
+
 def demonstrate_enhanced_features():
     """Demonstrate all enhanced security hardening features"""
 
@@ -155,6 +156,7 @@ def demonstrate_enhanced_features():
     print("with complete safety guarantees for production environments.")
     print()
 
+
 def show_example_workflow():
     """Show an example workflow of the enhanced hardening system"""
 
@@ -186,6 +188,7 @@ def show_example_workflow():
     print("   • Clear error reporting and rollback guidance")
     print()
 
+
 if __name__ == "__main__":
     demonstrate_enhanced_features()
     print()
@@ -193,4 +196,6 @@ if __name__ == "__main__":
     print()
     print("🎯 The enhanced security hardening system is ready for production use!")
     print("   All safety requirements have been implemented and validated.")
-    print("   Users can confidently apply security recommendations with full protection.")
+    print(
+        "   Users can confidently apply security recommendations with full protection."
+    )

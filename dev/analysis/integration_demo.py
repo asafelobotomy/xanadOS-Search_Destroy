@@ -15,6 +15,7 @@ import time
 # Add project root to path
 sys.path.append(str(Path(__file__).parent))
 
+
 async def integration_demo():
     """Demonstrate unified components working together"""
     print("🚀 xanadOS Search & Destroy - Unified Components Integration Demo")
@@ -38,7 +39,9 @@ async def integration_demo():
             print("  ⚠️  Unified Security Engine not available")
 
         if UNIFIED_PERFORMANCE_AVAILABLE:
-            from app.core.unified_performance_optimizer import UnifiedPerformanceOptimizer
+            from app.core.unified_performance_optimizer import (
+                UnifiedPerformanceOptimizer,
+            )
 
             print("  ✅ Unified Performance Optimizer loaded")
         else:
@@ -55,7 +58,9 @@ async def integration_demo():
     print("\n🔧 Setting up test environment...")
     test_dir = Path(tempfile.mkdtemp(prefix="xanados_integration_"))
     test_file = test_dir / "integration_test.txt"
-    test_file.write_text("Integration test file for xanadOS Search & Destroy validation.")
+    test_file.write_text(
+        "Integration test file for xanadOS Search & Destroy validation."
+    )
     print(f"  ✅ Test environment created: {test_dir}")
 
     # Initialize components
@@ -152,19 +157,19 @@ async def integration_demo():
 
     # Performance metrics summary
     if active_components > 0:
-        print(f"\n⚡ Performance Summary:")
-        print(f"  Initialization Time: < 1s")
+        print("\n⚡ Performance Summary:")
+        print("  Initialization Time: < 1s")
         print(f"  Coordination Time: {coordination_time:.3f}s")
-        print(f"  Memory Usage: Optimized")
-        print(f"  Component Integration: Successful")
+        print("  Memory Usage: Optimized")
+        print("  Component Integration: Successful")
 
     # Cleanup
-    print(f"\n🧹 Cleaning up...")
+    print("\n🧹 Cleaning up...")
     try:
         import shutil
 
         shutil.rmtree(test_dir)
-        print(f"  ✅ Test environment cleaned up")
+        print("  ✅ Test environment cleaned up")
     except Exception as e:
         print(f"  ⚠️  Cleanup warning: {e}")
 
@@ -175,7 +180,8 @@ async def integration_demo():
     print("=" * 70)
     print(
         f"Success Rate: {
-            success_rate:.1f}% ({active_components}/{total_components} components active)")
+            success_rate:.1f}% ({active_components}/{total_components} components active)"
+    )
 
     if success_rate >= 75:
         print("✅ Integration demo SUCCESSFUL - Unified components working correctly!")
@@ -184,10 +190,12 @@ async def integration_demo():
         print("⚠️  Integration demo PARTIAL - Some components need attention")
         return False
 
+
 async def main():
     """Main entry point"""
     success = await integration_demo()
     return 0 if success else 1
+
 
 if __name__ == "__main__":
     exit_code = asyncio.run(main())

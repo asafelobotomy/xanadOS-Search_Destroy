@@ -10,12 +10,19 @@ import sys
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "app"))
 
+
 def main():
     print("=== COMPREHENSIVE FIREWALL DEBUG ===\n")
 
     # 1. Environment check
     print("1. ENVIRONMENT VARIABLES:")
-    env_vars = ["DISPLAY", "XAUTHORITY", "XDG_SESSION_TYPE", "XDG_RUNTIME_DIR", "WAYLAND_DISPLAY"]
+    env_vars = [
+        "DISPLAY",
+        "XAUTHORITY",
+        "XDG_SESSION_TYPE",
+        "XDG_RUNTIME_DIR",
+        "WAYLAND_DISPLAY",
+    ]
     for var in env_vars:
         value = os.environ.get(var, "Not set")
         print(f"   {var}: {value}")
@@ -53,7 +60,7 @@ def main():
 
         # Attempt toggle
         result = toggle_firewall(not is_active)
-        print(f"   Toggle result:")
+        print("   Toggle result:")
         for key, value in result.items():
             print(f"     {key}: {value}")
 
@@ -72,6 +79,7 @@ def main():
             print(f"   {key}: {value}")
     except Exception as e:
         print(f"   ❌ Error getting final status: {e}")
+
 
 if __name__ == "__main__":
     main()

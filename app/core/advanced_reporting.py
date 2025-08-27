@@ -16,12 +16,72 @@ from enum import Enum
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
-import matplotlib.dates as mdates
-import matplotlib.pyplot as plt
-import numpy as np
-import pandas as pd
-from jinja2 import Template
-from matplotlib.backends.backend_pdf import PdfPages
+# Optional heavy dependencies with graceful fallbacks
+try:  # numpy for numeric operations
+    import numpy as np  # type: ignore
+except Exception:  # pragma: no cover - minimal fallback
+    class _NPDummy:
+        @staticmethod
+        def zeros(n):
+            return [0] * n
+
+        @staticmethod
+        def array(v):
+            return v
+
+        @staticmethod
+        def mean(seq):
+            try:
+                return sum(seq) / len(seq) if seq else 0.0
+            except Exception:
+                return 0.0
+
+    np = _NPDummy()  # type: ignore
+
+try:  # pandas for tabular outputs (Excel/CSV helpers)
+    import pandas as pd  # type: ignore
+except Exception:  # pragma: no cover - allow running without pandas
+    pd = None  # type: ignore
+
+try:  # templating engine for HTML reports
+    from jinja2 import Template  # type: ignore
+except Exception:  # pragma: no cover - naive fallback
+    class Template:  # type: ignore
+        def __init__(self, text: str):
+            self._text = text
+
+        def render(self, **_kwargs) -> str:
+            return self._text
+
+# Third-party imports with graceful fallbacks (keep imports at top for flake8 E402 compliance)
+try:
+    import matplotlib.dates as mdates
+    import matplotlib.pyplot as plt
+    from matplotlib.backends.backend_pdf import PdfPages
+except ImportError:  # pragma: no cover - fallback for minimal environments
+    # Provide lightweight dummies so module import succeeds without matplotlib
+    class _Dummy:
+        def __getattr__(self, _name):
+            return self
+
+        def __call__(self, *args, **kwargs):
+            return self
+
+    mdates = _Dummy()
+    plt = _Dummy()
+
+    class PdfPages:  # type: ignore[override]
+        def __init__(self, *args, **kwargs):
+            pass
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, exc_type, exc, tb):
+            return False
+
+        def savefig(self, *args, **kwargs):
+            pass
 
 
 class ReportType(Enum):
@@ -1657,88 +1717,4 @@ class AdvancedReportingSystem:
         self, start_date: datetime, end_date: datetime
     ) -> Dict[str, Any]:
         return {}
-
-
-# Add missing imports with fallbacks
-try:
-    import matplotlib.dates as mdates
-    import matplotlib.pyplot as plt
-    from matplotlib.backends.backend_pdf import PdfPages
-except ImportError:
-    # Mock matplotlib if not available
-    class MockMatplotlib:
-        def style(self):
-            return type("", (), {"use": lambda x: None})()
-
-        def subplots(self, **kwargs):
-            return None, None
-
-        def close(self, fig):
-            pass
-
-        def tight_layout(self):
-            pass
-
-        def xticks(self, **kwargs):
-            pass
-
-        def imread(self, *args):
-            return None
-
-        def savefig(self, *args, **kwargs):
-            pass
-
-    plt = MockMatplotlib()
-    mdates = type(
-        "", (), {"DateFormatter": lambda x: None, "DayLocator": lambda **x: None}
-    )()
-
-    def PdfPages(x):
-        return type(
-            "",
-            (),
-            {
-                "__enter__": lambda self: self,
-                "__exit__": lambda *args: None,
-                "savefig": lambda *args, **kwargs: None,
-            },
-        )()
-
-
-try:
-    import numpy as np
-    import pandas as pd
-except ImportError:
-    # Mock pandas and numpy
-    pd = type(
-        "pd",
-        (),
-        {
-            "DataFrame": lambda *args, **kwargs: type(
-                "", (), {"to_excel": lambda *args, **kwargs: None}
-            )(),
-            "ExcelWriter": lambda *args, **kwargs: type(
-                "", (), {"__enter__": lambda self: self, "__exit__": lambda *args: None}
-            )(),
-        },
-    )()
-    np = type(
-        "np",
-        (),
-        {
-            "mean": lambda x: sum(x) / len(x) if x else 0,
-            "array": lambda x: x,
-            "zeros": lambda x: [0] * x,
-        },
-    )()
-
-try:
-    from jinja2 import Template
-except ImportError:
-    # Mock Jinja2 Template
-    class Template:
-        def __init__(self, template_string):
-            self.template = template_string
-
-        def render(self, **kwargs):
-            return self.template
+# End of advanced_reporting module

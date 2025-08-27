@@ -4,6 +4,7 @@ Script to fix relative imports in FileScanner to handle different module loading
 """
 import re
 
+
 def fix_file_scanner_imports():
     """Fix relative imports in file_scanner.py"""
     file_path = "app/core/file_scanner.py"
@@ -19,7 +20,7 @@ def fix_file_scanner_imports():
         module = match.group(2)
         imports = match.group(3)
 
-        return f"""{indent}try:
+        return """{indent}try:
 {indent}    from ..utils.{module} import {imports}
 {indent}except ImportError:
 {indent}    try:
@@ -35,6 +36,7 @@ def fix_file_scanner_imports():
         f.write(new_content)
 
     print("✅ Fixed FileScanner imports")
+
 
 if __name__ == "__main__":
     fix_file_scanner_imports()

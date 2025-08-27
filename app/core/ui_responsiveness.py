@@ -123,10 +123,8 @@ class ResponsiveUI(QObject):
             result = task.callback(*task.args, **task.kwargs)
             execution_time = time.time() - start_time
 
-            self.logdebug(
-                "Completed task '%s' in %.3fs".replace(
-                    "%s", "{task.task_id, execution_time}"
-                ).replace("%d", "{task.task_id, execution_time}")
+            self.logger.debug(
+                "Completed task '%s' in %.3fs", task.task_id, execution_time
             )
 
             # Emit completion signal

@@ -30,30 +30,17 @@ import numpy as np
 import psutil
 
 # Security Research Integration (2025)
-try:
-    import bpftool  # eBPF monitoring
+from importlib.util import find_spec as _find_spec
 
-    EBPF_AVAILABLE = True
-except ImportError:
-    EBPF_AVAILABLE = False
+EBPF_AVAILABLE = _find_spec("bpftool") is not None
+INOTIFY_AVAILABLE = _find_spec("inotify.adapters") is not None
 
-try:
-    import inotify.adapters
-    import inotify.constants
-
-    INOTIFY_AVAILABLE = True
-except ImportError:
-    INOTIFY_AVAILABLE = False
-
-try:
-    # fanotify constants for advanced monitoring
-    FAN_ACCESS = 0x00000001
-    FAN_MODIFY = 0x00000002
-    FAN_CLOSE_WRITE = 0x00000008
-    FAN_CREATE = 0x00000100
-    FANOTIFY_AVAILABLE = True
-except BaseException:
-    FANOTIFY_AVAILABLE = False
+# fanotify constants for advanced monitoring (statically defined for internal use)
+FAN_ACCESS = 0x00000001
+FAN_MODIFY = 0x00000002
+FAN_CLOSE_WRITE = 0x00000008
+FAN_CREATE = 0x00000100
+FANOTIFY_AVAILABLE = True
 
 
 class ThreatLevel(Enum):

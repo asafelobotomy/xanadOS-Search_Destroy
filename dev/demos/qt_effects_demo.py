@@ -27,6 +27,7 @@ import sys
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
+
 class EffectsDemo(QMainWindow):
     """Demonstration of Qt-native effects that replace CSS effects."""
 
@@ -99,7 +100,9 @@ class EffectsDemo(QMainWindow):
 
         layout = QVBoxLayout(dialog)
 
-        label = QLabel("This dialog uses Qt's QGraphicsDropShadowEffect\ninstead of CSS box-shadow")
+        label = QLabel(
+            "This dialog uses Qt's QGraphicsDropShadowEffect\ninstead of CSS box-shadow"
+        )
         label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(label)
 
@@ -113,6 +116,7 @@ class EffectsDemo(QMainWindow):
 
         dialog.exec()
 
+
 def main():
     """Run the effects demo."""
     app = QApplication(sys.argv)
@@ -124,6 +128,7 @@ def main():
     demo.show()
 
     sys.exit(app.exec())
+
 
 if __name__ == "__main__":
     main()

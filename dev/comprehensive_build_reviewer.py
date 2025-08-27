@@ -22,6 +22,7 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+
 class BuildReviewResult:
     """Results of the comprehensive build review."""
 
@@ -35,7 +36,9 @@ class BuildReviewResult:
         self.archive_candidates: List[str] = []
         self.performance_improvements: List[Dict[str, Any]] = []
 
-    def add_conflict(self, component1: str, component2: str, issue: str, severity: str = "medium"):
+    def add_conflict(
+        self, component1: str, component2: str, issue: str, severity: str = "medium"
+    ):
         self.conflicts.append(
             {
                 "components": [component1, component2],
@@ -45,7 +48,9 @@ class BuildReviewResult:
             }
         )
 
-    def add_optimization(self, component: str, improvement: str, impact: str = "medium"):
+    def add_optimization(
+        self, component: str, improvement: str, impact: str = "medium"
+    ):
         self.optimizations.append(
             {
                 "component": component,
@@ -64,6 +69,7 @@ class BuildReviewResult:
                 "timestamp": datetime.now().isoformat(),
             }
         )
+
 
 class ComprehensiveBuildReviewer:
     """Comprehensive build reviewer implementing 2025 best practices."""
@@ -155,7 +161,10 @@ class ComprehensiveBuildReviewer:
                 "secondary": "auto_updater.py",
             },
             {
-                "components": ["real_time_protection.py", "enhanced_real_time_protection.py"],
+                "components": [
+                    "real_time_protection.py",
+                    "enhanced_real_time_protection.py",
+                ],
                 "reason": "Enhanced version supersedes original",
                 "recommendation": "Archive original, use enhanced version",
                 "primary": "enhanced_real_time_protection.py",
@@ -178,7 +187,11 @@ class ComprehensiveBuildReviewer:
                 ],
                 "target": "unified_security_engine.py",
                 "reason": "Related security components working together",
-                "benefits": ["Reduced imports", "Better performance", "Easier maintenance"],
+                "benefits": [
+                    "Reduced imports",
+                    "Better performance",
+                    "Easier maintenance",
+                ],
             },
             {
                 "components": ["memory_optimizer.py", "database_optimizer.py"],
@@ -231,7 +244,9 @@ class ComprehensiveBuildReviewer:
         )
 
         self.result.add_security_issue(
-            "real_time_protection", "Add Falco/Tracee integration for container security", "medium"
+            "real_time_protection",
+            "Add Falco/Tracee integration for container security",
+            "medium",
         )
 
     def _check_dependency_vulnerabilities(self):
@@ -240,7 +255,9 @@ class ComprehensiveBuildReviewer:
 
         # This would integrate with safety/bandit in a real implementation
         self.result.add_security_issue(
-            "dependencies", "Run 'safety check' and 'bandit' for vulnerability scanning", "medium"
+            "dependencies",
+            "Run 'safety check' and 'bandit' for vulnerability scanning",
+            "medium",
         )
 
     def _analyze_performance_bottlenecks(self):
@@ -275,11 +292,15 @@ class ComprehensiveBuildReviewer:
         self.logger.info("🔍 Checking memory optimization opportunities...")
 
         self.result.add_optimization(
-            "all_components", "Implement context managers for resource cleanup", "medium"
+            "all_components",
+            "Implement context managers for resource cleanup",
+            "medium",
         )
 
         self.result.add_optimization(
-            "database_optimizer.py", "Use connection pooling and prepared statements", "high"
+            "database_optimizer.py",
+            "Use connection pooling and prepared statements",
+            "high",
         )
 
     def _analyze_threading_efficiency(self):
@@ -319,9 +340,15 @@ class ComprehensiveBuildReviewer:
         plan.append("")
         plan.append(f"- **Conflicts Found**: {len(self.result.conflicts)}")
         plan.append(f"- **Security Issues**: {len(self.result.security_issues)}")
-        plan.append(f"- **Performance Improvements**: {len(self.result.performance_improvements)}")
-        plan.append(f"- **Components to Archive**: {len(self.result.archive_candidates)}")
-        plan.append(f"- **Merge Opportunities**: {len(self.result.merge_opportunities)}")
+        plan.append(
+            f"- **Performance Improvements**: {len(self.result.performance_improvements)}"
+        )
+        plan.append(
+            f"- **Components to Archive**: {len(self.result.archive_candidates)}"
+        )
+        plan.append(
+            f"- **Merge Opportunities**: {len(self.result.merge_opportunities)}"
+        )
         plan.append("")
 
         # High Priority Actions
@@ -343,7 +370,9 @@ class ComprehensiveBuildReviewer:
             plan.append("### Security Issues")
             for issue in self.result.security_issues:
                 if issue["severity"] == "high":
-                    plan.append(f"- **{issue['severity'].upper()}**: {issue['component']}")
+                    plan.append(
+                        f"- **{issue['severity'].upper()}**: {issue['component']}"
+                    )
                     plan.append(f"  - Issue: {issue['issue']}")
                     plan.append("")
 
@@ -450,6 +479,7 @@ class ComprehensiveBuildReviewer:
 
         self.logger.info(f"✅ Optimization plan exported to: {output_file}")
 
+
 async def main():
     """Main execution function."""
     print("🔍 xanadOS Search & Destroy - Comprehensive Build Review")
@@ -475,8 +505,9 @@ async def main():
     print(f"   Components to Archive: {len(result.archive_candidates)}")
     print(f"   Merge Opportunities: {len(result.merge_opportunities)}")
 
-    print(f"\n📄 Detailed plan exported to:")
+    print("\n📄 Detailed plan exported to:")
     print(f"   {output_path}")
+
 
 if __name__ == "__main__":
     asyncio.run(main())

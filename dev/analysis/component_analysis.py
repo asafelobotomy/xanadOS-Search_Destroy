@@ -20,6 +20,7 @@ from dataclasses import dataclass
 
 import ast
 
+
 @dataclass
 class ImportInfo:
     """Information about an import statement"""
@@ -30,6 +31,7 @@ class ImportInfo:
     line_number: int = 0
     is_relative: bool = False
 
+
 @dataclass
 class ComponentIssue:
     """Represents a component linkage issue"""
@@ -39,6 +41,7 @@ class ComponentIssue:
     description: str
     line_number: int = 0
     suggested_fix: str = ""
+
 
 class ComponentAnalyzer:
     """Analyzes component references and linkages across the application"""
@@ -203,14 +206,17 @@ class ComponentAnalyzer:
             if component_name not in self.core_components:
                 # Check if it's in archived components
                 archived_dir = self.project_root / "archive" / "deprecated-components"
-                if archived_dir.exists() and (archived_dir / f"{component_name}.py").exists():
+                if (
+                    archived_dir.exists()
+                    and (archived_dir / f"{component_name}.py").exists()
+                ):
                     self.issues.append(
                         ComponentIssue(
                             file_path=str(file_path),
                             issue_type="ARCHIVED_COMPONENT",
                             description=f"Importing archived component: {component_name}",
                             line_number=imp.line_number,
-                            suggested_fix=f"Replace with updated component or remove import",
+                            suggested_fix="Replace with updated component or remove import",
                         )
                     )
                 else:
@@ -295,10 +301,13 @@ class ComponentAnalyzer:
         if "unified_security_engine" in self.unified_components:
             # Check if properly imported in __init__.py
             init_file = self.core_dir / "__init__.py"
-            imports = self.imports_by_file.get(str(init_file.relative_to(self.project_root)), [])
+            imports = self.imports_by_file.get(
+                str(init_file.relative_to(self.project_root)), []
+            )
 
             found_unified_security = any(
-                "unified_security_engine" in imp.module or "UnifiedSecurityEngine" in imp.names
+                "unified_security_engine" in imp.module
+                or "UnifiedSecurityEngine" in imp.names
                 for imp in imports
             )
 
@@ -316,7 +325,9 @@ class ComponentAnalyzer:
         """Check GUI component references to core"""
         main_window = self.gui_dir / "main_window.py"
         if main_window.exists():
-            imports = self.imports_by_file.get(str(main_window.relative_to(self.project_root)), [])
+            imports = self.imports_by_file.get(
+                str(main_window.relative_to(self.project_root)), []
+            )
 
             # Check for proper core imports
             has_file_scanner = any("FileScanner" in imp.names for imp in imports)
@@ -378,19 +389,19 @@ class ComponentAnalyzer:
         print("COMPONENT REFERENCE & LINKAGE ANALYSIS REPORT")
         print("=" * 80)
 
-        print(f"\n📊 COMPONENT INVENTORY:")
+        print("\n📊 COMPONENT INVENTORY:")
         print(f"   Core Components: {len(analysis_result['core_components'])}")
         print(f"   GUI Components: {len(analysis_result['gui_components'])}")
         print(f"   Unified Components: {len(analysis_result['unified_components'])}")
 
-        print(f"\n🔍 ANALYSIS RESULTS:")
+        print("\n🔍 ANALYSIS RESULTS:")
         print(f"   Total Issues Found: {analysis_result['total_issues']}")
 
         if analysis_result["total_issues"] == 0:
             print("   ✅ No component reference or linkage issues found!")
             return
 
-        print(f"\n📋 ISSUES BY TYPE:")
+        print("\n📋 ISSUES BY TYPE:")
         for issue_type, issues in analysis_result["issues_by_type"].items():
             print(f"   {issue_type}: {len(issues)} issues")
             for issue in issues[:3]:  # Show first 3 of each type
@@ -398,7 +409,7 @@ class ComponentAnalyzer:
             if len(issues) > 3:
                 print(f"     ... and {len(issues) - 3} more")
 
-        print(f"\n🔧 SUGGESTED FIXES:")
+        print("\n🔧 SUGGESTED FIXES:")
         fix_count = 0
         for file_path, fixes in analysis_result["fixes"].items():
             print(f"   📁 {Path(file_path).name}:")
@@ -411,7 +422,7 @@ class ComponentAnalyzer:
         if fix_count == 0:
             print("   ℹ️  No automated fixes available")
 
-        print(f"\n🎯 RECOMMENDATIONS:")
+        print("\n🎯 RECOMMENDATIONS:")
         if "DEPRECATED_IMPORT" in analysis_result["issues_by_type"]:
             print("   1. Update deprecated component imports to use unified systems")
         if "MISSING_COMPONENT" in analysis_result["issues_by_type"]:
@@ -419,9 +430,12 @@ class ComponentAnalyzer:
         if "IMPORT_PATTERN" in analysis_result["issues_by_type"]:
             print("   3. Standardize import patterns across the application")
         if "ARCHIVED_COMPONENT" in analysis_result["issues_by_type"]:
-            print("   4. Replace archived component references with current alternatives")
+            print(
+                "   4. Replace archived component references with current alternatives"
+            )
 
         print("=" * 80)
+
 
 def main():
     """Main analysis entry point"""
@@ -436,6 +450,7 @@ def main():
 
     # Return exit code based on issues found
     return 0 if analysis_result["total_issues"] == 0 else 1
+
 
 if __name__ == "__main__":
     exit_code = main()

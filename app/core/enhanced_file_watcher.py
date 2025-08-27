@@ -52,13 +52,12 @@ try:
 except ImportError:
     FANOTIFY_AVAILABLE = False
 
-# Fallback to inotify
+# Fallback to inotify (detect availability without importing unused symbols)
 try:
-    import inotify.adapters
-    import inotify.constants
+    import importlib.util as _importlib_util  # local alias to avoid global namespace clutter
 
-    INOTIFY_AVAILABLE = True
-except ImportError:
+    INOTIFY_AVAILABLE = _importlib_util.find_spec("inotify.adapters") is not None
+except Exception:
     INOTIFY_AVAILABLE = False
 
 

@@ -12,8 +12,11 @@
   "lint": "npx markdownlint -c .markdownlint.json **/*.md --ignore node_modules --ignore .markdown-backups --ignore archive",
   "lint:fix": "npx markdownlint -c .markdownlint.json **/*.md --ignore node_modules --ignore .markdown-backups --ignore archive --fix",
   "spell:check": "npx cspell --config cspell.json \"**/*.md\" --no-progress --ignore-path .cspellignore",
-    "spell:check:main": "npx cspell --config cspell.json \"README.md\" \"CONTRIBUTING.md\" \"CHANGELOG.md\"",
+  "spell:check:main": "npx cspell --no-cache --config ./cspell.json README.md CONTRIBUTING.md CHANGELOG.md",
     "quick:validate": "npm run lint && npm run spell:check:main && npm run validate",
+  "validate:python": "bash scripts/tools/quality/check-python.sh",
+  "validate:python:strict": "bash scripts/tools/quality/check-python.sh --strict",
+  "quick:validate:all": "npm run quick:validate && npm run validate:python",
     "playground:test": "node examples/awesome-playground/test/greet.test.js",
     "mcp:triage": "node examples/mcp/github-issues-triage/run.js",
     "mcp:test": "node examples/mcp/github-issues-triage/test/triage.test.js"

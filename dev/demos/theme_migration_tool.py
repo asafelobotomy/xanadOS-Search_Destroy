@@ -11,6 +11,7 @@ import re
 
 import shutil
 
+
 def backup_original_theme_manager():
     """Backup the original theme manager before migration."""
     original = Path("app/gui/theme_manager.py")
@@ -20,7 +21,8 @@ def backup_original_theme_manager():
         shutil.copy2(original, backup)
         print(f"✅ Backed up original theme manager to {backup}")
     else:
-        print(f"⚠️ Backup already exists or original not found")
+        print("⚠️ Backup already exists or original not found")
+
 
 def update_main_window_imports():
     """Update main window to use optimized theme manager."""
@@ -42,7 +44,9 @@ def update_main_window_imports():
 
     # Remove redundant theme color method (now handled by optimized manager)
     theme_color_method = re.search(
-        r"def get_theme_color\(self.*?\n(?:.*?\n)*?.*?(?=\n    def|\nclass|\Z)", content, re.DOTALL
+        r"def get_theme_color\(self.*?\n(?:.*?\n)*?.*?(?=\n    def|\nclass|\Z)",
+        content,
+        re.DOTALL,
     )
     if theme_color_method:
         content = content.replace(theme_color_method.group(0), "")
@@ -52,6 +56,7 @@ def update_main_window_imports():
         f.write(content)
 
     print("✅ Updated main window imports and calls")
+
 
 def remove_redundant_theme_applications():
     """Remove redundant setStyleSheet calls that are now handled globally."""
@@ -98,6 +103,7 @@ def remove_redundant_theme_applications():
             with open(path, "w") as f:
                 f.write(content)
             print(f"✅ Cleaned up redundant theme code in {path.name}")
+
 
 def create_performance_comparison_script():
     """Create a script to compare theme performance."""
@@ -177,6 +183,7 @@ if __name__ == "__main__":
         f.write(script_content)
 
     print(f"✅ Created performance test script: {script_path}")
+
 
 def create_migration_summary():
     """Create a summary of the migration changes."""
@@ -267,6 +274,7 @@ All existing functionality is preserved with significant performance improvement
 
     print(f"✅ Created migration summary: {summary_path}")
 
+
 def main():
     """Run the complete theme performance migration."""
     print("🚀 Starting Theme Performance Migration...")
@@ -302,6 +310,7 @@ def main():
         return False
 
     return True
+
 
 if __name__ == "__main__":
     main()

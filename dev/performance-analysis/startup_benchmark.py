@@ -15,6 +15,7 @@ import time
 
 import signal
 
+
 def measure_startup_time(runs=3):
     """Measure average startup time over multiple runs."""
     print("🔬 STARTUP PERFORMANCE BENCHMARK")
@@ -76,7 +77,7 @@ def measure_startup_time(runs=3):
         min_time = min(times)
         max_time = max(times)
 
-        print(f"\n📈 RESULTS:")
+        print("\n📈 RESULTS:")
         print(f"   Average: {avg_time:.2f}s")
         print(f"   Best:    {min_time:.2f}s")
         print(f"   Worst:   {max_time:.2f}s")
@@ -86,6 +87,7 @@ def measure_startup_time(runs=3):
     else:
         print("\n❌ No successful startup measurements")
         return None
+
 
 def analyze_optimizations():
     """Analyze the optimizations implemented."""
@@ -125,6 +127,7 @@ def analyze_optimizations():
         print(f"   Impact: {opt['impact']}")
         print(f"   Status: {opt['status']}")
 
+
 def main():
     """Run the startup benchmark."""
     # Change to project directory
@@ -145,16 +148,17 @@ def main():
         estimated_before = avg_time + 0.47  # Add back the estimated optimized time
         improvement = ((estimated_before - avg_time) / estimated_before) * 100
 
-        print(f"\n💡 PERFORMANCE IMPROVEMENT ESTIMATE:")
+        print("\n💡 PERFORMANCE IMPROVEMENT ESTIMATE:")
         print(f"   Before optimizations: ~{estimated_before:.2f}s")
         print(f"   After optimizations:  ~{avg_time:.2f}s")
         print(f"   Improvement: {improvement:.1f}% faster")
 
-        print(f"\n🎯 KEY BENEFITS:")
-        print(f"   • Immediate UI responsiveness")
-        print(f"   • Background loading of reports")
-        print(f"   • Lazy initialization of heavy components")
-        print(f"   • Progressive enhancement of UI effects")
+        print("\n🎯 KEY BENEFITS:")
+        print("   • Immediate UI responsiveness")
+        print("   • Background loading of reports")
+        print("   • Lazy initialization of heavy components")
+        print("   • Progressive enhancement of UI effects")
+
 
 if __name__ == "__main__":
     main()

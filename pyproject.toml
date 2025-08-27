@@ -274,3 +274,33 @@ exclude_lines = [
     "class .*\\bProtocol\\):",
     "@(abc\\.)?abstractmethod",
 ]
+
+[tool.flake8]
+# Align flake8 with Black and repository standards
+max-line-length = 88
+extend-ignore = [
+    "E203",  # Whitespace before ':' (conflicts with Black)
+    "E266",  # Too many leading '#' for block comment
+    "E501",  # Line too long (handled by Black)
+    "W503",  # Line break before binary operator (Black's style)
+]
+exclude = [
+    ".git",
+    ".tox",
+    ".venv",
+    ".mypy_cache",
+    "build",
+    "dist",
+    "node_modules",
+    "archive",
+    "logs",
+    "packaging/icons",
+    "dev/node",
+]
+per-file-ignores = [
+    "__init__.py:F401,E402",
+    "tests/**/*:F401,F841,E402",
+    "dev/**/*:F401,F841,E402",
+    "app/main.py:E402",
+    "tests/test_implementation.py:E402",
+]

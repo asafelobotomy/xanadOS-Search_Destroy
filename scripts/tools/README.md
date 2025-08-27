@@ -1,11 +1,13 @@
 # GitHub Copilot Agent Toolshed
 
-_A comprehensive collection of ready-to-use scripts for GitHub Copilot agents_
+Comprehensive, ready-to-use scripts for GitHub Copilot agents.
 
 ## 🛠️ Overview
 
-This toolshed provides GitHub Copilot agents with a collection of pre-built, tested scripts that can be used consistently across all repositories.
-Instead of recreating common functionality, agents can simply reference and use these battle-tested tools.
+This toolshed provides GitHub Copilot agents with a collection of pre-built,
+tested scripts that can be used consistently across repositories. Instead of
+recreating common functionality, agents can reference and use these
+battle-tested tools.
 
 ## 🎯 Implementation Status
 
@@ -18,10 +20,9 @@ Instead of recreating common functionality, agents can simply reference and use 
 
 ### ✅ Implemented Core Tools
 
-#### Git Tools (`scripts/tools/Git/`)
+#### Git Tools (`scripts/tools/git/`)
 
 - **setup-repository.sh**: ✅ Complete Git repository initialization
-- **workflow-helper.sh**: ✅ Advanced Git workflow automation
 
 #### Validation Tools (`scripts/tools/validation/`)
 
@@ -31,7 +32,8 @@ Instead of recreating common functionality, agents can simply reference and use 
 #### Quality Tools (`scripts/tools/quality/`)
 
 - **check-quality.sh**: ✅ Code quality and standards validation
-- **fix-Markdown.sh**: ✅ Comprehensive Markdown formatting and linting tool
+- **fix-markdown.sh**: ✅ Comprehensive Markdown formatting and linting tool
+- **check-python.sh**: ✅ Non-destructive Python validation (ruff/black/flake8)
 
 #### Repository Tools (`scripts/tools/repository/`)
 
@@ -69,10 +71,10 @@ All tools include comprehensive help: `<tool> --help`
 
 ## 📂 Tool Categories
 
-### 🔧 **Git Tools** (`scripts/tools/Git/`)
+### 🔧 **Git Tools** (`scripts/tools/git/`)
 
 - **`setup-repository.sh`** - Initialize repository with industry standards
-- **`workflow-helper.sh`** - Advanced Git workflow automation (feature/release branches)
+<!-- workflow-helper.sh is not present; removed to avoid confusion -->
 
 ### ✅ **Validation Tools** (`scripts/tools/validation/`)
 
@@ -82,7 +84,7 @@ All tools include comprehensive help: `<tool> --help`
 ### 🎯 **Quality Assurance** (`scripts/tools/quality/`)
 
 - **`check-quality.sh`** - Comprehensive quality validation with auto-fix capabilities
-- **`fix-Markdown.sh`** - Professional Markdown formatting and linting tool with multiple fix strategies
+- **`fix-markdown.sh`** - Professional Markdown formatting and linting tool with multiple fix strategies
 
 ### 📁 **Repository Management** (`scripts/tools/repository/`)
 
@@ -108,7 +110,7 @@ All tools include comprehensive help: `<tool> --help`
 
 - **`dependency-manager.sh`** - Multi-language dependency management with security scanning
 
-### � **Performance Monitoring** (`scripts/tools/monitoring/`)
+### 📈 **Performance Monitoring** (`scripts/tools/monitoring/`)
 
 - **`performance-monitor.sh`** - Comprehensive performance monitoring and profiling
 
@@ -186,8 +188,7 @@ All tools include:
 ### Example Tool Structure
 
 ```bash
-
-## !/bin/bash
+#!/bin/bash
 
 ## Tool: example-tool.sh
 
@@ -245,7 +246,7 @@ main() {
 
 ## Parse command line arguments
 
-while [[$# -gt 0]]; do
+while [[ $# -gt 0 ]]; do
     case $1 in
 
         -h|--help)
@@ -370,11 +371,12 @@ Each tool can be configured via:
 - **documentation/**: Documentation generation and maintenance
 - **deployment/**: Release and deployment automation
 
-## � **Featured Tool: fix-Markdown.sh**
+## ⭐ Featured Tool: fix-markdown.sh
 
 ### Overview
 
-Professional-grade Markdown formatting and linting tool that combines automated fixes, validation, and comprehensive reporting.
+Professional-grade Markdown formatting and linting tool that combines automated
+fixes, validation, and comprehensive reporting.
 This tool represents the evolution of best practices learned from multiple Markdown fixing approaches.
 
 ### Key Features
@@ -394,23 +396,23 @@ This tool represents the evolution of best practices learned from multiple Markd
 
 ## Basic safe fixes across entire repository
 
-./scripts/tools/quality/fix-Markdown.sh
+./scripts/tools/quality/fix-markdown.sh
 
 ## Preview what would be changed
 
-./scripts/tools/quality/fix-Markdown.sh --dry-run --verbose
+./scripts/tools/quality/fix-markdown.sh --dry-run --verbose
 
 ## Aggressive fixing with custom line length
 
-./scripts/tools/quality/fix-Markdown.sh --strategy aggressive --line-length 100
+./scripts/tools/quality/fix-markdown.sh --strategy aggressive --line-length 100
 
 ## Fix specific directory with custom configuration
 
-./scripts/tools/quality/fix-Markdown.sh --target docs/ --config .markdownlint-docs.JSON
+./scripts/tools/quality/fix-markdown.sh --target docs/ --config .markdownlint-docs.JSON
 
 ## Custom patterns with ignore rules
 
-./scripts/tools/quality/fix-Markdown.sh --strategy custom --ignore "_.tmp.md" --ignore "legacy/_"
+./scripts/tools/quality/fix-markdown.sh --strategy custom --ignore "_.tmp.md" --ignore "legacy/_"
 ```
 
 ### Strategies
@@ -421,12 +423,15 @@ This tool represents the evolution of best practices learned from multiple Markd
 
 ### Integration with Existing Scripts
 
-This tool supersedes and consolidates the functionality from:
+This tool supersedes and consolidates functionality from older wrappers which
+are now archived under `archive/deprecated/scripts/tools/`:
 
-- `fix-Markdown-formatting.sh` - Basic formatting fixes
-- `fix-Markdown-targeted.sh` - Targeted file fixes
-- `fix-Markdown-advanced.sh` - Advanced pattern fixes
-- `fix-Markdown-final.sh` - Final cleanup operations
+- `scripts/tools/fix-markdown-formatting.sh` (archived)
+- `scripts/tools/fix-markdown-targeted.sh` (archived)
+- `scripts/tools/fix-markdown-advanced.sh` (archived)
+- `scripts/tools/fix-markdown-final.sh` (archived)
+
+Use `scripts/tools/quality/fix-markdown.sh`.
 
 ## �📈 Benefits
 
@@ -446,4 +451,5 @@ This tool supersedes and consolidates the functionality from:
 
 ---
 
-_This toolshed is maintained as part of the GitHub Copilot Enhancement Framework to provide consistent, reliable tools for all development workflows._
+This toolshed is maintained as part of the GitHub Copilot Enhancement Framework
+to provide consistent, reliable tools for development workflows.

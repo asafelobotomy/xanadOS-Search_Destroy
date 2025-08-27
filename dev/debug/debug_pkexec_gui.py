@@ -7,6 +7,7 @@ import os
 import subprocess
 import sys
 
+
 def test_pkexec_gui_context():
     """Test pkexec exactly as the GUI would call it"""
 
@@ -31,7 +32,14 @@ def test_pkexec_gui_context():
     print()
 
     # Test the exact command our wrapper uses
-    cmd = ["pkexec", "rkhunter", "--check", "--sk", "--nocolors", "--no-mail-on-warning"]
+    cmd = [
+        "pkexec",
+        "rkhunter",
+        "--check",
+        "--sk",
+        "--nocolors",
+        "--no-mail-on-warning",
+    ]
 
     print(f"Running: {' '.join(cmd)}")
     print("Note: This should show an authentication dialog...")
@@ -74,6 +82,7 @@ def test_pkexec_gui_context():
         print("   If you saw a dialog, the GUI authentication is working")
     except Exception as e:
         print(f"❌ Exception: {e}")
+
 
 if __name__ == "__main__":
     test_pkexec_gui_context()

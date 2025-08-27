@@ -5,7 +5,8 @@ RKHunter scan dialog and thread components for S&D - Search & Destroy
 
 import logging
 import threading
-from typing import List, Optional
+import time
+from typing import Any, List, Optional
 
 from PyQt6.QtCore import QThread, pyqtSignal
 from PyQt6.QtWidgets import (QCheckBox, QDialog, QGroupBox, QHBoxLayout,

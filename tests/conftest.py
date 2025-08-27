@@ -300,8 +300,6 @@ def cleanup_threads():
     yield
 
     # Wait for any background threads to complete
-    import threading
-    import time
 
     start_time = time.time()
     while threading.active_count() > 1 and time.time() - start_time < 5:

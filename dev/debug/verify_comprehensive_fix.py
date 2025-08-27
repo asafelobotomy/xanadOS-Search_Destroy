@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Final verification of the comprehensive scan stop/restart fix."""
 
+
 def verify_comprehensive_fix():
     """Verify all aspects of the scan stop/restart fix."""
 
@@ -19,11 +20,15 @@ def verify_comprehensive_fix():
         checks = [
             ("Manual stop flag added", "_scan_manually_stopped = False" in content),
             ("Signal disconnection", "progress_updated.disconnect()" in content),
-            ("Stop flag check in scan_completed", "if self._scan_manually_stopped:" in content),
+            (
+                "Stop flag check in scan_completed",
+                "if self._scan_manually_stopped:" in content,
+            ),
             ("Flag reset in start_scan", "_scan_manually_stopped = False" in content),
             (
                 "Immediate UI reset in stop",
-                "progress_bar.setValue(0)" in content and "✅ Scan stopped successfully" in content,
+                "progress_bar.setValue(0)" in content
+                and "✅ Scan stopped successfully" in content,
             ),
             (
                 "Thread cleanup",
@@ -117,6 +122,7 @@ def verify_comprehensive_fix():
     print("🎉 COMPREHENSIVE FIX COMPLETE!")
     print("🚀 Stop → Start cycle should now work flawlessly")
     print("✨ No more fake results, no more double-clicking!")
+
 
 if __name__ == "__main__":
     verify_comprehensive_fix()

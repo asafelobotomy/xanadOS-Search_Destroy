@@ -31,6 +31,10 @@ organized by category and chronology for easy discovery and reference.
 - `tests/test_implementation.py` — Archived 2025-08-25 (umbrella legacy test superseded by focused pytest suites)
 - `app/core/elevated_runner_simple.py` — Archived 2025-08-25 (deprecated simple elevated runner; use `app/core/elevated_runner.py`)
 - `app/core/elevated_runner_simple.py` — Archived 2025-08-26 (deprecated simple elevated runner; replacement `app/core/elevated_runner.py`)
+- `scripts/tools/fix-markdown-formatting.sh` — Archived 2025-08-27 (deprecated wrapper; use `scripts/tools/quality/fix-markdown.sh`)
+- `scripts/tools/fix-markdown-targeted.sh` — Archived 2025-08-27 (deprecated wrapper; use `scripts/tools/quality/fix-markdown.sh`)
+- `scripts/tools/fix-markdown-advanced.sh` — Archived 2025-08-27 (deprecated wrapper; use `scripts/tools/quality/fix-markdown.sh`)
+- `scripts/tools/fix-markdown-final.sh` — Archived 2025-08-27 (deprecated wrapper; use `scripts/tools/quality/fix-markdown.sh`)
 
 ### Legacy Versions
 
@@ -70,7 +74,8 @@ No legacy versions currently archived.
 
 **Recent Archives (2025-08-27)**:
 
-- `test_black_formatting.py` - Temporary test file for Black formatter verification (archived after successful testing)
+- `test_black_formatting.py` - Temporary test file for Black formatter
+	verification (archived after successful testing)
 
 ## 📅 Chronological Index
 

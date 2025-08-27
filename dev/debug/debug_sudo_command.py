@@ -6,6 +6,7 @@ import os
 
 import subprocess
 
+
 def debug_wrapper_sudo_command():
     """Test the exact command the wrapper is trying to run"""
     print("Testing the exact wrapper sudo command...")
@@ -24,7 +25,7 @@ def debug_wrapper_sudo_command():
         "--nocolors",
         "--no-mail-on-warning",
         "--configfile",
-        "/etc/rkhunter.conf",
+        "/etc/rkhunter.con",
         "--tmpdir",
         "/var/lib/rkhunter/tmp",
     ]
@@ -64,6 +65,7 @@ def debug_wrapper_sudo_command():
     except Exception as e:
         print(f"Exception: {e}")
         return False
+
 
 if __name__ == "__main__":
     success = debug_wrapper_sudo_command()

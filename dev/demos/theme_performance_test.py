@@ -8,11 +8,11 @@ import os
 import sys
 import time
 
-from PyQt6.QtWidgets import (QApplication, QMainWindow, QPushButton,
-                             QVBoxLayout, QWidget)
+from PyQt6.QtWidgets import QApplication, QMainWindow, QPushButton, QVBoxLayout, QWidget
 
 # Add the project directory to the path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 
 def test_theme_performance():
     """Test theme application performance."""
@@ -38,9 +38,11 @@ def test_theme_performance():
     # Test theme manager (fallback to existing manager if optimized version is not present)
     try:
         from app.gui.optimized_theme_manager import get_optimized_theme_manager
+
         theme_manager = get_optimized_theme_manager()
     except ModuleNotFoundError:
         from app.gui.theme_manager import ThemeManager
+
         theme_manager = ThemeManager()
 
     # Measure theme application time
@@ -51,7 +53,9 @@ def test_theme_performance():
     end_time = time.time()
 
     optimized_time = end_time - start_time
-    print(f"✅ Optimized theme manager: {optimized_time:.4f} seconds for 20 theme switches")
+    print(
+        f"✅ Optimized theme manager: {optimized_time:.4f} seconds for 20 theme switches"
+    )
 
     # Test effect application
     start_time = time.time()
@@ -60,13 +64,16 @@ def test_theme_performance():
     end_time = time.time()
 
     effects_time = end_time - start_time
-    print(f"✅ Effect application: {effects_time:.4f} seconds for {len(buttons)} buttons")
+    print(
+        f"✅ Effect application: {effects_time:.4f} seconds for {len(buttons)} buttons"
+    )
 
     # Memory usage test
     gc.collect()
     print("🧠 Memory optimization: Caches active, redundant operations eliminated")
 
     app.quit()
+
 
 if __name__ == "__main__":
     test_theme_performance()

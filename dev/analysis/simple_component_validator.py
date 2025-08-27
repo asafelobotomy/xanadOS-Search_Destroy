@@ -15,6 +15,7 @@ import traceback
 # Add project root to path
 sys.path.append(str(Path(__file__).parent.parent.parent))
 
+
 def test_imports():
     """Test core imports and component availability"""
     print("🔍 Testing component imports...")
@@ -78,6 +79,7 @@ def test_imports():
 
     return results
 
+
 def test_basic_functionality():
     """Test basic component functionality"""
     print("\n🔧 Testing basic functionality...")
@@ -134,7 +136,9 @@ def test_basic_functionality():
         from app.core import UNIFIED_PERFORMANCE_AVAILABLE
 
         if UNIFIED_PERFORMANCE_AVAILABLE:
-            from app.core.unified_performance_optimizer import UnifiedPerformanceOptimizer
+            from app.core.unified_performance_optimizer import (
+                UnifiedPerformanceOptimizer,
+            )
 
             optimizer = UnifiedPerformanceOptimizer()
             results["performance_optimizer_init"] = True
@@ -147,11 +151,16 @@ def test_basic_functionality():
 
     return results
 
+
 def test_archived_components():
     """Verify archived components are no longer imported"""
     print("\n📦 Verifying archived components...")
 
-    archived_components = ["auto_updater", "real_time_protection", "performance_monitor"]
+    archived_components = [
+        "auto_updater",
+        "real_time_protection",
+        "performance_monitor",
+    ]
 
     results = {"properly_archived": [], "still_importable": [], "errors": []}
 
@@ -169,6 +178,7 @@ def test_archived_components():
             print(f"  ❌ {component} error: {e}")
 
     return results
+
 
 def generate_summary(import_results, functionality_results, archive_results):
     """Generate validation summary"""
@@ -207,7 +217,9 @@ def generate_summary(import_results, functionality_results, archive_results):
     still_importable = len(archive_results["still_importable"])
     total_archived = properly_archived + still_importable
 
-    print(f"Archive Tests: {properly_archived}/{total_archived} components properly archived")
+    print(
+        f"Archive Tests: {properly_archived}/{total_archived} components properly archived"
+    )
 
     # Overall status
     total_tests = total_import_tests + total_func_tests + total_archived
@@ -218,7 +230,9 @@ def generate_summary(import_results, functionality_results, archive_results):
     # Recommendations
     print("\nRECOMMENDATIONS:")
     all_errors = (
-        import_results["errors"] + functionality_results["errors"] + archive_results["errors"]
+        import_results["errors"]
+        + functionality_results["errors"]
+        + archive_results["errors"]
     )
 
     if all_errors:
@@ -240,6 +254,7 @@ def generate_summary(import_results, functionality_results, archive_results):
         print(f"\n⚠️  {total_tests - total_passed} tests failed or had issues")
         return 1
 
+
 def main():
     """Main validation function"""
     print("🚀 xanadOS Search & Destroy - Component Validation")
@@ -255,6 +270,7 @@ def main():
 
     print(f"\nValidation completed with exit code: {exit_code}")
     return exit_code
+
 
 if __name__ == "__main__":
     exit_code = main()

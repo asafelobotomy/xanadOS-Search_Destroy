@@ -4,9 +4,10 @@ Repository Cleanup Verification
 Verifies that the xanadOS Search & Destroy repository is properly organized and functional.
 """
 
-import os
 import sys
+import importlib
 from pathlib import Path
+
 
 def check_repository_structure():
     """Verify the repository structure is clean and organized."""
@@ -38,13 +39,16 @@ def check_repository_structure():
 
     # Check for documentation organization
     impl_docs = base_dir / "docs" / "implementation"
-    if (impl_docs / "SECURITY_IMPROVEMENTS.md").exists() and (impl_docs / "scan_methods_audit.md").exists():
+    if (impl_docs / "SECURITY_IMPROVEMENTS.md").exists() and (
+        impl_docs / "scan_methods_audit.md"
+    ).exists():
         print("✅ Documentation properly organized")
     else:
         print("❌ Documentation files not properly organized")
         return False
 
     return True
+
 
 def check_application_imports():
     """Verify that the application can be imported without errors."""
@@ -54,10 +58,14 @@ def check_application_imports():
         # Add the app directory to Python path
         sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "app"))
 
-        # Try importing core modules
-        import core.rkhunter_wrapper
-        import gui.main_window
-        import monitoring.real_time_monitor
+        # Try importing core modules via importlib to avoid F401
+        for module_name in (
+            "core.rkhunter_wrapper",
+            "gui.main_window",
+            "monitoring.real_time_monitor",
+        ):
+            importlib.import_module(module_name)
+
         print("✅ Core application modules import successfully")
         return True
     except ImportError as e:
@@ -66,6 +74,7 @@ def check_application_imports():
     except Exception as e:
         print(f"❌ Unexpected error: {e}")
         return False
+
 
 def main():
     """Run all verification checks."""
@@ -84,6 +93,7 @@ def main():
         print("❌ Repository cleanup verification FAILED!")
         print("🔧 Some issues need to be addressed")
         return 1
+
 
 if __name__ == "__main__":
     exit(main())

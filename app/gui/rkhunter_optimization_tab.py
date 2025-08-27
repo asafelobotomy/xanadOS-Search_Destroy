@@ -11,6 +11,7 @@ This module provides GUI components for RKHunter optimization including:
 """
 
 import logging
+import subprocess
 from datetime import datetime
 
 from PyQt6.QtCore import Qt, QThread, QTimer, pyqtSignal

@@ -101,27 +101,27 @@ A professional-grade Markdown fixing tool with comprehensive coverage for all ma
 
 ## Basic safe fixes
 
-./fix-Markdown.sh
+./fix-markdown.sh
 
 ## Comprehensive aggressive fixes (recommended)
 
-./fix-Markdown.sh --strategy aggressive
+./fix-markdown.sh --strategy aggressive
 
 ## Test what would be changed
 
-./fix-Markdown.sh --dry-run --strategy aggressive
+./fix-markdown.sh --dry-run --strategy aggressive
 
 ## Fix specific directory
 
-./fix-Markdown.sh --target docs/ --strategy aggressive
+./fix-markdown.sh --target docs/ --strategy aggressive
 
 ## Custom line length
 
-./fix-Markdown.sh --strategy aggressive --line-length 100
+./fix-markdown.sh --strategy aggressive --line-length 100
 
 ## Verbose output with custom config
 
-./fix-Markdown.sh --verbose --config .markdownlint-strict.JSON
+./fix-markdown.sh --verbose --config .markdownlint-strict.JSON
 ```
 
 ### 🔧 Fix Strategies
@@ -152,12 +152,12 @@ python3 --version
 
 ### Script Location
 
-The tool is located at: `scripts/tools/quality/fix-Markdown.sh`
+The tool is located at: `scripts/tools/quality/fix-markdown.sh`
 
 Make sure it's executable:
 
 ```bash
-chmod +x scripts/tools/quality/fix-Markdown.sh
+chmod +x scripts/tools/quality/fix-markdown.sh
 ```
 
 ## Usage
@@ -168,15 +168,15 @@ chmod +x scripts/tools/quality/fix-Markdown.sh
 
 ## Fix all Markdown files in repository (safe mode)
 
-./scripts/tools/quality/fix-Markdown.sh
+./scripts/tools/quality/fix-markdown.sh
 
 ## Preview changes without applying them
 
-./scripts/tools/quality/fix-Markdown.sh --dry-run
+./scripts/tools/quality/fix-markdown.sh --dry-run
 
 ## Verbose output with detailed progress
 
-./scripts/tools/quality/fix-Markdown.sh --verbose
+./scripts/tools/quality/fix-markdown.sh --verbose
 ```
 
 ### Advanced Usage
@@ -185,19 +185,19 @@ chmod +x scripts/tools/quality/fix-Markdown.sh
 
 ## Aggressive fixing with custom line length
 
-./scripts/tools/quality/fix-Markdown.sh --strategy aggressive --line-length 100
+./scripts/tools/quality/fix-markdown.sh --strategy aggressive --line-length 100
 
 ## Fix specific directory only
 
-./scripts/tools/quality/fix-Markdown.sh --target docs/
+./scripts/tools/quality/fix-markdown.sh --target docs/
 
 ## Use custom configuration file
 
-./scripts/tools/quality/fix-Markdown.sh --config .markdownlint-docs.JSON
+./scripts/tools/quality/fix-markdown.sh --config .markdownlint-docs.JSON
 
 ## Custom strategy with ignore patterns
 
-./scripts/tools/quality/fix-Markdown.sh \
+./scripts/tools/quality/fix-markdown.sh \
     --strategy custom \
     --ignore "*.tmp.md" \
     --ignore "legacy/*" \
@@ -210,15 +210,15 @@ chmod +x scripts/tools/quality/fix-Markdown.sh
 
 ## Disable backup creation (not recommended)
 
-./scripts/tools/quality/fix-Markdown.sh --no-backup
+./scripts/tools/quality/fix-markdown.sh --no-backup
 
 ## Skip post-fix validation
 
-./scripts/tools/quality/fix-Markdown.sh --no-validation
+./scripts/tools/quality/fix-markdown.sh --no-validation
 
 ## Continue on errors (force mode)
 
-./scripts/tools/quality/fix-Markdown.sh --force
+./scripts/tools/quality/fix-markdown.sh --force
 ```
 
 ## Configuration Files
@@ -271,7 +271,7 @@ CHANGELOG.md
 #### Command-line Ignore Patterns
 
 ```bash
-./scripts/tools/quality/fix-Markdown.sh \
+./scripts/tools/quality/fix-markdown.sh \
     --ignore "*.backup.md" \
     --ignore "temp/*" \
     --ignore "vendor/"
@@ -314,12 +314,15 @@ CHANGELOG.md
 
 ### Supersedes Previous Scripts
 
-This tool consolidates and improves upon:
+This tool consolidates and replaces legacy scripts. The following have been
+archived under `archive/deprecated/scripts/tools/`:
 
-- `fix-Markdown-formatting.sh` - Basic formatting fixes
-- `fix-Markdown-targeted.sh` - Targeted file fixes
-- `fix-Markdown-advanced.sh` - Advanced pattern fixes
-- `fix-Markdown-final.sh` - Final cleanup operations
+- `scripts/tools/fix-markdown-formatting.sh`
+- `scripts/tools/fix-markdown-targeted.sh`
+- `scripts/tools/fix-markdown-advanced.sh`
+- `scripts/tools/fix-markdown-final.sh`
+
+Use `scripts/tools/quality/fix-markdown.sh` for all Markdown fixes.
 
 ### GitHub Copilot Instructions Integration
 
@@ -335,17 +338,17 @@ The tool follows patterns established in:
 
 ## Pre-commit workflow
 
-./scripts/tools/quality/fix-Markdown.sh --strategy safe
+./scripts/tools/quality/fix-markdown.sh --strategy safe
 Git add -A
 Git commit -m "docs: fix Markdown formatting"
 
 ## CI/CD validation
 
-./scripts/tools/quality/fix-Markdown.sh --dry-run --strategy aggressive
+./scripts/tools/quality/fix-markdown.sh --dry-run --strategy aggressive
 
 ## Release preparation
 
-./scripts/tools/quality/fix-Markdown.sh --strategy custom --verbose
+./scripts/tools/quality/fix-markdown.sh --strategy custom --verbose
 ```
 
 ## Troubleshooting
@@ -358,7 +361,7 @@ Git commit -m "docs: fix Markdown formatting"
 
 ## Check dependencies
 
-./scripts/tools/quality/fix-Markdown.sh --version
+./scripts/tools/quality/fix-markdown.sh --version
 
 ## Install markdownlint-cli 2
 
@@ -375,11 +378,11 @@ python3 --version
 
 ## Make script executable
 
-chmod +x scripts/tools/quality/fix-Markdown.sh
+chmod +x scripts/tools/quality/fix-markdown.sh
 
 ## Check file permissions
 
-ls -la scripts/tools/quality/fix-Markdown.sh
+ls -la scripts/tools/quality/fix-markdown.sh
 ```
 
 ### Configuration Issues
@@ -388,7 +391,7 @@ ls -la scripts/tools/quality/fix-Markdown.sh
 
 ## Test with default configuration
 
-./scripts/tools/quality/fix-Markdown.sh --no-config
+./scripts/tools/quality/fix-markdown.sh --no-config
 
 ## Validate configuration file
 
@@ -401,7 +404,7 @@ markdownlint --config .markdownlint.JSON --help
 
 ## Maximum verbosity
 
-./scripts/tools/quality/fix-Markdown.sh --verbose --dry-run
+./scripts/tools/quality/fix-markdown.sh --verbose --dry-run
 
 ## Check log file for details
 
@@ -409,7 +412,7 @@ tail -f ./Markdown-fixes.log
 
 ## Test specific files
 
-./scripts/tools/quality/fix-Markdown.sh --target specific-file.md
+./scripts/tools/quality/fix-markdown.sh --target specific-file.md
 ```
 
 ## Best Practices
@@ -508,7 +511,7 @@ Post-fix validation using markdownlint ensures:
 
 File issues related to this tool in the repository issue tracker with:
 
-- Tool version: `./scripts/tools/quality/fix-Markdown.sh --version`
+- Tool version: `./scripts/tools/quality/fix-markdown.sh --version`
 - Command used
 - Expected vs actual behavior
 - Log file contents if relevant

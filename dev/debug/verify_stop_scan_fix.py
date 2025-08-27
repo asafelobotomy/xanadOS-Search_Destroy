@@ -4,6 +4,7 @@ import os
 
 import sys
 
+
 def verify_stop_scan_fix():
     """Verify that the stop scan crash fix is properly implemented."""
 
@@ -18,8 +19,14 @@ def verify_stop_scan_fix():
 
         # Check for improvements
         improvements = [
-            ("✅ Graceful thread stopping", "stop_scan()" in content and "wait(3000)" in content),
-            ("✅ No immediate terminate()", "terminate()" in content and "wait(" in content),
+            (
+                "✅ Graceful thread stopping",
+                "stop_scan()" in content and "wait(3000)" in content,
+            ),
+            (
+                "✅ No immediate terminate()",
+                "terminate()" in content and "wait(" in content,
+            ),
             ("✅ UI reset method exists", "def reset_scan_ui" in content),
             ("✅ Proper cancellation handling", "_cancelled" in content),
             ("✅ Enhanced cancelled scan display", "🛑" in content),
@@ -38,11 +45,15 @@ def verify_stop_scan_fix():
         thread_improvements = [
             (
                 "✅ Early cancellation check",
-                "if self._cancelled:" in thread_content and "before start" in thread_content,
+                "if self._cancelled:" in thread_content
+                and "before start" in thread_content,
             ),
             ("✅ Cancellation flag handling", "_cancelled = True" in thread_content),
             ("✅ Scanner cancel integration", "cancel_scan()" in thread_content),
-            ("✅ Thread-safe progress callbacks", "safe_progress_callback" in thread_content),
+            (
+                "✅ Thread-safe progress callbacks",
+                "safe_progress_callback" in thread_content,
+            ),
         ]
 
         print("\n🧵 ScanThread Status:")
@@ -84,6 +95,7 @@ def verify_stop_scan_fix():
     print("\n" + "=" * 55)
     print("🎉 FIXED: Full Scan → Stop → No More Crashes!")
     print("🚀 Ready for testing: Start Full Scan, wait 2-3 seconds, click Stop")
+
 
 if __name__ == "__main__":
     verify_stop_scan_fix()

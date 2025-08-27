@@ -16,6 +16,7 @@ import sys
 app_dir = Path(__file__).parent.parent.parent / "app"
 sys.path.insert(0, str(app_dir))
 
+
 def main():
     """Launch the application to visually inspect the enhancements."""
     app = QApplication(sys.argv)
@@ -63,6 +64,7 @@ def main():
                 break
 
     return app.exec()
+
 
 if __name__ == "__main__":
     sys.exit(main())

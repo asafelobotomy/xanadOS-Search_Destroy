@@ -11,6 +11,7 @@ import sys
 # Add the app directory to Python path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "app"))
 
+
 def debug_rkhunter_output():
     """Debug RKHunter output to see what's being captured"""
     print("Debugging RKHunter output...")
@@ -35,7 +36,7 @@ def debug_rkhunter_output():
         # Run a system scan to test authentication
         result = wrapper.scan_system()
 
-        print(f"\n=== SCAN RESULT ===")
+        print("\n=== SCAN RESULT ===")
         print(f"Success: {result.success}")
         print(f"Tests run: {result.tests_run}")
         print(f"Total tests: {result.total_tests}")
@@ -48,7 +49,9 @@ def debug_rkhunter_output():
         if result.findings:
             print(f"\n=== FINDINGS ({len(result.findings)}) ===")
             for i, finding in enumerate(result.findings):
-                print(f"{i + 1}. {finding.test_name}: {finding.result.value} - {finding.description}")
+                print(
+                    f"{i + 1}. {finding.test_name}: {finding.result.value} - {finding.description}"
+                )
 
         return True
 
@@ -58,6 +61,7 @@ def debug_rkhunter_output():
 
         traceback.print_exc()
         return False
+
 
 if __name__ == "__main__":
     debug_rkhunter_output()

@@ -20,12 +20,65 @@ from datetime import datetime, timedelta
 from enum import Enum
 from typing import Any, Dict, List, Optional
 
-import aiohttp
-import boto3
-from botocore.exceptions import ClientError
-from cryptography.fernet import Fernet
-from cryptography.hazmat.primitives import hashes
-from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
+# Third-party imports with graceful fallbacks (E402 compliance: keep at top)
+try:
+    import aiohttp
+except ImportError:  # pragma: no cover - minimal env fallback
+    aiohttp = None  # type: ignore
+
+try:
+    import boto3
+    from botocore.exceptions import ClientError
+except ImportError:  # pragma: no cover - fallback mocks
+    class _MockBoto3:
+        @staticmethod
+        def client(*_args, **_kwargs):
+            return type(
+                "",
+                (),
+                {
+                    "head_bucket": staticmethod(lambda **_x: None),
+                    "create_bucket": staticmethod(lambda **_x: None),
+                    "put_object": staticmethod(lambda **_x: None),
+                    "get_object": staticmethod(lambda **_x: {"Body": type("", (), {"read": staticmethod(lambda: b"")})()}),
+                    "list_objects_v2": staticmethod(lambda **_x: {"KeyCount": 0, "Contents": []}),
+                },
+            )()
+
+    boto3 = _MockBoto3()  # type: ignore
+    ClientError = Exception  # type: ignore
+
+try:
+    from cryptography.fernet import Fernet
+    from cryptography.hazmat.primitives import hashes
+    from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
+except ImportError:  # pragma: no cover - fallback mocks
+    class Fernet:  # type: ignore
+        def __init__(self, _key):
+            pass
+
+        @staticmethod
+        def encrypt(data):
+            return data
+
+        @staticmethod
+        def decrypt(data):
+            return data
+
+    class _MockHashes:  # type: ignore
+        @staticmethod
+        def SHA256():
+            return None
+
+    class PBKDF2HMAC:  # type: ignore
+        def __init__(self, **_kwargs):
+            pass
+
+        @staticmethod
+        def derive(_password):
+            return b"mock_key" * 4
+
+    hashes = _MockHashes()  # type: ignore
 
 
 class CloudProvider(Enum):
@@ -163,6 +216,8 @@ class CloudIntegrationSystem:
         """Initialize cloud integration system."""
         try:
             # Initialize HTTP session
+            if aiohttp is None:
+                raise RuntimeError("aiohttp not available")
             self.session = aiohttp.ClientSession(
                 timeout=aiohttp.ClientTimeout(total=self.cloud_config.timeout),
                 connector=aiohttp.TCPConnector(ssl=ssl.create_default_context()),
@@ -744,15 +799,15 @@ class CloudIntegrationSystem:
             # Remove or hash sensitive fields
             sensitive_fields = ["source_path", "username", "hostname", "ip_address"]
 
-            for field in sensitive_fields:
-                if field in anonymized:
+            for sensitive_field in sensitive_fields:
+                if sensitive_field in anonymized:
                     if self.threat_intel_config.anonymize_data:
                         # Hash the value instead of removing it
-                        anonymized[field] = hashlib.sha256(
-                            str(anonymized[field]).encode()
+                        anonymized[sensitive_field] = hashlib.sha256(
+                            str(anonymized[sensitive_field]).encode()
                         ).hexdigest()[:16]
                     else:
-                        del anonymized[field]
+                        del anonymized[sensitive_field]
 
             return anonymized
 
@@ -830,6 +885,7 @@ class CloudIntegrationSystem:
                         return True
 
                     elif self.cloud_config.provider == CloudProvider.CUSTOM_API:
+                        assert self.session is not None
                         async with self.session.put(
                             f"{self.cloud_config.endpoint_url}/{path}",
                             data=data,
@@ -862,6 +918,7 @@ class CloudIntegrationSystem:
                         return response["Body"].read()
 
                     elif self.cloud_config.provider == CloudProvider.CUSTOM_API:
+                        assert self.session is not None
                         async with self.session.get(
                             f"{self.cloud_config.endpoint_url}/{path}",
                             headers={
@@ -926,6 +983,7 @@ class CloudIntegrationSystem:
                 url = "https://www.virustotal.com/vtapi/v2/domain/report"
                 params = {"apikey": api_key, "domain": "example.com"}  # Placeholder
 
+            assert self.session is not None
             async with self.session.get(url, params=params) as response:
                 if response.status == 200:
                     data = await response.json()
@@ -1298,56 +1356,4 @@ class CloudIntegrationSystem:
             return {}
 
 
-# Add missing imports with fallbacks
-try:
-    import boto3
-    from botocore.exceptions import ClientError
-except ImportError:
-    # Mock boto3 if not available
-    class MockBoto3:
-        def client(self, *args, **kwargs):
-            return type(
-                "",
-                (),
-                {
-                    "head_bucket": lambda **x: None,
-                    "create_bucket": lambda **x: None,
-                    "put_object": lambda **x: None,
-                    "get_object": lambda **x: {
-                        "Body": type("", (), {"read": lambda: b""})()
-                    },
-                    "list_objects_v2": lambda **x: {"KeyCount": 0, "Contents": []},
-                },
-            )()
-
-    boto3 = MockBoto3()
-    ClientError = Exception
-
-try:
-    from cryptography.fernet import Fernet
-    from cryptography.hazmat.primitives import hashes
-    from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
-except ImportError:
-    # Mock cryptography if not available
-    class Fernet:
-        def __init__(self, key):
-            pass
-
-        def encrypt(self, data):
-            return data
-
-        def decrypt(self, data):
-            return data
-
-    class MockHashes:
-        def SHA256(self):
-            return self
-
-    class PBKDF2HMAC:
-        def __init__(self, **kwargs):
-            pass
-
-        def derive(self, password):
-            return b"mock_key" * 4
-
-    hashes = MockHashes()
+# end of file

@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](HTTPS://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added (tooling)
+
+- Python validation script: `scripts/tools/quality/check-python.sh`
+	- Runs ruff/black/flake8; optional mypy and pytest with `--strict`.
+- NPM scripts: `validate:python`, `validate:python:strict`, and `quick:validate:all`.
+	- Extends quick validation with Python checks (non-destructive).
+
+### Changed (toolshed)
+
+- Archived legacy Markdown fixer wrapper scripts in favor of the canonical
+	`scripts/tools/quality/fix-markdown.sh`.
+	Archived files:
+	- `scripts/tools/fix-markdown-formatting.sh`
+	- `scripts/tools/fix-markdown-targeted.sh`
+	- `scripts/tools/fix-markdown-advanced.sh`
+	- `scripts/tools/fix-markdown-final.sh`
+
 ## [2.11.2] - 2025-08-25
 
 ### Fixed

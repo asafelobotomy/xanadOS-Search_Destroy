@@ -24,13 +24,15 @@ try:
 
     # Filter out noise
     clean_lines = [
-        line for line in lines if not ("grep: warning:" in line or "egrep: warning:" in line)
+        line
+        for line in lines
+        if not ("grep: warning:" in line or "egrep: warning:" in line)
     ]
 
     ok_tests = len([line for line in clean_lines if "[ OK ]" in line])
     warnings = len([line for line in clean_lines if line.startswith("Warning:")])
 
-    print(f"✅ RKHunter executed successfully")
+    print("✅ RKHunter executed successfully")
     print(f"✅ Tests passed: {ok_tests}")
     print(f"✅ Warnings found: {warnings}")
     print(f"✅ Return code: {result.returncode} (1 = warnings present, normal)")
@@ -77,7 +79,7 @@ try:
     from app.core.rkhunter_wrapper import RKHunterWrapper
 
     wrapper = RKHunterWrapper()
-    print(f"✅ RKHunter wrapper initialized")
+    print("✅ RKHunter wrapper initialized")
     print(f"✅ Available: {wrapper.available}")
     print(f"✅ Path: {wrapper.rkhunter_path}")
     print(f"✅ Warning analyzer: {hasattr(wrapper, 'warning_analyzer')}")
@@ -86,7 +88,7 @@ except Exception as e:
     print(f"❌ Wrapper integration failed: {e}")
     # This might fail due to import issues, but that's OK for now
 
-print(f"\n" + "=" * 60)
+print("\n" + "=" * 60)
 print("🎉 INTEGRATION TEST SUMMARY")
 print("=" * 60)
 
@@ -105,12 +107,12 @@ print("  • Real-time progress with accurate counts")
 print("  • Professional output formatting")
 print("  • Educational warning explanations")
 
-print(f"\n🔍 NEXT STEPS:")
+print("\n🔍 NEXT STEPS:")
 print("1. Test through GUI: Run python app/main.py")
 print("2. Navigate to Scan tab")
 print("3. Run RKHunter scan")
 print("4. Verify accurate test counts and warning explanations")
 
-print(f"\n🎯 MISSION ACCOMPLISHED!")
+print("\n🎯 MISSION ACCOMPLISHED!")
 print("RKHunter now provides a professional scanning experience")
 print("with accurate progress tracking and educational guidance!")

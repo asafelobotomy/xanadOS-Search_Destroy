@@ -20,6 +20,8 @@ import gc
 import logging
 import os
 import sqlite3
+import re
+import functools
 import sys
 import threading
 import time
@@ -37,8 +39,7 @@ import psutil
 # Advanced memory profiling (optional)
 try:
     import tracemalloc
-
-    import memory_profiler
+    import memory_profiler  # noqa: F401
 
     MEMORY_PROFILING_AVAILABLE = True
 except ImportError:
@@ -279,7 +280,9 @@ class AdvancedMemoryManager:
         """Clear various internal Python caches."""
         try:
             # Clear import cache
-            sys.modules.clear()
+            for mod in list(sys.modules.keys()):
+                if mod.startswith("app."):
+                    sys.modules.pop(mod, None)
 
             # Clear regex cache
 
@@ -288,14 +291,23 @@ class AdvancedMemoryManager:
             # Clear functools cache if available
             try:
                 if hasattr(functools, "_lru_cache_wrappers"):
-                    for wrapper in functools._lru_cache_wrappers:
-                        wrapper.cache_clear()
-            except BaseException:
+                    for wrapper in getattr(functools, "_lru_cache_wrappers", []):
+                        try:
+                            wrapper.cache_clear()
+                        except Exception:
+                            pass
+            except Exception:
                 pass
 
             # Clear weakref callbacks
 
-            weakref.getweakrefcount.__cache_clear__()
+            if hasattr(weakref, "getweakrefcount") and hasattr(
+                weakref.getweakrefcount, "__cache_clear__"
+            ):
+                try:
+                    weakref.getweakrefcount.__cache_clear__()  # type: ignore[attr-defined]
+                except Exception:
+                    pass
 
         except Exception as e:
             self.logger.debug(f"Error clearing caches: {e}")

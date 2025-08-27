@@ -4,8 +4,8 @@ Centralized Version Management System
 Keep all version references in sync by updating only the VERSION file.
 """
 
-import sys
 from pathlib import Path
+
 
 def get_version():
     """Get current version from VERSION file."""
@@ -16,6 +16,7 @@ def get_version():
         return "dev"
     except Exception:
         return "dev"
+
 
 def update_version_example():
     """Example of how to update version across the repository."""
@@ -31,6 +32,7 @@ def update_version_example():
     print("   - Main window")
     print("   - Configuration system")
     print("   - Update components")
+
 
 if __name__ == "__main__":
     update_version_example()

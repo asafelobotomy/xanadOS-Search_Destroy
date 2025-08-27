@@ -11,6 +11,7 @@ import sys
 # Add the app directory to the Python path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "app"))
 
+
 def test_firewall_settings():
     """Test the firewall settings implementation."""
     print("🔥 FIREWALL SETTINGS DEMO")
@@ -88,6 +89,7 @@ def test_firewall_settings():
 
         traceback.print_exc()
         return False
+
 
 if __name__ == "__main__":
     success = test_firewall_settings()

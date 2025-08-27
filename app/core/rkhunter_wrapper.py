@@ -16,6 +16,10 @@ from enum import Enum
 from pathlib import Path
 from typing import Callable, List, Optional, Tuple
 
+import psutil
+from .safe_kill import kill_sequence
+from .secure_subprocess import run_secure
+
 from .rkhunter_analyzer import RKHunterWarningAnalyzer, WarningExplanation
 from .security_validator import SecureRKHunterValidator
 
@@ -164,17 +168,6 @@ class RKHunterWrapper:
             self.logger.info("RKHunter wrapper initialized successfully")
         else:
             self.logger.warning("RKHunter not available on system")
-
-    def _initialize_config(self):
-        """Initialize minimal RKHunter configuration if missing."""
-        try:
-            self.config_path.parent.mkdir(parents=True, exist_ok=True)
-            if not self.config_path.exists():
-                self.config_path.write_text(
-                    "# minimal rkhunter config generated for tests\n",
-                )
-        except Exception:
-            self.logger.debug("Failed to initialize minimal config", exc_info=True)
 
     def get_version(self) -> Tuple[str, str]:
         """Return (version_string, status). Single authoritative implementation."""
@@ -1219,7 +1212,7 @@ class RKHunterWrapper:
                     try:
                         parts = line.split(":")
                         if len(parts) > 1:
-                            file_count = int(parts[1].strip())
+                            _ = int(parts[1].strip())
                             # Add to test count if not already counted
                     except ValueError:
                         pass
@@ -1229,7 +1222,7 @@ class RKHunterWrapper:
                     try:
                         parts = line.split(":")
                         if len(parts) > 1:
-                            rootkit_count = int(parts[1].strip())
+                            _ = int(parts[1].strip())
                             # Add to test count if not already counted
                     except ValueError:
                         pass
@@ -1239,7 +1232,7 @@ class RKHunterWrapper:
                     try:
                         parts = line.split(":")
                         if len(parts) > 1:
-                            suspect_count = int(parts[1].strip())
+                            _ = int(parts[1].strip())
                             # These are likely warnings we should count
                     except ValueError:
                         pass
@@ -1441,11 +1434,6 @@ class RKHunterWrapper:
             logging.error("Failed to get RKHunter quick status: %s", e)
             return {"status": "error", "message": f"Error getting status: {e}"}
 
-
-import psutil
-
-from .safe_kill import kill_sequence
-from .secure_subprocess import run_secure
 
 # Import elevated_run for module-level usage/fallback (outside class)
 try:  # pragma: no cover - testing convenience

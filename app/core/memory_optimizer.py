@@ -102,12 +102,9 @@ class StreamProcessor:
                     if not chunk:
                         break
                     processor_func(chunk)
-        except Exception:
-            self.logerror(
-                "Error processing file stream %s: %s".replace(
-                    "%s", "{file_path, e}"
-                ).replace("%d", "{file_path, e}")
-            )
+        except Exception as e:
+            # Use parameterized logging; include file path and exception
+            self.logger.error("Error processing file stream %s: %s", file_path, e)
             raise
 
 
@@ -187,17 +184,10 @@ class MemoryOptimizer:
         return False
 
     def optimize_memory(self, aggressive: bool = False) -> None:
-        self.loginfo(
-            "Performing memory optimization (aggressive=%s)".replace(
-                "%s", "{aggressive}"
-            ).replace("%d", "{aggressive}")
-        )
+        # Log action with proper parameterization
+        self.logger.info("Performing memory optimization (aggressive=%s)", aggressive)
         collected = gc.collect()
-        self.logdebug(
-            "Garbage collected %d objects".replace("%s", "{collected}").replace(
-                "%d", "{collected}"
-            )
-        )
+        self.logger.debug("Garbage collected %d objects", collected)
         if aggressive:
             gc.collect(0)
             gc.collect(1)
@@ -214,20 +204,14 @@ class MemoryOptimizer:
                     cleared += 1
             except Exception:
                 self.logger.debug("Error clearing cache", exc_info=True)
-        self.logdebug(
-            "Cleared %d caches".replace("%s", "{cleared}").replace("%d", "{cleared}")
-        )
+        self.logger.debug("Cleared %d caches", cleared)
 
     def _clear_pools(self) -> None:
         for name, pool in self.pools.items():
             with pool.lock:
                 cleared = len(pool.pool)
                 pool.pool.clear()
-                self.logdebug(
-                    "Cleared pool '%s': %d objects".replace(
-                        "%s", "{name, cleared}"
-                    ).replace("%d", "{name, cleared}")
-                )
+                self.logger.debug("Cleared pool '%s': %d objects", name, cleared)
 
     def register_cache(self, cache_obj: object) -> None:
         self.cache_refs.add(cache_obj)

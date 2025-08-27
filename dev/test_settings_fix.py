@@ -6,10 +6,13 @@ when the text orientation setting specifically changes.
 
 import sys
 import os
-sys.path.insert(0, os.path.abspath('.'))
+
+sys.path.insert(0, os.path.abspath("."))
+
 
 class MockCombo:
     """Mock combo box for testing"""
+
     def __init__(self, initial_value="Centered"):
         self.value = initial_value
         self.callbacks = []
@@ -21,7 +24,9 @@ class MockCombo:
         class Signal:
             def connect(self, callback):
                 self.callbacks.append(callback)
+
         return Signal()
+
 
 class MockSettingsTester:
     """Mock class to test the settings behavior"""
@@ -56,6 +61,7 @@ class MockSettingsTester:
         if trigger_auto_save:
             self.auto_save_settings()
 
+
 def test_settings_behavior():
     """Test that text orientation is only applied when it specifically changes"""
     print("🧪 Testing Settings Fix")
@@ -63,7 +69,9 @@ def test_settings_behavior():
 
     tester = MockSettingsTester()
 
-    print("\n1. Simulating other setting changes (should NOT trigger text orientation):")
+    print(
+        "\n1. Simulating other setting changes (should NOT trigger text orientation):"
+    )
 
     # Simulate changing font size, notification settings, etc.
     tester.auto_save_settings()  # Font size change
@@ -83,7 +91,10 @@ def test_settings_behavior():
     print(f"Last applied orientation: {tester.last_applied_orientation}")
 
     print("\n🎯 Test Results:")
-    if tester.text_orientation_apply_count == 1 and tester.last_applied_orientation == "Left":
+    if (
+        tester.text_orientation_apply_count == 1
+        and tester.last_applied_orientation == "Left"
+    ):
         print("✅ PASS: Text orientation only applied when specifically changed")
     else:
         print("❌ FAIL: Text orientation applied incorrectly")
@@ -92,6 +103,7 @@ def test_settings_behavior():
     print("- Other settings changes did NOT trigger text orientation message")
     print("- Text orientation change DID trigger text orientation message")
     print("- Fix is working correctly!")
+
 
 if __name__ == "__main__":
     test_settings_behavior()

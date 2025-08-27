@@ -6,10 +6,12 @@ import shutil
 import signal
 import subprocess
 import tempfile
+import hashlib
+import sys
 import textwrap
 import time
 import traceback
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 
 # Import centralized version
@@ -35,7 +37,7 @@ except ImportError:
     OptimizationReport = None
 # Import compatible update system
 try:
-    from app.core.automatic_updates import AutoUpdateSystem, UpdateStatus
+    from app.core.automatic_updates import AutoUpdateSystem
 
     UPDATES_AVAILABLE = True
 except ImportError:
@@ -58,7 +60,7 @@ except ImportError:
 
 from threading import Thread
 
-from PyQt6.QtCore import Qt, QTime, QTimer, pyqtSignal
+from PyQt6.QtCore import Qt, QTime, QTimer, QDate, pyqtSignal
 from PyQt6.QtGui import (QAction, QFont, QIcon, QKeySequence, QMouseEvent,
                          QPixmap, QShortcut, QWheelEvent)
 from PyQt6.QtWidgets import (QApplication, QCheckBox, QComboBox, QDateEdit,
@@ -72,8 +74,7 @@ from PyQt6.QtWidgets import (QApplication, QCheckBox, QComboBox, QDateEdit,
                              QVBoxLayout, QWidget)
 
 from app.core import UNIFIED_PERFORMANCE_AVAILABLE
-from app.core.elevated_runner import (cleanup_auth_session,
-                                      validate_auth_session)
+from app.core.elevated_runner import cleanup_auth_session
 from app.core.memory_cache import get_system_cache
 from app.gui import APP_VERSION, settings_pages
 from app.gui.all_warnings_dialog import AllWarningsDialog
@@ -84,16 +85,27 @@ from app.gui.settings_pages import RKHunterOptimizationWorker
 from app.gui.setup_wizard import SetupWizard
 from app.gui.system_hardening_tab import SystemHardeningTab
 from app.gui.theme_manager import (apply_button_effects, get_theme_manager,
-                                   setup_widget_effects)
+                                   setup_widget_effects, toggle_theme)
 from app.gui.themed_widgets import ThemedWidgetMixin
 from app.gui.update_components import UpdateDialog, UpdateNotifier
 from app.gui.user_manual_window import UserManualWindow
+from app.gui.warning_explanation_dialog import WarningExplanationDialog
 from app.monitoring import MonitorConfig, RealTimeMonitor
 from app.utils.config import (CONFIG_DIR, DATA_DIR, LOG_DIR, QUARANTINE_DIR,
-                              get_config_setting, load_config, save_config,
-                              update_config_setting, update_multiple_settings)
+                              get_config_setting, get_factory_defaults,
+                              load_config, save_config, update_config_setting,
+                              update_multiple_settings)
 from app.utils.scan_reports import (ScanReportManager, ScanResult, ScanType,
                                     ThreatInfo, ThreatLevel)
+
+
+def _which(cmd: str) -> str | None:
+    """Lightweight which implementation; returns path or None."""
+    for directory in os.environ.get("PATH", "").split(os.pathsep):
+        candidate = os.path.join(directory, cmd)
+        if os.path.isfile(candidate) and os.access(candidate, os.X_OK):
+            return candidate
+    return None
 
 
 class NoWheelComboBox(QComboBox):

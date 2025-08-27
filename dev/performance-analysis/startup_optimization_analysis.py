@@ -13,6 +13,7 @@ import time
 
 from dataclasses import dataclass
 
+
 @dataclass
 class StartupBottleneck:
     """Represents a performance bottleneck during app startup."""
@@ -23,6 +24,7 @@ class StartupBottleneck:
     optimization: str
     potential_savings_ms: float
     priority: str  # high, medium, low
+
 
 class StartupOptimizer:
     """Analyzes and provides optimization recommendations for app startup."""
@@ -139,6 +141,7 @@ EXPECTED RESULTS:
 """
         return strategy
 
+
 def main():
     """Analyze startup performance and generate optimization report."""
     optimizer = StartupOptimizer()
@@ -165,11 +168,14 @@ def main():
     # Show total potential savings
     total_savings = optimizer.estimate_total_savings()
     print(f"💡 TOTAL POTENTIAL SAVINGS: {total_savings}ms")
-    print(f"⚡ ESTIMATED IMPROVEMENT: {(total_savings / 800) * 100:.1f}% faster startup")
+    print(
+        f"⚡ ESTIMATED IMPROVEMENT: {(total_savings / 800) * 100:.1f}% faster startup"
+    )
     print()
 
     # Show implementation strategy
     print(optimizer.generate_implementation_strategy())
+
 
 if __name__ == "__main__":
     main()

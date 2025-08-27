@@ -1048,10 +1048,8 @@ exec /usr/bin/python3 {self.config.executable_path} --daemon
             old_state = self.current_state
             self.current_state = new_state
 
-            self.loginfo(
-                "Service state changed: %s -> %s".replace(
-                    "%s", "{old_state.value, new_state.value}"
-                ).replace("%d", "{old_state.value, new_state.value}")
+            self.logger.info(
+                "Service state changed: %s -> %s", old_state.value, new_state.value
             )
 
             if self.state_changed_callback:

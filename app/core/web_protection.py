@@ -19,7 +19,24 @@ from typing import Any, Callable, Dict, List, Optional, Set, Tuple
 from urllib.parse import urlparse
 
 import aiohttp
-import dns.resolver
+
+# Guarded DNS import with fallback to a lightweight mock to avoid redefinition
+try:
+    import dns.resolver  # type: ignore[import-not-found]
+except Exception:  # ImportError or environment without dnspython
+    class _MockDNSResolver:
+        def __init__(self):
+            self.nameservers = []
+
+        def resolve(self, domain, record_type):
+            return []
+
+    class _MockDNSModule:
+        class resolver:  # noqa: N801 - mirror dnspython structure
+            Resolver = _MockDNSResolver
+            NXDOMAIN = Exception
+
+    dns = _MockDNSModule()  # type: ignore[assignment]
 
 
 class ThreatCategory(Enum):
@@ -1372,24 +1389,6 @@ class WebProtectionSystem:
         """Set callback for suspicious activity."""
         self.suspicious_activity_callback = callback
 
-
-# Add missing import for DNS
-try:
-    import dns.resolver
-except ImportError:
-    # Create a mock DNS resolver if not available
-    class MockDNSResolver:
-        def __init__(self):
-            self.nameservers = []
-
-        def resolve(self, domain, record_type):
-            # Return empty result
-            return []
-
-    dns = type("dns", (), {})()
-    dns.resolver = type("resolver", (), {})()
-    dns.resolver.Resolver = MockDNSResolver
-    dns.resolver.NXDOMAIN = Exception
     logging.getLogger(__name__).warning(
         "DNS resolver not available, some features may not work"
     )

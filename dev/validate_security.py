@@ -15,6 +15,7 @@ import shutil
 app_dir = Path(__file__).parent / "app"
 sys.path.insert(0, str(app_dir))
 
+
 def test_tempfile_usage():
     """Test that tempfile.gettempdir() is used instead of hardcoded paths"""
     print("🔍 Testing tempfile usage...")
@@ -23,6 +24,7 @@ def test_tempfile_usage():
     temp_dir = tempfile.gettempdir()
     print(f"✅ tempfile.gettempdir() returns: {temp_dir}")
     return True
+
 
 def test_secure_command_path():
     """Test the secure command path helper"""
@@ -40,6 +42,7 @@ def test_secure_command_path():
         print(f"❌ Error testing secure command path: {e}")
         return False
 
+
 def test_logging_available():
     """Test that logging is available for silent exception handling"""
     print("🔍 Testing logging availability...")
@@ -56,6 +59,7 @@ def test_logging_available():
         print(f"❌ Error testing logging: {e}")
         return False
 
+
 def test_secure_subprocess_availability():
     """Test that secure_subprocess module is available"""
     print("🔍 Testing secure subprocess module...")
@@ -63,7 +67,7 @@ def test_secure_subprocess_availability():
     try:
         from core.secure_subprocess import ALLOWED_BINARIES, run_secure
 
-        print(f"✅ Secure subprocess module loaded")
+        print("✅ Secure subprocess module loaded")
         print(f"   Allowed binaries: {len(ALLOWED_BINARIES)} commands")
         return True
     except ImportError as e:
@@ -72,6 +76,7 @@ def test_secure_subprocess_availability():
     except Exception as e:
         print(f"❌ Error testing secure subprocess: {e}")
         return False
+
 
 def main():
     """Run all security validation tests"""
@@ -106,6 +111,7 @@ def main():
     else:
         print("⚠️ Some validations failed, but this may be due to missing dependencies")
         return 0  # Don't fail on missing deps
+
 
 if __name__ == "__main__":
     sys.exit(main())

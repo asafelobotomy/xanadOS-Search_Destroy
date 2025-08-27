@@ -145,16 +145,8 @@ class PrivilegeEscalationManager:
             error: The exception that occurred
             include_type: Whether to include the exception type
         """
-        if include_type:
-            error_info = f"{type(error).__name__}"
-        else:
-            error_info = "Error occurred"
-
-        self.logerror(
-            "Operation '%s' failed: %s".replace(
-                "%s", "{operation, error_info}"
-            ).replace("%d", "{operation, error_info}")
-        )
+        error_info = f"{type(error).__name__}" if include_type else "Error occurred"
+        self.logger.error("Operation '%s' failed: %s", operation, error_info)
 
     def _create_secure_wrapper_script(self, request: ElevationRequest) -> str:
         """

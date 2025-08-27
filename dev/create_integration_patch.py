@@ -14,6 +14,7 @@ app_dir = Path(__file__).parent
 if str(app_dir) not in sys.path:
     sys.path.insert(0, str(app_dir))
 
+
 def create_integration_patch():
     """Create a patch file to integrate non-invasive monitoring"""
 
@@ -234,6 +235,7 @@ TESTING STRATEGY:
 
     return patch_content
 
+
 def main():
     print("🔧 COMPREHENSIVE NON-INVASIVE STATUS INTEGRATION")
     print("=" * 60)
@@ -263,6 +265,7 @@ def main():
     print()
     print("🚨 CRITICAL: Only implement user-triggered authentication")
     print("🚫 NEVER: Automatic timers must not require elevated privileges")
+
 
 if __name__ == "__main__":
     main()

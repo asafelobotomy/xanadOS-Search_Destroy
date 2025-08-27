@@ -9,6 +9,7 @@ from PyQt6.QtWidgets import (QCheckBox, QComboBox, QFormLayout, QFrame,
                              QProgressBar, QPushButton, QScrollArea, QSpinBox,
                              QTabWidget, QTextEdit, QVBoxLayout, QWidget)
 
+from app.gui import APP_VERSION
 from app.gui.theme_manager import get_theme_manager
 
 try:
@@ -16,23 +17,13 @@ try:
                                              RKHunterConfig, RKHunterOptimizer,
                                              RKHunterStatus)
 except ImportError:
-    try:
-        from app.core.rkhunter_optimizer import (OptimizationReport,
-                                                 RKHunterConfig,
-                                                 RKHunterOptimizer,
-                                                 RKHunterStatus)
-    except ImportError:
-        # Graceful fallback if module not available
-        RKHunterOptimizer = None
-        RKHunterConfig = None
-        RKHunterStatus = None
-        OptimizationReport = None
+    # Graceful fallback if module not available
+    RKHunterOptimizer = None
+    RKHunterConfig = None
+    RKHunterStatus = None
+    OptimizationReport = None
 
 logger = logging.getLogger(__name__)
-
-# Expect host MainWindow to provide helper widget classes:
-# NoWheelComboBox, NoWheelSpinBox, NoWheelTimeEdit
-from app.gui import APP_VERSION
 
 
 class RKHunterOptimizationWorker(QThread):
