@@ -109,7 +109,9 @@ class AsyncFileScanner:
         self.total_bytes_processed = 0
 
         # Initialization complete
-        self.logger.info("AsyncFileScanner initialized with %d workers", self.max_workers)
+        self.logger.info(
+            "AsyncFileScanner initialized with %d workers", self.max_workers
+        )
 
     async def _setup_async_components(self):
         """Setup async components that require an event loop."""
@@ -207,7 +209,9 @@ class AsyncFileScanner:
             # Security validation
             is_valid, error_msg = self.path_validator.validate_file_for_scan(file_path)
             if not is_valid:
-                self.logger.debug("File validation failed for %s: %s", file_path, error_msg)
+                self.logger.debug(
+                    "File validation failed for %s: %s", file_path, error_msg
+                )
                 return False
 
             # Size check
@@ -264,7 +268,9 @@ class AsyncFileScanner:
 
             # Run the actual scan in thread pool
             scanner = FileScanner()
-            result = await loop.run_in_executor(self.executor, scanner.scan_file, file_path)
+            result = await loop.run_in_executor(
+                self.executor, scanner.scan_file, file_path
+            )
 
             # Update progress
             self.files_processed += 1
@@ -331,7 +337,9 @@ class AsyncFileScanner:
         self.total_bytes_processed = 0
 
         # Initialize progress
-        self.progress = ScanProgress(total_files=len(file_paths), start_time=datetime.now())
+        self.progress = ScanProgress(
+            total_files=len(file_paths), start_time=datetime.now()
+        )
 
         try:
             # Filter files that should be scanned

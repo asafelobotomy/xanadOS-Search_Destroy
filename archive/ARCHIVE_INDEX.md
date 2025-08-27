@@ -16,12 +16,13 @@ organized by category and chronology for easy discovery and reference.
 
 ## 📊 Archive Statistics
 
-- **Total Archived Items**: 19
+- **Total Archived Items**: 20
 - **Deprecated Items**: 2
 - **Legacy Versions**: 0
 - **Superseded Items**: 11
 - **Performance/Monitoring Data**: 6
-- **Last Updated**: 2025-08-26
+- **Temporary Testing Files**: 1
+- **Last Updated**: 2025-08-27
 
 ## 🗂️ Archive Categories
 
@@ -64,6 +65,12 @@ No legacy versions currently archived.
 - `performance-monitoring/` - Performance monitoring data from security assessment
 - `logs/` - Application logs from development and testing
 - `latest_monitoring_dir.txt` - Outdated monitoring directory reference
+
+### Temporary Testing Files
+
+**Recent Archives (2025-08-27)**:
+
+- `test_black_formatting.py` - Temporary test file for Black formatter verification (archived after successful testing)
 
 ## 📅 Chronological Index
 

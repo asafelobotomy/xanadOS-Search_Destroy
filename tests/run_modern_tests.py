@@ -7,31 +7,29 @@ reporting, performance metrics, and future-proofing validation.
 Author: GitHub Copilot
 Date: 22 August 2025
 """
-from datetime import datetime
-
-from pathlib import Path
-from typing import Any, Dict, List, Optional
-
 import json
-
 import logging
 import os
-
 import subprocess
 import sys
-
 import time
+from datetime import datetime
+from pathlib import Path
+from typing import Any, Dict, List, Optional
 
 import psutil
 
 # Setup logging
-logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
+)
 logger = logging.getLogger(__name__)
 
 # Add app directory to path
 repo_root = Path(__file__).parent.parent
 app_dir = repo_root / "app"
 sys.path.insert(0, str(app_dir))
+
 
 class TestSuiteRunner:
     """Modern test suite runner with comprehensive reporting"""
@@ -104,14 +102,26 @@ class TestSuiteRunner:
             {
                 "name": "Comprehensive Suite",
                 "description": "Core functionality, integration, and future-proofing",
-                "command": [python_exec, "-m", "pytest", "tests/test_comprehensive_suite.py", "-v"],
+                "command": [
+                    python_exec,
+                    "-m",
+                    "pytest",
+                    "tests/test_comprehensive_suite.py",
+                    "-v",
+                ],
                 "critical": True,
                 "timeout": 180,
             },
             {
                 "name": "Security Validation",
                 "description": "Security testing and vulnerability checks",
-                "command": [python_exec, "-m", "pytest", "tests/test_security_validation.py", "-v"],
+                "command": [
+                    python_exec,
+                    "-m",
+                    "pytest",
+                    "tests/test_security_validation.py",
+                    "-v",
+                ],
                 "critical": True,
                 "timeout": 120,
             },
@@ -131,7 +141,14 @@ class TestSuiteRunner:
             {
                 "name": "Hardening Tests",
                 "description": "System hardening functionality",
-                "command": [python_exec, "-m", "pytest", "tests/hardening/", "-v", "--tb=short"],
+                "command": [
+                    python_exec,
+                    "-m",
+                    "pytest",
+                    "tests/hardening/",
+                    "-v",
+                    "--tb=short",
+                ],
                 "critical": False,
                 "timeout": 180,
             },
@@ -219,7 +236,8 @@ class TestSuiteRunner:
                             0)} passed, {
                         stats.get(
                             'tests_failed',
-                            0)} failed")
+                            0)} failed"
+                )
 
             if not success and result.stderr:
                 print(f"Error output:\n{result.stderr[:500]}...")
@@ -265,7 +283,9 @@ class TestSuiteRunner:
             # Look for pytest summary line
             lines = output.split("\n")
             for line in lines:
-                if "passed" in line and ("failed" in line or "error" in line or "skipped" in line):
+                if "passed" in line and (
+                    "failed" in line or "error" in line or "skipped" in line
+                ):
                     # Parse line like: "5 passed, 2 failed, 1 skipped in 10.23s"
                     parts = line.split()
                     for i, part in enumerate(parts):
@@ -302,7 +322,9 @@ class TestSuiteRunner:
         total_suites = len(self.results)
         successful_suites = sum(1 for r in self.results.values() if r["success"])
         critical_failures = sum(
-            1 for r in self.results.values() if not r["success"] and r.get("critical", False)
+            1
+            for r in self.results.values()
+            if not r["success"] and r.get("critical", False)
         )
 
         total_tests = sum(r.get("tests_run", 0) for r in self.results.values())
@@ -330,7 +352,9 @@ class TestSuiteRunner:
                 "tests_passed": total_passed,
                 "tests_failed": total_failed,
                 "tests_skipped": total_skipped,
-                "success_rate": (total_passed / total_tests * 100) if total_tests > 0 else 0,
+                "success_rate": (
+                    (total_passed / total_tests * 100) if total_tests > 0 else 0
+                ),
             },
             "detailed_results": self.results,
             "recommendations": self._generate_recommendations(),
@@ -348,16 +372,24 @@ class TestSuiteRunner:
         ]
 
         if critical_failures:
-            recommendations.append(f"❌ Critical test failures in: {', '.join(critical_failures)}")
-            recommendations.append("🔧 Fix critical issues before deploying to production")
+            recommendations.append(
+                f"❌ Critical test failures in: {', '.join(critical_failures)}"
+            )
+            recommendations.append(
+                "🔧 Fix critical issues before deploying to production"
+            )
 
         # Check for performance issues
         slow_suites = [
-            name for name, result in self.results.items() if result.get("duration", 0) > 120
+            name
+            for name, result in self.results.items()
+            if result.get("duration", 0) > 120
         ]
 
         if slow_suites:
-            recommendations.append(f"⚠️ Slow test suites detected: {', '.join(slow_suites)}")
+            recommendations.append(
+                f"⚠️ Slow test suites detected: {', '.join(slow_suites)}"
+            )
             recommendations.append("🚀 Consider optimizing test performance")
 
         # Check for skipped tests
@@ -424,7 +456,9 @@ class TestSuiteRunner:
         if summary["total_tests"] > 0:
             print("📊 Test Statistics:")
             print(f"  Total Tests: {summary['total_tests']}")
-            print(f"  Passed: {summary['tests_passed']} ({summary['success_rate']:.1f}%)")
+            print(
+                f"  Passed: {summary['tests_passed']} ({summary['success_rate']:.1f}%)"
+            )
             print(f"  Failed: {summary['tests_failed']}")
             print(f"  Skipped: {summary['tests_skipped']}")
             print()
@@ -441,29 +475,34 @@ class TestSuiteRunner:
         print("⚡ Running Quick Validation Tests")
         print("=" * 60)
 
-        quick_tests = [{"name": "Syntax Check",
-                        "description": "Python syntax validation",
-                        "command": ["python",
-                                    "-m",
-                                    "pytest",
-                                    "tests/test_gui.py::TestCodeQuality::test_no_syntax_errors",
-                                    "-v",
-                                    ],
-                        "critical": True,
-                        "timeout": 30,
-                        },
-                       {"name": "Import Check",
-                        "description": "Module import validation",
-                        "command": ["python",
-                                    "-m",
-                                    "pytest",
-                                    "tests/test_comprehensive_suite.py::TestCoreFunctionality::test_application_startup",
-                                    "-v",
-                                    ],
-                        "critical": True,
-                        "timeout": 30,
-                        },
-                       ]
+        quick_tests = [
+            {
+                "name": "Syntax Check",
+                "description": "Python syntax validation",
+                "command": [
+                    "python",
+                    "-m",
+                    "pytest",
+                    "tests/test_gui.py::TestCodeQuality::test_no_syntax_errors",
+                    "-v",
+                ],
+                "critical": True,
+                "timeout": 30,
+            },
+            {
+                "name": "Import Check",
+                "description": "Module import validation",
+                "command": [
+                    "python",
+                    "-m",
+                    "pytest",
+                    "tests/test_comprehensive_suite.py::TestCoreFunctionality::test_application_startup",
+                    "-v",
+                ],
+                "critical": True,
+                "timeout": 30,
+            },
+        ]
 
         all_passed = True
         for test in quick_tests:
@@ -477,6 +516,7 @@ class TestSuiteRunner:
         print(f"\n{status} Quick validation completed")
 
         return all_passed
+
 
 def main():
     """Main test runner entry point"""
@@ -501,6 +541,7 @@ def main():
 
     # Return appropriate exit code
     return 0 if report["summary"]["overall_success"] else 1
+
 
 if __name__ == "__main__":
     exit_code = main()

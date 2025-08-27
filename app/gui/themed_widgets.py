@@ -52,7 +52,9 @@ class ThemedWidgetMixin:
         """Get a font property from the current theme."""
         return get_theme_manager().get_font_property(font_key)
 
-    def show_themed_message_box(self, msg_type: str, title: str, text: str, buttons=None):
+    def show_themed_message_box(
+        self, msg_type: str, title: str, text: str, buttons=None
+    ):
         """Show a themed message box."""
         msg_box = get_theme_manager().create_themed_message_box(
             self, msg_type, title, text, buttons
@@ -90,8 +92,8 @@ def make_widget_themed(widget: QWidget):
     """
     # Add theming methods to the widget
     widget.get_theme_color = lambda color_key: get_theme_manager().get_color(color_key)
-    widget.get_theme_font_property = lambda font_key: get_theme_manager().get_font_property(
-        font_key
+    widget.get_theme_font_property = (
+        lambda font_key: get_theme_manager().get_font_property(font_key)
     )
     widget.show_themed_message_box = (
         lambda msg_type, title, text, buttons=None: get_theme_manager()

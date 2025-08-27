@@ -78,7 +78,9 @@ class ResponsiveUI(QObject):
         self.show_notification.connect(self._handle_notification)
         self.task_completed.connect(self._handle_task_completion)
 
-    def schedule_task(self, task_id: str, callback: Callable, *args, priority: int = 1, **kwargs):
+    def schedule_task(
+        self, task_id: str, callback: Callable, *args, priority: int = 1, **kwargs
+    ):
         """
         Schedule a background task.
 
@@ -103,9 +105,9 @@ class ResponsiveUI(QObject):
             self.pending_tasks.append(task)
 
         self.logdebug(
-            "Scheduled task '%s' with priority %d".replace("%s", "{task_id, priority}").replace(
-                "%d", "{task_id, priority}"
-            )
+            "Scheduled task '%s' with priority %d".replace(
+                "%s", "{task_id, priority}"
+            ).replace("%d", "{task_id, priority}")
         )
 
     def _process_background_tasks(self):
@@ -154,7 +156,9 @@ class ResponsiveUI(QObject):
             elif animation["type"] == "pulse":
                 self._update_pulse_animation(widget_id, animation, current_time)
 
-    def _update_progress_animation(self, widget_id: str, animation: dict, current_time: float):
+    def _update_progress_animation(
+        self, widget_id: str, animation: dict, current_time: float
+    ):
         """Update smooth progress bar animation."""
         widget = animation.get("widget")
         if not widget:
@@ -175,7 +179,9 @@ class ResponsiveUI(QObject):
 
             widget.setValue(new_value)
 
-    def _update_pulse_animation(self, widget_id: str, animation: dict, current_time: float):
+    def _update_pulse_animation(
+        self, widget_id: str, animation: dict, current_time: float
+    ):
         """Update pulsing animation."""
         widget = animation.get("widget")
         if not widget:
@@ -263,9 +269,9 @@ class ResponsiveUI(QObject):
     def _handle_task_completion(self, task_id: str, result: Any):
         """Handle task completion."""
         self.logdebug(
-            "Task '%s' completed with result: %s".replace("%s", "{task_id, result}").replace(
-                "%d", "{task_id, result}"
-            )
+            "Task '%s' completed with result: %s".replace(
+                "%s", "{task_id, result}"
+            ).replace("%d", "{task_id, result}")
         )
 
 
@@ -309,9 +315,9 @@ class ScanProgressManager(QObject):
         self.start_time = time.time()
 
         self.loginfo(
-            "Started scan progress tracking for %d files".replace("%s", "{total_files}").replace(
-                "%d", "{total_files}"
-            )
+            "Started scan progress tracking for %d files".replace(
+                "%s", "{total_files}"
+            ).replace("%d", "{total_files}")
         )
         self._emit_progress_update()
 
@@ -391,7 +397,9 @@ class ScanProgressManager(QObject):
 
         self.scan_completed.emit(final_stats)
         self.loginfo(
-            "Scan completed: %s".replace("%s", "{final_stats}").replace("%d", "{final_stats}")
+            "Scan completed: %s".replace("%s", "{final_stats}").replace(
+                "%d", "{final_stats}"
+            )
         )
 
     def report_error(self, error_message: str):
@@ -404,7 +412,9 @@ class ScanProgressManager(QObject):
         self.errors += 1
         self.error_occurred.emit(error_message)
         self.logerror(
-            "Scan error: %s".replace("%s", "{error_message}").replace("%d", "{error_message}")
+            "Scan error: %s".replace("%s", "{error_message}").replace(
+                "%d", "{error_message}"
+            )
         )
 
 
@@ -446,9 +456,9 @@ class LoadingIndicator(QObject):
             self.main_window.status_label.setText(message)
 
         self.logdebug(
-            "Started loading for operation '%s'".replace("%s", "{operation_id}").replace(
-                "%d", "{operation_id}"
-            )
+            "Started loading for operation '%s'".replace(
+                "%s", "{operation_id}"
+            ).replace("%d", "{operation_id}")
         )
 
     def stop_loading(self, operation_id: str):
@@ -465,9 +475,9 @@ class LoadingIndicator(QObject):
             self.busy_cursor_active = False
 
         self.logdebug(
-            "Stopped loading for operation '%s'".replace("%s", "{operation_id}").replace(
-                "%d", "{operation_id}"
-            )
+            "Stopped loading for operation '%s'".replace(
+                "%s", "{operation_id}"
+            ).replace("%d", "{operation_id}")
         )
 
     def is_loading(self, operation_id: Optional[str] = None) -> bool:

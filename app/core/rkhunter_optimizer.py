@@ -27,9 +27,10 @@ from typing import Any, Dict, List, Optional, Tuple
 logger = logging.getLogger(__name__)
 
 try:
+    from contextlib import nullcontext
+
     from .auth_session_manager import auth_manager, session_context
     from .elevated_runner import elevated_run
-    from contextlib import nullcontext
 except ImportError:
     logger.warning("elevated_run or auth_session_manager not available, using fallback")
 
@@ -153,7 +154,9 @@ class RKHunterOptimizer:
 
             # If not found in common paths, try which command
             if not rkhunter_path:
-                result = subprocess.run(["which", "rkhunter"], capture_output=True, timeout=5)
+                result = subprocess.run(
+                    ["which", "rkhunter"], capture_output=True, timeout=5
+                )
                 if result.returncode == 0 and result.stdout:
                     rkhunter_path = result.stdout.strip()
                     logger.info(f"Found RKHunter via which: {rkhunter_path}")
@@ -269,7 +272,9 @@ class RKHunterOptimizer:
         except Exception as e:
             return False, f"Installation error: {str(e)}"
 
-    def optimize_configuration(self, target_config: RKHunterConfig) -> OptimizationReport:
+    def optimize_configuration(
+        self, target_config: RKHunterConfig
+    ) -> OptimizationReport:
         """Perform comprehensive RKHunter optimization"""
         logger.info("Starting RKHunter configuration optimization")
 
@@ -278,7 +283,9 @@ class RKHunterOptimizer:
             error_report = OptimizationReport(
                 config_changes=[],
                 performance_improvements=[],
-                recommendations=["Please install RKHunter using: sudo pacman -S rkhunter"],
+                recommendations=[
+                    "Please install RKHunter using: sudo pacman -S rkhunter"
+                ],
                 warnings=["RKHunter is not installed or accessible"],
                 baseline_updated=False,
                 mirrors_updated=False,
@@ -290,7 +297,9 @@ class RKHunterOptimizer:
         # Acquire lock to prevent concurrent modifications and use session context
         with self._acquire_lock():
             # Use unified authentication session for the entire optimization process
-            with session_context("rkhunter_optimization", "RKHunter Configuration Optimization"):
+            with session_context(
+                "rkhunter_optimization", "RKHunter Configuration Optimization"
+            ):
                 changes = []
                 improvements = []
                 recommendations = []
@@ -306,7 +315,9 @@ class RKHunterOptimizer:
                 mirror_updated = self._optimize_mirrors(target_config)
                 if mirror_updated:
                     changes.append("Optimized mirror configuration")
-                    improvements.append("Enhanced mirror reliability with UPDATE_MIRRORS=1")
+                    improvements.append(
+                        "Enhanced mirror reliability with UPDATE_MIRRORS=1"
+                    )
 
                 # Optimize update settings
                 update_optimized = self._optimize_updates(target_config)
@@ -332,7 +343,9 @@ class RKHunterOptimizer:
                 baseline_updated = self._update_baseline_if_needed()
                 if baseline_updated:
                     changes.append("Updated property database baseline")
-                    improvements.append("Refreshed system baseline for accurate detection")
+                    improvements.append(
+                        "Refreshed system baseline for accurate detection"
+                    )
 
                 # Optimize scheduling
                 schedule_optimized = self._optimize_scheduling(target_config)
@@ -358,7 +371,9 @@ class RKHunterOptimizer:
                     timestamp=datetime.now().isoformat(),
                 )
 
-                logger.info(f"RKHunter optimization completed with {len(changes)} changes")
+                logger.info(
+                    f"RKHunter optimization completed with {len(changes)} changes"
+                )
                 return report
 
     def get_current_status(self) -> RKHunterStatus:
@@ -375,7 +390,9 @@ class RKHunterOptimizer:
                     baseline_exists=False,
                     mirror_status="RKHunter not installed",
                     performance_metrics={},
-                    issues_found=["RKHunter is not installed. Run: sudo pacman -S rkhunter"],
+                    issues_found=[
+                        "RKHunter is not installed. Run: sudo pacman -S rkhunter"
+                    ],
                 )
 
             # Get version (no sudo needed for version check)
@@ -501,7 +518,9 @@ class RKHunterOptimizer:
 
             # Run property update
             try:
-                result = self._execute_rkhunter_command(["--propupd", "--nocolors"], timeout=300)
+                result = self._execute_rkhunter_command(
+                    ["--propupd", "--nocolors"], timeout=300
+                )
             except Exception as e:
                 return False, f"Failed to execute baseline update: {str(e)}"
 
@@ -512,7 +531,9 @@ class RKHunterOptimizer:
                 if baseline_backup:
                     changes = self._analyze_baseline_changes(baseline_backup)
                     if changes:
-                        logger.info(f"Baseline changes detected: {len(changes)} modifications")
+                        logger.info(
+                            f"Baseline changes detected: {len(changes)} modifications"
+                        )
 
                 return True, "Baseline updated successfully"
             else:
@@ -559,7 +580,9 @@ class RKHunterOptimizer:
 
             # Update mirror settings
             if config.update_mirrors:
-                config_content = self._update_config_value(config_content, "UPDATE_MIRRORS", "1")
+                config_content = self._update_config_value(
+                    config_content, "UPDATE_MIRRORS", "1"
+                )
                 changes_made = True
 
             # Set mirrors mode
@@ -592,8 +615,12 @@ class RKHunterOptimizer:
 
             if config.auto_update_db:
                 # Enable automatic database updates
-                config_content = self._update_config_value(config_content, "ROTATE_MIRRORS", "1")
-                config_content = self._update_config_value(config_content, "UPDATE_LANG", "en")
+                config_content = self._update_config_value(
+                    config_content, "ROTATE_MIRRORS", "1"
+                )
+                config_content = self._update_config_value(
+                    config_content, "UPDATE_LANG", "en"
+                )
                 changes_made = True
 
             if changes_made:
@@ -617,8 +644,12 @@ class RKHunterOptimizer:
                 config_content = self._update_config_value(
                     config_content, "LOGFILE", "/var/log/rkhunter.log"
                 )
-                config_content = self._update_config_value(config_content, "APPEND_LOG", "1")
-                config_content = self._update_config_value(config_content, "COPY_LOG_ON_ERROR", "1")
+                config_content = self._update_config_value(
+                    config_content, "APPEND_LOG", "1"
+                )
+                config_content = self._update_config_value(
+                    config_content, "COPY_LOG_ON_ERROR", "1"
+                )
                 changes_made = True
 
             if changes_made:
@@ -647,7 +678,9 @@ class RKHunterOptimizer:
                 )
             elif config.performance_mode == "thorough":
                 # Thorough mode - enable all checks
-                config_content = self._update_config_value(config_content, "DISABLE_TESTS", "")
+                config_content = self._update_config_value(
+                    config_content, "DISABLE_TESTS", ""
+                )
             else:  # balanced
                 # Balanced mode - reasonable defaults
                 config_content = self._update_config_value(
@@ -714,15 +747,23 @@ class RKHunterOptimizer:
         try:
             # Check system resources
             if self._system_has_sufficient_memory():
-                recommendations.append("💾 Enable memory-intensive checks for better detection")
+                recommendations.append(
+                    "💾 Enable memory-intensive checks for better detection"
+                )
             else:
-                recommendations.append("⚠️ Consider enabling performance mode on low-memory systems")
+                recommendations.append(
+                    "⚠️ Consider enabling performance mode on low-memory systems"
+                )
 
             # Check network configuration
             if self._has_reliable_network():
-                recommendations.append("🌐 Enable automatic updates for latest threat detection")
+                recommendations.append(
+                    "🌐 Enable automatic updates for latest threat detection"
+                )
             else:
-                recommendations.append("📡 Configure manual updates due to network limitations")
+                recommendations.append(
+                    "📡 Configure manual updates due to network limitations"
+                )
 
             # Check disk space
             free_space = self._get_available_disk_space()
@@ -731,15 +772,21 @@ class RKHunterOptimizer:
 
             # Check for custom rules
             if self._custom_rules_available():
-                recommendations.append("🔧 Consider enabling custom rules for enhanced detection")
+                recommendations.append(
+                    "🔧 Consider enabling custom rules for enhanced detection"
+                )
 
             # Check scheduling
             if not self._has_optimal_schedule():
-                recommendations.append("⏰ Optimize scan scheduling to avoid system conflicts")
+                recommendations.append(
+                    "⏰ Optimize scan scheduling to avoid system conflicts"
+                )
 
         except Exception as e:
             logger.error(f"Error generating recommendations: {e}")
-            recommendations.append("❓ Run manual assessment for detailed recommendations")
+            recommendations.append(
+                "❓ Run manual assessment for detailed recommendations"
+            )
 
         return recommendations
 
@@ -750,7 +797,9 @@ class RKHunterOptimizer:
         try:
             # Check if RKHunter is available first
             if not self._ensure_rkhunter_available():
-                warnings.append("❌ RKHunter is not installed. Run: sudo pacman -S rkhunter")
+                warnings.append(
+                    "❌ RKHunter is not installed. Run: sudo pacman -S rkhunter"
+                )
                 return warnings
 
             # Check configuration file exists and is readable
@@ -773,7 +822,9 @@ class RKHunterOptimizer:
                     # Check if it's a real syntax error or just permission issue
                     stderr_lower = result.stderr.lower() if result.stderr else ""
                     if "permission" in stderr_lower or "access" in stderr_lower:
-                        warnings.append("🔒 Configuration check requires elevated permissions")
+                        warnings.append(
+                            "🔒 Configuration check requires elevated permissions"
+                        )
                     else:
                         warnings.append("⚠️ Configuration syntax issues detected")
 
@@ -787,7 +838,9 @@ class RKHunterOptimizer:
             try:
                 missing_deps = self._check_dependencies()
                 if missing_deps:
-                    warnings.append(f"📦 Optional dependencies missing: {', '.join(missing_deps)}")
+                    warnings.append(
+                        f"📦 Optional dependencies missing: {', '.join(missing_deps)}"
+                    )
             except Exception as e:
                 logger.debug(f"Dependency check failed: {e}")
 
@@ -871,7 +924,9 @@ class RKHunterOptimizer:
             with open(self.config_path, "r") as f:
                 return f.read()
         except PermissionError:
-            logger.info("Permission denied for direct read, using elevated permissions...")
+            logger.info(
+                "Permission denied for direct read, using elevated permissions..."
+            )
             try:
                 return auth_manager.execute_elevated_file_operation(
                     "read", self.config_path, session_type="rkhunter_config"
@@ -893,7 +948,9 @@ class RKHunterOptimizer:
                 f.write(content)
             logger.info("Configuration file updated")
         except PermissionError:
-            logger.info("Permission denied for direct write, using elevated permissions...")
+            logger.info(
+                "Permission denied for direct write, using elevated permissions..."
+            )
             # If permission denied, use unified authentication manager
             try:
                 result = auth_manager.execute_elevated_file_operation(
@@ -902,7 +959,9 @@ class RKHunterOptimizer:
                 if result:
                     logger.info("Configuration file updated with elevated permissions")
                 else:
-                    raise RuntimeError("Failed to write config file with elevated permissions")
+                    raise RuntimeError(
+                        "Failed to write config file with elevated permissions"
+                    )
             except Exception as elevated_error:
                 logger.error(
                     f"Failed to write config file even with elevated permissions: {elevated_error}"
@@ -957,9 +1016,13 @@ class RKHunterOptimizer:
                     for line in reversed(lines):
                         if "Update completed" in line:
                             # Extract timestamp
-                            match = re.search(r"(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})", line)
+                            match = re.search(
+                                r"(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})", line
+                            )
                             if match:
-                                return datetime.strptime(match.group(1), "%Y-%m-%d %H:%M:%S")
+                                return datetime.strptime(
+                                    match.group(1), "%Y-%m-%d %H:%M:%S"
+                                )
         except BaseException:
             pass
         return None
@@ -975,9 +1038,13 @@ class RKHunterOptimizer:
                     for line in reversed(lines):
                         if "Check completed" in line or "Scan completed" in line:
                             # Extract timestamp
-                            match = re.search(r"(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})", line)
+                            match = re.search(
+                                r"(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})", line
+                            )
                             if match:
-                                return datetime.strptime(match.group(1), "%Y-%m-%d %H:%M:%S")
+                                return datetime.strptime(
+                                    match.group(1), "%Y-%m-%d %H:%M:%S"
+                                )
         except BaseException:
             pass
         return None
@@ -1138,7 +1205,9 @@ class RKHunterOptimizer:
                 backup_size = os.path.getsize(backup_file)
 
                 if current_size != backup_size:
-                    changes.append(f"Database size changed: {backup_size} -> {current_size} bytes")
+                    changes.append(
+                        f"Database size changed: {backup_size} -> {current_size} bytes"
+                    )
 
         except Exception as e:
             logger.debug(f"Error analyzing baseline changes: {e}")
@@ -1156,7 +1225,9 @@ class RKHunterOptimizer:
             pass
         return []
 
-    def _calculate_optimal_scan_time(self, frequency: str, existing_jobs: List[str]) -> str:
+    def _calculate_optimal_scan_time(
+        self, frequency: str, existing_jobs: List[str]
+    ) -> str:
         """Calculate optimal scan time to avoid conflicts"""
         # Simple implementation - in practice, you'd analyze system load patterns
         if frequency == "daily":
@@ -1193,7 +1264,9 @@ class RKHunterOptimizer:
 
             # Update crontab
             new_crontab = "\n".join(filtered_lines)
-            process = subprocess.Popen(["crontab", "-"], stdin=subprocess.PIPE, text=True)
+            process = subprocess.Popen(
+                ["crontab", "-"], stdin=subprocess.PIPE, text=True
+            )
             process.communicate(input=new_crontab)
 
             return process.returncode == 0
@@ -1232,7 +1305,9 @@ class RKHunterOptimizer:
                         statvfs = os.statvfs(path)
                         available_bytes = statvfs.f_bavail * statvfs.f_frsize
                         mb_available = available_bytes // (1024 * 1024)  # Convert to MB
-                        logger.debug(f"Available disk space at {path}: {mb_available}MB")
+                        logger.debug(
+                            f"Available disk space at {path}: {mb_available}MB"
+                        )
                         return mb_available
                 except Exception as e:
                     logger.debug(f"Could not check disk space at {path}: {e}")
@@ -1298,7 +1373,9 @@ class RKHunterOptimizer:
                         issues.append(f"Cannot read {directory}")
                         # Don't set permissions_ok = False for read-only access to system dirs
                     if not os.access(directory, os.W_OK):
-                        logger.debug(f"No write access to {directory} (normal for non-root)")
+                        logger.debug(
+                            f"No write access to {directory} (normal for non-root)"
+                        )
 
             # Check our temp directory is writable
             if not os.access(self.temp_dir, os.W_OK):

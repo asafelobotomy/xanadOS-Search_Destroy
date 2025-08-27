@@ -1,21 +1,16 @@
 """Modern Pytest configuration & shared fixtures/mocks."""
 
-from pathlib import Path
-
-from typing import Any, Dict, Generator
 import os
-
 import sys
 import tempfile
-
 import threading
 import time
-
+import types
+from pathlib import Path
+from typing import Any, Dict, Generator
 from unittest.mock import MagicMock, Mock
 
 import pytest
-
-import types
 
 # Ensure app on path
 repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -26,6 +21,7 @@ for p in (repo_root, app_dir):
 
 # Test configuration
 pytest_plugins = ["pytest_asyncio"]
+
 
 @pytest.fixture(autouse=True)
 def mock_pyqt(monkeypatch):
@@ -89,12 +85,14 @@ def mock_pyqt(monkeypatch):
 
     yield mocked_modules
 
+
 @pytest.fixture
 def temp_workspace():
     """Provide a temporary workspace for tests."""
     with tempfile.TemporaryDirectory() as temp_dir:
         workspace = Path(temp_dir)
         yield workspace
+
 
 @pytest.fixture
 def mock_file_system(tmp_path):
@@ -109,6 +107,7 @@ def mock_file_system(tmp_path):
     (tmp_path / "logs" / "app.log").write_text("Log file content\n")
 
     return tmp_path
+
 
 @pytest.fixture
 def performance_monitor():
@@ -148,6 +147,7 @@ def performance_monitor():
 
     return PerfMonitor()
 
+
 @pytest.fixture
 def async_test_environment():
     """Provide async test environment setup."""
@@ -174,6 +174,7 @@ def async_test_environment():
     except Exception:
         pass
 
+
 @pytest.fixture
 def thread_pool_executor():
     """Provide thread pool executor for concurrent tests."""
@@ -181,6 +182,7 @@ def thread_pool_executor():
 
     with concurrent.futures.ThreadPoolExecutor(max_workers=4) as executor:
         yield executor
+
 
 @pytest.fixture
 def security_test_data():
@@ -214,6 +216,7 @@ def security_test_data():
         ],
     }
 
+
 # Enhanced elevated run fixtures
 @pytest.fixture
 def fake_elevated_run_success(monkeypatch):
@@ -221,7 +224,9 @@ def fake_elevated_run_success(monkeypatch):
 
     def _factory(stdout="", returncode=0):
         def _impl(argv, **kwargs):
-            return SimpleNamespace(args=argv, stdout=stdout, stderr="", returncode=returncode)
+            return SimpleNamespace(
+                args=argv, stdout=stdout, stderr="", returncode=returncode
+            )
 
         return _impl
 
@@ -229,6 +234,7 @@ def fake_elevated_run_success(monkeypatch):
         "app.core.rkhunter_wrapper.elevated_run", _factory("System checks summary", 0)
     )
     yield
+
 
 @pytest.fixture
 def fake_elevated_run_timeout(monkeypatch):
@@ -240,6 +246,7 @@ def fake_elevated_run_timeout(monkeypatch):
     monkeypatch.setattr("app.core.rkhunter_wrapper.elevated_run", _impl)
     yield
 
+
 @pytest.fixture
 def fake_elevated_run_cancel(monkeypatch):
     from types import SimpleNamespace
@@ -249,6 +256,7 @@ def fake_elevated_run_cancel(monkeypatch):
 
     monkeypatch.setattr("app.core.rkhunter_wrapper.elevated_run", _impl)
     yield
+
 
 @pytest.fixture(scope="session")
 def test_config():
@@ -261,6 +269,7 @@ def test_config():
         "max_concurrent_operations": 10,
     }
 
+
 # Pytest hooks for better test reporting
 def pytest_configure(config):
     """Configure pytest with custom markers and settings."""
@@ -270,10 +279,12 @@ def pytest_configure(config):
     config.addinivalue_line("markers", "security: marks tests as security tests")
     config.addinivalue_line("markers", "slow: marks tests as slow running")
 
+
 def pytest_runtest_setup(item):
     """Setup for each test run."""
     # Add any per-test setup here
     pass
+
 
 def pytest_runtest_teardown(item, nextitem):
     """Teardown after each test run."""
@@ -281,6 +292,7 @@ def pytest_runtest_teardown(item, nextitem):
     import gc
 
     gc.collect()
+
 
 @pytest.fixture(autouse=True)
 def cleanup_threads():
@@ -297,5 +309,7 @@ def cleanup_threads():
 
     # Log any remaining threads for debugging
     if threading.active_count() > 1:
-        active_threads = [t.name for t in threading.enumerate() if t != threading.current_thread()]
+        active_threads = [
+            t.name for t in threading.enumerate() if t != threading.current_thread()
+        ]
         print(f"Warning: {len(active_threads)} threads still active: {active_threads}")

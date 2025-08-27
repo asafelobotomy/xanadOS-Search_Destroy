@@ -7,9 +7,9 @@ import pytest
 
 pytest.skip("Legacy umbrella test file skipped", allow_module_level=True)
 import ast  # noqa: F401
-
 import os  # noqa: F401
 import sys  # noqa: F401
+
 
 def test_requirements_fixed():
     """Test that requirements.txt has been fixed"""
@@ -24,6 +24,7 @@ def test_requirements_fixed():
 
     print("✓ requirements.txt fixed - pyclamd version corrected")
 
+
 def test_pyqt6_consistency():
     """Test that all GUI files use PyQt6 consistently"""
     print("Testing PyQt6 consistency...")
@@ -37,7 +38,9 @@ def test_pyqt6_consistency():
 
             # Check that PyQt5 is not imported
             assert "from PyQt5" not in content, f"FAIL: {file_path} still imports PyQt5"
-            assert "import PyQt5" not in content, f"FAIL: {file_path} still imports PyQt5"
+            assert (
+                "import PyQt5" not in content
+            ), f"FAIL: {file_path} still imports PyQt5"
 
             # If PyQt is imported, it should be PyQt6
             if "PyQt" in content:
@@ -45,11 +48,13 @@ def test_pyqt6_consistency():
 
     print("✓ PyQt6 consistency verified - all files use PyQt6")
 
+
 def test_placeholder_implementations_removed():
     """Test that placeholder implementations have been replaced"""
     print("Testing placeholder implementations...")
 
     print("✓ Legacy dialog files removed - functionality moved to main window tabs")
+
 
 def test_python_syntax():
     """Test that all Python files have correct syntax"""
@@ -73,6 +78,7 @@ def test_python_syntax():
 
     print(f"✓ Python syntax verified - {len(python_files)} files checked")
 
+
 def test_main_structure():
     """Test that main.py has correct structure"""
     print("Testing main.py structure...")
@@ -84,7 +90,8 @@ def test_main_structure():
 
     # Check for main function
     has_main_function = any(
-        isinstance(node, ast.FunctionDef) and node.name == "main" for node in ast.walk(tree)
+        isinstance(node, ast.FunctionDef) and node.name == "main"
+        for node in ast.walk(tree)
     )
     assert has_main_function, "FAIL: main.py should have a main() function"
 
@@ -95,12 +102,15 @@ def test_main_structure():
 
     print("✓ main.py structure verified")
 
+
 def test_icons_created():
     """Test that application icons have been created"""
     print("Testing application icons...")
 
     # Check icons directory exists
-    assert os.path.exists("packaging/icons"), "FAIL: packaging/icons directory should exist"
+    assert os.path.exists(
+        "packaging/icons"
+    ), "FAIL: packaging/icons directory should exist"
 
     # Check for SVG icon
     svg_icon = "packaging/icons/io.github.asafelobotomy.SearchAndDestroy.svg"
@@ -115,15 +125,16 @@ def test_icons_created():
     # Check for icon placeholders or actual PNG files
     sizes = [16, 32, 48, 64, 128]
     for size in sizes:
-        png_icon = f"packaging/icons/io.github.asafelobotomy.SearchAndDestroy-{size}.png"
-        placeholder = (
-            f"packaging/icons/io.github.asafelobotomy.SearchAndDestroy-{size}.png.placeholder"
+        png_icon = (
+            f"packaging/icons/io.github.asafelobotomy.SearchAndDestroy-{size}.png"
         )
+        placeholder = f"packaging/icons/io.github.asafelobotomy.SearchAndDestroy-{size}.png.placeholder"
 
         icon_exists = os.path.exists(png_icon) or os.path.exists(placeholder)
         assert icon_exists, f"FAIL: Icon for size {size}x{size} should exist"
 
     print("✓ Application icons created - SVG and PNG placeholders")
+
 
 def test_code_organization():
     """Test that code is properly organized"""
@@ -137,10 +148,14 @@ def test_code_organization():
         scan_thread_content = f.read()
 
     # MainWindow should be in main_window.py
-    assert "class MainWindow" in main_window_content, "FAIL: MainWindow should be in main_window.py"
+    assert (
+        "class MainWindow" in main_window_content
+    ), "FAIL: MainWindow should be in main_window.py"
 
     # ScanThread should be in scan_thread.py, not a large MainWindow implementation
-    assert "class ScanThread" in scan_thread_content, "FAIL: ScanThread should be in scan_thread.py"
+    assert (
+        "class ScanThread" in scan_thread_content
+    ), "FAIL: ScanThread should be in scan_thread.py"
 
     # scan_thread.py should contain ScanThread implementation (can be substantial)
     scan_thread_lines = len(scan_thread_content.splitlines())
@@ -154,6 +169,7 @@ def test_code_organization():
     ), "FAIL: scan_thread.py should not contain MainWindow class"
 
     print("✓ Code organization verified - proper separation of concerns")
+
 
 def main():
     """Run all tests"""
@@ -193,6 +209,7 @@ def main():
     else:
         print("❌ Some tests failed. See details above.")
         return 1
+
 
 if __name__ == "__main__":  # pragma: no cover
     sys.exit(main())

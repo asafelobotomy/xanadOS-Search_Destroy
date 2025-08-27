@@ -74,7 +74,9 @@ class NonInvasiveSystemMonitor:
                     # Convert datetime strings back to datetime objects
                     if data.get("status"):
                         status_data = data["status"]
-                        status_data["timestamp"] = datetime.fromisoformat(status_data["timestamp"])
+                        status_data["timestamp"] = datetime.fromisoformat(
+                            status_data["timestamp"]
+                        )
                         if status_data.get("last_activity"):
                             status_data["last_activity"] = datetime.fromisoformat(
                                 status_data["last_activity"]
@@ -97,7 +99,9 @@ class NonInvasiveSystemMonitor:
                 status_dict = asdict(self._status_cache)
                 status_dict["timestamp"] = status_dict["timestamp"].isoformat()
                 if status_dict.get("last_activity"):
-                    status_dict["last_activity"] = status_dict["last_activity"].isoformat()
+                    status_dict["last_activity"] = status_dict[
+                        "last_activity"
+                    ].isoformat()
 
                 cache_data = {"cache_time": self._cache_time, "status": status_dict}
 
@@ -190,7 +194,9 @@ class NonInvasiveSystemMonitor:
             rkhunter_path = None
 
             for path in rkhunter_paths:
-                if os.path.exists(path):  # Just check existence, not user execution permissions
+                if os.path.exists(
+                    path
+                ):  # Just check existence, not user execution permissions
                     rkhunter_path = path
                     break
 
@@ -411,8 +417,12 @@ if __name__ == "__main__":
 
     print("\n📊 SYSTEM STATUS REPORT:")
     print(f"Timestamp: {status.timestamp}")
-    print(f"RKHunter: {'✅' if status.rkhunter_available else '❌'} {status.rkhunter_version}")
-    print(f"ClamAV: {'✅' if status.clamav_available else '❌'} {status.clamav_version}")
+    print(
+        f"RKHunter: {'✅' if status.rkhunter_available else '❌'} {status.rkhunter_version}"
+    )
+    print(
+        f"ClamAV: {'✅' if status.clamav_available else '❌'} {status.clamav_version}"
+    )
     print(f"Virus Definitions Age: {status.virus_definitions_age} days")
     print(f"Firewall: {status.firewall_status}")
     print("System Services:")

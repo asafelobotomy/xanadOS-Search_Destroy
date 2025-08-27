@@ -2,14 +2,11 @@
 """
 Test script for Phase 3 real-time monitoring system
 """
-from pathlib import Path
-
 import os
-
 import sys
 import tempfile
-
 import time
+from pathlib import Path
 
 # Add src to path for imports
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "app"))
@@ -66,7 +63,9 @@ try:
             stats = monitor.get_statistics()
             assert isinstance(stats, dict) and stats, "Statistics should not be empty"
             # Ensure no errors recorded during basic operation
-            assert not events["errors"], f"Unexpected monitor errors: {events['errors']}"
+            assert not events[
+                "errors"
+            ], f"Unexpected monitor errors: {events['errors']}"
 
             logger.info("Stopping monitor...")
             monitor.stop()

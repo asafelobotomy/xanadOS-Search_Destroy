@@ -12,18 +12,14 @@ Includes scanning engine, security, quarantine management, and performance optim
 # Core scanning and security components
 from .clamav_wrapper import ClamAVWrapper, ScanFileResult, ScanResult
 from .file_scanner import FileScanner
-from .rkhunter_wrapper import RKHunterResult, RKHunterScanResult, RKHunterWrapper
+from .rkhunter_wrapper import (RKHunterResult, RKHunterScanResult,
+                               RKHunterWrapper)
 
 # Unified systems (2025 optimizations)
 try:
-    from .unified_security_engine import (
-        EventType,
-        ProtectionMode,
-        SecurityEvent,
-        SystemHealth,
-        ThreatLevel,
-        UnifiedSecurityEngine,
-    )
+    from .unified_security_engine import (EventType, ProtectionMode,
+                                          SecurityEvent, SystemHealth,
+                                          ThreatLevel, UnifiedSecurityEngine)
 
     UNIFIED_SECURITY_AVAILABLE = True
 except ImportError as e:
@@ -33,19 +29,19 @@ except ImportError as e:
     logging.getLogger(__name__).warning(f"Unified Security Engine unavailable: {e}")
 
 try:
-    from .unified_performance_optimizer import (
-        OptimizationResult,
-        PerformanceMetrics,
-        PerformanceMode,
-        UnifiedPerformanceOptimizer,
-    )
+    from .unified_performance_optimizer import (OptimizationResult,
+                                                PerformanceMetrics,
+                                                PerformanceMode,
+                                                UnifiedPerformanceOptimizer)
 
     UNIFIED_PERFORMANCE_AVAILABLE = True
 except ImportError as e:
     UNIFIED_PERFORMANCE_AVAILABLE = False
     import logging
 
-    logging.getLogger(__name__).warning(f"Unified Performance Optimizer unavailable: {e}")
+    logging.getLogger(__name__).warning(
+        f"Unified Performance Optimizer unavailable: {e}"
+    )
 
 # Legacy components (maintained for compatibility)
 try:
@@ -53,26 +49,18 @@ try:
 except ImportError:
     # Async scanner may have import issues, skip for now
     pass
-from .rate_limiting import AdaptiveRateLimiter, GlobalRateLimitManager, RateLimiter
+from .rate_limiting import (AdaptiveRateLimiter, GlobalRateLimitManager,
+                            RateLimiter)
 from .telemetry import PrivacyManager, TelemetryCollector, TelemetryManager
-from .ui_responsiveness import (
-    LoadingIndicator,
-    ResponsiveUI,
-    ScanProgressManager,
-    get_loading_indicator,
-    get_responsive_ui,
-    get_scan_progress,
-    initialize_responsive_ui,
-)
+from .ui_responsiveness import (LoadingIndicator, ResponsiveUI,
+                                ScanProgressManager, get_loading_indicator,
+                                get_responsive_ui, get_scan_progress,
+                                initialize_responsive_ui)
 
 # Performance optimization components (legacy fallback)
 try:
-    from .database_optimizer import (
-        DatabaseConnectionPool,
-        QueryOptimizer,
-        ScanResultsDB,
-        get_scan_db,
-    )
+    from .database_optimizer import (DatabaseConnectionPool, QueryOptimizer,
+                                     ScanResultsDB, get_scan_db)
     from .memory_optimizer import MemoryOptimizer
 except ImportError:
     pass
@@ -88,38 +76,30 @@ except ImportError:
 
 # Advanced feature modules (optional dependencies)
 try:
-    from .advanced_reporting import AdvancedReportingSystem, ReportFormat, ReportType
+    from .advanced_reporting import (AdvancedReportingSystem, ReportFormat,
+                                     ReportType)
     from .automatic_updates import AutoUpdateSystem, UpdateStatus, UpdateType
-    from .cloud_integration import (
-        CloudIntegrationSystem,
-        CloudProvider,
-        ThreatIntelSource,
-    )
-    from .heuristic_analysis import HeuristicAnalysisEngine, HeuristicType, RiskLevel
+    from .cloud_integration import (CloudIntegrationSystem, CloudProvider,
+                                    ThreatIntelSource)
+    from .heuristic_analysis import (HeuristicAnalysisEngine, HeuristicType,
+                                     RiskLevel)
     from .multi_language_support import MultiLanguageSupport, SupportedLanguage
-
     # Non-invasive monitoring system - eliminates sudo requirements for status
     # checks
-    from .non_invasive_monitor import (
-        NonInvasiveSystemMonitor,
-        SystemStatus,
-        get_system_status,
-        record_activity,
-        system_monitor,
-    )
+    from .non_invasive_monitor import (NonInvasiveSystemMonitor, SystemStatus,
+                                       get_system_status, record_activity,
+                                       system_monitor)
     from .rkhunter_monitor_non_invasive import (
-        RKHunterMonitorNonInvasive,
-        RKHunterStatusNonInvasive,
-        get_rkhunter_status_non_invasive,
-        record_rkhunter_activity,
-        rkhunter_monitor,
-    )
-
+        RKHunterMonitorNonInvasive, RKHunterStatusNonInvasive,
+        get_rkhunter_status_non_invasive, record_rkhunter_activity,
+        rkhunter_monitor)
     # Note: real_time_protection.py has been deprecated and moved to archive/
     # Its functionality has been integrated into
     # enhanced_real_time_protection.py
-    from .system_service import ServiceConfig, ServiceState, SystemServiceManager
-    from .web_protection import ThreatCategory, URLReputation, WebProtectionSystem
+    from .system_service import (ServiceConfig, ServiceState,
+                                 SystemServiceManager)
+    from .web_protection import (ThreatCategory, URLReputation,
+                                 WebProtectionSystem)
 except ImportError as e:
     # Advanced modules may not be available due to missing dependencies
     import logging

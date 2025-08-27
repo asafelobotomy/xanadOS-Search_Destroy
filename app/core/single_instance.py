@@ -29,7 +29,9 @@ class SingleInstanceManager:
         """Check if another instance is already running."""
         try:
             # Try to acquire lock file
-            self.lock_fd = os.open(self.lock_file_path, os.O_CREAT | os.O_WRONLY | os.O_TRUNC)
+            self.lock_fd = os.open(
+                self.lock_file_path, os.O_CREAT | os.O_WRONLY | os.O_TRUNC
+            )
             fcntl.flock(self.lock_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
 
             # Write PID to lock file
@@ -76,7 +78,9 @@ class SingleInstanceManager:
 
             # Set up timer to check for incoming connections
             self.connection_timer = QTimer()
-            self.connection_timer.timeout.connect(lambda: self._check_connections(main_window))
+            self.connection_timer.timeout.connect(
+                lambda: self._check_connections(main_window)
+            )
             self.connection_timer.start(500)  # Check every 500ms
 
             return True

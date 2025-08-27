@@ -3,7 +3,7 @@
 
 # Project metadata
 PROJECT_NAME := xanadOS-Search-Destroy
-VERSION := $(shell cat VERSION 2>/dev/null || echo "2.7.1")
+VERSION := $(shell cat VERSION 2>/dev/null || echo "2.11.2")
 PYTHON := python3
 PIP := $(PYTHON) -m pip
 VENV_DIR := .venv

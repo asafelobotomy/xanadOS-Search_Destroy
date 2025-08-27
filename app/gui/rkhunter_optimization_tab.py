@@ -15,38 +15,17 @@ from datetime import datetime
 
 from PyQt6.QtCore import Qt, QThread, QTimer, pyqtSignal
 from PyQt6.QtGui import QColor, QFont, QTextCursor
-from PyQt6.QtWidgets import (
-    QCheckBox,
-    QComboBox,
-    QDialog,
-    QDialogButtonBox,
-    QFormLayout,
-    QFrame,
-    QGridLayout,
-    QGroupBox,
-    QHBoxLayout,
-    QLabel,
-    QLineEdit,
-    QListWidget,
-    QListWidgetItem,
-    QMessageBox,
-    QPushButton,
-    QScrollArea,
-    QSpinBox,
-    QSplitter,
-    QTabWidget,
-    QTextEdit,
-    QVBoxLayout,
-    QWidget,
-)
+from PyQt6.QtWidgets import (QCheckBox, QComboBox, QDialog, QDialogButtonBox,
+                             QFormLayout, QFrame, QGridLayout, QGroupBox,
+                             QHBoxLayout, QLabel, QLineEdit, QListWidget,
+                             QListWidgetItem, QMessageBox, QPushButton,
+                             QScrollArea, QSpinBox, QSplitter, QTabWidget,
+                             QTextEdit, QVBoxLayout, QWidget)
 
 try:
-    from app.core.rkhunter_optimizer import (
-        OptimizationReport,
-        RKHunterConfig,
-        RKHunterOptimizer,
-        RKHunterStatus,
-    )
+    from app.core.rkhunter_optimizer import (OptimizationReport,
+                                             RKHunterConfig, RKHunterOptimizer,
+                                             RKHunterStatus)
 except ImportError:
     # Fallbacks if optimizer module not fully available
     OptimizationReport = None  # type: ignore[assignment]
@@ -482,7 +461,9 @@ class RKHunterOptimizationResultsWidget(QWidget):
             recommendations_html += "</ul>"
             self.recommendations_text.setHtml(recommendations_html)
         else:
-            self.recommendations_text.setPlainText("No additional recommendations at this time.")
+            self.recommendations_text.setPlainText(
+                "No additional recommendations at this time."
+            )
 
         # Populate warnings
         for warning in report.warnings:
@@ -497,8 +478,12 @@ class RKHunterOptimizationResultsWidget(QWidget):
 
         # Set tab badges based on content
         self.results_tabs.setTabText(0, f"Changes ({len(report.config_changes)})")
-        self.results_tabs.setTabText(1, f"Improvements ({len(report.performance_improvements)})")
-        self.results_tabs.setTabText(2, f"Recommendations ({len(report.recommendations)})")
+        self.results_tabs.setTabText(
+            1, f"Improvements ({len(report.performance_improvements)})"
+        )
+        self.results_tabs.setTabText(
+            2, f"Recommendations ({len(report.recommendations)})"
+        )
         self.results_tabs.setTabText(3, f"Warnings ({len(report.warnings)})")
 
 
@@ -666,9 +651,7 @@ class RKHunterOptimizationTab(QWidget):
         improvements_count = len(report.performance_improvements)
         warnings_count = len(report.warnings)
 
-        summary = (
-            f"Optimization completed: {changes_count} changes, {improvements_count} improvements"
-        )
+        summary = f"Optimization completed: {changes_count} changes, {improvements_count} improvements"
         if warnings_count > 0:
             summary += f", {warnings_count} warnings"
 
@@ -772,11 +755,15 @@ class RKHunterManualActionsDialog(QDialog):
 
     def update_mirrors(self):
         """Update RKHunter mirrors"""
-        self.run_action("Updating mirrors...", lambda: self.optimizer.update_mirrors_enhanced())
+        self.run_action(
+            "Updating mirrors...", lambda: self.optimizer.update_mirrors_enhanced()
+        )
 
     def update_baseline(self):
         """Update RKHunter baseline"""
-        self.run_action("Updating baseline...", lambda: self.optimizer.update_baseline_smart())
+        self.run_action(
+            "Updating baseline...", lambda: self.optimizer.update_baseline_smart()
+        )
 
     def check_configuration(self):
         """Check RKHunter configuration"""

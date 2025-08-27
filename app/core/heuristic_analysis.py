@@ -196,7 +196,9 @@ class HeuristicAnalysisEngine:
 
         except Exception:
             self.logerror(
-                "Failed to initialize database: %s".replace("%s", "{e}").replace("%d", "{e}")
+                "Failed to initialize database: %s".replace("%s", "{e}").replace(
+                    "%d", "{e}"
+                )
             )
 
     def _load_default_patterns(self):
@@ -393,9 +395,9 @@ class HeuristicAnalysisEngine:
 
             except asyncio.TimeoutError:
                 self.logwarning(
-                    "Heuristic analysis timeout for %s".replace("%s", "{file_path}").replace(
-                        "%d", "{file_path}"
-                    )
+                    "Heuristic analysis timeout for %s".replace(
+                        "%s", "{file_path}"
+                    ).replace("%d", "{file_path}")
                 )
 
             # Store results in database
@@ -406,9 +408,9 @@ class HeuristicAnalysisEngine:
 
         except Exception:
             self.logerror(
-                "Error in heuristic analysis of %s: %s".replace("%s", "{file_path, e}").replace(
-                    "%d", "{file_path, e}"
-                )
+                "Error in heuristic analysis of %s: %s".replace(
+                    "%s", "{file_path, e}"
+                ).replace("%d", "{file_path, e}")
             )
             return []
 
@@ -474,14 +476,20 @@ class HeuristicAnalysisEngine:
                         details={
                             "overall_entropy": overall_entropy,
                             "section_entropies": section_entropies,
-                            "entropy_variance": (entropy_variance if section_entropies else 0.0),
+                            "entropy_variance": (
+                                entropy_variance if section_entropies else 0.0
+                            ),
                         },
                     )
 
                 return None
 
         except Exception:
-            self.logerror("Error in entropy analysis: %s".replace("%s", "{e}").replace("%d", "{e}"))
+            self.logerror(
+                "Error in entropy analysis: %s".replace("%s", "{e}").replace(
+                    "%d", "{e}"
+                )
+            )
             return None
 
     async def _pattern_analysis(self, file_path: str) -> Optional[HeuristicResult]:
@@ -530,7 +538,9 @@ class HeuristicAnalysisEngine:
 
                 if threat_indicators:
                     avg_confidence = sum(confidence_scores) / len(confidence_scores)
-                    risk_level = self._calculate_risk_level(threat_indicators, avg_confidence)
+                    risk_level = self._calculate_risk_level(
+                        threat_indicators, avg_confidence
+                    )
 
                     return HeuristicResult(
                         file_path=file_path,
@@ -545,7 +555,11 @@ class HeuristicAnalysisEngine:
                 return None
 
         except Exception:
-            self.logerror("Error in pattern analysis: %s".replace("%s", "{e}").replace("%d", "{e}"))
+            self.logerror(
+                "Error in pattern analysis: %s".replace("%s", "{e}").replace(
+                    "%d", "{e}"
+                )
+            )
             return None
 
     async def _structural_analysis(self, file_path: str) -> Optional[HeuristicResult]:
@@ -585,7 +599,10 @@ class HeuristicAnalysisEngine:
                         confidence = 0.5
 
                 # Check for script files
-                elif any(header.startswith(script) for script in [b"#!/", b"<script", b"<?php"]):
+                elif any(
+                    header.startswith(script)
+                    for script in [b"#!/", b"<script", b"<?php"]
+                ):
                     details["file_type"] = "script"
 
                     # Check for suspicious script content
@@ -602,7 +619,9 @@ class HeuristicAnalysisEngine:
                     confidence = max(confidence, 0.4)
 
                 if threat_indicators:
-                    risk_level = self._calculate_risk_level(threat_indicators, confidence)
+                    risk_level = self._calculate_risk_level(
+                        threat_indicators, confidence
+                    )
 
                     return HeuristicResult(
                         file_path=file_path,
@@ -618,7 +637,9 @@ class HeuristicAnalysisEngine:
 
         except Exception:
             self.logerror(
-                "Error in structural analysis: %s".replace("%s", "{e}").replace("%d", "{e}")
+                "Error in structural analysis: %s".replace("%s", "{e}").replace(
+                    "%d", "{e}"
+                )
             )
             return None
 
@@ -708,7 +729,9 @@ class HeuristicAnalysisEngine:
 
         except Exception:
             self.logerror(
-                "Error in metadata analysis: %s".replace("%s", "{e}").replace("%d", "{e}")
+                "Error in metadata analysis: %s".replace("%s", "{e}").replace(
+                    "%d", "{e}"
+                )
             )
             return None
 
@@ -747,14 +770,18 @@ class HeuristicAnalysisEngine:
                         1
                         for s in suspicious_strings_found
                         if any(
-                            api in s.lower() for api in ["create", "write", "read", "delete", "reg"]
+                            api in s.lower()
+                            for api in ["create", "write", "read", "delete", "reg"]
                         )
                     )
 
                     network_strings = sum(
                         1
                         for s in suspicious_strings_found
-                        if any(net in s.lower() for net in ["http", "connect", "socket", "send"])
+                        if any(
+                            net in s.lower()
+                            for net in ["http", "connect", "socket", "send"]
+                        )
                     )
 
                     crypto_strings = sum(
@@ -789,11 +816,15 @@ class HeuristicAnalysisEngine:
                         "api_calls": api_calls,
                         "network_strings": network_strings,
                         "crypto_strings": crypto_strings,
-                        "sample_strings": suspicious_strings_found[:10],  # First 10 for review
+                        "sample_strings": suspicious_strings_found[
+                            :10
+                        ],  # First 10 for review
                     }
 
                 if threat_indicators:
-                    risk_level = self._calculate_risk_level(threat_indicators, confidence)
+                    risk_level = self._calculate_risk_level(
+                        threat_indicators, confidence
+                    )
 
                     return HeuristicResult(
                         file_path=file_path,
@@ -810,10 +841,14 @@ class HeuristicAnalysisEngine:
                 return None
 
         except Exception:
-            self.logerror("Error in string analysis: %s".replace("%s", "{e}").replace("%d", "{e}"))
+            self.logerror(
+                "Error in string analysis: %s".replace("%s", "{e}").replace("%d", "{e}")
+            )
             return None
 
-    def analyze_behavioral_pattern(self, activities: List[Dict[str, Any]]) -> List[HeuristicResult]:
+    def analyze_behavioral_pattern(
+        self, activities: List[Dict[str, Any]]
+    ) -> List[HeuristicResult]:
         """Analyze behavioral patterns from system activities."""
         try:
             results = []
@@ -827,7 +862,9 @@ class HeuristicAnalysisEngine:
                     if not pattern.enabled:
                         continue
 
-                    match_score = self._evaluate_behavioral_pattern(pattern, window_activities)
+                    match_score = self._evaluate_behavioral_pattern(
+                        pattern, window_activities
+                    )
 
                     if match_score > 0.5:  # Threshold for pattern match
                         threat_indicators = self._pattern_to_threat_indicators(pattern)
@@ -854,7 +891,9 @@ class HeuristicAnalysisEngine:
 
         except Exception:
             self.logerror(
-                "Error in behavioral pattern analysis: %s".replace("%s", "{e}").replace("%d", "{e}")
+                "Error in behavioral pattern analysis: %s".replace("%s", "{e}").replace(
+                    "%d", "{e}"
+                )
             )
             return []
 
@@ -943,9 +982,9 @@ class HeuristicAnalysisEngine:
 
                 if len(full_header) > pe_offset + 24:
                     # Check number of sections
-                    num_sections = struct.unpack("<H", full_header[pe_offset + 6 : pe_offset + 8])[
-                        0
-                    ]
+                    num_sections = struct.unpack(
+                        "<H", full_header[pe_offset + 6 : pe_offset + 8]
+                    )[0]
 
                     if num_sections > 20:  # Unusual number of sections
                         anomalies.append("excessive_sections")
@@ -1099,7 +1138,9 @@ class HeuristicAnalysisEngine:
 
         return matched_indicators / total_indicators
 
-    def _activity_matches_indicator(self, activity: Dict[str, Any], indicator: str) -> bool:
+    def _activity_matches_indicator(
+        self, activity: Dict[str, Any], indicator: str
+    ) -> bool:
         """Check if an activity matches a behavioral indicator."""
         activity_type = activity.get("type", "").lower()
         activity_details = str(activity.get("details", "")).lower()
@@ -1111,7 +1152,9 @@ class HeuristicAnalysisEngine:
             or any(indicator in str(v).lower() for v in activity.values())
         )
 
-    def _pattern_to_threat_indicators(self, pattern: BehavioralPattern) -> List[ThreatIndicator]:
+    def _pattern_to_threat_indicators(
+        self, pattern: BehavioralPattern
+    ) -> List[ThreatIndicator]:
         """Convert behavioral pattern to threat indicators."""
         # Mapping from pattern indicators to threat indicators
         indicator_mapping = {
@@ -1155,7 +1198,9 @@ class HeuristicAnalysisEngine:
         }
 
         # Calculate total risk score
-        total_risk = sum(indicator_risks.get(indicator, 1) for indicator in threat_indicators)
+        total_risk = sum(
+            indicator_risks.get(indicator, 1) for indicator in threat_indicators
+        )
 
         # Adjust by confidence
         adjusted_risk = total_risk * confidence
@@ -1186,7 +1231,10 @@ class HeuristicAnalysisEngine:
         with self.lock:
             if file_hash in self.analysis_cache:
                 # Check if cache entry is still valid
-                if file_hash in self.cache_expiry and datetime.now() < self.cache_expiry[file_hash]:
+                if (
+                    file_hash in self.cache_expiry
+                    and datetime.now() < self.cache_expiry[file_hash]
+                ):
                     return self.analysis_cache[file_hash]
                 else:
                     # Remove expired entry
@@ -1199,7 +1247,9 @@ class HeuristicAnalysisEngine:
         """Cache analysis result."""
         with self.lock:
             self.analysis_cache[file_hash] = result
-            self.cache_expiry[file_hash] = datetime.now() + timedelta(hours=self.cache_ttl_hours)
+            self.cache_expiry[file_hash] = datetime.now() + timedelta(
+                hours=self.cache_ttl_hours
+            )
 
             # Limit cache size
             if len(self.analysis_cache) > 1000:
@@ -1243,7 +1293,9 @@ class HeuristicAnalysisEngine:
 
         except Exception:
             self.logerror(
-                "Error storing analysis result: %s".replace("%s", "{e}").replace("%d", "{e}")
+                "Error storing analysis result: %s".replace("%s", "{e}").replace(
+                    "%d", "{e}"
+                )
             )
 
     def get_analysis_statistics(self) -> Dict[str, Any]:
@@ -1289,7 +1341,9 @@ class HeuristicAnalysisEngine:
             }
 
         except Exception:
-            self.logerror("Error getting statistics: %s".replace("%s", "{e}").replace("%d", "{e}"))
+            self.logerror(
+                "Error getting statistics: %s".replace("%s", "{e}").replace("%d", "{e}")
+            )
             return {}
 
     def add_behavioral_pattern(self, pattern: BehavioralPattern):
@@ -1323,7 +1377,9 @@ class HeuristicAnalysisEngine:
 
         except Exception:
             self.logerror(
-                "Error storing behavioral pattern: %s".replace("%s", "{e}").replace("%d", "{e}")
+                "Error storing behavioral pattern: %s".replace("%s", "{e}").replace(
+                    "%d", "{e}"
+                )
             )
 
     def add_file_signature(self, signature: FileSignature):
@@ -1356,5 +1412,7 @@ class HeuristicAnalysisEngine:
 
         except Exception:
             self.logerror(
-                "Error storing file signature: %s".replace("%s", "{e}").replace("%d", "{e}")
+                "Error storing file signature: %s".replace("%s", "{e}").replace(
+                    "%d", "{e}"
+                )
             )

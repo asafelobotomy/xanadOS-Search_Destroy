@@ -3,26 +3,18 @@
 Space Utilization Comparison Demo
 Shows before vs after space optimization for security features table
 """
-from PyQt6.QtWidgets import (
-    QApplication,
-    QHBoxLayout,
-    QLabel,
-    QMainWindow,
-    QTabWidget,
-    QVBoxLayout,
-    QWidget,
-)
-from PyQt6.QtGui import QFont
-
-from PyQt6.QtCore import Qt, QTimer
-from gui.theme_manager import ThemeManager
-
-from gui.system_hardening_tab import SystemHardeningTab
 import os
-
 import sys
 
+from gui.system_hardening_tab import SystemHardeningTab
+from gui.theme_manager import ThemeManager
+from PyQt6.QtCore import Qt, QTimer
+from PyQt6.QtGui import QFont
+from PyQt6.QtWidgets import (QApplication, QHBoxLayout, QLabel, QMainWindow,
+                             QTabWidget, QVBoxLayout, QWidget)
+
 sys.path.insert(0, "app")
+
 
 class SpaceComparisonDemo(QMainWindow):
     def __init__(self):
@@ -85,6 +77,7 @@ class SpaceComparisonDemo(QMainWindow):
         )
         layout.addWidget(info_label)
 
+
 def main():
     app = QApplication(sys.argv)
 
@@ -111,6 +104,7 @@ def main():
     QTimer.singleShot(2000, run_assessment)
 
     sys.exit(app.exec())
+
 
 if __name__ == "__main__":
     main()

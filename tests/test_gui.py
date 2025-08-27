@@ -2,15 +2,11 @@
 """
 Unit tests for S&D - Search & Destroy GUI components
 """
-import os
-
-import sys
-
-from unittest.mock import Mock
-
 import ast
-
+import os
+import sys
 import unittest
+from unittest.mock import Mock
 
 # Add the app directory to the path for imports
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "app"))
@@ -26,6 +22,7 @@ mock_modules = ["pyclamd", "requests", "schedule", "psutil"]
 
 for module in mock_modules:
     sys.modules[module] = Mock()
+
 
 class TestMainWindow(unittest.TestCase):
     """Test cases for MainWindow class"""
@@ -78,6 +75,7 @@ class TestMainWindow(unittest.TestCase):
         except Exception as e:
             self.fail(f"Syntax error in scan_thread.py: {e}")
 
+
 class TestApplicationStructure(unittest.TestCase):
     """Test cases for overall application structure"""
 
@@ -93,7 +91,8 @@ class TestApplicationStructure(unittest.TestCase):
 
             # Check for main function
             has_main_function = any(
-                isinstance(node, ast.FunctionDef) and node.name == "main" for node in ast.walk(tree)
+                isinstance(node, ast.FunctionDef) and node.name == "main"
+                for node in ast.walk(tree)
             )
             self.assertTrue(has_main_function, "main.py should have a main() function")
 
@@ -116,14 +115,21 @@ class TestApplicationStructure(unittest.TestCase):
                     content = f.read()
 
                 # Check that PyQt5 is not imported
-                self.assertNotIn("from PyQt5", content, f"{file_path} should not import PyQt5")
-                self.assertNotIn("import PyQt5", content, f"{file_path} should not import PyQt5")
+                self.assertNotIn(
+                    "from PyQt5", content, f"{file_path} should not import PyQt5"
+                )
+                self.assertNotIn(
+                    "import PyQt5", content, f"{file_path} should not import PyQt5"
+                )
 
                 # If PyQt is imported, it should be PyQt6
                 if "PyQt" in content:
                     self.assertIn(
-                        "PyQt6", content, f"{file_path} should use PyQt6 if importing PyQt"
+                        "PyQt6",
+                        content,
+                        f"{file_path} should use PyQt6 if importing PyQt",
                     )
+
 
 class TestRequirements(unittest.TestCase):
     """Test cases for project requirements and dependencies"""
@@ -132,7 +138,9 @@ class TestRequirements(unittest.TestCase):
         """Test that requirements.txt exists and is readable"""
         base_path = os.path.join(os.path.dirname(__file__), "..")
         requirements_path = os.path.join(base_path, "requirements.txt")
-        self.assertTrue(os.path.exists(requirements_path), "requirements.txt should exist")
+        self.assertTrue(
+            os.path.exists(requirements_path), "requirements.txt should exist"
+        )
 
         with open(requirements_path, "r", encoding="utf-8") as f:
             content = f.read()
@@ -147,10 +155,14 @@ class TestRequirements(unittest.TestCase):
         """Test that application icons exist"""
         base_path = os.path.join(os.path.dirname(__file__), "..")
         icons_dir = os.path.join(base_path, "packaging", "icons")
-        self.assertTrue(os.path.exists(icons_dir), "packaging/icons directory should exist")
+        self.assertTrue(
+            os.path.exists(icons_dir), "packaging/icons directory should exist"
+        )
 
         # Check for SVG icon (Prefer io.github.* naming per Flathub guidelines)
-        svg_icon = os.path.join(icons_dir, "io.github.asafelobotomy.SearchAndDestroy.svg")
+        svg_icon = os.path.join(
+            icons_dir, "io.github.asafelobotomy.SearchAndDestroy.svg"
+        )
         self.assertTrue(os.path.exists(svg_icon), "SVG icon should exist")
 
         # Check for icon placeholders (or actual PNG files)
@@ -160,13 +172,16 @@ class TestRequirements(unittest.TestCase):
                 icons_dir, f"io.github.asafelobotomy.SearchAndDestroy-{size}.png"
             )
             placeholder = os.path.join(
-                icons_dir, f"io.github.asafelobotomy.SearchAndDestroy-{size}.png.placeholder"
+                icons_dir,
+                f"io.github.asafelobotomy.SearchAndDestroy-{size}.png.placeholder",
             )
 
             icon_exists = os.path.exists(png_icon) or os.path.exists(placeholder)
             self.assertTrue(
-                icon_exists, f"Icon for size {size}x{size} should exist (PNG or placeholder)"
+                icon_exists,
+                f"Icon for size {size}x{size} should exist (PNG or placeholder)",
             )
+
 
 class TestCodeQuality(unittest.TestCase):
     """Test cases for code quality and standards"""
@@ -190,6 +205,7 @@ class TestCodeQuality(unittest.TestCase):
                     ast.parse(code)
                 except SyntaxError as e:
                     self.fail(f"Syntax error in {file_path}: {e}")
+
 
 if __name__ == "__main__":
     # Change to the tests directory for relative path imports

@@ -10,12 +10,12 @@ Features:
 - Fallback handling for missing logo files
 """
 
+import time
 from pathlib import Path
 
 from PyQt6.QtCore import Qt, QTimer, pyqtSignal
 from PyQt6.QtGui import QColor, QFont, QPainter, QPen, QPixmap
 from PyQt6.QtWidgets import QSplashScreen
-import time
 
 # Import centralized version
 from app import __version__
@@ -74,7 +74,10 @@ class ModernSplashScreen(QSplashScreen):
             # Get the project root directory
             current_dir = Path(__file__).parent.parent.parent
             logo_path = (
-                current_dir / "packaging" / "icons" / "io.github.asafelobotomy.SearchAndDestroy.png"
+                current_dir
+                / "packaging"
+                / "icons"
+                / "io.github.asafelobotomy.SearchAndDestroy.png"
             )
 
             if logo_path.exists():
@@ -155,10 +158,22 @@ class ModernSplashScreen(QSplashScreen):
         try:
             # Try to load a larger icon (128x128 or fallback to the main icon)
             large_logo_paths = [
-                current_dir / "packaging" / "icons" / "io.github.asafelobotomy.SearchAndDestroy-128.png",
-                current_dir / "packaging" / "icons" / "org.xanados.SearchAndDestroy-128.png",
-                current_dir / "packaging" / "icons" / "io.github.asafelobotomy.SearchAndDestroy.png",
-                current_dir / "packaging" / "icons" / "org.xanados.SearchAndDestroy.png",
+                current_dir
+                / "packaging"
+                / "icons"
+                / "io.github.asafelobotomy.SearchAndDestroy-128.png",
+                current_dir
+                / "packaging"
+                / "icons"
+                / "org.xanados.SearchAndDestroy-128.png",
+                current_dir
+                / "packaging"
+                / "icons"
+                / "io.github.asafelobotomy.SearchAndDestroy.png",
+                current_dir
+                / "packaging"
+                / "icons"
+                / "org.xanados.SearchAndDestroy.png",
             ]
 
             large_logo_pixmap = None

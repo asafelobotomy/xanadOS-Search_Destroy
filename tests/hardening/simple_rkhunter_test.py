@@ -3,12 +3,12 @@
 Simple test for RKHunter availability detection - standalone version
 """
 import logging
-
 import os
 
 # Set up basic logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
 
 def test_rkhunter_availability_paths_checked():
     """Ensure our availability check executes without raising and inspects standard locations."""
@@ -35,6 +35,7 @@ def test_rkhunter_availability_paths_checked():
         assert rkhunter_path is not None
     else:
         assert rkhunter_path is None
+
 
 def main():
     """Main test function"""
@@ -89,6 +90,7 @@ def main():
     print("=" * 70)
 
     return is_available
+
 
 if __name__ == "__main__":
     main()

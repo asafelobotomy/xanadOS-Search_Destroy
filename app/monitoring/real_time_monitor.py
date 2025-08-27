@@ -6,11 +6,11 @@ Main entry point for Phase 3 real-time monitoring system
 
 import logging
 import os
-from datetime import datetime
 import tempfile
 import threading
 import time
 from dataclasses import dataclass
+from datetime import datetime
 from enum import Enum
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional
@@ -20,10 +20,11 @@ from .event_processor import EventAction, EventProcessor, ProcessedEvent
 from .file_watcher import FileSystemWatcher, WatchEvent
 
 try:
-    from app.core.clamav_wrapper import ClamAVWrapper
-    from app.utils.config import QUARANTINE_DIR
     import hashlib
     import json
+
+    from app.core.clamav_wrapper import ClamAVWrapper
+    from app.utils.config import QUARANTINE_DIR
 except ImportError:
     # Fallback for development/testing
     class ClamAVWrapper:  # type: ignore[no-redef]
@@ -292,7 +293,9 @@ class RealTimeMonitor:
                 try:
                     quarantine_dir = QUARANTINE_DIR
                 except Exception:
-                    quarantine_dir = Path.home() / ".local/share/search-and-destroy/quarantine"
+                    quarantine_dir = (
+                        Path.home() / ".local/share/search-and-destroy/quarantine"
+                    )
                 quarantine_dir.mkdir(parents=True, exist_ok=True)
                 # Hard permission on directory
                 if os.name == "posix":
@@ -341,14 +344,18 @@ class RealTimeMonitor:
                         ) as m_out:
                             json.dump(meta, m_out, indent=2, sort_keys=True)
                     except Exception as m_err:
-                        self.logger.error("Failed writing quarantine metadata: %s", m_err)
+                        self.logger.error(
+                            "Failed writing quarantine metadata: %s", m_err
+                        )
                     with self.lock:
                         self.files_quarantined += 1
                     if self.file_quarantined_callback:
                         try:
                             self.file_quarantined_callback(str(dest))
                         except Exception as cb_err:
-                            self.logger.error("Error in quarantine callback: %s", cb_err)
+                            self.logger.error(
+                                "Error in quarantine callback: %s", cb_err
+                            )
                 except OSError as move_err:
                     self.logger.error("Failed moving file to quarantine: %s", move_err)
 

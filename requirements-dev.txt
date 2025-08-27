@@ -7,6 +7,7 @@ pytest-cov>=4.1.0
 pytest-qt>=4.2.0
 pytest-mock>=3.11.1
 pytest-xvfb>=3.0.0
+pytest-asyncio>=1.1.0
 
 # Code quality and linting
 black>=23.7.0

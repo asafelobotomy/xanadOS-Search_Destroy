@@ -4,24 +4,16 @@ Update dialog for S&D - Search & Destroy
 Handles app update notifications and user interaction
 """
 
+import subprocess
+import sys
 import webbrowser
 
 from PyQt6.QtCore import Qt, QThread, pyqtSignal
 from PyQt6.QtGui import QFont
-from PyQt6.QtWidgets import (
-    QFrame,
-    QHBoxLayout,
-    QLabel,
-    QProgressBar,
-    QPushButton,
-    QScrollArea,
-    QTextEdit,
-    QVBoxLayout,
-)
+from PyQt6.QtWidgets import (QFrame, QHBoxLayout, QLabel, QProgressBar,
+                             QPushButton, QScrollArea, QTextEdit, QVBoxLayout)
 
 from .themed_widgets import ThemedDialog
-import subprocess
-import sys
 
 
 class UpdateDownloadThread(QThread):

@@ -6,24 +6,16 @@ Theme Showcase - Demonstrate all three stunning themes:
 3. High Contrast (Accessibility) - Maximum accessibility compliance
 Press F12 to cycle through all themes!
 """
-from PyQt6.QtWidgets import (
-    QApplication,
-    QHBoxLayout,
-    QLabel,
-    QMainWindow,
-    QMessageBox,
-    QPushButton,
-    QVBoxLayout,
-    QWidget,
-)
-from PyQt6.QtCore import Qt
-
-from gui.theme_manager import get_theme_manager, toggle_theme
 import os
-
 import sys
 
+from gui.theme_manager import get_theme_manager, toggle_theme
+from PyQt6.QtCore import Qt
+from PyQt6.QtWidgets import (QApplication, QHBoxLayout, QLabel, QMainWindow,
+                             QMessageBox, QPushButton, QVBoxLayout, QWidget)
+
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "app"))
+
 
 class ThemeShowcaseWindow(QMainWindow):
     def __init__(self):
@@ -50,7 +42,8 @@ class ThemeShowcaseWindow(QMainWindow):
             "🌟 <b>Dark (Professional)</b>: Sophisticated strawberry/coral with elegant gradients<br>"
             "🌞 <b>Light (Summer Breeze)</b>: Refreshing sky blue, seafoam, peach & yellow palette<br>"
             "🔍 <b>High Contrast (Accessibility)</b>: Maximum WCAG compliance for all users<br><br>"
-            "🎯 Each theme is carefully crafted for different user preferences!")
+            "🎯 Each theme is carefully crafted for different user preferences!"
+        )
         desc.setAlignment(Qt.AlignmentFlag.AlignCenter)
         desc.setWordWrap(True)
         desc.setStyleSheet("font-size: 14px; line-height: 1.6; margin: 10px;")
@@ -113,7 +106,9 @@ class ThemeShowcaseWindow(QMainWindow):
 
         success_demo = QPushButton("Success State")
         success_demo.setStyleSheet(
-            "background-color: " + get_theme_manager().get_color("success") + "; color: white;"
+            "background-color: "
+            + get_theme_manager().get_color("success")
+            + "; color: white;"
         )
         success_demo.setMinimumHeight(40)
         demo_btn_layout.addWidget(success_demo)
@@ -209,6 +204,7 @@ class ThemeShowcaseWindow(QMainWindow):
         msg.setText(message)
         msg.exec()
 
+
 def main():
     app = QApplication(sys.argv)
 
@@ -226,6 +222,7 @@ def main():
     print("🎯 Press F12 to cycle through all themes!")
 
     sys.exit(app.exec())
+
 
 if __name__ == "__main__":
     main()

@@ -10,11 +10,11 @@ This library provides standardized security definitions for:
 - Security policy enforcement
 """
 
+import os
 import re
 from dataclasses import dataclass
 from enum import Enum
 from typing import List
-import os
 
 
 class SecurityLevel(Enum):
@@ -454,7 +454,9 @@ class SecurityStandards:
             return ThreatCategory.SPYWARE
         elif any(pattern in threat_lower for pattern in ["adware", "popup", "banner"]):
             return ThreatCategory.ADWARE
-        elif any(pattern in threat_lower for pattern in ["pup", "unwanted", "suspicious"]):
+        elif any(
+            pattern in threat_lower for pattern in ["pup", "unwanted", "suspicious"]
+        ):
             return ThreatCategory.POTENTIALLY_UNWANTED
         else:
             return ThreatCategory.MALWARE
@@ -492,9 +494,13 @@ def validate_file_safety(filename: str, file_size: int = 0) -> ValidationResult:
             True, f"File {filename} requires careful scanning", SecurityLevel.HIGH
         )
     elif risk_level == FileRiskLevel.MODERATE_RISK:
-        return ValidationResult(True, f"File {filename} has moderate risk", SecurityLevel.MEDIUM)
+        return ValidationResult(
+            True, f"File {filename} has moderate risk", SecurityLevel.MEDIUM
+        )
     else:
-        return ValidationResult(True, f"File {filename} appears safe", SecurityLevel.LOW)
+        return ValidationResult(
+            True, f"File {filename} appears safe", SecurityLevel.LOW
+        )
 
 
 def validate_command_safety(binary: str, args: List[str]) -> ValidationResult:

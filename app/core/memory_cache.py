@@ -8,6 +8,7 @@ import threading
 import time
 from dataclasses import dataclass
 from typing import Any, Callable, Dict, Optional
+
 from PyQt6.QtCore import QTimer
 
 
@@ -89,7 +90,9 @@ class ModernMemoryCache:
                 value=value, timestamp=time.time(), ttl=ttl, last_access=time.time()
             )
 
-    def get_or_set(self, key: str, factory: Callable[[], Any], ttl: Optional[float] = None) -> Any:
+    def get_or_set(
+        self, key: str, factory: Callable[[], Any], ttl: Optional[float] = None
+    ) -> Any:
         """Get value or set it using a factory function."""
         value = self.get(key)
         if value is None:
@@ -130,7 +133,9 @@ class ModernMemoryCache:
     def cleanup_expired(self) -> int:
         """Clean up expired entries and return count removed."""
         with self._lock:
-            expired_keys = [key for key, entry in self._cache.items() if entry.is_expired()]
+            expired_keys = [
+                key for key, entry in self._cache.items() if entry.is_expired()
+            ]
 
             for key in expired_keys:
                 del self._cache[key]
@@ -169,7 +174,9 @@ class SystemStatusCache:
         """Register a callback to refresh stale data."""
         self.refresh_callbacks[key] = callback
 
-    def get_system_status(self, component: str, factory: Optional[Callable] = None) -> Any:
+    def get_system_status(
+        self, component: str, factory: Optional[Callable] = None
+    ) -> Any:
         """
         Get system status with stale-while-revalidate pattern.
         Returns cached data immediately, triggers background refresh if stale.

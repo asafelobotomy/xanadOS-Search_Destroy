@@ -16,7 +16,7 @@ try:
     from app.utils.scan_reports import ScanResult, ScanType, ThreatInfo
 except ImportError:
     # Fallback import path
-    sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
+    sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
     from app.utils.scan_reports import ScanResult, ScanType, ThreatInfo
 
 # Add the app directory to the path for imports
@@ -101,8 +101,12 @@ class ScanThread(QThread, CooperativeCancellationMixin):
             self.status_updated.emit("Initializing scan...")
 
             # Enhanced scan parameters for stability
-            max_files = 50 if self.quick_scan else 1000  # Reduced limits to prevent crashes
-            max_workers = 2 if self.quick_scan else 3  # Reduced threading to prevent overload
+            max_files = (
+                50 if self.quick_scan else 1000
+            )  # Reduced limits to prevent crashes
+            max_workers = (
+                2 if self.quick_scan else 3
+            )  # Reduced threading to prevent overload
 
             # Check interruption before starting intensive work
             if self.isInterruptionRequested() or self._cancelled:
@@ -196,7 +200,9 @@ class ScanThread(QThread, CooperativeCancellationMixin):
                     if self.path == os.path.expanduser("~") or self.path == "/":
                         scan_type = ScanType.FULL
                         self._current_scan_type = "full"
-                        max_files = 2000  # Increased limit for full scans but still safe
+                        max_files = (
+                            2000  # Increased limit for full scans but still safe
+                        )
                         max_workers = 4  # Slightly more workers for full scans
                         self.status_updated.emit("Full scan starting...")
                     else:
@@ -238,7 +244,10 @@ class ScanThread(QThread, CooperativeCancellationMixin):
                     return
 
                 # Update status based on scan type
-                if hasattr(self, "_current_scan_type") and self._current_scan_type == "custom":
+                if (
+                    hasattr(self, "_current_scan_type")
+                    and self._current_scan_type == "custom"
+                ):
                     self.status_updated.emit("Custom scan in progress...")
                 else:
                     self.status_updated.emit("Full scan in progress...")
@@ -369,17 +378,17 @@ class ScanThread(QThread, CooperativeCancellationMixin):
                     combined["scanned_paths"].extend(result["scanned_paths"])
             else:
                 # Handle ReportScanResult object (from FileScanner)
-                if hasattr(result, 'threats') and result.threats:
+                if hasattr(result, "threats") and result.threats:
                     combined["threats"].extend(result.threats)
 
                 # Sum numerical values from object attributes
-                combined["threats_found"] += getattr(result, 'threats_found', 0)
-                combined["scanned_files"] += getattr(result, 'scanned_files', 0)
-                combined["total_files"] += getattr(result, 'total_files', 0)
-                combined["duration"] += getattr(result, 'duration', 0)
+                combined["threats_found"] += getattr(result, "threats_found", 0)
+                combined["scanned_files"] += getattr(result, "scanned_files", 0)
+                combined["total_files"] += getattr(result, "total_files", 0)
+                combined["duration"] += getattr(result, "duration", 0)
 
                 # Collect scanned paths from object
-                if hasattr(result, 'scanned_paths') and result.scanned_paths:
+                if hasattr(result, "scanned_paths") and result.scanned_paths:
                     combined["scanned_paths"].extend(result.scanned_paths)
 
         # Generate a unique scan ID for the combined result
@@ -403,8 +412,12 @@ class ScanThread(QThread, CooperativeCancellationMixin):
 
             print("\n💾 === SAVING CONSOLIDATED SCAN REPORT ===")
             print(f"DEBUG: Scan paths: {scan_paths}")
-            print(f"DEBUG: Combined threats found: {combined_result.get('threats_found', 0)}")
-            print(f"DEBUG: Combined files scanned: {combined_result.get('scanned_files', 0)}")
+            print(
+                f"DEBUG: Combined threats found: {combined_result.get('threats_found', 0)}"
+            )
+            print(
+                f"DEBUG: Combined files scanned: {combined_result.get('scanned_files', 0)}"
+            )
 
             # Convert combined result to proper ScanResult format
             scan_result = ScanResult(
@@ -415,7 +428,9 @@ class ScanThread(QThread, CooperativeCancellationMixin):
                 start_time=datetime.now().isoformat(),
                 end_time=datetime.now().isoformat(),
                 duration=combined_result.get("duration", 0),
-                scanned_paths=(scan_paths if isinstance(scan_paths, list) else [scan_paths]),
+                scanned_paths=(
+                    scan_paths if isinstance(scan_paths, list) else [scan_paths]
+                ),
                 total_files=combined_result.get("total_files", 0),
                 scanned_files=combined_result.get("scanned_files", 0),
                 threats_found=combined_result.get("threats_found", 0),
@@ -435,7 +450,9 @@ class ScanThread(QThread, CooperativeCancellationMixin):
                 self.scanner.scan_report_manager.save_scan_result(scan_result)
                 print("DEBUG: ✅ Consolidated report saved successfully")
             else:
-                print("DEBUG: ❌ No report manager available to save consolidated report")
+                print(
+                    "DEBUG: ❌ No report manager available to save consolidated report"
+                )
 
         except Exception as e:
             print(f"DEBUG: ❌ Error saving consolidated report: {e}")

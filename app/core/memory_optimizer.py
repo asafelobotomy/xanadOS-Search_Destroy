@@ -6,6 +6,7 @@ Provides efficient memory management and resource optimization
 
 import gc
 import logging
+import sys
 import threading
 import time
 import weakref
@@ -13,7 +14,6 @@ from dataclasses import dataclass
 from typing import Callable, Dict, List, Optional
 
 import psutil
-import sys
 
 
 @dataclass
@@ -85,7 +85,9 @@ class StreamProcessor:
         self.chunk_size = chunk_size
         self.logger = logging.getLogger(__name__)
 
-    def process_file_stream(self, file_path: str, processor_func: Callable[[bytes], None]):
+    def process_file_stream(
+        self, file_path: str, processor_func: Callable[[bytes], None]
+    ):
         """
         Process file in chunks without loading entire file.
 
@@ -102,9 +104,9 @@ class StreamProcessor:
                     processor_func(chunk)
         except Exception:
             self.logerror(
-                "Error processing file stream %s: %s".replace("%s", "{file_path, e}").replace(
-                    "%d", "{file_path, e}"
-                )
+                "Error processing file stream %s: %s".replace(
+                    "%s", "{file_path, e}"
+                ).replace("%d", "{file_path, e}")
             )
             raise
 
@@ -142,7 +144,9 @@ class MemoryOptimizer:
                 used_percent = 50.0
             try:
                 process_memory = psutil.Process().memory_info()
-                if hasattr(process_memory, "rss") and isinstance(process_memory.rss, int):
+                if hasattr(process_memory, "rss") and isinstance(
+                    process_memory.rss, int
+                ):
                     process_mb = process_memory.rss / 1024 / 1024
                 else:
                     process_mb = 100.0
@@ -153,10 +157,14 @@ class MemoryOptimizer:
                 cached = getattr(system_memory, "cached", 0)
                 if isinstance(cached, int):
                     cache_mb = cached / 1024 / 1024
-            return MemoryStats(total_mb, available_mb, used_mb, used_percent, process_mb, cache_mb)
+            return MemoryStats(
+                total_mb, available_mb, used_mb, used_percent, process_mb, cache_mb
+            )
         except Exception:  # pragma: no cover
             self.logerror(
-                "Failed to get memory stats: %s".replace("%s", "{e}").replace("%d", "{e}")
+                "Failed to get memory stats: %s".replace("%s", "{e}").replace(
+                    "%d", "{e}"
+                )
             )
             return MemoryStats(0, 0, 0, 0, 0, 0)
 
@@ -180,13 +188,15 @@ class MemoryOptimizer:
 
     def optimize_memory(self, aggressive: bool = False) -> None:
         self.loginfo(
-            "Performing memory optimization (aggressive=%s)".replace("%s", "{aggressive}").replace(
-                "%d", "{aggressive}"
-            )
+            "Performing memory optimization (aggressive=%s)".replace(
+                "%s", "{aggressive}"
+            ).replace("%d", "{aggressive}")
         )
         collected = gc.collect()
         self.logdebug(
-            "Garbage collected %d objects".replace("%s", "{collected}").replace("%d", "{collected}")
+            "Garbage collected %d objects".replace("%s", "{collected}").replace(
+                "%d", "{collected}"
+            )
         )
         if aggressive:
             gc.collect(0)
@@ -204,7 +214,9 @@ class MemoryOptimizer:
                     cleared += 1
             except Exception:
                 self.logger.debug("Error clearing cache", exc_info=True)
-        self.logdebug("Cleared %d caches".replace("%s", "{cleared}").replace("%d", "{cleared}"))
+        self.logdebug(
+            "Cleared %d caches".replace("%s", "{cleared}").replace("%d", "{cleared}")
+        )
 
     def _clear_pools(self) -> None:
         for name, pool in self.pools.items():
@@ -212,9 +224,9 @@ class MemoryOptimizer:
                 cleared = len(pool.pool)
                 pool.pool.clear()
                 self.logdebug(
-                    "Cleared pool '%s': %d objects".replace("%s", "{name, cleared}").replace(
-                        "%d", "{name, cleared}"
-                    )
+                    "Cleared pool '%s': %d objects".replace(
+                        "%s", "{name, cleared}"
+                    ).replace("%d", "{name, cleared}")
                 )
 
     def register_cache(self, cache_obj: object) -> None:
@@ -256,10 +268,14 @@ class MemoryOptimizer:
         if self.monitor_thread:
             self.monitor_thread.join(timeout=5)
 
-    def set_memory_warning_callback(self, callback: Callable[[MemoryStats], None]) -> None:
+    def set_memory_warning_callback(
+        self, callback: Callable[[MemoryStats], None]
+    ) -> None:
         self.memory_warning_callback = callback
 
-    def set_memory_critical_callback(self, callback: Callable[[MemoryStats], None]) -> None:
+    def set_memory_critical_callback(
+        self, callback: Callable[[MemoryStats], None]
+    ) -> None:
         self.memory_critical_callback = callback
 
 
@@ -329,10 +345,14 @@ class CacheManager:
                 # Update memory estimate
 
                 item_size_mb = sys.getsizeof(value) / 1024 / 1024
-                self.estimated_memory_mb = max(0, self.estimated_memory_mb - item_size_mb)
+                self.estimated_memory_mb = max(
+                    0, self.estimated_memory_mb - item_size_mb
+                )
 
         self.logdebug(
-            "Evicted %d cache entries".replace("%s", "{evict_count}").replace("%d", "{evict_count}")
+            "Evicted %d cache entries".replace("%s", "{evict_count}").replace(
+                "%d", "{evict_count}"
+            )
         )
 
     def clear(self):

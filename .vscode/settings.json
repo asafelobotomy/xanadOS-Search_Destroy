@@ -130,5 +130,9 @@
   // Pylance performance settings
   "python.analysis.indexing": true,
   "python.analysis.autoSearchPaths": false,
-  "python.defaultInterpreterPath": "./.venv/bin/python"
+  "python.defaultInterpreterPath": "./.venv/bin/python",
+  // Python formatting settings
+  "[python]": {
+    "editor.defaultFormatter": "ms-python.black-formatter"
+  }
 }

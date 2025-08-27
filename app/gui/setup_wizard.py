@@ -13,41 +13,30 @@ Notes
 
 import subprocess
 import sys
-from datetime import datetime
 from dataclasses import dataclass
+from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Optional
 
-from PyQt6.QtCore import Qt, QThread, QTimer, pyqtSignal  # pylint: disable=no-name-in-module
+from PyQt6.QtCore import QThread  # pylint: disable=no-name-in-module
+from PyQt6.QtCore import Qt, QTimer, pyqtSignal
 from PyQt6.QtGui import QFont  # pylint: disable=no-name-in-module
-from PyQt6.QtWidgets import (  # pylint: disable=no-name-in-module
-    QApplication,
-    QDialog,
-    QHBoxLayout,
-    QLabel,
-    QMessageBox,
-    QPushButton,
-    QScrollArea,
-    QTabWidget,
-    QTextEdit,
-    QVBoxLayout,
-    QWidget,
-    QFrame,
-    QCheckBox,
-    QProgressBar,
-)
+from PyQt6.QtWidgets import QApplication  # pylint: disable=no-name-in-module
+from PyQt6.QtWidgets import (QCheckBox, QDialog, QFrame, QHBoxLayout, QLabel,
+                             QMessageBox, QProgressBar, QPushButton,
+                             QScrollArea, QTabWidget, QTextEdit, QVBoxLayout,
+                             QWidget)
+
 from app.utils.config import load_config, save_config
 
 # Import theming support
 try:
+    from app.core.elevated_runner import \
+        elevated_run  # pylint: disable=import-outside-toplevel
+    from app.core.rkhunter_monitor_non_invasive import \
+        rkhunter_monitor  # pylint: disable=import-outside-toplevel
     from app.gui.theme_manager import get_theme_manager
     from app.gui.themed_widgets import ThemedDialog
-    from app.core.elevated_runner import (
-        elevated_run,
-    )  # pylint: disable=import-outside-toplevel
-    from app.core.rkhunter_monitor_non_invasive import (
-        rkhunter_monitor,
-    )  # pylint: disable=import-outside-toplevel
 
     THEMING_AVAILABLE = True
 except ImportError:
@@ -110,7 +99,9 @@ class InstallationWorker(QThread):  # pylint: disable=too-many-instance-attribut
             install_cmd = self.package_info.install_commands[self.distro]
 
             # Update progress
-            self.progress_updated.emit(f"Installing {self.package_info.display_name}...", 25)
+            self.progress_updated.emit(
+                f"Installing {self.package_info.display_name}...", 25
+            )
             self.output_updated.emit(f"Running: {install_cmd}")
 
             success = False
@@ -121,7 +112,9 @@ class InstallationWorker(QThread):  # pylint: disable=too-many-instance-attribut
                 # Parse the command properly for elevated execution
                 if install_cmd.startswith("pkexec sh -c"):
                     # Extract shell command from pkexec wrapper
-                    shell_cmd = install_cmd.split('"')[1]  # Extract the command between quotes
+                    shell_cmd = install_cmd.split('"')[
+                        1
+                    ]  # Extract the command between quotes
                     # Execute using shell with elevated_run
                     install_result = elevated_run(
                         ["sh", "-c", shell_cmd],
@@ -165,7 +158,9 @@ class InstallationWorker(QThread):  # pylint: disable=too-many-instance-attribut
                 success = False
 
             if success:
-                self.progress_updated.emit(f"Configuring {self.package_info.display_name}...", 75)
+                self.progress_updated.emit(
+                    f"Configuring {self.package_info.display_name}...", 75
+                )
 
                 # Run post-installation commands if any
                 if self.package_info.post_install_commands:
@@ -286,7 +281,9 @@ class PackageCard(QFrame):
 
         # Install checkbox (only if not installed)
         if not self.is_installed:
-            self.install_checkbox = QCheckBox(f"Install {self.package_info.display_name}")
+            self.install_checkbox = QCheckBox(
+                f"Install {self.package_info.display_name}"
+            )
             if self.package_info.is_critical:
                 self.install_checkbox.setChecked(True)
                 self.install_checkbox.setText(
@@ -338,8 +335,12 @@ class SetupWizard(ThemedDialog):  # pylint: disable=too-many-instance-attributes
                     "arch": (
                         'sh -c "rm -f /var/lib/pacman/db.lck && pacman -S --noconfirm clamav"'
                     ),
-                    "ubuntu": ('sh -c "apt update && apt install -y clamav clamav-daemon"'),
-                    "debian": ('sh -c "apt update && apt install -y clamav clamav-daemon"'),
+                    "ubuntu": (
+                        'sh -c "apt update && apt install -y clamav clamav-daemon"'
+                    ),
+                    "debian": (
+                        'sh -c "apt update && apt install -y clamav clamav-daemon"'
+                    ),
                     "fedora": "dnf install -y clamav clamav-update",
                     "opensuse": "zypper install -y clamav",
                 },
@@ -357,7 +358,9 @@ class SetupWizard(ThemedDialog):  # pylint: disable=too-many-instance-attributes
                 ),
                 purpose="Network security and firewall management",
                 install_commands={
-                    "arch": ('sh -c "rm -f /var/lib/pacman/db.lck && pacman -S --noconfirm ufw"'),
+                    "arch": (
+                        'sh -c "rm -f /var/lib/pacman/db.lck && pacman -S --noconfirm ufw"'
+                    ),
                     "ubuntu": 'sh -c "apt update && apt install -y ufw"',
                     "debian": 'sh -c "apt update && apt install -y ufw"',
                     "fedora": "dnf install -y ufw",
@@ -701,7 +704,10 @@ class SetupWizard(ThemedDialog):  # pylint: disable=too-many-instance-attributes
         for package_name, package_info in self.packages.items():
             try:
                 check_result = subprocess.run(
-                    package_info.check_command.split(), capture_output=True, timeout=5, check=False
+                    package_info.check_command.split(),
+                    capture_output=True,
+                    timeout=5,
+                    check=False,
                 )
                 status[package_name] = check_result.returncode == 0
             except (OSError, subprocess.SubprocessError, ValueError):
@@ -773,8 +779,12 @@ class SetupWizard(ThemedDialog):  # pylint: disable=too-many-instance-attributes
         try:
             # Prefer running pip as a module of current interpreter
             cmd = [sys.executable, "-m", "pip", "install", "--user", package]
-            result = subprocess.run(cmd, capture_output=True, text=True, check=False, timeout=900)
-            output = (result.stdout or "") + ("\n" + result.stderr if result.stderr else "")
+            result = subprocess.run(
+                cmd, capture_output=True, text=True, check=False, timeout=900
+            )
+            output = (result.stdout or "") + (
+                "\n" + result.stderr if result.stderr else ""
+            )
             return result.returncode == 0, output.strip()
         except Exception as e:  # pylint: disable=broad-exception-caught
             return False, str(e)
@@ -1061,7 +1071,9 @@ class SetupWizard(ThemedDialog):  # pylint: disable=too-many-instance-attributes
             return
 
         # Confirm installation
-        package_names = [self.packages[name].display_name for name in packages_to_install]
+        package_names = [
+            self.packages[name].display_name for name in packages_to_install
+        ]
         reply = QMessageBox.question(
             self,
             "Confirm Installation",
@@ -1080,7 +1092,9 @@ class SetupWizard(ThemedDialog):  # pylint: disable=too-many-instance-attributes
         self.installation_dialog = InstallationDialog(
             packages_to_install, self.packages, self.distro, self
         )
-        self.installation_dialog.installation_complete.connect(self.on_installation_complete)
+        self.installation_dialog.installation_complete.connect(
+            self.on_installation_complete
+        )
         self.installation_dialog.exec()
 
     def on_installation_complete(self, results: Dict[str, bool]):
@@ -1318,7 +1332,9 @@ class InstallationDialog(QDialog):  # pylint: disable=too-many-instance-attribut
         self.results[package_name] = success
 
         if success:
-            self.update_output(f"✅ {package_name} installation completed successfully!")
+            self.update_output(
+                f"✅ {package_name} installation completed successfully!"
+            )
         else:
             self.update_output(f"❌ {package_name} installation failed!")
 

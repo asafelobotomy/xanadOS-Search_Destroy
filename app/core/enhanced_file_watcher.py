@@ -188,7 +188,9 @@ class SmartEventFilter:
                 return True
 
             # Process high-priority paths
-            if any(event.file_path.startswith(path) for path in self.high_priority_paths):
+            if any(
+                event.file_path.startswith(path) for path in self.high_priority_paths
+            ):
                 if event.event_type in [
                     WatchEventType.FILE_CREATED,
                     WatchEventType.FILE_MODIFIED,
@@ -324,14 +326,18 @@ class AdaptiveEventBatcher:
                     self.medium_timer = None
 
                 # Process in separate thread
-                threading.Thread(target=self.callback, args=(events,), daemon=True).start()
+                threading.Thread(
+                    target=self.callback, args=(events,), daemon=True
+                ).start()
 
     def _schedule_low_priority(self):
         """Schedule low-priority batch processing."""
         if len(self.low_priority_queue) >= self.low_priority_batch_size:
             self._process_low_priority()
         elif self.low_timer is None:
-            self.low_timer = threading.Timer(self.low_priority_timeout, self._process_low_priority)
+            self.low_timer = threading.Timer(
+                self.low_priority_timeout, self._process_low_priority
+            )
             self.low_timer.start()
 
     def _process_low_priority(self):
@@ -346,7 +352,9 @@ class AdaptiveEventBatcher:
                     self.low_timer = None
 
                 # Process in separate thread
-                threading.Thread(target=self.callback, args=(events,), daemon=True).start()
+                threading.Thread(
+                    target=self.callback, args=(events,), daemon=True
+                ).start()
 
     def flush_all(self):
         """Flush all pending events immediately."""
@@ -646,7 +654,9 @@ class EnhancedFileSystemWatcher:
 
             if success:
                 self.watching = True
-                self.logger.info(f"File system monitoring started using {self.backend_type}")
+                self.logger.info(
+                    f"File system monitoring started using {self.backend_type}"
+                )
 
             return success
 
@@ -688,7 +698,9 @@ class EnhancedFileSystemWatcher:
 
             # Calculate processing latency
             current_time = time.time()
-            avg_latency = sum((current_time - e.timestamp) * 1000 for e in events) / len(events)
+            avg_latency = sum(
+                (current_time - e.timestamp) * 1000 for e in events
+            ) / len(events)
 
             # Update latency statistics
             if self.stats["events_processed"] > 0:

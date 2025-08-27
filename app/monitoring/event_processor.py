@@ -127,7 +127,9 @@ class EventProcessor:
             self.rules.append(rule)
             self.rules.sort(key=lambda r: r.priority, reverse=True)
         self.loginfo(
-            "Added event rule: %s".replace("%s", "{rule.name}").replace("%d", "{rule.name}")
+            "Added event rule: %s".replace("%s", "{rule.name}").replace(
+                "%d", "{rule.name}"
+            )
         )
 
     def remove_rule(self, rule_name: str) -> bool:
@@ -162,9 +164,9 @@ class EventProcessor:
             # Check event rate limiting
             if not self._check_event_rate(event):
                 self.logdebug(
-                    "Event rate limit exceeded for %s".replace("%s", "{event.file_path}").replace(
-                        "%d", "{event.file_path}"
-                    )
+                    "Event rate limit exceeded for %s".replace(
+                        "%s", "{event.file_path}"
+                    ).replace("%d", "{event.file_path}")
                 )
                 return None
 
@@ -202,7 +204,9 @@ class EventProcessor:
                     self.event_callback(processed)
                 except Exception:
                     self.logerror(
-                        "Error in event callback: %s".replace("%s", "{e}").replace("%d", "{e}")
+                        "Error in event callback: %s".replace("%s", "{e}").replace(
+                            "%d", "{e}"
+                        )
                     )
 
             if rule.action == EventAction.ALERT and self.alert_callback:
@@ -213,7 +217,9 @@ class EventProcessor:
                     )
                 except Exception:
                     self.logerror(
-                        "Error in alert callback: %s".replace("%s", "{e}").replace("%d", "{e}")
+                        "Error in alert callback: %s".replace("%s", "{e}").replace(
+                            "%d", "{e}"
+                        )
                     )
 
             self.logger.debug(
@@ -227,9 +233,9 @@ class EventProcessor:
 
         except Exception:
             self.logerror(
-                "Error processing event for %s: %s".replace("%s", "{event.file_path, e}").replace(
-                    "%d", "{event.file_path, e}"
-                )
+                "Error processing event for %s: %s".replace(
+                    "%s", "{event.file_path, e}"
+                ).replace("%d", "{event.file_path, e}")
             )
             return None
 

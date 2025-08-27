@@ -28,17 +28,12 @@ from app.core import UNIFIED_PERFORMANCE_AVAILABLE, UNIFIED_SECURITY_AVAILABLE
 sys.path.append(str(Path(__file__).parent.parent.parent))
 
 if UNIFIED_SECURITY_AVAILABLE:
-    from app.core.unified_security_engine import (
-        ProtectionMode,
-        ThreatLevel,
-        UnifiedSecurityEngine,
-    )
+    from app.core.unified_security_engine import (ProtectionMode, ThreatLevel,
+                                                  UnifiedSecurityEngine)
 
 if UNIFIED_PERFORMANCE_AVAILABLE:
     from app.core.unified_performance_optimizer import (
-        PerformanceMode,
-        UnifiedPerformanceOptimizer,
-    )
+        PerformanceMode, UnifiedPerformanceOptimizer)
 
 
 @dataclass
@@ -116,7 +111,9 @@ class UnifiedComponentValidator:
         binary_file.write_bytes(b"\x00\x01\x02\x03" * 1000)
         test_files.append(binary_file)
 
-        self.logger.info(f"Created {len(test_files)} test files in {self.test_data_dir}")
+        self.logger.info(
+            f"Created {len(test_files)} test files in {self.test_data_dir}"
+        )
         return self.test_data_dir
 
     async def validate_unified_security_engine(self) -> ValidationResult:
@@ -296,7 +293,9 @@ class UnifiedComponentValidator:
 
         try:
             if not (UNIFIED_SECURITY_AVAILABLE and UNIFIED_PERFORMANCE_AVAILABLE):
-                warnings.append("Not all unified components available for integration testing")
+                warnings.append(
+                    "Not all unified components available for integration testing"
+                )
                 return ValidationResult(
                     component="ComponentIntegration",
                     passed=True,
@@ -330,13 +329,13 @@ class UnifiedComponentValidator:
             # Test graceful concurrent shutdown
             await asyncio.gather(security_engine.stop(), perf_optimizer.stop())
 
-            details = (
-                f"Integration validation completed. Concurrent start: {concurrent_start_time:.3f}s"
-            )
+            details = f"Integration validation completed. Concurrent start: {concurrent_start_time:.3f}s"
 
         except Exception as e:
             errors.append(f"Integration validation failed: {str(e)}")
-            details = f"Exception during integration validation: {traceback.format_exc()}"
+            details = (
+                f"Exception during integration validation: {traceback.format_exc()}"
+            )
 
         return ValidationResult(
             component="ComponentIntegration",
@@ -354,21 +353,21 @@ class UnifiedComponentValidator:
 
         try:
             # Test core module imports
-            from app.core import (
-                UNIFIED_PERFORMANCE_AVAILABLE,
-                UNIFIED_SECURITY_AVAILABLE,
-            )
+            from app.core import (UNIFIED_PERFORMANCE_AVAILABLE,
+                                  UNIFIED_SECURITY_AVAILABLE)
             from app.core.clamav_wrapper import ClamAVWrapper
             from app.core.file_scanner import FileScanner
 
             # Test conditional imports work
             if UNIFIED_SECURITY_AVAILABLE:
-                from app.core import ProtectionMode, ThreatLevel, UnifiedSecurityEngine
+                from app.core import (ProtectionMode, ThreatLevel,
+                                      UnifiedSecurityEngine)
             else:
                 warnings.append("Unified Security Engine not available")
 
             if UNIFIED_PERFORMANCE_AVAILABLE:
-                from app.core import PerformanceMode, UnifiedPerformanceOptimizer
+                from app.core import (PerformanceMode,
+                                      UnifiedPerformanceOptimizer)
             else:
                 warnings.append("Unified Performance Optimizer not available")
 
@@ -438,7 +437,9 @@ class UnifiedComponentValidator:
 
                 # Collect performance metrics
                 if validation.performance_metrics:
-                    overall_performance[validation.component] = validation.performance_metrics
+                    overall_performance[validation.component] = (
+                        validation.performance_metrics
+                    )
 
             total_tests += 1
 
@@ -458,7 +459,9 @@ class UnifiedComponentValidator:
         # Cleanup test data
         self._cleanup_test_data()
 
-        self.logger.info(f"Validation completed: {passed_tests}/{total_tests} tests passed")
+        self.logger.info(
+            f"Validation completed: {passed_tests}/{total_tests} tests passed"
+        )
         return validation_suite
 
     def _generate_recommendations(self, results: List[ValidationResult]) -> List[str]:
@@ -476,7 +479,11 @@ class UnifiedComponentValidator:
         for result in results:
             if result.performance_metrics:
                 for metric, value in result.performance_metrics.items():
-                    if "time" in metric and isinstance(value, (int, float)) and value > 5.0:
+                    if (
+                        "time" in metric
+                        and isinstance(value, (int, float))
+                        and value > 5.0
+                    ):
                         recommendations.append(
                             f"Consider optimizing {metric} for {result.component} (current: {
                                 value:.3f}s)"
@@ -484,10 +491,14 @@ class UnifiedComponentValidator:
 
         # General recommendations
         if any(not r.passed for r in results):
-            recommendations.append("Review failed validations and fix underlying issues")
+            recommendations.append(
+                "Review failed validations and fix underlying issues"
+            )
 
         if any(r.warnings for r in results):
-            recommendations.append("Address validation warnings for optimal performance")
+            recommendations.append(
+                "Address validation warnings for optimal performance"
+            )
 
         return recommendations
 

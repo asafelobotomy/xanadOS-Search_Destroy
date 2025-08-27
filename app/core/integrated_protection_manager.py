@@ -20,18 +20,11 @@ import psutil
 
 # Import our enhanced components
 try:
-    from .enhanced_file_watcher import (
-        EnhancedFileSystemWatcher,
-        WatchEvent,
-        WatchEventType,
-    )
-    from .unified_security_engine import (
-        ProtectionMode,
-        SecurityEvent,
-        ThreatLevel,
-        UnifiedSecurityEngine,
-    )
+    from .enhanced_file_watcher import (EnhancedFileSystemWatcher, WatchEvent,
+                                        WatchEventType)
     from .enhanced_real_time_protection import EnhancedRealTimeProtection
+    from .unified_security_engine import (ProtectionMode, SecurityEvent,
+                                          ThreatLevel, UnifiedSecurityEngine)
 except ImportError:
     # For standalone testing, provide light fallbacks
     EnhancedFileSystemWatcher = None  # type: ignore
@@ -124,7 +117,9 @@ class PerformanceOptimizer:
 
             # Network activity (simplified)
             net_io = psutil.net_io_counters()
-            network_activity = (net_io.bytes_sent + net_io.bytes_recv) / (1024 * 1024)  # MB
+            network_activity = (net_io.bytes_sent + net_io.bytes_recv) / (
+                1024 * 1024
+            )  # MB
 
             # Process count
             active_processes = len(psutil.pids())
@@ -150,9 +145,13 @@ class PerformanceOptimizer:
 
         except Exception as e:
             self.logger.error(f"Error analyzing system health: {e}")
-            return SystemHealth(0, 0, 0, 0, 0, ThreatLevel.LOW, "balanced", datetime.now())
+            return SystemHealth(
+                0, 0, 0, 0, 0, ThreatLevel.LOW, "balanced", datetime.now()
+            )
 
-    def _assess_threat_level(self, cpu_usage: float, memory_usage: float) -> ThreatLevel:
+    def _assess_threat_level(
+        self, cpu_usage: float, memory_usage: float
+    ) -> ThreatLevel:
         """Assess current threat level based on system activity."""
         # High resource usage might indicate malicious activity
         if cpu_usage > 90 or memory_usage > 90:
@@ -252,7 +251,9 @@ class IntegratedProtectionManager:
             # Optimize initial settings
             await self._optimize_settings()
 
-            self.logger.info("✅ Integrated Protection Manager initialized successfully")
+            self.logger.info(
+                "✅ Integrated Protection Manager initialized successfully"
+            )
             return True
 
         except Exception as e:
@@ -276,7 +277,9 @@ class IntegratedProtectionManager:
 
             # Start background monitoring tasks
             self.health_monitor_task = asyncio.create_task(self._health_monitor_loop())
-            self.performance_task = asyncio.create_task(self._performance_monitor_loop())
+            self.performance_task = asyncio.create_task(
+                self._performance_monitor_loop()
+            )
 
             self.is_running = True
             self.start_time = time.time()
@@ -334,7 +337,9 @@ class IntegratedProtectionManager:
 
             # Process events through protection engine
             if self.protection_engine:
-                asyncio.create_task(self.protection_engine.process_events(protection_events))
+                asyncio.create_task(
+                    self.protection_engine.process_events(protection_events)
+                )
 
             # Update metrics
             self.performance_metrics["files_scanned"] += len(events)
@@ -423,7 +428,8 @@ class IntegratedProtectionManager:
         )
 
         self.performance_metrics["memory_usage_avg"] = (
-            alpha * memory_usage + (1 - alpha) * self.performance_metrics["memory_usage_avg"]
+            alpha * memory_usage
+            + (1 - alpha) * self.performance_metrics["memory_usage_avg"]
         )
 
     async def _check_optimization_opportunities(self):
@@ -587,7 +593,9 @@ async def demonstrate_integrated_protection():
                 # Show status
                 status = protection_manager.get_status()
                 print("\n📊 Final Status:")
-                print(f"   Files scanned: {status['performance_metrics']['files_scanned']}")
+                print(
+                    f"   Files scanned: {status['performance_metrics']['files_scanned']}"
+                )
                 print(f"   Uptime: {status['system_status']['uptime_seconds']:.1f}s")
                 print(f"   Current mode: {status['system_status']['current_mode']}")
                 print(f"   CPU usage: {status['system_health']['cpu_usage']:.1f}%")

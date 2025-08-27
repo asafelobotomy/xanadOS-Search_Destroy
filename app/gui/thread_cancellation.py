@@ -60,7 +60,10 @@ class CooperativeCancellationMixin:
             self._graceful_flag = graceful
 
     def mark_cancellation_complete(self):
-        if self.cancellation_finished_at is None and self.cancellation_requested_at is not None:
+        if (
+            self.cancellation_finished_at is None
+            and self.cancellation_requested_at is not None
+        ):
             self.cancellation_finished_at = time.time()
             self._register_cancellation_metric()
 

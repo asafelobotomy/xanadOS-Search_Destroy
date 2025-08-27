@@ -4,16 +4,17 @@ Simple test to verify unified authentication session management logic
 without requiring full app dependencies.
 """
 import os
-
 import sys
 
 # Add the app directory to the Python path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "app"))
 
+
 def test_auth_session_manager_import():
     """Test that we can import the auth session manager"""
     try:
-        from app.core.auth_session_manager import AuthenticationSessionManager, auth_manager
+        from app.core.auth_session_manager import (
+            AuthenticationSessionManager, auth_manager)
 
         print("✅ Successfully imported AuthenticationSessionManager")
 
@@ -35,7 +36,9 @@ def test_auth_session_manager_import():
         print("✅ Session start working correctly")
 
         manager.end_session("test")
-        assert not manager.is_session_valid("test"), "Session should be invalid after end"
+        assert not manager.is_session_valid(
+            "test"
+        ), "Session should be invalid after end"
         print("✅ Session end working correctly")
 
         print("\n🎉 All basic auth session manager tests passed!")
@@ -48,6 +51,7 @@ def test_auth_session_manager_import():
         print(f"❌ Auth session manager test failed: {e}")
         return False
 
+
 def test_elevated_runner_import():
     """Test that we can import the elevated runner"""
     try:
@@ -58,6 +62,7 @@ def test_elevated_runner_import():
     except ImportError as e:
         print(f"❌ Failed to import elevated_run: {e}")
         return False
+
 
 def verify_file_integrations():
     """Verify that our file modifications are syntactically correct"""
@@ -90,6 +95,7 @@ def verify_file_integrations():
             all_valid = False
 
     return all_valid
+
 
 def main():
     """Run verification tests"""
@@ -128,6 +134,7 @@ def main():
         if not test3:
             print("  - File syntax errors detected")
         return 1
+
 
 if __name__ == "__main__":
     exit(main())

@@ -14,18 +14,18 @@ This creates a unified interface for compatibility and performance.
 import json
 import logging
 import os
+import platform
+import sys
 from dataclasses import asdict
 from enum import Enum
 from pathlib import Path
 from typing import Any, Dict, List, Union
 
-from .performance_standards import PERFORMANCE_OPTIMIZER, PerformanceLevel
+from .performance_standards import (PERFORMANCE_OPTIMIZER, PerformanceLevel,
+                                    optimize_for_scanning)
 from .process_management import PROCESS_MANAGER, ProcessConfig
 from .security_standards import SecurityLevel, SecurityStandards
 from .system_paths import ApplicationPaths, SystemPaths
-import platform
-import sys
-from .performance_standards import optimize_for_scanning
 
 
 class ConfigurationLevel(Enum):
@@ -180,7 +180,9 @@ class StandardsManager:
 
         except Exception:
             self.logerror(
-                "Failed to save configuration: %s".replace("%s", "{e}").replace("%d", "{e}")
+                "Failed to save configuration: %s".replace("%s", "{e}").replace(
+                    "%d", "{e}"
+                )
             )
             return False
 
@@ -210,7 +212,9 @@ class StandardsManager:
 
         except Exception:
             self.logerror(
-                "Failed to load configuration: %s".replace("%s", "{e}").replace("%d", "{e}")
+                "Failed to load configuration: %s".replace("%s", "{e}").replace(
+                    "%d", "{e}"
+                )
             )
             return self.get_unified_config()
 
@@ -344,11 +348,15 @@ class StandardsManager:
 
         # Check for old security settings
         if "allowed_commands" in old_config:
-            migration_steps.append("Migrate allowed_commands to new ALLOWED_BINARIES format")
+            migration_steps.append(
+                "Migrate allowed_commands to new ALLOWED_BINARIES format"
+            )
 
         # Check for old performance settings
         if "max_workers" in old_config:
-            migration_steps.append("Migrate max_workers to performance-based thread management")
+            migration_steps.append(
+                "Migrate max_workers to performance-based thread management"
+            )
 
         return migration_steps
 

@@ -15,7 +15,9 @@ logger = logging.getLogger(__name__)
 def _which(name: str) -> Optional[str]:
     """Find executable in PATH."""
     try:
-        result = subprocess.run(["which", name], capture_output=True, text=True, timeout=5)
+        result = subprocess.run(
+            ["which", name], capture_output=True, text=True, timeout=5
+        )
         return result.stdout.strip() if result.returncode == 0 else None
     except Exception:
         return None
@@ -70,7 +72,9 @@ def elevated_run(
             from .gui_auth_manager import elevated_run_gui
 
             logger.info("Using persistent GUI authentication manager")
-            return elevated_run_gui(argv, timeout=timeout, capture_output=capture_output, text=text)
+            return elevated_run_gui(
+                argv, timeout=timeout, capture_output=capture_output, text=text
+            )
         except ImportError:
             logger.warning(
                 "GUI authentication manager not available, falling back to legacy methods"
@@ -102,7 +106,9 @@ def _legacy_elevated_run(
     pkexec = _which("pkexec") if gui else None
 
     if not (sudo or pkexec):
-        return subprocess.CompletedProcess(argv, 1, "", "No privilege escalation tool available")
+        return subprocess.CompletedProcess(
+            argv, 1, "", "No privilege escalation tool available"
+        )
 
     # Prepare environment
     env = _sanitize_env(gui=gui)
@@ -128,7 +134,9 @@ def _legacy_elevated_run(
                 logger.info(f"Using GUI sudo with {helper}")
                 env_with_askpass = env.copy()
                 env_with_askpass["SUDO_ASKPASS"] = helper
-                methods.append(("sudo-gui", [sudo, "-A"] + list(argv), env_with_askpass))
+                methods.append(
+                    ("sudo-gui", [sudo, "-A"] + list(argv), env_with_askpass)
+                )
                 break
 
     # pkexec moved to lower priority (only as fallback)
@@ -157,7 +165,9 @@ def _legacy_elevated_run(
                 logger.info(f"Success with {method_name}")
                 return result
             else:
-                logger.debug(f"{method_name} failed with return code {result.returncode}")
+                logger.debug(
+                    f"{method_name} failed with return code {result.returncode}"
+                )
 
         except subprocess.TimeoutExpired:
             logger.warning(f"{method_name} timed out")
@@ -165,7 +175,9 @@ def _legacy_elevated_run(
             logger.debug(f"{method_name} error: {e}")
 
     # If all methods failed, return the last result or create a failure result
-    return subprocess.CompletedProcess(argv, 1, "", "All privilege escalation methods failed")
+    return subprocess.CompletedProcess(
+        argv, 1, "", "All privilege escalation methods failed"
+    )
 
 
 ## Note: validate_auth_session is defined later alongside cleanup_auth_session
@@ -261,7 +273,9 @@ def _legacy_elevated_popen(
                 logger.info(f"Using GUI sudo with {helper}")
                 env_with_askpass = env.copy()
                 env_with_askpass["SUDO_ASKPASS"] = helper
-                methods.append(("sudo-gui", [sudo, "-A"] + list(argv), env_with_askpass))
+                methods.append(
+                    ("sudo-gui", [sudo, "-A"] + list(argv), env_with_askpass)
+                )
                 break
 
     # pkexec moved to lower priority (only as fallback)
@@ -295,7 +309,9 @@ def _legacy_elevated_popen(
             last_error = e
 
     # If all methods failed, raise the last error
-    raise RuntimeError(f"All privilege escalation methods failed. Last error: {last_error}")
+    raise RuntimeError(
+        f"All privilege escalation methods failed. Last error: {last_error}"
+    )
 
 
 def cleanup_auth_session() -> None:

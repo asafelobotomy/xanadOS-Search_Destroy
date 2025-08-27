@@ -6,11 +6,11 @@ Provides persistent GUI sudo sessions to avoid multiple password prompts.
 
 import logging
 import os
+import stat
 import subprocess
+import tempfile
 import time
 from typing import Dict, Optional, Sequence
-import stat
-import tempfile
 
 logger = logging.getLogger(__name__)
 
@@ -60,7 +60,9 @@ class GUIAuthManager:
     def _which(self, name: str) -> Optional[str]:
         """Find executable in PATH."""
         try:
-            result = subprocess.run(["which", name], capture_output=True, text=True, timeout=5)
+            result = subprocess.run(
+                ["which", name], capture_output=True, text=True, timeout=5
+            )
             return result.stdout.strip() if result.returncode == 0 else None
         except Exception:
             return None
@@ -69,7 +71,9 @@ class GUIAuthManager:
         """Check if a sudo session is currently active."""
         try:
             # Quick test with sudo -n (non-interactive)
-            result = subprocess.run(["sudo", "-n", "true"], capture_output=True, timeout=5)
+            result = subprocess.run(
+                ["sudo", "-n", "true"], capture_output=True, timeout=5
+            )
 
             current_time = time.time()
 
@@ -182,7 +186,9 @@ kdialog --password "Enter your password for administrative access:"
                 logger.info("✅ GUI sudo session established successfully")
                 return True
             else:
-                logger.error(f"Failed to establish sudo session: {result.stderr.decode()}")
+                logger.error(
+                    f"Failed to establish sudo session: {result.stderr.decode()}"
+                )
                 return False
 
         except subprocess.TimeoutExpired:
@@ -242,7 +248,9 @@ kdialog --password "Enter your password for administrative access:"
                 if result.returncode == 0:
                     return result
                 else:
-                    logger.warning(f"Command failed with existing session: {result.returncode}")
+                    logger.warning(
+                        f"Command failed with existing session: {result.returncode}"
+                    )
             except Exception as e:
                 logger.warning(f"Error using existing session: {e}")
 
@@ -253,7 +261,9 @@ kdialog --password "Enter your password for administrative access:"
 
         # Run the command with the established session
         try:
-            logger.info(f"Running command with GUI sudo session: {' '.join(argv[:3])}...")
+            logger.info(
+                f"Running command with GUI sudo session: {' '.join(argv[:3])}..."
+            )
             result = subprocess.run(
                 [sudo_path] + list(argv),
                 timeout=timeout,
@@ -361,8 +371,12 @@ kdialog --password "Enter your password for administrative access:"
     def get_session_info(self) -> Dict[str, any]:
         """Get information about the current authentication session."""
         current_time = time.time()
-        elapsed = current_time - self._session_start_time if self._session_start_time else 0
-        remaining = max(0, self._session_timeout - elapsed) if self._sudo_session_active else 0
+        elapsed = (
+            current_time - self._session_start_time if self._session_start_time else 0
+        )
+        remaining = (
+            max(0, self._session_timeout - elapsed) if self._sudo_session_active else 0
+        )
 
         return {
             "active": self._sudo_session_active,
