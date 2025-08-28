@@ -65,56 +65,56 @@
     br = branch
     ci = commit
     st = status
-    
+
     # Logging
     lg = log --oneline --graph --decorate
     lga = log --oneline --graph --decorate --all
     ll = log --pretty=format:'%C(yellow)%h%Creset -%C(red)%d%Creset %s %C(green)(%cr) %C(blue)<%an>%Creset' --abbrev-commit
-    
+
     # Diffs
     df = diff
     dfc = diff --cached
-    
+
     # Status and info
     s = status -s
     info = remote show origin
-    
+
     # Branch management
     bra = branch -a
     brd = branch -d
     brm = branch -m
-    
+
     # Commit shortcuts
     cm = commit -m
     cam = commit -am
     amend = commit --amend
-    
+
     # Reset shortcuts
     unstage = reset HEAD --
     discard = checkout --
-    
+
     # Stash shortcuts
     ss = stash save
     sp = stash pop
     sl = stash list
-    
+
     # Remote shortcuts
     po = push origin
     pom = push origin master
     pod = push origin develop
-    
+
     # Merge shortcuts
     mom = merge origin/master
     mod = merge origin/develop
-    
+
     # Release flow
     release-start = "!f() { git checkout develop && git pull origin develop && git checkout -b release/$1; }; f"
     release-finish = "!f() { git checkout master && git merge release/$1 && git tag -a v$1 -m 'Release version $1' && git checkout develop && git merge master && git branch -d release/$1; }; f"
-    
+
     # Feature flow
     feature-start = "!f() { git checkout develop && git pull origin develop && git checkout -b feature/$1; }; f"
     feature-finish = "!f() { git checkout develop && git merge feature/$1 && git branch -d feature/$1; }; f"
-    
+
     # Hotfix flow
     hotfix-start = "!f() { git checkout master && git pull origin master && git checkout -b hotfix/$1; }; f"
     hotfix-finish = "!f() { git checkout master && git merge hotfix/$1 && git tag -a v$1 -m 'Hotfix version $1' && git checkout develop && git merge master && git branch -d hotfix/$1; }; f"
