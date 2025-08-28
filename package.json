@@ -1,7 +1,7 @@
 {
-  "name": "github-copilot-enhancement-framework",
-  "version": "1.0.0",
-  "description": "Comprehensive GitHub Copilot enhancement framework with validation systems and VS Code integration",
+  "name": "xanados-search-destroy",
+  "version": "2.11.2",
+  "description": "xanadOS Search & Destroy security scanner with GitHub Copilot enhancement framework for development",
   "main": "scripts/update-readme.js",
   "scripts": {
     "update-readme": "node scripts/update-readme.js",

@@ -45,7 +45,10 @@ setup: ## Set up development environment
 .PHONY: install
 install: ## Install dependencies
 	@echo "$(BLUE)Installing dependencies...$(NC)"
-	@if command -v pip >/dev/null 2>&1; then \
+	@if [ -d "$(VENV_DIR)" ]; then \
+		echo "$(YELLOW)Using virtual environment...$(NC)"; \
+		$(VENV_DIR)/bin/pip install -r requirements.txt; \
+	elif command -v pip >/dev/null 2>&1; then \
 		pip install -r requirements.txt; \
 	elif command -v pip3 >/dev/null 2>&1; then \
 		pip3 install -r requirements.txt; \
@@ -62,7 +65,10 @@ install: ## Install dependencies
 .PHONY: install-dev
 install-dev: ## Install development dependencies
 	@echo "$(BLUE)Installing development dependencies...$(NC)"
-	@if command -v pip >/dev/null 2>&1; then \
+	@if [ -d "$(VENV_DIR)" ]; then \
+		echo "$(YELLOW)Using virtual environment...$(NC)"; \
+		$(VENV_DIR)/bin/pip install -r requirements.txt && $(VENV_DIR)/bin/pip install -r requirements-dev.txt; \
+	elif command -v pip >/dev/null 2>&1; then \
 		pip install -r requirements.txt && pip install -r requirements-dev.txt; \
 	elif command -v pip3 >/dev/null 2>&1; then \
 		pip3 install -r requirements.txt && pip3 install -r requirements-dev.txt; \
@@ -140,12 +146,20 @@ dev-tools: ## Run development tools and reports
 .PHONY: run
 run: ## Run the application
 	@echo "$(BLUE)Starting xanadOS Search & Destroy...$(NC)"
-	$(PYTHON) -m app.main
+	@if [ -d "$(VENV_DIR)" ]; then \
+		$(VENV_DIR)/bin/python -m app.main; \
+	else \
+		$(PYTHON) -m app.main; \
+	fi
 
 .PHONY: run-debug
 run-debug: ## Run the application in debug mode
 	@echo "$(BLUE)Starting xanadOS Search & Destroy (Debug Mode)...$(NC)"
-	DEBUG=1 $(PYTHON) -m app.main
+	@if [ -d "$(VENV_DIR)" ]; then \
+		DEBUG=1 $(VENV_DIR)/bin/python -m app.main; \
+	else \
+		DEBUG=1 $(PYTHON) -m app.main; \
+	fi
 
 .PHONY: run-console
 run-console: ## Run the application in console mode (no GUI)

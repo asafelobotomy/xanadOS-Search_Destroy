@@ -1,8 +1,10 @@
-# Meta-Instruction Validation Framework
+# Development Instruction Validation Tools
 
 ## Overview
 
-This framework provides automated validation and quality assurance for GitHub Copilot instructions, ensuring consistency, effectiveness, and maintainability across all instruction sets.
+These tools provide automated validation and quality assurance for GitHub Copilot
+instructions, ensuring consistency, effectiveness, and maintainability across all
+instruction sets used in xanadOS development.
 
 ## Validation Categories
 

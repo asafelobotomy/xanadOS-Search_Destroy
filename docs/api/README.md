@@ -1,7 +1,7 @@
 # API Documentation
 
 This directory contains API documentation and specifications for programmatic
-interaction with the GitHub Copilot Enhancement Framework.
+interaction with the xanadOS development environment.
 
 ## Available APIs
 

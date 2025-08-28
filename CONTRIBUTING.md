@@ -1,25 +1,94 @@
 # Contributing
 
-Thanks for contributing! This repository follows the Coding & Development Bible.
+Thanks for contributing to **xanadOS Search & Destroy**! This repository contains
+a Linux security application with AI-enhanced development tools.
 
 ## Before you start
 
--
+### For Security Application Development
 
-- Read `.GitHub/Copilot-instructions.md`and any`.GitHub/chatmodes/_.chatmode.md`or`.GitHub/prompts/_.prompt.md` that apply to your changes.
-- Install linters/formatters per project configuration.
+- Review security guidelines: `.github/instructions/security.instructions.md`
+- Check implementation guide: `docs/implementation/CONSOLIDATED_IMPLEMENTATION_GUIDE.md`
+- Understand security architecture: `docs/project/SECURITY_PERFORMANCE_REPORT.md`
+- Install Python dependencies: `pip install -r requirements-dev.txt`
+
+### For Development Tool Usage
+
+- Read `.github/copilot-instructions.md` for AI development guidance
+- Review available tools: `scripts/tools/README.md`
+- Install Node.js dependencies: `npm install` (for validation tools)
+- Follow quality guidelines: `.github/instructions/code-quality.instructions.md`
 
 ## Workflow
 
-1. Create a feature branch.
-2. Write or update tests under `tests/`mirroring`src/` paths.
-3. Make focused code changes; avoid unrelated formatting.
-4. Ensure `npm test`/`pytest` passes locally.
-5. Open a PR with a concise description, assumptions, and tradeoffs.
+### Security Application Changes
+
+1. Create a feature branch for your security enhancement
+2. Write or update tests in `tests/` matching `app/` structure
+3. Follow Python security best practices (see `app/core/input_validation.py` examples)
+4. Ensure `python -m pytest tests/` passes locally
+5. Test with the GUI: `python -m app.main`
+6. Update security documentation if needed
+
+### General Guidelines
+
+1. Make focused changes; avoid unrelated formatting
+2. Write clear commit messages following conventional commits
+3. Open a PR with concise description, assumptions, and tradeoffs
+4. Update `CHANGELOG.md` for notable changes
+
+## Development Environment
+
+### Python Application Setup
+
+```bash
+# Install Python dependencies
+pip install -r requirements.txt
+pip install -r requirements-dev.txt
+
+# Install system dependencies (Ubuntu/Debian)
+sudo apt install clamav clamav-daemon
+
+# Run tests
+python -m pytest tests/
+
+# Launch application
+python -m app.main
+```
+
+### AI Framework Setup
+
+```bash
+# Install Node.js dependencies (for development tools)
+npm install
+
+# Run validation tools
+npm run quick:validate
+
+# Use development tools
+./scripts/tools/quality/check-quality.sh --fix
+./scripts/tools/validation/validate-structure.sh
+```
 
 ## Notes
 
--
+### Security Considerations
 
-- Prefer reusing existing files/functions.
-- Document public APIs with inputs/outputs and error modes.
+- All user inputs must be validated (see `app/core/input_validation.py`)
+- Command execution must use safe methods (see `app/core/privilege_escalation.py`)
+- Follow PolicyKit security patterns for privilege escalation
+- Test security features thoroughly with edge cases
+
+### Code Quality
+
+- Prefer reusing existing functions and following established patterns
+- Document public APIs with inputs/outputs and error modes
+- Follow existing code style and security patterns
+- Update type hints and docstrings for new code
+
+### Documentation
+
+- Update user documentation for new security features
+- Update AI framework docs for new development tools
+- Include examples and usage patterns
+- Keep documentation current with code changes

@@ -1,7 +1,7 @@
 # Tutorials Directory
 
 This directory contains step-by-step learning-oriented guides for using the GitHub
-Copilot Enhancement Framework.
+development infrastructure for xanadOS.
 
 ## Available Tutorials
 

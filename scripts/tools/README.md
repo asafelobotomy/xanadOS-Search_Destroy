@@ -451,5 +451,5 @@ Use `scripts/tools/quality/fix-markdown.sh`.
 
 ---
 
-This toolshed is maintained as part of the GitHub Copilot Enhancement Framework
+This toolshed is maintained as part of the xanadOS development infrastructure
 to provide consistent, reliable tools for development workflows.

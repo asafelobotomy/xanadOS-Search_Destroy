@@ -1,7 +1,7 @@
 # Reference Documentation
 
 This directory contains reference materials, specifications, and quick-lookup
-information for the GitHub Copilot Enhancement Framework.
+information for the xanadOS development environment.
 
 ## Available References
 

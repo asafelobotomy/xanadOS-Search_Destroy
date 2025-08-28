@@ -2,7 +2,9 @@
 
 ## Overview
 
-The GitHub Copilot Enhancement Framework now includes advanced model targeting capabilities, allowing you to select specialized AI models optimized for specific use cases and development scenarios.
+The AI development framework included with **xanadOS Search & Destroy** provides advanced
+model targeting capabilities, allowing developers to select specialized AI models optimized
+for security development, testing, and analysis scenarios.
 
 ## Supported Models
 

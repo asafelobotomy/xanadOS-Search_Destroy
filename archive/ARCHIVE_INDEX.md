@@ -16,13 +16,14 @@ organized by category and chronology for easy discovery and reference.
 
 ## 📊 Archive Statistics
 
-- **Total Archived Items**: 20
-- **Deprecated Items**: 2
+- **Total Archived Items**: 24
+- **Deprecated Items**: 3
 - **Legacy Versions**: 0
-- **Superseded Items**: 11
+- **Superseded Items**: 12
 - **Performance/Monitoring Data**: 6
-- **Temporary Testing Files**: 1
-- **Last Updated**: 2025-08-27
+- **Temporary Testing Files**: 2
+- **Development Files**: 1
+- **Last Updated**: 2025-08-28
 
 ## 🗂️ Archive Categories
 
@@ -42,7 +43,11 @@ No legacy versions currently archived.
 
 ### Superseded Content
 
-**Recent Archives (2025-08-26)**:
+**Recent Archives (2025-08-28)**:
+
+- `.flake8` - Legacy linting config superseded by `[tool.ruff.lint]` in `pyproject.toml`
+
+**Previous Archives (2025-08-26)**:
 
 - `.flake8` - Legacy linting config superseded by `[tool.ruff.lint]` in `pyproject.toml`
 - `.pylintrc` - Legacy pylint config superseded by `[tool.ruff.lint]` in `pyproject.toml`
@@ -72,14 +77,34 @@ No legacy versions currently archived.
 
 ### Temporary Testing Files
 
-**Recent Archives (2025-08-27)**:
+**Recent Archives (2025-08-28)**:
+
+- `test_installation.py` - Test file for setup wizard validation (archived after successful testing)
+
+**Previous Archives (2025-08-27)**:
 
 - `test_black_formatting.py` - Temporary test file for Black formatter
-	verification (archived after successful testing)
+    verification (archived after successful testing)
+
+### Development Files
+
+**Recent Archives (2025-08-28)**:
+
+- `dev/` - Development directory containing testing scripts, analysis tools, and demos
+  - `coverage.xml` - Test coverage report file
+  - Various debugging and testing scripts
 
 ## 📅 Chronological Index
 
 ### 2025
+
+**August 28, 2025** - Repository organization cleanup:
+
+- Archived `test_installation.py` test file
+- Archived `.flake8` legacy configuration file
+- Archived `coverage.xml` test coverage report
+- Archived `dev/` directory with development tools and scripts
+- Removed empty `clamav_db/` directory
 
 **August 25, 2025** - Repository organization cleanup:
 

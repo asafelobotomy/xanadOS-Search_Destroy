@@ -103,13 +103,18 @@ class InstallationWorker(QThread):  # pylint: disable=too-many-instance-attribut
         try:
             # Get installation command for this distribution
             if self.distro not in self.package_info.install_commands:
-                self.output_updated.emit(
-                    f"ERROR: No installation command available for {self.distro}"
-                )
-                self.installation_finished.emit(self.package_info.name, False)
-                return
-
-            install_cmd = self.package_info.install_commands[self.distro]
+                # Try fallback to unknown distribution command
+                if "unknown" in self.package_info.install_commands:
+                    install_cmd = self.package_info.install_commands["unknown"]
+                    self.output_updated.emit(f"Using fallback installation method for {self.distro}")
+                else:
+                    self.output_updated.emit(
+                        f"ERROR: No installation command available for {self.distro}"
+                    )
+                    self.installation_finished.emit(self.package_info.name, False)
+                    return
+            else:
+                install_cmd = self.package_info.install_commands[self.distro]
 
             # Update progress
             self.progress_updated.emit(
@@ -137,14 +142,50 @@ class InstallationWorker(QThread):  # pylint: disable=too-many-instance-attribut
                         gui=True,
                     )
                 else:
-                    # Handle simple commands - remove any pkexec prefix
-                    cmd_parts = install_cmd.split()
-                    if cmd_parts[0] == "pkexec":
-                        cmd_parts = cmd_parts[1:]  # Remove pkexec prefix
+                    # Handle shell commands and simple commands properly
+                    if install_cmd.startswith('sh -c "') and install_cmd.endswith('"'):
+                        # This is a shell command like: sh -c "command && other_command"
+                        # Extract the shell command between quotes
+                        parts = install_cmd.split('"')
+                        if len(parts) >= 2:
+                            shell_cmd = parts[1]
+                            cmd_parts = ["sh", "-c", shell_cmd]
+                            self.output_updated.emit(f"Executing shell command: {shell_cmd}")
+                        else:
+                            # Fallback to simple splitting
+                            cmd_parts = install_cmd.split()
+                    else:
+                        # Handle simple commands - remove any pkexec prefix
+                        cmd_parts = install_cmd.split()
+                        if cmd_parts[0] == "pkexec":
+                            cmd_parts = cmd_parts[1:]  # Remove pkexec prefix
 
-                    install_result = elevated_run(
-                        cmd_parts, timeout=600, capture_output=True, text=True, gui=True
-                    )
+                    # For better GUI authentication, try elevated_run with retries
+                    max_retries = 2
+                    install_result = None
+
+                    for attempt in range(max_retries):
+                        try:
+                            self.output_updated.emit(f"Installation attempt {attempt + 1}/{max_retries}")
+                            install_result = elevated_run(
+                                cmd_parts, timeout=600, capture_output=True, text=True, gui=True
+                            )
+                            if install_result.returncode == 0:
+                                break  # Success, exit retry loop
+                            else:
+                                self.output_updated.emit(f"Attempt {attempt + 1} failed with code {install_result.returncode}")
+                                if attempt < max_retries - 1:
+                                    self.output_updated.emit("Retrying with fresh authentication...")
+                                    # Clear any existing authentication session before retry
+                                    import time
+                                    time.sleep(1)  # Brief pause between attempts
+                        except Exception as e:
+                            self.output_updated.emit(f"Attempt {attempt + 1} error: {str(e)}")
+                            if attempt == max_retries - 1:
+                                raise  # Re-raise on final attempt
+
+                    if install_result is None:
+                        raise RuntimeError("All installation attempts failed")
 
                 # Output both stdout and stderr
                 if install_result.stdout:
@@ -356,6 +397,8 @@ class SetupWizard(ThemedDialog):  # pylint: disable=too-many-instance-attributes
                     ),
                     "fedora": "dnf install -y clamav clamav-update",
                     "opensuse": "zypper install -y clamav",
+                    # Add fallback for unknown distributions
+                    "unknown": self._get_fallback_install_command("clamav"),
                 },
                 check_command="clamscan --version",
                 service_name="clamav-daemon",
@@ -378,6 +421,7 @@ class SetupWizard(ThemedDialog):  # pylint: disable=too-many-instance-attributes
                     "debian": 'sh -c "apt update && apt install -y ufw"',
                     "fedora": "dnf install -y ufw",
                     "opensuse": "zypper install -y ufw",
+                    "unknown": self._get_fallback_install_command("ufw"),
                 },
                 check_command="ufw --version",
                 service_name="ufw",
@@ -400,8 +444,9 @@ class SetupWizard(ThemedDialog):  # pylint: disable=too-many-instance-attributes
                     "debian": 'sh -c "apt update && apt install -y rkhunter"',
                     "fedora": "dnf install -y rkhunter",
                     "opensuse": "zypper install -y rkhunter",
+                    "unknown": self._get_fallback_install_command("rkhunter"),
                 },
-                check_command="rkhunter --version",
+                check_command="which rkhunter",
                 post_install_commands=[
                     'sh -c "chmod 755 /usr/bin/rkhunter"',
                     "/usr/bin/rkhunter --update",
@@ -695,20 +740,77 @@ class SetupWizard(ThemedDialog):  # pylint: disable=too-many-instance-attributes
             with open("/etc/os-release", "r", encoding="utf-8") as f:
                 content = f.read().lower()
 
+            # Check for distribution ID first (most reliable)
+            for line in content.splitlines():
+                if line.startswith("id="):
+                    distro_id = line.split("=")[1].strip().strip('"')
+                    if distro_id in ["arch", "manjaro", "endeavouros", "garuda"]:
+                        return "arch"
+                    elif distro_id in ["ubuntu", "pop", "mint", "elementary"]:
+                        return "ubuntu"
+                    elif distro_id in ["debian", "raspbian"]:
+                        return "debian"
+                    elif distro_id in ["fedora", "centos", "rhel", "rocky", "alma"]:
+                        return "fedora"
+                    elif distro_id in ["opensuse", "suse", "opensuse-leap", "opensuse-tumbleweed"]:
+                        return "opensuse"
+
+            # Fallback to content-based detection
             detected = "unknown"
-            if "arch" in content:
+            if any(keyword in content for keyword in ["arch", "manjaro", "endeavour", "garuda"]):
                 detected = "arch"
-            elif "ubuntu" in content:
+            elif any(keyword in content for keyword in ["ubuntu", "pop", "mint", "elementary"]):
                 detected = "ubuntu"
-            elif "debian" in content:
+            elif "debian" in content or "raspbian" in content:
                 detected = "debian"
-            elif "fedora" in content:
+            elif any(keyword in content for keyword in ["fedora", "centos", "rhel", "rocky", "alma"]):
                 detected = "fedora"
             elif "opensuse" in content or "suse" in content:
                 detected = "opensuse"
+
             return detected
         except OSError:
             return "unknown"
+
+    def _get_available_package_manager(self) -> str:
+        """Detect available package manager on the system."""
+        package_managers = {
+            "pacman": "arch",
+            "apt": "ubuntu",
+            "apt-get": "debian",
+            "dnf": "fedora",
+            "yum": "fedora",
+            "zypper": "opensuse",
+            "portage": "gentoo",
+            "xbps-install": "void",
+            "apk": "alpine"
+        }
+
+        for pm, distro in package_managers.items():
+            try:
+                result = subprocess.run(["which", pm], capture_output=True, timeout=3)
+                if result.returncode == 0:
+                    return distro
+            except:
+                continue
+        return "unknown"
+
+    def _get_fallback_install_command(self, package: str) -> str:
+        """Generate fallback installation command based on available package manager."""
+        pm_distro = self._get_available_package_manager()
+
+        fallback_commands = {
+            "arch": f"pacman -S --noconfirm {package}",
+            "ubuntu": f"apt update && apt install -y {package}",
+            "debian": f"apt update && apt install -y {package}",
+            "fedora": f"dnf install -y {package}",
+            "opensuse": f"zypper install -y {package}",
+            "gentoo": f"emerge {package}",
+            "void": f"xbps-install -y {package}",
+            "alpine": f"apk add {package}"
+        }
+
+        return fallback_commands.get(pm_distro, f"echo 'Please install {package} manually'")
 
     def check_package_availability(self) -> Dict[str, bool]:
         """Check which packages are already installed"""
@@ -716,13 +818,20 @@ class SetupWizard(ThemedDialog):  # pylint: disable=too-many-instance-attributes
 
         for package_name, package_info in self.packages.items():
             try:
-                check_result = subprocess.run(
-                    package_info.check_command.split(),
-                    capture_output=True,
-                    timeout=5,
-                    check=False,
-                )
-                status[package_name] = check_result.returncode == 0
+                # Special handling for RKHunter - check if binary exists rather than 'which'
+                # since RKHunter has restrictive permissions and may not be in user PATH
+                if package_name == "rkhunter":
+                    import os
+                    rkhunter_paths = ["/usr/bin/rkhunter", "/usr/local/bin/rkhunter", "/bin/rkhunter"]
+                    status[package_name] = any(os.path.exists(path) for path in rkhunter_paths)
+                else:
+                    check_result = subprocess.run(
+                        package_info.check_command.split(),
+                        capture_output=True,
+                        timeout=5,
+                        check=False,
+                    )
+                    status[package_name] = check_result.returncode == 0
             except (OSError, subprocess.SubprocessError, ValueError):
                 status[package_name] = False
 

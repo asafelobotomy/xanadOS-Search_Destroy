@@ -1,6 +1,6 @@
 # Scripts Directory
 
-Organized automation scripts for the GitHub Copilot Enhancement Framework.
+Organized automation scripts for xanadOS Search & Destroy development.
 
 ## Structure
 

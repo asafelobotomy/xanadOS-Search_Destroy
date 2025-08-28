@@ -1,242 +1,367 @@
-# 🚀 GitHub Copilot Enhancement Framework
+# �️ xanadOS Search & Destroy
 
-[![CI](HTTPS://GitHub.com/asafelobotomy/agent-instructions-co-pilot/actions/workflows/ci.yml/badge.svg)](HTTPS://GitHub.com/asafelobotomy/agent-instructions-co-pilot/actions/workflows/ci.yml)
-[![Spellcheck](HTTPS://GitHub.com/asafelobotomy/agent-instructions-co-pilot/actions/workflows/spellcheck.yml/badge.svg)](HTTPS://GitHub.com/asafelobotomy/agent-instructions-co-pilot/actions/workflows/spellcheck.yml)
-[![Link Check](HTTPS://GitHub.com/asafelobotomy/agent-instructions-co-pilot/actions/workflows/link-check.yml/badge.svg)](HTTPS://GitHub.com/asafelobotomy/agent-instructions-co-pilot/actions/workflows/link-check.yml)
+[![Security Scanner](https://img.shields.io/badge/Security-A--Grade-green.svg)](docs/project/SECURITY_PERFORMANCE_REPORT.md)
+[![Python 3.11+](https://img.shields.io/badge/Python-3.11+-blue.svg)](https://python.org)
+[![PyQt6](https://img.shields.io/badge/GUI-PyQt6-blue.svg)](https://riverbankcomputing.com/software/pyqt/)
+[![ClamAV](https://img.shields.io/badge/Engine-ClamAV-red.svg)](https://www.clamav.net/)
 
-**A comprehensive enterprise-grade system for AI-assisted development with specialized
-chatmodes, prompt templates, and advanced instructions.**
+**A comprehensive Linux security scanner and system protection suite with advanced
+malware detection, real-time monitoring, and enterprise-grade security hardening.**
 
-_Quality Score: **98.9%** | Enterprise Excellence Level | Production Ready_
+_Security Rating: **A- (Excellent)** | Production Ready | Current Version: 2.11.2_
 
 ## Start here
 
-- Read first: `.GitHub/instructions/agent-workflow.instructions.md`
-- Instruction map: `.GitHub/instructions/INDEX.md`
-- Toolshed overview: `scripts/tools/README.md`
-- Validate quickly: `npm run quick:validate`
-- Placeholder log: `docs/reports/PLACEHOLDERS.md`
+- 🛡️ **Main Application**: Run `python -m app.main` to launch the security scanner
+- 📖 **Security Guide**: `docs/project/SECURITY_PERFORMANCE_REPORT.md`
+- 🚀 **Quick Setup**: `./scripts/tools/git/setup-repository.sh`
+- ✅ **Validate Install**: `npm run quick:validate` (requires Node.js)
+- 📋 **Feature Guide**: `docs/implementation/CONSOLIDATED_IMPLEMENTATION_GUIDE.md`
 
-## 🛠️ **IMPORTANT: Ready-to-Use Toolshed Available**
+## 🔧 **Development Tools** (AI-Enhanced)
 
-**⚡ This repository includes a complete toolshed of pre-built scripts that GitHub
-Copilot agents should ALWAYS use instead of recreating functionality.**
+This repository includes development automation tools enhanced with AI assistance:
 
-### 🔧 **Essential Tools for Immediate Use:**
+### **Available Development Tools:**
 
 ```bash
-
-## Repository setup with industry standards (instead of manual setup)
-
-./scripts/tools/Git/setup-repository.sh
-
-## Comprehensive validation (instead of custom checks)
-
+# Repository setup and validation
+./scripts/tools/git/setup-repository.sh
 ./scripts/tools/validation/validate-structure.sh
 
-## Code quality with auto-fix (instead of manual review)
-
+# Code quality and formatting
 ./scripts/tools/quality/check-quality.sh --fix
 
-## Deploy complete toolshed to any repository
-
+# Complete toolshed deployment
 ./scripts/tools/implement-toolshed.sh
-
-```text
+```
 
 **📖 Complete Tool Catalog**: `scripts/tools/README.md` (20+ tools across 6 categories)
 
-**🎯 Always check the toolshed first!** Avoid recreating existing functionality.
+**🤖 AI Development Assistance:**
 
-## 📚 **IMPORTANT: Comprehensive Documentation Repository**
-
-**📖 This repository includes a complete documentation system in `/docs/` that
-GitHub Copilot agents should ALWAYS use instead of creating redundant
-documentation.**
-
-### 📖 **Essential Documentation for Immediate Use:**
-
-```bash
-
-## Framework overview and capabilities (instead of creating new guides)
-
-cat /docs/guides/ENHANCEMENTS.md
-
-## Repository structure documentation (instead of custom structure docs)
-
-cat /docs/guides/PROJECT_STRUCTURE.md
-
-## Enterprise deployment guide (instead of setup instructions)
-
-cat /docs/guides/organization-custom-instructions.md
-
-## AI model targeting guide (instead of model-specific docs)
-
-cat /docs/guides/model-targeting-guide.md
-
-```text
-
-**📚 Complete Documentation Index**: `/docs/README.md` (6+ guides, templates, reports)
-
-**🎯 Always check existing documentation first!** Avoid recreating content.
+- Chat modes in `.github/chatmodes/` for specialized development tasks
+- Prompt templates in `.github/prompts/` for code review and analysis
+- Development instructions in `.github/instructions/` for automated guidance
 
 ---
 
-## 🎯 What This Repository Does
+## 🛡️ What This Application Does
 
-This framework transforms your GitHub Copilot experience by providing:
+**xanadOS Search & Destroy** is a comprehensive Linux security suite that provides:
 
-- **11 Specialized Chatmodes** - From architect to security specialist,
+### 🔍 **Core Security Features**
 
-  each optimized for specific development tasks
+- **Real-time Malware Detection** - ClamAV integration with custom signatures
+- **System Integrity Monitoring** - File system and configuration change detection
+- **Network Security Analysis** - Traffic monitoring and firewall management
+- **Privilege Escalation Protection** - PolicyKit hardening and secure authentication
+- **Vulnerability Scanning** - Automated security assessment and reporting
 
-- **7 Professional Prompt Templates** - Reusable, battle-tested prompts for common scenarios
-- **Path-Specific Instructions** - Advanced targeting with `applyTo` frontmatter for file-specific guidance
-- **Enterprise Validation System** - Comprehensive quality assurance with automated testing
-- **Complete Script Toolshed** - 20+ pre-built tools for common development tasks
-- **Advanced Model Support** - Optimized for GitHub Copilot 2025, GPT-5, Claude Sonnet 4,
+### 🎨 **User Interface & Experience**
 
-  and Gemini Pro
+- **Modern PyQt6 GUI** - Intuitive interface with professional styling
+- **Quick Scan Functionality** - Fast system security assessment
+- **Real-time Status Dashboard** - Live monitoring of security components
+- **Comprehensive Reporting** - Detailed security analysis and recommendations
+- **Settings Management** - Configurable security policies and preferences
+
+### 🚀 **Performance & Reliability**
+
+- **Non-invasive Monitoring** - No authentication loops or system disruption
+- **Optimized Scanning** - 58% faster startup with intelligent background processing
+- **Memory Efficient** - Advanced optimization for system resource management
+- **Multi-threaded Architecture** - Responsive UI with background security operations
+
+---
+
+## 🔧 Installation & Setup
+
+### **System Requirements**
+
+- **Operating System:** Linux (Ubuntu 20.04+, Fedora 35+, Arch Linux)
+- **Python:** 3.11 or higher
+- **GUI Framework:** PyQt6
+- **Security Engine:** ClamAV (for malware detection)
+- **Memory:** 2GB RAM minimum, 4GB recommended
+
+### **Quick Installation**
+
+```bash
+# Clone the repository
+git clone https://github.com/asafelobotomy/xanadOS-Search_Destroy.git
+cd xanadOS-Search_Destroy
+
+# Install Python dependencies
+pip install -r requirements.txt
+
+# Install system dependencies (Ubuntu/Debian)
+sudo apt update && sudo apt install clamav clamav-daemon
+
+# Update ClamAV signatures
+sudo freshclam
+
+# Launch the application
+python -m app.main
+```
+
+### **Development Setup (with AI Enhancement Tools)**
+
+```bash
+# Install Node.js dependencies for validation tools
+npm install
+
+# Set up development environment
+./scripts/tools/git/setup-repository.sh
+
+# Run validation and tests
+npm run quick:validate
+```
+
+---
+
+## 🔒 Security Features & Certifications
+
+### **Security Rating: A- (Excellent)**
+
+Based on comprehensive security analysis ([full report](docs/project/SECURITY_PERFORMANCE_REPORT.md)):
+
+**✅ Security Strengths:**
+
+- **Command Injection Protection** - Multi-layer validation with strict whitelisting
+- **Input Validation Framework** - Comprehensive sanitization system
+- **Network Security** - SSL/TLS with certificate pinning
+- **Privilege Escalation Hardening** - PolicyKit integration with secure validation
+- **Dependency Security** - Regular scanning, zero known vulnerabilities
+
+**🛡️ Compliance:**
+
+- ✅ **OWASP Top 10** injection vulnerability protection
+- ✅ **CWE-78** (Command Injection) prevention
+- ✅ **CWE-22** (Path Traversal) blocking
+- ✅ **CWE-200** (Information Disclosure) protection
 
 ## 🏗️ Repository Structure
 
-### 📁 Core Framework Components
+### 📁 Core Application Components
 
 ```text
-📦 agent-instructions-co-pilot/
-├── 🤖 .GitHub/                    # GitHub Copilot Enhancement Framework
-│   ├── 💬 chatmodes/             # 11 Specialized interaction modes
-│   ├── 🎯 prompts/               # 7 Reusable prompt templates
+📦 xanadOS-Search_Destroy/
+├── 🛡️ app/                       # Main security application
+│   ├── 🎮 gui/                   # PyQt6 user interface
+│   ├── � core/                  # Security engine components
+│   ├── 📊 monitoring/            # Real-time system monitoring
+│   └── �️ utils/                # Utility functions and helpers
+├── � config/                     # Security policies and configurations
+│   ├── 🔐 *.policy               # PolicyKit security rules
+│   ├── ⚙️ *.ini                  # Application settings
+│   └── �️ security.conf.example # Security configuration template
+├── 🧪 tests/                     # Comprehensive test suite
+│   ├── � security/              # Security validation tests
+│   ├── 🎮 gui/                   # User interface tests
+│   └── � integration/           # System integration tests
+├── 📚 docs/                      # Security documentation
+│   ├── 🛡️ project/              # Security analysis reports
+│   ├── 📋 implementation/        # Feature implementation guides
+│   └── � releases/              # Version release notes
+├── 🤖 .github/                   # AI Development Tools
+│   ├── � chatmodes/             # 11 specialized AI interaction modes
+│   ├── 🎯 prompts/               # 7 reusable prompt templates
 │   ├── 📋 instructions/          # Path-specific development guidance
-│   ├── 🔧 mcp/                   # Model Context Protocol integration
 │   └── ✅ validation/            # Enterprise quality assurance
-├── 📊 reports/                    # Development reports and analysis
-│   ├── 📈 stages/                # Stage completion reports
-│   ├── 🔍 analysis/              # Enhancement analysis reports
-│   └── 🛡️ quality/               # Quality assurance reports
-├── 🛠️ scripts/                   # Automation and utility scripts
-│   ├── 🎭 stages/                # Stage implementation scripts
-│   ├── ✨ quality/               # Quality enhancement tools
-│   ├── ✅ validation/            # Structure and policy validation
-│   └── 🔧 utils/                 # General utility scripts
-├── 📚 docs/                      # Comprehensive documentation
-├── 🗄️ archive/                   # Historical files and backups
-└── 📋 repo-template/             # Ready-to-deploy template
+└── 🛠️ scripts/tools/             # Development automation tools
+
+```
+
+### 🛡️ Security Engine Features
 
 ```text
+app/core/
+├── clamav_wrapper.py             # Malware detection engine
+├── privilege_escalation.py       # Secure authentication handling
+├── input_validation.py           # Command injection prevention
+├── network_security.py           # SSL/TLS certificate validation
+├── file_monitor.py               # Real-time file system monitoring
+├── firewall_manager.py           # Network security management
+├── async_scanner.py              # Multi-threaded scanning engine
+└── telemetry.py                  # Security event logging
 
-### 🎯 Chatmode System
+```
 
-```text
-.GitHub/chatmodes/
-├── architect.chatmode.md          # System design and architecture
-├── elite-engineer.chatmode.md     # Advanced coding and optimization
-├── security.chatmode.md           # Security analysis and hardening
-├── testing.chatmode.md            # Test-driven development
-├── performance.chatmode.md        # Performance optimization
-├── documentation.chatmode.md      # Professional documentation
-├── gpt5-elite-developer.chatmode.md      # GPT-5 optimized development
-├── claude-sonnet4-architect.chatmode.md  # Claude Sonnet 4 architecture
-├── gemini-pro-specialist.chatmode.md     # Gemini Pro specialization
-├── o1-preview-reasoning.chatmode.md      # Advanced reasoning mode
-└── advanced-task-planner.chatmode.md    # Complex task planning
+### � User Interface Components
 
 ```text
+app/gui/
+├── main_window.py                # Primary application interface
+├── scan_tab.py                   # Security scanning interface
+├── settings_dialog.py            # Configuration management
+├── security_dashboard.py         # Real-time status display
+├── report_viewer.py              # Security report visualization
+└── about_dialog.py               # Application information
 
-### 🎯 Prompt Templates
-
-```text
-.GitHub/prompts/
-├── security-review.prompt.md      # Comprehensive security analysis
-├── performance-optimization.prompt.md  # System performance enhancement
-├── tdd-implementation.prompt.md   # Test-driven development
-├── code-refactoring.prompt.md     # Code improvement strategies
-├── API-design.prompt.md           # RESTful API design patterns
-├── database-optimization.prompt.md # Database performance tuning
-└── deployment-strategy.prompt.md  # Production deployment planning
-
-```text
-
-### 📋 Advanced Instructions
-
-```text
-.GitHub/instructions/
-├── security.instructions.md       # Security-first development (all code files)
-├── testing.instructions.md        # Testing excellence (test files)
-└── debugging.instructions.md      # Comprehensive debugging guidance
-└── 3 more instruction sets...
-
-```text
+```
 
 ## 🚀 Quick Start
 
-### One-Click Setup
+### Security Application Launch
 
-#### Basic Installation (Core Instructions Only)
-
-[![Open in VS Code](HTTPS://img.shields.io/badge/VS_Code-Basic_Install-0098FF?style=flat-square&logo=visualstudiocode&logoColor=white)](HTTPS://VS Code.dev/redirect?URL=VS Code%3Achat-instructions%2Finstall%3Furl%3Dhttps%3A%2F%2Fraw.githubusercontent.com%2Fasafelobotomy%2Fagent-instructions-co-pilot%2Fmain%2F.GitHub%2Fcopilot-instructions.md)
-[![Open in VS Code Insiders](HTTPS://img.shields.io/badge/VS_Code_Insiders-Basic_Install-24bfa5?style=flat-square&logo=visualstudiocode&logoColor=white)](HTTPS://insiders.VS Code.dev/redirect?URL=VS Code-insiders%3Achat-instructions%2Finstall%3Furl%3Dhttps%3A%2F%2Fraw.githubusercontent.com%2Fasafelobotomy%2Fagent-instructions-co-pilot%2Fmain%2F.GitHub%2Fcopilot-instructions.md)
-
-#### Complete Framework Installation (Recommended)
-
-[![Open in VS Code](HTTPS://img.shields.io/badge/VS_Code-Complete_Framework-FF6B6B?style=flat-square&logo=visualstudiocode&logoColor=white)](HTTPS://VS Code.dev/redirect?URL=VS Code%3Achat-instructions%2Finstall%3Furl%3Dhttps%3A%2F%2Fraw.githubusercontent.com%2Fasafelobotomy%2Fagent-instructions-co-pilot%2Fmain%2F.GitHub%2Fcopilot-instructions-complete.md)
-[![Open in VS Code Insiders](HTTPS://img.shields.io/badge/VS_Code_Insiders-Complete_Framework-FF6B6B?style=flat-square&logo=visualstudiocode&logoColor=white)](HTTPS://insiders.VS Code.dev/redirect?URL=VS Code-insiders%3Achat-instructions%2Finstall%3Furl%3Dhttps%3A%2F%2Fraw.githubusercontent.com%2Fasafelobotomy%2Fagent-instructions-co-pilot%2Fmain%2F.GitHub%2Fcopilot-instructions-complete.md)
-
-### Complete Framework includes
-
-- ✅ Core repository instructions
-- ✅ 11 specialized instruction sets (security, testing, docs, etc.)
-- ✅ 11 chat modes (architect, security, performance, etc.)
-- ✅ Validation systems and quality checks
-- ✅ Toolshed integration and usage guidance
-
-[![Open in Codespaces](HTTPS://GitHub.com/codespaces/badge.svg)](HTTPS://codespaces.new/asafelobotomy/agent-instructions-co-pilot)
-
-### Alternative Setup Methods
-
-#### Option 1: Complete Framework Installation Script
-
-**For the most comprehensive setup**, run our installation script that copies all components:
+#### Launch GUI Application
 
 ```bash
-Git clone <HTTPS://GitHub.com/asafelobotomy/agent-instructions-co-pilot.Git>
-cd agent-instructions-co-pilot
-./scripts/tools/setup/install-Copilot-framework.sh
+# Clone and setup
+git clone https://github.com/asafelobotomy/xanadOS-Search_Destroy.git
+cd xanadOS-Search_Destroy
 
-```text
+# Install dependencies
+pip install -r requirements.txt
 
-This installs:
+# Install ClamAV (Ubuntu/Debian)
+sudo apt update && sudo apt install clamav clamav-daemon
+sudo freshclam
 
-- Core instructions + 11 specialized instruction sets + 11 chat modes
-- All components organized in your VS Code config directory
-- Master framework file for easy loading
+# Launch xanadOS Search & Destroy
+python -m app.main
+```
 
-#### Option 2: VS Code One-Click Installation
+#### Development Environment Setup
 
-**Use the VS Code buttons above** to install either:
+```bash
+# Install Node.js dependencies (for AI development tools)
+npm install
 
-- **Basic Install**: Core instructions only (blue buttons)
-- **Complete Framework**: All components via comprehensive instruction file (red buttons)
+# Set up development environment
+./scripts/tools/git/setup-repository.sh
 
-#### Option 3: GitHub Copilot Chat Installation
+# Run validation and quality checks
+npm run quick:validate
 
-1. **Clone or access this repository**:
+# Launch with development logging
+python -m app.main --debug
+```
 
-  ```bash
-  Git clone <HTTPS://GitHub.com/asafelobotomy/agent-instructions-co-pilot.Git>
-  cd agent-instructions-co-pilot
+### 🤖 AI Development Tools
 
-```text
+AI development tools are included for development productivity:
 
-2. **Install via GitHub Copilot Chat**:
-- Open VS Code in this repository directory
-- Open GitHub Copilot Chat (`Ctrl+Shift+I`or`Cmd+Shift+I`)
-- Type: `@GitHub use .GitHub/Copilot-instructions.md`
-- Copilot will automatically load the repository's custom instructions
+- **Chat Modes**: `.github/chatmodes/security.chatmode.md` for security-focused development
+- **Prompt Templates**: `.github/prompts/security-review.prompt.md` for code security analysis
+- **Quality Tools**: `scripts/tools/quality/check-quality.sh` for automated code review
+- **Validation**: `scripts/tools/validation/validate-structure.sh` for repository compliance
 
-#### Option 2: Manual File Installation
+---
 
-1. **Copy the main instructions file**:
+## 📚 Documentation & Resources
+
+### **🛡️ Security Application Documentation**
+
+- 📋 **[Complete User Guide](docs/implementation/CONSOLIDATED_IMPLEMENTATION_GUIDE.md)**
+  Full feature overview and usage instructions
+- 🔒 **[Security Analysis Report](docs/project/SECURITY_PERFORMANCE_REPORT.md)**
+  Comprehensive security assessment and ratings
+- 🚀 **[Performance Benchmarks](docs/project/SECURITY_PERFORMANCE_REPORT.md#performance-analysis)**
+  System optimization metrics
+- 📈 **[Release Notes](releases/)** - Version history, features, and improvements
+- 🔧 **[Development Setup](dev/README.md)** - Developer tools, testing, and contribution guide
+
+### **🔧 Development Tools Documentation**
+
+- 🎯 **[Model Targeting Guide](docs/guides/model-targeting-guide.md)** - AI model selection for development
+- �️ **[Project Structure Guide](docs/guides/PROJECT_STRUCTURE.md)** - Repository organization
+- 🛠️ **[Toolshed Reference](scripts/tools/README.md)** - 20+ automation and quality tools
+- 📋 **[Development Instructions](.github/instructions/)** - AI guidance for coding
+
+---
+
+## 🎯 Usage Examples
+
+### **Security Operations**
+
+```bash
+# Launch the main application
+python -m app.main
+
+# Quick system security scan
+# (Use GUI quick scan button or future CLI implementation)
+
+# View security reports
+# (Available in GUI Reports tab)
+
+# Update malware signatures
+sudo freshclam
+
+# Check application logs
+tail -f ~/.local/share/xanadOS/logs/search_destroy.log
+```
+
+### **Development with AI Tools**
+
+```bash
+# Use security-focused chat mode for code review
+# (Available in VS Code with GitHub Copilot)
+
+# Run automated code quality checks
+./scripts/tools/quality/check-quality.sh --security
+
+# Comprehensive repository validation
+./scripts/tools/validation/validate-structure.sh
+
+# Fix code formatting issues
+./scripts/tools/quality/fix-markdown.sh
+```
+
+---
+
+## 🏆 Awards & Recognition
+
+- **Security Rating: A- (Excellent)** - Comprehensive security analysis
+- **Performance Grade: A (Excellent)** - Advanced optimization techniques
+- **Code Quality: A- (Very Good)** - Well-structured, maintainable architecture
+- **Industry Standards**: Exceeds typical Linux antivirus security implementations
+
+---
+
+## 🤝 Contributing
+
+We welcome contributions to both the security application and the AI development tools!
+
+### **Security Application Development**
+
+1. Fork the repository
+2. Set up development environment: `./scripts/tools/git/setup-repository.sh`
+3. Run tests: `python -m pytest tests/`
+4. Follow security guidelines: `.github/instructions/security.instructions.md`
+
+### **AI Framework Enhancement**
+
+1. Review framework documentation: `docs/guides/Copilot-INSTRUCTIONS-GUIDE.md`
+2. Test with validation tools: `npm run quick:validate`
+3. Follow coding standards: `.github/instructions/code-quality.instructions.md`
+
+### **Bug Reports & Feature Requests**
+
+- **Security Issues**: Use private security disclosure process
+- **Feature Requests**: Open GitHub issue with enhancement template
+- **Bug Reports**: Include system info, logs, and reproduction steps
+
+---
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+**Security Disclaimer**: This software is provided as-is for educational and protection purposes.
+Always maintain system backups and test in non-production environments first.
+
+---
+
+## 📞 Support & Community
+
+- **Documentation**: Complete guides in `/docs/` directory
+- **Issues**: GitHub issue tracker for bug reports and feature requests
+- **Security**: Private disclosure for security vulnerabilities
+- **Development**: AI-enhanced development tools in `.github/` directory
+
+**xanadOS Search & Destroy** - Comprehensive Linux security with modern development tools. 🛡️
 
   ```bash
 
