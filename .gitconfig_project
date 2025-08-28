@@ -1,9 +1,9 @@
 # Git Configuration for xanadOS Search & Destroy Project
 
-# User configuration (uncomment and customize)
-# [user]
-#     name = Your Name
-#     email = your.email@example.com
+# User configuration
+[user]
+    name = asafelobotomy
+    email = coeliac.ranking-2s@icloud.com
 
 # Core settings
 [core]
