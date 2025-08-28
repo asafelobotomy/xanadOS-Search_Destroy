@@ -5,9 +5,20 @@ GUI components for the auto-update system
 
 from PyQt6.QtCore import Qt, QThread, QTimer, pyqtSignal
 from PyQt6.QtGui import QFont, QPixmap
-from PyQt6.QtWidgets import (QCheckBox, QDialog, QFormLayout, QGroupBox,
-                             QHBoxLayout, QLabel, QMessageBox, QProgressBar,
-                             QPushButton, QSpinBox, QTextEdit, QVBoxLayout)
+from PyQt6.QtWidgets import (
+    QCheckBox,
+    QDialog,
+    QFormLayout,
+    QGroupBox,
+    QHBoxLayout,
+    QLabel,
+    QMessageBox,
+    QProgressBar,
+    QPushButton,
+    QSpinBox,
+    QTextEdit,
+    QVBoxLayout,
+)
 
 # Import compatible update system
 try:

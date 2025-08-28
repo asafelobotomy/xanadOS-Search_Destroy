@@ -15,7 +15,7 @@ import sys
 import time
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 import psutil
 
@@ -47,7 +47,7 @@ class TestSuiteRunner:
         # Ensure report directory exists
         self.report_file.parent.mkdir(exist_ok=True)
 
-    def _get_system_info(self) -> Dict[str, Any]:
+    def _get_system_info(self) -> dict[str, Any]:
         """Get system information for the test report"""
         try:
             return {
@@ -62,7 +62,7 @@ class TestSuiteRunner:
             logger.warning(f"Could not gather system info: {e}")
             return {"error": str(e)}
 
-    def run_comprehensive_tests(self) -> Dict[str, Any]:
+    def run_comprehensive_tests(self) -> dict[str, Any]:
         """Run the complete test suite with all categories"""
 
         print("🚀 Starting Comprehensive Modern Test Suite")
@@ -177,7 +177,7 @@ class TestSuiteRunner:
 
         return final_report
 
-    def _run_test_suite(self, suite: Dict[str, Any]) -> Dict[str, Any]:
+    def _run_test_suite(self, suite: dict[str, Any]) -> dict[str, Any]:
         """Run a single test suite"""
 
         print(f"\n🧪 Running: {suite['name']}")
@@ -269,7 +269,7 @@ class TestSuiteRunner:
                 "critical": suite.get("critical", False),
             }
 
-    def _parse_pytest_output(self, output: str) -> Dict[str, int]:
+    def _parse_pytest_output(self, output: str) -> dict[str, int]:
         """Parse pytest output to extract test statistics"""
         stats = {
             "tests_run": 0,
@@ -315,7 +315,7 @@ class TestSuiteRunner:
 
         return stats
 
-    def _generate_final_report(self, total_duration: float) -> Dict[str, Any]:
+    def _generate_final_report(self, total_duration: float) -> dict[str, Any]:
         """Generate comprehensive final report"""
 
         # Calculate overall statistics
@@ -360,7 +360,7 @@ class TestSuiteRunner:
             "recommendations": self._generate_recommendations(),
         }
 
-    def _generate_recommendations(self) -> List[str]:
+    def _generate_recommendations(self) -> list[str]:
         """Generate recommendations based on test results"""
         recommendations = []
 
@@ -409,16 +409,16 @@ class TestSuiteRunner:
 
         return recommendations
 
-    def _save_detailed_report(self, report: Dict[str, Any]):
+    def _save_detailed_report(self, report: dict[str, Any]) -> None:
         """Save detailed report to file"""
         try:
-            with open(self.report_file, "w") as f:
+            with open(self.report_file, "w", encoding="utf-8") as f:
                 json.dump(report, f, indent=2, default=str)
             print(f"\n📊 Detailed report saved to: {self.report_file}")
         except Exception as e:
             logger.error(f"Could not save report: {e}")
 
-    def _print_summary(self, report: Dict[str, Any]):
+    def _print_summary(self, report: dict[str, Any]) -> None:
         """Print test summary"""
 
         print("\n" + "=" * 80)

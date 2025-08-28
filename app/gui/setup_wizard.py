@@ -22,19 +22,32 @@ from PyQt6.QtCore import QThread  # pylint: disable=no-name-in-module
 from PyQt6.QtCore import Qt, QTimer, pyqtSignal
 from PyQt6.QtGui import QFont  # pylint: disable=no-name-in-module
 from PyQt6.QtWidgets import QApplication  # pylint: disable=no-name-in-module
-from PyQt6.QtWidgets import (QCheckBox, QDialog, QFrame, QHBoxLayout, QLabel,
-                             QMessageBox, QProgressBar, QPushButton,
-                             QScrollArea, QTabWidget, QTextEdit, QVBoxLayout,
-                             QWidget)
+from PyQt6.QtWidgets import (
+    QCheckBox,
+    QDialog,
+    QFrame,
+    QHBoxLayout,
+    QLabel,
+    QMessageBox,
+    QProgressBar,
+    QPushButton,
+    QScrollArea,
+    QTabWidget,
+    QTextEdit,
+    QVBoxLayout,
+    QWidget,
+)
 
 from app.utils.config import load_config, save_config
 
 # Import theming support
 try:
-    from app.core.elevated_runner import \
-        elevated_run  # pylint: disable=import-outside-toplevel
-    from app.core.rkhunter_monitor_non_invasive import \
-        rkhunter_monitor  # pylint: disable=import-outside-toplevel
+    from app.core.elevated_runner import (
+        elevated_run,
+    )  # pylint: disable=import-outside-toplevel
+    from app.core.rkhunter_monitor_non_invasive import (
+        rkhunter_monitor,
+    )  # pylint: disable=import-outside-toplevel
     from app.gui.theme_manager import get_theme_manager
     from app.gui.themed_widgets import ThemedDialog
 

@@ -7,11 +7,16 @@ Provides automatic theming for all GUI components without manual application.
 import re
 from typing import Any, Dict, Optional
 
-from PyQt6.QtCore import (QEasingCurve, QObject, QPropertyAnimation, QRect,
-                          pyqtSignal)
+from PyQt6.QtCore import QEasingCurve, QObject, QPropertyAnimation, QRect, pyqtSignal
 from PyQt6.QtGui import QColor, QPalette
-from PyQt6.QtWidgets import (QApplication, QDialog, QGraphicsDropShadowEffect,
-                             QMessageBox, QPushButton, QWidget)
+from PyQt6.QtWidgets import (
+    QApplication,
+    QDialog,
+    QGraphicsDropShadowEffect,
+    QMessageBox,
+    QPushButton,
+    QWidget,
+)
 
 
 class ThemeManager(QObject):

@@ -20,11 +20,18 @@ import psutil
 
 # Import our enhanced components
 try:
-    from .enhanced_file_watcher import (EnhancedFileSystemWatcher, WatchEvent,
-                                        WatchEventType)
+    from .enhanced_file_watcher import (
+        EnhancedFileSystemWatcher,
+        WatchEvent,
+        WatchEventType,
+    )
     from .enhanced_real_time_protection import EnhancedRealTimeProtection
-    from .unified_security_engine import (ProtectionMode, SecurityEvent,
-                                          ThreatLevel, UnifiedSecurityEngine)
+    from .unified_security_engine import (
+        ProtectionMode,
+        SecurityEvent,
+        ThreatLevel,
+        UnifiedSecurityEngine,
+    )
 except ImportError:
     # For standalone testing, provide light fallbacks
     EnhancedFileSystemWatcher = None  # type: ignore

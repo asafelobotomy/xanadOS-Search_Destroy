@@ -9,9 +9,17 @@ import time
 from typing import Any, List, Optional
 
 from PyQt6.QtCore import QThread, pyqtSignal
-from PyQt6.QtWidgets import (QCheckBox, QDialog, QGroupBox, QHBoxLayout,
-                             QLabel, QPushButton, QScrollArea, QVBoxLayout,
-                             QWidget)
+from PyQt6.QtWidgets import (
+    QCheckBox,
+    QDialog,
+    QGroupBox,
+    QHBoxLayout,
+    QLabel,
+    QPushButton,
+    QScrollArea,
+    QVBoxLayout,
+    QWidget,
+)
 
 from app.core.elevated_runner import validate_auth_session
 from app.core.rkhunter_wrapper import RKHunterWrapper

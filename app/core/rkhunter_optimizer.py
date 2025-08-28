@@ -688,10 +688,12 @@ class RKHunterOptimizer:
                 )
 
             # Configure scan options
+            # SCANROOTKITMODE must be a valid string token understood by rkhunter.
+            # The wrapper initializes this to THOROUGH; keep consistent here.
             config_content = self._update_config_value(
                 config_content,
                 "SCANROOTKITMODE",
-                "1",  # Thorough rootkit scanning
+                "THOROUGH",
             )
 
             changes_made = True

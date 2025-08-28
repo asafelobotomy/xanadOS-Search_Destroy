@@ -6,7 +6,11 @@
 set -e
 
 APP_ID="io.github.asafelobotomy.SearchAndDestroy"
-VERSION="2.11.0"
+# Source centralized version helper
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck disable=SC1091
+source "${SCRIPT_DIR}/../tools/lib/version.sh"
+VERSION="$(get_repo_version)"
 COMMIT_HASH="1259106378521bfec9492f5d14d5f0e999dba772"
 
 echo "🚀 Search & Destroy v${VERSION} - Flathub Submission"

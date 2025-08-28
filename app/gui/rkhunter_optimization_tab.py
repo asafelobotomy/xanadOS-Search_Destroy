@@ -16,17 +16,43 @@ from datetime import datetime
 
 from PyQt6.QtCore import Qt, QThread, QTimer, pyqtSignal
 from PyQt6.QtGui import QColor, QFont, QTextCursor
-from PyQt6.QtWidgets import (QCheckBox, QComboBox, QDialog, QDialogButtonBox,
-                             QFormLayout, QFrame, QGridLayout, QGroupBox,
-                             QHBoxLayout, QLabel, QLineEdit, QListWidget,
-                             QListWidgetItem, QMessageBox, QPushButton,
-                             QScrollArea, QSpinBox, QSplitter, QTabWidget,
-                             QTextEdit, QVBoxLayout, QWidget)
+from PyQt6.QtWidgets import (
+    QCheckBox,
+    QComboBox,
+    QDialog,
+    QDialogButtonBox,
+    QFormLayout,
+    QFrame,
+    QGridLayout,
+    QGroupBox,
+    QHBoxLayout,
+    QLabel,
+    QLineEdit,
+    QListWidget,
+    QListWidgetItem,
+    QMessageBox,
+    QPushButton,
+    QScrollArea,
+    QSpinBox,
+    QSplitter,
+    QTabWidget,
+    QTextEdit,
+    QVBoxLayout,
+    QWidget,
+)
 
 try:
-    from app.core.rkhunter_optimizer import (OptimizationReport,
-                                             RKHunterConfig, RKHunterOptimizer,
-                                             RKHunterStatus)
+    from app.core.rkhunter_optimizer import (
+        OptimizationReport,
+        RKHunterConfig,
+        RKHunterOptimizer,
+        RKHunterStatus,
+    )
+    # Non-invasive monitor for fast, persistent status without sudo
+    from app.core.rkhunter_monitor_non_invasive import (
+        RKHunterStatusNonInvasive,
+        get_rkhunter_status_non_invasive,
+    )
 except ImportError:
     # Fallbacks if optimizer module not fully available
     OptimizationReport = None  # type: ignore[assignment]
@@ -55,6 +81,61 @@ class StatusOnlyWorker(QThread):
         except Exception as e:
             logger.error(f"Error in status check: {e}")
             self.error_occurred.emit(str(e))
+
+
+class NonInvasiveStatusWorker(QThread):
+    """Background worker that fetches non-invasive cached status (no sudo)."""
+
+    status_updated = pyqtSignal(object)  # Adapted status object
+    error_occurred = pyqtSignal(str)
+
+    def __init__(self, force_refresh: bool = False):
+        super().__init__()
+        self.force_refresh = force_refresh
+
+    def run(self):
+        try:
+            ni_status = get_rkhunter_status_non_invasive(
+                force_refresh=self.force_refresh
+            )
+            adapted = adapt_non_invasive_status(ni_status)
+            self.status_updated.emit(adapted)
+        except Exception as e:
+            logger.error(f"Error in non-invasive status check: {e}")
+            self.error_occurred.emit(str(e))
+
+
+def adapt_non_invasive_status(ni: "RKHunterStatusNonInvasive"):
+    """Adapt RKHunterStatusNonInvasive to the fields expected by the UI.
+
+    Returns an object with attributes similar to RKHunterStatus so the
+    existing widget can consume it without change.
+    """
+    from types import SimpleNamespace
+
+    # Map fields conservatively
+    version = ni.version if ni.available else "Not Available"
+    database_version = (
+        "Present" if ni.database_exists else ("Not Found" if ni.available else "Not Available")
+    )
+    last_update = None  # Not derivable non-invasively
+    last_scan = ni.last_scan_attempt
+    baseline_exists = ni.database_exists  # Proxy for baseline presence
+    mirror_status = "Configured" if ni.available else "Not Installed"
+    performance_metrics = {}
+    issues_found = ni.issues_found or []
+
+    return SimpleNamespace(
+        version=version,
+        config_file="/etc/rkhunter.conf",
+        database_version=database_version,
+        last_update=last_update,
+        last_scan=last_scan,
+        baseline_exists=baseline_exists,
+        mirror_status=mirror_status,
+        performance_metrics=performance_metrics,
+        issues_found=issues_found,
+    )
 
 
 class RKHunterOptimizationWorker(QThread):
@@ -497,6 +578,14 @@ class RKHunterOptimizationTab(QWidget):
         self.worker = None
         self.setup_ui()
         self.setup_connections()
+        # Load cached status quickly on open (non-invasive, persistent)
+        try:
+            ni = get_rkhunter_status_non_invasive(force_refresh=False)
+            self.status_widget.update_status(adapt_non_invasive_status(ni))
+            self.progress_label.setText("Loaded cached status")
+        except Exception:
+            # Silent fallback; user can refresh manually
+            pass
 
     def setup_ui(self):
         main_layout = QVBoxLayout(self)
@@ -588,15 +677,15 @@ class RKHunterOptimizationTab(QWidget):
         self.optimize_btn.clicked.connect(self.run_optimization)
 
     def refresh_status(self):
-        """Refresh RKHunter status using a lightweight status check"""
+        """Refresh RKHunter status using non-invasive cached check (no sudo)."""
         if self.worker and self.worker.isRunning():
             return
 
         self.refresh_status_btn.setEnabled(False)
-        self.progress_label.setText("Checking RKHunter status...")
+        self.progress_label.setText("Checking RKHunter status (no sudo)...")
 
-        # Create a lightweight status-only worker
-        self.worker = StatusOnlyWorker()
+        # Use non-invasive status worker for speed and persistence
+        self.worker = NonInvasiveStatusWorker(force_refresh=True)
         self.worker.status_updated.connect(self.on_status_updated)
         self.worker.error_occurred.connect(self.on_error)
         self.worker.finished.connect(self.on_status_check_finished)

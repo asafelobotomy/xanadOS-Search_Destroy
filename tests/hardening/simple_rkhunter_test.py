@@ -44,7 +44,7 @@ def main():
     print("=" * 70)
 
     print("\n🔍 Testing availability detection logic...")
-    is_available, rkhunter_path = test_rkhunter_availability()
+    is_available, rkhunter_path = check_rkhunter_availability()
 
     print("\n📊 Results:")
     print(f"   RKHunter Available: {'✅ YES' if is_available else '❌ NO'}")
@@ -96,7 +96,7 @@ if __name__ == "__main__":
     main()
 
 
-def test_rkhunter_availability():
+def check_rkhunter_availability():
     """Helper to check availability and return (is_available, path)."""
     possible_paths = [
         "/usr/bin/rkhunter",

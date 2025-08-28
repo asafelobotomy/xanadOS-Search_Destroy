@@ -186,6 +186,27 @@ class AutoUpdateSystem:  # pylint: disable=too-many-instance-attributes
 
         self.logger.info("Auto-update system initialized")
 
+    # --- Lightweight logging helpers to match call sites across the module ---
+    def logdebug(self, msg: str, *args, **kwargs) -> None:  # noqa: D401
+        """Proxy to logger.debug."""
+        self.logger.debug(msg, *args, **kwargs)
+
+    def loginfo(self, msg: str, *args, **kwargs) -> None:  # noqa: D401
+        """Proxy to logger.info."""
+        self.logger.info(msg, *args, **kwargs)
+
+    def logwarning(self, msg: str, *args, **kwargs) -> None:  # noqa: D401
+        """Proxy to logger.warning."""
+        self.logger.warning(msg, *args, **kwargs)
+
+    def logerror(self, msg: str, *args, **kwargs) -> None:  # noqa: D401
+        """Proxy to logger.error."""
+        self.logger.error(msg, *args, **kwargs)
+
+    def logcritical(self, msg: str, *args, **kwargs) -> None:  # noqa: D401
+        """Proxy to logger.critical."""
+        self.logger.critical(msg, *args, **kwargs)
+
     def _load_persistent_state(self):
         """Load persistent state from config file."""
         try:
@@ -446,17 +467,15 @@ class AutoUpdateSystem:  # pylint: disable=too-many-instance-attributes
         """Check for software updates."""
         try:
             # Check GitHub releases for newer versions
-            # Read current version from VERSION file
+            # Use centralized version from app package (reads root VERSION)
             try:
-                project_root = Path(__file__).parent.parent.parent
-                version_file = project_root / "VERSION"
-                current_version = (
-                    version_file.read_text().strip()
-                    if version_file.exists()
-                    else "2.1.0"
-                )
-            except (OSError, IOError, FileNotFoundError):
-                current_version = "2.10.0"  # Fallback version
+                from app import (
+                    get_version,
+                )  # local import to avoid cycles at module load
+
+                current_version = get_version()
+            except Exception:  # pylint: disable=broad-exception-caught
+                current_version = "dev"  # Fallback version
 
             response = await self._async_http_request(
                 "GET",
@@ -1194,9 +1213,11 @@ class AutoUpdateSystem:  # pylint: disable=too-many-instance-attributes
             # Convert to GUI-compatible format
             if UpdateType.SOFTWARE in updates:
                 software_update = updates[UpdateType.SOFTWARE]
+                from app import get_version as _get_version  # local import
+
                 return {
                     "available": True,
-                    "current_version": self.current_version or "2.9.0",
+                    "current_version": self.current_version or _get_version(),
                     "latest_version": software_update.version,
                     "release_name": f"Version {software_update.version}",
                     "release_notes": (
@@ -1209,9 +1230,11 @@ class AutoUpdateSystem:  # pylint: disable=too-many-instance-attributes
                     "published_at": datetime.now().isoformat(),
                     "prerelease": False,
                 }
+            from app import get_version as _get_version  # local import
+
             return {
                 "available": False,
-                "current_version": self.current_version or "2.9.0",
+                "current_version": self.current_version or _get_version(),
             }
 
         except Exception as e:

@@ -14,7 +14,9 @@ def test_auth_session_manager_import():
     """Test that we can import the auth session manager"""
     try:
         from app.core.auth_session_manager import (
-            AuthenticationSessionManager, auth_manager)
+            AuthenticationSessionManager,
+            auth_manager,
+        )
 
         print("✅ Successfully imported AuthenticationSessionManager")
 
@@ -77,7 +79,7 @@ def verify_file_integrations():
 
     for file_path in files_to_check:
         try:
-            with open(file_path, "r") as f:
+            with open(file_path, encoding="utf-8") as f:
                 content = f.read()
 
             # Basic syntax check by compiling

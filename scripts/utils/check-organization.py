@@ -1,44 +1,19 @@
 #!/usr/bin/env python3
-"""
-Check repository organization and report issues.
-"""
+"""Deprecated duplicate of scripts/check-organization.py.
 
-import sys
+Kept for backwards compatibility with older docs or scripts.
+This shim imports and delegates to the canonical checker to avoid mypy duplicate module errors.
+"""
 from pathlib import Path
+import sys
 
+# Add repo root to sys.path to import the canonical checker
+_this_file = Path(__file__).resolve()
+_repo_root = _this_file.parents[2]
+if str(_repo_root) not in sys.path:
+    sys.path.insert(0, str(_repo_root))
 
-def check_organization():
-    """Check if repository is properly organized."""
-    issues = []
-    repo_root = Path(__file__).parent.parent
-
-    # Check for files in wrong locations
-    misplaced_files = [
-        (repo_root / "*.py", "Python files should be in app/, dev/, or scripts/"),
-        (repo_root / "test_*.py", "Test files should be in dev/ or tests/"),
-        (repo_root / "*.md", "Documentation should be in docs/ (except main README)"),
-    ]
-
-    for pattern, message in misplaced_files:
-        for file in repo_root.glob(pattern.name):
-            if file.name not in ["README.md", "CHANGELOG.md", "LICENSE"]:
-                issues.append(f"Misplaced file: {file.name} - {message}")
-
-    # Check for missing __init__.py files
-    python_dirs = ["app", "app/core", "app/gui", "app/monitoring", "app/utils", "tests"]
-    for dir_name in python_dirs:
-        init_file = repo_root / dir_name / "__init__.py"
-        if not init_file.exists() and (repo_root / dir_name).exists():
-            issues.append(f"Missing __init__.py in {dir_name}")
-
-    if issues:
-        print("❌ Organization issues found:")
-        for issue in issues:
-            print(f"  - {issue}")
-        return False
-    else:
-        print("✅ Repository is properly organized")
-        return True
+from scripts.check_organization import check_organization  # type: ignore  # noqa: E402
 
 
 if __name__ == "__main__":

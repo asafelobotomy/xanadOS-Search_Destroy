@@ -41,6 +41,56 @@ log_error() {
     echo -e "${RED}[ERROR]${NC} $1" >&2
 }
 
+# Severity mapping helpers (maps our threshold to each tool's flags)
+map_severities() {
+    local thr="${SEVERITY_THRESHOLD,,}"  # normalize to lowercase
+
+    # Semgrep expects one of: INFO | WARNING | ERROR (we use threshold)
+    case "$thr" in
+        low)      SEMGREP_SEVERITY="INFO" ;;
+        medium)   SEMGREP_SEVERITY="WARNING" ;;
+        high)     SEMGREP_SEVERITY="ERROR" ;;
+        critical) SEMGREP_SEVERITY="ERROR" ;;
+        *)        SEMGREP_SEVERITY="WARNING" ;;
+    esac
+
+    # Trivy accepts comma list of severities to include
+    case "$thr" in
+        low)      TRIVY_SEVERITIES="LOW,MEDIUM,HIGH,CRITICAL" ;;
+        medium)   TRIVY_SEVERITIES="MEDIUM,HIGH,CRITICAL" ;;
+        high)     TRIVY_SEVERITIES="HIGH,CRITICAL" ;;
+        critical) TRIVY_SEVERITIES="CRITICAL" ;;
+        *)        TRIVY_SEVERITIES="MEDIUM,HIGH,CRITICAL" ;;
+    esac
+
+    # Bandit severity
+    case "$thr" in
+        low)      BANDIT_SEVERITY="low" ;;
+        medium)   BANDIT_SEVERITY="medium" ;;
+        high)     BANDIT_SEVERITY="high" ;;
+        critical) BANDIT_SEVERITY="high" ;; # bandit max is high
+        *)        BANDIT_SEVERITY="medium" ;;
+    esac
+
+    # Checkov uses a threshold-like value
+    case "$thr" in
+        low)      CHECKOV_SEVERITY="LOW" ;;
+        medium)   CHECKOV_SEVERITY="MEDIUM" ;;
+        high)     CHECKOV_SEVERITY="HIGH" ;;
+        critical) CHECKOV_SEVERITY="CRITICAL" ;;
+        *)        CHECKOV_SEVERITY="MEDIUM" ;;
+    esac
+
+    # npm audit level
+    case "$thr" in
+        low)      NPM_AUDIT_LEVEL="low" ;;
+        medium)   NPM_AUDIT_LEVEL="moderate" ;;
+        high)     NPM_AUDIT_LEVEL="high" ;;
+        critical) NPM_AUDIT_LEVEL="critical" ;;
+        *)        NPM_AUDIT_LEVEL="moderate" ;;
+    esac
+}
+
 # Usage function
 show_usage() {
     cat << EOF
@@ -181,13 +231,13 @@ run_sast_scan() {
     if command -v semgrep &> /dev/null; then
         case $OUTPUT_FORMAT in
             "json")
-                semgrep --config=auto --json --output="${output_file}.json" .
+                semgrep --config=auto --severity "$SEMGREP_SEVERITY" --json --output="${output_file}.json" .
                 ;;
             "sarif")
-                semgrep --config=auto --sarif --output="${output_file}.sarif" .
+                semgrep --config=auto --severity "$SEMGREP_SEVERITY" --sarif --output="${output_file}.sarif" .
                 ;;
             *)
-                semgrep --config=auto .
+                semgrep --config=auto --severity "$SEMGREP_SEVERITY" .
                 ;;
         esac
         log_success "SAST scan completed"
@@ -197,19 +247,19 @@ run_sast_scan() {
 
     # Run Python-specific security scanning
     if [[ -f "requirements.txt" ]] || [[ -f "pyproject.toml" ]]; then
-        if command -v bandit &> /dev/null; then
+    if command -v bandit &> /dev/null; then
             log_info "Running Python security scan with bandit..."
             case $OUTPUT_FORMAT in
                 "json")
-                    bandit -r . -f json -o "security-python-report.json" || true
+            bandit -r . --severity-level "$BANDIT_SEVERITY" -f json -o "security-python-report.json" || true
                     ;;
                 *)
-                    bandit -r . || true
+            bandit -r . --severity-level "$BANDIT_SEVERITY" || true
                     ;;
             esac
         else
-            pip install bandit
-            bandit -r . || true
+        pip install bandit
+        bandit -r . --severity-level "$BANDIT_SEVERITY" || true
         fi
     fi
 }
@@ -244,7 +294,14 @@ run_dependency_scan() {
 
         # Use trivy for Python dependencies
         if command -v trivy &> /dev/null; then
-            trivy fs --security-checks vuln . || true
+            case $OUTPUT_FORMAT in
+                "sarif")
+                    trivy fs --security-checks vuln --severity "$TRIVY_SEVERITIES" --format sarif --output "security-python-deps.sarif" . || true
+                    ;;
+                *)
+                    trivy fs --security-checks vuln --severity "$TRIVY_SEVERITIES" . || true
+                    ;;
+            esac
         fi
     fi
 
@@ -252,13 +309,13 @@ run_dependency_scan() {
     if [[ -f "package.json" ]]; then
         log_info "Scanning Node.js dependencies..."
 
-        if command -v npm &> /dev/null; then
+    if command -v npm &> /dev/null; then
             case $OUTPUT_FORMAT in
                 "json")
-                    npm audit --json > "security-npm-audit.json" || true
+            npm audit --audit-level "$NPM_AUDIT_LEVEL" --json > "security-npm-audit.json" || true
                     ;;
                 *)
-                    npm audit || true
+            npm audit --audit-level "$NPM_AUDIT_LEVEL" || true
                     ;;
             esac
         fi
@@ -286,21 +343,32 @@ run_container_scan() {
         if command -v trivy &> /dev/null; then
             case $OUTPUT_FORMAT in
                 "json")
-                    trivy config --format json --output "security-dockerfile.json" Dockerfile || true
+                    trivy config --severity "$TRIVY_SEVERITIES" --format json --output "security-dockerfile.json" Dockerfile || true
+                    ;;
+                "sarif")
+                    trivy config --severity "$TRIVY_SEVERITIES" --format sarif --output "security-dockerfile.sarif" Dockerfile || true
                     ;;
                 *)
-                    trivy config Dockerfile || true
+                    trivy config --severity "$TRIVY_SEVERITIES" Dockerfile || true
                     ;;
             esac
         fi
 
         # Scan built images if Docker is available
         if command -v docker &> /dev/null; then
-            local images=$(docker images --format "{{.Repository}}:{{.Tag}}" | grep -v "<none>" | head -5)
+            local images
+            images=$(docker images --format "{{.Repository}}:{{.Tag}}" | grep -v "<none>" | head -5)
             for image in $images; do
                 log_info "Scanning Docker image: $image"
                 if command -v trivy &> /dev/null; then
-                    trivy image "$image" || true
+                    case $OUTPUT_FORMAT in
+                        "sarif")
+                            trivy image --severity "$TRIVY_SEVERITIES" --format sarif -o "security-image-$(echo "$image" | tr '/:' '__').sarif" "$image" || true
+                            ;;
+                        *)
+                            trivy image --severity "$TRIVY_SEVERITIES" "$image" || true
+                            ;;
+                    esac
                 fi
             done
         fi
@@ -317,7 +385,8 @@ run_iac_scan() {
     fi
 
     # Look for IaC files
-    local iac_files=$(find . -name "*.tf" -o -name "*.yaml" -o -name "*.yml" -o -name "Dockerfile" -o -name "docker-compose.yml" | grep -v node_modules | head -20)
+    local iac_files
+    iac_files=$(find . -name "*.tf" -o -name "*.yaml" -o -name "*.yml" -o -name "Dockerfile" -o -name "docker-compose.yml" | grep -v node_modules | head -20)
 
     if [[ -n "$iac_files" ]]; then
         log_info "Found IaC files, running checkov scan..."
@@ -325,10 +394,13 @@ run_iac_scan() {
         if command -v checkov &> /dev/null; then
             case $OUTPUT_FORMAT in
                 "json")
-                    checkov -d . --framework all --output json --output-file "security-iac-report.json" || true
+                    checkov -d . --framework all --severity "$CHECKOV_SEVERITY" --output json --output-file "security-iac-report.json" || true
+                    ;;
+                "sarif")
+                    checkov -d . --framework all --severity "$CHECKOV_SEVERITY" --output sarif --output-file-path "security-iac-report.sarif" || true
                     ;;
                 *)
-                    checkov -d . --framework all || true
+                    checkov -d . --framework all --severity "$CHECKOV_SEVERITY" || true
                     ;;
             esac
         else
@@ -349,18 +421,27 @@ run_secrets_scan() {
     fi
 
     if command -v detect-secrets &> /dev/null; then
-        # Create baseline if it doesn't exist
+        # Create baseline if it doesn't exist (detect-secrets expects output redirection for baseline)
         if [[ ! -f ".secrets.baseline" ]]; then
-            detect-secrets scan --baseline .secrets.baseline
+            log_info "Creating detect-secrets baseline at .secrets.baseline"
+            detect-secrets scan --all-files > .secrets.baseline || true
         fi
 
-        # Run secrets scan
+        # Run secrets scan; when baseline exists, use it to filter known secrets
         case $OUTPUT_FORMAT in
             "json")
-                detect-secrets scan --baseline .secrets.baseline --output "security-secrets-report.json" || true
+                if [[ -f ".secrets.baseline" ]]; then
+                    detect-secrets scan --all-files --baseline .secrets.baseline > "security-secrets-report.json" || true
+                else
+                    detect-secrets scan --all-files > "security-secrets-report.json" || true
+                fi
                 ;;
             *)
-                detect-secrets scan --baseline .secrets.baseline || true
+                if [[ -f ".secrets.baseline" ]]; then
+                    detect-secrets scan --all-files --baseline .secrets.baseline || true
+                else
+                    detect-secrets scan --all-files || true
+                fi
                 ;;
         esac
 
@@ -504,6 +585,15 @@ main() {
 
     # Install required tools
     install_security_tools
+
+    # Enable verbose tracing if requested
+    if [[ "${VERBOSE:-false}" == "true" ]]; then
+        log_info "Verbose mode enabled"
+        set -x
+    fi
+
+    # Map severities for tools
+    map_severities
 
     # Run scans based on options
     case $scan_type in

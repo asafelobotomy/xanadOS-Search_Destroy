@@ -11,8 +11,16 @@ import sys
 
 from gui.theme_manager import get_theme_manager, toggle_theme
 from PyQt6.QtCore import Qt
-from PyQt6.QtWidgets import (QApplication, QHBoxLayout, QLabel, QMainWindow,
-                             QMessageBox, QPushButton, QVBoxLayout, QWidget)
+from PyQt6.QtWidgets import (
+    QApplication,
+    QHBoxLayout,
+    QLabel,
+    QMainWindow,
+    QMessageBox,
+    QPushButton,
+    QVBoxLayout,
+    QWidget,
+)
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "app"))
 
@@ -66,7 +74,7 @@ class ThemeShowcaseWindow(QMainWindow):
         dark_btn.setMinimumHeight(50)
         button_layout.addWidget(dark_btn)
 
-        light_btn = QPushButton("� Summer Breeze")
+        light_btn = QPushButton("🌞 Summer Breeze")
         light_btn.clicked.connect(lambda: self.set_specific_theme("light"))
         light_btn.setMinimumHeight(50)
         button_layout.addWidget(light_btn)
@@ -134,7 +142,7 @@ class ThemeShowcaseWindow(QMainWindow):
 
     def cycle_themes(self):
         """Cycle through all themes."""
-        new_theme = toggle_theme()
+        toggle_theme()
         self.update_display()
         self.show_theme_message()
 
@@ -156,7 +164,7 @@ class ThemeShowcaseWindow(QMainWindow):
                 "font-size: 16px; font-weight: bold; padding: 15px; border: 2px solid #c62828; border-radius: 10px; background: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #c62828, stop:1 #e57373); color: white;"
             )
         elif current_theme == "light":
-            self.status_label.setText(f"� Current Theme: {theme_name}")
+            self.status_label.setText(f"🌞 Current Theme: {theme_name}")
             self.status_label.setStyleSheet(
                 "font-size: 16px; font-weight: bold; padding: 15px; border: 2px solid #87CEEB; border-radius: 10px; background: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #87CEEB, stop:1 #93E9BE); color: white;"
             )
@@ -169,7 +177,8 @@ class ThemeShowcaseWindow(QMainWindow):
     def show_theme_message(self):
         """Show a themed message about the current theme."""
         current_theme = get_theme_manager().get_current_theme()
-        theme_name = get_theme_manager().get_theme_display_name(current_theme)
+        # Display name not used directly in the message body; keep call minimal
+        _ = get_theme_manager().get_theme_display_name(current_theme)
 
         if current_theme == "dark":
             message = (
@@ -182,7 +191,7 @@ class ThemeShowcaseWindow(QMainWindow):
             )
         elif current_theme == "light":
             message = (
-                "� Light (Summer Breeze) Theme Active!\n\n"
+                "🌞 Light (Summer Breeze) Theme Active!\n\n"
                 "🌊 Features:\n"
                 "• Refreshing summer color palette\n"
                 "• Sky blue → seafoam → peach → yellow gradients\n"

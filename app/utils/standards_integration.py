@@ -21,8 +21,11 @@ from enum import Enum
 from pathlib import Path
 from typing import Any, Dict, List, Union
 
-from .performance_standards import (PERFORMANCE_OPTIMIZER, PerformanceLevel,
-                                    optimize_for_scanning)
+from .performance_standards import (
+    PERFORMANCE_OPTIMIZER,
+    PerformanceLevel,
+    optimize_for_scanning,
+)
 from .process_management import PROCESS_MANAGER, ProcessConfig
 from .security_standards import SecurityLevel, SecurityStandards
 from .system_paths import ApplicationPaths, SystemPaths
@@ -115,10 +118,18 @@ class StandardsManager:
             base_settings["performance_level"]
         )
 
+        # Obtain app version from centralized source
+        try:
+            from app import get_version as _get_version  # local import
+
+            _app_version = _get_version()
+        except Exception:  # noqa: BLE001 - defensive, config path should not break
+            _app_version = "dev"
+
         unified_config = {
             "application": {
                 "name": self.app_name,
-                "version": "2.0.0",
+                "version": _app_version,
                 "config_level": level.value,
             },
             "paths": {

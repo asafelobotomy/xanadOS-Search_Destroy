@@ -7,7 +7,7 @@ A modern GUI for ClamAV antivirus scanning with real-time monitoring.
 from pathlib import Path
 
 
-def get_version():
+def get_version() -> str:
     """Read version from VERSION file in the project root."""
     try:
         # Get the project root directory (2 levels up from this file)
@@ -16,11 +16,11 @@ def get_version():
 
         if version_file.exists():
             return version_file.read_text().strip()
-        # Fallback version if VERSION file doesn't exist
-        return "2.11.2"
+        # Fallback when VERSION file doesn't exist
+        return "dev"
     except (OSError, IOError, FileNotFoundError):
         # Fallback version in case of any file reading errors
-        return "2.11.2"
+        return "dev"
 
 
 __version__ = get_version()

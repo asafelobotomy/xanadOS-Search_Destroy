@@ -30,6 +30,7 @@ try:
     import boto3
     from botocore.exceptions import ClientError
 except ImportError:  # pragma: no cover - fallback mocks
+
     class _MockBoto3:
         @staticmethod
         def client(*_args, **_kwargs):
@@ -40,8 +41,14 @@ except ImportError:  # pragma: no cover - fallback mocks
                     "head_bucket": staticmethod(lambda **_x: None),
                     "create_bucket": staticmethod(lambda **_x: None),
                     "put_object": staticmethod(lambda **_x: None),
-                    "get_object": staticmethod(lambda **_x: {"Body": type("", (), {"read": staticmethod(lambda: b"")})()}),
-                    "list_objects_v2": staticmethod(lambda **_x: {"KeyCount": 0, "Contents": []}),
+                    "get_object": staticmethod(
+                        lambda **_x: {
+                            "Body": type("", (), {"read": staticmethod(lambda: b"")})()
+                        }
+                    ),
+                    "list_objects_v2": staticmethod(
+                        lambda **_x: {"KeyCount": 0, "Contents": []}
+                    ),
                 },
             )()
 
@@ -53,6 +60,7 @@ try:
     from cryptography.hazmat.primitives import hashes
     from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 except ImportError:  # pragma: no cover - fallback mocks
+
     class Fernet:  # type: ignore
         def __init__(self, _key):
             pass

@@ -20,6 +20,7 @@ from typing import Any, Dict, List, Optional, Tuple
 try:  # numpy for numeric operations
     import numpy as np  # type: ignore
 except Exception:  # pragma: no cover - minimal fallback
+
     class _NPDummy:
         @staticmethod
         def zeros(n):
@@ -46,12 +47,14 @@ except Exception:  # pragma: no cover - allow running without pandas
 try:  # templating engine for HTML reports
     from jinja2 import Template  # type: ignore
 except Exception:  # pragma: no cover - naive fallback
+
     class Template:  # type: ignore
         def __init__(self, text: str):
             self._text = text
 
         def render(self, **_kwargs) -> str:
             return self._text
+
 
 # Third-party imports with graceful fallbacks (keep imports at top for flake8 E402 compliance)
 try:
@@ -1717,4 +1720,6 @@ class AdvancedReportingSystem:
         self, start_date: datetime, end_date: datetime
     ) -> Dict[str, Any]:
         return {}
+
+
 # End of advanced_reporting module

@@ -9,9 +9,17 @@ try:
 except Exception:  # pragma: no cover - optional dependency
     markdown = None
 from PyQt6.QtCore import Qt
-from PyQt6.QtWidgets import (QFrame, QHBoxLayout, QLabel, QPushButton,
-                             QSplitter, QTextEdit, QTreeWidget,
-                             QTreeWidgetItem, QVBoxLayout)
+from PyQt6.QtWidgets import (
+    QFrame,
+    QHBoxLayout,
+    QLabel,
+    QPushButton,
+    QSplitter,
+    QTextEdit,
+    QTreeWidget,
+    QTreeWidgetItem,
+    QVBoxLayout,
+)
 
 # Import centralized version
 from app import __version__

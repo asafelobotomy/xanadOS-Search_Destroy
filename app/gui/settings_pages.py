@@ -4,18 +4,35 @@ import logging
 
 from PyQt6.QtCore import Qt, QThread, QTime, QTimer, pyqtSignal
 from PyQt6.QtGui import QFont
-from PyQt6.QtWidgets import (QCheckBox, QComboBox, QFormLayout, QFrame,
-                             QGridLayout, QGroupBox, QHBoxLayout, QLabel,
-                             QProgressBar, QPushButton, QScrollArea, QSpinBox,
-                             QTabWidget, QTextEdit, QVBoxLayout, QWidget)
+from PyQt6.QtWidgets import (
+    QCheckBox,
+    QComboBox,
+    QFormLayout,
+    QFrame,
+    QGridLayout,
+    QGroupBox,
+    QHBoxLayout,
+    QLabel,
+    QProgressBar,
+    QPushButton,
+    QScrollArea,
+    QSpinBox,
+    QTabWidget,
+    QTextEdit,
+    QVBoxLayout,
+    QWidget,
+)
 
 from app.gui import APP_VERSION
 from app.gui.theme_manager import get_theme_manager
 
 try:
-    from app.core.rkhunter_optimizer import (OptimizationReport,
-                                             RKHunterConfig, RKHunterOptimizer,
-                                             RKHunterStatus)
+    from app.core.rkhunter_optimizer import (
+        OptimizationReport,
+        RKHunterConfig,
+        RKHunterOptimizer,
+        RKHunterStatus,
+    )
 except ImportError:
     # Graceful fallback if module not available
     RKHunterOptimizer = None

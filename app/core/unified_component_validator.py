@@ -29,12 +29,17 @@ from app.core import UNIFIED_PERFORMANCE_AVAILABLE, UNIFIED_SECURITY_AVAILABLE
 sys.path.append(str(Path(__file__).parent.parent.parent))
 
 if UNIFIED_SECURITY_AVAILABLE:
-    from app.core.unified_security_engine import (ProtectionMode, ThreatLevel,
-                                                  UnifiedSecurityEngine)
+    from app.core.unified_security_engine import (
+        ProtectionMode,
+        ThreatLevel,
+        UnifiedSecurityEngine,
+    )
 
 if UNIFIED_PERFORMANCE_AVAILABLE:
     from app.core.unified_performance_optimizer import (
-        PerformanceMode, UnifiedPerformanceOptimizer)
+        PerformanceMode,
+        UnifiedPerformanceOptimizer,
+    )
 
 
 @dataclass
@@ -354,22 +359,28 @@ class UnifiedComponentValidator:
 
         try:
             # Test core module imports
-            from app.core import (UNIFIED_PERFORMANCE_AVAILABLE,
-                                  UNIFIED_SECURITY_AVAILABLE)
+            from app.core import (
+                UNIFIED_PERFORMANCE_AVAILABLE,
+                UNIFIED_SECURITY_AVAILABLE,
+            )
             from app.core.clamav_wrapper import ClamAVWrapper as _ClamAVWrapper
             from app.core.file_scanner import FileScanner as _FileScanner
 
             # Test conditional imports work
             if UNIFIED_SECURITY_AVAILABLE:
-                from app.core import (ProtectionMode as _ProtectionMode,
-                                      ThreatLevel as _ThreatLevel,
-                                      UnifiedSecurityEngine as _UnifiedSecurityEngine)
+                from app.core import (
+                    ProtectionMode as _ProtectionMode,
+                    ThreatLevel as _ThreatLevel,
+                    UnifiedSecurityEngine as _UnifiedSecurityEngine,
+                )
             else:
                 warnings.append("Unified Security Engine not available")
 
             if UNIFIED_PERFORMANCE_AVAILABLE:
-                from app.core import (PerformanceMode as _PerformanceMode,
-                                      UnifiedPerformanceOptimizer as _UnifiedPerformanceOptimizer)
+                from app.core import (
+                    PerformanceMode as _PerformanceMode,
+                    UnifiedPerformanceOptimizer as _UnifiedPerformanceOptimizer,
+                )
             else:
                 warnings.append("Unified Performance Optimizer not available")
 

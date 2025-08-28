@@ -4,7 +4,8 @@
   "ignores": [
     ".markdown-backups/**",
     "archive/**",
-    "node_modules/**"
+  "node_modules/**",
+  ".github/CODEOWNERS"
   ],
   "MD001": true,
   "MD003": { "style": "atx" },

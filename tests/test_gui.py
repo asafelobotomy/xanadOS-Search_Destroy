@@ -56,7 +56,7 @@ class TestMainWindow(unittest.TestCase):
             os.path.dirname(__file__), "..", "app", "gui", "main_window.py"
         )
         try:
-            with open(main_window_path, "r", encoding="utf-8") as f:
+            with open(main_window_path, encoding="utf-8") as f:
                 ast.parse(f.read())
             # If we get here, the syntax is valid
         except Exception as e:
@@ -68,7 +68,7 @@ class TestMainWindow(unittest.TestCase):
             os.path.dirname(__file__), "..", "app", "gui", "scan_thread.py"
         )
         try:
-            with open(scan_thread_path, "r", encoding="utf-8") as f:
+            with open(scan_thread_path, encoding="utf-8") as f:
                 code = f.read()
             ast.parse(code)
             # If we get here, the syntax is valid
@@ -83,7 +83,7 @@ class TestApplicationStructure(unittest.TestCase):
         """Test that main.py has correct structure"""
         try:
             main_path = os.path.join(os.path.dirname(__file__), "..", "app", "main.py")
-            with open(main_path, "r", encoding="utf-8") as f:
+            with open(main_path, encoding="utf-8") as f:
                 code = f.read()
 
             # Parse the code to ensure it's valid Python
@@ -111,7 +111,7 @@ class TestApplicationStructure(unittest.TestCase):
 
         for file_path in gui_files:
             if os.path.exists(file_path):
-                with open(file_path, "r", encoding="utf-8") as f:
+                with open(file_path, encoding="utf-8") as f:
                     content = f.read()
 
                 # Check that PyQt5 is not imported
@@ -142,7 +142,7 @@ class TestRequirements(unittest.TestCase):
             os.path.exists(requirements_path), "requirements.txt should exist"
         )
 
-        with open(requirements_path, "r", encoding="utf-8") as f:
+        with open(requirements_path, encoding="utf-8") as f:
             content = f.read()
 
         self.assertIn("PyQt6", content, "PyQt6 should be in requirements")
@@ -200,7 +200,7 @@ class TestCodeQuality(unittest.TestCase):
         for file_path in python_files:
             with self.subTest(file_path=file_path):
                 try:
-                    with open(file_path, "r", encoding="utf-8") as f:
+                    with open(file_path, encoding="utf-8") as f:
                         code = f.read()
                     ast.parse(code)
                 except SyntaxError as e:

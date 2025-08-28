@@ -15,7 +15,7 @@ def test_requirements_fixed():
     """Test that requirements.txt has been fixed"""
     print("Testing requirements.txt...")
 
-    with open("requirements.txt", "r") as f:
+    with open("requirements.txt", encoding="utf-8") as f:
         content = f.read()
 
     # Check that pyclamd version issue is fixed
@@ -33,7 +33,7 @@ def test_pyqt6_consistency():
 
     for file_path in gui_files:
         if os.path.exists(file_path):
-            with open(file_path, "r") as f:
+            with open(file_path, encoding="utf-8") as f:
                 content = f.read()
 
             # Check that PyQt5 is not imported
@@ -70,7 +70,7 @@ def test_python_syntax():
 
     for file_path in python_files:
         try:
-            with open(file_path, "r") as f:
+            with open(file_path, encoding="utf-8") as f:
                 code = f.read()
             ast.parse(code)
         except SyntaxError as e:
@@ -83,7 +83,7 @@ def test_main_structure():
     """Test that main.py has correct structure"""
     print("Testing main.py structure...")
 
-    with open("app/main.py", "r") as f:
+    with open("app/main.py", encoding="utf-8") as f:
         code = f.read()
 
     tree = ast.parse(code)
@@ -117,7 +117,7 @@ def test_icons_created():
     assert os.path.exists(svg_icon), "FAIL: SVG icon should exist"
 
     # Check SVG content
-    with open(svg_icon, "r") as f:
+    with open(svg_icon, encoding="utf-8") as f:
         svg_content = f.read()
     assert "<svg" in svg_content, "FAIL: SVG file should contain SVG markup"
     # We're using a visual icon without text branding
@@ -141,10 +141,10 @@ def test_code_organization():
     print("Testing code organization...")
 
     # Check that MainWindow is in main_window.py, not scan_thread.py
-    with open("app/gui/main_window.py", "r") as f:
+    with open("app/gui/main_window.py", encoding="utf-8") as f:
         main_window_content = f.read()
 
-    with open("app/gui/scan_thread.py", "r") as f:
+    with open("app/gui/scan_thread.py", encoding="utf-8") as f:
         scan_thread_content = f.read()
 
     # MainWindow should be in main_window.py

@@ -27,8 +27,12 @@ from app.utils.scan_reports import ScanResult as ReportScanResult
 from app.utils.scan_reports import ScanType, ThreatInfo, ThreatLevel
 
 from .clamav_wrapper import ClamAVWrapper, ScanFileResult, ScanResult
-from .input_validation import (FileSizeMonitor, PathValidator,
-                               SecurityValidationError, validate_scan_request)
+from .input_validation import (
+    FileSizeMonitor,
+    PathValidator,
+    SecurityValidationError,
+    validate_scan_request,
+)
 from .rate_limiting import configure_rate_limits, rate_limit_manager
 
 # Optional scheduler dependency

@@ -14,15 +14,33 @@ from typing import List, Tuple
 
 from PyQt6.QtCore import Qt, QThread, pyqtSignal
 from PyQt6.QtGui import QColor
-from PyQt6.QtWidgets import (QCheckBox, QDialog, QDialogButtonBox, QFrame,
-                             QGroupBox, QHBoxLayout, QHeaderView, QLabel,
-                             QMessageBox, QProgressBar, QPushButton,
-                             QScrollArea, QTableWidget, QTableWidgetItem,
-                             QTabWidget, QTextEdit, QVBoxLayout, QWidget)
+from PyQt6.QtWidgets import (
+    QCheckBox,
+    QDialog,
+    QDialogButtonBox,
+    QFrame,
+    QGroupBox,
+    QHBoxLayout,
+    QHeaderView,
+    QLabel,
+    QMessageBox,
+    QProgressBar,
+    QPushButton,
+    QScrollArea,
+    QTableWidget,
+    QTableWidgetItem,
+    QTabWidget,
+    QTextEdit,
+    QVBoxLayout,
+    QWidget,
+)
 
 from app.core.elevated_runner import elevated_run
-from app.core.system_hardening import (HardeningReport, SecurityFeature,
-                                       SystemHardeningChecker)
+from app.core.system_hardening import (
+    HardeningReport,
+    SecurityFeature,
+    SystemHardeningChecker,
+)
 
 from .theme_manager import create_themed_message_box, get_theme_manager
 from .themed_widgets import ThemedWidgetMixin

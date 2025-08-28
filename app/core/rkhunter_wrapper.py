@@ -903,15 +903,13 @@ class RKHunterWrapper:
             #             for test in self.test_categories[category]:
             #                 cmd_args.extend(["--enable", test])
 
-            # Add configuration file - use system default with minimal overrides
-            if os.path.exists("/etc/rkhunter.conf"):
-                cmd_args.extend(["--configfile", "/etc/rkhunter.conf"])
-                # Override problematic settings via command line
-                cmd_args.extend(
-                    ["--tmpdir", "/var/lib/rkhunter/tmp"],
-                )  # Use secure temp dir
-            elif self.config_path.exists():
+            # Prefer the app-managed config to avoid invalid system settings
+            if self.config_path.exists():
                 cmd_args.extend(["--configfile", str(self.config_path)])
+            elif os.path.exists("/etc/rkhunter.conf"):
+                cmd_args.extend(["--configfile", "/etc/rkhunter.conf"])
+            # Use secure temp dir regardless of config source
+            cmd_args.extend(["--tmpdir", "/var/lib/rkhunter/tmp"])  # Use secure temp dir
 
             self.logger.info(
                 "Running RKHunter scan with command: %s",
@@ -1017,15 +1015,13 @@ class RKHunterWrapper:
             #             for test in self.test_categories[category]:
             #                 cmd_args.extend(["--enable", test])
 
-            # Add configuration file - use system default with minimal overrides
-            if os.path.exists("/etc/rkhunter.conf"):
-                cmd_args.extend(["--configfile", "/etc/rkhunter.conf"])
-                # Override problematic settings via command line
-                cmd_args.extend(
-                    ["--tmpdir", "/var/lib/rkhunter/tmp"],
-                )  # Use secure temp dir
-            elif self.config_path.exists():
+            # Prefer the app-managed config to avoid invalid system settings
+            if self.config_path.exists():
                 cmd_args.extend(["--configfile", str(self.config_path)])
+            elif os.path.exists("/etc/rkhunter.conf"):
+                cmd_args.extend(["--configfile", "/etc/rkhunter.conf"])
+            # Use secure temp dir regardless of config source
+            cmd_args.extend(["--tmpdir", "/var/lib/rkhunter/tmp"])  # Use secure temp dir
 
             self.logger.info(
                 "Running RKHunter scan with command: %s",

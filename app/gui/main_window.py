@@ -24,9 +24,12 @@ from app.core.scan_results_formatter import ModernScanResultsFormatter
 
 # Import RKHunter optimizer for settings integration
 try:
-    from app.core.rkhunter_optimizer import (OptimizationReport,
-                                             RKHunterConfig, RKHunterOptimizer,
-                                             RKHunterStatus)
+    from app.core.rkhunter_optimizer import (
+        OptimizationReport,
+        RKHunterConfig,
+        RKHunterOptimizer,
+        RKHunterStatus,
+    )
 
     RKHUNTER_OPTIMIZER_AVAILABLE = True
 except ImportError:
@@ -46,10 +49,8 @@ except ImportError:
 
 # Import non-invasive monitoring system for status checks without sudo
 try:
-    from app.core.non_invasive_monitor import (get_system_status,
-                                               record_activity)
-    from app.core.rkhunter_monitor_non_invasive import \
-        get_rkhunter_status_non_invasive
+    from app.core.non_invasive_monitor import get_system_status, record_activity
+    from app.core.rkhunter_monitor_non_invasive import get_rkhunter_status_non_invasive
 
     NON_INVASIVE_MONITORING_AVAILABLE = True
 except ImportError:
@@ -61,17 +62,50 @@ except ImportError:
 from threading import Thread
 
 from PyQt6.QtCore import Qt, QTime, QTimer, QDate, pyqtSignal
-from PyQt6.QtGui import (QAction, QFont, QIcon, QKeySequence, QMouseEvent,
-                         QPixmap, QShortcut, QWheelEvent)
-from PyQt6.QtWidgets import (QApplication, QCheckBox, QComboBox, QDateEdit,
-                             QDialog, QFileDialog, QFrame, QGridLayout,
-                             QGroupBox, QHBoxLayout, QLabel, QLineEdit,
-                             QListWidget, QListWidgetItem, QMainWindow, QMenu,
-                             QMenuBar, QMessageBox, QProgressBar,
-                             QProgressDialog, QPushButton, QSizePolicy,
-                             QSpinBox, QSplitter, QStackedWidget, QStatusBar,
-                             QSystemTrayIcon, QTabWidget, QTextEdit, QTimeEdit,
-                             QVBoxLayout, QWidget)
+from PyQt6.QtGui import (
+    QAction,
+    QFont,
+    QIcon,
+    QKeySequence,
+    QMouseEvent,
+    QPixmap,
+    QShortcut,
+    QWheelEvent,
+)
+from PyQt6.QtWidgets import (
+    QApplication,
+    QCheckBox,
+    QComboBox,
+    QDateEdit,
+    QDialog,
+    QFileDialog,
+    QFrame,
+    QGridLayout,
+    QGroupBox,
+    QHBoxLayout,
+    QLabel,
+    QLineEdit,
+    QListWidget,
+    QListWidgetItem,
+    QMainWindow,
+    QMenu,
+    QMenuBar,
+    QMessageBox,
+    QProgressBar,
+    QProgressDialog,
+    QPushButton,
+    QSizePolicy,
+    QSpinBox,
+    QSplitter,
+    QStackedWidget,
+    QStatusBar,
+    QSystemTrayIcon,
+    QTabWidget,
+    QTextEdit,
+    QTimeEdit,
+    QVBoxLayout,
+    QWidget,
+)
 
 from app.core import UNIFIED_PERFORMANCE_AVAILABLE
 from app.core.elevated_runner import cleanup_auth_session
@@ -84,19 +118,36 @@ from app.gui.scan_thread import ScanThread
 from app.gui.settings_pages import RKHunterOptimizationWorker
 from app.gui.setup_wizard import SetupWizard
 from app.gui.system_hardening_tab import SystemHardeningTab
-from app.gui.theme_manager import (apply_button_effects, get_theme_manager,
-                                   setup_widget_effects, toggle_theme)
+from app.gui.theme_manager import (
+    apply_button_effects,
+    get_theme_manager,
+    setup_widget_effects,
+    toggle_theme,
+)
 from app.gui.themed_widgets import ThemedWidgetMixin
 from app.gui.update_components import UpdateDialog, UpdateNotifier
 from app.gui.user_manual_window import UserManualWindow
 from app.gui.warning_explanation_dialog import WarningExplanationDialog
 from app.monitoring import MonitorConfig, RealTimeMonitor
-from app.utils.config import (CONFIG_DIR, DATA_DIR, LOG_DIR, QUARANTINE_DIR,
-                              get_config_setting, get_factory_defaults,
-                              load_config, save_config, update_config_setting,
-                              update_multiple_settings)
-from app.utils.scan_reports import (ScanReportManager, ScanResult, ScanType,
-                                    ThreatInfo, ThreatLevel)
+from app.utils.config import (
+    CONFIG_DIR,
+    DATA_DIR,
+    LOG_DIR,
+    QUARANTINE_DIR,
+    get_config_setting,
+    get_factory_defaults,
+    load_config,
+    save_config,
+    update_config_setting,
+    update_multiple_settings,
+)
+from app.utils.scan_reports import (
+    ScanReportManager,
+    ScanResult,
+    ScanType,
+    ThreatInfo,
+    ThreatLevel,
+)
 
 
 def _which(cmd: str) -> str | None:
@@ -567,8 +618,9 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
         # Performance monitoring
         try:
             if UNIFIED_PERFORMANCE_AVAILABLE:
-                from app.core.unified_performance_optimizer import \
-                    UnifiedPerformanceOptimizer
+                from app.core.unified_performance_optimizer import (
+                    UnifiedPerformanceOptimizer,
+                )
 
                 self.performance_monitor = UnifiedPerformanceOptimizer()
                 # Add compatibility method for optimization callbacks
@@ -6514,8 +6566,14 @@ System        {perf_status}"""
 
     def _show_simple_warnings_dialog(self):
         """Fallback simple warnings dialog using basic Qt widgets."""
-        from PyQt6.QtWidgets import (QDialog, QHBoxLayout, QLabel, QPushButton,
-                                     QTextEdit, QVBoxLayout)
+        from PyQt6.QtWidgets import (
+            QDialog,
+            QHBoxLayout,
+            QLabel,
+            QPushButton,
+            QTextEdit,
+            QVBoxLayout,
+        )
 
         class SimpleWarningsDialog(QDialog):
             def __init__(self, warnings, parent=None):

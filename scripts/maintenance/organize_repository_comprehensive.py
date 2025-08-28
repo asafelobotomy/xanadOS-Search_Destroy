@@ -392,13 +392,11 @@ xanadOS-Search_Destroy/
         else:
             report_content += "\nNo organization issues found.\n"
 
-        report_content += (
-            """
+        report_content += """
 ## Statistics
 
 *This report is automatically generated. Do not edit manually.*
 """
-        )
 
         report_path.write_text(report_content, encoding="utf-8")
         print(f"  ✅ Generated: {report_path.relative_to(self.repo_root)}")

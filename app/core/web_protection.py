@@ -24,6 +24,7 @@ import aiohttp
 try:
     import dns.resolver  # type: ignore[import-not-found]
 except Exception:  # ImportError or environment without dnspython
+
     class _MockDNSResolver:
         def __init__(self):
             self.nameservers = []

@@ -5,10 +5,8 @@ import sys
 import tempfile
 import threading
 import time
-import types
 from pathlib import Path
-from typing import Any, Dict, Generator
-from unittest.mock import MagicMock, Mock
+from unittest.mock import Mock
 
 import pytest
 

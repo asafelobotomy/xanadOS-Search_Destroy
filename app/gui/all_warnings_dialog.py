@@ -8,10 +8,20 @@ try:
     from datetime import datetime
 
     from PyQt6.QtCore import Qt
-    from PyQt6.QtWidgets import (QDialog, QFileDialog, QGroupBox, QHBoxLayout,
-                                 QLabel, QListWidget, QListWidgetItem,
-                                 QMessageBox, QPushButton, QSplitter,
-                                 QTextEdit, QVBoxLayout)
+    from PyQt6.QtWidgets import (
+        QDialog,
+        QFileDialog,
+        QGroupBox,
+        QHBoxLayout,
+        QLabel,
+        QListWidget,
+        QListWidgetItem,
+        QMessageBox,
+        QPushButton,
+        QSplitter,
+        QTextEdit,
+        QVBoxLayout,
+    )
 
     PYQT6_AVAILABLE = True
 except ImportError:

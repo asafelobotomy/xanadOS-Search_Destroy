@@ -42,9 +42,7 @@ This document consolidates all implementation details for xanadOS Search & Destr
                 content = f.read()
 
             # Append section using original content, preserving its title
-            consolidated_content += (
-                "\n" + content.strip() + "\n\n---\n\n"
-            )
+            consolidated_content += "\n" + content.strip() + "\n\n---\n\n"
 
     # Write consolidated guide
     os.makedirs("docs/implementation", exist_ok=True)
@@ -74,8 +72,7 @@ def consolidate_project_management_docs():
             vc_summary = f.read()
 
         # Create consolidated version control doc
-        consolidated_vc = (
-            f"""{vc_content}
+        consolidated_vc = f"""{vc_content}
 
 ---
 
@@ -83,7 +80,6 @@ def consolidate_project_management_docs():
 
 {vc_summary[vc_summary.find('## ✅'):]}
 """
-        )
 
         with open(version_control_path, "w", encoding="utf-8") as f:
             f.write(consolidated_vc)

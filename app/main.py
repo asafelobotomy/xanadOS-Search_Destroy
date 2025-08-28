@@ -47,13 +47,14 @@ def main():
 
     # Import GUI modules only AFTER QApplication is constructed
     from app.core.telemetry import (  # pylint: disable=import-outside-toplevel
-        initialize_telemetry, record_error, shutdown_telemetry)
+        initialize_telemetry,
+        record_error,
+        shutdown_telemetry,
+    )
     from app.gui.main_window import MainWindow
     from app.gui.setup_wizard import show_setup_wizard
-    from app.gui.splash_screen import (ModernSplashScreen,
-                                       StartupProgressTracker)
-    from app.utils.config import \
-        load_config  # pylint: disable=import-outside-toplevel
+    from app.gui.splash_screen import ModernSplashScreen, StartupProgressTracker
+    from app.utils.config import load_config  # pylint: disable=import-outside-toplevel
 
     # Create and show splash screen immediately
     splash = ModernSplashScreen()
