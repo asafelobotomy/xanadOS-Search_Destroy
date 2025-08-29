@@ -17,7 +17,7 @@ from collections import deque
 from contextlib import contextmanager
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
 import psutil
 
@@ -71,7 +71,7 @@ class PerformanceConfig:
 class PerformanceOptimizer:
     """Performance optimization and monitoring"""
 
-    def __init__(self, config: Optional[PerformanceConfig] = None):
+    def __init__(self, config: PerformanceConfig | None = None):
         self.config = config or PerformanceConfig()
         self.metrics_history: deque = deque(maxlen=1000)
         self.operation_counter = 0
@@ -184,7 +184,7 @@ class PerformanceOptimizer:
         collected = gc.collect()
         return collected
 
-    def cache_get(self, key: str) -> Optional[Any]:
+    def cache_get(self, key: str) -> Any | None:
         """Get value from cache"""
         with self._lock:
             if key in self._cache:
@@ -318,7 +318,7 @@ class ResourceMonitor:
         self.optimizer = optimizer
         self.alerts: List[Dict[str, Any]] = []
         self._monitoring = False
-        self._monitor_thread: Optional[threading.Thread] = None
+        self._monitor_thread: threading.Thread | None = None
 
     def start_monitoring(self, interval: float = 10.0):
         """Start resource monitoring"""
@@ -358,7 +358,8 @@ class ResourceMonitor:
                     "type": "cpu_high",
                     "value": metrics.cpu_percent,
                     "threshold": config.max_cpu_percent,
-                    "message": f"CPU usage {metrics.cpu_percent:.1f}% exceeds threshold {
+                    "message": f"CPU usage {
+                        metrics.cpu_percent:.1f}% exceeds threshold {
                         config.max_cpu_percent
                     }%",
                 }
@@ -371,7 +372,8 @@ class ResourceMonitor:
                     "type": "memory_high",
                     "value": metrics.memory_percent,
                     "threshold": config.max_memory_percent,
-                    "message": f"Memory usage {metrics.memory_percent:.1f}% exceeds threshold {
+                    "message": f"Memory usage {
+                        metrics.memory_percent:.1f}% exceeds threshold {
                         config.max_memory_percent
                     }%",
                 }

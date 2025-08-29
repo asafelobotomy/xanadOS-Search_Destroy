@@ -1,7 +1,5 @@
 #!/usr/bin/env python3
-"""
-RKHunter scan dialog and thread components for S&D - Search & Destroy
-"""
+"""RKHunter scan dialog and thread components for S&D - Search & Destroy"""
 
 import logging
 import threading
@@ -186,7 +184,9 @@ class RKHunterScanDialog(QDialog):
         start_btn.setDefault(True)
         start_btn.setStyleSheet(
             f"QPushButton {{ background-color: {
-                self.get_theme_color('success') if hasattr(self, 'get_theme_color') else '#007bff'
+                self.get_theme_color('success')
+                if hasattr(self, 'get_theme_color')
+                else '#007bff'
             }; "
             f"color: {
                 self.get_theme_color('primary_text')
@@ -195,7 +195,9 @@ class RKHunterScanDialog(QDialog):
             }; "
             "font-weight: bold; padding: 8px 20px; border-radius: 4px; }"
             f"QPushButton:hover {{ background-color: {
-                self.get_theme_color('hover_bg') if hasattr(self, 'get_theme_color') else '#0056b3'
+                self.get_theme_color('hover_bg')
+                if hasattr(self, 'get_theme_color')
+                else '#0056b3'
             }; }}"
         )
 
@@ -221,7 +223,7 @@ class RKHunterScanDialog(QDialog):
         for category_id, checkbox in self.category_checkboxes.items():
             checkbox.setChecked(category_id in recommended)
 
-    def get_selected_categories(self) -> List[str]:
+    def get_selected_categories(self) -> list[str]:
         """Get list of selected test categories."""
         selected = []
         for category_id, checkbox in self.category_checkboxes.items():
@@ -372,7 +374,7 @@ class RKHunterScanThread(QThread, CooperativeCancellationMixin):
     scan_completed = pyqtSignal(object)  # RKHunterScanResult
 
     def __init__(
-        self, rkhunter: RKHunterWrapper, test_categories: Optional[List[str]] = None
+        self, rkhunter: RKHunterWrapper, test_categories: list[str] | None = None
     ):
         super().__init__()
         self.rkhunter = rkhunter
@@ -591,7 +593,7 @@ class RKHunterScanThread(QThread, CooperativeCancellationMixin):
                 start_time=datetime.now(),
                 end_time=datetime.now(),
                 success=False,
-                error_message=f"Scan thread error: {str(e)}",
+                error_message=f"Scan thread error: {e!s}",
             )
 
             self.scan_completed.emit(error_result)

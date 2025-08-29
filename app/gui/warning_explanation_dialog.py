@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""
-RKHunter Warning Explanation Dialog
+"""RKHunter Warning Explanation Dialog
 Provides detailed explanations and guidance for each RKHunter warning.
 """
 

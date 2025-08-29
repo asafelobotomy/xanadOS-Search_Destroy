@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""
-All Warnings Dialog - Comprehensive view of all scan warnings
+"""All Warnings Dialog - Comprehensive view of all scan warnings
 Part of xanadOS Search & Destroy
 """
 
@@ -118,7 +117,7 @@ class AllWarningsDialog(QDialog):
             QMessageBox.critical(
                 parent,
                 "Error",
-                f"Failed to create warnings dialog: {str(e)}\n\nPlease check the application logs.",
+                f"Failed to create warnings dialog: {e!s}\n\nPlease check the application logs.",
             )
             self.accept()  # Close dialog
 
@@ -571,12 +570,12 @@ class AllWarningsDialog(QDialog):
                     ):
                         lines.append("Remediation Steps:")
                         for step in explanation_obj.remediation_steps:
-                            lines.append(f"  • {str(step)}")
+                            lines.append(f"  • {step!s}")
                         lines.append("")
                 else:
                     lines.append(str(warning.explanation))
             except Exception as e:  # pylint: disable=broad-exception-caught
-                lines.append(f"Explanation: {str(warning.explanation)}")
+                lines.append(f"Explanation: {warning.explanation!s}")
                 lines.append(f"(Note: Error processing explanation details: {e})")
             lines.append("")
         else:
@@ -732,7 +731,7 @@ class AllWarningsDialog(QDialog):
         if not file_path:
             return
 
-        try:  # noqa: SIM105
+        try:
             # Generate report content
             report_lines: list[str] = []
             report_lines.append("SECURITY WARNINGS REPORT")
@@ -778,9 +777,9 @@ class AllWarningsDialog(QDialog):
             # UI boundary: ensure we surface a message rather than crash on export errors
             if hasattr(self.parent_window, "show_themed_message_box"):
                 self.parent_window.show_themed_message_box(
-                    "critical", "Export Error", f"Failed to export report:\n{str(e)}"
+                    "critical", "Export Error", f"Failed to export report:\n{e!s}"
                 )
             else:
                 QMessageBox.critical(
-                    self, "Export Error", f"Failed to export report:\n{str(e)}"
+                    self, "Export Error", f"Failed to export report:\n{e!s}"
                 )

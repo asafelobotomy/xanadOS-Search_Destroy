@@ -2,6 +2,7 @@
 """
 Unit tests for S&D - Search & Destroy GUI components
 """
+
 import ast
 import os
 import sys

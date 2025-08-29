@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""
-Unified Performance Optimizer for xanadOS Search & Destroy
+"""Unified Performance Optimizer for xanadOS Search & Destroy
 Consolidates memory optimization, database optimization, and system performance management.
 This module combines:
 - Memory optimization and garbage collection
@@ -16,12 +15,12 @@ Features:
 """
 
 import asyncio
+import functools
 import gc
 import logging
 import os
-import sqlite3
 import re
-import functools
+import sqlite3
 import sys
 import threading
 import time
@@ -32,13 +31,14 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
 from pathlib import Path
-from typing import Any, Dict, List, Tuple
+from typing import Any
 
 import psutil
 
 # Advanced memory profiling (optional)
 try:
     import tracemalloc
+
     import memory_profiler  # noqa: F401
 
     MEMORY_PROFILING_AVAILABLE = True
@@ -100,7 +100,7 @@ class OptimizationResult:
     improvement_percentage: float
     duration_ms: float
     success: bool
-    details: Dict[str, Any] = field(default_factory=dict)
+    details: dict[str, Any] = field(default_factory=dict)
 
 
 class AdvancedMemoryManager:
@@ -151,7 +151,7 @@ class AdvancedMemoryManager:
         except Exception as e:
             self.logger.warning(f"Failed to tune garbage collection: {e}")
 
-    def get_memory_usage(self) -> Dict[str, float]:
+    def get_memory_usage(self) -> dict[str, float]:
         """Get detailed memory usage information."""
         try:
             process = psutil.Process()
@@ -516,10 +516,10 @@ class DatabaseOptimizer:
     def execute_optimized_query(
         self,
         query: str,
-        params: Tuple = (),
+        params: tuple = (),
         pool_name: str = "default",
         db_type: str = "sqlite",
-    ) -> List[Tuple]:
+    ) -> list[tuple]:
         """Execute query with automatic optimization and caching."""
         start_time = time.time()
 
@@ -616,7 +616,7 @@ class DatabaseOptimizer:
         except Exception as e:
             self.logger.error(f"Failed to optimize PostgreSQL database: {e}")
 
-    def analyze_query_performance(self) -> Dict[str, Any]:
+    def analyze_query_performance(self) -> dict[str, Any]:
         """Analyze query performance and suggest optimizations."""
         analysis = {
             "total_queries": sum(stats["count"] for stats in self.query_stats.values()),
@@ -1078,7 +1078,7 @@ class UnifiedPerformanceOptimizer:
             f"🔄 Performance mode changed: {old_mode.value} → {mode.value}"
         )
 
-    def get_optimization_report(self) -> Dict[str, Any]:
+    def get_optimization_report(self) -> dict[str, Any]:
         """Generate comprehensive optimization report."""
         current_metrics = self.get_performance_metrics()
 
@@ -1109,7 +1109,7 @@ class UnifiedPerformanceOptimizer:
 
         return report
 
-    def _generate_recommendations(self, metrics: PerformanceMetrics) -> List[str]:
+    def _generate_recommendations(self, metrics: PerformanceMetrics) -> list[str]:
         """Generate performance optimization recommendations."""
         recommendations = []
 

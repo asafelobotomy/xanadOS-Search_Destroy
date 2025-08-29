@@ -3,6 +3,7 @@
 Simple test to verify unified authentication session management logic
 without requiring full app dependencies.
 """
+
 import os
 import sys
 

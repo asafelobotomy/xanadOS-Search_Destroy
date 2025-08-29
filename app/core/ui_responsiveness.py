@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
-"""
-GUI responsiveness improvements for xanadOS Search & Destroy
+"""GUI responsiveness improvements for xanadOS Search & Destroy
 Provides non-blocking UI operations and smooth user experience
 """
 
 import logging
 import time
+from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Any, Callable, Optional
+from typing import Any
 
 from PyQt6.QtCore import QObject, Qt, QTimer, pyqtSignal
 from PyQt6.QtWidgets import QApplication, QProgressBar
@@ -20,7 +20,7 @@ class UITask:
     task_id: str
     callback: Callable
     args: tuple = ()
-    kwargs: Optional[dict] = None
+    kwargs: dict | None = None
     priority: int = 1  # Lower number = higher priority
 
     def __post_init__(self):
@@ -29,8 +29,7 @@ class UITask:
 
 
 class ResponsiveUI(QObject):
-    """
-    Manager for responsive UI operations.
+    """Manager for responsive UI operations.
     Prevents UI freezing during long-running operations.
     """
 
@@ -41,8 +40,7 @@ class ResponsiveUI(QObject):
     task_completed = pyqtSignal(str, object)  # task_id, result
 
     def __init__(self, main_window=None):
-        """
-        Initialize responsive UI manager.
+        """Initialize responsive UI manager.
 
         Args:
             main_window: Main application window
@@ -81,8 +79,7 @@ class ResponsiveUI(QObject):
     def schedule_task(
         self, task_id: str, callback: Callable, *args, priority: int = 1, **kwargs
     ):
-        """
-        Schedule a background task.
+        """Schedule a background task.
 
         Args:
             task_id: Unique task identifier
@@ -194,8 +191,7 @@ class ResponsiveUI(QObject):
         widget.setWindowOpacity(opacity)
 
     def smooth_progress_update(self, progress_bar: QProgressBar, target_value: int):
-        """
-        Update progress bar with smooth animation.
+        """Update progress bar with smooth animation.
 
         Args:
             progress_bar: Progress bar widget
@@ -211,8 +207,7 @@ class ResponsiveUI(QObject):
         }
 
     def start_pulse_animation(self, widget, duration: float = 2.0):
-        """
-        Start pulsing animation on widget.
+        """Start pulsing animation on widget.
 
         Args:
             widget: Widget to animate
@@ -228,8 +223,7 @@ class ResponsiveUI(QObject):
         }
 
     def stop_animation(self, widget):
-        """
-        Stop animation on widget.
+        """Stop animation on widget.
 
         Args:
             widget: Widget to stop animating
@@ -274,9 +268,7 @@ class ResponsiveUI(QObject):
 
 
 class ScanProgressManager(QObject):
-    """
-    Manages scan progress display and updates.
-    """
+    """Manages scan progress display and updates."""
 
     # Signals for progress updates
     progress_updated = pyqtSignal(int, str, dict)  # progress, message, stats
@@ -300,8 +292,7 @@ class ScanProgressManager(QObject):
         self.update_interval = 0.1  # Update UI every 100ms max
 
     def start_scan(self, total_files: int):
-        """
-        Start scan progress tracking.
+        """Start scan progress tracking.
 
         Args:
             total_files: Total number of files to scan
@@ -326,8 +317,7 @@ class ScanProgressManager(QObject):
         errors: int = 0,
         current_file: str = "",
     ):
-        """
-        Update scan progress.
+        """Update scan progress.
 
         Args:
             scanned: Number of files scanned (increment)
@@ -401,8 +391,7 @@ class ScanProgressManager(QObject):
         )
 
     def report_error(self, error_message: str):
-        """
-        Report scan error.
+        """Report scan error.
 
         Args:
             error_message: Error description
@@ -417,13 +406,10 @@ class ScanProgressManager(QObject):
 
 
 class LoadingIndicator(QObject):
-    """
-    Manages loading indicators and busy states.
-    """
+    """Manages loading indicators and busy states."""
 
     def __init__(self, main_window=None):
-        """
-        Initialize loading indicator.
+        """Initialize loading indicator.
 
         Args:
             main_window: Main application window
@@ -437,8 +423,7 @@ class LoadingIndicator(QObject):
         self.busy_cursor_active = False
 
     def start_loading(self, operation_id: str, message: str = "Loading..."):
-        """
-        Start loading indicator.
+        """Start loading indicator.
 
         Args:
             operation_id: Unique operation identifier
@@ -460,8 +445,7 @@ class LoadingIndicator(QObject):
         )
 
     def stop_loading(self, operation_id: str):
-        """
-        Stop loading indicator.
+        """Stop loading indicator.
 
         Args:
             operation_id: Operation identifier to stop
@@ -478,9 +462,8 @@ class LoadingIndicator(QObject):
             ).replace("%d", "{operation_id}")
         )
 
-    def is_loading(self, operation_id: Optional[str] = None) -> bool:
-        """
-        Check if loading indicator is active.
+    def is_loading(self, operation_id: str | None = None) -> bool:
+        """Check if loading indicator is active.
 
         Args:
             operation_id: Specific operation to check (optional)

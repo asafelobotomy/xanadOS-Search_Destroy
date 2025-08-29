@@ -12,7 +12,7 @@ import os
 import re
 import shlex
 import subprocess
-from typing import Mapping, Optional, Sequence
+from collections.abc import Mapping, Sequence
 
 DEFAULT_TIMEOUT = 60
 SAFE_PATH = "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
@@ -53,7 +53,7 @@ def _is_allowed(argv: Sequence[str]) -> bool:
     return base in ALLOWED_BINARIES
 
 
-def _sanitized_env(extra: Optional[Mapping[str, str]] = None) -> Mapping[str, str]:
+def _sanitized_env(extra: Mapping[str, str] | None = None) -> Mapping[str, str]:
     env = {
         "PATH": SAFE_PATH,
         "LANG": "C.UTF-8",
@@ -70,7 +70,7 @@ def run_secure(
     timeout: int = DEFAULT_TIMEOUT,
     check: bool = False,
     allow_root: bool = False,
-    env: Optional[Mapping[str, str]] = None,
+    env: Mapping[str, str] | None = None,
     capture_output: bool = True,
     text: bool = True,
 ) -> subprocess.CompletedProcess:
@@ -103,8 +103,8 @@ def quote_for_logging(argv: Sequence[str]) -> str:
 
 
 __all__ = [
-    "run_secure",
     "quote_for_logging",
+    "run_secure",
 ]
 
 
@@ -112,7 +112,7 @@ def popen_secure(
     argv: Sequence[str],
     *,
     allow_root: bool = False,
-    env: Optional[Mapping[str, str]] = None,
+    env: Mapping[str, str] | None = None,
     text: bool = True,
     stdout=subprocess.PIPE,
     stderr=subprocess.PIPE,

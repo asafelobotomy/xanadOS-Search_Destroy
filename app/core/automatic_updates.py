@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""
-Automatic Updates System for S&D
+"""Automatic Updates System for S&D
 Handles virus definition updates, software updates, and threat intelligence feeds.
 
 Note: This module is intentionally comprehensive and currently exceeds the default
@@ -19,11 +18,12 @@ import subprocess
 import tempfile
 import threading
 import time
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from enum import Enum
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any
 
 import requests
 import schedule
@@ -81,7 +81,7 @@ class UpdateInfo:  # pylint: disable=too-many-instance-attributes
     priority: UpdatePriority = UpdatePriority.NORMAL
     release_date: datetime = field(default_factory=datetime.now)
     required_restart: bool = False
-    changelog: List[str] = field(default_factory=list)
+    changelog: list[str] = field(default_factory=list)
 
 
 @dataclass
@@ -104,14 +104,14 @@ class UpdateConfig:  # pylint: disable=too-many-instance-attributes
     auto_update_enabled: bool = True
     check_interval_hours: int = 4
     download_timeout: int = 300  # 5 minutes
-    virus_definitions_sources: List[str] = field(
+    virus_definitions_sources: list[str] = field(
         default_factory=lambda: [
             "https://database.clamav.net/main.cvd",
             "https://database.clamav.net/daily.cvd",
             "https://database.clamav.net/bytecode.cvd",
         ]
     )
-    threat_intel_sources: List[str] = field(default_factory=list)
+    threat_intel_sources: list[str] = field(default_factory=list)
     update_window_start: str = "02:00"  # 2 AM
     update_window_end: str = "04:00"  # 4 AM
     max_concurrent_downloads: int = 3
@@ -120,8 +120,7 @@ class UpdateConfig:  # pylint: disable=too-many-instance-attributes
 
 
 class AutoUpdateSystem:  # pylint: disable=too-many-instance-attributes
-    """
-    Comprehensive automatic update system for virus definitions,
+    """Comprehensive automatic update system for virus definitions,
     threat intelligence, and software components.
     """
 
@@ -141,23 +140,21 @@ class AutoUpdateSystem:  # pylint: disable=too-many-instance-attributes
         self.is_running = False
 
         # Update tracking
-        self.last_check_time: Optional[datetime] = None
-        self.last_update_times: Dict[UpdateType, datetime] = {}
-        self.available_updates: Dict[UpdateType, UpdateInfo] = {}
-        self.update_history: List[UpdateResult] = []
-        self.pending_updates: List[UpdateInfo] = []
+        self.last_check_time: datetime | None = None
+        self.last_update_times: dict[UpdateType, datetime] = {}
+        self.available_updates: dict[UpdateType, UpdateInfo] = {}
+        self.update_history: list[UpdateResult] = []
+        self.pending_updates: list[UpdateInfo] = []
 
         # Download management
-        self.active_downloads: Dict[str, asyncio.Task] = {}
-        self.download_progress: Dict[str, Dict[str, Any]] = {}
+        self.active_downloads: dict[str, asyncio.Task] = {}
+        self.download_progress: dict[str, dict[str, Any]] = {}
 
         # Callbacks
-        self.update_available_callback: Optional[Callable[[UpdateInfo], None]] = None
-        self.update_completed_callback: Optional[Callable[[UpdateResult], None]] = None
-        self.update_progress_callback: Optional[Callable[[UpdateType, int], None]] = (
-            None
-        )
-        self.update_error_callback: Optional[Callable[[str], None]] = None
+        self.update_available_callback: Callable[[UpdateInfo], None] | None = None
+        self.update_completed_callback: Callable[[UpdateResult], None] | None = None
+        self.update_progress_callback: Callable[[UpdateType, int], None] | None = None
+        self.update_error_callback: Callable[[str], None] | None = None
 
         # Database paths
         self.db_dir = (
@@ -178,32 +175,32 @@ class AutoUpdateSystem:  # pylint: disable=too-many-instance-attributes
 
         # Scheduler
         self.scheduler = schedule.Scheduler()
-        self.scheduler_thread: Optional[threading.Thread] = None
+        self.scheduler_thread: threading.Thread | None = None
 
         # Async components
-        self.update_loop_task: Optional[asyncio.Task] = None
-        self.check_updates_task: Optional[asyncio.Task] = None
+        self.update_loop_task: asyncio.Task | None = None
+        self.check_updates_task: asyncio.Task | None = None
 
         self.logger.info("Auto-update system initialized")
 
     # --- Lightweight logging helpers to match call sites across the module ---
-    def logdebug(self, msg: str, *args, **kwargs) -> None:  # noqa: D401
+    def logdebug(self, msg: str, *args, **kwargs) -> None:
         """Proxy to logger.debug."""
         self.logger.debug(msg, *args, **kwargs)
 
-    def loginfo(self, msg: str, *args, **kwargs) -> None:  # noqa: D401
+    def loginfo(self, msg: str, *args, **kwargs) -> None:
         """Proxy to logger.info."""
         self.logger.info(msg, *args, **kwargs)
 
-    def logwarning(self, msg: str, *args, **kwargs) -> None:  # noqa: D401
+    def logwarning(self, msg: str, *args, **kwargs) -> None:
         """Proxy to logger.warning."""
         self.logger.warning(msg, *args, **kwargs)
 
-    def logerror(self, msg: str, *args, **kwargs) -> None:  # noqa: D401
+    def logerror(self, msg: str, *args, **kwargs) -> None:
         """Proxy to logger.error."""
         self.logger.error(msg, *args, **kwargs)
 
-    def logcritical(self, msg: str, *args, **kwargs) -> None:  # noqa: D401
+    def logcritical(self, msg: str, *args, **kwargs) -> None:
         """Proxy to logger.critical."""
         self.logger.critical(msg, *args, **kwargs)
 
@@ -211,7 +208,7 @@ class AutoUpdateSystem:  # pylint: disable=too-many-instance-attributes
         """Load persistent state from config file."""
         try:
             if self.config_file.exists():
-                with open(self.config_file, "r", encoding="utf-8") as f:
+                with open(self.config_file, encoding="utf-8") as f:
                     state = json.load(f)
 
                 # Load last check time
@@ -355,7 +352,7 @@ class AutoUpdateSystem:  # pylint: disable=too-many-instance-attributes
 
     async def check_for_updates_async(
         self, force_check: bool = False
-    ) -> Dict[UpdateType, UpdateInfo]:
+    ) -> dict[UpdateType, UpdateInfo]:
         """Check for available updates (async version)."""
         with self.status_lock:
             if self.status != UpdateStatus.IDLE and not force_check:
@@ -419,7 +416,7 @@ class AutoUpdateSystem:  # pylint: disable=too-many-instance-attributes
                 self.update_error_callback(f"Update check failed: {e}")
             return {}
 
-    async def _check_virus_definitions(self) -> Optional[UpdateInfo]:
+    async def _check_virus_definitions(self) -> UpdateInfo | None:
         """Check for virus definition updates."""
         try:
             # Get current database versions
@@ -463,7 +460,7 @@ class AutoUpdateSystem:  # pylint: disable=too-many-instance-attributes
             )
             return None
 
-    async def _check_software_updates(self) -> Optional[UpdateInfo]:
+    async def _check_software_updates(self) -> UpdateInfo | None:
         """Check for software updates."""
         try:
             # Check GitHub releases for newer versions
@@ -509,7 +506,7 @@ class AutoUpdateSystem:  # pylint: disable=too-many-instance-attributes
             )
             return None
 
-    async def _check_threat_intelligence(self) -> Optional[UpdateInfo]:
+    async def _check_threat_intelligence(self) -> UpdateInfo | None:
         """Check for threat intelligence updates."""
         try:
             # Check threat intelligence sources
@@ -545,7 +542,7 @@ class AutoUpdateSystem:  # pylint: disable=too-many-instance-attributes
             )
             return None
 
-    async def install_pending_updates(self) -> List[UpdateResult]:
+    async def install_pending_updates(self) -> list[UpdateResult]:
         """Install all pending updates."""
         results = []
 
@@ -930,7 +927,7 @@ class AutoUpdateSystem:  # pylint: disable=too-many-instance-attributes
                 )
             )
 
-    async def _get_latest_db_versions(self) -> Dict[str, Dict[str, Any]]:
+    async def _get_latest_db_versions(self) -> dict[str, dict[str, Any]]:
         """Get latest virus definition versions from online sources."""
         versions = {}
 
@@ -953,9 +950,7 @@ class AutoUpdateSystem:  # pylint: disable=too-many-instance-attributes
 
         return versions
 
-    async def _async_http_request(
-        self, method: str, url: str
-    ) -> Optional[Dict[str, Any]]:
+    async def _async_http_request(self, method: str, url: str) -> dict[str, Any] | None:
         """Make async HTTP request."""
         try:
             # Simplified implementation - would use aiohttp in production
@@ -1013,7 +1008,7 @@ class AutoUpdateSystem:  # pylint: disable=too-many-instance-attributes
             v1_parts.extend([0] * (max_len - len(v1_parts)))
             v2_parts.extend([0] * (max_len - len(v2_parts)))
 
-            for v1, v2 in zip(v1_parts, v2_parts):
+            for v1, v2 in zip(v1_parts, v2_parts, strict=False):
                 if v1 > v2:
                     return 1
                 if v1 < v2:
@@ -1024,7 +1019,7 @@ class AutoUpdateSystem:  # pylint: disable=too-many-instance-attributes
         except ValueError:
             return 0
 
-    async def _process_threat_intel(self, intel_file: Path) -> Dict[str, Any]:
+    async def _process_threat_intel(self, intel_file: Path) -> dict[str, Any]:
         """Process downloaded threat intelligence data."""
         try:
             with intel_file.open("r", encoding="utf-8") as f:
@@ -1048,7 +1043,7 @@ class AutoUpdateSystem:  # pylint: disable=too-many-instance-attributes
             )
             return {}
 
-    async def _store_threat_intel(self, intel_data: Dict[str, Any]):
+    async def _store_threat_intel(self, intel_data: dict[str, Any]):
         """Store threat intelligence data for use by protection engine."""
         try:
             intel_db_path = self.db_dir / "threat_intel.json"
@@ -1117,7 +1112,7 @@ class AutoUpdateSystem:  # pylint: disable=too-many-instance-attributes
                 # Swallow unexpected errors while waiting on shutdown; state is being torn down
                 pass
 
-    def get_update_status(self) -> Dict[str, Any]:
+    def get_update_status(self) -> dict[str, Any]:
         """Get current update system status."""
         return {
             "status": self.status.value,
@@ -1136,7 +1131,7 @@ class AutoUpdateSystem:  # pylint: disable=too-many-instance-attributes
             "check_interval_hours": self.config.check_interval_hours,
         }
 
-    def get_update_history(self, limit: int = 50) -> List[Dict[str, Any]]:
+    def get_update_history(self, limit: int = 50) -> list[dict[str, Any]]:
         """Get update history."""
         recent_updates = sorted(
             self.update_history,
@@ -1157,7 +1152,7 @@ class AutoUpdateSystem:  # pylint: disable=too-many-instance-attributes
             for update in recent_updates
         ]
 
-    def get_last_check_time(self) -> Optional[datetime]:
+    def get_last_check_time(self) -> datetime | None:
         """Get the last time updates were checked."""
         return self.last_check_time
 
@@ -1178,7 +1173,7 @@ class AutoUpdateSystem:  # pylint: disable=too-many-instance-attributes
         """Set callback for update errors."""
         self.update_error_callback = callback
 
-    async def force_update_check(self) -> Dict[UpdateType, UpdateInfo]:
+    async def force_update_check(self) -> dict[UpdateType, UpdateInfo]:
         """Force immediate update check."""
         self.logger.info("Forcing update check...")
         return await self.check_for_updates_async()
@@ -1192,9 +1187,8 @@ class AutoUpdateSystem:  # pylint: disable=too-many-instance-attributes
                 self.update_completed_callback(result)
 
     # Synchronous wrapper methods for GUI compatibility
-    def check_for_updates_sync(self, force_check: bool = False) -> Optional[Dict]:
-        """
-        Synchronous wrapper for check_for_updates to maintain GUI compatibility.
+    def check_for_updates_sync(self, force_check: bool = False) -> dict | None:
+        """Synchronous wrapper for check_for_updates to maintain GUI compatibility.
         Returns update info in the format expected by the GUI.
         """
         try:
@@ -1245,9 +1239,8 @@ class AutoUpdateSystem:  # pylint: disable=too-many-instance-attributes
             )
             raise e
 
-    def check_for_updates(self, force_check: bool = False) -> Optional[Dict]:
-        """
-        GUI-compatible synchronous method that maintains the expected interface.
+    def check_for_updates(self, force_check: bool = False) -> dict | None:
+        """GUI-compatible synchronous method that maintains the expected interface.
         This method is called by the GUI and delegates to check_for_updates_sync.
         """
         return self.check_for_updates_sync(force_check)

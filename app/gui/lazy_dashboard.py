@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
-"""
-Lazy Loading Dashboard Manager for xanadOS Search & Destroy
+"""Lazy Loading Dashboard Manager for xanadOS Search & Destroy
 Implements modern progressive loading patterns for optimal startup performance.
 """
 
 import time
+from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 from PyQt6.QtCore import QObject, QTimer, pyqtSignal
 from PyQt6.QtWidgets import QLabel, QWidget
@@ -21,13 +21,12 @@ class DashboardCard:
     load_time_estimate: float  # Estimated load time in seconds
     is_loaded: bool = False
     is_visible: bool = True
-    data_loader: Optional[Callable] = None
+    data_loader: Callable | None = None
     placeholder_text: str = "Loading..."
 
 
 class LazyDashboardLoader(QObject):
-    """
-    Modern lazy loading manager for dashboard components.
+    """Modern lazy loading manager for dashboard components.
 
     Features:
     - Priority-based loading
@@ -45,8 +44,8 @@ class LazyDashboardLoader(QObject):
     def __init__(self, parent=None):
         super().__init__(parent)
 
-        self.cards: Dict[str, DashboardCard] = {}
-        self.loading_queue: List[str] = []
+        self.cards: dict[str, DashboardCard] = {}
+        self.loading_queue: list[str] = []
         self.load_timer = QTimer()
         self.load_timer.timeout.connect(self._process_next_card)
         self.load_timer.setSingleShot(True)
@@ -65,11 +64,10 @@ class LazyDashboardLoader(QObject):
         card_id: str,
         widget: QWidget,
         priority: int = 5,
-        data_loader: Optional[Callable] = None,
+        data_loader: Callable | None = None,
         placeholder_text: str = "Loading...",
     ) -> None:
         """Register a dashboard card for lazy loading."""
-
         card = DashboardCard(
             widget=widget,
             priority=priority,
@@ -258,7 +256,7 @@ class LazyDashboardLoader(QObject):
         self._setup_placeholder(card_id)
         self._load_card_data(card_id)
 
-    def get_loading_stats(self) -> Dict[str, Any]:
+    def get_loading_stats(self) -> dict[str, Any]:
         """Get loading performance statistics."""
         loaded_cards = [card for card in self.cards.values() if card.is_loaded]
 
@@ -277,8 +275,7 @@ class LazyDashboardLoader(QObject):
 
 
 class ViewportAwareDashboardLoader(LazyDashboardLoader):
-    """
-    Enhanced dashboard loader that considers viewport visibility.
+    """Enhanced dashboard loader that considers viewport visibility.
     Loads visible cards first for better perceived performance.
     """
 

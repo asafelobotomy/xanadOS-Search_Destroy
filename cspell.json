@@ -145,7 +145,10 @@
     "Fmain",
     "Fcopilot",
     "Fasafelobotomy",
-    "Runbooks"
+  "Runbooks",
+  "clamav",
+  "freshclam",
+  "docstrings"
   ],
   "flagWords": [
     "hte",

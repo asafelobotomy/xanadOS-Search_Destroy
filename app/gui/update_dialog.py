@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""
-Update dialog for S&D - Search & Destroy
+"""Update dialog for S&D - Search & Destroy
 Handles app update notifications and user interaction
 """
 
@@ -67,7 +66,7 @@ class UpdateDownloadThread(QThread):
                 self.download_completed.emit(False, "Failed to download update.")
 
         except Exception as e:
-            self.download_completed.emit(False, f"Update failed: {str(e)}")
+            self.download_completed.emit(False, f"Update failed: {e!s}")
 
 
 class UpdateDialog(ThemedDialog):
@@ -243,7 +242,7 @@ class UpdateDialog(ThemedDialog):
             sys.exit(0)
 
         except Exception as e:
-            self.status_label.setText(f"Failed to restart application: {str(e)}")
+            self.status_label.setText(f"Failed to restart application: {e!s}")
 
     def remind_later(self):
         """Remind about the update later."""

@@ -10,17 +10,17 @@ import shutil
 import subprocess
 import tempfile
 import time
+from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
 from pathlib import Path
-from typing import Callable, List, Optional, Tuple
 
 import psutil
-from .safe_kill import kill_sequence
-from .secure_subprocess import run_secure
 
 from .rkhunter_analyzer import RKHunterWarningAnalyzer, WarningExplanation
+from .safe_kill import kill_sequence
+from .secure_subprocess import run_secure
 from .security_validator import SecureRKHunterValidator
 
 # Import the warning analyzer
@@ -61,10 +61,10 @@ class RKHunterFinding:
     severity: RKHunterSeverity
     description: str
     details: str = ""
-    file_path: Optional[str] = None
+    file_path: str | None = None
     recommendation: str = ""
-    timestamp: Optional[datetime] = None
-    explanation: Optional[WarningExplanation] = None
+    timestamp: datetime | None = None
+    explanation: WarningExplanation | None = None
 
     def __post_init__(self):
         if self.timestamp is None:
@@ -77,13 +77,13 @@ class RKHunterScanResult:
 
     scan_id: str
     start_time: datetime
-    end_time: Optional[datetime]
+    end_time: datetime | None
     total_tests: int = 0
     tests_run: int = 0
     warnings_found: int = 0
     infections_found: int = 0
     skipped_tests: int = 0
-    findings: Optional[List[RKHunterFinding]] = None
+    findings: list[RKHunterFinding] | None = None
     scan_summary: str = ""
     success: bool = False
     error_message: str = ""
@@ -169,7 +169,7 @@ class RKHunterWrapper:
         else:
             self.logger.warning("RKHunter not available on system")
 
-    def get_version(self) -> Tuple[str, str]:
+    def get_version(self) -> tuple[str, str]:
         """Return (version_string, status). Single authoritative implementation."""
         if not self.available or self.rkhunter_path is None:
             return "Not Available", "N/A"
@@ -274,7 +274,7 @@ class RKHunterWrapper:
             self._max_grace_period,
         )
 
-    def _find_rkhunter(self) -> Optional[str]:
+    def _find_rkhunter(self) -> str | None:
         """Find RKHunter executable."""
         possible_paths = [
             "/usr/bin/rkhunter",
@@ -296,7 +296,7 @@ class RKHunterWrapper:
 
         return None
 
-    def _find_executable(self, name: str) -> Optional[str]:
+    def _find_executable(self, name: str) -> str | None:
         """Find an executable in PATH."""
         return shutil.which(name)
 
@@ -538,7 +538,7 @@ class RKHunterWrapper:
 
     def _run_with_privilege_escalation(
         self,
-        cmd_args: List[str],
+        cmd_args: list[str],
         capture_output: bool = True,
         timeout: int = 300,
     ) -> subprocess.CompletedProcess:
@@ -609,8 +609,8 @@ class RKHunterWrapper:
 
     def _run_with_privilege_escalation_streaming(
         self,
-        cmd_args: List[str],
-        output_callback: Optional[Callable[[str], None]] = None,
+        cmd_args: list[str],
+        output_callback: Callable[[str], None] | None = None,
         timeout: int = 300,
     ) -> subprocess.CompletedProcess:
         """Run a command with privilege escalation and stream output.
@@ -624,7 +624,6 @@ class RKHunterWrapper:
         Returns:
             subprocess.CompletedProcess with stdout collected line-by-line.
         """
-
         # SECURITY: Validate command arguments before any execution
         is_valid, error_message = self.security_validator.validate_command_args(
             cmd_args,
@@ -851,10 +850,10 @@ class RKHunterWrapper:
 
     def scan_system_with_output_callback(
         self,
-        test_categories: Optional[List[str]] = None,
+        test_categories: list[str] | None = None,
         skip_keypress: bool = True,
         update_database: bool = True,
-        output_callback: Optional[Callable[[str], None]] = None,
+        output_callback: Callable[[str], None] | None = None,
     ) -> RKHunterScanResult:
         """Perform a full system rootkit scan with real-time output streaming.
 
@@ -909,7 +908,9 @@ class RKHunterWrapper:
             elif os.path.exists("/etc/rkhunter.conf"):
                 cmd_args.extend(["--configfile", "/etc/rkhunter.conf"])
             # Use secure temp dir regardless of config source
-            cmd_args.extend(["--tmpdir", "/var/lib/rkhunter/tmp"])  # Use secure temp dir
+            cmd_args.extend(
+                ["--tmpdir", "/var/lib/rkhunter/tmp"]
+            )  # Use secure temp dir
 
             self.logger.info(
                 "Running RKHunter scan with command: %s",
@@ -960,14 +961,14 @@ class RKHunterWrapper:
         except Exception as e:
             result.end_time = datetime.now()
             result.success = False
-            result.error_message = f"Scan error: {str(e)}"
+            result.error_message = f"Scan error: {e!s}"
             self.logger.error("RKHunter scan failed: %s", e)
 
         return result
 
     def scan_system(
         self,
-        test_categories: Optional[List[str]] = None,
+        test_categories: list[str] | None = None,
         skip_keypress: bool = True,
     ) -> RKHunterScanResult:
         """Perform a full system rootkit scan.
@@ -1021,7 +1022,9 @@ class RKHunterWrapper:
             elif os.path.exists("/etc/rkhunter.conf"):
                 cmd_args.extend(["--configfile", "/etc/rkhunter.conf"])
             # Use secure temp dir regardless of config source
-            cmd_args.extend(["--tmpdir", "/var/lib/rkhunter/tmp"])  # Use secure temp dir
+            cmd_args.extend(
+                ["--tmpdir", "/var/lib/rkhunter/tmp"]
+            )  # Use secure temp dir
 
             self.logger.info(
                 "Running RKHunter scan with command: %s",
@@ -1072,7 +1075,7 @@ class RKHunterWrapper:
         except Exception as e:
             result.end_time = datetime.now()
             result.success = False
-            result.error_message = f"Scan error: {str(e)}"
+            result.error_message = f"Scan error: {e!s}"
             self.logger.error("RKHunter scan failed: %s", e)
 
         return result
@@ -1265,7 +1268,7 @@ class RKHunterWrapper:
                 )
             )
 
-    def get_log_path(self) -> Optional[Path]:
+    def get_log_path(self) -> Path | None:
         """Get path to RKHunter log file."""
         log_paths = [
             Path("/var/log/rkhunter.log"),
@@ -1280,7 +1283,7 @@ class RKHunterWrapper:
 
         return None
 
-    def install_rkhunter(self) -> Tuple[bool, str]:
+    def install_rkhunter(self) -> tuple[bool, str]:
         """Attempt to install RKHunter using system package manager with GUI-friendly auth.
 
         Returns:
@@ -1347,9 +1350,9 @@ class RKHunterWrapper:
             return False, "No compatible package manager found or installation failed"
 
         except Exception as e:
-            return False, f"Installation error: {str(e)}"
+            return False, f"Installation error: {e!s}"
 
-    def get_scan_recommendations(self, scan_result: RKHunterScanResult) -> List[str]:
+    def get_scan_recommendations(self, scan_result: RKHunterScanResult) -> list[str]:
         """Get recommendations based on scan results.
 
         Args:
@@ -1433,8 +1436,10 @@ class RKHunterWrapper:
 
 # Import elevated_run for module-level usage/fallback (outside class)
 try:  # pragma: no cover - testing convenience
-    from .elevated_runner import elevated_run  # type: ignore  # noqa: F401
-    from .elevated_runner import validate_auth_session  # type: ignore
+    from .elevated_runner import (
+        elevated_run,  # type: ignore
+        validate_auth_session,  # type: ignore
+    )
 except Exception:  # pragma: no cover
 
     def elevated_run(*a, **k):  # type: ignore

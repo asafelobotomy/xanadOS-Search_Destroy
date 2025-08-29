@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""
-Real-time monitor that coordinates file watching, event processing, and background scanning
+"""Real-time monitor that coordinates file watching, event processing, and background scanning
 Main entry point for Phase 3 real-time monitoring system
 """
 
@@ -9,11 +8,12 @@ import os
 import tempfile
 import threading
 import time
+from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any
 
 from .background_scanner import BackgroundScanner, ScanPriority
 from .event_processor import EventAction, EventProcessor, ProcessedEvent
@@ -46,8 +46,8 @@ class MonitorState(Enum):
 class MonitorConfig:
     """Configuration for real-time monitor."""
 
-    watch_paths: List[str]
-    excluded_paths: Optional[List[str]] = None
+    watch_paths: list[str]
+    excluded_paths: list[str] | None = None
     scan_new_files: bool = True
     scan_modified_files: bool = True
     quarantine_threats: bool = True
@@ -60,14 +60,12 @@ class MonitorConfig:
 
 
 class RealTimeMonitor:
-    """
-    Main real-time monitoring system that coordinates all components.
+    """Main real-time monitoring system that coordinates all components.
     Provides comprehensive real-time protection and monitoring.
     """
 
-    def __init__(self, config: Optional[MonitorConfig] = None):
-        """
-        Initialize real-time monitor.
+    def __init__(self, config: MonitorConfig | None = None):
+        """Initialize real-time monitor.
 
         Args:
             config: Monitor configuration
@@ -88,8 +86,8 @@ class RealTimeMonitor:
 
         # State management
         self.state = MonitorState.STOPPED
-        self.start_time: Optional[float] = None
-        self.error_message: Optional[str] = None
+        self.start_time: float | None = None
+        self.error_message: str | None = None
 
         # Statistics
         self.events_processed = 0
@@ -98,10 +96,10 @@ class RealTimeMonitor:
         self.scans_performed = 0
 
         # Callbacks
-        self.threat_detected_callback: Optional[Callable[[str, str], None]] = None
-        self.file_quarantined_callback: Optional[Callable[[str], None]] = None
-        self.scan_completed_callback: Optional[Callable[[str, str], None]] = None
-        self.error_callback: Optional[Callable[[str], None]] = None
+        self.threat_detected_callback: Callable[[str, str], None] | None = None
+        self.file_quarantined_callback: Callable[[str], None] | None = None
+        self.scan_completed_callback: Callable[[str, str], None] | None = None
+        self.error_callback: Callable[[str], None] | None = None
 
         # Threading
         self.lock = threading.RLock()
@@ -110,8 +108,7 @@ class RealTimeMonitor:
         self._setup_callbacks()
 
     def start(self) -> bool:
-        """
-        Start real-time monitoring.
+        """Start real-time monitoring.
 
         Returns:
             True if started successfully, False otherwise
@@ -397,7 +394,7 @@ class RealTimeMonitor:
             except Exception as e:
                 self.logger.error("Error in alert callback: %s", e)
 
-    def _on_scan_result(self, file_path: str, result: Dict[str, Any]):
+    def _on_scan_result(self, file_path: str, result: dict[str, Any]):
         """Handle scan result from background scanner."""
         try:
             with self.lock:
@@ -431,7 +428,7 @@ class RealTimeMonitor:
         except Exception as e:
             self.logger.error("Error handling threat detection: %s", e)
 
-    def get_status(self) -> Dict[str, Any]:
+    def get_status(self) -> dict[str, Any]:
         """Get current monitor status."""
         with self.lock:
             uptime = time.time() - self.start_time if self.start_time else 0
@@ -449,7 +446,7 @@ class RealTimeMonitor:
                 "clamav_available": self.clamav.available,
             }
 
-    def get_statistics(self) -> Dict[str, Any]:
+    def get_statistics(self) -> dict[str, Any]:
         """Get detailed statistics from all components."""
         return {
             "monitor": self.get_status(),

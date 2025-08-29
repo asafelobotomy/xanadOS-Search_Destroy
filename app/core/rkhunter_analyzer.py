@@ -1,13 +1,11 @@
 #!/usr/bin/env python3
-"""
-RKHunter Warning Analysis and Explanation System
+"""RKHunter Warning Analysis and Explanation System
 Provides intelligent categorization and explanations for RKHunter warnings
 """
 
 import re
 from dataclasses import dataclass
 from enum import Enum
-from typing import List, Optional, Tuple
 
 
 class WarningCategory(Enum):
@@ -46,7 +44,7 @@ class WarningExplanation:
     recommended_action: str
     is_common: bool
     technical_details: str = ""
-    remediation_steps: Optional[List[str]] = None
+    remediation_steps: list[str] | None = None
 
     def __post_init__(self):
         if self.remediation_steps is None:
@@ -61,7 +59,7 @@ class RKHunterWarningAnalyzer:
 
     def _initialize_warning_patterns(
         self,
-    ) -> List[Tuple[re.Pattern, WarningExplanation]]:
+    ) -> list[tuple[re.Pattern, WarningExplanation]]:
         """Initialize warning pattern matching rules."""
         patterns = []
 

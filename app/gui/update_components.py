@@ -1,7 +1,5 @@
 #!/usr/bin/env python3
-"""
-GUI components for the auto-update system
-"""
+"""GUI components for the auto-update system"""
 
 from PyQt6.QtCore import Qt, QThread, QTimer, pyqtSignal
 from PyQt6.QtGui import QFont, QPixmap
@@ -405,7 +403,7 @@ class UpdateDialog(QDialog):
                 QMessageBox.critical(
                     self,
                     "Installation Error",
-                    f"An error occurred during installation: {str(e)}",
+                    f"An error occurred during installation: {e!s}",
                 )
                 self.install_button.setEnabled(True)
 

@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""
-Enhanced Real-Time Protection Integration
+"""Enhanced Real-Time Protection Integration
 Combines all 2025 optimization techniques into a unified system:
 - Enhanced file system monitoring with fanotify/eBPF
 - Machine learning anomaly detection
@@ -12,9 +11,10 @@ Combines all 2025 optimization techniques into a unified system:
 import asyncio
 import logging
 import time
+from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any
 
 import psutil
 
@@ -50,7 +50,7 @@ class ProtectionEvent:
     event_type: str
     file_path: str
     threat_level: ThreatLevel
-    details: Dict[str, Any]
+    details: dict[str, Any]
 
 
 @dataclass
@@ -182,7 +182,7 @@ class PerformanceOptimizer:
         else:
             return "balanced"
 
-    def get_optimization_settings(self, mode: str) -> Dict[str, Any]:
+    def get_optimization_settings(self, mode: str) -> dict[str, Any]:
         """Get optimization settings for a specific mode."""
         return self.modes.get(mode, self.modes["balanced"])
 
@@ -206,13 +206,13 @@ class PerformanceOptimizer:
 class IntegratedProtectionManager:
     """Main integrated protection manager combining all enhancements."""
 
-    def __init__(self, watch_paths: List[str]):
+    def __init__(self, watch_paths: list[str]):
         self.logger = logging.getLogger(__name__)
         self.watch_paths = watch_paths
 
         # Core components
-        self.file_watcher: Optional[EnhancedFileSystemWatcher] = None
-        self.protection_engine: Optional[EnhancedRealTimeProtection] = None
+        self.file_watcher: EnhancedFileSystemWatcher | None = None
+        self.protection_engine: EnhancedRealTimeProtection | None = None
         self.performance_optimizer = PerformanceOptimizer()
 
         # State management
@@ -232,12 +232,12 @@ class IntegratedProtectionManager:
         }
 
         # Event callbacks
-        self.threat_callbacks: List[Callable] = []
-        self.performance_callbacks: List[Callable] = []
+        self.threat_callbacks: list[Callable] = []
+        self.performance_callbacks: list[Callable] = []
 
         # Background tasks
-        self.health_monitor_task: Optional[asyncio.Task] = None
-        self.performance_task: Optional[asyncio.Task] = None
+        self.health_monitor_task: asyncio.Task | None = None
+        self.performance_task: asyncio.Task | None = None
 
         self.start_time = time.time()
 
@@ -320,7 +320,7 @@ class IntegratedProtectionManager:
 
         self.logger.info("✅ Integrated Protection System stopped")
 
-    def _handle_file_events(self, events: List[WatchEvent]):
+    def _handle_file_events(self, events: list[WatchEvent]):
         """Handle file system events from the watcher."""
         try:
             # Convert file events to protection events
@@ -450,9 +450,9 @@ class IntegratedProtectionManager:
 
             if optimal_mode != self.current_mode:
                 self.logger.info(
-                    f"🔧 Optimization opportunity: switching from {self.current_mode} to {
-                        optimal_mode
-                    }"
+                    f"🔧 Optimization opportunity: switching from {
+                        self.current_mode
+                    } to {optimal_mode}"
                 )
                 await self._change_protection_mode(optimal_mode)
 
@@ -494,7 +494,7 @@ class IntegratedProtectionManager:
         """Add callback for performance monitoring."""
         self.performance_callbacks.append(callback)
 
-    def get_status(self) -> Dict[str, Any]:
+    def get_status(self) -> dict[str, Any]:
         """Get comprehensive protection system status."""
         file_watcher_stats = {}
         if self.file_watcher:
@@ -527,7 +527,7 @@ class IntegratedProtectionManager:
             ],  # Last 10
         }
 
-    def export_configuration(self) -> Dict[str, Any]:
+    def export_configuration(self) -> dict[str, Any]:
         """Export current configuration for backup/sharing."""
         return {
             "version": "1.0",
@@ -539,7 +539,7 @@ class IntegratedProtectionManager:
             "exported_at": datetime.now().isoformat(),
         }
 
-    async def import_configuration(self, config: Dict[str, Any]):
+    async def import_configuration(self, config: dict[str, Any]):
         """Import configuration from backup/sharing."""
         try:
             if config.get("version") != "1.0":

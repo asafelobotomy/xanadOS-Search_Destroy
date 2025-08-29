@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""
-Heuristic Analysis Engine for S&D
+"""Heuristic Analysis Engine for S&D
 Provides behavioral analysis, pattern detection, and machine learning-based threat detection.
 """
 
@@ -19,7 +18,7 @@ from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from enum import Enum
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Set
+from typing import Any
 
 
 class HeuristicType(Enum):
@@ -63,11 +62,11 @@ class HeuristicResult:
 
     file_path: str
     heuristic_type: HeuristicType
-    threat_indicators: List[ThreatIndicator]
+    threat_indicators: list[ThreatIndicator]
     risk_level: RiskLevel
     confidence_score: float  # 0.0 to 1.0
     description: str
-    details: Dict[str, Any] = field(default_factory=dict)
+    details: dict[str, Any] = field(default_factory=dict)
     scan_time: float = 0.0
 
 
@@ -78,7 +77,7 @@ class BehavioralPattern:
     pattern_id: str
     name: str
     description: str
-    indicators: List[str]
+    indicators: list[str]
     weight: float
     risk_level: RiskLevel
     enabled: bool = True
@@ -97,8 +96,7 @@ class FileSignature:
 
 
 class HeuristicAnalysisEngine:
-    """
-    Advanced heuristic analysis engine for detecting unknown threats
+    """Advanced heuristic analysis engine for detecting unknown threats
     using behavioral analysis, entropy calculation, and pattern matching.
     """
 
@@ -110,17 +108,17 @@ class HeuristicAnalysisEngine:
         self._init_database()
 
         # Analysis components
-        self.behavioral_patterns: Dict[str, BehavioralPattern] = {}
-        self.file_signatures: Dict[str, FileSignature] = {}
-        self.suspicious_strings: Set[str] = set()
+        self.behavioral_patterns: dict[str, BehavioralPattern] = {}
+        self.file_signatures: dict[str, FileSignature] = {}
+        self.suspicious_strings: set[str] = set()
 
         # File tracking for behavioral analysis
-        self.file_activities: Dict[str, List[Dict[str, Any]]] = defaultdict(list)
-        self.process_activities: Dict[int, List[Dict[str, Any]]] = defaultdict(list)
+        self.file_activities: dict[str, list[dict[str, Any]]] = defaultdict(list)
+        self.process_activities: dict[int, list[dict[str, Any]]] = defaultdict(list)
 
         # Analysis cache
-        self.analysis_cache: Dict[str, HeuristicResult] = {}
-        self.cache_expiry: Dict[str, datetime] = {}
+        self.analysis_cache: dict[str, HeuristicResult] = {}
+        self.cache_expiry: dict[str, datetime] = {}
 
         # Performance settings
         self.max_file_size = 100 * 1024 * 1024  # 100MB
@@ -337,9 +335,8 @@ class HeuristicAnalysisEngine:
 
         self.suspicious_strings.update(suspicious_patterns)
 
-    async def analyze_file(self, file_path: str) -> List[HeuristicResult]:
-        """
-        Perform comprehensive heuristic analysis on a file.
+    async def analyze_file(self, file_path: str) -> list[HeuristicResult]:
+        """Perform comprehensive heuristic analysis on a file.
 
         Args:
             file_path: Path to file to analyze
@@ -393,7 +390,7 @@ class HeuristicAnalysisEngine:
                         if result.risk_level.value >= RiskLevel.MEDIUM.value:
                             self._cache_result(file_hash, result)
 
-            except asyncio.TimeoutError:
+            except TimeoutError:
                 self.logwarning(
                     "Heuristic analysis timeout for %s".replace(
                         "%s", "{file_path}"
@@ -414,7 +411,7 @@ class HeuristicAnalysisEngine:
             )
             return []
 
-    async def _entropy_analysis(self, file_path: str) -> Optional[HeuristicResult]:
+    async def _entropy_analysis(self, file_path: str) -> HeuristicResult | None:
         """Analyze file entropy to detect packed/encrypted content."""
         try:
             file_path_obj = Path(file_path)
@@ -492,7 +489,7 @@ class HeuristicAnalysisEngine:
             )
             return None
 
-    async def _pattern_analysis(self, file_path: str) -> Optional[HeuristicResult]:
+    async def _pattern_analysis(self, file_path: str) -> HeuristicResult | None:
         """Analyze file for known malicious patterns."""
         try:
             file_path_obj = Path(file_path)
@@ -562,7 +559,7 @@ class HeuristicAnalysisEngine:
             )
             return None
 
-    async def _structural_analysis(self, file_path: str) -> Optional[HeuristicResult]:
+    async def _structural_analysis(self, file_path: str) -> HeuristicResult | None:
         """Analyze file structure for anomalies."""
         try:
             file_path_obj = Path(file_path)
@@ -643,7 +640,7 @@ class HeuristicAnalysisEngine:
             )
             return None
 
-    async def _metadata_analysis(self, file_path: str) -> Optional[HeuristicResult]:
+    async def _metadata_analysis(self, file_path: str) -> HeuristicResult | None:
         """Analyze file metadata for suspicious characteristics."""
         try:
             file_path_obj = Path(file_path)
@@ -735,7 +732,7 @@ class HeuristicAnalysisEngine:
             )
             return None
 
-    async def _string_analysis(self, file_path: str) -> Optional[HeuristicResult]:
+    async def _string_analysis(self, file_path: str) -> HeuristicResult | None:
         """Analyze strings in file for suspicious content."""
         try:
             threat_indicators = []
@@ -847,8 +844,8 @@ class HeuristicAnalysisEngine:
             return None
 
     def analyze_behavioral_pattern(
-        self, activities: List[Dict[str, Any]]
-    ) -> List[HeuristicResult]:
+        self, activities: list[dict[str, Any]]
+    ) -> list[HeuristicResult]:
         """Analyze behavioral patterns from system activities."""
         try:
             results = []
@@ -914,7 +911,7 @@ class HeuristicAnalysisEngine:
 
         return entropy
 
-    def _calculate_variance(self, values: List[float]) -> float:
+    def _calculate_variance(self, values: list[float]) -> float:
         """Calculate variance of values."""
         if len(values) < 2:
             return 0.0
@@ -937,7 +934,7 @@ class HeuristicAnalysisEngine:
         except Exception:
             return False
 
-    def _detect_suspicious_patterns(self, data: bytes) -> List[str]:
+    def _detect_suspicious_patterns(self, data: bytes) -> list[str]:
         """Detect suspicious byte patterns in data."""
         patterns = []
 
@@ -963,7 +960,7 @@ class HeuristicAnalysisEngine:
 
         return patterns
 
-    def _check_pe_anomalies(self, header: bytes, file_obj) -> List[str]:
+    def _check_pe_anomalies(self, header: bytes, file_obj) -> list[str]:
         """Check for PE file anomalies."""
         anomalies = []
 
@@ -996,7 +993,7 @@ class HeuristicAnalysisEngine:
 
         return anomalies
 
-    def _check_elf_anomalies(self, header: bytes) -> List[str]:
+    def _check_elf_anomalies(self, header: bytes) -> list[str]:
         """Check for ELF file anomalies."""
         anomalies = []
 
@@ -1017,7 +1014,7 @@ class HeuristicAnalysisEngine:
 
         return anomalies
 
-    def _check_script_threats(self, header: bytes) -> List[str]:
+    def _check_script_threats(self, header: bytes) -> list[str]:
         """Check for threats in script files."""
         threats = []
 
@@ -1072,7 +1069,7 @@ class HeuristicAnalysisEngine:
 
         return True  # Unknown extension, assume valid
 
-    def _extract_strings(self, data: bytes, min_length: int = 4) -> List[str]:
+    def _extract_strings(self, data: bytes, min_length: int = 4) -> list[str]:
         """Extract ASCII strings from binary data."""
         strings = []
         current_string = ""
@@ -1092,8 +1089,8 @@ class HeuristicAnalysisEngine:
         return strings
 
     def _group_activities_by_time(
-        self, activities: List[Dict[str, Any]], window_minutes: int = 5
-    ) -> Dict[datetime, List[Dict[str, Any]]]:
+        self, activities: list[dict[str, Any]], window_minutes: int = 5
+    ) -> dict[datetime, list[dict[str, Any]]]:
         """Group activities into time windows."""
         windows = defaultdict(list)
         timedelta(minutes=window_minutes)
@@ -1115,7 +1112,7 @@ class HeuristicAnalysisEngine:
         return windows
 
     def _evaluate_behavioral_pattern(
-        self, pattern: BehavioralPattern, activities: List[Dict[str, Any]]
+        self, pattern: BehavioralPattern, activities: list[dict[str, Any]]
     ) -> float:
         """Evaluate how well activities match a behavioral pattern."""
         if not activities:
@@ -1139,7 +1136,7 @@ class HeuristicAnalysisEngine:
         return matched_indicators / total_indicators
 
     def _activity_matches_indicator(
-        self, activity: Dict[str, Any], indicator: str
+        self, activity: dict[str, Any], indicator: str
     ) -> bool:
         """Check if an activity matches a behavioral indicator."""
         activity_type = activity.get("type", "").lower()
@@ -1154,7 +1151,7 @@ class HeuristicAnalysisEngine:
 
     def _pattern_to_threat_indicators(
         self, pattern: BehavioralPattern
-    ) -> List[ThreatIndicator]:
+    ) -> list[ThreatIndicator]:
         """Convert behavioral pattern to threat indicators."""
         # Mapping from pattern indicators to threat indicators
         indicator_mapping = {
@@ -1177,7 +1174,7 @@ class HeuristicAnalysisEngine:
         return list(set(threat_indicators))  # Remove duplicates
 
     def _calculate_risk_level(
-        self, threat_indicators: List[ThreatIndicator], confidence: float
+        self, threat_indicators: list[ThreatIndicator], confidence: float
     ) -> RiskLevel:
         """Calculate overall risk level based on threat indicators and confidence."""
         if not threat_indicators:
@@ -1226,7 +1223,7 @@ class HeuristicAnalysisEngine:
         except Exception:
             return ""
 
-    def _get_cached_result(self, file_hash: str) -> Optional[HeuristicResult]:
+    def _get_cached_result(self, file_hash: str) -> HeuristicResult | None:
         """Get cached analysis result."""
         with self.lock:
             if file_hash in self.analysis_cache:
@@ -1298,7 +1295,7 @@ class HeuristicAnalysisEngine:
                 )
             )
 
-    def get_analysis_statistics(self) -> Dict[str, Any]:
+    def get_analysis_statistics(self) -> dict[str, Any]:
         """Get analysis engine statistics."""
         try:
             conn = sqlite3.connect(self.db_path)

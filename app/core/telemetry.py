@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""
-Anonymous telemetry module for xanadOS Search & Destroy
+"""Anonymous telemetry module for xanadOS Search & Destroy
 Collects usage analytics while preserving privacy
 """
 
@@ -16,7 +15,7 @@ import uuid
 from dataclasses import asdict, dataclass
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any
 
 from app.utils.config import CACHE_DIR
 
@@ -28,7 +27,7 @@ class TelemetryEvent:
     event_type: str
     timestamp: float
     session_id: str
-    data: Dict[str, Any]
+    data: dict[str, Any]
     privacy_level: str = "anonymous"  # anonymous, aggregated, detailed
 
 
@@ -46,7 +45,7 @@ class PrivacyManager:
                 salt_file = Path(CACHE_DIR) / "telemetry_salt"
 
                 if salt_file.exists():
-                    with open(salt_file, "r") as f:
+                    with open(salt_file) as f:
                         self._salt = f.read().strip()
                 else:
                     self._salt = str(uuid.uuid4())
@@ -76,7 +75,7 @@ class PrivacyManager:
 
         return f"path_{dir_hash}{extension}"
 
-    def anonymize_user_data(self, data: Dict[str, Any]) -> Dict[str, Any]:
+    def anonymize_user_data(self, data: dict[str, Any]) -> dict[str, Any]:
         """Remove or anonymize personally identifiable information."""
         anonymized = {}
 
@@ -146,8 +145,8 @@ class TelemetryCollector:
     def record_event(
         self,
         event_type: str,
-        data: Optional[Dict[str, Any]] = None,
-        privacy_level: Optional[str] = None,
+        data: dict[str, Any] | None = None,
+        privacy_level: str | None = None,
     ):
         """Record a telemetry event."""
         if not self.enabled:
@@ -185,7 +184,7 @@ class TelemetryCollector:
         except Exception as e:
             self.logger.error(f"Failed to record telemetry event: {e}")
 
-    def _update_counters(self, event_type: str, data: Dict[str, Any]):
+    def _update_counters(self, event_type: str, data: dict[str, Any]):
         """Update aggregated counters."""
         with self.events_lock:
             if event_type == "scan_completed":
@@ -249,7 +248,7 @@ class TelemetryCollector:
         except Exception as e:
             self.logger.error(f"Failed to flush telemetry events: {e}")
 
-    def get_session_summary(self) -> Dict[str, Any]:
+    def get_session_summary(self) -> dict[str, Any]:
         """Get summary of current session."""
         with self.events_lock:
             return {
@@ -289,7 +288,7 @@ class TelemetryCollector:
         except Exception as e:
             self.logger.error(f"Failed to export telemetry summary: {e}")
 
-    def _get_anonymous_system_info(self) -> Dict[str, Any]:
+    def _get_anonymous_system_info(self) -> dict[str, Any]:
         """Get anonymous system information for analytics."""
         info = {
             "platform": "unknown",
@@ -303,7 +302,7 @@ class TelemetryCollector:
 
             # Try to get app version
             try:
-                with open(Path(__file__).parent.parent.parent / "VERSION", "r") as f:
+                with open(Path(__file__).parent.parent.parent / "VERSION") as f:
                     info["app_version"] = f.read().strip()
             except FileNotFoundError:
                 pass
@@ -323,7 +322,7 @@ class TelemetryCollector:
 class TelemetryManager:
     """High-level telemetry management."""
 
-    def __init__(self, config: Optional[Dict[str, Any]] = None):
+    def __init__(self, config: dict[str, Any] | None = None):
         self.config = config or {}
 
         # Initialize telemetry based on configuration
@@ -377,7 +376,7 @@ class TelemetryManager:
             "gui_interaction", {"component": component, "action": action}
         )
 
-    def record_performance_metrics(self, metrics: Dict[str, Any]):
+    def record_performance_metrics(self, metrics: dict[str, Any]):
         """Record performance metrics."""
         self.collector.record_event("performance_metrics", metrics)
 
@@ -392,7 +391,7 @@ class TelemetryManager:
             },
         )
 
-    def get_privacy_settings(self) -> Dict[str, Any]:
+    def get_privacy_settings(self) -> dict[str, Any]:
         """Get current privacy settings."""
         return {
             "enabled": self.collector.enabled,
@@ -424,7 +423,7 @@ class TelemetryManager:
 _telemetry_manager = None
 
 
-def get_telemetry_manager(config: Optional[Dict[str, Any]] = None) -> TelemetryManager:
+def get_telemetry_manager(config: dict[str, Any] | None = None) -> TelemetryManager:
     """Get or create global telemetry manager."""
     global _telemetry_manager
     if _telemetry_manager is None:
@@ -432,7 +431,7 @@ def get_telemetry_manager(config: Optional[Dict[str, Any]] = None) -> TelemetryM
     return _telemetry_manager
 
 
-def initialize_telemetry(config: Optional[Dict[str, Any]] = None):
+def initialize_telemetry(config: dict[str, Any] | None = None):
     """Initialize global telemetry system."""
     return get_telemetry_manager(config)
 
@@ -461,7 +460,7 @@ def record_gui_action(component: str, action: str):
     get_telemetry_manager().record_gui_interaction(component, action)
 
 
-def record_performance(metrics: Dict[str, Any]):
+def record_performance(metrics: dict[str, Any]):
     """Record performance metrics."""
     get_telemetry_manager().record_performance_metrics(metrics)
 

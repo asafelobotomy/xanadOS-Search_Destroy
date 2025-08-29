@@ -1,22 +1,21 @@
 #!/usr/bin/env python3
-"""
-Simple privilege escalation for xanadOS Search & Destroy.
+"""Simple privilege escalation for xanadOS Search & Destroy.
 Simplified version without complex session management.
 """
 
 import logging
 import os
 import subprocess
-from typing import Optional, Sequence
+from collections.abc import Sequence
 
 logger = logging.getLogger(__name__)
 
 
-def _which(name: str) -> Optional[str]:
+def _which(name: str) -> str | None:
     """Find executable in PATH."""
     try:
         result = subprocess.run(
-            ["which", name], capture_output=True, text=True, timeout=5
+            ["which", name], check=False, capture_output=True, text=True, timeout=5
         )
         return result.stdout.strip() if result.returncode == 0 else None
     except Exception:
@@ -50,8 +49,7 @@ def elevated_run(
     text: bool = True,
     gui: bool = True,
 ) -> subprocess.CompletedProcess:
-    """
-    Run command with elevated privileges using persistent GUI authentication.
+    """Run command with elevated privileges using persistent GUI authentication.
 
     Args:
         argv: Command to run (without sudo/pkexec prefix)
@@ -98,9 +96,7 @@ def _simple_legacy_elevated_run(
     text: bool = True,
     gui: bool = True,
 ) -> subprocess.CompletedProcess:
-    """
-    Legacy simple privilege escalation fallback method.
-    """
+    """Legacy simple privilege escalation fallback method."""
     # Find available privilege escalation tools
     sudo = _which("sudo")
     pkexec = _which("pkexec") if gui else None
@@ -148,7 +144,12 @@ def _simple_legacy_elevated_run(
         try:
             logger.info(f"Trying {method_name}: {' '.join(cmd[:3])}...")
             result = subprocess.run(
-                cmd, timeout=timeout, capture_output=capture_output, text=text, env=env
+                cmd,
+                check=False,
+                timeout=timeout,
+                capture_output=capture_output,
+                text=text,
+                env=env,
             )
 
             if result.returncode == 0:
@@ -171,8 +172,7 @@ def _simple_legacy_elevated_run(
 
 
 def validate_auth_session() -> bool:
-    """
-    Validate authentication session using GUI authentication manager.
+    """Validate authentication session using GUI authentication manager.
 
     Returns:
         True if authentication works, False otherwise

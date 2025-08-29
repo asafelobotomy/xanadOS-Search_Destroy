@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""
-System Hardening GUI Components
+"""System Hardening GUI Components
 xanadOS Search & Destroy - Enhanced Security Interface
 This module provides GUI components for displaying system hardening
 status, security compliance scores, and hardening recommendations.
@@ -212,7 +211,7 @@ class SecurityFeatureTable(QTableWidget):
 
         # Remove custom styling - let global theme handle it
 
-    def populate_features(self, features: List[SecurityFeature]):
+    def populate_features(self, features: list[SecurityFeature]):
         """Populate table with security features using optimized space-efficient presentation"""
         self.setRowCount(len(features))
         theme = get_theme_manager()
@@ -301,18 +300,17 @@ class SecurityFeatureTable(QTableWidget):
         }
         return name_mapping.get(technical_name, technical_name)
 
-    def _get_compact_status(self, feature: SecurityFeature) -> Tuple[str, str, str]:
+    def _get_compact_status(self, feature: SecurityFeature) -> tuple[str, str, str]:
         """Get compact status display with visual indicators"""
         if feature.enabled:
             return "✅ Protected", "#2d5016", "#e8f5e8"  # Green text, light green bg
+        # Use severity to determine urgency level
+        elif feature.severity in ["critical", "high"]:
+            return "❌ Vulnerable", "#721c24", "#f8d7da"  # Red text, light red bg
         else:
-            # Use severity to determine urgency level
-            if feature.severity in ["critical", "high"]:
-                return "❌ Vulnerable", "#721c24", "#f8d7da"  # Red text, light red bg
-            else:
-                return "⚠️ At Risk", "#8b4513", "#fff3cd"  # Brown text, light yellow bg
+            return "⚠️ At Risk", "#8b4513", "#fff3cd"  # Brown text, light yellow bg
 
-    def _get_compact_impact(self, severity: str) -> Tuple[str, str]:
+    def _get_compact_impact(self, severity: str) -> tuple[str, str]:
         """Get compact impact level display"""
         severity_colors = {
             "critical": ("#721c24", "🔴 Critical"),  # Dark red
@@ -345,15 +343,14 @@ class SecurityFeatureTable(QTableWidget):
         """Get user-friendly status with visual indicators"""
         if feature.enabled:
             return "✅ Protected", "#2e7d32", "#e8f5e8"  # Green
+        elif feature.severity == "critical":
+            return "❌ Vulnerable", "#d32f2f", "#ffebee"  # Red
+        elif feature.severity == "high":
+            return "⚠️ At Risk", "#f57c00", "#fff3e0"  # Orange
+        elif feature.severity == "medium":
+            return "⚠️ Needs Attention", "#f9a825", "#fffde7"  # Yellow
         else:
-            if feature.severity == "critical":
-                return "❌ Vulnerable", "#d32f2f", "#ffebee"  # Red
-            elif feature.severity == "high":
-                return "⚠️ At Risk", "#f57c00", "#fff3e0"  # Orange
-            elif feature.severity == "medium":
-                return "⚠️ Needs Attention", "#f9a825", "#fffde7"  # Yellow
-            else:
-                return "ℹ️ Optional", "#1976d2", "#e3f2fd"  # Blue
+            return "ℹ️ Optional", "#1976d2", "#e3f2fd"  # Blue
 
     def _get_impact_level_display(self, severity: str) -> tuple:
         """Convert technical severity to user-friendly impact level"""
@@ -452,7 +449,7 @@ class HardeningRecommendationsWidget(ThemedWidgetMixin, QWidget):
         self.recommendations_text.setMaximumHeight(400)
         layout.addWidget(self.recommendations_text)
 
-    def update_recommendations(self, recommendations: List[str]):
+    def update_recommendations(self, recommendations: list[str]):
         """Update the recommendations display"""
         if not recommendations:
             self.recommendations_text.setHtml(
@@ -660,13 +657,13 @@ class SystemHardeningTab(ThemedWidgetMixin, QWidget):
             self.worker.deleteLater()
             self.worker = None
 
-    def _get_fixable_issues(self, report: HardeningReport) -> List[SecurityFeature]:
+    def _get_fixable_issues(self, report: HardeningReport) -> list[SecurityFeature]:
         """Get list of security features that can be automatically fixed"""
         fixable_issues = []
 
         # Detect distribution for platform-specific fixes
         try:
-            with open("/etc/os-release", "r") as f:
+            with open("/etc/os-release") as f:
                 content = f.read().lower()
                 if "id=arch" in content:
                     pass
@@ -771,7 +768,7 @@ Do you want to proceed?"""
             name = "Kernel Lockdown"
         return name
 
-    def _apply_security_fixes(self, fixable_issues: List[SecurityFeature]):
+    def _apply_security_fixes(self, fixable_issues: list[SecurityFeature]):
         """Apply security fixes using elevated privileges"""
         self.fix_button.setEnabled(False)
         self.fix_button.setText("Applying Fixes...")
@@ -788,7 +785,7 @@ Do you want to proceed?"""
                     failed_fixes.append(issue.name)
             except Exception as e:
                 logger.error(f"Failed to apply fix for {issue.name}: {e}")
-                failed_fixes.append(f"{issue.name} ({str(e)})")
+                failed_fixes.append(f"{issue.name} ({e!s})")
 
         # Show results with themed dialogs
         if success_count > 0:
@@ -944,7 +941,7 @@ Do you want to proceed?"""
 
             for lockdown_file in lockdown_files:
                 try:
-                    with open(lockdown_file, "r") as f:
+                    with open(lockdown_file) as f:
                         content = f.read().strip()
                         if "[integrity]" in content:
                             current_status = "integrity"
@@ -1361,7 +1358,7 @@ Some applications may require reboot to fully activate AppArmor protection."""
                 return True
 
             # Check kernel boot parameters
-            with open("/proc/cmdline", "r") as f:
+            with open("/proc/cmdline") as f:
                 cmdline = f.read()
                 if "apparmor=1" in cmdline or "security=apparmor" in cmdline:
                     return True
@@ -1382,7 +1379,7 @@ Some applications may require reboot to fully activate AppArmor protection."""
         """Get distribution information for package management"""
         try:
             distro_info = []
-            with open("/etc/os-release", "r") as f:
+            with open("/etc/os-release") as f:
                 for line in f:
                     if line.startswith("ID=") or line.startswith("ID_LIKE="):
                         distro_info.append(line.strip().lower())
@@ -1394,7 +1391,7 @@ Some applications may require reboot to fully activate AppArmor protection."""
 class FixSelectionDialog(ThemedWidgetMixin, QDialog):
     """Dialog for selecting which security fixes to apply"""
 
-    def __init__(self, fixable_issues: List[SecurityFeature], parent=None):
+    def __init__(self, fixable_issues: list[SecurityFeature], parent=None):
         super().__init__(parent)
         self.fixable_issues = fixable_issues
         self.selected_fixes = []
@@ -1556,7 +1553,7 @@ class FixSelectionDialog(ThemedWidgetMixin, QDialog):
             )
             self.ok_button.setEnabled(True)
 
-    def get_selected_fixes(self) -> List[SecurityFeature]:
+    def get_selected_fixes(self) -> list[SecurityFeature]:
         """Get the list of selected fixes"""
         selected = []
         for i, checkbox in enumerate(self.checkboxes):

@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""
-Enhanced Scan Results Formatter for xanadOS Search & Destroy
+"""Enhanced Scan Results Formatter for xanadOS Search & Destroy
 Provides improved readability and organization for scan output.
 """
 
@@ -8,7 +7,7 @@ import os
 from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 
 class ScanResultType(Enum):
@@ -26,14 +25,13 @@ class FormattedScanSection:
     """A formatted section of scan results."""
 
     title: str
-    content: List[str]
+    content: list[str]
     section_type: str
     priority: int = 0
 
 
 class ModernScanResultsFormatter:
-    """
-    Modern, user-friendly formatter for scan results.
+    """Modern, user-friendly formatter for scan results.
     Focuses on readability, organization, and visual hierarchy.
     """
 
@@ -67,8 +65,8 @@ class ModernScanResultsFormatter:
         }
 
     def format_scan_header(
-        self, scan_type: str, timestamp: Optional[str] = None
-    ) -> List[str]:
+        self, scan_type: str, timestamp: str | None = None
+    ) -> list[str]:
         """Create a clean, professional scan header."""
         if not timestamp:
             timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -83,7 +81,7 @@ class ModernScanResultsFormatter:
         ]
         return header
 
-    def format_scan_configuration(self, config: Dict[str, Any]) -> List[str]:
+    def format_scan_configuration(self, config: dict[str, Any]) -> list[str]:
         """Format scan configuration in a clean, organized way."""
         if not config:
             return []
@@ -117,7 +115,7 @@ class ModernScanResultsFormatter:
 
         return lines
 
-    def format_rkhunter_output(self, raw_output: str) -> List[str]:
+    def format_rkhunter_output(self, raw_output: str) -> list[str]:
         """Format RKHunter output with improved organization and readability."""
         lines = raw_output.split("\n")
         formatted_lines = []
@@ -200,8 +198,8 @@ class ModernScanResultsFormatter:
         return formatted_lines
 
     def _format_check_section(
-        self, section_name: str, items: List[tuple], stats: Dict
-    ) -> List[str]:
+        self, section_name: str, items: list[tuple], stats: dict
+    ) -> list[str]:
         """Format a section of RKHunter checks with grouped results."""
         if not items:
             return []
@@ -258,7 +256,7 @@ class ModernScanResultsFormatter:
 
         return section_lines
 
-    def _format_rkhunter_summary(self, stats: Dict) -> List[str]:
+    def _format_rkhunter_summary(self, stats: dict) -> list[str]:
         """Create a comprehensive but concise summary."""
         summary_lines = [
             "",
@@ -313,7 +311,7 @@ class ModernScanResultsFormatter:
         duration: float,
         files_scanned: int = 0,
         threats_found: int = 0,
-    ) -> List[str]:
+    ) -> list[str]:
         """Create a clean scan completion summary."""
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
@@ -404,7 +402,6 @@ class ModernScanResultsFormatter:
 
     def _format_path(self, path: str) -> str:
         """Format file paths for better readability."""
-
         path_str = str(path)
 
         # Replace home directory with ~
@@ -415,8 +412,8 @@ class ModernScanResultsFormatter:
         return path_str
 
     def format_combined_scan_summary(
-        self, rkhunter_results: Dict, clamav_results: Dict
-    ) -> List[str]:
+        self, rkhunter_results: dict, clamav_results: dict
+    ) -> list[str]:
         """Create a unified summary for combined scans."""
         summary_lines = [
             "",

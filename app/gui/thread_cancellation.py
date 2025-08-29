@@ -23,13 +23,13 @@ class CancellationMetric:
     graceful: bool
 
 
-_CANCELLATION_METRICS: List[CancellationMetric] = []
+_CANCELLATION_METRICS: list[CancellationMetric] = []
 _METRICS_LOCK = threading.Lock()
 
 
 class CooperativeCancellationMixin:
-    cancellation_requested_at: Optional[float] = None
-    cancellation_finished_at: Optional[float] = None
+    cancellation_requested_at: float | None = None
+    cancellation_finished_at: float | None = None
     _cancellation_name: str = "thread"
     _graceful_flag: bool = False
 
@@ -67,18 +67,18 @@ class CooperativeCancellationMixin:
             self.cancellation_finished_at = time.time()
             self._register_cancellation_metric()
 
-    def cancellation_latency(self) -> Optional[float]:
+    def cancellation_latency(self) -> float | None:
         if self.cancellation_requested_at and self.cancellation_finished_at:
             return self.cancellation_finished_at - self.cancellation_requested_at
         return None
 
     @staticmethod
-    def all_cancellation_metrics() -> List[CancellationMetric]:
+    def all_cancellation_metrics() -> list[CancellationMetric]:
         with _METRICS_LOCK:
             return list(_CANCELLATION_METRICS)
 
 
 __all__ = [
-    "CooperativeCancellationMixin",
     "CancellationMetric",
+    "CooperativeCancellationMixin",
 ]

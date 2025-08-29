@@ -9,8 +9,8 @@ import logging
 import os
 import signal
 import time
+from collections.abc import Sequence
 from dataclasses import dataclass
-from typing import Sequence
 
 logger = logging.getLogger(__name__)
 
@@ -153,4 +153,4 @@ def kill_sequence(
     return KillResult(False, escalated, all_attempts, last_err)
 
 
-__all__ = ["safe_kill", "kill_sequence", "KillResult"]
+__all__ = ["KillResult", "kill_sequence", "safe_kill"]

@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""
-Unified Authentication Session Manager
+"""Unified Authentication Session Manager
 xanadOS Search & Destroy - Global Authentication Caching
 This module provides a singleton authentication session manager that all
 components can use to reduce password prompts throughout the application.
@@ -19,7 +18,7 @@ import subprocess
 import threading
 from contextlib import contextmanager
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -42,10 +41,10 @@ class AuthenticationSessionManager:
             return
 
         self._session_lock = threading.RLock()
-        self._active_sessions: Dict[str, datetime] = {}
+        self._active_sessions: dict[str, datetime] = {}
         self._session_timeout = 300  # 5 minutes in seconds
         self._global_session_active = False
-        self._global_session_start: Optional[datetime] = None
+        self._global_session_start: datetime | None = None
         self._initialized = True
 
         logger.debug("Authentication session manager initialized")
@@ -137,10 +136,9 @@ class AuthenticationSessionManager:
                 )
 
     def try_passwordless_sudo(
-        self, cmd: List[str], timeout: int = 30
-    ) -> Optional[subprocess.CompletedProcess]:
-        """
-        Attempt to run a command with passwordless sudo if we have an active session
+        self, cmd: list[str], timeout: int = 30
+    ) -> subprocess.CompletedProcess | None:
+        """Attempt to run a command with passwordless sudo if we have an active session
 
         Returns:
             CompletedProcess if successful, None if authentication required
@@ -155,7 +153,11 @@ class AuthenticationSessionManager:
 
         try:
             result = subprocess.run(
-                ["sudo", "-n"] + cmd, capture_output=True, text=True, timeout=timeout
+                ["sudo", "-n"] + cmd,
+                check=False,
+                capture_output=True,
+                text=True,
+                timeout=timeout,
             )
 
             if result.returncode == 0:
@@ -180,15 +182,14 @@ class AuthenticationSessionManager:
 
     def execute_elevated_command(
         self,
-        cmd: List[str],
+        cmd: list[str],
         timeout: int = 300,
         capture_output: bool = True,
         text: bool = True,
         session_type: str = "global",
         operation: str = "command",
     ) -> subprocess.CompletedProcess:
-        """
-        Execute a command with elevated privileges using session management
+        """Execute a command with elevated privileges using session management
 
         This is the main method that components should use for elevated commands.
         It handles session management automatically and reduces password prompts.
@@ -234,8 +235,7 @@ class AuthenticationSessionManager:
         content: str = None,
         session_type: str = "global",
     ) -> Any:
-        """
-        Execute file operations (read/write) with elevated privileges using session management
+        """Execute file operations (read/write) with elevated privileges using session management
 
         Args:
             operation: "read" or "write"
@@ -296,8 +296,7 @@ class AuthenticationSessionManager:
     def session_context(
         self, session_type: str = "global", operation: str = "batch_operation"
     ):
-        """
-        Context manager for batch operations that should share authentication
+        """Context manager for batch operations that should share authentication
 
         Usage:
             with auth_manager.session_context("rkhunter_optimization", "RKHunter setup"):
@@ -313,7 +312,7 @@ class AuthenticationSessionManager:
         finally:
             self.end_session(session_type)
 
-    def get_session_status(self) -> Dict[str, Any]:
+    def get_session_status(self) -> dict[str, Any]:
         """Get current session status for debugging"""
         with self._session_lock:
             status = {
@@ -350,7 +349,7 @@ def is_session_valid(session_type: str = "global") -> bool:
 
 
 def execute_elevated_command(
-    cmd: List[str],
+    cmd: list[str],
     timeout: int = 300,
     session_type: str = "global",
     operation: str = "command",

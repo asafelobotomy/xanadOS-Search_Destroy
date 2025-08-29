@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""
-Non-Invasive Status Monitoring System
+"""Non-Invasive Status Monitoring System
 Extends the successful firewall solution to all other system status checks
 """
 
@@ -11,7 +10,6 @@ import time
 from dataclasses import asdict, dataclass
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, Optional
 
 # Import secure subprocess without requiring elevated privileges
 try:
@@ -33,15 +31,14 @@ class SystemStatus:
     clamav_available: bool
     clamav_version: str
     virus_definitions_age: int  # days since last update
-    system_services: Dict[str, str]  # service_name: status
+    system_services: dict[str, str]  # service_name: status
     firewall_status: str
-    last_activity: Optional[datetime]
+    last_activity: datetime | None
     cache_valid: bool
 
 
 class NonInvasiveSystemMonitor:
-    """
-    System-wide non-invasive status monitoring
+    """System-wide non-invasive status monitoring
     Uses the same principles as the successful firewall solution:
     1. Activity-based caching with time limits
     2. Multiple detection methods without sudo
@@ -51,8 +48,8 @@ class NonInvasiveSystemMonitor:
 
     def __init__(self, cache_duration: int = 300):  # 5 minutes default
         self.cache_duration = cache_duration
-        self._status_cache: Optional[SystemStatus] = None
-        self._cache_time: Optional[float] = None
+        self._status_cache: SystemStatus | None = None
+        self._cache_time: float | None = None
         self._lock = threading.Lock()
 
         # Cache file for persistent status across app sessions
@@ -65,7 +62,7 @@ class NonInvasiveSystemMonitor:
         """Load cached status from disk"""
         try:
             if self.cache_file.exists():
-                with open(self.cache_file, "r") as f:
+                with open(self.cache_file) as f:
                     data = json.load(f)
 
                 # Check if cache is still valid (within cache_duration)
@@ -112,8 +109,7 @@ class NonInvasiveSystemMonitor:
             print(f"⚠️ Error saving persistent cache: {e}")
 
     def get_system_status(self, force_refresh: bool = False) -> SystemStatus:
-        """
-        Get comprehensive system status using non-invasive methods
+        """Get comprehensive system status using non-invasive methods
 
         Args:
             force_refresh: If True, bypass cache and get fresh status
@@ -153,7 +149,6 @@ class NonInvasiveSystemMonitor:
 
     def _collect_fresh_status(self) -> SystemStatus:
         """Collect fresh system status using only non-invasive methods"""
-
         # RKHunter status (non-invasive)
         rkhunter_available, rkhunter_version = self._check_rkhunter_non_invasive()
 
@@ -236,7 +231,7 @@ class NonInvasiveSystemMonitor:
 
         except Exception as e:
             print(f"⚠️ Error checking RKHunter: {e}")
-            return False, f"Error: {str(e)}"
+            return False, f"Error: {e!s}"
 
     def _check_clamav_non_invasive(self) -> tuple[bool, str]:
         """Check ClamAV availability without requiring sudo"""
@@ -282,7 +277,7 @@ class NonInvasiveSystemMonitor:
 
         except Exception as e:
             print(f"⚠️ Error checking ClamAV: {e}")
-            return False, f"Error: {str(e)}"
+            return False, f"Error: {e!s}"
 
     def _check_virus_definitions_age(self) -> int:
         """Check virus definitions age without requiring sudo"""
@@ -312,7 +307,7 @@ class NonInvasiveSystemMonitor:
             print(f"⚠️ Error checking virus definitions age: {e}")
             return -1
 
-    def _check_system_services_non_invasive(self) -> Dict[str, str]:
+    def _check_system_services_non_invasive(self) -> dict[str, str]:
         """Check system services status without requiring sudo"""
         services = {}
 
@@ -335,7 +330,7 @@ class NonInvasiveSystemMonitor:
                     services[service] = "inactive"
 
             except Exception as e:
-                services[service] = f"error: {str(e)}"
+                services[service] = f"error: {e!s}"
 
         return services
 
@@ -381,7 +376,7 @@ class NonInvasiveSystemMonitor:
 
         except Exception as e:
             print(f"⚠️ Error checking firewall: {e}")
-            return f"error: {str(e)}"
+            return f"error: {e!s}"
 
     def record_user_activity(self, activity_type: str, details: str = ""):
         """Record user activity to improve status caching"""

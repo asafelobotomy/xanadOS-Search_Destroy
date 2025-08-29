@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""
-Background scanner for continuous monitoring
+"""Background scanner for continuous monitoring
 Performs scheduled scans and processes file system events
 """
 
@@ -9,11 +8,12 @@ import logging
 import tempfile
 import threading
 import time
+from collections.abc import Callable
 from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
 from queue import Empty, Queue
-from typing import Any, Callable, Dict, List, Optional, Set
+from typing import Any
 
 try:
     import schedule  # type: ignore
@@ -40,11 +40,11 @@ except ImportError:  # pragma: no cover - env dependent
         def day(self):
             return self
 
-        def do(self, _func, *_, **__):  # noqa: D401 - mimic schedule API
+        def do(self, _func, *_, **__):
             return self
 
     class _NoOpScheduler:
-        def every(self, *_args, **_kwargs):  # noqa: D401 - mimic schedule API
+        def every(self, *_args, **_kwargs):
             return _NoOpJob()
 
         def run_pending(self):
@@ -102,7 +102,7 @@ class ScanTask:
     file_path: str
     priority: ScanPriority
     timestamp: float
-    event_type: Optional[WatchEventType] = None
+    event_type: WatchEventType | None = None
     retry_count: int = 0
     max_retries: int = 3
 
@@ -114,7 +114,7 @@ class ScanTask:
 class BackgroundScanner:
     """Background scanner that processes file system events and performs scheduled scans."""
 
-    def __init__(self, file_scanner: Optional[ClamAVWrapper] = None):
+    def __init__(self, file_scanner: ClamAVWrapper | None = None):
         """Initialize background scanner.
 
         Args:
@@ -125,12 +125,12 @@ class BackgroundScanner:
 
         # Task management
         self.scan_queue: Queue[ScanTask] = Queue()
-        self.active_scans: Set[str] = set()
-        self.scan_results: Dict[str, Any] = {}
+        self.active_scans: set[str] = set()
+        self.scan_results: dict[str, Any] = {}
 
         # Threading
         self.running = False
-        self.worker_threads: List[threading.Thread] = []
+        self.worker_threads: list[threading.Thread] = []
         self.num_workers = 2
 
         # Scheduling
@@ -140,11 +140,11 @@ class BackgroundScanner:
                 "Python 'schedule' package not installed; background scan schedules disabled. "
                 "Install with: pip install --user schedule"
             )
-        self.scheduler_thread: Optional[threading.Thread] = None
+        self.scheduler_thread: threading.Thread | None = None
 
         # Event callbacks
-        self.result_callback: Optional[Callable[[str, Any], None]] = None
-        self.threat_callback: Optional[Callable[[str, str], None]] = None
+        self.result_callback: Callable[[str, Any], None] | None = None
+        self.threat_callback: Callable[[str, str], None] | None = None
 
         # Performance monitoring
         self.scans_completed = 0
@@ -154,7 +154,7 @@ class BackgroundScanner:
         # Configuration
         self.scan_timeout = 30.0  # seconds
         self.max_concurrent_scans = 3
-        self.immediate_scan_extensions: Set[str] = {
+        self.immediate_scan_extensions: set[str] = {
             ".exe",
             ".dll",
             ".bat",
@@ -166,19 +166,19 @@ class BackgroundScanner:
         self._setup_scheduled_tasks()
 
     # --- Logger helper methods for consistent callsites (used across modules) ---
-    def loginfo(self, message: str):  # noqa: D401 - thin wrapper
+    def loginfo(self, message: str):
         """Info-level log wrapper."""
         self.logger.info("%s", message)
 
-    def logdebug(self, message: str):  # noqa: D401 - thin wrapper
+    def logdebug(self, message: str):
         """Debug-level log wrapper."""
         self.logger.debug("%s", message)
 
-    def logwarning(self, message: str):  # noqa: D401 - thin wrapper
+    def logwarning(self, message: str):
         """Warning-level log wrapper."""
         self.logger.warning("%s", message)
 
-    def logerror(self, message: str):  # noqa: D401 - thin wrapper
+    def logerror(self, message: str):
         """Error-level log wrapper."""
         self.logger.error("%s", message)
 
@@ -231,8 +231,7 @@ class BackgroundScanner:
         self.logger.info("Background scanner stopped")
 
     def handle_file_event(self, event: WatchEvent):
-        """
-        Handle a file system event by scheduling appropriate scans.
+        """Handle a file system event by scheduling appropriate scans.
 
         Args:
             event: File system event to process
@@ -270,8 +269,7 @@ class BackgroundScanner:
     def schedule_scan(
         self, file_path: str, priority: ScanPriority = ScanPriority.NORMAL
     ):
-        """
-        Schedule a manual scan of a file.
+        """Schedule a manual scan of a file.
 
         Args:
             file_path: Path to file to scan
@@ -487,7 +485,7 @@ class BackgroundScanner:
                 "Cleaned up %d old scan results", len(old_results)
             )
 
-    def get_statistics(self) -> Dict[str, Any]:
+    def get_statistics(self) -> dict[str, Any]:
         """Get scanner performance statistics."""
         uptime = time.time() - self.start_time
         return {
@@ -502,7 +500,7 @@ class BackgroundScanner:
             "worker_threads": len(self.worker_threads),
         }
 
-    def get_recent_results(self, limit: int = 100) -> List[Dict[str, Any]]:
+    def get_recent_results(self, limit: int = 100) -> list[dict[str, Any]]:
         """Get recent scan results."""
         results = []
         for path, result in self.scan_results.items():

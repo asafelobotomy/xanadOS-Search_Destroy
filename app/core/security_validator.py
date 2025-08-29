@@ -1,30 +1,27 @@
 #!/usr/bin/env python3
-"""
-Security Hardening for RKHunter Wrapper
+"""Security Hardening for RKHunter Wrapper
 Implements strict command validation and privilege restrictions.
 """
 
 import os
 import re
-from typing import List, Optional, Set
 
 
 class SecureRKHunterValidator:
-    """
-    Validates RKHunter commands and arguments for security.
+    """Validates RKHunter commands and arguments for security.
     Implements whitelist-based approach for all privileged operations.
     """
 
     def __init__(self):
         # Allowed RKHunter executable paths (strict whitelist)
-        self.allowed_rkhunter_paths: Set[str] = {
+        self.allowed_rkhunter_paths: set[str] = {
             "/usr/bin/rkhunter",
             "/usr/local/bin/rkhunter",
             "/opt/rkhunter/bin/rkhunter",
         }
 
         # Allowed RKHunter commands (strict whitelist)
-        self.allowed_commands: Set[str] = {
+        self.allowed_commands: set[str] = {
             "--version",
             "--check",
             "--update",
@@ -33,7 +30,7 @@ class SecureRKHunterValidator:
         }
 
         # Allowed RKHunter options (safe options only)
-        self.allowed_options: Set[str] = {
+        self.allowed_options: set[str] = {
             "--sk",  # Skip keypress
             "--nocolors",  # No colors
             "--no-mail-on-warning",  # No mail
@@ -52,7 +49,7 @@ class SecureRKHunterValidator:
         }
 
         # Allowed test categories for --enable/--disable
-        self.allowed_test_categories: Set[str] = {
+        self.allowed_test_categories: set[str] = {
             "filesystem",
             "network",
             "system_commands",
@@ -70,21 +67,20 @@ class SecureRKHunterValidator:
         }
 
         # Allowed config file paths
-        self.allowed_config_paths: Set[str] = {
+        self.allowed_config_paths: set[str] = {
             "/etc/rkhunter.conf",
             "/usr/local/etc/rkhunter.conf",
         }
 
         # Allowed temporary directory paths
-        self.allowed_tmp_paths: Set[str] = {
+        self.allowed_tmp_paths: set[str] = {
             "/var/lib/rkhunter/tmp",
             "/tmp/rkhunter",
             "/var/tmp/rkhunter",
         }
 
     def validate_executable_path(self, rkhunter_path: str) -> bool:
-        """
-        Validate that the RKHunter executable path is in the allowlist.
+        """Validate that the RKHunter executable path is in the allowlist.
 
         Args:
             rkhunter_path: Path to RKHunter executable
@@ -99,9 +95,8 @@ class SecureRKHunterValidator:
         except (OSError, ValueError):
             return False
 
-    def validate_command_args(self, cmd_args: List[str]) -> tuple[bool, str]:
-        """
-        Validate RKHunter command arguments against security policy.
+    def validate_command_args(self, cmd_args: list[str]) -> tuple[bool, str]:
+        """Validate RKHunter command arguments against security policy.
 
         Args:
             cmd_args: List of command arguments
@@ -179,8 +174,7 @@ class SecureRKHunterValidator:
         return True, "Command arguments validated successfully"
 
     def _contains_injection_patterns(self, arg: str) -> bool:
-        """
-        Check for common command injection patterns.
+        """Check for common command injection patterns.
 
         Args:
             arg: Argument to check
@@ -207,9 +201,8 @@ class SecureRKHunterValidator:
 
         return False
 
-    def get_safe_rkhunter_path(self) -> Optional[str]:
-        """
-        Get the first available safe RKHunter path.
+    def get_safe_rkhunter_path(self) -> str | None:
+        """Get the first available safe RKHunter path.
 
         Returns:
             str: Safe RKHunter path, or None if none found

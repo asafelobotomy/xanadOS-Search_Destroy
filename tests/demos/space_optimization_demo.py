@@ -3,6 +3,7 @@
 Space Utilization Comparison Demo
 Shows before vs after space optimization for security features table
 """
+
 import sys
 
 from gui.system_hardening_tab import SystemHardeningTab

@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""
-Rate limiting module for xanadOS Search & Destroy
+"""Rate limiting module for xanadOS Search & Destroy
 Prevents resource exhaustion through intelligent throttling
 """
 
@@ -8,9 +7,10 @@ import logging
 import threading
 import time
 from collections import defaultdict, deque
+from collections.abc import Callable
 from dataclasses import dataclass
 from functools import wraps
-from typing import Any, Callable, Dict, Optional
+from typing import Any
 
 import psutil
 
@@ -21,7 +21,7 @@ class RateLimit:
 
     calls: int
     period: float  # seconds
-    burst: Optional[int] = None  # burst allowance
+    burst: int | None = None  # burst allowance
 
 
 @dataclass
@@ -35,8 +35,7 @@ class RateLimitState:
 
 
 class RateLimiter:
-    """
-    Token bucket rate limiter with burst support.
+    """Token bucket rate limiter with burst support.
     Thread-safe implementation for concurrent access.
     """
 
@@ -51,8 +50,7 @@ class RateLimiter:
         self.refill_rate = rate_limit.calls / rate_limit.period
 
     def acquire(self, tokens: int = 1) -> bool:
-        """
-        Attempt to acquire tokens.
+        """Attempt to acquire tokens.
 
         Args:
             tokens: Number of tokens to acquire
@@ -88,12 +86,10 @@ class RateLimiter:
 
 
 class AdaptiveRateLimiter:
-    """
-    Adaptive rate limiter that adjusts limits based on system load.
-    """
+    """Adaptive rate limiter that adjusts limits based on system load."""
 
     def __init__(
-        self, base_limit: RateLimit, load_monitor: Optional[Callable[[], float]] = None
+        self, base_limit: RateLimit, load_monitor: Callable[[], float] | None = None
     ):
         self.base_limit = base_limit
         self.load_monitor = load_monitor or self._default_load_monitor
@@ -148,13 +144,11 @@ class AdaptiveRateLimiter:
 
 
 class GlobalRateLimitManager:
-    """
-    Global rate limit manager for different operation types.
-    """
+    """Global rate limit manager for different operation types."""
 
     def __init__(self):
-        self.limiters: Dict[str, RateLimiter] = {}
-        self.adaptive_limiters: Dict[str, AdaptiveRateLimiter] = {}
+        self.limiters: dict[str, RateLimiter] = {}
+        self.adaptive_limiters: dict[str, AdaptiveRateLimiter] = {}
         self.lock = threading.RLock()
         self.logger = logging.getLogger(__name__)
 
@@ -227,8 +221,7 @@ rate_limit_manager = GlobalRateLimitManager()
 
 
 def rate_limit(operation: str, tokens: int = 1, wait_on_limit: bool = False):
-    """
-    Decorator for rate limiting function calls.
+    """Decorator for rate limiting function calls.
 
     Args:
         operation: Operation type for rate limiting
@@ -262,9 +255,7 @@ def rate_limit(operation: str, tokens: int = 1, wait_on_limit: bool = False):
 
 
 class RequestTracker:
-    """
-    Track request patterns and detect potential abuse.
-    """
+    """Track request patterns and detect potential abuse."""
 
     def __init__(self, window_size: int = 1000):
         self.window_size = window_size
@@ -296,7 +287,7 @@ class RequestTracker:
         key = f"{client_id}:{operation}"
         return self.request_counts[key] > threshold
 
-    def get_request_stats(self) -> Dict[str, Any]:
+    def get_request_stats(self) -> dict[str, Any]:
         """Get request statistics."""
         with self.lock:
             now = time.time()
@@ -311,7 +302,7 @@ class RequestTracker:
                 "top_operations": self._get_top_operations(recent_requests),
             }
 
-    def _get_top_operations(self, requests) -> Dict[str, int]:
+    def _get_top_operations(self, requests) -> dict[str, int]:
         """Get top operations from request list."""
         operation_counts = defaultdict(int)
         for request in requests:
@@ -326,7 +317,7 @@ class RequestTracker:
 request_tracker = RequestTracker()
 
 
-def configure_rate_limits(config: Dict[str, Any]):
+def configure_rate_limits(config: dict[str, Any]):
     """Configure rate limits from configuration dictionary."""
     for operation, limit_config in config.get("rate_limits", {}).items():
         rate_limit = RateLimit(

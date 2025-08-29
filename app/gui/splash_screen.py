@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""
-Modern Splash Screen for xanadOS Search & Destroy
+"""Modern Splash Screen for xanadOS Search & Destroy
 Progressive loading with real-time progress tracking (2025)
 Features:
 - Official xanadOS Search & Destroy logo display
@@ -22,8 +21,7 @@ from app import __version__
 
 
 class ModernSplashScreen(QSplashScreen):
-    """
-    Modern splash screen with progress tracking and phase-based loading.
+    """Modern splash screen with progress tracking and phase-based loading.
     Following 2025 best practices for user experience.
     """
 
@@ -265,8 +263,7 @@ class ModernSplashScreen(QSplashScreen):
 
 
 class StartupProgressTracker:
-    """
-    Tracks startup progress across different components.
+    """Tracks startup progress across different components.
     Implements modern progress tracking patterns.
     """
 
@@ -277,12 +274,10 @@ class StartupProgressTracker:
 
     def start_tracking(self):
         """Start tracking startup time."""
-
         self.start_time = time.time()
 
     def complete_phase(self, phase: str):
         """Mark a phase as complete and update splash."""
-
         if self.start_time:
             self.phase_times[phase] = time.time() - self.start_time
 
@@ -291,7 +286,6 @@ class StartupProgressTracker:
 
     def get_total_time(self) -> float:
         """Get total startup time."""
-
         if self.start_time:
             return time.time() - self.start_time
         return 0.0

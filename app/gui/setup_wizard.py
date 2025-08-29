@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
-"""
-Setup Wizard for xanadOS Search & Destroy
+"""Setup Wizard for xanadOS Search & Destroy
 First-time setup experience for installing and configuring required packages.
 
-Notes
+Notes:
 -----
 - This module is large due to UI/widget definitions and styling consolidated in one place.
     A future refactor can split it, but for now we prefer stability over risky changes.
@@ -18,11 +17,15 @@ from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Optional
 
-from PyQt6.QtCore import QThread  # pylint: disable=no-name-in-module
-from PyQt6.QtCore import Qt, QTimer, pyqtSignal
+from PyQt6.QtCore import (
+    Qt,
+    QThread,  # pylint: disable=no-name-in-module
+    QTimer,
+    pyqtSignal,
+)
 from PyQt6.QtGui import QFont  # pylint: disable=no-name-in-module
-from PyQt6.QtWidgets import QApplication  # pylint: disable=no-name-in-module
 from PyQt6.QtWidgets import (
+    QApplication,  # pylint: disable=no-name-in-module
     QCheckBox,
     QDialog,
     QFrame,
@@ -69,10 +72,10 @@ class PackageInfo:  # pylint: disable=too-many-instance-attributes
     display_name: str
     description: str
     purpose: str
-    install_commands: Dict[str, str]  # distro -> command
+    install_commands: dict[str, str]  # distro -> command
     check_command: str
-    service_name: Optional[str] = None
-    post_install_commands: Optional[List[str]] = None
+    service_name: str | None = None
+    post_install_commands: list[str] | None = None
     is_critical: bool = True
 
 
@@ -106,7 +109,9 @@ class InstallationWorker(QThread):  # pylint: disable=too-many-instance-attribut
                 # Try fallback to unknown distribution command
                 if "unknown" in self.package_info.install_commands:
                     install_cmd = self.package_info.install_commands["unknown"]
-                    self.output_updated.emit(f"Using fallback installation method for {self.distro}")
+                    self.output_updated.emit(
+                        f"Using fallback installation method for {self.distro}"
+                    )
                 else:
                     self.output_updated.emit(
                         f"ERROR: No installation command available for {self.distro}"
@@ -150,7 +155,9 @@ class InstallationWorker(QThread):  # pylint: disable=too-many-instance-attribut
                         if len(parts) >= 2:
                             shell_cmd = parts[1]
                             cmd_parts = ["sh", "-c", shell_cmd]
-                            self.output_updated.emit(f"Executing shell command: {shell_cmd}")
+                            self.output_updated.emit(
+                                f"Executing shell command: {shell_cmd}"
+                            )
                         else:
                             # Fallback to simple splitting
                             cmd_parts = install_cmd.split()
@@ -166,21 +173,34 @@ class InstallationWorker(QThread):  # pylint: disable=too-many-instance-attribut
 
                     for attempt in range(max_retries):
                         try:
-                            self.output_updated.emit(f"Installation attempt {attempt + 1}/{max_retries}")
+                            self.output_updated.emit(
+                                f"Installation attempt {attempt + 1}/{max_retries}"
+                            )
                             install_result = elevated_run(
-                                cmd_parts, timeout=600, capture_output=True, text=True, gui=True
+                                cmd_parts,
+                                timeout=600,
+                                capture_output=True,
+                                text=True,
+                                gui=True,
                             )
                             if install_result.returncode == 0:
                                 break  # Success, exit retry loop
                             else:
-                                self.output_updated.emit(f"Attempt {attempt + 1} failed with code {install_result.returncode}")
+                                self.output_updated.emit(
+                                    f"Attempt {attempt + 1} failed with code {install_result.returncode}"
+                                )
                                 if attempt < max_retries - 1:
-                                    self.output_updated.emit("Retrying with fresh authentication...")
+                                    self.output_updated.emit(
+                                        "Retrying with fresh authentication..."
+                                    )
                                     # Clear any existing authentication session before retry
                                     import time
+
                                     time.sleep(1)  # Brief pause between attempts
                         except Exception as e:
-                            self.output_updated.emit(f"Attempt {attempt + 1} error: {str(e)}")
+                            self.output_updated.emit(
+                                f"Attempt {attempt + 1} error: {e!s}"
+                            )
                             if attempt == max_retries - 1:
                                 raise  # Re-raise on final attempt
 
@@ -271,7 +291,7 @@ class InstallationWorker(QThread):  # pylint: disable=too-many-instance-attribut
             self.installation_finished.emit(self.package_info.name, success)
 
         except Exception as e:  # pylint: disable=broad-exception-caught
-            self.output_updated.emit(f"Error during installation: {str(e)}")
+            self.output_updated.emit(f"Error during installation: {e!s}")
             self.installation_finished.emit(self.package_info.name, False)
 
     def stop(self):
@@ -737,7 +757,7 @@ class SetupWizard(ThemedDialog):  # pylint: disable=too-many-instance-attributes
         """Detect the Linux distribution."""
         try:
             # Try to read os-release file
-            with open("/etc/os-release", "r", encoding="utf-8") as f:
+            with open("/etc/os-release", encoding="utf-8") as f:
                 content = f.read().lower()
 
             # Check for distribution ID first (most reliable)
@@ -752,18 +772,32 @@ class SetupWizard(ThemedDialog):  # pylint: disable=too-many-instance-attributes
                         return "debian"
                     elif distro_id in ["fedora", "centos", "rhel", "rocky", "alma"]:
                         return "fedora"
-                    elif distro_id in ["opensuse", "suse", "opensuse-leap", "opensuse-tumbleweed"]:
+                    elif distro_id in [
+                        "opensuse",
+                        "suse",
+                        "opensuse-leap",
+                        "opensuse-tumbleweed",
+                    ]:
                         return "opensuse"
 
             # Fallback to content-based detection
             detected = "unknown"
-            if any(keyword in content for keyword in ["arch", "manjaro", "endeavour", "garuda"]):
+            if any(
+                keyword in content
+                for keyword in ["arch", "manjaro", "endeavour", "garuda"]
+            ):
                 detected = "arch"
-            elif any(keyword in content for keyword in ["ubuntu", "pop", "mint", "elementary"]):
+            elif any(
+                keyword in content
+                for keyword in ["ubuntu", "pop", "mint", "elementary"]
+            ):
                 detected = "ubuntu"
             elif "debian" in content or "raspbian" in content:
                 detected = "debian"
-            elif any(keyword in content for keyword in ["fedora", "centos", "rhel", "rocky", "alma"]):
+            elif any(
+                keyword in content
+                for keyword in ["fedora", "centos", "rhel", "rocky", "alma"]
+            ):
                 detected = "fedora"
             elif "opensuse" in content or "suse" in content:
                 detected = "opensuse"
@@ -783,15 +817,17 @@ class SetupWizard(ThemedDialog):  # pylint: disable=too-many-instance-attributes
             "zypper": "opensuse",
             "portage": "gentoo",
             "xbps-install": "void",
-            "apk": "alpine"
+            "apk": "alpine",
         }
 
         for pm, distro in package_managers.items():
             try:
-                result = subprocess.run(["which", pm], capture_output=True, timeout=3)
+                result = subprocess.run(
+                    ["which", pm], check=False, capture_output=True, timeout=3
+                )
                 if result.returncode == 0:
                     return distro
-            except:
+            except Exception:
                 continue
         return "unknown"
 
@@ -807,12 +843,14 @@ class SetupWizard(ThemedDialog):  # pylint: disable=too-many-instance-attributes
             "opensuse": f"zypper install -y {package}",
             "gentoo": f"emerge {package}",
             "void": f"xbps-install -y {package}",
-            "alpine": f"apk add {package}"
+            "alpine": f"apk add {package}",
         }
 
-        return fallback_commands.get(pm_distro, f"echo 'Please install {package} manually'")
+        return fallback_commands.get(
+            pm_distro, f"echo 'Please install {package} manually'"
+        )
 
-    def check_package_availability(self) -> Dict[str, bool]:
+    def check_package_availability(self) -> dict[str, bool]:
         """Check which packages are already installed"""
         status = {}
 
@@ -822,8 +860,15 @@ class SetupWizard(ThemedDialog):  # pylint: disable=too-many-instance-attributes
                 # since RKHunter has restrictive permissions and may not be in user PATH
                 if package_name == "rkhunter":
                     import os
-                    rkhunter_paths = ["/usr/bin/rkhunter", "/usr/local/bin/rkhunter", "/bin/rkhunter"]
-                    status[package_name] = any(os.path.exists(path) for path in rkhunter_paths)
+
+                    rkhunter_paths = [
+                        "/usr/bin/rkhunter",
+                        "/usr/local/bin/rkhunter",
+                        "/bin/rkhunter",
+                    ]
+                    status[package_name] = any(
+                        os.path.exists(path) for path in rkhunter_paths
+                    )
                 else:
                     check_result = subprocess.run(
                         package_info.check_command.split(),
@@ -957,7 +1002,7 @@ class SetupWizard(ThemedDialog):  # pylint: disable=too-many-instance-attributes
             layout.addLayout(row)
             cards.append((name, chk if not installed else None, lbl))
 
-        def do_install():  # noqa: D401 - small inline handler
+        def do_install():
             installed_any = False
             for name, chk, lbl in cards:
                 if chk is None or not chk.isChecked():
@@ -1209,7 +1254,7 @@ class SetupWizard(ThemedDialog):  # pylint: disable=too-many-instance-attributes
         if reply == QMessageBox.StandardButton.Yes:
             self.show_installation_dialog(packages_to_install)
 
-    def show_installation_dialog(self, packages_to_install: List[str]):
+    def show_installation_dialog(self, packages_to_install: list[str]):
         """Show installation progress dialog."""
         self.installation_dialog = InstallationDialog(
             packages_to_install, self.packages, self.distro, self
@@ -1219,7 +1264,7 @@ class SetupWizard(ThemedDialog):  # pylint: disable=too-many-instance-attributes
         )
         self.installation_dialog.exec()
 
-    def on_installation_complete(self, results: Dict[str, bool]):
+    def on_installation_complete(self, results: dict[str, bool]):
         """Handle installation completion."""
         successful = [name for name, success in results.items() if success]
         failed = [name for name, success in results.items() if not success]
@@ -1303,8 +1348,8 @@ class InstallationDialog(QDialog):  # pylint: disable=too-many-instance-attribut
 
     def __init__(
         self,
-        packages_to_install: List[str],
-        package_info: Dict[str, PackageInfo],
+        packages_to_install: list[str],
+        package_info: dict[str, PackageInfo],
         distro: str,
         parent=None,
     ):

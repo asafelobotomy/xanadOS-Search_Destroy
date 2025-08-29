@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""
-xanadOS Search & Destroy - Main Application Package
+"""xanadOS Search & Destroy - Main Application Package
 A modern GUI for ClamAV antivirus scanning with real-time monitoring.
 """
 
@@ -13,7 +12,7 @@ def get_version():
         from app import get_version as _root_get_version  # local import to avoid cycles
 
         return _root_get_version()
-    except Exception:  # noqa: BLE001 - defensive fallback
+    except Exception:
         return "dev"
 
 

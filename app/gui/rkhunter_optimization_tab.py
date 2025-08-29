@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""
-RKHunter Optimization GUI Components
+"""RKHunter Optimization GUI Components
 xanadOS Search & Destroy - Enhanced RKHunter Management Interface
 This module provides GUI components for RKHunter optimization including:
 - Configuration optimization interface
@@ -42,16 +41,16 @@ from PyQt6.QtWidgets import (
 )
 
 try:
+    # Non-invasive monitor for fast, persistent status without sudo
+    from app.core.rkhunter_monitor_non_invasive import (
+        RKHunterStatusNonInvasive,
+        get_rkhunter_status_non_invasive,
+    )
     from app.core.rkhunter_optimizer import (
         OptimizationReport,
         RKHunterConfig,
         RKHunterOptimizer,
         RKHunterStatus,
-    )
-    # Non-invasive monitor for fast, persistent status without sudo
-    from app.core.rkhunter_monitor_non_invasive import (
-        RKHunterStatusNonInvasive,
-        get_rkhunter_status_non_invasive,
     )
 except ImportError:
     # Fallbacks if optimizer module not fully available
@@ -116,7 +115,9 @@ def adapt_non_invasive_status(ni: "RKHunterStatusNonInvasive"):
     # Map fields conservatively
     version = ni.version if ni.available else "Not Available"
     database_version = (
-        "Present" if ni.database_exists else ("Not Found" if ni.available else "Not Available")
+        "Present"
+        if ni.database_exists
+        else ("Not Found" if ni.available else "Not Available")
     )
     last_update = None  # Not derivable non-invasively
     last_scan = ni.last_scan_attempt
@@ -861,6 +862,7 @@ class RKHunterManualActionsDialog(QDialog):
         def check_config():
             result = subprocess.run(
                 ["rkhunter", "--config-check"],
+                check=False,
                 capture_output=True,
                 text=True,
                 timeout=60,
@@ -888,7 +890,7 @@ class RKHunterManualActionsDialog(QDialog):
                 self.output_text.append(f"❌ Failed: {message}")
 
         except Exception as e:
-            self.output_text.append(f"💥 Error: {str(e)}")
+            self.output_text.append(f"💥 Error: {e!s}")
 
         # Scroll to bottom
         cursor = self.output_text.textCursor()

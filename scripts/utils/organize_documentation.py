@@ -38,7 +38,7 @@ This document consolidates all implementation details for xanadOS Search & Destr
         if os.path.exists(doc_path):
             print(f"   📄 Processing: {os.path.basename(doc_path)}")
 
-            with open(doc_path, "r", encoding="utf-8") as f:
+            with open(doc_path, encoding="utf-8") as f:
                 content = f.read()
 
             # Append section using original content, preserving its title
@@ -65,10 +65,10 @@ def consolidate_project_management_docs():
     version_summary_path = "docs/project/VERSION_CONTROL_SUMMARY.md"
 
     if os.path.exists(version_control_path) and os.path.exists(version_summary_path):
-        with open(version_control_path, "r", encoding="utf-8") as f:
+        with open(version_control_path, encoding="utf-8") as f:
             vc_content = f.read()
 
-        with open(version_summary_path, "r", encoding="utf-8") as f:
+        with open(version_summary_path, encoding="utf-8") as f:
             vc_summary = f.read()
 
         # Create consolidated version control doc
@@ -78,7 +78,7 @@ def consolidate_project_management_docs():
 
 # Implementation Status
 
-{vc_summary[vc_summary.find('## ✅'):]}
+{vc_summary[vc_summary.find("## ✅") :]}
 """
 
         with open(version_control_path, "w", encoding="utf-8") as f:
@@ -225,7 +225,7 @@ docs/**/*.tmp
 
     gitignore_path = ".gitignore"
     if os.path.exists(gitignore_path):
-        with open(gitignore_path, "r", encoding="utf-8") as f:
+        with open(gitignore_path, encoding="utf-8") as f:
             content = f.read()
 
         if "# Documentation organization" not in content:

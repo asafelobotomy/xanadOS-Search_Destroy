@@ -233,7 +233,7 @@ class ScanThread(QThread, CooperativeCancellationMixin):
                         **self.scan_options,  # Pass scan options to the scanner
                     )
                 except Exception as scan_error:
-                    self.status_updated.emit(f"Scan error: {str(scan_error)}")
+                    self.status_updated.emit(f"Scan error: {scan_error!s}")
                     self.scan_completed.emit(
                         {
                             "error": str(scan_error),
@@ -322,7 +322,7 @@ class ScanThread(QThread, CooperativeCancellationMixin):
 
             # Clean up and report error
             self.progress_updated.emit(0)
-            self.status_updated.emit(f"Scan failed: {str(e)}")
+            self.status_updated.emit(f"Scan failed: {e!s}")
             self.scan_completed.emit(
                 {
                     "error": str(e),
@@ -362,7 +362,7 @@ class ScanThread(QThread, CooperativeCancellationMixin):
         for result in results_list:
             if isinstance(result, dict):
                 # Add threats
-                if "threats" in result and result["threats"]:
+                if result.get("threats"):
                     combined["threats"].extend(result["threats"])
 
                 # Sum numerical values

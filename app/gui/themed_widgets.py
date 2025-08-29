@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""
-Themed Widget Mixins - Base classes for theme-aware G    # Add theming methods to the widget
+"""Themed Widget Mixins - Base classes for theme-aware G    # Add theming methods to the widget
     widget.get_theme_color = lambda color_key: get_theme_manager().get_color(color_key)
     widget.get_theme_font_property = lambda font_key: get_theme_manager().get_font_property(font_key)
     widget.show_themed_message_box = lambda msg_type, title, text, buttons=None: get_theme_manager().create_themed_message_box(widget, msg_type, title, text, buttons).exec()
@@ -17,8 +16,7 @@ from .theme_manager import get_theme_manager
 
 
 class ThemedWidgetMixin:
-    """
-    Mixin class for widgets that automatically respond to theme changes.
+    """Mixin class for widgets that automatically respond to theme changes.
     Inherit from this to get automatic theme updating capabilities.
     """
 
@@ -37,8 +35,7 @@ class ThemedWidgetMixin:
         self._apply_theme()
 
     def _apply_theme(self):
-        """
-        Apply the current theme to this widget.
+        """Apply the current theme to this widget.
         Override this method in subclasses for custom theming.
         Default implementation does nothing as global stylesheet handles most cases.
         """
@@ -63,31 +60,28 @@ class ThemedWidgetMixin:
 
 
 class ThemedDialog(QDialog, ThemedWidgetMixin):
-    """
-    Base class for dialogs with automatic theming.
+    """Base class for dialogs with automatic theming.
     Use this instead of QDialog for consistent theming.
     """
 
-    def __init__(self, parent: Optional[QWidget] = None):
+    def __init__(self, parent: QWidget | None = None):
         super().__init__(parent)
         # ThemedWidgetMixin.__init__ is called automatically via super()
 
 
 class ThemedWidget(QWidget, ThemedWidgetMixin):
-    """
-    Base class for widgets with automatic theming.
+    """Base class for widgets with automatic theming.
     Use this instead of QWidget for consistent theming.
     """
 
-    def __init__(self, parent: Optional[QWidget] = None):
+    def __init__(self, parent: QWidget | None = None):
         super().__init__(parent)
         # ThemedWidgetMixin.__init__ is called automatically via super()
 
 
 # Utility functions for existing widgets
 def make_widget_themed(widget: QWidget):
-    """
-    Add theming capabilities to an existing widget instance.
+    """Add theming capabilities to an existing widget instance.
     This is useful for widgets that can't inherit from ThemedWidget.
     """
     # Add theming methods to the widget
@@ -110,8 +104,7 @@ def make_widget_themed(widget: QWidget):
 
 
 def apply_widget_class_styles(widget_class: str, **style_properties):
-    """
-    Apply CSS class-like styling to widgets.
+    """Apply CSS class-like styling to widgets.
     Usage: apply_widget_class_styles("header", font_size="16px", font_weight="bold")
     """
     get_theme_manager()

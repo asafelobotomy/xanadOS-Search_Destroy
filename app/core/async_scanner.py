@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""
-Asynchronous file scanning system for xanadOS Search & Destroy
+"""Asynchronous file scanning system for xanadOS Search & Destroy
 Provides high-performance scanning with non-blocking operations and worker threads
 """
 
@@ -8,12 +7,12 @@ import asyncio
 import logging
 import os
 import time
+from collections.abc import AsyncIterator, Callable
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 from queue import Queue
-from typing import AsyncIterator, Callable, Dict, List, Optional
 
 import psutil
 
@@ -32,8 +31,8 @@ class ScanProgress:
     infected_files: int = 0
     errors: int = 0
     current_file: str = ""
-    start_time: Optional[datetime] = None
-    estimated_completion: Optional[datetime] = None
+    start_time: datetime | None = None
+    estimated_completion: datetime | None = None
     throughput_fps: float = 0.0  # files per second
     memory_usage_mb: float = 0.0
 
@@ -42,14 +41,13 @@ class ScanProgress:
 class ScanBatch:
     """Represents a batch of files to scan."""
 
-    files: List[str]
+    files: list[str]
     batch_id: str
     priority: int = 1  # 1=low, 2=medium, 3=high
 
 
 class AsyncFileScanner:
-    """
-    High-performance asynchronous file scanner.
+    """High-performance asynchronous file scanner.
 
     Features:
     - Non-blocking async operations
@@ -60,7 +58,7 @@ class AsyncFileScanner:
     - Automatic load balancing
     """
 
-    def __init__(self, max_workers: Optional[int] = None, memory_limit_mb: int = 512):
+    def __init__(self, max_workers: int | None = None, memory_limit_mb: int = 512):
         """Initialize the async scanner.
 
         Args:
@@ -119,8 +117,7 @@ class AsyncFileScanner:
             self.semaphore = asyncio.Semaphore(self.max_workers)
 
     def _check_memory_usage(self) -> bool:
-        """
-        Check if memory usage is within limits.
+        """Check if memory usage is within limits.
 
         Returns:
             True if memory usage is acceptable, False if throttling needed
@@ -143,8 +140,7 @@ class AsyncFileScanner:
             return True  # Continue on error
 
     async def _walk_directory_async(self, directory: str) -> AsyncIterator[str]:
-        """
-        Asynchronously walk directory tree yielding file paths.
+        """Asynchronously walk directory tree yielding file paths.
 
         Args:
             directory: Directory path to walk
@@ -196,8 +192,7 @@ class AsyncFileScanner:
             self.logger.error("Error walking directory %s: %s", directory, e)
 
     async def _should_scan_file(self, file_path: str) -> bool:
-        """
-        Determine if file should be scanned based on security and performance criteria.
+        """Determine if file should be scanned based on security and performance criteria.
 
         Args:
             file_path: Path to file
@@ -246,8 +241,7 @@ class AsyncFileScanner:
             return False
 
     async def _scan_file_async(self, file_path: str) -> ScanFileResult:
-        """
-        Scan a single file asynchronously.
+        """Scan a single file asynchronously.
 
         Args:
             file_path: Path to file to scan
@@ -317,9 +311,8 @@ class AsyncFileScanner:
 
             return result
 
-    async def scan_files_async(self, file_paths: List[str]) -> List[ScanFileResult]:
-        """
-        Scan multiple files asynchronously with parallel processing.
+    async def scan_files_async(self, file_paths: list[str]) -> list[ScanFileResult]:
+        """Scan multiple files asynchronously with parallel processing.
 
         Args:
             file_paths: List of file paths to scan
@@ -408,9 +401,8 @@ class AsyncFileScanner:
         finally:
             self.is_scanning = False
 
-    async def scan_directory_async(self, directory: str) -> List[ScanFileResult]:
-        """
-        Scan entire directory asynchronously with optimized file discovery.
+    async def scan_directory_async(self, directory: str) -> list[ScanFileResult]:
+        """Scan entire directory asynchronously with optimized file discovery.
 
         Args:
             directory: Directory path to scan
@@ -456,9 +448,8 @@ class AsyncFileScanner:
         """Set callback for individual scan results."""
         self.result_callback = callback
 
-    def get_performance_stats(self) -> Dict[str, float]:
-        """
-        Get performance statistics.
+    def get_performance_stats(self) -> dict[str, float]:
+        """Get performance statistics.
 
         Returns:
             Dictionary with performance metrics

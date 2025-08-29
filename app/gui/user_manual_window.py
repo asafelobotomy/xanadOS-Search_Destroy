@@ -1,6 +1,4 @@
-"""
-User Manual Window - Display the comprehensive user manual in a scrollable dialog.
-"""
+"""User Manual Window - Display the comprehensive user manual in a scrollable dialog."""
 
 from pathlib import Path
 
@@ -29,9 +27,7 @@ from .themed_widgets import ThemedDialog
 
 
 class UserManualWindow(ThemedDialog):
-    """
-    A comprehensive user manual window with table of contents navigation.
-    """
+    """A comprehensive user manual window with table of contents navigation."""
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -173,7 +169,7 @@ class UserManualWindow(ThemedDialog):
             )
 
             if manual_path.exists():
-                with open(manual_path, "r", encoding="utf-8") as f:
+                with open(manual_path, encoding="utf-8") as f:
                     return f.read()
             else:
                 return self._get_fallback_content()

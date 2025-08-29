@@ -13,11 +13,12 @@ import os
 import subprocess
 import threading
 import time
+from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from contextlib import contextmanager
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any, Callable, Dict, List, Optional, Union
+from typing import Any, Dict, List, Union
 
 import psutil
 
@@ -55,10 +56,10 @@ class ProcessConfig:
     capture_output: bool = True
     text: bool = True
     shell: bool = False
-    env: Optional[Dict[str, str]] = None
-    cwd: Optional[str] = None
+    env: Dict[str, str] | None = None
+    cwd: str | None = None
     max_memory_mb: int = 1024
-    cpu_limit_percent: Optional[float] = None
+    cpu_limit_percent: float | None = None
 
 
 @dataclass
@@ -71,7 +72,7 @@ class ProcessResult:
     stderr: str
     execution_time: float
     state: ProcessState
-    pid: Optional[int] = None
+    pid: int | None = None
     memory_peak: int = 0
     cpu_percent: float = 0.0
 
@@ -86,7 +87,7 @@ class SecureProcessManager:
         self._lock = threading.Lock()
 
     def execute_command(
-        self, command: Union[str, List[str]], config: Optional[ProcessConfig] = None
+        self, command: Union[str, List[str]], config: ProcessConfig | None = None
     ) -> ProcessResult:
         """Execute command with security validation and monitoring"""
         if config is None:
@@ -197,8 +198,8 @@ class SecureProcessManager:
     def execute_async(
         self,
         command: Union[str, List[str]],
-        config: Optional[ProcessConfig] = None,
-        callback: Optional[Callable[[ProcessResult], None]] = None,
+        config: ProcessConfig | None = None,
+        callback: Callable[[ProcessResult], None] | None = None,
     ) -> threading.Thread:
         """Execute command asynchronously"""
 
@@ -214,7 +215,7 @@ class SecureProcessManager:
     def execute_batch(
         self,
         commands: List[Union[str, List[str]]],
-        config: Optional[ProcessConfig] = None,
+        config: ProcessConfig | None = None,
         max_concurrent: int = 4,
     ) -> List[ProcessResult]:
         """Execute multiple commands concurrently"""
@@ -244,7 +245,7 @@ class SecureProcessManager:
         return results
 
     def _prepare_environment(
-        self, extra_env: Optional[Dict[str, str]] = None
+        self, extra_env: Dict[str, str] | None = None
     ) -> Dict[str, str]:
         """Prepare secure environment for subprocess"""
         env = {
@@ -321,7 +322,7 @@ class ProcessMonitor:
         self.monitored_processes: Dict[int, psutil.Process] = {}
         self.suspicious_processes: List[Dict[str, Any]] = []
         self._monitoring = False
-        self._monitor_thread: Optional[threading.Thread] = None
+        self._monitor_thread: threading.Thread | None = None
 
     def start_monitoring(self, interval: float = 5.0):
         """Start process monitoring"""

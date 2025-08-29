@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""
-Single Instance Manager for S&D - Search & Destroy
+"""Single Instance Manager for S&D - Search & Destroy
 Ensures only one instance of the application can run at a time.
 """
 
@@ -40,7 +39,7 @@ class SingleInstanceManager:
 
             return False  # Not already running, we got the lock
 
-        except (OSError, IOError):
+        except OSError:
             # Lock file is already locked by another process
             if self.lock_fd:
                 try:
@@ -99,7 +98,7 @@ class SingleInstanceManager:
                 # Another instance wants us to show the window
                 self._bring_to_front(main_window)
 
-        except socket.error:
+        except OSError:
             # No connection waiting, which is normal
             pass
         except Exception as e:

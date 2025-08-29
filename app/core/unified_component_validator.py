@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""
-Unified Component Validator for xanadOS Search & Destroy
+"""Unified Component Validator for xanadOS Search & Destroy
 Validates all unified components created during the 2025 optimization:
 - Unified Security Engine
 - Unified Performance Optimizer
@@ -14,14 +13,14 @@ Purpose:
 
 import asyncio
 import logging
-import sys
 import shutil
+import sys
 import tempfile
 import time
 import traceback
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any
 
 from app.core import UNIFIED_PERFORMANCE_AVAILABLE, UNIFIED_SECURITY_AVAILABLE
 
@@ -48,9 +47,9 @@ class ValidationResult:
 
     component: str
     passed: bool
-    errors: List[str]
-    warnings: List[str]
-    performance_metrics: Dict[str, Any]
+    errors: list[str]
+    warnings: list[str]
+    performance_metrics: dict[str, Any]
     details: str
 
 
@@ -62,14 +61,13 @@ class ValidationSuite:
     passed_tests: int
     failed_tests: int
     warnings: int
-    results: List[ValidationResult]
-    overall_performance: Dict[str, Any]
-    recommendations: List[str]
+    results: list[ValidationResult]
+    overall_performance: dict[str, Any]
+    recommendations: list[str]
 
 
 class UnifiedComponentValidator:
-    """
-    Comprehensive validator for unified components.
+    """Comprehensive validator for unified components.
 
     Features:
     - Security engine validation
@@ -84,7 +82,7 @@ class UnifiedComponentValidator:
         self.setup_logging(log_level)
         self.logger = logging.getLogger(__name__)
         self.test_data_dir = Path(tempfile.mkdtemp(prefix="xanados_validation_"))
-        self.results: List[ValidationResult] = []
+        self.results: list[ValidationResult] = []
 
     def setup_logging(self, level: int):
         """Setup logging configuration"""
@@ -192,11 +190,11 @@ class UnifiedComponentValidator:
             elif hasattr(security_engine, "shutdown"):
                 await security_engine.shutdown()
 
-            details = f"Security Engine validation completed. Init: {init_time:.3f}s, Start: {
-                start_time_duration:.3f}s"
+            details = f"Security Engine validation completed. Init: {
+                init_time:.3f}s, Start: {start_time_duration:.3f}s"
 
         except Exception as e:
-            errors.append(f"Security Engine validation failed: {str(e)}")
+            errors.append(f"Security Engine validation failed: {e!s}")
             details = f"Exception during validation: {traceback.format_exc()}"
 
         return ValidationResult(
@@ -275,11 +273,11 @@ class UnifiedComponentValidator:
             elif hasattr(perf_optimizer, "shutdown"):
                 await perf_optimizer.shutdown()
 
-            details = f"Performance Optimizer validation completed. Init: {init_time:.3f}s, Start: {
-                start_time_duration:.3f}s"
+            details = f"Performance Optimizer validation completed. Init: {
+                init_time:.3f}s, Start: {start_time_duration:.3f}s"
 
         except Exception as e:
-            errors.append(f"Performance Optimizer validation failed: {str(e)}")
+            errors.append(f"Performance Optimizer validation failed: {e!s}")
             details = f"Exception during validation: {traceback.format_exc()}"
 
         return ValidationResult(
@@ -338,7 +336,7 @@ class UnifiedComponentValidator:
             details = f"Integration validation completed. Concurrent start: {concurrent_start_time:.3f}s"
 
         except Exception as e:
-            errors.append(f"Integration validation failed: {str(e)}")
+            errors.append(f"Integration validation failed: {e!s}")
             details = (
                 f"Exception during integration validation: {traceback.format_exc()}"
             )
@@ -370,7 +368,11 @@ class UnifiedComponentValidator:
             if UNIFIED_SECURITY_AVAILABLE:
                 from app.core import (
                     ProtectionMode as _ProtectionMode,
+                )
+                from app.core import (
                     ThreatLevel as _ThreatLevel,
+                )
+                from app.core import (
                     UnifiedSecurityEngine as _UnifiedSecurityEngine,
                 )
             else:
@@ -379,6 +381,8 @@ class UnifiedComponentValidator:
             if UNIFIED_PERFORMANCE_AVAILABLE:
                 from app.core import (
                     PerformanceMode as _PerformanceMode,
+                )
+                from app.core import (
                     UnifiedPerformanceOptimizer as _UnifiedPerformanceOptimizer,
                 )
             else:
@@ -400,10 +404,10 @@ class UnifiedComponentValidator:
             details = "Import compatibility validation passed"
 
         except ImportError as e:
-            errors.append(f"Import compatibility issue: {str(e)}")
+            errors.append(f"Import compatibility issue: {e!s}")
             details = f"Import error: {traceback.format_exc()}"
         except Exception as e:
-            errors.append(f"Unexpected error in import validation: {str(e)}")
+            errors.append(f"Unexpected error in import validation: {e!s}")
             details = f"Exception: {traceback.format_exc()}"
 
         return ValidationResult(
@@ -445,7 +449,7 @@ class UnifiedComponentValidator:
                     ValidationResult(
                         component="UnknownComponent",
                         passed=False,
-                        errors=[f"Validation exception: {str(validation)}"],
+                        errors=[f"Validation exception: {validation!s}"],
                         warnings=[],
                         performance_metrics={},
                         details=f"Exception: {traceback.format_exc()}",
@@ -489,7 +493,7 @@ class UnifiedComponentValidator:
         )
         return validation_suite
 
-    def _generate_recommendations(self, results: List[ValidationResult]) -> List[str]:
+    def _generate_recommendations(self, results: list[ValidationResult]) -> list[str]:
         """Generate recommendations based on validation results"""
         recommendations = []
 
@@ -510,8 +514,9 @@ class UnifiedComponentValidator:
                         and value > 5.0
                     ):
                         recommendations.append(
-                            f"Consider optimizing {metric} for {result.component} (current: {
-                                value:.3f}s)"
+                            f"Consider optimizing {metric} for {
+                                result.component
+                            } (current: {value:.3f}s)"
                         )
 
         # General recommendations

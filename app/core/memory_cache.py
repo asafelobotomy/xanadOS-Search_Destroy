@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
-"""
-Modern Memory Cache Manager for xanadOS Search & Destroy
+"""Modern Memory Cache Manager for xanadOS Search & Destroy
 Implements 2025 best practices for application caching with TTL and intelligent invalidation.
 """
 
 import threading
 import time
+from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Any, Callable, Dict, Optional
+from typing import Any
 
 from PyQt6.QtCore import QTimer
 
@@ -38,8 +38,7 @@ class CacheEntry:
 
 
 class ModernMemoryCache:
-    """
-    Modern memory cache implementation with intelligent eviction and TTL.
+    """Modern memory cache implementation with intelligent eviction and TTL.
 
     Features:
     - TTL-based expiration
@@ -52,7 +51,7 @@ class ModernMemoryCache:
     def __init__(self, max_size: int = 1000, default_ttl: float = 300):
         self.max_size = max_size
         self.default_ttl = default_ttl
-        self._cache: Dict[str, CacheEntry] = {}
+        self._cache: dict[str, CacheEntry] = {}
         self._lock = threading.RLock()
         self._stats = {"hits": 0, "misses": 0, "evictions": 0, "refreshes": 0}
 
@@ -76,7 +75,7 @@ class ModernMemoryCache:
             self._stats["hits"] += 1
             return entry.value
 
-    def set(self, key: str, value: Any, ttl: Optional[float] = None) -> None:
+    def set(self, key: str, value: Any, ttl: float | None = None) -> None:
         """Set value in cache with TTL."""
         with self._lock:
             if ttl is None:
@@ -91,7 +90,7 @@ class ModernMemoryCache:
             )
 
     def get_or_set(
-        self, key: str, factory: Callable[[], Any], ttl: Optional[float] = None
+        self, key: str, factory: Callable[[], Any], ttl: float | None = None
     ) -> Any:
         """Get value or set it using a factory function."""
         value = self.get(key)
@@ -142,7 +141,7 @@ class ModernMemoryCache:
 
             return len(expired_keys)
 
-    def get_stats(self) -> Dict[str, Any]:
+    def get_stats(self) -> dict[str, Any]:
         """Get cache statistics."""
         with self._lock:
             total_requests = self._stats["hits"] + self._stats["misses"]
@@ -160,25 +159,21 @@ class ModernMemoryCache:
 
 
 class SystemStatusCache:
-    """
-    Specialized cache for system status with intelligent refresh patterns.
+    """Specialized cache for system status with intelligent refresh patterns.
     Implements stale-while-revalidate for optimal user experience.
     """
 
     def __init__(self):
         self.cache = ModernMemoryCache(max_size=100, default_ttl=30)  # 30 second TTL
-        self.refresh_callbacks: Dict[str, Callable] = {}
+        self.refresh_callbacks: dict[str, Callable] = {}
         self._background_refresh_active = set()
 
     def register_refresh_callback(self, key: str, callback: Callable):
         """Register a callback to refresh stale data."""
         self.refresh_callbacks[key] = callback
 
-    def get_system_status(
-        self, component: str, factory: Optional[Callable] = None
-    ) -> Any:
-        """
-        Get system status with stale-while-revalidate pattern.
+    def get_system_status(self, component: str, factory: Callable | None = None) -> Any:
+        """Get system status with stale-while-revalidate pattern.
         Returns cached data immediately, triggers background refresh if stale.
         """
         # Try to get cached value first
@@ -237,7 +232,7 @@ class SystemStatusCache:
         """Invalidate cache for a specific component."""
         self.cache.delete(f"status_{component}")
 
-    def get_cache_summary(self) -> Dict[str, Any]:
+    def get_cache_summary(self) -> dict[str, Any]:
         """Get cache performance summary."""
         stats = self.cache.get_stats()
         stats["active_refreshes"] = len(self._background_refresh_active)

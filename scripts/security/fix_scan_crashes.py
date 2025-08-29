@@ -18,7 +18,7 @@ def fix_scan_thread_issues():
         return False
 
     # Read current content (not used further, but ensure path exists)
-    with open(scan_thread_path, "r", encoding="utf-8"):
+    with open(scan_thread_path, encoding="utf-8"):
         pass
 
     # Enhanced scan thread with better error handling and memory management
@@ -238,7 +238,7 @@ def fix_timer_threading_issues():
         print(f"❌ File not found: {main_window_path}")
         return False
 
-    with open(main_window_path, "r", encoding="utf-8") as f:
+    with open(main_window_path, encoding="utf-8") as f:
         content = f.read()
 
     # Find and fix the stop_scan method to properly handle thread termination
@@ -370,7 +370,7 @@ def fix_memory_management():
         print(f"❌ File not found: {scanner_path}")
         return False
 
-    with open(scanner_path, "r", encoding="utf-8") as f:
+    with open(scanner_path, encoding="utf-8") as f:
         content = f.read()
 
     # Add memory check in scan_directory method
@@ -463,7 +463,7 @@ def add_scan_timeout_protection():
     if not os.path.exists(scanner_path):
         return False
 
-    with open(scanner_path, "r", encoding="utf-8") as f:
+    with open(scanner_path, encoding="utf-8") as f:
         content = f.read()
 
     # Add timeout parameter to scan_files method

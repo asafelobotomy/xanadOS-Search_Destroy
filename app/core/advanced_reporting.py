@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""
-Advanced Reporting System for S&D
+"""Advanced Reporting System for S&D
 Provides comprehensive reporting, analytics, and threat intelligence visualization.
 """
 
@@ -14,7 +13,7 @@ from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from enum import Enum
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 # Optional heavy dependencies with graceful fallbacks
 try:  # numpy for numeric operations
@@ -127,35 +126,34 @@ class ReportConfig:
     report_type: ReportType
     format: ReportFormat
     period: ReportPeriod
-    start_date: Optional[datetime] = None
-    end_date: Optional[datetime] = None
+    start_date: datetime | None = None
+    end_date: datetime | None = None
     include_charts: bool = True
     include_raw_data: bool = False
     include_recommendations: bool = True
-    custom_title: Optional[str] = None
-    custom_filters: Dict[str, Any] = field(default_factory=dict)
+    custom_title: str | None = None
+    custom_filters: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
 class ReportData:
     """Structured report data."""
 
-    metadata: Dict[str, Any]
-    summary: Dict[str, Any]
-    metrics: Dict[str, Any]
-    charts: Dict[str, Any] = field(default_factory=dict)
-    tables: Dict[str, List[Dict[str, Any]]] = field(default_factory=dict)
-    recommendations: List[str] = field(default_factory=list)
-    raw_data: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any]
+    summary: dict[str, Any]
+    metrics: dict[str, Any]
+    charts: dict[str, Any] = field(default_factory=dict)
+    tables: dict[str, list[dict[str, Any]]] = field(default_factory=dict)
+    recommendations: list[str] = field(default_factory=list)
+    raw_data: dict[str, Any] = field(default_factory=dict)
 
 
 class AdvancedReportingSystem:
-    """
-    Comprehensive reporting system providing detailed analytics,
+    """Comprehensive reporting system providing detailed analytics,
     threat intelligence reports, and compliance documentation.
     """
 
-    def __init__(self, database_paths: Dict[str, str] = None):
+    def __init__(self, database_paths: dict[str, str] = None):
         self.logger = logging.getLogger(__name__)
 
         # Database connections
@@ -344,8 +342,7 @@ class AdvancedReportingSystem:
         )
 
     async def generate_report(self, config: ReportConfig) -> ReportData:
-        """
-        Generate comprehensive report based on configuration.
+        """Generate comprehensive report based on configuration.
 
         Args:
             config: Report generation configuration
@@ -430,8 +427,7 @@ class AdvancedReportingSystem:
     async def export_report(
         self, report_data: ReportData, config: ReportConfig, output_path: str
     ) -> bool:
-        """
-        Export report to specified format and location.
+        """Export report to specified format and location.
 
         Args:
             report_data: Generated report data
@@ -871,8 +867,8 @@ class AdvancedReportingSystem:
             )
 
     async def _create_line_chart(
-        self, data: Dict[str, Any], title: str, xlabel: str, ylabel: str
-    ) -> Dict[str, Any]:
+        self, data: dict[str, Any], title: str, xlabel: str, ylabel: str
+    ) -> dict[str, Any]:
         """Create line chart from data."""
         try:
             fig, ax = plt.subplots(figsize=self.chart_config["figure_size"])
@@ -928,8 +924,8 @@ class AdvancedReportingSystem:
             return {"title": title, "type": "line", "error": str(e)}
 
     async def _create_pie_chart(
-        self, data: List[Dict[str, Any]], title: str
-    ) -> Dict[str, Any]:
+        self, data: list[dict[str, Any]], title: str
+    ) -> dict[str, Any]:
         """Create pie chart from data."""
         try:
             fig, ax = plt.subplots(figsize=self.chart_config["figure_size"])
@@ -970,8 +966,8 @@ class AdvancedReportingSystem:
             return {"title": title, "type": "pie", "error": str(e)}
 
     async def _create_bar_chart(
-        self, data: Dict[str, Any], title: str, xlabel: str, ylabel: str
-    ) -> Dict[str, Any]:
+        self, data: dict[str, Any], title: str, xlabel: str, ylabel: str
+    ) -> dict[str, Any]:
         """Create bar chart from data."""
         try:
             fig, ax = plt.subplots(figsize=self.chart_config["figure_size"])
@@ -1025,8 +1021,8 @@ class AdvancedReportingSystem:
             return {"title": title, "type": "bar", "error": str(e)}
 
     async def _create_stacked_bar_chart(
-        self, data: Dict[str, Any], title: str
-    ) -> Dict[str, Any]:
+        self, data: dict[str, Any], title: str
+    ) -> dict[str, Any]:
         """Create stacked bar chart from data."""
         try:
             fig, ax = plt.subplots(figsize=self.chart_config["figure_size"])
@@ -1314,9 +1310,9 @@ class AdvancedReportingSystem:
     def _get_date_range(
         self,
         period: ReportPeriod,
-        start_date: Optional[datetime],
-        end_date: Optional[datetime],
-    ) -> Tuple[datetime, datetime]:
+        start_date: datetime | None,
+        end_date: datetime | None,
+    ) -> tuple[datetime, datetime]:
         """Get date range for report period."""
         now = datetime.now()
 
@@ -1346,7 +1342,7 @@ class AdvancedReportingSystem:
 
     async def _get_scan_statistics(
         self, start_date: datetime, end_date: datetime
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Get scan statistics from database."""
         # This would query the actual scan results database
         # For now, return mock data
@@ -1361,7 +1357,7 @@ class AdvancedReportingSystem:
 
     async def _get_threat_statistics(
         self, start_date: datetime, end_date: datetime
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Get threat statistics from database."""
         # Mock data
         return {
@@ -1376,7 +1372,7 @@ class AdvancedReportingSystem:
 
     async def _get_web_protection_statistics(
         self, start_date: datetime, end_date: datetime
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Get web protection statistics."""
         # Mock data
         return {
@@ -1388,10 +1384,10 @@ class AdvancedReportingSystem:
 
     def _generate_security_recommendations(
         self,
-        scan_stats: Dict[str, Any],
-        threat_stats: Dict[str, Any],
-        web_stats: Dict[str, Any],
-    ) -> List[str]:
+        scan_stats: dict[str, Any],
+        threat_stats: dict[str, Any],
+        web_stats: dict[str, Any],
+    ) -> list[str]:
         """Generate security recommendations based on statistics."""
         recommendations = []
 
@@ -1423,7 +1419,7 @@ class AdvancedReportingSystem:
 
         return recommendations
 
-    def _format_summary_metrics(self, summary: Dict[str, Any]) -> List[Dict[str, Any]]:
+    def _format_summary_metrics(self, summary: dict[str, Any]) -> list[dict[str, Any]]:
         """Format summary metrics for template rendering."""
         formatted = []
         for key, value in summary.items():
@@ -1445,8 +1441,8 @@ class AdvancedReportingSystem:
             return str(value)
 
     def _format_threat_summary(
-        self, threat_breakdown: List[Dict[str, Any]]
-    ) -> List[Dict[str, Any]]:
+        self, threat_breakdown: list[dict[str, Any]]
+    ) -> list[dict[str, Any]]:
         """Format threat summary for template rendering."""
         formatted = []
         for threat in threat_breakdown:
@@ -1468,7 +1464,7 @@ class AdvancedReportingSystem:
             )
         return formatted
 
-    def _format_technical_sections(self, report_data: ReportData) -> Dict[str, Any]:
+    def _format_technical_sections(self, report_data: ReportData) -> dict[str, Any]:
         """Format technical sections for detailed report."""
         sections = {}
 
@@ -1493,26 +1489,26 @@ class AdvancedReportingSystem:
 
     async def _get_threat_detections(
         self, start_date: datetime, end_date: datetime
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """Get threat detections from database."""
         # Would implement actual database query
         return []
 
     async def _get_heuristic_analysis(
         self, start_date: datetime, end_date: datetime
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """Get heuristic analysis results."""
         return []
 
     async def _get_recent_threats(
         self, start_date: datetime, end_date: datetime, limit: int
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """Get recent threat detections."""
         return []
 
     async def _get_threat_breakdown(
         self, start_date: datetime, end_date: datetime
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """Get threat breakdown by type."""
         return [
             {"type": "Malware", "count": 15, "risk_level": "high", "status": "Blocked"},
@@ -1578,7 +1574,7 @@ class AdvancedReportingSystem:
 
     def _generate_executive_recommendations(
         self, security_data: ReportData
-    ) -> List[str]:
+    ) -> list[str]:
         """Generate strategic recommendations for executives."""
         recommendations = []
 
@@ -1606,119 +1602,119 @@ class AdvancedReportingSystem:
     # functionality
     async def _get_threat_trends(
         self, start_date: datetime, end_date: datetime
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         return {"dates": [], "values": []}
 
     async def _analyze_threat_sources(
         self, start_date: datetime, end_date: datetime
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         return {}
 
     async def _analyze_threat_file_types(
         self, start_date: datetime, end_date: datetime
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         return {}
 
     async def _calculate_risk_assessment(
-        self, threat_detections: List[Dict[str, Any]]
-    ) -> Dict[str, Any]:
+        self, threat_detections: list[dict[str, Any]]
+    ) -> dict[str, Any]:
         return {}
 
     async def _get_performance_metrics(
         self, start_date: datetime, end_date: datetime
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         return {}
 
     async def _get_scan_duration_analysis(
         self, start_date: datetime, end_date: datetime
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         return {}
 
     async def _get_throughput_analysis(
         self, start_date: datetime, end_date: datetime
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         return {}
 
     async def _get_resource_usage(
         self, start_date: datetime, end_date: datetime
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         return {}
 
     async def _get_scan_error_analysis(
         self, start_date: datetime, end_date: datetime
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         return {"total_errors": 0, "error_rate": 0.0}
 
     async def _get_slowest_scans(
         self, start_date: datetime, end_date: datetime
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         return []
 
     async def _get_largest_files_scanned(
         self, start_date: datetime, end_date: datetime
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         return []
 
     async def _get_web_threat_detections(
         self, start_date: datetime, end_date: datetime
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         return []
 
     async def _get_url_analysis_stats(
         self, start_date: datetime, end_date: datetime
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         return {"total_requests": 0, "cache_hit_rate": 0.0}
 
     async def _get_blocked_domains_analysis(
         self, start_date: datetime, end_date: datetime
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         return []
 
     async def _get_web_threat_categories(
         self, start_date: datetime, end_date: datetime
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         return {}
 
     async def _get_geographic_threat_analysis(
         self, start_date: datetime, end_date: datetime
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         return {}
 
-    async def _get_system_configuration(self) -> Dict[str, Any]:
+    async def _get_system_configuration(self) -> dict[str, Any]:
         return {}
 
-    async def _get_component_status(self) -> Dict[str, Any]:
+    async def _get_component_status(self) -> dict[str, Any]:
         return {}
 
-    async def _get_database_statistics(self) -> Dict[str, Any]:
+    async def _get_database_statistics(self) -> dict[str, Any]:
         return {}
 
     async def _get_performance_benchmarks(
         self, start_date: datetime, end_date: datetime
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         return {}
 
     async def _get_error_logs(
         self, start_date: datetime, end_date: datetime
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         return []
 
-    async def _analyze_configuration(self) -> List[Dict[str, Any]]:
+    async def _analyze_configuration(self) -> list[dict[str, Any]]:
         return []
 
     async def _get_raw_scan_data(
         self, start_date: datetime, end_date: datetime
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         return {}
 
     async def _get_raw_threat_data(
         self, start_date: datetime, end_date: datetime
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         return {}
 
     async def _get_raw_system_metrics(
         self, start_date: datetime, end_date: datetime
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         return {}
 
 

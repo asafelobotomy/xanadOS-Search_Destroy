@@ -2,6 +2,7 @@
 """
 Simple test for RKHunter availability detection - standalone version
 """
+
 import logging
 import os
 

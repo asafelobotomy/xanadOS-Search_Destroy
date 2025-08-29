@@ -4,8 +4,8 @@ Repository Cleanup Verification
 Verifies that the xanadOS Search & Destroy repository is properly organized and functional.
 """
 
-import sys
 import importlib
+import sys
 from pathlib import Path
 
 

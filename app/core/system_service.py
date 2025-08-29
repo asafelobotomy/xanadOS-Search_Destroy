@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""
-System Service Integration for S&D
+"""System Service Integration for S&D
 Provides system service management, startup integration, and daemon capabilities.
 """
 
@@ -10,14 +9,16 @@ import signal
 import subprocess
 import threading
 import time
+from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
 from pathlib import Path
-from typing import Callable, Dict, List, Optional
 
-from .safe_kill import _process_exists  # type: ignore
-from .safe_kill import kill_sequence
+from .safe_kill import (
+    _process_exists,  # type: ignore
+    kill_sequence,
+)
 from .secure_subprocess import run_secure
 
 
@@ -59,7 +60,7 @@ class ServiceConfig:
     restart_on_failure: bool = True
     restart_delay_seconds: int = 10
     max_restart_attempts: int = 5
-    environment_vars: Optional[Dict[str, str]] = None
+    environment_vars: dict[str, str] | None = None
 
     def __post_init__(self):
         if self.environment_vars is None:
@@ -71,22 +72,21 @@ class ServiceStatus:
     """Service status information."""
 
     state: ServiceState
-    pid: Optional[int] = None
+    pid: int | None = None
     uptime_seconds: float = 0.0
     memory_usage_mb: float = 0.0
     cpu_percent: float = 0.0
     restart_count: int = 0
-    last_restart_time: Optional[datetime] = None
+    last_restart_time: datetime | None = None
     error_message: str = ""
 
 
 class SystemServiceManager:
-    """
-    Comprehensive system service integration for S&D.
+    """Comprehensive system service integration for S&D.
     Handles service installation, management, and monitoring across different init systems.
     """
 
-    def __init__(self, config: Optional[ServiceConfig] = None):
+    def __init__(self, config: ServiceConfig | None = None):
         self.logger = logging.getLogger(__name__)
         self.config = config or ServiceConfig()
 
@@ -100,24 +100,22 @@ class SystemServiceManager:
 
         # Service state
         self.current_state = ServiceState.UNKNOWN
-        self.service_pid: Optional[int] = None
-        self.start_time: Optional[datetime] = None
+        self.service_pid: int | None = None
+        self.start_time: datetime | None = None
         self.restart_count = 0
 
         # Daemon mode support
         self.daemon_mode = False
-        self.daemon_thread: Optional[threading.Thread] = None
+        self.daemon_thread: threading.Thread | None = None
         self.shutdown_event = threading.Event()
 
         # Service monitoring
-        self.monitor_thread: Optional[threading.Thread] = None
+        self.monitor_thread: threading.Thread | None = None
         self.monitor_running = False
 
         # Callbacks
-        self.state_changed_callback: Optional[Callable[[ServiceState, str], None]] = (
-            None
-        )
-        self.error_callback: Optional[Callable[[str], None]] = None
+        self.state_changed_callback: Callable[[ServiceState, str], None] | None = None
+        self.error_callback: Callable[[str], None] | None = None
 
     def _detect_init_system(self) -> ServiceType:
         """Detect the system's init system."""
@@ -767,6 +765,7 @@ exec /usr/bin/python3 {self.config.executable_path} --daemon
         try:
             result = subprocess.run(
                 [f"/etc/init.d/{self.config.service_name}", action],
+                check=False,
                 capture_output=True,
                 text=True,
             )
@@ -884,7 +883,7 @@ exec /usr/bin/python3 {self.config.executable_path} --daemon
             )
             self.current_state = ServiceState.UNKNOWN
 
-    def _get_service_pid(self) -> Optional[int]:
+    def _get_service_pid(self) -> int | None:
         """Get service process ID."""
         try:
             pid_file = Path(self.config.pid_file)
@@ -1062,7 +1061,7 @@ exec /usr/bin/python3 {self.config.executable_path} --daemon
                         ).replace("%d", "{e}")
                     )
 
-    def get_service_logs(self, lines: int = 100) -> List[str]:
+    def get_service_logs(self, lines: int = 100) -> list[str]:
         """Get recent service logs."""
         try:
             if self.service_type == ServiceType.SYSTEMD:

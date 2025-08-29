@@ -8,8 +8,8 @@ organization and cleanup efforts.
 """
 
 import os
-from pathlib import Path
 from datetime import datetime
+from pathlib import Path
 
 
 def generate_status_report():
@@ -51,7 +51,7 @@ def generate_status_report():
             print(f"❌ {dir_path:<20} - {description}")
 
     print(
-        f"\nStructure Score: {structure_score}/{len(required_dirs)} ({structure_score/len(required_dirs)*100:.1f}%)"
+        f"\nStructure Score: {structure_score}/{len(required_dirs)} ({structure_score / len(required_dirs) * 100:.1f}%)"
     )
 
     # Cleanup Results
@@ -114,7 +114,7 @@ def generate_status_report():
             print(f"⚠️  {doc_file:<30} - {description}")
 
     print(
-        f"\nDocumentation Score: {docs_score}/{len(docs)} ({docs_score/len(docs)*100:.1f}%)"
+        f"\nDocumentation Score: {docs_score}/{len(docs)} ({docs_score / len(docs) * 100:.1f}%)"
     )
 
     # Code Quality
@@ -133,7 +133,7 @@ def generate_status_report():
     total_lines = 0
     for py_file in py_files:
         try:
-            with open(py_file, "r", encoding="utf-8") as f:
+            with open(py_file, encoding="utf-8") as f:
                 total_lines += len(f.readlines())
         except (OSError, UnicodeDecodeError):
             pass
@@ -200,7 +200,7 @@ def generate_status_report():
     print("4. 🔄 Regular maintenance with cleanup script")
     print("5. 📈 Monitor code quality metrics")
 
-    print(f"\n{'='*65}")
+    print(f"\n{'=' * 65}")
     print("🎉 REPOSITORY ORGANIZATION COMPLETE!")
     print("Repository is clean, organized, and ready for development!")
 

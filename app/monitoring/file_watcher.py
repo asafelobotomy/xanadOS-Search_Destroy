@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""
-File system watcher for real-time monitoring
+"""File system watcher for real-time monitoring
 Uses inotify on Linux for efficient file system event detection
 """
 
@@ -9,9 +8,10 @@ import os
 import tempfile
 import threading
 import time
+from collections.abc import Callable
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any, Callable, Dict, List, Optional, Set
+from typing import Any
 
 # Try to import inotify, fallback to polling if not available
 try:
@@ -41,7 +41,7 @@ class WatchEvent:
     event_type: WatchEventType
     file_path: str
     timestamp: float
-    old_path: Optional[str] = None  # For move events
+    old_path: str | None = None  # For move events
     size: int = 0
     is_directory: bool = False
 
@@ -65,8 +65,8 @@ class FileSystemWatcher:
 
     def __init__(
         self,
-        paths_to_watch: Optional[List[str]] = None,
-        event_callback: Optional[Callable[[WatchEvent], None]] = None,
+        paths_to_watch: list[str] | None = None,
+        event_callback: Callable[[WatchEvent], None] | None = None,
     ) -> None:
         """Initialize file system watcher.
 
@@ -80,21 +80,21 @@ class FileSystemWatcher:
         self.event_callback = event_callback
 
         # Event filtering
-        self.excluded_extensions: Set[str] = {".tmp", ".swp", ".log", ".cache"}
-        self.excluded_paths: Set[str] = {"/proc", "/sys", "/dev", tempfile.gettempdir()}
+        self.excluded_extensions: set[str] = {".tmp", ".swp", ".log", ".cache"}
+        self.excluded_paths: set[str] = {"/proc", "/sys", "/dev", tempfile.gettempdir()}
         self.max_file_size: int = 100 * 1024 * 1024  # 100MB
 
         # State management
         self.watching = False
-        self.watch_thread: Optional[threading.Thread] = None
-        self.inotify_adapter: Optional["inotify.adapters.Inotify"] = None
+        self.watch_thread: threading.Thread | None = None
+        self.inotify_adapter: inotify.adapters.Inotify | None = None
 
         # Enhanced event throttling and debouncing
-        self.event_queue: List[WatchEvent] = []
-        self.last_event_time: Dict[str, float] = {}
+        self.event_queue: list[WatchEvent] = []
+        self.last_event_time: dict[str, float] = {}
         self.throttle_duration = 1.0  # seconds
-        self.debounce_buffer: Dict[str, List[WatchEvent]] = {}
-        self.debounce_timer: Optional[threading.Timer] = None
+        self.debounce_buffer: dict[str, list[WatchEvent]] = {}
+        self.debounce_timer: threading.Timer | None = None
         self.debounce_delay = 0.5  # seconds
 
         # Performance monitoring
@@ -252,7 +252,7 @@ class FileSystemWatcher:
             if not is_directory and os.path.exists(full_path):
                 try:
                     file_size = os.path.getsize(full_path)
-                except (OSError, IOError):
+                except OSError:
                     file_size = 0
 
             watch_event = WatchEvent(
@@ -330,7 +330,7 @@ class FileSystemWatcher:
                                     )
                                     self._handle_event(event)
 
-                            except (OSError, IOError) as e:
+                            except OSError as e:
                                 self.logger.debug(
                                     "Error accessing file %s: %s", full_path, e
                                 )
@@ -370,7 +370,7 @@ class FileSystemWatcher:
                 try:
                     if os.path.getsize(path) > self.max_file_size:
                         return False
-                except (OSError, IOError):
+                except OSError:
                     pass
 
             return True
@@ -458,7 +458,7 @@ class FileSystemWatcher:
         except Exception as e:
             self.logger.error("Error in event callback: %s", e)
 
-    def get_statistics(self) -> Dict[str, Any]:
+    def get_statistics(self) -> dict[str, Any]:
         """Get watcher performance statistics."""
         uptime = time.time() - self.start_time
         return {

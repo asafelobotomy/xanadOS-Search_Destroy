@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""
-Theme Manager - Centralized theming system for S&D Search & Destroy
+"""Theme Manager - Centralized theming system for S&D Search & Destroy
 Provides automatic theming for all GUI components without manual application.
 """
 
@@ -20,8 +19,7 @@ from PyQt6.QtWidgets import (
 
 
 class ThemeManager(QObject):
-    """
-    Centralized theme management system that automatically applies themes
+    """Centralized theme management system that automatically applies themes
     to all GUI components through Qt's style system and custom stylesheets.
     """
 
@@ -280,7 +278,7 @@ class ThemeManager(QObject):
         """Get the current theme name."""
         return self._current_theme
 
-    def get_available_themes(self) -> Dict[str, str]:
+    def get_available_themes(self) -> dict[str, str]:
         """Get available themes as {theme_id: display_name}."""
         return {
             theme_id: theme_data["name"]
@@ -294,7 +292,7 @@ class ThemeManager(QObject):
             return theme_data["name"]
         return theme_id.title()  # Fallback to capitalized theme ID
 
-    def get_color(self, color_key: str, theme: Optional[str] = None) -> str:
+    def get_color(self, color_key: str, theme: str | None = None) -> str:
         """Get a color value from the current or specified theme."""
         theme_name = theme or self._current_theme
         theme_data = self._theme_definitions.get(
@@ -302,7 +300,7 @@ class ThemeManager(QObject):
         )
         return theme_data["colors"].get(color_key, "#FFFFFF")
 
-    def get_font_property(self, font_key: str, theme: Optional[str] = None) -> Any:
+    def get_font_property(self, font_key: str, theme: str | None = None) -> Any:
         """Get a font property from the current or specified theme."""
         theme_name = theme or self._current_theme
         theme_data = self._theme_definitions.get(
@@ -372,10 +370,7 @@ class ThemeManager(QObject):
         return "dark"
 
     def _process_qt_stylesheet(self, css: str) -> str:
-        """
-        Process CSS to remove unsupported properties and add Qt-compatible alternatives.
-        """
-
+        """Process CSS to remove unsupported properties and add Qt-compatible alternatives."""
         # Remove unsupported CSS properties that cause warnings
         unsupported_patterns = [
             r"^\s*transition[^;]*;.*$",  # Remove transition properties
@@ -404,9 +399,7 @@ class ThemeManager(QObject):
         return processed_css
 
     def _enhance_hover_state(self, hover_rule: str) -> str:
-        """
-        Enhance hover states with Qt-compatible effects instead of transforms.
-        """
+        """Enhance hover states with Qt-compatible effects instead of transforms."""
         # For buttons that had translateY effects, we can use margin adjustments
         if "QPushButton" in hover_rule:
             # Add subtle margin effect for button press simulation
@@ -416,9 +409,7 @@ class ThemeManager(QObject):
         return hover_rule
 
     def apply_qt_effects(self, widget: QWidget, effect_type: str = "button"):
-        """
-        Apply Qt-native effects to widgets to replace CSS effects that don't work.
-        """
+        """Apply Qt-native effects to widgets to replace CSS effects that don't work."""
         if effect_type == "button" and isinstance(widget, QPushButton):
             self._setup_button_effects(widget)
         elif effect_type == "shadow":
@@ -525,8 +516,7 @@ class ThemeManager(QObject):
         widget.setGraphicsEffect(shadow)
 
     def setup_widget_effects(self, widget: QWidget):
-        """
-        Automatically setup Qt effects for a widget based on its type.
+        """Automatically setup Qt effects for a widget based on its type.
         Call this method when creating new widgets to get enhanced effects.
         """
         if isinstance(widget, QPushButton):

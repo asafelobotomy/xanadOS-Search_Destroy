@@ -336,10 +336,17 @@ class SecurityStandards:
         """Determine risk level of a file based on extension and properties"""
         filename_lower = filename.lower()
 
+        # Default assumption
+        risk: FileRiskLevel = FileRiskLevel.LOW_RISK
+
         # Check for suspicious patterns first
         for pattern in cls.SUSPICIOUS_PATTERNS:
             if pattern.match(filename):
-                return FileRiskLevel.DANGEROUS
+                risk = FileRiskLevel.DANGEROUS
+                break
+
+        if risk is FileRiskLevel.DANGEROUS:
+            return risk
 
         # Get file extension
         ext = None
@@ -349,24 +356,25 @@ class SecurityStandards:
                 break
 
         if not ext:
-            return FileRiskLevel.MODERATE_RISK
-
-        if ext in cls.DANGEROUS_EXTENSIONS:
+            risk = FileRiskLevel.MODERATE_RISK
+        elif ext in cls.DANGEROUS_EXTENSIONS:
             # Further classify dangerous files
             if ext in [".exe", ".com", ".scr", ".bat", ".cmd"]:
-                return FileRiskLevel.DANGEROUS
+                risk = FileRiskLevel.DANGEROUS
             elif ext in [".zip", ".rar", ".7z", ".tar", ".gz"]:
-                return FileRiskLevel.HIGH_RISK  # Archives need scanning
+                risk = FileRiskLevel.HIGH_RISK  # Archives need scanning
             else:
-                return FileRiskLevel.MODERATE_RISK
-
-        if ext in cls.SAFE_EXTENSIONS:
+                risk = FileRiskLevel.MODERATE_RISK
+        elif ext in cls.SAFE_EXTENSIONS:
             # Even "safe" files can be dangerous if oversized
-            if file_size > cls.FILE_SIZE_LIMITS.get("default", 100 * 1024 * 1024):
-                return FileRiskLevel.MODERATE_RISK
-            return FileRiskLevel.SAFE
+            default_limit = cls.FILE_SIZE_LIMITS.get("default", 100 * 1024 * 1024)
+            risk = (
+                FileRiskLevel.SAFE
+                if file_size <= default_limit
+                else FileRiskLevel.MODERATE_RISK
+            )
 
-        return FileRiskLevel.LOW_RISK
+        return risk
 
     @classmethod
     def validate_command_arguments(cls, args: List[str]) -> bool:
@@ -442,24 +450,26 @@ class SecurityStandards:
         """Classify threat based on name patterns"""
         threat_lower = threat_name.lower()
 
+        category: ThreatCategory = ThreatCategory.MALWARE
+
         if any(pattern in threat_lower for pattern in ["rootkit", "backdoor"]):
-            return ThreatCategory.ROOTKIT
+            category = ThreatCategory.ROOTKIT
         elif any(pattern in threat_lower for pattern in ["trojan", "horse"]):
-            return ThreatCategory.TROJAN
+            category = ThreatCategory.TROJAN
         elif any(pattern in threat_lower for pattern in ["virus", "infect"]):
-            return ThreatCategory.VIRUS
+            category = ThreatCategory.VIRUS
         elif any(pattern in threat_lower for pattern in ["worm", "network"]):
-            return ThreatCategory.WORM
+            category = ThreatCategory.WORM
         elif any(pattern in threat_lower for pattern in ["spy", "keylog", "steal"]):
-            return ThreatCategory.SPYWARE
+            category = ThreatCategory.SPYWARE
         elif any(pattern in threat_lower for pattern in ["adware", "popup", "banner"]):
-            return ThreatCategory.ADWARE
+            category = ThreatCategory.ADWARE
         elif any(
             pattern in threat_lower for pattern in ["pup", "unwanted", "suspicious"]
         ):
-            return ThreatCategory.POTENTIALLY_UNWANTED
-        else:
-            return ThreatCategory.MALWARE
+            category = ThreatCategory.POTENTIALLY_UNWANTED
+
+        return category
 
     @classmethod
     def classify_file_risk(cls, filename: str, file_size: int = 0) -> FileRiskLevel:
@@ -487,11 +497,15 @@ def validate_file_safety(filename: str, file_size: int = 0) -> ValidationResult:
 
     if risk_level == FileRiskLevel.DANGEROUS:
         return ValidationResult(
-            False, f"File {filename} is classified as dangerous", SecurityLevel.CRITICAL
+            False,
+            f"File {filename} is classified as dangerous",
+            SecurityLevel.CRITICAL,
         )
     elif risk_level == FileRiskLevel.HIGH_RISK:
         return ValidationResult(
-            True, f"File {filename} requires careful scanning", SecurityLevel.HIGH
+            True,
+            f"File {filename} requires careful scanning",
+            SecurityLevel.HIGH,
         )
     elif risk_level == FileRiskLevel.MODERATE_RISK:
         return ValidationResult(
@@ -507,15 +521,23 @@ def validate_command_safety(binary: str, args: List[str]) -> ValidationResult:
     """Validate command execution safety"""
     if not SecurityStandards.is_allowed_binary(binary):
         return ValidationResult(
-            False, f"Binary {binary} is not in allowed list", SecurityLevel.CRITICAL
+            False,
+            f"Binary {binary} is not in allowed list",
+            SecurityLevel.CRITICAL,
         )
 
     if not SecurityStandards.validate_command_arguments(args):
         return ValidationResult(
-            False, "Command arguments contain unsafe patterns", SecurityLevel.HIGH
+            False,
+            "Command arguments contain unsafe patterns",
+            SecurityLevel.HIGH,
         )
 
-    return ValidationResult(True, f"Command {binary} appears safe", SecurityLevel.LOW)
+    return ValidationResult(
+        True,
+        f"Command {binary} appears safe",
+        SecurityLevel.LOW,
+    )
 
 
 # Create global instance for easy access

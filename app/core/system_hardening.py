@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""
-System Hardening Detection and Validation Module
+"""System Hardening Detection and Validation Module
 xanadOS Search & Destroy - Enhanced Security Checks
 This module implements comprehensive system hardening detection including:
 - Kernel security features (KASLR, SMEP/SMAP)
@@ -17,7 +16,7 @@ import subprocess
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -39,12 +38,12 @@ class SecurityFeature:
 class HardeningReport:
     """Comprehensive system hardening report"""
 
-    security_features: List[SecurityFeature]
+    security_features: list[SecurityFeature]
     overall_score: int
     max_score: int
     compliance_level: str
-    recommendations: List[str]
-    critical_issues: List[str]
+    recommendations: list[str]
+    critical_issues: list[str]
     timestamp: str
 
 
@@ -124,7 +123,7 @@ class SystemHardeningChecker:
         )
         return report
 
-    def _check_kernel_security_features(self) -> List[SecurityFeature]:
+    def _check_kernel_security_features(self) -> list[SecurityFeature]:
         """Check kernel-level security features (KASLR, SMEP/SMAP, etc.)"""
         features = []
 
@@ -202,7 +201,7 @@ class SystemHardeningChecker:
 
         return features
 
-    def _check_kernel_lockdown(self) -> List[SecurityFeature]:
+    def _check_kernel_lockdown(self) -> list[SecurityFeature]:
         """Check kernel lockdown mode status"""
         features = []
 
@@ -237,7 +236,7 @@ class SystemHardeningChecker:
 
         return features
 
-    def _check_mandatory_access_control(self) -> List[SecurityFeature]:
+    def _check_mandatory_access_control(self) -> list[SecurityFeature]:
         """Check AppArmor status - SELinux removed for simplicity"""
         features = []
 
@@ -257,7 +256,7 @@ class SystemHardeningChecker:
 
         return features
 
-    def _check_critical_sysctl_params(self) -> List[SecurityFeature]:
+    def _check_critical_sysctl_params(self) -> list[SecurityFeature]:
         """Check critical sysctl security parameters"""
         features = []
 
@@ -327,7 +326,7 @@ class SystemHardeningChecker:
 
         return features
 
-    def _check_additional_security_features(self) -> List[SecurityFeature]:
+    def _check_additional_security_features(self) -> list[SecurityFeature]:
         """Check additional security features"""
         features = []
 
@@ -369,11 +368,11 @@ class SystemHardeningChecker:
 
         return features
 
-    def _check_kaslr(self) -> Dict[str, Any]:
+    def _check_kaslr(self) -> dict[str, Any]:
         """Check KASLR status"""
         try:
             # Check if KASLR is enabled via kernel command line
-            with open("/proc/cmdline", "r") as f:
+            with open("/proc/cmdline") as f:
                 cmdline = f.read().strip()
 
             # Check for KASLR in various ways
@@ -384,37 +383,37 @@ class SystemHardeningChecker:
                 status = "Disabled via kernel command line (nokaslr)"
             elif "kaslr" in cmdline:
                 status = "Explicitly enabled via kernel command line"
+            # Check kernel config if available
+            elif os.path.exists("/proc/config.gz"):
+                try:
+                    result = subprocess.run(
+                        ["zcat", "/proc/config.gz"],
+                        check=False,
+                        capture_output=True,
+                        text=True,
+                        timeout=5,
+                    )
+                    if "CONFIG_RANDOMIZE_BASE=y" in result.stdout:
+                        status = "Enabled in kernel configuration"
+                    else:
+                        kaslr_enabled = False
+                        status = "Not enabled in kernel configuration"
+                except BaseException:
+                    status = "Status unknown - unable to check kernel config"
             else:
-                # Check kernel config if available
-                if os.path.exists("/proc/config.gz"):
-                    try:
-                        result = subprocess.run(
-                            ["zcat", "/proc/config.gz"],
-                            capture_output=True,
-                            text=True,
-                            timeout=5,
-                        )
-                        if "CONFIG_RANDOMIZE_BASE=y" in result.stdout:
-                            status = "Enabled in kernel configuration"
-                        else:
-                            kaslr_enabled = False
-                            status = "Not enabled in kernel configuration"
-                    except BaseException:
-                        status = "Status unknown - unable to check kernel config"
-                else:
-                    # Assume enabled on modern kernels unless explicitly disabled
-                    status = "Likely enabled (modern kernel default)"
+                # Assume enabled on modern kernels unless explicitly disabled
+                status = "Likely enabled (modern kernel default)"
 
             return {"enabled": kaslr_enabled, "status": status}
         except Exception as e:
             logger.warning(f"Error checking KASLR: {e}")
             return {"enabled": False, "status": f"Error checking KASLR: {e}"}
 
-    def _check_smep_smap(self) -> Dict[str, Any]:
+    def _check_smep_smap(self) -> dict[str, Any]:
         """Check SMEP/SMAP status"""
         try:
             # Check CPU flags for SMEP/SMAP support
-            with open("/proc/cpuinfo", "r") as f:
+            with open("/proc/cpuinfo") as f:
                 cpuinfo = f.read()
 
             flags = []
@@ -440,13 +439,14 @@ class SystemHardeningChecker:
             logger.warning(f"Error checking SMEP/SMAP: {e}")
             return {"enabled": False, "status": f"Error checking SMEP/SMAP: {e}"}
 
-    def _check_stack_guard_pages(self) -> Dict[str, Any]:
+    def _check_stack_guard_pages(self) -> dict[str, Any]:
         """Check kernel stack guard pages"""
         try:
             # Check if VMAP_STACK is enabled
             if os.path.exists("/proc/config.gz"):
                 result = subprocess.run(
                     ["zcat", "/proc/config.gz"],
+                    check=False,
                     capture_output=True,
                     text=True,
                     timeout=5,
@@ -461,13 +461,14 @@ class SystemHardeningChecker:
         except Exception as e:
             return {"enabled": False, "status": f"Error checking: {e}"}
 
-    def _check_kasan(self) -> Dict[str, Any]:
+    def _check_kasan(self) -> dict[str, Any]:
         """Check KASAN status"""
         try:
             # KASAN is typically not enabled in production kernels
             if os.path.exists("/proc/config.gz"):
                 result = subprocess.run(
                     ["zcat", "/proc/config.gz"],
+                    check=False,
                     capture_output=True,
                     text=True,
                     timeout=5,
@@ -497,7 +498,7 @@ class SystemHardeningChecker:
 
             for lockdown_file in lockdown_files:
                 if os.path.exists(lockdown_file):
-                    with open(lockdown_file, "r") as f:
+                    with open(lockdown_file) as f:
                         content = f.read().strip()
 
                     # Parse lockdown status
@@ -515,11 +516,11 @@ class SystemHardeningChecker:
             logger.warning(f"Error checking lockdown status: {e}")
             return "unknown"
 
-    def _check_apparmor(self) -> Dict[str, Any]:
+    def _check_apparmor(self) -> dict[str, Any]:
         """Check AppArmor status"""
         try:
             result = subprocess.run(
-                ["aa-status"], capture_output=True, text=True, timeout=5
+                ["aa-status"], check=False, capture_output=True, text=True, timeout=5
             )
             if result.returncode == 0:
                 output = result.stdout
@@ -568,14 +569,18 @@ class SystemHardeningChecker:
                 "recommendation": "Investigate AppArmor configuration",
             }
 
-    def _get_sysctl_value(self, param: str) -> Optional[str]:
+    def _get_sysctl_value(self, param: str) -> str | None:
         """Get sysctl parameter value"""
         if param in self.sysctl_cache:
             return self.sysctl_cache[param]
 
         try:
             result = subprocess.run(
-                ["sysctl", "-n", param], capture_output=True, text=True, timeout=5
+                ["sysctl", "-n", param],
+                check=False,
+                capture_output=True,
+                text=True,
+                timeout=5,
             )
             if result.returncode == 0:
                 value = result.stdout.strip()
@@ -587,7 +592,7 @@ class SystemHardeningChecker:
             logger.debug(f"Error getting sysctl {param}: {e}")
             return None
 
-    def _check_aslr(self) -> Dict[str, Any]:
+    def _check_aslr(self) -> dict[str, Any]:
         """Check ASLR status"""
         aslr_value = self._get_sysctl_value("kernel.randomize_va_space")
 
@@ -612,11 +617,11 @@ class SystemHardeningChecker:
                 "status": f"ASLR status unknown (randomize_va_space = {aslr_value})",
             }
 
-    def _check_nx_bit(self) -> Dict[str, Any]:
+    def _check_nx_bit(self) -> dict[str, Any]:
         """Check NX bit / DEP status"""
         try:
             # Check CPU flags for NX support
-            with open("/proc/cpuinfo", "r") as f:
+            with open("/proc/cpuinfo") as f:
                 cpuinfo = f.read()
 
             # Look for NX-related flags
@@ -635,7 +640,7 @@ class SystemHardeningChecker:
         except Exception as e:
             return {"enabled": False, "status": f"Error checking NX bit: {e}"}
 
-    def get_hardening_recommendations(self, report: HardeningReport) -> List[str]:
+    def get_hardening_recommendations(self, report: HardeningReport) -> list[str]:
         """Generate specific hardening recommendations based on report"""
         recommendations = []
 

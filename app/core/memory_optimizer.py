@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""
-Memory optimization module for xanadOS Search & Destroy
+"""Memory optimization module for xanadOS Search & Destroy
 Provides efficient memory management and resource optimization
 """
 
@@ -10,8 +9,8 @@ import sys
 import threading
 import time
 import weakref
+from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Callable, Dict, List, Optional
 
 import psutil
 
@@ -44,7 +43,7 @@ class MemoryPool:
         """
         self.object_factory = object_factory
         self.max_size = max_size
-        self.pool: List[object] = []
+        self.pool: list[object] = []
         self.lock = threading.Lock()
         self.logger = logging.getLogger(__name__)
 
@@ -71,13 +70,10 @@ class MemoryPool:
 
 
 class StreamProcessor:
-    """
-    Stream processor for handling large files without loading entire content into memory.
-    """
+    """Stream processor for handling large files without loading entire content into memory."""
 
     def __init__(self, chunk_size: int = 64 * 1024):  # 64KB chunks
-        """
-        Initialize stream processor.
+        """Initialize stream processor.
 
         Args:
             chunk_size: Size of chunks to process at a time
@@ -88,8 +84,7 @@ class StreamProcessor:
     def process_file_stream(
         self, file_path: str, processor_func: Callable[[bytes], None]
     ):
-        """
-        Process file in chunks without loading entire file.
+        """Process file in chunks without loading entire file.
 
         Args:
             file_path: Path to file to process
@@ -117,14 +112,14 @@ class MemoryOptimizer:
         self.logger = logging.getLogger(__name__)
         # Monitoring
         self.monitoring = False
-        self.monitor_thread: Optional[threading.Thread] = None
+        self.monitor_thread: threading.Thread | None = None
         self.monitor_interval = 5.0
         # Callbacks
-        self.memory_warning_callback: Optional[Callable[[MemoryStats], None]] = None
-        self.memory_critical_callback: Optional[Callable[[MemoryStats], None]] = None
+        self.memory_warning_callback: Callable[[MemoryStats], None] | None = None
+        self.memory_critical_callback: Callable[[MemoryStats], None] | None = None
         # Pools / caches
-        self.pools: Dict[str, MemoryPool] = {}
-        self.cache_refs: "weakref.WeakSet[object]" = weakref.WeakSet()
+        self.pools: dict[str, MemoryPool] = {}
+        self.cache_refs: weakref.WeakSet[object] = weakref.WeakSet()
 
     def get_memory_stats(self) -> MemoryStats:
         try:
@@ -264,13 +259,10 @@ class MemoryOptimizer:
 
 
 class CacheManager:
-    """
-    Intelligent cache manager with automatic eviction and memory awareness.
-    """
+    """Intelligent cache manager with automatic eviction and memory awareness."""
 
     def __init__(self, max_size: int = 1000, max_memory_mb: int = 100):
-        """
-        Initialize cache manager.
+        """Initialize cache manager.
 
         Args:
             max_size: Maximum number of cache entries
@@ -278,8 +270,8 @@ class CacheManager:
         """
         self.max_size = max_size
         self.max_memory_mb = max_memory_mb
-        self.cache: Dict = {}
-        self.access_times: Dict = {}
+        self.cache: dict = {}
+        self.access_times: dict = {}
         self.lock = threading.RLock()
         self.logger = logging.getLogger(__name__)
 
@@ -346,7 +338,7 @@ class CacheManager:
             self.access_times.clear()
             self.estimated_memory_mb = 0.0
 
-    def get_stats(self) -> Dict[str, float]:
+    def get_stats(self) -> dict[str, float]:
         """Get cache statistics."""
         with self.lock:
             return {

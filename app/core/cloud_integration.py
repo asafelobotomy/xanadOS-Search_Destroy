@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""
-Cloud Integration System for S&D
+"""Cloud Integration System for S&D
 Provides enhanced threat intelligence, cloud backup, and community threat sharing.
 """
 
@@ -18,7 +17,7 @@ import time
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from enum import Enum
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 # Third-party imports with graceful fallbacks (E402 compliance: keep at top)
 try:
@@ -122,11 +121,11 @@ class CloudConfig:
     """Cloud service configuration."""
 
     provider: CloudProvider
-    api_key: Optional[str] = None
-    secret_key: Optional[str] = None
-    endpoint_url: Optional[str] = None
-    bucket_name: Optional[str] = None
-    region: Optional[str] = None
+    api_key: str | None = None
+    secret_key: str | None = None
+    endpoint_url: str | None = None
+    bucket_name: str | None = None
+    region: str | None = None
     encryption_enabled: bool = True
     compression_enabled: bool = True
     sync_interval: int = 3600  # seconds
@@ -139,27 +138,27 @@ class CloudConfig:
 class ThreatIntelConfig:
     """Threat intelligence configuration."""
 
-    sources: List[ThreatIntelSource]
-    api_keys: Dict[str, str] = field(default_factory=dict)
+    sources: list[ThreatIntelSource]
+    api_keys: dict[str, str] = field(default_factory=dict)
     update_interval: int = 1800  # 30 minutes
     cache_duration: int = 86400  # 24 hours
     share_detections: bool = True
     anonymize_data: bool = True
     min_confidence: float = 0.7
-    rate_limits: Dict[str, int] = field(default_factory=dict)
+    rate_limits: dict[str, int] = field(default_factory=dict)
 
 
 @dataclass
 class CloudSyncStatus:
     """Cloud synchronization status."""
 
-    last_sync: Optional[datetime] = None
+    last_sync: datetime | None = None
     files_synced: int = 0
     bytes_synced: int = 0
     errors_count: int = 0
-    last_error: Optional[str] = None
+    last_error: str | None = None
     sync_in_progress: bool = False
-    next_sync: Optional[datetime] = None
+    next_sync: datetime | None = None
 
 
 @dataclass
@@ -172,17 +171,16 @@ class ThreatIntelligence:
     source: str
     first_seen: datetime
     last_seen: datetime
-    threat_names: List[str] = field(default_factory=list)
-    families: List[str] = field(default_factory=list)
-    tags: List[str] = field(default_factory=list)
-    country_origin: Optional[str] = None
+    threat_names: list[str] = field(default_factory=list)
+    families: list[str] = field(default_factory=list)
+    tags: list[str] = field(default_factory=list)
+    country_origin: str | None = None
     severity: str = "medium"
-    additional_data: Dict[str, Any] = field(default_factory=dict)
+    additional_data: dict[str, Any] = field(default_factory=dict)
 
 
 class CloudIntegrationSystem:
-    """
-    Comprehensive cloud integration system providing threat intelligence,
+    """Comprehensive cloud integration system providing threat intelligence,
     backup services, and community threat sharing capabilities.
     """
 
@@ -278,10 +276,9 @@ class CloudIntegrationSystem:
             self.logger.error("Error during cleanup: %s", e)
 
     async def upload_threat_data(
-        self, threat_data: Dict[str, Any], anonymize: bool = True
+        self, threat_data: dict[str, Any], anonymize: bool = True
     ) -> bool:
-        """
-        Upload threat detection data to cloud for community sharing.
+        """Upload threat detection data to cloud for community sharing.
 
         Args:
             threat_data: Threat detection information
@@ -329,9 +326,8 @@ class CloudIntegrationSystem:
 
     async def download_threat_intelligence(
         self, hash_value: str = None
-    ) -> List[ThreatIntelligence]:
-        """
-        Download threat intelligence from cloud sources.
+    ) -> list[ThreatIntelligence]:
+        """Download threat intelligence from cloud sources.
 
         Args:
             hash_value: Specific hash to query (optional)
@@ -367,9 +363,8 @@ class CloudIntegrationSystem:
             self.logger.error("Error downloading threat intelligence: %s", e)
             return []
 
-    async def backup_scan_data(self, scan_results: List[Dict[str, Any]]) -> bool:
-        """
-        Backup scan results to cloud storage.
+    async def backup_scan_data(self, scan_results: list[dict[str, Any]]) -> bool:
+        """Backup scan results to cloud storage.
 
         Args:
             scan_results: List of scan result dictionaries
@@ -415,9 +410,8 @@ class CloudIntegrationSystem:
 
     async def restore_scan_data(
         self, backup_date: datetime = None
-    ) -> List[Dict[str, Any]]:
-        """
-        Restore scan data from cloud backup.
+    ) -> list[dict[str, Any]]:
+        """Restore scan data from cloud backup.
 
         Args:
             backup_date: Specific date to restore from (optional)
@@ -460,9 +454,8 @@ class CloudIntegrationSystem:
 
     async def query_threat_reputation(
         self, file_hash: str
-    ) -> Optional[ThreatIntelligence]:
-        """
-        Query threat reputation from multiple sources.
+    ) -> ThreatIntelligence | None:
+        """Query threat reputation from multiple sources.
 
         Args:
             file_hash: File hash to query
@@ -491,8 +484,7 @@ class CloudIntegrationSystem:
             return None
 
     async def sync_community_signatures(self) -> bool:
-        """
-        Synchronize community threat signatures.
+        """Synchronize community threat signatures.
 
         Returns:
             True if sync successful
@@ -536,10 +528,9 @@ class CloudIntegrationSystem:
         self,
         file_hash: str,
         detection_name: str,
-        additional_info: Dict[str, Any] = None,
+        additional_info: dict[str, Any] = None,
     ) -> bool:
-        """
-        Submit false positive report to improve community detection.
+        """Submit false positive report to improve community detection.
 
         Args:
             file_hash: Hash of falsely detected file
@@ -579,9 +570,8 @@ class CloudIntegrationSystem:
             self.logger.error("Error submitting false positive: %s", e)
             return False
 
-    async def get_cloud_statistics(self) -> Dict[str, Any]:
-        """
-        Get cloud integration statistics.
+    async def get_cloud_statistics(self) -> dict[str, Any]:
+        """Get cloud integration statistics.
 
         Returns:
             Dictionary of statistics
@@ -799,7 +789,7 @@ class CloudIntegrationSystem:
         except asyncio.CancelledError:
             self.logger.info("Threat intel loop cancelled")
 
-    def _anonymize_threat_data(self, threat_data: Dict[str, Any]) -> Dict[str, Any]:
+    def _anonymize_threat_data(self, threat_data: dict[str, Any]) -> dict[str, Any]:
         """Anonymize sensitive data in threat information."""
         try:
             anonymized = threat_data.copy()
@@ -835,7 +825,7 @@ class CloudIntegrationSystem:
         except Exception:
             return "src_unknown"
 
-    async def _process_upload_data(self, data: Dict[str, Any]) -> bytes:
+    async def _process_upload_data(self, data: dict[str, Any]) -> bytes:
         """Process data for upload (compression + encryption)."""
         try:
             # Convert to JSON
@@ -856,7 +846,7 @@ class CloudIntegrationSystem:
             self.logger.error("Error processing upload data: %s", e)
             raise
 
-    async def _process_download_data(self, data: bytes) -> Dict[str, Any]:
+    async def _process_download_data(self, data: bytes) -> dict[str, Any]:
         """Process downloaded data (decryption + decompression)."""
         try:
             processed_data = data
@@ -914,7 +904,7 @@ class CloudIntegrationSystem:
             self.logger.error("Error uploading to cloud: %s", e)
             return False
 
-    async def _download_from_cloud(self, path: str) -> Optional[bytes]:
+    async def _download_from_cloud(self, path: str) -> bytes | None:
         """Download data from cloud storage."""
         try:
             for attempt in range(self.cloud_config.retry_attempts):
@@ -951,7 +941,7 @@ class CloudIntegrationSystem:
 
     async def _query_threat_source(
         self, source: ThreatIntelSource, hash_value: str = None
-    ) -> List[ThreatIntelligence]:
+    ) -> list[ThreatIntelligence]:
         """Query specific threat intelligence source."""
         try:
             # Check rate limits
@@ -975,7 +965,7 @@ class CloudIntegrationSystem:
 
     async def _query_virustotal(
         self, hash_value: str = None
-    ) -> List[ThreatIntelligence]:
+    ) -> list[ThreatIntelligence]:
         """Query VirusTotal API."""
         try:
             api_key = self.threat_intel_config.api_keys.get("virustotal")
@@ -1005,14 +995,14 @@ class CloudIntegrationSystem:
 
     async def _query_malwarebytes(
         self, hash_value: str = None
-    ) -> List[ThreatIntelligence]:
+    ) -> list[ThreatIntelligence]:
         """Query Malwarebytes threat intelligence."""
         # Placeholder implementation
         return []
 
     async def _query_community_db(
         self, hash_value: str = None
-    ) -> List[ThreatIntelligence]:
+    ) -> list[ThreatIntelligence]:
         """Query community threat database."""
         try:
             # Query from cloud-stored community database
@@ -1033,8 +1023,8 @@ class CloudIntegrationSystem:
             return []
 
     def _parse_virustotal_response(
-        self, data: Dict[str, Any]
-    ) -> List[ThreatIntelligence]:
+        self, data: dict[str, Any]
+    ) -> list[ThreatIntelligence]:
         """Parse VirusTotal API response."""
         try:
             if data.get("response_code") != 1:
@@ -1065,8 +1055,8 @@ class CloudIntegrationSystem:
             return []
 
     def _parse_community_response(
-        self, data: Dict[str, Any]
-    ) -> List[ThreatIntelligence]:
+        self, data: dict[str, Any]
+    ) -> list[ThreatIntelligence]:
         """Parse community database response."""
         try:
             intelligence_list = []
@@ -1102,8 +1092,8 @@ class CloudIntegrationSystem:
             return []
 
     def _filter_and_deduplicate(
-        self, intelligence_list: List[ThreatIntelligence]
-    ) -> List[ThreatIntelligence]:
+        self, intelligence_list: list[ThreatIntelligence]
+    ) -> list[ThreatIntelligence]:
         """Filter and deduplicate threat intelligence."""
         try:
             # Group by hash value
@@ -1143,7 +1133,7 @@ class CloudIntegrationSystem:
             return intelligence_list
 
     async def _cache_threat_intelligence(
-        self, intelligence_list: List[ThreatIntelligence]
+        self, intelligence_list: list[ThreatIntelligence]
     ):
         """Cache threat intelligence in local database."""
         try:
@@ -1187,7 +1177,7 @@ class CloudIntegrationSystem:
 
     async def _get_cached_intelligence(
         self, hash_value: str
-    ) -> Optional[ThreatIntelligence]:
+    ) -> ThreatIntelligence | None:
         """Get cached threat intelligence."""
         try:
             with sqlite3.connect(self.db_path) as conn:
@@ -1257,7 +1247,7 @@ class CloudIntegrationSystem:
             self.logger.error("Error checking rate limit: %s", e)
             return True
 
-    async def _record_upload(self, threat_data: Dict[str, Any]):
+    async def _record_upload(self, threat_data: dict[str, Any]):
         """Record upload in database log."""
         try:
             with sqlite3.connect(self.db_path) as conn:
@@ -1278,12 +1268,12 @@ class CloudIntegrationSystem:
         except Exception as e:
             self.logger.error("Error recording upload: %s", e)
 
-    async def _list_backup_files(self, backup_date: datetime = None) -> List[str]:
+    async def _list_backup_files(self, backup_date: datetime = None) -> list[str]:
         """List available backup files."""
         # Placeholder implementation
         return []
 
-    async def _download_community_signatures(self) -> List[Dict[str, Any]]:
+    async def _download_community_signatures(self) -> list[dict[str, Any]]:
         """Download community threat signatures."""
         try:
             signatures_data = await self._download_from_cloud(
@@ -1299,13 +1289,13 @@ class CloudIntegrationSystem:
             self.logger.error("Error downloading community signatures: %s", e)
             return []
 
-    async def _update_signature_database(self, signatures: List[Dict[str, Any]]):
+    async def _update_signature_database(self, signatures: list[dict[str, Any]]):
         """Update local signature database."""
         # This would update the local antivirus signature database
         # Placeholder implementation
         pass
 
-    async def _get_threat_intel_stats(self) -> Dict[str, Any]:
+    async def _get_threat_intel_stats(self) -> dict[str, Any]:
         """Get threat intelligence statistics."""
         try:
             with sqlite3.connect(self.db_path) as conn:
@@ -1337,7 +1327,7 @@ class CloudIntegrationSystem:
             self.logger.error("Error getting threat intel stats: %s", e)
             return {}
 
-    async def _get_cloud_storage_stats(self) -> Dict[str, Any]:
+    async def _get_cloud_storage_stats(self) -> dict[str, Any]:
         """Get cloud storage statistics."""
         try:
             if self.cloud_config.provider == CloudProvider.AWS_S3:

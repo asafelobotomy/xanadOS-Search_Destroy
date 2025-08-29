@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""
-Security input validation module for S&D - Search & Destroy
+"""Security input validation module for S&D - Search & Destroy
 Provides comprehensive input validation and security checks
 """
 
@@ -8,7 +7,6 @@ import logging
 import os
 import stat
 from pathlib import Path
-from typing import Dict, Optional, Tuple
 
 # Maximum file sizes (in bytes)
 MAX_FILE_SIZE = 100 * 1024 * 1024  # 100MB
@@ -66,9 +64,8 @@ class PathValidator:
     def __init__(self):
         self.forbidden_paths = [Path(p) for p in FORBIDDEN_PATHS]
 
-    def validate_scan_path(self, path: str) -> Tuple[bool, str]:
-        """
-        Validate a path for scanning.
+    def validate_scan_path(self, path: str) -> tuple[bool, str]:
+        """Validate a path for scanning.
 
         Returns:
             Tuple of (is_valid, error_message)
@@ -126,9 +123,8 @@ class PathValidator:
         except (OSError, ValueError, PermissionError) as e:
             return False, f"Path validation error: {e}"
 
-    def validate_file_for_scan(self, file_path: str) -> Tuple[bool, str]:
-        """
-        Validate an individual file for scanning.
+    def validate_file_for_scan(self, file_path: str) -> tuple[bool, str]:
+        """Validate an individual file for scanning.
 
         Returns:
             Tuple of (is_valid, error_message)
@@ -326,11 +322,10 @@ class FileSizeMonitor:
 
 def validate_scan_request(
     scan_path: str,
-    max_depth: Optional[int] = None,
-    additional_options: Optional[Dict[str, str]] = None,
+    max_depth: int | None = None,
+    additional_options: dict[str, str] | None = None,
 ) -> dict:
-    """
-    Comprehensive validation of scan requests.
+    """Comprehensive validation of scan requests.
 
     Args:
         scan_path: Path to scan
@@ -399,8 +394,7 @@ def validate_scan_request(
 
 
 def _validate_option_security(key: str, value: str) -> bool:
-    """
-    Validate option key-value pairs for security issues.
+    """Validate option key-value pairs for security issues.
 
     Args:
         key: Option key

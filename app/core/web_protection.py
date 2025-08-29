@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""
-Web Protection System for S&D
+"""Web Protection System for S&D
 Provides real-time web threat protection, URL filtering, and browser integration.
 """
 
@@ -12,10 +11,11 @@ import sqlite3
 import ssl
 import threading
 import time
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from enum import Enum
-from typing import Any, Callable, Dict, List, Optional, Set, Tuple
+from typing import Any
 from urllib.parse import urlparse
 
 import aiohttp
@@ -84,7 +84,7 @@ class WebThreat:
     risk_score: float  # 0.0 to 1.0
     detection_time: datetime
     source: str  # Detection source (blacklist, heuristic, etc.)
-    details: Dict[str, Any] = field(default_factory=dict)
+    details: dict[str, Any] = field(default_factory=dict)
     blocked: bool = False
 
 
@@ -94,13 +94,13 @@ class URLAnalysis:
 
     url: str
     domain: str
-    ip_addresses: List[str]
-    ssl_info: Dict[str, Any]
-    threat_indicators: List[str]
+    ip_addresses: list[str]
+    ssl_info: dict[str, Any]
+    threat_indicators: list[str]
     reputation: URLReputation
     risk_score: float
     analysis_time: float
-    details: Dict[str, Any] = field(default_factory=dict)
+    details: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
@@ -115,18 +115,17 @@ class WebProtectionConfig:
     warn_suspicious: bool = True
     log_all_requests: bool = False
     enable_safe_search: bool = False
-    custom_blocked_domains: Set[str] = field(default_factory=set)
-    custom_allowed_domains: Set[str] = field(default_factory=set)
-    threat_intelligence_feeds: List[str] = field(default_factory=list)
-    dns_servers: List[str] = field(default_factory=lambda: ["8.8.8.8", "1.1.1.1"])
+    custom_blocked_domains: set[str] = field(default_factory=set)
+    custom_allowed_domains: set[str] = field(default_factory=set)
+    threat_intelligence_feeds: list[str] = field(default_factory=list)
+    dns_servers: list[str] = field(default_factory=lambda: ["8.8.8.8", "1.1.1.1"])
     request_timeout: float = 10.0
     cache_ttl_hours: int = 24
     max_redirects: int = 5
 
 
 class WebProtectionSystem:
-    """
-    Comprehensive web protection system providing real-time URL filtering,
+    """Comprehensive web protection system providing real-time URL filtering,
     threat detection, and browser security integration.
     """
 
@@ -139,18 +138,18 @@ class WebProtectionSystem:
         self._init_database()
 
         # Threat intelligence
-        self.malware_domains: Set[str] = set()
-        self.phishing_domains: Set[str] = set()
-        self.suspicious_domains: Set[str] = set()
-        self.trusted_domains: Set[str] = set()
+        self.malware_domains: set[str] = set()
+        self.phishing_domains: set[str] = set()
+        self.suspicious_domains: set[str] = set()
+        self.trusted_domains: set[str] = set()
 
         # URL analysis cache
-        self.url_cache: Dict[str, URLAnalysis] = {}
-        self.cache_expiry: Dict[str, datetime] = {}
+        self.url_cache: dict[str, URLAnalysis] = {}
+        self.cache_expiry: dict[str, datetime] = {}
 
         # Real-time monitoring
-        self.active_requests: Dict[str, Dict[str, Any]] = {}
-        self.threat_history: List[WebThreat] = []
+        self.active_requests: dict[str, dict[str, Any]] = {}
+        self.threat_history: list[WebThreat] = []
 
         # Performance tracking
         self.stats = {
@@ -162,19 +161,19 @@ class WebProtectionSystem:
         }
 
         # Callbacks
-        self.threat_detected_callback: Optional[Callable[[WebThreat], None]] = None
-        self.request_blocked_callback: Optional[Callable[[str, str], None]] = None
-        self.suspicious_activity_callback: Optional[
-            Callable[[str, Dict[str, Any]], None]
-        ] = None
+        self.threat_detected_callback: Callable[[WebThreat], None] | None = None
+        self.request_blocked_callback: Callable[[str, str], None] | None = None
+        self.suspicious_activity_callback: (
+            Callable[[str, dict[str, Any]], None] | None
+        ) = None
 
         # Threading
         self.lock = threading.RLock()
         self.running = False
-        self.update_thread: Optional[threading.Thread] = None
+        self.update_thread: threading.Thread | None = None
 
         # HTTP session for analysis
-        self.session: Optional[aiohttp.ClientSession] = None
+        self.session: aiohttp.ClientSession | None = None
 
         # Load initial threat intelligence
         self._load_default_threat_lists()
@@ -394,8 +393,7 @@ class WebProtectionSystem:
         self.logger.info("Web protection system stopped")
 
     async def analyze_url(self, url: str, force_refresh: bool = False) -> URLAnalysis:
-        """
-        Analyze a URL for threats and reputation.
+        """Analyze a URL for threats and reputation.
 
         Args:
             url: URL to analyze
@@ -528,9 +526,8 @@ class WebProtectionSystem:
                 analysis_time=0.0,
             )
 
-    async def check_url_safety(self, url: str) -> Tuple[bool, WebThreat]:
-        """
-        Check if URL is safe to visit.
+    async def check_url_safety(self, url: str) -> tuple[bool, WebThreat]:
+        """Check if URL is safe to visit.
 
         Args:
             url: URL to check
@@ -640,7 +637,7 @@ class WebProtectionSystem:
             )
             return True, None  # Default to safe on error
 
-    async def _check_domain_reputation(self, domain: str) -> Optional[Dict[str, Any]]:
+    async def _check_domain_reputation(self, domain: str) -> dict[str, Any] | None:
         """Check domain reputation against known threat lists."""
         try:
             # Check malware domains
@@ -715,7 +712,7 @@ class WebProtectionSystem:
             )
             return None
 
-    async def _resolve_domain_ips(self, domain: str) -> List[str]:
+    async def _resolve_domain_ips(self, domain: str) -> list[str]:
         """Resolve domain to IP addresses."""
         try:
             # Use custom DNS servers if configured
@@ -752,7 +749,7 @@ class WebProtectionSystem:
             )
             return []
 
-    async def _analyze_ssl_certificate(self, domain: str) -> Dict[str, Any]:
+    async def _analyze_ssl_certificate(self, domain: str) -> dict[str, Any]:
         """Analyze SSL certificate for suspicious characteristics."""
         try:
             ssl_info = {}
@@ -861,7 +858,7 @@ class WebProtectionSystem:
             )
             return {"error": str(e)}
 
-    def _analyze_url_patterns(self, url: str) -> List[str]:
+    def _analyze_url_patterns(self, url: str) -> list[str]:
         """Analyze URL for suspicious patterns."""
         indicators = []
 
@@ -924,7 +921,7 @@ class WebProtectionSystem:
             )
             return []
 
-    def _check_blacklists(self, domain: str) -> Optional[Dict[str, Any]]:
+    def _check_blacklists(self, domain: str) -> dict[str, Any] | None:
         """Check domain against blacklists."""
         try:
             # This would integrate with external blacklist services
@@ -954,7 +951,7 @@ class WebProtectionSystem:
             )
             return None
 
-    async def _heuristic_url_analysis(self, url: str) -> Optional[Dict[str, Any]]:
+    async def _heuristic_url_analysis(self, url: str) -> dict[str, Any] | None:
         """Perform heuristic analysis by fetching URL content."""
         try:
             if not self.session:
@@ -1085,7 +1082,7 @@ class WebProtectionSystem:
         except Exception:
             return url
 
-    def _get_cached_analysis(self, url: str) -> Optional[URLAnalysis]:
+    def _get_cached_analysis(self, url: str) -> URLAnalysis | None:
         """Get cached URL analysis."""
         with self.lock:
             if url in self.url_cache:
@@ -1325,7 +1322,7 @@ class WebProtectionSystem:
                 )
             )
 
-    def get_protection_statistics(self) -> Dict[str, Any]:
+    def get_protection_statistics(self) -> dict[str, Any]:
         """Get web protection statistics."""
         try:
             with self.lock:
@@ -1355,7 +1352,7 @@ class WebProtectionSystem:
             )
             return {}
 
-    def get_recent_threats(self, limit: int = 50) -> List[Dict[str, Any]]:
+    def get_recent_threats(self, limit: int = 50) -> list[dict[str, Any]]:
         """Get recent threat detections."""
         recent_threats = sorted(
             self.threat_history, key=lambda t: t.detection_time, reverse=True
@@ -1385,7 +1382,7 @@ class WebProtectionSystem:
         self.request_blocked_callback = callback
 
     def set_suspicious_activity_callback(
-        self, callback: Callable[[str, Dict[str, Any]], None]
+        self, callback: Callable[[str, dict[str, Any]], None]
     ):
         """Set callback for suspicious activity."""
         self.suspicious_activity_callback = callback

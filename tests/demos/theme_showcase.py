@@ -6,6 +6,7 @@ Theme Showcase - Demonstrate all three stunning themes:
 3. High Contrast (Accessibility) - Maximum accessibility compliance
 Press F12 to cycle through all themes!
 """
+
 import os
 import sys
 

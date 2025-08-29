@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""
-Multi-language Support System for S&D
+"""Multi-language Support System for S&D
 Provides internationalization (i18n) and localization (l10n) capabilities.
 """
 
@@ -12,7 +11,7 @@ import math
 from dataclasses import dataclass, field
 from enum import Enum
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 from PyQt6.QtCore import QCoreApplication, QTranslator
 from PyQt6.QtWidgets import QApplication
@@ -54,10 +53,10 @@ class TranslationString:
 
     key: str
     default_text: str
-    context: Optional[str] = None
-    description: Optional[str] = None
-    plurals: Dict[str, str] = field(default_factory=dict)
-    variables: List[str] = field(default_factory=list)
+    context: str | None = None
+    description: str | None = None
+    plurals: dict[str, str] = field(default_factory=dict)
+    variables: list[str] = field(default_factory=list)
 
 
 class TranslationCategory(Enum):
@@ -93,8 +92,7 @@ class LanguagePreferences:
 
 
 class MultiLanguageSupport:
-    """
-    Comprehensive multi-language support system providing internationalization
+    """Comprehensive multi-language support system providing internationalization
     and localization for the S&D antivirus application.
     """
 
@@ -248,8 +246,7 @@ class MultiLanguageSupport:
             )
 
     def set_language(self, language: SupportedLanguage) -> bool:
-        """
-        Set the application language.
+        """Set the application language.
 
         Args:
             language: Language to set
@@ -303,9 +300,8 @@ class MultiLanguageSupport:
             )
             return False
 
-    def get_available_languages(self) -> List[Tuple[str, str, str]]:
-        """
-        Get list of available languages.
+    def get_available_languages(self) -> list[tuple[str, str, str]]:
+        """Get list of available languages.
 
         Returns:
             List of tuples (code, native_name, english_name)
@@ -322,8 +318,7 @@ class MultiLanguageSupport:
         default: str = None,
         **kwargs,
     ) -> str:
-        """
-        Translate a text string.
+        """Translate a text string.
 
         Args:
             key: Translation key
@@ -362,8 +357,7 @@ class MultiLanguageSupport:
         category: TranslationCategory = TranslationCategory.UI_GENERAL,
         **kwargs,
     ) -> str:
-        """
-        Translate a string with plural forms.
+        """Translate a string with plural forms.
 
         Args:
             key: Translation key
@@ -396,8 +390,7 @@ class MultiLanguageSupport:
             return f"{key} ({count})"
 
     def format_date(self, date_obj, format_type: str = "default") -> str:
-        """
-        Format date according to current locale.
+        """Format date according to current locale.
 
         Args:
             date_obj: Date object to format
@@ -427,8 +420,7 @@ class MultiLanguageSupport:
             return str(date_obj)
 
     def format_time(self, time_obj, include_seconds: bool = True) -> str:
-        """
-        Format time according to current locale.
+        """Format time according to current locale.
 
         Args:
             time_obj: Time object to format
@@ -451,8 +443,7 @@ class MultiLanguageSupport:
             return str(time_obj)
 
     def format_number(self, number: float, decimal_places: int = 2) -> str:
-        """
-        Format number according to current locale.
+        """Format number according to current locale.
 
         Args:
             number: Number to format
@@ -485,8 +476,7 @@ class MultiLanguageSupport:
             return str(number)
 
     def format_file_size(self, size_bytes: int) -> str:
-        """
-        Format file size according to current locale.
+        """Format file size according to current locale.
 
         Args:
             size_bytes: Size in bytes
@@ -535,8 +525,7 @@ class MultiLanguageSupport:
             return f"{size_bytes} B"
 
     def get_text_direction(self) -> str:
-        """
-        Get text direction for current language.
+        """Get text direction for current language.
 
         Returns:
             "ltr" for left-to-right, "rtl" for right-to-left
@@ -546,8 +535,7 @@ class MultiLanguageSupport:
     def export_translations_for_translation(
         self, output_file: str, include_completed: bool = False
     ) -> bool:
-        """
-        Export translations in a format suitable for translators.
+        """Export translations in a format suitable for translators.
 
         Args:
             output_file: Output file path
@@ -613,8 +601,7 @@ class MultiLanguageSupport:
     def import_completed_translations(
         self, input_file: str, target_language: SupportedLanguage
     ) -> bool:
-        """
-        Import completed translations from file.
+        """Import completed translations from file.
 
         Args:
             input_file: Input file path
@@ -624,7 +611,7 @@ class MultiLanguageSupport:
             True if import successful
         """
         try:
-            with open(input_file, "r", encoding="utf-8") as f:
+            with open(input_file, encoding="utf-8") as f:
                 import_data = json.load(f)
 
             imported_count = 0
@@ -664,9 +651,8 @@ class MultiLanguageSupport:
 
     def validate_translation_coverage(
         self, language: SupportedLanguage
-    ) -> Dict[str, Any]:
-        """
-        Validate translation coverage for a language.
+    ) -> dict[str, Any]:
+        """Validate translation coverage for a language.
 
         Args:
             language: Language to validate
@@ -896,7 +882,7 @@ msgstr ""
             )
             return template
 
-    def _collect_translatable_strings(self) -> Dict[str, Dict[str, Any]]:
+    def _collect_translatable_strings(self) -> dict[str, dict[str, Any]]:
         """Collect all translatable strings from the application."""
         # This would scan the source code for translatable strings
         # For now, return a sample set
@@ -946,7 +932,7 @@ msgstr ""
 
     def _load_language_translations(
         self, language: SupportedLanguage
-    ) -> Dict[str, str]:
+    ) -> dict[str, str]:
         """Load existing translations for a language."""
         # This would load from PO/MO files
         # For now, return empty dict
@@ -977,7 +963,7 @@ def initialize_translations(languages_dir: str = "locales") -> MultiLanguageSupp
     return _translation_system
 
 
-def get_translation_system() -> Optional[MultiLanguageSupport]:
+def get_translation_system() -> MultiLanguageSupport | None:
     """Get the global translation system."""
     return _translation_system
 
@@ -985,8 +971,7 @@ def get_translation_system() -> Optional[MultiLanguageSupport]:
 def _(
     text: str, category: TranslationCategory = TranslationCategory.UI_GENERAL, **kwargs
 ) -> str:
-    """
-    Quick translation function.
+    """Quick translation function.
 
     Args:
         text: Text to translate
@@ -1008,8 +993,7 @@ def ngettext(
     category: TranslationCategory = TranslationCategory.UI_GENERAL,
     **kwargs,
 ) -> str:
-    """
-    Plural translation function.
+    """Plural translation function.
 
     Args:
         singular: Singular form

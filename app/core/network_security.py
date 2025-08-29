@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""
-Network security module for xanadOS Search & Destroy
+"""Network security module for xanadOS Search & Destroy
 Handles secure network communications, certificate validation, and secure updates
 """
 
@@ -21,7 +20,6 @@ import urllib.request
 from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
-from typing import Dict, Optional, Tuple
 
 from .secure_subprocess import run_secure
 
@@ -39,7 +37,7 @@ class SecureEndpoint:
     """Represents a secure network endpoint."""
 
     url: str
-    certificate_fingerprint: Optional[str] = None
+    certificate_fingerprint: str | None = None
     max_retries: int = 3
     timeout: int = 30
     security_level: NetworkSecurityLevel = NetworkSecurityLevel.STANDARD
@@ -52,8 +50,7 @@ class NetworkSecurityError(Exception):
 
 
 class SecureNetworkManager:
-    """
-    Manages secure network communications for antivirus operations.
+    """Manages secure network communications for antivirus operations.
 
     Provides secure update mechanisms, certificate validation,
     and protection against network-based attacks.
@@ -135,7 +132,7 @@ class SecureNetworkManager:
                     return
             except OSError:
                 return
-            with open(self.PIN_FILE, "r", encoding="utf-8") as f:
+            with open(self.PIN_FILE, encoding="utf-8") as f:
                 data = json.load(f)
             hosts = data.get("hosts", {})
             for host, fp in hosts.items():
@@ -154,7 +151,8 @@ class SecureNetworkManager:
     def refresh_pins(self) -> bool:
         """Reload pins at runtime. Returns True if any pin changed.
 
-        Ignores pin files with insecure permissions (group/other access)."""
+        Ignores pin files with insecure permissions (group/other access).
+        """
         before = {
             h: ep.certificate_fingerprint for h, ep in self.CLAMAV_ENDPOINTS.items()
         }
@@ -167,8 +165,7 @@ class SecureNetworkManager:
     def _verify_certificate_fingerprint(
         self, hostname: str, port: int, expected_fingerprint: str
     ) -> bool:
-        """
-        Verify certificate fingerprint for certificate pinning.
+        """Verify certificate fingerprint for certificate pinning.
 
         Args:
             hostname: The hostname to connect to
@@ -212,10 +209,9 @@ class SecureNetworkManager:
         self,
         url: str,
         endpoint: SecureEndpoint,
-        headers: Optional[Dict[str, str]] = None,
+        headers: dict[str, str] | None = None,
     ) -> urllib.request.Request:
-        """
-        Create a secure HTTP request with appropriate headers.
+        """Create a secure HTTP request with appropriate headers.
 
         Args:
             url: The URL to request
@@ -243,10 +239,9 @@ class SecureNetworkManager:
         return request
 
     def _validate_response(
-        self, response, expected_content_type: Optional[str] = None
+        self, response, expected_content_type: str | None = None
     ) -> bool:
-        """
-        Validate HTTP response for security issues.
+        """Validate HTTP response for security issues.
 
         Args:
             response: The HTTP response object
@@ -302,11 +297,10 @@ class SecureNetworkManager:
     def secure_download(
         self,
         endpoint: SecureEndpoint,
-        destination: Optional[str] = None,
+        destination: str | None = None,
         verify_signature: bool = True,
-    ) -> Tuple[bool, str]:
-        """
-        Securely download content from an endpoint.
+    ) -> tuple[bool, str]:
+        """Securely download content from an endpoint.
 
         Args:
             endpoint: The secure endpoint to download from
@@ -437,8 +431,7 @@ class SecureNetworkManager:
         return False, "Download failed - unknown error"
 
     def _verify_download_signature(self, file_path: Path) -> bool:
-        """
-        Verify the digital signature of a downloaded file.
+        """Verify the digital signature of a downloaded file.
 
         Args:
             file_path: Path to the downloaded file
@@ -478,9 +471,8 @@ class SecureNetworkManager:
             )
             return False
 
-    def update_clamav_database(self, database_dir: str) -> Tuple[bool, str]:
-        """
-        Securely update ClamAV virus database.
+    def update_clamav_database(self, database_dir: str) -> tuple[bool, str]:
+        """Securely update ClamAV virus database.
 
         Args:
             database_dir: Directory to store database files
@@ -545,8 +537,7 @@ class SecureNetworkManager:
             return False, "Failed to update any database files"
 
     def check_network_connectivity(self) -> bool:
-        """
-        Check if network connectivity is available.
+        """Check if network connectivity is available.
 
         Returns:
             True if network is available, False otherwise
@@ -566,15 +557,14 @@ class SecureNetworkManager:
                     ).replace("%d", "{host, port}")
                 )
                 return True
-            except (socket.error, socket.timeout):
+            except (TimeoutError, OSError):
                 continue
 
         self.logger.warning("No network connectivity detected")
         return False
 
-    def validate_url_security(self, url: str) -> Tuple[bool, str]:
-        """
-        Validate URL for security issues.
+    def validate_url_security(self, url: str) -> tuple[bool, str]:
+        """Validate URL for security issues.
 
         Args:
             url: The URL to validate

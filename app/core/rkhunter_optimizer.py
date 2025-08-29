@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""
-RKHunter Configuration Optimization Module
+"""RKHunter Configuration Optimization Module
 xanadOS Search & Destroy - Enhanced RKHunter Management
 This module implements advanced RKHunter configuration optimization including:
 - Automated mirror updates with enhanced error handling
@@ -19,16 +18,15 @@ import shutil
 import subprocess
 import tempfile
 import time
+from contextlib import nullcontext as _nullcontext
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
 try:
-    from contextlib import nullcontext as _nullcontext  # noqa: F401
-
     from .auth_session_manager import auth_manager, session_context
     from .elevated_runner import elevated_run
 except ImportError:
@@ -39,17 +37,7 @@ except ImportError:
 
     class MockAuthManager:
         def session_context(self, *args, **kwargs):
-            try:
-                _nullcontext  # type: ignore[name-defined]
-            except NameError:
-
-                class _nullcontext:  # type: ignore[dead-code]
-                    def __enter__(self):
-                        return None
-
-                    def __exit__(self, exc_type, exc, tb):
-                        return False
-
+            # Use the standard library nullcontext for a no-op context manager
             return _nullcontext()
 
         def execute_elevated_command(self, *args, **kwargs):
@@ -79,7 +67,7 @@ class RKHunterConfig:
     baseline_auto_update: bool = True
     performance_mode: str = "balanced"  # fast, balanced, thorough
     network_timeout: int = 300  # seconds
-    exclude_paths: List[str] = None
+    exclude_paths: list[str] = None
 
     def __post_init__(self):
         if self.exclude_paths is None:
@@ -93,22 +81,22 @@ class RKHunterStatus:
     version: str
     config_file: str
     database_version: str
-    last_update: Optional[datetime]
-    last_scan: Optional[datetime]
+    last_update: datetime | None
+    last_scan: datetime | None
     baseline_exists: bool
     mirror_status: str
-    performance_metrics: Dict[str, Any]
-    issues_found: List[str]
+    performance_metrics: dict[str, Any]
+    issues_found: list[str]
 
 
 @dataclass
 class OptimizationReport:
     """RKHunter optimization report"""
 
-    config_changes: List[str]
-    performance_improvements: List[str]
-    recommendations: List[str]
-    warnings: List[str]
+    config_changes: list[str]
+    performance_improvements: list[str]
+    recommendations: list[str]
+    warnings: list[str]
     baseline_updated: bool
     mirrors_updated: bool
     schedule_optimized: bool
@@ -155,7 +143,7 @@ class RKHunterOptimizer:
             # If not found in common paths, try which command
             if not rkhunter_path:
                 result = subprocess.run(
-                    ["which", "rkhunter"], capture_output=True, timeout=5
+                    ["which", "rkhunter"], check=False, capture_output=True, timeout=5
                 )
                 if result.returncode == 0 and result.stdout:
                     rkhunter_path = result.stdout.strip()
@@ -203,7 +191,9 @@ class RKHunterOptimizer:
             )
         else:
             # Run without sudo
-            return subprocess.run(cmd, capture_output=True, text=True, timeout=timeout)
+            return subprocess.run(
+                cmd, check=False, capture_output=True, text=True, timeout=timeout
+            )
 
     def _ensure_rkhunter_available(self) -> bool:
         """Ensure RKHunter is available, offer installation if not"""
@@ -235,7 +225,7 @@ class RKHunterOptimizer:
         else:
             return "Please install rkhunter using your system's package manager"
 
-    def install_rkhunter(self) -> Tuple[bool, str]:
+    def install_rkhunter(self) -> tuple[bool, str]:
         """Attempt to install RKHunter (requires sudo privileges)"""
         try:
             install_cmd = self.get_installation_command()
@@ -244,6 +234,7 @@ class RKHunterOptimizer:
                 # For Arch Linux
                 result = subprocess.run(
                     ["sudo", "pacman", "-S", "--noconfirm", "rkhunter"],
+                    check=False,
                     capture_output=True,
                     text=True,
                     timeout=300,
@@ -270,7 +261,7 @@ class RKHunterOptimizer:
         except subprocess.TimeoutExpired:
             return False, "Installation timed out"
         except Exception as e:
-            return False, f"Installation error: {str(e)}"
+            return False, f"Installation error: {e!s}"
 
     def optimize_configuration(
         self, target_config: RKHunterConfig
@@ -444,7 +435,7 @@ class RKHunterOptimizer:
             logger.error(f"Error getting RKHunter status: {e}")
             raise
 
-    def update_mirrors_enhanced(self) -> Tuple[bool, str]:
+    def update_mirrors_enhanced(self) -> tuple[bool, str]:
         """Enhanced mirror update with better error handling"""
         try:
             # Check RKHunter availability first
@@ -495,9 +486,9 @@ class RKHunterOptimizer:
 
         except Exception as e:
             logger.error(f"Enhanced mirror update failed: {e}")
-            return False, f"Mirror update error: {str(e)}"
+            return False, f"Mirror update error: {e!s}"
 
-    def update_baseline_smart(self) -> Tuple[bool, str]:
+    def update_baseline_smart(self) -> tuple[bool, str]:
         """Smart baseline update with change detection"""
         try:
             # Check RKHunter availability first
@@ -522,7 +513,7 @@ class RKHunterOptimizer:
                     ["--propupd", "--nocolors"], timeout=300
                 )
             except Exception as e:
-                return False, f"Failed to execute baseline update: {str(e)}"
+                return False, f"Failed to execute baseline update: {e!s}"
 
             if result.returncode == 0:
                 logger.info("Baseline update completed successfully")
@@ -542,9 +533,9 @@ class RKHunterOptimizer:
 
         except Exception as e:
             logger.error(f"Smart baseline update failed: {e}")
-            return False, f"Baseline update error: {str(e)}"
+            return False, f"Baseline update error: {e!s}"
 
-    def optimize_cron_schedule(self, frequency: str = "daily") -> Tuple[bool, str]:
+    def optimize_cron_schedule(self, frequency: str = "daily") -> tuple[bool, str]:
         """Optimize cron scheduling with conflict detection"""
         try:
             logger.info(f"Optimizing cron schedule for {frequency} frequency")
@@ -568,7 +559,7 @@ class RKHunterOptimizer:
 
         except Exception as e:
             logger.error(f"Cron optimization failed: {e}")
-            return False, f"Cron optimization error: {str(e)}"
+            return False, f"Cron optimization error: {e!s}"
 
     def _optimize_mirrors(self, config: RKHunterConfig) -> bool:
         """Optimize mirror configuration"""
@@ -742,7 +733,7 @@ class RKHunterOptimizer:
             logger.error(f"Scheduling optimization failed: {e}")
             return False
 
-    def _generate_recommendations(self) -> List[str]:
+    def _generate_recommendations(self) -> list[str]:
         """Generate optimization recommendations"""
         recommendations = []
 
@@ -792,7 +783,7 @@ class RKHunterOptimizer:
 
         return recommendations
 
-    def _validate_configuration(self) -> List[str]:
+    def _validate_configuration(self) -> list[str]:
         """Validate current configuration for issues"""
         warnings = []
 
@@ -923,7 +914,7 @@ class RKHunterOptimizer:
     def _read_config_file(self) -> str:
         """Read configuration file content with unified authentication session management"""
         try:
-            with open(self.config_path, "r") as f:
+            with open(self.config_path) as f:
                 return f.read()
         except PermissionError:
             logger.info(
@@ -997,6 +988,7 @@ class RKHunterOptimizer:
         try:
             result = subprocess.run(
                 ["rkhunter", "--versioncheck"],
+                check=False,
                 capture_output=True,
                 text=True,
                 timeout=30,
@@ -1007,13 +999,13 @@ class RKHunterOptimizer:
         except BaseException:
             return "Unknown"
 
-    def _get_last_update_time(self) -> Optional[datetime]:
+    def _get_last_update_time(self) -> datetime | None:
         """Get last update time"""
         try:
             log_file = "/var/log/rkhunter.log"
             if os.path.exists(log_file):
                 # Parse log for last update
-                with open(log_file, "r") as f:
+                with open(log_file) as f:
                     lines = f.readlines()
                     for line in reversed(lines):
                         if "Update completed" in line:
@@ -1029,13 +1021,13 @@ class RKHunterOptimizer:
             pass
         return None
 
-    def _get_last_scan_time(self) -> Optional[datetime]:
+    def _get_last_scan_time(self) -> datetime | None:
         """Get last scan time"""
         try:
             log_file = "/var/log/rkhunter.log"
             if os.path.exists(log_file):
                 # Parse log for last scan
-                with open(log_file, "r") as f:
+                with open(log_file) as f:
                     lines = f.readlines()
                     for line in reversed(lines):
                         if "Check completed" in line or "Scan completed" in line:
@@ -1064,7 +1056,7 @@ class RKHunterOptimizer:
             config_file = "/etc/rkhunter.conf"
             if os.path.exists(config_file):
                 try:
-                    with open(config_file, "r") as f:
+                    with open(config_file) as f:
                         content = f.read()
                         if "UPDATE_MIRRORS=" in content:
                             return "Configured"
@@ -1083,6 +1075,7 @@ class RKHunterOptimizer:
         try:
             result = subprocess.run(
                 ["rkhunter", "--update", "--check"],
+                check=False,
                 capture_output=True,
                 text=True,
                 timeout=60,
@@ -1095,7 +1088,7 @@ class RKHunterOptimizer:
             logger.warning(f"Error checking mirror connectivity: {e}")
             return "Unknown"
 
-    def _collect_performance_metrics(self) -> Dict[str, Any]:
+    def _collect_performance_metrics(self) -> dict[str, Any]:
         """Collect performance metrics"""
         metrics = {}
         try:
@@ -1121,13 +1114,15 @@ class RKHunterOptimizer:
 
         return metrics
 
-    def _check_configuration_issues(self) -> List[str]:
+    def _check_configuration_issues(self) -> list[str]:
         """Check for configuration issues"""
         issues = []
 
         try:
             # Check if RKHunter is properly installed
-            result = subprocess.run(["which", "rkhunter"], capture_output=True)
+            result = subprocess.run(
+                ["which", "rkhunter"], check=False, capture_output=True
+            )
             if result.returncode != 0:
                 issues.append("RKHunter not found in PATH")
 
@@ -1152,6 +1147,7 @@ class RKHunterOptimizer:
         try:
             result = subprocess.run(
                 ["ping", "-c", "1", "-W", "5", "rkhunter.sourceforge.net"],
+                check=False,
                 capture_output=True,
                 timeout=10,
             )
@@ -1182,7 +1178,7 @@ class RKHunterOptimizer:
             logger.debug(f"Error checking baseline: {e}")
             return False
 
-    def _backup_baseline(self) -> Optional[str]:
+    def _backup_baseline(self) -> str | None:
         """Backup current baseline"""
         try:
             baseline_file = "/var/lib/rkhunter/db/rkhunter.dat"
@@ -1194,7 +1190,7 @@ class RKHunterOptimizer:
             logger.warning(f"Failed to backup baseline: {e}")
         return None
 
-    def _analyze_baseline_changes(self, backup_file: str) -> List[str]:
+    def _analyze_baseline_changes(self, backup_file: str) -> list[str]:
         """Analyze changes between baseline versions"""
         changes = []
         try:
@@ -1217,10 +1213,12 @@ class RKHunterOptimizer:
         return changes
 
     # Additional helper methods for cron optimization, system checks, etc.
-    def _get_existing_cron_jobs(self) -> List[str]:
+    def _get_existing_cron_jobs(self) -> list[str]:
         """Get existing cron jobs"""
         try:
-            result = subprocess.run(["crontab", "-l"], capture_output=True, text=True)
+            result = subprocess.run(
+                ["crontab", "-l"], check=False, capture_output=True, text=True
+            )
             if result.returncode == 0:
                 return result.stdout.strip().split("\n")
         except BaseException:
@@ -1228,7 +1226,7 @@ class RKHunterOptimizer:
         return []
 
     def _calculate_optimal_scan_time(
-        self, frequency: str, existing_jobs: List[str]
+        self, frequency: str, existing_jobs: list[str]
     ) -> str:
         """Calculate optimal scan time to avoid conflicts"""
         # Simple implementation - in practice, you'd analyze system load patterns
@@ -1254,7 +1252,9 @@ class RKHunterOptimizer:
         """Update cron job"""
         try:
             # Get existing crontab
-            result = subprocess.run(["crontab", "-l"], capture_output=True, text=True)
+            result = subprocess.run(
+                ["crontab", "-l"], check=False, capture_output=True, text=True
+            )
             current_crontab = result.stdout if result.returncode == 0 else ""
 
             # Remove existing rkhunter entries
@@ -1280,7 +1280,7 @@ class RKHunterOptimizer:
     def _system_has_sufficient_memory(self) -> bool:
         """Check if system has sufficient memory"""
         try:
-            with open("/proc/meminfo", "r") as f:
+            with open("/proc/meminfo") as f:
                 meminfo = f.read()
                 match = re.search(r"MemTotal:\s+(\d+)", meminfo)
                 if match:
@@ -1295,7 +1295,7 @@ class RKHunterOptimizer:
         """Check for reliable network connection"""
         return self._check_network_connectivity()
 
-    def _get_available_disk_space(self) -> Optional[int]:
+    def _get_available_disk_space(self) -> int | None:
         """Get available disk space in MB with better error handling"""
         try:
             # Try different directories to check space
@@ -1343,13 +1343,13 @@ class RKHunterOptimizer:
         # Simple check - could be enhanced
         return len(rkhunter_jobs) == 1
 
-    def _check_dependencies(self) -> List[str]:
+    def _check_dependencies(self) -> list[str]:
         """Check for missing dependencies"""
         missing = []
         required_commands = ["curl", "wget", "file", "stat", "readlink"]
 
         for cmd in required_commands:
-            result = subprocess.run(["which", cmd], capture_output=True)
+            result = subprocess.run(["which", cmd], check=False, capture_output=True)
             if result.returncode != 0:
                 missing.append(cmd)
 
@@ -1393,7 +1393,7 @@ class RKHunterOptimizer:
             logger.error(f"Permission check failed: {e}")
             return False
 
-    def _calculate_average_scan_time(self) -> Optional[float]:
+    def _calculate_average_scan_time(self) -> float | None:
         """Calculate average scan time from logs"""
         try:
             # This is a simplified implementation
@@ -1402,7 +1402,7 @@ class RKHunterOptimizer:
         except BaseException:
             return None
 
-    def _get_last_update_duration(self) -> Optional[float]:
+    def _get_last_update_duration(self) -> float | None:
         """Get duration of last update"""
         try:
             # Simplified implementation

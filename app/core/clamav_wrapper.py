@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""
-Enhanced ClamAV wrapper for S&D - Search & Destroy
+"""Enhanced ClamAV wrapper for S&D - Search & Destroy
 Supports virus definition updates, multiple signature sources, and detailed scanning
 """
 
@@ -15,7 +14,7 @@ from dataclasses import dataclass
 from datetime import datetime, timedelta
 from enum import Enum
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 import requests
 
@@ -71,6 +70,8 @@ class ClamAVWrapper:
         try:
             from app.utils.config import CACHE_DIR, load_config, setup_logging
 
+            cache_dir = CACHE_DIR  # prefer imported config cache dir
+
         except ImportError:
             # Create minimal fallbacks for testing
 
@@ -87,7 +88,7 @@ class ClamAVWrapper:
                 }
 
             # Fallback cache dir for testing
-            CACHE_DIR = Path("/tmp") / "xanados_test_cache"
+            cache_dir = Path("/tmp") / "xanados_test_cache"
 
         self.logger = setup_logging()
         self.config = load_config()
@@ -106,13 +107,13 @@ class ClamAVWrapper:
         else:
             self.db_path = Path("/var/lib/clamav")
 
-        # Handle CACHE_DIR which might be mocked during testing
+        # Handle cache_dir which might be mocked during testing
         try:
-            if hasattr(CACHE_DIR, "__truediv__"):  # Check if it's a Path object
-                self.custom_db_path = CACHE_DIR / "custom_signatures"
+            if hasattr(cache_dir, "__truediv__"):  # Check if it's a Path-like
+                self.custom_db_path = cache_dir / "custom_signatures"
             else:
                 # Handle string or Mock case
-                self.custom_db_path = Path(str(CACHE_DIR)) / "custom_signatures"
+                self.custom_db_path = Path(str(cache_dir)) / "custom_signatures"
         except (TypeError, AttributeError):
             # Fallback for testing - use secure temp directory
             self.custom_db_path = (
@@ -155,9 +156,8 @@ class ClamAVWrapper:
                 "Could not start daemon - will use regular clamscan (slower)"
             )
 
-    def _find_executable(self, name: str) -> Optional[str]:
+    def _find_executable(self, name: str) -> str | None:
         """Find ClamAV executable in system PATH."""
-
         return shutil.which(name)
 
     def _check_clamav_availability(self) -> bool:
@@ -173,7 +173,7 @@ class ClamAVWrapper:
         except (subprocess.SubprocessError, FileNotFoundError):
             return False
 
-    def get_engine_version(self) -> Tuple[str, str]:
+    def get_engine_version(self) -> tuple[str, str]:
         """Get ClamAV engine and signature database versions."""
         if not self.available:
             return "Not available", "Not available"
@@ -328,7 +328,7 @@ class ClamAVWrapper:
                 error_message=str(e),
             )
 
-    def scan_directory(self, directory_path: str, **kwargs) -> List[ScanFileResult]:
+    def scan_directory(self, directory_path: str, **kwargs) -> list[ScanFileResult]:
         """Scan a directory recursively."""
         # Directory validation
         try:
@@ -419,7 +419,7 @@ class ClamAVWrapper:
                 )
             ]
 
-    def _build_scan_options(self, quick_scan: bool = False, **kwargs) -> List[str]:
+    def _build_scan_options(self, quick_scan: bool = False, **kwargs) -> list[str]:
         """Build ClamAV scan options from configuration and parameters.
 
         Args:
@@ -509,7 +509,7 @@ class ClamAVWrapper:
 
         return options
 
-    def get_version_info(self) -> Dict[str, str]:
+    def get_version_info(self) -> dict[str, str]:
         """Get detailed ClamAV version and database information."""
         version_info = {
             "engine_version": "Unknown",
@@ -602,7 +602,7 @@ class ClamAVWrapper:
             self.logger.error("Database integrity check failed: %s", e)
             return False
 
-    def get_security_recommendations(self) -> List[str]:
+    def get_security_recommendations(self) -> list[str]:
         """Get security recommendations based on current configuration."""
         recommendations = []
 
@@ -631,7 +631,7 @@ class ClamAVWrapper:
         config_path = Path("/etc/clamav/clamd.conf")
         if config_path.exists() and not os.environ.get("FLATPAK_ID"):
             try:
-                with open(config_path, "r", encoding="utf-8") as f:
+                with open(config_path, encoding="utf-8") as f:
                     config_content = f.read()
 
                 if (
@@ -647,14 +647,14 @@ class ClamAVWrapper:
                         "Configure MaxScanSize to prevent memory exhaustion"
                     )
 
-            except (IOError, PermissionError):
+            except (OSError, PermissionError):
                 recommendations.append(
                     "Review ClamAV daemon configuration for security settings"
                 )
 
         return recommendations
 
-    def optimize_for_parallel_scanning(self, max_threads: int = None) -> Dict[str, Any]:
+    def optimize_for_parallel_scanning(self, max_threads: int = None) -> dict[str, Any]:
         """Configure ClamAV for optimal parallel scanning performance."""
         if max_threads is None:
             try:
@@ -821,12 +821,12 @@ class ClamAVWrapper:
                         # PE magic number (Windows executables)
                         if header.startswith(b"MZ"):
                             return True
-                except (IOError, PermissionError):
+                except (OSError, PermissionError):
                     pass
 
             return True
 
-        except (OSError, IOError, PermissionError):
+        except (OSError, PermissionError):
             # If we can't analyze the file, err on the side of caution and scan it
             return True
 
@@ -919,7 +919,7 @@ class ClamAVWrapper:
             self.logger.error("Error starting ClamAV daemon: %s", e)
             return False
 
-    def apply_2025_security_hardening(self) -> Dict[str, bool]:
+    def apply_2025_security_hardening(self) -> dict[str, bool]:
         """Apply 2025 security hardening recommendations for ClamAV."""
         hardening_results = {
             "database_verification": False,
@@ -948,7 +948,7 @@ class ClamAVWrapper:
         config_path = Path("/etc/clamav/clamd.conf")
         if config_path.exists():
             try:
-                with open(config_path, "r", encoding="utf-8") as f:
+                with open(config_path, encoding="utf-8") as f:
                     config = f.read()
                     if any(
                         param in config
@@ -957,7 +957,7 @@ class ClamAVWrapper:
                         hardening_results["memory_limits"] = True
                     if "TCPAddr 127.0.0.1" in config or "LocalSocket" in config:
                         hardening_results["network_security"] = True
-            except (IOError, PermissionError):
+            except (OSError, PermissionError):
                 pass
 
         # 4. Signature validation (CVD files have built-in verification)
@@ -977,7 +977,7 @@ class ClamAVWrapper:
 
         return hardening_results
 
-    def get_2025_performance_settings(self) -> Dict[str, Any]:
+    def get_2025_performance_settings(self) -> dict[str, Any]:
         """Get optimized performance settings based on 2024-2025 research."""
         return {
             "daemon_settings": {
@@ -1019,8 +1019,8 @@ class ClamAVWrapper:
         }
 
     def implement_multithreaded_scanning(
-        self, file_list: List[str], max_workers: int = None
-    ) -> List[Dict[str, Any]]:
+        self, file_list: list[str], max_workers: int = None
+    ) -> list[dict[str, Any]]:
         """Implement parallel scanning based on 2024 research findings."""
         if max_workers is None:
             try:
@@ -1041,7 +1041,7 @@ class ClamAVWrapper:
             # Implement parallel daemon scanning
             from concurrent.futures import ThreadPoolExecutor, as_completed
 
-            def scan_single_file(file_path: str) -> Dict[str, Any]:
+            def scan_single_file(file_path: str) -> dict[str, Any]:
                 start_time = datetime.now()
                 try:
                     result = self._scan_file_with_daemon(
@@ -1105,7 +1105,6 @@ class ClamAVWrapper:
         scan_time: float,
     ) -> ScanFileResult:
         """Parse ClamAV scan output for a single file."""
-
         # Check for errors first
         if returncode == 2:  # ClamAV error
             error_msg = stderr.strip() if stderr else "ClamAV scan error"
@@ -1143,7 +1142,7 @@ class ClamAVWrapper:
 
     def _parse_directory_scan_output(
         self, stdout: str, _stderr: str, _returncode: int
-    ) -> List[ScanFileResult]:
+    ) -> list[ScanFileResult]:
         """Parse ClamAV output for directory scan."""
         results = []
 
@@ -1209,7 +1208,7 @@ class ClamAVWrapper:
         """Get file size safely."""
         try:
             return Path(file_path).stat().st_size
-        except (OSError, IOError):
+        except OSError:
             return 0
 
     def update_virus_definitions(self) -> bool:
@@ -1397,11 +1396,11 @@ class ClamAVWrapper:
             self.logger.info("Updated custom source: %s", source_url)
             return True
 
-        except (requests.RequestException, IOError) as e:
+        except (OSError, requests.RequestException) as e:
             self.logger.error("Failed to update custom source %s: %s", source_url, e)
             return False
 
-    def get_definition_info(self) -> List[VirusDefinitionInfo]:
+    def get_definition_info(self) -> list[VirusDefinitionInfo]:
         """Get information about current virus definitions."""
         definitions = []
 
@@ -1420,11 +1419,11 @@ class ClamAVWrapper:
                                 url="official",
                             )
                         )
-                    except (OSError, IOError, PermissionError) as e:
+                    except (OSError, PermissionError) as e:
                         # Log the error but continue processing other files
                         print(f"Warning: Could not access {db_file}: {e}")
                         continue
-        except (OSError, IOError, PermissionError) as e:
+        except (OSError, PermissionError) as e:
             print(f"Warning: Could not access database directory {self.db_path}: {e}")
 
         # Check custom databases - handle permission errors gracefully
@@ -1442,18 +1441,18 @@ class ClamAVWrapper:
                                 url="custom",
                             )
                         )
-                    except (OSError, IOError, PermissionError) as e:
+                    except (OSError, PermissionError) as e:
                         # Log the error but continue processing other files
                         print(f"Warning: Could not access custom db {db_file}: {e}")
                         continue
-        except (OSError, IOError, PermissionError) as e:
+        except (OSError, PermissionError) as e:
             print(
                 f"Warning: Could not access custom database directory {self.custom_db_path}: {e}"
             )
 
         return definitions
 
-    def check_definition_freshness(self) -> Dict[str, Any]:
+    def check_definition_freshness(self) -> dict[str, Any]:
         """Check if virus definitions need updating."""
         info = {
             "needs_update": False,

@@ -37,7 +37,7 @@ def main():
     app.setApplicationName("S&D - Search & Destroy")
     # Prefer VERSION file from project root to avoid fragile app.__init__ coupling
     try:
-        with open(project_root / "VERSION", "r", encoding="utf-8") as vf:
+        with open(project_root / "VERSION", encoding="utf-8") as vf:
             version = vf.read().strip()
     except Exception:
         version = "dev"

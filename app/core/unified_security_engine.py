@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""
-Unified Security Engine for xanadOS Search & Destroy
+"""Unified Security Engine for xanadOS Search & Destroy
 Consolidates all security components into a single, optimized system.
 This module combines:
 - Enhanced Real-Time Protection
@@ -20,17 +19,18 @@ import logging
 import os
 import time
 from collections import defaultdict, deque
+from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
-from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional, Tuple
-
-import numpy as np
-import psutil
 
 # Security Research Integration (2025)
 from importlib.util import find_spec as _find_spec
+from pathlib import Path
+from typing import Any
+
+import numpy as np
+import psutil
 
 EBPF_AVAILABLE = _find_spec("bpftool") is not None
 INOTIFY_AVAILABLE = _find_spec("inotify.adapters") is not None
@@ -87,11 +87,11 @@ class SecurityEvent:
     event_type: EventType
     timestamp: float
     source_path: str
-    target_path: Optional[str] = None
-    process_id: Optional[int] = None
-    user_id: Optional[int] = None
+    target_path: str | None = None
+    process_id: int | None = None
+    user_id: int | None = None
     threat_level: ThreatLevel = ThreatLevel.LOW
-    additional_data: Dict[str, Any] = None
+    additional_data: dict[str, Any] = None
     detection_latency_ms: float = 0.0
 
     def __post_init__(self):
@@ -156,7 +156,7 @@ class MLAnomalyDetector:
         except Exception as e:
             self.logger.error(f"Error adding training sample: {e}")
 
-    def detect_anomaly(self, event: SecurityEvent) -> Tuple[bool, float]:
+    def detect_anomaly(self, event: SecurityEvent) -> tuple[bool, float]:
         """Detect if event is anomalous using ML models."""
         try:
             anomaly_scores = []
@@ -489,7 +489,7 @@ class AdaptiveResourceManager:
             )
 
     def _assess_threat_level(
-        self, cpu_usage: float, memory_usage: float, processes: List
+        self, cpu_usage: float, memory_usage: float, processes: list
     ) -> ThreatLevel:
         """Enhanced threat level assessment."""
         # High resource usage might indicate malicious activity
@@ -554,7 +554,7 @@ class AdaptiveResourceManager:
 class UnifiedSecurityEngine:
     """Main unified security engine combining all components."""
 
-    def __init__(self, watch_paths: List[str]):
+    def __init__(self, watch_paths: list[str]):
         self.logger = logging.getLogger(__name__)
         self.watch_paths = watch_paths
 
@@ -584,11 +584,11 @@ class UnifiedSecurityEngine:
         }
 
         # Callbacks
-        self.threat_callbacks: List[Callable] = []
-        self.performance_callbacks: List[Callable] = []
+        self.threat_callbacks: list[Callable] = []
+        self.performance_callbacks: list[Callable] = []
 
         # Background tasks
-        self.monitoring_tasks: List[asyncio.Task] = []
+        self.monitoring_tasks: list[asyncio.Task] = []
 
         self.start_time = time.time()
 
@@ -617,7 +617,7 @@ class UnifiedSecurityEngine:
             self.logger.error(f"❌ Failed to initialize security engine: {e}")
             return False
 
-    def _check_system_capabilities(self) -> Dict[str, bool]:
+    def _check_system_capabilities(self) -> dict[str, bool]:
         """Check available system capabilities for 2025 features."""
         capabilities = {
             "ebpf": EBPF_AVAILABLE and os.geteuid() == 0,
@@ -632,7 +632,7 @@ class UnifiedSecurityEngine:
     def _get_kernel_version(self) -> str:
         """Get kernel version for capability assessment."""
         try:
-            with open("/proc/version", "r") as f:
+            with open("/proc/version") as f:
                 return f.read().strip()
         except BaseException:
             return "unknown"
@@ -779,7 +779,7 @@ class UnifiedSecurityEngine:
                 # Add to training data
                 self.ml_detector.add_training_sample(event)
 
-            except asyncio.TimeoutError:
+            except TimeoutError:
                 continue
             except asyncio.CancelledError:
                 break
@@ -899,7 +899,7 @@ class UnifiedSecurityEngine:
         """Add callback for performance monitoring."""
         self.performance_callbacks.append(callback)
 
-    def get_status(self) -> Dict[str, Any]:
+    def get_status(self) -> dict[str, Any]:
         """Get comprehensive security engine status."""
         return {
             "engine_status": {

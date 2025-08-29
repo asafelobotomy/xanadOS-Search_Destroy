@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""
-Enhanced GUI authentication manager for xanadOS Search & Destroy.
+"""Enhanced GUI authentication manager for xanadOS Search & Destroy.
 Provides persistent GUI sudo sessions to avoid multiple password prompts.
 """
 
@@ -10,14 +9,13 @@ import stat
 import subprocess
 import tempfile
 import time
-from typing import Dict, Optional, Sequence
+from collections.abc import Sequence
 
 logger = logging.getLogger(__name__)
 
 
 class GUIAuthManager:
-    """
-    Manages GUI-based authentication with persistent sessions.
+    """Manages GUI-based authentication with persistent sessions.
     Prioritizes GUI sudo over pkexec for better user experience.
     """
 
@@ -53,15 +51,15 @@ class GUIAuthManager:
         """Check if GUI authentication is available."""
         return self._gui_helper is not None and bool(os.environ.get("DISPLAY"))
 
-    def get_gui_helper(self) -> Optional[str]:
+    def get_gui_helper(self) -> str | None:
         """Get the discovered GUI helper path."""
         return self._gui_helper
 
-    def _which(self, name: str) -> Optional[str]:
+    def _which(self, name: str) -> str | None:
         """Find executable in PATH."""
         try:
             result = subprocess.run(
-                ["which", name], capture_output=True, text=True, timeout=5
+                ["which", name], check=False, capture_output=True, text=True, timeout=5
             )
             return result.stdout.strip() if result.returncode == 0 else None
         except Exception:
@@ -72,7 +70,7 @@ class GUIAuthManager:
         try:
             # Quick test with sudo -n (non-interactive)
             result = subprocess.run(
-                ["sudo", "-n", "true"], capture_output=True, timeout=5
+                ["sudo", "-n", "true"], check=False, capture_output=True, timeout=5
             )
 
             current_time = time.time()
@@ -101,7 +99,6 @@ class GUIAuthManager:
 
     def _create_zenity_password_helper(self) -> str:
         """Create a temporary script to use zenity for password prompts."""
-
         # Create a temporary script that uses zenity for password input
         script_content = """#!/bin/bash
 zenity --password --title="Authentication Required" --text="Enter your password for administrative access:"
@@ -123,7 +120,6 @@ zenity --password --title="Authentication Required" --text="Enter your password 
 
     def _create_kdialog_password_helper(self) -> str:
         """Create a temporary script to use kdialog for password prompts."""
-
         # Create a temporary script that uses kdialog for password input
         script_content = """#!/bin/bash
 kdialog --password "Enter your password for administrative access:"
@@ -175,6 +171,7 @@ kdialog --password "Enter your password for administrative access:"
             logger.info(f"Establishing GUI sudo session using {self._gui_helper}")
             result = subprocess.run(
                 ["sudo", "-A", "true"],
+                check=False,
                 env=env,
                 timeout=60,  # Give user time to enter password
                 capture_output=True,
@@ -213,8 +210,7 @@ kdialog --password "Enter your password for administrative access:"
         capture_output: bool = True,
         text: bool = True,
     ) -> subprocess.CompletedProcess:
-        """
-        Run command with GUI authentication, using persistent sudo session.
+        """Run command with GUI authentication, using persistent sudo session.
 
         Args:
             argv: Command to run (without sudo prefix)
@@ -240,6 +236,7 @@ kdialog --password "Enter your password for administrative access:"
             try:
                 result = subprocess.run(
                     [sudo_path] + list(argv),
+                    check=False,
                     timeout=timeout,
                     capture_output=capture_output,
                     text=text,
@@ -266,6 +263,7 @@ kdialog --password "Enter your password for administrative access:"
             )
             result = subprocess.run(
                 [sudo_path] + list(argv),
+                check=False,
                 timeout=timeout,
                 capture_output=capture_output,
                 text=text,
@@ -293,8 +291,7 @@ kdialog --password "Enter your password for administrative access:"
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
     ) -> subprocess.Popen:
-        """
-        Start a privileged process with GUI authentication, returning Popen for streaming.
+        """Start a privileged process with GUI authentication, returning Popen for streaming.
 
         Args:
             argv: Command to run (without sudo prefix)
@@ -338,6 +335,7 @@ kdialog --password "Enter your password for administrative access:"
             # Refresh with a simple command
             result = subprocess.run(
                 ["sudo", "-v"],
+                check=False,
                 timeout=5,
                 capture_output=True,  # Refresh timestamp
             )
@@ -360,7 +358,9 @@ kdialog --password "Enter your password for administrative access:"
         try:
             if self._sudo_session_active:
                 # Invalidate sudo timestamp
-                subprocess.run(["sudo", "-k"], timeout=5, capture_output=True)
+                subprocess.run(
+                    ["sudo", "-k"], check=False, timeout=5, capture_output=True
+                )
                 logger.info("Sudo session cleaned up")
         except Exception as e:
             logger.debug(f"Error cleaning up session: {e}")
@@ -368,7 +368,7 @@ kdialog --password "Enter your password for administrative access:"
             self._sudo_session_active = False
             self._session_start_time = 0
 
-    def get_session_info(self) -> Dict[str, any]:
+    def get_session_info(self) -> dict[str, any]:
         """Get information about the current authentication session."""
         current_time = time.time()
         elapsed = (
@@ -406,8 +406,7 @@ def elevated_run_gui(
     capture_output: bool = True,
     text: bool = True,
 ) -> subprocess.CompletedProcess:
-    """
-    Convenience function for running commands with GUI authentication.
+    """Convenience function for running commands with GUI authentication.
     Uses the global GUI authentication manager.
     """
     return get_gui_auth_manager().run_with_gui_auth(
@@ -422,8 +421,7 @@ def elevated_popen_gui(
     stdout=subprocess.PIPE,
     stderr=subprocess.PIPE,
 ) -> subprocess.Popen:
-    """
-    Convenience function for starting privileged processes with GUI authentication.
+    """Convenience function for starting privileged processes with GUI authentication.
     Uses the global GUI authentication manager.
     """
     return get_gui_auth_manager().start_gui_auth_process(

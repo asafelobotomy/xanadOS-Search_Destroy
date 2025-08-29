@@ -47,7 +47,7 @@ def find_version_patterns():
                         file_path = os.path.join(root, file)
                         try:
                             with open(
-                                file_path, "r", encoding="utf-8", errors="ignore"
+                                file_path, encoding="utf-8", errors="ignore"
                             ) as f:
                                 content = f.read()
                                 for i, line in enumerate(content.split("\n"), 1):
@@ -76,7 +76,7 @@ def find_version_patterns():
     for file in root_files:
         if os.path.exists(file):
             try:
-                with open(file, "r", encoding="utf-8", errors="ignore") as f:
+                with open(file, encoding="utf-8", errors="ignore") as f:
                     content = f.read()
                     for i, line in enumerate(content.split("\n"), 1):
                         for pattern in patterns:
@@ -104,7 +104,7 @@ def find_version_patterns():
 def get_current_version():
     """Get the current version from VERSION file."""
     try:
-        with open("VERSION", "r") as f:
+        with open("VERSION") as f:
             return f.read().strip()
     except FileNotFoundError:
         return "Unknown"

@@ -111,7 +111,7 @@ def setup_logging():
 
         # Optional structured logging: avoid circular import by using module-level CONFIG_FILE
         try:
-            with open(CONFIG_FILE, "r", encoding="utf-8") as cf:
+            with open(CONFIG_FILE, encoding="utf-8") as cf:
                 cfg_json = json.load(cf)
             structured = cfg_json.get("advanced_settings", {}).get(
                 "structured_logging", False
@@ -154,7 +154,7 @@ def load_config(file_path=None):
         return initial_config
 
     try:
-        with open(config_path, "r", encoding="utf-8") as config_file:
+        with open(config_path, encoding="utf-8") as config_file:
             config = json.load(config_file)
             # Return config exactly as saved - no modifications
             return config
@@ -204,7 +204,7 @@ def save_config(config_data, file_path=None):
     config_path = Path(file_path) if file_path else CONFIG_FILE
     try:
         _atomic_write_json(config_path, config_data)
-    except (IOError, OSError) as e:
+    except OSError as e:
         logging.getLogger(APP_NAME).error("Failed to save config atomically: %s", e)
 
 

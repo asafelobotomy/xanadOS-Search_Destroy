@@ -3,6 +3,7 @@
 Superseded by focused unit & security tests.
 Retained only for historical reference.
 """
+
 import pytest
 
 pytest.skip("Legacy umbrella test file skipped", allow_module_level=True)

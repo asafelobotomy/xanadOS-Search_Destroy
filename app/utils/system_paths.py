@@ -16,7 +16,7 @@ import shutil
 import tempfile
 from enum import Enum
 from pathlib import Path
-from typing import List, Optional
+from typing import List
 
 
 class PathType(Enum):
@@ -172,7 +172,7 @@ class SystemPaths:
         return any(path_str.startswith(sys_path) for sys_path in system_paths)
 
     @classmethod
-    def get_executable_path(cls, executable: str) -> Optional[str]:
+    def get_executable_path(cls, executable: str) -> str | None:
         """Get full path to executable with security validation"""
 
         # First try shutil.which for standard PATH lookup
@@ -322,7 +322,7 @@ def get_temp_dir() -> str:
     return SystemPaths.get_system_temp_dir()
 
 
-def get_executable(name: str) -> Optional[str]:
+def get_executable(name: str) -> str | None:
     """Get executable path with security validation"""
     return SystemPaths.get_executable_path(name)
 

@@ -7,6 +7,7 @@ reporting, performance metrics, and future-proofing validation.
 Author: GitHub Copilot
 Date: 22 August 2025
 """
+
 import json
 import logging
 import os
@@ -229,14 +230,9 @@ class TestSuiteRunner:
 
             if stats.get("tests_run", 0) > 0:
                 print(
-                    f"Tests: {
-                        stats['tests_run']} run, {
-                        stats.get(
-                            'tests_passed',
-                            0)} passed, {
-                        stats.get(
-                            'tests_failed',
-                            0)} failed"
+                    f"Tests: {stats['tests_run']} run, {
+                        stats.get('tests_passed', 0)
+                    } passed, {stats.get('tests_failed', 0)} failed"
                 )
 
             if not success and result.stderr:

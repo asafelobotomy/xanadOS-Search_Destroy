@@ -9,7 +9,7 @@ from dataclasses import asdict, dataclass
 from datetime import datetime, timedelta
 from enum import Enum
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
 from .config import DATA_DIR, setup_logging
 
@@ -117,7 +117,7 @@ class ScanReportManager:
 
             return str(report_file)
 
-        except (IOError, OSError):
+        except OSError:
             self.logerror(
                 "Failed to save scan result: %s".replace("%s", "{e}").replace(
                     "%d", "{e}"
@@ -147,9 +147,9 @@ class ScanReportManager:
         summary = {}
         if summary_file.exists():
             try:
-                with open(summary_file, "r", encoding="utf-8") as f:
+                with open(summary_file, encoding="utf-8") as f:
                     summary = json.load(f)
-            except (json.JSONDecodeError, IOError):
+            except (OSError, json.JSONDecodeError):
                 summary = {}
 
         # Initialize if empty
@@ -196,14 +196,14 @@ class ScanReportManager:
         try:
             with open(summary_file, "w", encoding="utf-8") as f:
                 json.dump(summary, f, indent=2, default=str)
-        except (IOError, OSError):
+        except OSError:
             self.logerror(
                 "Failed to update daily summary: %s".replace("%s", "{e}").replace(
                     "%d", "{e}"
                 )
             )
 
-    def load_scan_result(self, scan_id: str) -> Optional[ScanResult]:
+    def load_scan_result(self, scan_id: str) -> ScanResult | None:
         """Load scan result by ID."""
         report_file = self.daily_reports / f"scan_{scan_id}.json"
 
@@ -211,7 +211,7 @@ class ScanReportManager:
             return None
 
         try:
-            with open(report_file, "r", encoding="utf-8") as f:
+            with open(report_file, encoding="utf-8") as f:
                 data = json.load(f)
 
             # Convert back to ScanResult object
@@ -256,7 +256,7 @@ class ScanReportManager:
 
             return ScanResult(**data)
 
-        except (json.JSONDecodeError, IOError, TypeError, ValueError):
+        except (OSError, json.JSONDecodeError, TypeError, ValueError):
             self.logerror(
                 "Failed to load scan result %s: %s".replace(
                     "%s", "{scan_id, e}"
@@ -275,7 +275,7 @@ class ScanReportManager:
         recent_scans = []
         for scan_file in scan_files[:limit]:
             try:
-                with open(scan_file, "r", encoding="utf-8") as f:
+                with open(scan_file, encoding="utf-8") as f:
                     data = json.load(f)
 
                 # Extract summary information
@@ -290,7 +290,7 @@ class ScanReportManager:
                 }
                 recent_scans.append(summary)
 
-            except (json.JSONDecodeError, IOError, KeyError):
+            except (OSError, json.JSONDecodeError, KeyError):
                 self.logwarning(
                     "Failed to read scan summary from %s: %s".replace(
                         "%s", "{scan_file, e}"
@@ -318,7 +318,7 @@ class ScanReportManager:
         # Scan through threat logs
         for threat_file in self.threat_logs.glob("threats_*.json"):
             try:
-                with open(threat_file, "r", encoding="utf-8") as f:
+                with open(threat_file, encoding="utf-8") as f:
                     data = json.load(f)
 
                 # Check if within date range
@@ -353,7 +353,7 @@ class ScanReportManager:
                             stats["most_infected_paths"].get(path_parent, 0) + 1
                         )
 
-            except (json.JSONDecodeError, IOError, KeyError, ValueError):
+            except (OSError, json.JSONDecodeError, KeyError, ValueError):
                 self.logwarning(
                     "Failed to process threat file %s: %s".replace(
                         "%s", "{threat_file, e}"
@@ -378,7 +378,7 @@ class ScanReportManager:
                     ):
                         report_file.unlink()
                         deleted_count += 1
-                except (OSError, IOError):
+                except OSError:
                     self.logwarning(
                         "Failed to delete old report %s: %s".replace(
                             "%s", "{report_file, e}"
@@ -423,7 +423,7 @@ class ScanReportManager:
             # Collect all scans in date range
             for scan_file in self.daily_reports.glob("scan_*.json"):
                 try:
-                    with open(scan_file, "r", encoding="utf-8") as f:
+                    with open(scan_file, encoding="utf-8") as f:
                         scan_data = json.load(f)
 
                     # Date filtering if specified
@@ -445,7 +445,7 @@ class ScanReportManager:
                             threat["scan_date"] = scan_data["start_time"]
                             export_data["threats"].append(threat)
 
-                except (json.JSONDecodeError, IOError, ValueError):
+                except (OSError, json.JSONDecodeError, ValueError):
                     continue
 
             # Generate appropriate format
@@ -470,7 +470,7 @@ class ScanReportManager:
             )
             return True
 
-        except (IOError, OSError):
+        except OSError:
             self.logerror(
                 "Failed to export reports: %s".replace("%s", "{e}").replace("%d", "{e}")
             )

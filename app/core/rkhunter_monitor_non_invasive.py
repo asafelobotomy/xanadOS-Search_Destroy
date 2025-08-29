@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""
-Enhanced RKHunter Status Checker - Non-Invasive Implementation
+"""Enhanced RKHunter Status Checker - Non-Invasive Implementation
 Replaces elevated privilege status checking with activity-based caching
 """
 
@@ -11,7 +10,6 @@ import time
 from dataclasses import asdict, dataclass
 from datetime import datetime
 from pathlib import Path
-from typing import Optional, Tuple
 
 try:
     from app.core.secure_subprocess import run_secure
@@ -34,7 +32,7 @@ class RKHunterStatusNonInvasive:
     database_exists: bool
     database_readable: bool
     log_file_exists: bool
-    last_scan_attempt: Optional[datetime]
+    last_scan_attempt: datetime | None
     installation_method: str  # "package", "manual", "not_installed"
     issues_found: list
     cache_valid: bool
@@ -42,8 +40,7 @@ class RKHunterStatusNonInvasive:
 
 
 class RKHunterMonitorNonInvasive:
-    """
-    Non-invasive RKHunter monitoring using the same principles as firewall solution:
+    """Non-invasive RKHunter monitoring using the same principles as firewall solution:
     1. No elevated privilege requirements
     2. Activity-based caching
     3. Multiple detection methods
@@ -52,8 +49,8 @@ class RKHunterMonitorNonInvasive:
 
     def __init__(self, cache_duration: int = 300):  # 5 minutes default
         self.cache_duration = cache_duration
-        self._status_cache: Optional[RKHunterStatusNonInvasive] = None
-        self._cache_time: Optional[float] = None
+        self._status_cache: RKHunterStatusNonInvasive | None = None
+        self._cache_time: float | None = None
         self._lock = threading.Lock()
 
         # Cache file for persistent status
@@ -85,7 +82,7 @@ class RKHunterMonitorNonInvasive:
         """Load cached status from disk"""
         try:
             if self.cache_file.exists():
-                with open(self.cache_file, "r") as f:
+                with open(self.cache_file) as f:
                     data = json.load(f)
 
                 cache_time = data.get("cache_time", 0)
@@ -129,8 +126,7 @@ class RKHunterMonitorNonInvasive:
     def get_status_non_invasive(
         self, force_refresh: bool = False
     ) -> RKHunterStatusNonInvasive:
-        """
-        Get RKHunter status using only non-invasive methods
+        """Get RKHunter status using only non-invasive methods
 
         This replaces get_current_status() to eliminate sudo requirements
         """
@@ -166,7 +162,6 @@ class RKHunterMonitorNonInvasive:
 
     def _collect_fresh_status(self) -> RKHunterStatusNonInvasive:
         """Collect fresh RKHunter status using only non-invasive methods"""
-
         issues = []
 
         # Check if RKHunter is available
@@ -223,7 +218,7 @@ class RKHunterMonitorNonInvasive:
             cache_valid=True,
         )
 
-    def _check_rkhunter_availability(self) -> Tuple[bool, str, str]:
+    def _check_rkhunter_availability(self) -> tuple[bool, str, str]:
         """Check if RKHunter is available without elevated privileges"""
         try:
             # Method 1: Check if binary exists in PATH
@@ -268,15 +263,15 @@ class RKHunterMonitorNonInvasive:
 
         except Exception as e:
             print(f"⚠️ Error checking RKHunter availability: {e}")
-            return False, f"Error: {str(e)}", "error"
+            return False, f"Error: {e!s}", "error"
 
-    def _check_configuration(self) -> Tuple[bool, bool]:
+    def _check_configuration(self) -> tuple[bool, bool]:
         """Check RKHunter configuration files"""
         for config_path in self.config_paths:
             if os.path.exists(config_path):
                 try:
                     # Try to read first few lines to check readability
-                    with open(config_path, "r") as f:
+                    with open(config_path) as f:
                         f.read(100)  # Read first 100 chars
                     return True, True
                 except PermissionError:
@@ -286,7 +281,7 @@ class RKHunterMonitorNonInvasive:
 
         return False, False
 
-    def _check_database(self) -> Tuple[bool, bool]:
+    def _check_database(self) -> tuple[bool, bool]:
         """Check RKHunter database directories"""
         for db_path in self.database_paths:
             if os.path.exists(db_path):
@@ -301,7 +296,7 @@ class RKHunterMonitorNonInvasive:
 
         return False, False
 
-    def _check_logs(self) -> Tuple[bool, Optional[datetime]]:
+    def _check_logs(self) -> tuple[bool, datetime | None]:
         """Check RKHunter log files and extract last scan time"""
         last_scan = None
 
@@ -309,7 +304,7 @@ class RKHunterMonitorNonInvasive:
             if os.path.exists(log_path):
                 try:
                     # Try to read last few lines of log file
-                    with open(log_path, "r") as f:
+                    with open(log_path) as f:
                         # Get file modification time as fallback
                         mtime = os.path.getmtime(log_path)
                         last_scan = datetime.fromtimestamp(mtime)

@@ -12,7 +12,7 @@ import time
 from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from app.utils.config import load_config
 
@@ -73,7 +73,7 @@ class DatabaseConnectionPool:
             # Log full stack for easier diagnostics
             self.logger.exception("Failed to initialize connection pool")
 
-    def _create_connection(self) -> Optional[sqlite3.Connection]:
+    def _create_connection(self) -> sqlite3.Connection | None:
         """Create a new database connection."""
         try:
             conn = sqlite3.connect(
@@ -188,16 +188,16 @@ class QueryOptimizer:
         self.logger = logging.getLogger(__name__)
 
         # Query caching
-        self.query_cache: Dict[str, Any] = {}
+        self.query_cache: dict[str, Any] = {}
         self.cache_lock = threading.RLock()
         self.cache_max_size = 1000
 
         # Performance monitoring
-        self.query_stats: Dict[str, QueryStats] = {}
+        self.query_stats: dict[str, QueryStats] = {}
         self.stats_lock = threading.Lock()
 
         # Prepared statements
-        self.prepared_statements: Dict[str, str] = {}
+        self.prepared_statements: dict[str, str] = {}
 
     def _get_cache_key(self, query: str, params: tuple) -> str:
         """Generate cache key for query and parameters."""
@@ -219,7 +219,7 @@ class QueryOptimizer:
         query: str,
         params: tuple = (),
         cache_results: bool = True,
-    ) -> List[sqlite3.Row]:
+    ) -> list[sqlite3.Row]:
         """Execute optimized database query.
 
         Args:
@@ -280,7 +280,7 @@ class QueryOptimizer:
             )
             raise
 
-    def execute_transaction(self, queries: List[tuple]) -> bool:
+    def execute_transaction(self, queries: list[tuple]) -> bool:
         """Execute multiple queries in a transaction.
 
         Args:
@@ -342,7 +342,7 @@ class QueryOptimizer:
 
         return normalized.strip()
 
-    def get_query_stats(self) -> Dict[str, QueryStats]:
+    def get_query_stats(self) -> dict[str, QueryStats]:
         """Get query performance statistics."""
         with self.stats_lock:
             return dict(self.query_stats)
@@ -492,7 +492,7 @@ class ScanResultsDB:
         file_path: str,
         file_size: int,
         scan_result: str,
-        threat_name: Optional[str] = None,
+        threat_name: str | None = None,
     ):
         """Add scan result to database.
 
@@ -558,7 +558,7 @@ class ScanResultsDB:
         except Exception:
             self.logger.exception("Failed to finish scan session")
 
-    def get_recent_sessions(self, limit: int = 10) -> List[sqlite3.Row]:
+    def get_recent_sessions(self, limit: int = 10) -> list[sqlite3.Row]:
         """Get recent scan sessions.
 
         Args:
@@ -618,7 +618,7 @@ class ScanResultsDB:
 
 
 # Global database instance
-scan_db: Optional[ScanResultsDB] = None
+scan_db: ScanResultsDB | None = None
 
 
 def get_scan_db() -> ScanResultsDB:

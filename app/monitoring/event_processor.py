@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""
-Event processor for intelligent handling of file system events
+"""Event processor for intelligent handling of file system events
 Filters, prioritizes, and processes file events for real-time monitoring
 """
 
@@ -9,10 +8,11 @@ import logging
 import threading
 import time
 from collections import defaultdict, deque
+from collections.abc import Callable
 from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any
 
 from .file_watcher import WatchEvent, WatchEventType
 
@@ -33,11 +33,11 @@ class EventRule:
 
     name: str
     pattern: str  # File pattern to match
-    event_types: List[WatchEventType]
+    event_types: list[WatchEventType]
     action: EventAction
     priority: int = 0
     enabled: bool = True
-    conditions: Optional[Dict[str, Any]] = None
+    conditions: dict[str, Any] | None = None
 
     def __post_init__(self):
         if self.conditions is None:
@@ -53,7 +53,7 @@ class ProcessedEvent:
     rule_name: str
     priority: int
     timestamp: float
-    metadata: Optional[Dict[str, Any]] = None
+    metadata: dict[str, Any] | None = None
 
     def __post_init__(self):
         if self.metadata is None:
@@ -61,18 +61,16 @@ class ProcessedEvent:
 
 
 class EventProcessor:
-    """
-    Intelligent event processor that applies rules and filters to file system events.
-    """
+    """Intelligent event processor that applies rules and filters to file system events."""
 
     def __init__(self):
         """Initialize event processor."""
         self.logger = logging.getLogger(__name__)
 
         # Event processing
-        self.rules: List[EventRule] = []
+        self.rules: list[EventRule] = []
         self.processed_events: deque = deque(maxlen=10000)
-        self.event_stats: Dict[str, int] = defaultdict(int)
+        self.event_stats: dict[str, int] = defaultdict(int)
 
         # Event filtering
         self.ignored_extensions = {".tmp", ".swp", ".log", ".cache", ".lock"}
@@ -81,8 +79,8 @@ class EventProcessor:
         self.event_rate_window = {}  # path -> list of timestamps
 
         # Event callbacks
-        self.event_callback: Optional[Callable[[ProcessedEvent], None]] = None
-        self.alert_callback: Optional[Callable[[str, str], None]] = None
+        self.event_callback: Callable[[ProcessedEvent], None] | None = None
+        self.alert_callback: Callable[[str, str], None] | None = None
 
         # Threading
         self.lock = threading.RLock()
@@ -146,9 +144,8 @@ class EventProcessor:
                     return True
         return False
 
-    def process_event(self, event: WatchEvent) -> Optional[ProcessedEvent]:
-        """
-        Process a file system event through rules and filters.
+    def process_event(self, event: WatchEvent) -> ProcessedEvent | None:
+        """Process a file system event through rules and filters.
 
         Args:
             event: File system event to process
@@ -288,7 +285,7 @@ class EventProcessor:
         window.append(current_time)
         return True
 
-    def _find_matching_rule(self, event: WatchEvent) -> Optional[EventRule]:
+    def _find_matching_rule(self, event: WatchEvent) -> EventRule | None:
         """Find the highest priority rule that matches the event."""
         with self.lock:
             for rule in self.rules:
@@ -326,7 +323,7 @@ class EventProcessor:
                     and file_path.stat().st_size > rule.conditions["max_file_size"]
                 ):
                     return False
-            except (OSError, IOError):
+            except OSError:
                 pass
 
         # Check file age condition
@@ -336,7 +333,7 @@ class EventProcessor:
                     file_age = time.time() - file_path.stat().st_mtime
                     if file_age > rule.conditions["max_file_age"]:
                         return False
-            except (OSError, IOError):
+            except OSError:
                 pass
 
         # Check directory depth condition
@@ -347,9 +344,9 @@ class EventProcessor:
 
         return True
 
-    def _extract_metadata(self, event: WatchEvent) -> Dict[str, Any]:
+    def _extract_metadata(self, event: WatchEvent) -> dict[str, Any]:
         """Extract metadata from file event."""
-        metadata: Dict[str, Any] = {}
+        metadata: dict[str, Any] = {}
 
         try:
             file_path = Path(event.file_path)
@@ -454,7 +451,7 @@ class EventProcessor:
         for rule in default_rules:
             self.add_rule(rule)
 
-    def get_statistics(self) -> Dict[str, Any]:
+    def get_statistics(self) -> dict[str, Any]:
         """Get event processing statistics."""
         with self.lock:
             return {
@@ -465,12 +462,12 @@ class EventProcessor:
                 "rate_limited_paths": len(self.event_rate_window),
             }
 
-    def get_recent_events(self, limit: int = 100) -> List[ProcessedEvent]:
+    def get_recent_events(self, limit: int = 100) -> list[ProcessedEvent]:
         """Get recent processed events."""
         with self.lock:
             return list(self.processed_events)[-limit:]
 
-    def get_rules(self) -> List[EventRule]:
+    def get_rules(self) -> list[EventRule]:
         """Get all event processing rules."""
         with self.lock:
             return self.rules.copy()

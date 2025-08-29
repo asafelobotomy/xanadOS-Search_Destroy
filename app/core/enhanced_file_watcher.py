@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""
-Enhanced File System Watcher - 2025 Optimizations
+"""Enhanced File System Watcher - 2025 Optimizations
 Implements latest research findings for efficient file system monitoring:
 - fanotify API for mount-point level monitoring (Linux)
 - eBPF integration for kernel-level event filtering
@@ -16,10 +15,11 @@ import select
 import threading
 import time
 from collections import defaultdict, deque
+from collections.abc import Callable
 from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any
 
 # Try advanced Linux monitoring APIs
 try:
@@ -92,9 +92,9 @@ class WatchEvent:
     timestamp: float
     file_size: int = 0
     is_directory: bool = False
-    process_id: Optional[int] = None
-    user_id: Optional[int] = None
-    old_path: Optional[str] = None  # For move events
+    process_id: int | None = None
+    user_id: int | None = None
+    old_path: str | None = None  # For move events
 
     # Performance metadata
     detection_latency_ms: float = 0.0
@@ -255,7 +255,7 @@ class SmartEventFilter:
 class AdaptiveEventBatcher:
     """Intelligent event batching based on system load and event priority."""
 
-    def __init__(self, callback: Callable[[List[WatchEvent]], None]):
+    def __init__(self, callback: Callable[[list[WatchEvent]], None]):
         self.callback = callback
         self.logger = logging.getLogger(__name__)
 
@@ -274,8 +274,8 @@ class AdaptiveEventBatcher:
         self.low_priority_queue = []
 
         # Timers for batch processing
-        self.medium_timer: Optional[threading.Timer] = None
-        self.low_timer: Optional[threading.Timer] = None
+        self.medium_timer: threading.Timer | None = None
+        self.low_timer: threading.Timer | None = None
 
         self.lock = threading.Lock()
 
@@ -383,7 +383,7 @@ class AdaptiveEventBatcher:
 class FanotifyWatcher:
     """Advanced Linux file system watcher using fanotify API."""
 
-    def __init__(self, paths_to_watch: List[str]):
+    def __init__(self, paths_to_watch: list[str]):
         self.logger = logging.getLogger(__name__)
         self.paths_to_watch = paths_to_watch
         self.fanotify_fd = None
@@ -493,7 +493,7 @@ class FanotifyWatcher:
                 self.logger.error(f"Error in fanotify monitor loop: {e}")
                 time.sleep(0.1)
 
-    def _parse_fanotify_events(self, data: bytes) -> List[WatchEvent]:
+    def _parse_fanotify_events(self, data: bytes) -> list[WatchEvent]:
         """Parse raw fanotify event data."""
         events = []
         offset = 0
@@ -546,7 +546,7 @@ class FanotifyWatcher:
 
         return events
 
-    def _mask_to_event_type(self, mask: int) -> Optional[WatchEventType]:
+    def _mask_to_event_type(self, mask: int) -> WatchEventType | None:
         """Convert fanotify mask to WatchEventType."""
         if mask & FAN_CREATE:
             return WatchEventType.FILE_CREATED
@@ -580,8 +580,8 @@ class EnhancedFileSystemWatcher:
 
     def __init__(
         self,
-        paths_to_watch: List[str],
-        event_callback: Optional[Callable[[List[WatchEvent]], None]] = None,
+        paths_to_watch: list[str],
+        event_callback: Callable[[list[WatchEvent]], None] | None = None,
     ):
         self.logger = logging.getLogger(__name__)
         self.paths_to_watch = paths_to_watch
@@ -687,7 +687,7 @@ class EnhancedFileSystemWatcher:
         # Add to batch processor
         self.event_batcher.add_event(event)
 
-    def _process_event_batch(self, events: List[WatchEvent]):
+    def _process_event_batch(self, events: list[WatchEvent]):
         """Process a batch of filtered events."""
         if not events:
             return
@@ -716,7 +716,7 @@ class EnhancedFileSystemWatcher:
         except Exception as e:
             self.logger.error(f"Error processing event batch: {e}")
 
-    def get_performance_stats(self) -> Dict[str, Any]:
+    def get_performance_stats(self) -> dict[str, Any]:
         """Get current performance statistics."""
         return {
             **self.stats,
@@ -735,7 +735,7 @@ async def test_enhanced_watcher():
     print("🔍 Enhanced File System Watcher Test")
     print("=" * 50)
 
-    def event_handler(events: List[WatchEvent]):
+    def event_handler(events: list[WatchEvent]):
         for event in events:
             print(f"📁 {event.event_type.event_name}: {event.file_path}")
             print(

@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""
-Real-time monitoring system for xanadOS Search & Destroy
+"""Real-time monitoring system for xanadOS Search & Destroy
 Phase 3 implementation: Real-time file system monitoring and threat protection
 """
 
@@ -10,17 +9,17 @@ from .file_watcher import FileSystemWatcher, WatchEvent, WatchEventType
 from .real_time_monitor import MonitorConfig, MonitorState, RealTimeMonitor
 
 __all__ = [
-    "FileSystemWatcher",
-    "WatchEvent",
-    "WatchEventType",
+    "BackgroundScanner",
+    "EventAction",
     "EventProcessor",
     "EventRule",
-    "ProcessedEvent",
-    "EventAction",
-    "BackgroundScanner",
-    "ScanTask",
-    "ScanPriority",
-    "RealTimeMonitor",
+    "FileSystemWatcher",
     "MonitorConfig",
     "MonitorState",
+    "ProcessedEvent",
+    "RealTimeMonitor",
+    "ScanPriority",
+    "ScanTask",
+    "WatchEvent",
+    "WatchEventType",
 ]

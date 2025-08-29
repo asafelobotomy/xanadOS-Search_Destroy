@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""
-Enhanced Real-time Protection Engine for S&D - 2025 Optimizations
+"""Enhanced Real-time Protection Engine for S&D - 2025 Optimizations
 Incorporates latest research findings for improved performance and security:
 - eBPF-based file system monitoring for kernel-level efficiency
 - Machine learning anomaly detection for behavioral analysis
@@ -19,7 +18,7 @@ from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
 from enum import Enum
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any
 
 import numpy as np
 import psutil
@@ -56,10 +55,10 @@ class ThreatDetectionResult:
     threat_level: ThreatLevel
     confidence_score: float  # 0.0 to 1.0
     detection_method: str
-    behavioral_features: Dict[str, Any] = field(default_factory=dict)
-    ml_prediction: Optional[str] = None
+    behavioral_features: dict[str, Any] = field(default_factory=dict)
+    ml_prediction: str | None = None
     processing_time_ms: float = 0.0
-    resource_usage: Dict[str, float] = field(default_factory=dict)
+    resource_usage: dict[str, float] = field(default_factory=dict)
 
 
 @dataclass
@@ -70,8 +69,8 @@ class SystemResourceMetrics:
     memory_percent: float
     disk_io_rate: float
     network_io_rate: float
-    temperature: Optional[float] = None
-    battery_level: Optional[float] = None
+    temperature: float | None = None
+    battery_level: float | None = None
 
 
 class LightweightMLDetector:
@@ -154,7 +153,7 @@ class LightweightMLDetector:
 
     def _extract_features_fast(
         self, file_path: str, content: bytes
-    ) -> Dict[str, float]:
+    ) -> dict[str, float]:
         """Fast feature extraction optimized for real-time processing."""
         features = {}
 
@@ -228,7 +227,7 @@ class LightweightMLDetector:
         except BaseException:
             return 0.5  # Error in analysis
 
-    def _quick_string_analysis(self, data: bytes) -> Dict[str, float]:
+    def _quick_string_analysis(self, data: bytes) -> dict[str, float]:
         """Fast string-based analysis."""
         features = {}
 
@@ -268,7 +267,7 @@ class LightweightMLDetector:
 
         return features
 
-    def _calculate_anomaly_score(self, features: Dict[str, float]) -> float:
+    def _calculate_anomaly_score(self, features: dict[str, float]) -> float:
         """Calculate overall anomaly score from features."""
         # Weighted feature combination for lightweight detection
         weights = {
@@ -405,7 +404,7 @@ class AdaptiveResourceManager:
         else:
             return ProtectionMode.BALANCED
 
-    def get_scan_parameters(self, mode: ProtectionMode) -> Dict[str, Any]:
+    def get_scan_parameters(self, mode: ProtectionMode) -> dict[str, Any]:
         """Get scanning parameters optimized for the given mode."""
         if mode == ProtectionMode.PERFORMANCE:
             return {
@@ -452,7 +451,7 @@ class EnhancedRealTimeProtection:
         # State management
         self.is_active = False
         self.current_mode = ProtectionMode.ADAPTIVE
-        self.protection_thread: Optional[threading.Thread] = None
+        self.protection_thread: threading.Thread | None = None
 
         # Performance monitoring
         self.stats = {
@@ -600,7 +599,7 @@ class EnhancedRealTimeProtection:
                 detection_method="error",
             )
 
-    def get_performance_stats(self) -> Dict[str, Any]:
+    def get_performance_stats(self) -> dict[str, Any]:
         """Get current performance statistics."""
         current_metrics = self.resource_manager.get_current_metrics()
 

@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""
-Secure privilege escalation module for xanadOS Search & Destroy
+"""Secure privilege escalation module for xanadOS Search & Destroy
 Handles elevation requests through polkit for secure operations
 """
 
@@ -13,7 +12,6 @@ import tempfile
 from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
 
 from .auth_session_manager import auth_manager
 from .elevated_runner import elevated_run
@@ -34,9 +32,9 @@ class ElevationRequest:
     """Represents a privilege escalation request."""
 
     operation: PrivilegeOperation
-    command: List[str]
-    working_directory: Optional[str] = None
-    environment: Optional[Dict[str, str]] = None
+    command: list[str]
+    working_directory: str | None = None
+    environment: dict[str, str] | None = None
     timeout: int = 300  # 5 minutes default timeout
 
 
@@ -47,8 +45,7 @@ class SecureElevationError(Exception):
 
 
 class PrivilegeEscalationManager:
-    """
-    Manages secure privilege escalation using polkit.
+    """Manages secure privilege escalation using polkit.
 
     This class provides a secure way to request elevated privileges
     for specific operations without compromising security.
@@ -74,8 +71,7 @@ class PrivilegeEscalationManager:
             return False
 
     def _check_authorization(self, operation: PrivilegeOperation) -> bool:
-        """
-        Check if current user is authorized for the specified operation.
+        """Check if current user is authorized for the specified operation.
 
         Args:
             operation: The operation to check authorization for
@@ -108,9 +104,8 @@ class PrivilegeEscalationManager:
             self._safe_log_error("authorization check", e)
             return False
 
-    def _validate_command_security(self, command: List[str]) -> bool:
-        """
-        Validate command arguments for security issues.
+    def _validate_command_security(self, command: list[str]) -> bool:
+        """Validate command arguments for security issues.
 
         Args:
             command: List of command arguments to validate
@@ -137,8 +132,7 @@ class PrivilegeEscalationManager:
     def _safe_log_error(
         self, operation: str, error: Exception, include_type: bool = True
     ) -> None:
-        """
-        Log errors safely without exposing sensitive information.
+        """Log errors safely without exposing sensitive information.
 
         Args:
             operation: Description of the operation that failed
@@ -149,8 +143,7 @@ class PrivilegeEscalationManager:
         self.logger.error("Operation '%s' failed: %s", operation, error_info)
 
     def _create_secure_wrapper_script(self, request: ElevationRequest) -> str:
-        """
-        Create a secure wrapper script for the elevated operation.
+        """Create a secure wrapper script for the elevated operation.
 
         Args:
             request: The elevation request
@@ -199,9 +192,8 @@ class PrivilegeEscalationManager:
             os.unlink(script_path)
             raise
 
-    def request_elevation(self, request: ElevationRequest) -> Tuple[bool, str, str]:
-        """
-        Request privilege escalation for a specific operation.
+    def request_elevation(self, request: ElevationRequest) -> tuple[bool, str, str]:
+        """Request privilege escalation for a specific operation.
 
         Args:
             request: The elevation request containing operation details
@@ -290,10 +282,9 @@ class PrivilegeEscalationManager:
                     )
 
     def scan_system_directories(
-        self, scan_paths: List[str], scan_options: Optional[Dict[str, str]] = None
-    ) -> Tuple[bool, str, str]:
-        """
-        Request elevation to scan system directories.
+        self, scan_paths: list[str], scan_options: dict[str, str] | None = None
+    ) -> tuple[bool, str, str]:
+        """Request elevation to scan system directories.
 
         Args:
             scan_paths: List of paths to scan
@@ -340,9 +331,8 @@ class PrivilegeEscalationManager:
 
         return self.request_elevation(request)
 
-    def update_virus_database(self) -> Tuple[bool, str, str]:
-        """
-        Request elevation to update the virus database.
+    def update_virus_database(self) -> tuple[bool, str, str]:
+        """Request elevation to update the virus database.
 
         Returns:
             Tuple of (success, stdout, stderr)
@@ -355,9 +345,8 @@ class PrivilegeEscalationManager:
 
         return self.request_elevation(request)
 
-    def manage_quarantine(self, action: str, file_path: str) -> Tuple[bool, str, str]:
-        """
-        Request elevation to manage quarantined files.
+    def manage_quarantine(self, action: str, file_path: str) -> tuple[bool, str, str]:
+        """Request elevation to manage quarantined files.
 
         Args:
             action: The quarantine action (restore, delete, etc.)
@@ -385,8 +374,7 @@ class PrivilegeEscalationManager:
         return self.request_elevation(request)
 
     def install_policy_file(self) -> bool:
-        """
-        Install the polkit policy file to the system.
+        """Install the polkit policy file to the system.
 
         Returns:
             True if successful, False otherwise
@@ -468,8 +456,7 @@ privilege_manager = PrivilegeEscalationManager()
 
 
 def require_elevation(operation: PrivilegeOperation):
-    """
-    Decorator to require privilege escalation for a function.
+    """Decorator to require privilege escalation for a function.
 
     Args:
         operation: The privilege operation required

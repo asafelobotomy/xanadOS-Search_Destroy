@@ -123,7 +123,7 @@ class StandardsManager:
             from app import get_version as _get_version  # local import
 
             _app_version = _get_version()
-        except Exception:  # noqa: BLE001 - defensive, config path should not break
+        except Exception:
             _app_version = "dev"
 
         unified_config = {
@@ -211,7 +211,7 @@ class StandardsManager:
                 # Return default configuration
                 return self.get_unified_config()
 
-            with open(config_file, "r", encoding="utf-8") as f:
+            with open(config_file, encoding="utf-8") as f:
                 config = json.load(f)
 
             self.loginfo(
