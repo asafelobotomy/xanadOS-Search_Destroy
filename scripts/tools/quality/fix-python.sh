@@ -136,37 +136,68 @@ check_tool_availability() {
         exit 1
     fi
 
-    # Enhanced: Check for virtual environment ruff first
-    local venv_ruff="$WORKSPACE_ROOT/.python-env/bin/ruff"
-    if [[ -f "$venv_ruff" ]]; then
-        USE_RUFF=true
-        RUFF_CMD="$venv_ruff"
-        log_info "Using ruff from virtual environment for comprehensive fixes"
-        tools_available=$((tools_available + 1))
-    elif command -v ruff >/dev/null 2>&1; then
-        USE_RUFF=true
-        RUFF_CMD="ruff"
-        log_info "Using system ruff for comprehensive fixes"
-        tools_available=$((tools_available + 1))
-    else
-        USE_RUFF=false
-        log_debug "ruff not found, using individual tools"
+    # Enhanced: Check for uv environment tools first
+    local uv_available=false
+    if command -v uv >/dev/null 2>&1 && [[ -d "$WORKSPACE_ROOT/.venv" ]]; then
+        log_info "Found uv environment, using uv run for tools"
+        uv_available=true
 
-        # Check for individual tools
-        if command -v black >/dev/null 2>&1; then
-            log_debug "black found"
+        # Test if tools are available in uv environment
+        if cd "$WORKSPACE_ROOT" && uv run ruff --version >/dev/null 2>&1; then
+            USE_RUFF=true
+            RUFF_CMD="uv run ruff"
+            log_info "Using ruff from uv environment for comprehensive fixes"
             tools_available=$((tools_available + 1))
-        else
-            USE_BLACK=false
-            tools_missing+=("black")
         fi
 
-        if command -v isort >/dev/null 2>&1; then
-            log_debug "isort found"
+        if cd "$WORKSPACE_ROOT" && uv run black --version >/dev/null 2>&1; then
+            USE_BLACK=true
+            BLACK_CMD="uv run black"
+            log_debug "black found in uv environment"
+            tools_available=$((tools_available + 1))
+        fi
+
+        if cd "$WORKSPACE_ROOT" && uv run isort --version >/dev/null 2>&1; then
+            USE_ISORT=true
+            ISORT_CMD="uv run isort"
+            log_debug "isort found in uv environment"
+            tools_available=$((tools_available + 1))
+        fi
+    else
+        # Fallback: Check for virtual environment ruff
+        local venv_ruff="$WORKSPACE_ROOT/.python-env/bin/ruff"
+        if [[ -f "$venv_ruff" ]]; then
+            USE_RUFF=true
+            RUFF_CMD="$venv_ruff"
+            log_info "Using ruff from virtual environment for comprehensive fixes"
+            tools_available=$((tools_available + 1))
+        elif command -v ruff >/dev/null 2>&1; then
+            USE_RUFF=true
+            RUFF_CMD="ruff"
+            log_info "Using system ruff for comprehensive fixes"
             tools_available=$((tools_available + 1))
         else
-            USE_ISORT=false
-            tools_missing+=("isort")
+            USE_RUFF=false
+            log_debug "ruff not found, using individual tools"
+
+            # Check for individual tools
+            if command -v black >/dev/null 2>&1; then
+                BLACK_CMD="black"
+                log_debug "black found"
+                tools_available=$((tools_available + 1))
+            else
+                USE_BLACK=false
+                tools_missing+=("black")
+            fi
+
+            if command -v isort >/dev/null 2>&1; then
+                ISORT_CMD="isort"
+                log_debug "isort found"
+                tools_available=$((tools_available + 1))
+            else
+                USE_ISORT=false
+                tools_missing+=("isort")
+            fi
         fi
     fi
 
@@ -530,11 +561,11 @@ fix_imports() {
     log_debug "Fixing imports in: $file"
 
     # Try isort first if available
-    if [[ "$USE_ISORT" == "true" ]] && [[ "$DRY_RUN" == "false" ]]; then
-        if isort --check-only --diff "$file" >/dev/null 2>&1; then
+    if [[ "$USE_ISORT" == "true" ]] && [[ "$DRY_RUN" == "false" ]] && [[ -n "$ISORT_CMD" ]]; then
+        if $ISORT_CMD --check-only --diff "$file" >/dev/null 2>&1; then
             log_debug "No import changes needed for $file"
         else
-            if isort "$file" 2>/dev/null; then
+            if $ISORT_CMD "$file" 2>/dev/null; then
                 log_debug "Applied isort fixes to $file"
                 changes_made=true
             else
@@ -696,18 +727,21 @@ fix_formatting() {
 
     # Use ruff if available (preferred)
     if [[ "$USE_RUFF" == "true" ]]; then
-        if ruff format "$file" 2>/dev/null; then
-            log_debug "Applied ruff formatting to $file"
-            changes_made=true
-        fi
-        if ruff check --fix "$file" 2>/dev/null; then
-            log_debug "Applied ruff linting fixes to $file"
-            changes_made=true
+        # Use ruff for comprehensive formatting and linting
+        if [[ -n "$RUFF_CMD" ]]; then
+            if $RUFF_CMD format "$file" 2>/dev/null; then
+                log_debug "Applied ruff formatting to $file"
+                changes_made=true
+            fi
+            if $RUFF_CMD check --fix "$file" 2>/dev/null; then
+                log_debug "Applied ruff linting fixes to $file"
+                changes_made=true
+            fi
         fi
     else
         # Use black for formatting
-        if [[ "$USE_BLACK" == "true" ]]; then
-            if black --line-length "$MAX_LINE_LENGTH" --quiet "$file" 2>/dev/null; then
+        if [[ "$USE_BLACK" == "true" ]] && [[ -n "$BLACK_CMD" ]]; then
+            if $BLACK_CMD --line-length "$MAX_LINE_LENGTH" --quiet "$file" 2>/dev/null; then
                 log_debug "Applied black formatting to $file"
                 changes_made=true
             fi

@@ -4281,9 +4281,7 @@ System        {perf_status}"""
         print(f"DEBUG: Current thread exists: {self.current_scan_thread is not None}")
         print(
             f"DEBUG: Thread running: {
-                self.current_scan_thread.isRunning()
-                if self.current_scan_thread
-                else 'N/A'
+                self.current_scan_thread.isRunning() if self.current_scan_thread else 'N/A'
             }"
         )
         print(f"DEBUG: Manual stop flag: {self._scan_manually_stopped}")
@@ -5886,9 +5884,7 @@ System        {perf_status}"""
                 self.results_text.append(
                     f"  ❌ <span style='color: {
                         get_theme_manager().get_color('error')
-                    };'><b>ERROR:</b></span> {
-                        formatted_line.replace('ERROR:', '').strip()
-                    }"
+                    };'><b>ERROR:</b></span> {formatted_line.replace('ERROR:', '').strip()}"
                 )
             elif "INFECTED" in formatted_line.upper() or (
                 "ROOTKIT" in formatted_line.upper()
@@ -7145,7 +7141,7 @@ Common False Positives:
         # Note: Most components are handled by the main setStyleSheet() calls
         # in apply_dark_theme() and apply_light_theme()
 
-    def _configure_platform_dropdown_behavior(self) -> None:
+    def _configure_platform_dropdown_behavior(self):
         """Configure application to prevent popup window issues on Wayland"""
         try:
             # Get Qt application instance
@@ -7157,7 +7153,7 @@ Common False Positives:
         except Exception as e:
             print(f"Warning: Could not configure platform dropdown behavior: {e}")
 
-    def stop_scan(self) -> None:
+    def stop_scan(self):
         print("\n🛑 === STOP_SCAN CALLED ===")
         print("DEBUG: stop_scan() called")
         print(f"DEBUG: Current scan state: {self._scan_state}")
@@ -7166,9 +7162,7 @@ Common False Positives:
         )
         print(
             f"DEBUG: Scan thread running: {
-                self.current_scan_thread.isRunning()
-                if self.current_scan_thread
-                else 'N/A'
+                self.current_scan_thread.isRunning() if self.current_scan_thread else 'N/A'
             }"
         )
         print(
@@ -7180,8 +7174,7 @@ Common False Positives:
         print(
             f"DEBUG: RKHunter thread running: {
                 self.current_rkhunter_thread.isRunning()
-                if hasattr(self, 'current_rkhunter_thread')
-                and self.current_rkhunter_thread
+                if hasattr(self, 'current_rkhunter_thread') and self.current_rkhunter_thread
                 else 'N/A'
             }"
         )
@@ -7398,9 +7391,7 @@ Common False Positives:
         )
         print(
             f"DEBUG: Scan thread running: {
-                self.current_scan_thread.isRunning()
-                if self.current_scan_thread
-                else 'N/A'
+                self.current_scan_thread.isRunning() if self.current_scan_thread else 'N/A'
             }"
         )
         print(
@@ -7412,8 +7403,7 @@ Common False Positives:
         print(
             f"DEBUG: RKHunter thread running: {
                 self.current_rkhunter_thread.isRunning()
-                if hasattr(self, 'current_rkhunter_thread')
-                and self.current_rkhunter_thread
+                if hasattr(self, 'current_rkhunter_thread') and self.current_rkhunter_thread
                 else 'N/A'
             }"
         )
@@ -7442,9 +7432,9 @@ Common False Positives:
             f"🛑 Stopping scan... ({remaining_time}s remaining)"
         )
         print(
-            f"DEBUG: 📊 Stop progress: {stop_progress}% (attempt {
-                self._stop_completion_attempts
-            }/{max_attempts})"
+            f"DEBUG: 📊 Stop progress: {stop_progress}% (attempt {self._stop_completion_attempts}/{
+                max_attempts
+            })"
         )
 
         # Check current thread states with safe error handling
@@ -7554,9 +7544,7 @@ Common False Positives:
             print(
                 f"DEBUG: ⏳ Still waiting for {
                     ', '.join(threads_still_running)
-                } to finish... (attempt {self._stop_completion_attempts}/{
-                    max_attempts
-                })"
+                } to finish... (attempt {self._stop_completion_attempts}/{max_attempts})"
             )
 
     def _force_cleanup_threads(self):
@@ -7940,9 +7928,7 @@ Common False Positives:
                 threats.append(threat)
                 print(
                     f"DEBUG: Added threat: {
-                        threat.threat_name
-                        if hasattr(threat, 'threat_name')
-                        else 'unknown'
+                        threat.threat_name if hasattr(threat, 'threat_name') else 'unknown'
                     }"
                 )
 

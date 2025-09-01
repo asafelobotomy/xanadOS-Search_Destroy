@@ -106,17 +106,32 @@ setup_python_environment() {
         log_success "Virtual environment created"
     fi
 
-    # Activate virtual environment
-    source .venv/bin/activate
-
     # Install project in development mode with uv
     log_info "Installing project dependencies with uv..."
-    uv pip sync requirements.txt 2>/dev/null || {
-        log_info "requirements.txt not found, installing from pyproject.toml..."
-        uv pip install -e .
+
+    # First install the main project dependencies
+    uv sync || {
+        log_error "Failed to sync basic dependencies"
+        exit 1
     }
 
+    # Install development dependencies including formatting tools
+    log_info "Installing development dependencies (black, ruff, isort, etc.)..."
+    uv sync --extra dev || {
+        log_warning "Failed to install dev dependencies, continuing with basic setup..."
+    }
+
+    # Install additional optional dependency groups
+    local optional_groups=("security" "docs" "debugging")
+    for group in "${optional_groups[@]}"; do
+        log_info "Installing $group dependencies..."
+        uv sync --extra "$group" || {
+            log_warning "Failed to install $group dependencies, continuing..."
+        }
+    done
+
     log_success "Python environment setup complete"
+    log_info "Available tools: black, ruff, isort, mypy, pytest, bandit, safety"
 }
 
 # Install advanced security analysis tools

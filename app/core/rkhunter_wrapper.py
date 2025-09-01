@@ -25,7 +25,8 @@ from .security_validator import SecureRKHunterValidator
 
 # Import the warning analyzer
 # Import security validator
-# Provide a module-level alias for elevated_run to ease monkeypatching in tests.
+# Provide a module-level alias for elevated_run to ease monkeypatching
+# in tests.
 try:  # pragma: no cover - import guard
     from .elevated_runner import elevated_run as _elevated_run
 except Exception:  # pragma: no cover - fallback if elevated runner unavailable
@@ -111,13 +112,17 @@ class RKHunterWrapper:
         self._current_process = None  # Track current running process
 
         # Authentication session management
-        self._auth_session_start = None  # Track when authentication was granted
+        # Track when authentication was granted
+        self._auth_session_start = None
         self._auth_session_duration = 60  # Session valid for 60 seconds
-        # SECURITY: Extended grace period for scan duration but with additional safeguards
-        # Research shows RKHunter scans typically take 5-45 minutes
-        # Extended to match scan duration with enhanced security validation
-        self._grace_period = 1800  # 30 minutes - covers typical RKHunter scan duration
-        self._max_grace_period = 3600  # 60 minutes - absolute maximum for large systems
+        # SECURITY: Extended grace period for scan duration but with
+        # additional safeguards. Research shows RKHunter scans typically
+        # take 5-45 minutes. Extended to match scan duration with enhanced
+        # security validation
+        # 30 minutes - covers typical RKHunter scan duration
+        self._grace_period = 1800
+        # 60 minutes - absolute maximum for large systems
+        self._max_grace_period = 3600
         self._grace_period_extensions = (
             0  # Track grace period usage for security monitoring
         )
@@ -130,7 +135,10 @@ class RKHunterWrapper:
 
         # Validate RKHunter path on initialization for security
         if self.rkhunter_path:
-            if not self.security_validator.validate_executable_path(self.rkhunter_path):
+            is_valid = self.security_validator.validate_executable_path(
+                self.rkhunter_path
+            )
+            if not is_valid:
                 self.logger.warning(
                     "RKHunter path %s failed security validation",
                     self.rkhunter_path,
@@ -695,7 +703,8 @@ class RKHunterWrapper:
             if not self.config_path.exists():
                 config_lines = [
                     "# RKHunter configuration for S&D Search & Destroy",
-                    "# This file configures RKHunter behavior within the antivirus application",
+                    "# This file configures RKHunter behavior within",
+                    "# the antivirus application",
                     "",
                     "# Logging",
                     "LOGFILE=/tmp/rkhunter-scan.log",
@@ -721,19 +730,50 @@ class RKHunterWrapper:
                     "TMPDIR=/tmp",
                     "",
                     "# Suppress common warnings and false positives",
-                    'DISABLE_TESTS="suspscan hidden_procs deleted_files packet_cap_apps apps"',
+                    # Disable tests causing false positives on modern systems
+                    'DISABLE_TESTS="suspscan hidden_procs deleted_files"',
+                    'DISABLE_TESTS="$DISABLE_TESTS packet_cap_apps apps"',
                     "",
-                    "# Additional Arch Linux specific settings",
+                    "# Enhanced Script Whitelisting - Modern Linux Wrappers",
+                    "# Based on ArchWiki recommendations and research",
+                    "SCRIPTWHITELIST=/usr/bin/egrep",
+                    "SCRIPTWHITELIST=/usr/bin/fgrep",
+                    "SCRIPTWHITELIST=/usr/bin/ldd",
+                    "SCRIPTWHITELIST=/bin/egrep",
+                    "SCRIPTWHITELIST=/bin/fgrep",
+                    "SCRIPTWHITELIST=/bin/ldd",
+                    "",
+                    "# Hidden File Whitelisting - SystemD and Modern Linux",
+                    "# systemd flag files for cache rebuilding",
+                    'ALLOWHIDDENFILE="/etc/.updated"',
+                    'ALLOWHIDDENFILE="/etc/.lastUpdated"',
+                    'ALLOWHIDDENFILE="/var/.updated"',
+                    'ALLOWHIDDENFILE="/var/lib/.updated"',
+                    "",
+                    "# krb5 and Java configuration files",
+                    'ALLOWHIDDENFILE="/etc/.java"',
+                    'ALLOWHIDDENFILE="/etc/.krb5.conf"',
+                    "",
+                    "# Hidden Directory Whitelisting",
                     "ALLOWHIDDENDIR=/etc/.java",
                     "ALLOWHIDDENDIR=/dev/.static",
                     "ALLOWHIDDENDIR=/dev/.udev",
                     "ALLOWHIDDENDIR=/dev/.mount",
+                    "ALLOWHIDDENDIR=/etc/.systemd",
+                    "ALLOWHIDDENDIR=/var/lib/.systemd",
                     "",
-                    "# Package manager - use NONE for Arch Linux",
+                    "# Package manager - Enhanced Arch Linux configuration",
                     "PKGMGR=NONE",
-                    'SCRIPTWHITELIST=""',
-                    'ALLOWHIDDENDIR="/etc/.java"',
-                    'ALLOWHIDDENFILE="/etc/.java"',
+                    "PKGMGR_NO_VRFY=1",
+                    "",
+                    "# File Property Whitelisting - Handle system changes",
+                    "# These settings prevent false positives for files",
+                    "EXISTWHITELIST=/usr/bin/egrep",
+                    "EXISTWHITELIST=/usr/bin/fgrep",
+                    "EXISTWHITELIST=/usr/bin/ldd",
+                    "RTKT_FILE_WHITELIST=/tmp/go-build*",
+                    "RTKT_FILE_WHITELIST=/var/tmp/go-build*",
+                    "",
                     "",
                     "# Disable GUI prompts (for automated scanning)",
                     "AUTO_X_DETECT=1",
