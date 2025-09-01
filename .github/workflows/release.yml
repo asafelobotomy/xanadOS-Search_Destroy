@@ -25,7 +25,7 @@ jobs:
       is_prerelease: ${{ steps.extract.outputs.is_prerelease }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
@@ -51,7 +51,7 @@ jobs:
     needs: validate-version
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -80,7 +80,7 @@ jobs:
     needs: [validate-version, quality-checks]
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Create release archive
         run: |
@@ -102,7 +102,7 @@ jobs:
     needs: [validate-version, quality-checks, build-artifacts]
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
@@ -145,7 +145,7 @@ jobs:
     if: needs.validate-version.outputs.is_prerelease == 'false'
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Update documentation
         run: |
