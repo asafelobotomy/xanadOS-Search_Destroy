@@ -39,9 +39,9 @@ def test_pyqt6_consistency():
 
             # Check that PyQt5 is not imported
             assert "from PyQt5" not in content, f"FAIL: {file_path} still imports PyQt5"
-            assert "import PyQt5" not in content, (
-                f"FAIL: {file_path} still imports PyQt5"
-            )
+            assert (
+                "import PyQt5" not in content
+            ), f"FAIL: {file_path} still imports PyQt5"
 
             # If PyQt is imported, it should be PyQt6
             if "PyQt" in content:
@@ -97,9 +97,9 @@ def test_main_structure():
     assert has_main_function, "FAIL: main.py should have a main() function"
 
     # Check for if __name__ == "__main__"
-    assert 'if __name__ == "__main__"' in code, (
-        "FAIL: main.py should have if __name__ == '__main__'"
-    )
+    assert (
+        'if __name__ == "__main__"' in code
+    ), "FAIL: main.py should have if __name__ == '__main__'"
 
     print("✓ main.py structure verified")
 
@@ -109,9 +109,9 @@ def test_icons_created():
     print("Testing application icons...")
 
     # Check icons directory exists
-    assert os.path.exists("packaging/icons"), (
-        "FAIL: packaging/icons directory should exist"
-    )
+    assert os.path.exists(
+        "packaging/icons"
+    ), "FAIL: packaging/icons directory should exist"
 
     # Check for SVG icon
     svg_icon = "packaging/icons/io.github.asafelobotomy.SearchAndDestroy.svg"
@@ -149,25 +149,25 @@ def test_code_organization():
         scan_thread_content = f.read()
 
     # MainWindow should be in main_window.py
-    assert "class MainWindow" in main_window_content, (
-        "FAIL: MainWindow should be in main_window.py"
-    )
+    assert (
+        "class MainWindow" in main_window_content
+    ), "FAIL: MainWindow should be in main_window.py"
 
     # ScanThread should be in scan_thread.py, not a large MainWindow implementation
-    assert "class ScanThread" in scan_thread_content, (
-        "FAIL: ScanThread should be in scan_thread.py"
-    )
+    assert (
+        "class ScanThread" in scan_thread_content
+    ), "FAIL: ScanThread should be in scan_thread.py"
 
     # scan_thread.py should contain ScanThread implementation (can be substantial)
     scan_thread_lines = len(scan_thread_content.splitlines())
-    assert scan_thread_lines > 10, (
-        f"FAIL: scan_thread.py too small ({scan_thread_lines} lines), should contain ScanThread implementation"
-    )
+    assert (
+        scan_thread_lines > 10
+    ), f"FAIL: scan_thread.py too small ({scan_thread_lines} lines), should contain ScanThread implementation"
 
     # Ensure it doesn't contain MainWindow (separation of concerns)
-    assert "class MainWindow" not in scan_thread_content, (
-        "FAIL: scan_thread.py should not contain MainWindow class"
-    )
+    assert (
+        "class MainWindow" not in scan_thread_content
+    ), "FAIL: scan_thread.py should not contain MainWindow class"
 
     print("✓ Code organization verified - proper separation of concerns")
 
