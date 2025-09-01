@@ -296,7 +296,7 @@ class FileScanner:
         except ImportError:
             from app.core.input_validation import FileSizeMonitor, PathValidator
             from app.core.rate_limiting import rate_limit_manager, configure_rate_limits
-        
+
         try:
             from utils.config import load_config, setup_logging
             from utils.scan_reports import ScanReportManager
@@ -390,7 +390,7 @@ class FileScanner:
         if not self.rate_limiter.acquire('file_scan'):
             wait_time = self.rate_limiter.wait_time('file_scan')
             self.logger.warning(
-                "Rate limit exceeded for file scan. Wait time: %.2f seconds", 
+                "Rate limit exceeded for file scan. Wait time: %.2f seconds",
                 wait_time
             )
             return ScanFileResult(
@@ -451,7 +451,7 @@ class FileScanner:
         # Performance optimization: Check if file should be scanned
         scan_type = kwargs.get('scan_type', 'full')
         quick_scan = scan_type.lower() in ['quick', 'fast', 'basic']
-        
+
         if not self.clamav_wrapper.should_scan_file(file_path, quick_scan=quick_scan):
             # Return clean result for skipped files
             result = ScanFileResult(
@@ -581,7 +581,7 @@ class FileScanner:
             # Set up timeout protection
             scan_timeout = timeout or kwargs.get('timeout', 1800)  # Default 30 minutes
             scan_start_time = time.time()
-            
+
             executor = ThreadPoolExecutor(max_workers=max_workers)
             try:
                 # Submit all scan tasks
@@ -604,7 +604,7 @@ class FileScanner:
                         # Shutdown executor immediately without waiting
                         executor.shutdown(wait=False)
                         break
-                    
+
                     # Additional check for Qt6 thread interruption if thread reference available
                     if hasattr(self, '_current_thread') and self._current_thread:
                         if hasattr(self._current_thread, 'isInterruptionRequested'):
@@ -618,7 +618,7 @@ class FileScanner:
                                 # Shutdown executor immediately without waiting
                                 executor.shutdown(wait=False)
                                 break
-                    
+
                     # Check for timeout
                     if time.time() - scan_start_time > scan_timeout:
                         self.logger.warning("Scan timeout reached, stopping")
@@ -676,7 +676,7 @@ class FileScanner:
                             current_file = current_file[:max_filename_length-3] + "..."
                         status_msg = f"Scanning: {current_file} | Remaining: {files_remaining}"
                         self.progress_callback(progress, status_msg)
-                    
+
                     # Emit detailed progress information for results display
                     if self.detailed_progress_callback:
                         current_dir = str(Path(file_path).parent.resolve())  # Use resolve() for consistent paths
@@ -691,7 +691,7 @@ class FileScanner:
                             "scan_result": file_result.result.value if file_result else "clean"
                         }
                         self.detailed_progress_callback(detail_info)
-            
+
             except Exception as e:
                 self.logger.error("Error during scan execution: %s", e)
                 self._scan_cancelled = True
@@ -780,7 +780,7 @@ class FileScanner:
             scan_type = ScanType.CUSTOM
         """Scan a directory recursively."""
         directory_obj = Path(directory_path)
-        
+
         # Debug scan options to verify they're being received
         print(f"\n🔍 === FILESCANNER SCAN OPTIONS DEBUG ===")
         print(f"DEBUG: Directory: {directory_path}")
@@ -804,7 +804,7 @@ class FileScanner:
         # Enhanced memory and performance protection
         MAX_FILES_LIMIT = kwargs.get("max_files", 1000)  # Reduced default limit
         MEMORY_LIMIT_MB = kwargs.get("memory_limit_mb", 512)  # Memory limit
-        
+
         # Handle depth limiting
         scan_depth = kwargs.get("depth", None)
         if scan_depth is not None:
@@ -814,7 +814,7 @@ class FileScanner:
                 max_depth = None
         else:
             max_depth = None
-        
+
         # Always instantiate a MemoryMonitor (previous conditional check was ineffective)
         memory_monitor = MemoryMonitor()
 
@@ -825,7 +825,7 @@ class FileScanner:
                 if hasattr(self, '_scan_cancelled') and self._scan_cancelled:
                     self.logger.info("📁 File collection cancelled by manual flag")
                     break
-                
+
                 # Additional check for Qt6 thread interruption if thread reference available
                 if hasattr(self, '_current_thread') and self._current_thread:
                     if hasattr(self._current_thread, 'isInterruptionRequested'):
@@ -833,14 +833,14 @@ class FileScanner:
                             self.logger.info("📁 File collection cancelled by Qt6 thread interruption")
                             self._scan_cancelled = True
                             break
-                            
+
                 if file_path.is_file():
                     # Skip hidden files unless requested
                     if not include_hidden and any(
                         part.startswith(".") for part in file_path.parts
                     ):
                         continue
-                    
+
                     # Apply file filter options if specified
                     if 'file_filter' in kwargs:
                         file_filter = kwargs['file_filter']
@@ -853,23 +853,23 @@ class FileScanner:
                             if not self._is_document_file(file_path):
                                 continue
                         elif file_filter == 'archives':
-                            # Only scan archive files  
+                            # Only scan archive files
                             if not self._is_archive_file(file_path):
                                 continue
                         # 'all' or other values scan all files (default behavior)
-                    
+
                     # Apply exclusion patterns if specified
                     if 'exclusions' in kwargs:
                         exclusions = kwargs['exclusions']
                         if self._is_excluded_file(file_path, exclusions):
                             continue
-                    
+
                     # Memory and performance checks (same as below)
                     if memory_monitor and memory_monitor.check_memory_pressure(MEMORY_LIMIT_MB):
                         self.logger.warning("Memory pressure detected, limiting file collection")
                         memory_monitor.force_garbage_collection()
                         MAX_FILES_LIMIT = min(MAX_FILES_LIMIT, len(file_paths) + 100)
-                    
+
                     file_paths.append(str(file_path))
 
                     # Check limits and interruption (same as below)
@@ -881,7 +881,7 @@ class FileScanner:
                             MAX_FILES_LIMIT,
                         )
                         break
-                        
+
                     # More frequent interruption checks for large scans (every 100 files)
                     if len(file_paths) % 100 == 0:
                         # Check for Qt6 thread interruption
@@ -891,7 +891,7 @@ class FileScanner:
                                     self.logger.info(f"📁 File collection interrupted after {len(file_paths)} files")
                                     self._scan_cancelled = True
                                     break
-                    
+
                     # Periodic memory check for large directories
                     if len(file_paths) % 500 == 0 and memory_monitor:
                         if memory_monitor.check_memory_pressure(MEMORY_LIMIT_MB * 0.8):
@@ -904,7 +904,7 @@ class FileScanner:
                 if hasattr(self, '_scan_cancelled') and self._scan_cancelled:
                     self.logger.info("📁 File collection cancelled by manual flag")
                     break
-                    
+
                 # Additional check for Qt6 thread interruption if thread reference available
                 if hasattr(self, '_current_thread') and self._current_thread:
                     if hasattr(self._current_thread, 'isInterruptionRequested'):
@@ -912,14 +912,14 @@ class FileScanner:
                             self.logger.info("📁 File collection cancelled by Qt6 thread interruption")
                             self._scan_cancelled = True
                             break
-                            
+
                 if file_path.is_file():
                     # Skip hidden files unless requested
                     if not include_hidden and any(
                         part.startswith(".") for part in file_path.parts
                     ):
                         continue
-                    
+
                     # Apply file filter options if specified
                     if 'file_filter' in kwargs:
                         file_filter = kwargs['file_filter']
@@ -932,23 +932,23 @@ class FileScanner:
                             if not self._is_document_file(file_path):
                                 continue
                         elif file_filter == 'archives':
-                            # Only scan archive files  
+                            # Only scan archive files
                             if not self._is_archive_file(file_path):
                                 continue
                         # 'all' or other values scan all files (default behavior)
-                    
+
                     # Apply exclusion patterns if specified
                     if 'exclusions' in kwargs:
                         exclusions = kwargs['exclusions']
                         if self._is_excluded_file(file_path, exclusions):
                             continue
-                    
+
                     # Check memory pressure
                     if memory_monitor and memory_monitor.check_memory_pressure(MEMORY_LIMIT_MB):
                         self.logger.warning("Memory pressure detected, limiting file collection")
                         memory_monitor.force_garbage_collection()
                         MAX_FILES_LIMIT = min(MAX_FILES_LIMIT, len(file_paths) + 100)
-                    
+
                     file_paths.append(str(file_path))
 
                     # More frequent interruption checks for large scans (every 100 files)
@@ -970,7 +970,7 @@ class FileScanner:
                             MAX_FILES_LIMIT,
                         )
                         break
-                        
+
                     # Periodic memory check for large directories
                     if len(file_paths) % 500 == 0 and memory_monitor:
                         if memory_monitor.check_memory_pressure(MEMORY_LIMIT_MB * 0.8):
@@ -1034,7 +1034,7 @@ class FileScanner:
         if self._scheduler_running and self._scheduler_thread and self._scheduler_thread.is_alive():
             self.logger.info("Scheduler is already running")
             return
-            
+
         self._scheduler_running = True
         # Clear the stop event before starting
         self._scheduler_stop_event.clear()
@@ -1049,13 +1049,13 @@ class FileScanner:
         self._scheduler_running = False
         # Signal the event to wake up the scheduler thread immediately
         self._scheduler_stop_event.set()
-        
+
         if self._scheduler_thread and self._scheduler_thread.is_alive():
             # With event-based stopping, thread should stop almost immediately
             self._scheduler_thread.join(timeout=2.0)
             if self._scheduler_thread.is_alive():
                 self.logger.warning("Scheduler thread did not stop gracefully")
-        
+
         # Reset the event for next time
         self._scheduler_stop_event.clear()
         self.logger.info("Scan scheduler stopped")
@@ -1309,7 +1309,7 @@ class FileScanner:
         def _recursive_scan(current_dir, current_depth):
             if current_depth > max_depth:
                 return
-            
+
             try:
                 for item in current_dir.iterdir():
                     yield item
@@ -1318,42 +1318,42 @@ class FileScanner:
             except (OSError, PermissionError):
                 # Skip directories we can't access
                 pass
-        
+
         return _recursive_scan(directory_obj, 0)
 
     def _is_executable_file(self, file_path):
         """Check if a file is executable."""
         try:
             # Check file extension
-            executable_extensions = {'.exe', '.bat', '.cmd', '.com', '.scr', '.pif', 
+            executable_extensions = {'.exe', '.bat', '.cmd', '.com', '.scr', '.pif',
                                    '.app', '.deb', '.rpm', '.dmg', '.pkg', '.msi',
-                                   '.sh', '.bash', '.zsh', '.fish', '.py', '.pl', 
+                                   '.sh', '.bash', '.zsh', '.fish', '.py', '.pl',
                                    '.rb', '.js', '.jar', '.bin', '.run'}
             if file_path.suffix.lower() in executable_extensions:
                 return True
-            
+
             # Check if file has execute permissions (Unix-like systems)
             if hasattr(os, 'access'):
                 return os.access(file_path, os.X_OK)
-                
+
             return False
         except (OSError, AttributeError):
             return False
-    
+
     def _is_document_file(self, file_path):
         """Check if a file is a document."""
         document_extensions = {'.pdf', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx',
                              '.txt', '.rtf', '.odt', '.ods', '.odp', '.csv', '.xml',
                              '.html', '.htm', '.md', '.tex', '.epub', '.mobi'}
         return file_path.suffix.lower() in document_extensions
-    
+
     def _is_archive_file(self, file_path):
         """Check if a file is an archive."""
         archive_extensions = {'.zip', '.rar', '.7z', '.tar', '.gz', '.bz2', '.xz',
                             '.tar.gz', '.tar.bz2', '.tar.xz', '.tgz', '.tbz2',
                             '.cab', '.iso', '.dmg', '.img'}
         return file_path.suffix.lower() in archive_extensions
-    
+
     def _is_excluded_file(self, file_path, exclusions):
         """Check if a file matches any exclusion pattern."""
         import fnmatch

@@ -61,39 +61,39 @@ jobs:
           echo "=== ML/Data Science Standards Check ==="
           # Check for reproducibility patterns
           find . -name "requirements.txt" -o -name "conda.yml" -o -name "pyproject.toml" -o -name "poetry.lock" | head -3 || echo "No dependency files found"
-          
+
           # Check for experiment tracking
           grep -r "mlflow\|wandb\|tensorboard" --include="*.py" --include="*.ipynb" . || echo "No experiment tracking detected"
-          
+
           # Check for data validation
           grep -r "great_expectations\|pandera\|schema" --include="*.py" . || echo "No data validation detected"
-          
+
           # Check for model versioning
           grep -r "mlflow.log_model\|model_version\|dvc" --include="*.py" . || echo "No model versioning detected"
 
-      # Mobile Development Quality Checks  
+      # Mobile Development Quality Checks
       - name: Check Mobile Development Standards
         run: |
           echo "=== Mobile Development Standards Check ==="
           # Check for mobile-specific files
           find . -name "*.swift" -o -name "*.kt" -o -name "*.dart" -o -name "pubspec.yaml" -o -name "Package.swift" -o -name "build.gradle" | head -5 || echo "No mobile development files found"
-          
+
           # Check for accessibility implementations
           grep -r "accessibility\|contentDescription\|semantics" --include="*.swift" --include="*.kt" --include="*.dart" . || echo "No accessibility patterns detected"
-          
+
           # Check for secure storage usage
           grep -r "Keychain\|KeyStore\|flutter_secure_storage" --include="*.swift" --include="*.kt" --include="*.dart" . || echo "No secure storage detected"
 
       # Gaming Performance Checks
-      - name: Check Gaming Performance Standards  
+      - name: Check Gaming Performance Standards
         run: |
           echo "=== Gaming Performance Standards Check ==="
           # Check for gaming-specific files
           find . -name "*.cpp" -o -name "*.cs" -o -name "*.hlsl" -o -name "*.glsl" -o -name "*.unity" -o -name "*.unreal" | head -5 || echo "No gaming development files found"
-          
+
           # Check for performance patterns
           grep -r "object.pool\|LOD\|profiler" --include="*.cpp" --include="*.cs" --include="*.c" . || echo "No performance optimization patterns detected"
-          
+
           # Check for memory management
           grep -r "dispose\|destroy\|cleanup" --include="*.cpp" --include="*.cs" --include="*.c" . || echo "No memory management patterns detected"
 
@@ -103,10 +103,10 @@ jobs:
           echo "=== Compliance Standards Check ==="
           # Check for GDPR compliance patterns
           grep -r "gdpr\|consent\|privacy.policy\|data.subject" --include="*.py" --include="*.js" --include="*.ts" --include="*.go" --include="*.java" . || echo "No GDPR compliance patterns detected"
-          
+
           # Check for security logging
           grep -r "audit.log\|security.log\|compliance.log" --include="*.py" --include="*.js" --include="*.ts" --include="*.go" --include="*.java" . || echo "No compliance logging detected"
-          
+
           # Check for encryption usage
           grep -r "encrypt\|decrypt\|cipher" --include="*.py" --include="*.js" --include="*.ts" --include="*.go" --include="*.java" . || echo "No encryption patterns detected"
 
@@ -116,13 +116,13 @@ jobs:
           echo "=== Supply Chain Security Standards Check ==="
           # Check for SBOM generation
           find . -name "*.spdx" -o -name "*.cyclonedx" -o -name "sbom.*" | head -3 || echo "No SBOM files found"
-          
+
           # Check for dependency pinning
           grep -r "==" --include="requirements*.txt" . || echo "No pinned Python dependencies found"
           grep -r '".*": ".*"' --include="package-lock.json" --include="yarn.lock" . || echo "No pinned JavaScript dependencies found"
-          
+
           # Check for container signing
           grep -r "cosign\|notary\|docker.trust" --include="*.yml" --include="*.yaml" --include="Dockerfile" . || echo "No container signing detected"
-          
+
           # Check for provenance attestation
           grep -r "slsa\|in-toto\|attestation" --include="*.yml" --include="*.yaml" . || echo "No provenance attestation detected"

@@ -31,14 +31,14 @@ class StackOverflowMCPServer {
         },
       }
     );
-    
+
     this.apiKey = process.env.STACKOVERFLOW_API_KEY;
     this.baseUrl = 'https://api.stackexchange.com/2.3';
     this.site = process.env.STACKOVERFLOW_SITE || 'stackoverflow';
     this.cache = new Map();
     this.cacheTimeout = 10 * 60 * 1000; // 10 minutes
     this.rateLimitDelay = 100; // 100ms between requests to respect rate limits
-    
+
     this.setupHandlers();
   }
 
@@ -78,7 +78,7 @@ class StackOverflowMCPServer {
             description: 'Top users by reputation on StackOverflow',
           },
         ];
-        
+
         return { resources };
       } catch (error) {
         throw new McpError(
@@ -91,7 +91,7 @@ class StackOverflowMCPServer {
     // Read StackOverflow data
     this.server.setRequestHandler(ReadResourceRequestSchema, async (request) => {
       const { uri } = request.params;
-      
+
       try {
         const match = uri.match(/^stackoverflow:\/\/(.+?)\/(.+)$/);
         if (!match) {
@@ -100,10 +100,10 @@ class StackOverflowMCPServer {
             `Invalid StackOverflow URI: ${uri}`
           );
         }
-        
+
         const [, category, type] = match;
         let content = {};
-        
+
         switch (category) {
           case 'trending':
             content = await this.getTrendingQuestions();
@@ -126,7 +126,7 @@ class StackOverflowMCPServer {
               `Unknown StackOverflow category: ${category}`
             );
         }
-        
+
         return {
           contents: [
             {
@@ -319,7 +319,7 @@ class StackOverflowMCPServer {
     // Handle tool calls
     this.server.setRequestHandler(CallToolRequestSchema, async (request) => {
       const { name, arguments: args } = request.params;
-      
+
       try {
         switch (name) {
           case 'search_questions':
@@ -356,39 +356,39 @@ class StackOverflowMCPServer {
     const cacheKey = `${endpoint}:${JSON.stringify(params)}`;
     const cached = this.getCachedData(cacheKey);
     if (cached) return cached;
-    
+
     // Add rate limiting delay
     await this.delay(this.rateLimitDelay);
-    
+
     const url = new URL(`${this.baseUrl}${endpoint}`);
     const searchParams = new URLSearchParams({
       site: this.site,
       ...params,
     });
-    
+
     if (this.apiKey) {
       searchParams.append('key', this.apiKey);
     }
-    
+
     url.search = searchParams.toString();
-    
+
     try {
       const response = await fetch(url.toString(), {
         headers: {
           'User-Agent': 'stackoverflow-mcp/1.0.0',
         },
       });
-      
+
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
-      
+
       const data = await response.json();
-      
+
       if (data.error_id) {
         throw new Error(`StackOverflow API Error: ${data.error_message}`);
       }
-      
+
       this.setCachedData(cacheKey, data);
       return data;
     } catch (error) {
@@ -404,7 +404,7 @@ class StackOverflowMCPServer {
         pagesize: 20,
         filter: 'withbody',
       });
-      
+
       return {
         title: 'Trending Questions',
         total: data.total || 0,
@@ -424,7 +424,7 @@ class StackOverflowMCPServer {
         pagesize: 20,
         filter: 'withbody',
       });
-      
+
       return {
         title: 'Featured Questions',
         total: data.total || 0,
@@ -444,7 +444,7 @@ class StackOverflowMCPServer {
         pagesize: 20,
         filter: 'withbody',
       });
-      
+
       return {
         title: 'Hot Questions',
         total: data.total || 0,
@@ -463,7 +463,7 @@ class StackOverflowMCPServer {
         sort: 'popular',
         pagesize: 50,
       });
-      
+
       return {
         title: 'Popular Tags',
         total: data.total || 0,
@@ -489,7 +489,7 @@ class StackOverflowMCPServer {
         sort: 'reputation',
         pagesize: 20,
       });
-      
+
       return {
         title: 'Top Users',
         total: data.total || 0,
@@ -514,7 +514,7 @@ class StackOverflowMCPServer {
 
   async searchQuestions(args) {
     const { query, tags = [], sort = 'relevance', limit = 10, accepted_only = false } = args;
-    
+
     try {
       const params = {
         order: 'desc',
@@ -523,17 +523,17 @@ class StackOverflowMCPServer {
         q: query,
         filter: 'withbody',
       };
-      
+
       if (tags.length > 0) {
         params.tagged = tags.join(';');
       }
-      
+
       if (accepted_only) {
         params.accepted = 'True';
       }
-      
+
       const data = await this.makeApiRequest('/search', params);
-      
+
       const results = {
         query,
         tags,
@@ -542,7 +542,7 @@ class StackOverflowMCPServer {
         questions: data.items.map(this.formatQuestion),
         has_more: data.has_more,
       };
-      
+
       return {
         content: [
           {
@@ -558,7 +558,7 @@ class StackOverflowMCPServer {
 
   async getQuestionDetails(args) {
     const { question_id, include_answers = true, include_comments = false } = args;
-    
+
     try {
       let filter = 'withbody';
       if (include_answers) {
@@ -567,22 +567,22 @@ class StackOverflowMCPServer {
       if (include_comments) {
         filter = '!9YdnSMC)M';  // Includes answers and comments
       }
-      
+
       const data = await this.makeApiRequest(`/questions/${question_id}`, {
         filter: filter,
       });
-      
+
       if (!data.items || data.items.length === 0) {
         throw new Error(`Question ${question_id} not found`);
       }
-      
+
       const question = data.items[0];
       const details = {
         question: this.formatQuestion(question),
         answers: question.answers ? question.answers.map(this.formatAnswer) : [],
         comments: question.comments ? question.comments.map(this.formatComment) : [],
       };
-      
+
       return {
         content: [
           {
@@ -598,7 +598,7 @@ class StackOverflowMCPServer {
 
   async searchAnswers(args) {
     const { query, tags = [], min_score = 0, accepted_only = false, limit = 10 } = args;
-    
+
     try {
       const params = {
         order: 'desc',
@@ -607,24 +607,24 @@ class StackOverflowMCPServer {
         q: query,
         filter: 'withbody',
       };
-      
+
       if (tags.length > 0) {
         params.tagged = tags.join(';');
       }
-      
+
       if (min_score > 0) {
         params.min = min_score;
       }
-      
+
       if (accepted_only) {
         params.accepted = 'True';
       }
-      
+
       const data = await this.makeApiRequest('/search', params);
-      
+
       // Filter for questions with good answers
       const questionsWithAnswers = data.items.filter(q => q.answer_count > 0);
-      
+
       const results = {
         query,
         tags,
@@ -632,7 +632,7 @@ class StackOverflowMCPServer {
         total_results: questionsWithAnswers.length,
         questions_with_answers: questionsWithAnswers.map(this.formatQuestion),
       };
-      
+
       return {
         content: [
           {
@@ -648,14 +648,14 @@ class StackOverflowMCPServer {
 
   async getTagInfo(args) {
     const { tag_name, include_synonyms = false } = args;
-    
+
     try {
       const data = await this.makeApiRequest(`/tags/${tag_name}/info`);
-      
+
       if (!data.items || data.items.length === 0) {
         throw new Error(`Tag '${tag_name}' not found`);
       }
-      
+
       const tag = data.items[0];
       const tagInfo = {
         name: tag.name,
@@ -666,12 +666,12 @@ class StackOverflowMCPServer {
         description: tag.excerpt_last_body,
         wiki_last_body: tag.wiki_last_body,
       };
-      
+
       if (include_synonyms && tag.has_synonyms) {
         const synonymsData = await this.makeApiRequest(`/tags/${tag_name}/synonyms`);
         tagInfo.synonyms = synonymsData.items || [];
       }
-      
+
       return {
         content: [
           {
@@ -687,14 +687,14 @@ class StackOverflowMCPServer {
 
   async getUserProfile(args) {
     const { user_id, include_activity = false } = args;
-    
+
     try {
       const data = await this.makeApiRequest(`/users/${user_id}`);
-      
+
       if (!data.items || data.items.length === 0) {
         throw new Error(`User ${user_id} not found`);
       }
-      
+
       const user = data.items[0];
       const profile = {
         user_id: user.user_id,
@@ -714,14 +714,14 @@ class StackOverflowMCPServer {
         up_vote_count: user.up_vote_count,
         down_vote_count: user.down_vote_count,
       };
-      
+
       if (include_activity) {
         const activityData = await this.makeApiRequest(`/users/${user_id}/timeline`, {
           pagesize: 20,
         });
         profile.recent_activity = activityData.items || [];
       }
-      
+
       return {
         content: [
           {
@@ -737,7 +737,7 @@ class StackOverflowMCPServer {
 
   async findDuplicateQuestions(args) {
     const { question_title, tags = [], limit = 5 } = args;
-    
+
     try {
       const params = {
         order: 'desc',
@@ -746,13 +746,13 @@ class StackOverflowMCPServer {
         q: question_title,
         filter: 'withbody',
       };
-      
+
       if (tags.length > 0) {
         params.tagged = tags.join(';');
       }
-      
+
       const data = await this.makeApiRequest('/search', params);
-      
+
       // Score potential duplicates based on title similarity and tags
       const potentialDuplicates = data.items
         .map(q => ({
@@ -761,14 +761,14 @@ class StackOverflowMCPServer {
         }))
         .sort((a, b) => b.similarity_score - a.similarity_score)
         .slice(0, limit);
-      
+
       const results = {
         original_title: question_title,
         tags,
         potential_duplicates: potentialDuplicates,
         search_results_count: data.total || 0,
       };
-      
+
       return {
         content: [
           {
@@ -804,7 +804,7 @@ class StackOverflowMCPServer {
       } : null,
       link: question.link,
       bounty_amount: question.bounty_amount,
-      bounty_closes_date: question.bounty_closes_date ? 
+      bounty_closes_date: question.bounty_closes_date ?
         new Date(question.bounty_closes_date * 1000).toISOString() : null,
     };
   }

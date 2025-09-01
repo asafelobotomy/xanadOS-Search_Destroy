@@ -138,6 +138,7 @@ RKHunter is a specialized tool for detecting these hidden threats:
 2. **Enter your password** when prompted (needed for system-level access)
 3. **Watch the progress** - RKHunter performs 14 different security checks
 4. **Review results** with easy-to-understand color coding:
+
 - 🟢 **Green** = Clean/Safe
 - 🟡 **Yellow** = Warning/Suspicious
 - 🔴 **Red** = Threat detected
@@ -209,14 +210,19 @@ After any scan, you'll see a summary with key information:
 Here's what to do:
 
 1. **🗃️ Quarantine First** (recommended for beginners)
+
 - Safely isolates the threat
 - Prevents damage while allowing investigation
 - Can be reversed if it's a false alarm
+
 2. **🔍 Research the Threat**
+
 - Use threat name in online databases (VirusTotal.com)
 - Check if it's a known false positive
 - Look for removal instructions from security experts
+
 3. **💭 Consider the Context**
+
 - Where was the file found?
 - Do you remember downloading/installing it?
 - Does it seem legitimate for your use?
@@ -256,6 +262,7 @@ Think of quarantine as a **secure jail** for suspicious files. Files in quaranti
 1. **Click the 🗃️ Quarantine tab**
 2. **Review the list** of isolated files
 3. **For each file, you can:**
+
 - **📋 View Details** - See why it was quarantined
 - **🔄 Restore** - Put it back if it's safe
 - **🗑️ Delete** - Remove permanently

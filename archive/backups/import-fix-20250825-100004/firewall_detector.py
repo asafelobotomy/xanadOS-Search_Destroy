@@ -18,12 +18,12 @@ from typing import Any, Dict, Optional, Tuple
 
 class FirewallActivityTracker:
     """Tracks firewall state changes through activity monitoring."""
-    
+
     def __init__(self):
         self.activity_file = Path.home() / ".local/share/search-and-destroy/firewall_activity.json"
         self.activity_file.parent.mkdir(parents=True, exist_ok=True)
         self._last_known_state = None
-    
+
     def get_cached_status(self) -> Optional[Dict[str, Any]]:
         """Get last known firewall status from activity cache."""
         try:
@@ -36,7 +36,7 @@ class FirewallActivityTracker:
         except (json.JSONDecodeError, IOError):
             pass
         return None
-    
+
     def update_status(self, status: Dict[str, Any]):
         """Update cached firewall status."""
         try:
@@ -48,7 +48,7 @@ class FirewallActivityTracker:
                 json.dump(data, f)
         except IOError:
             pass
-    
+
     def record_activity(self, action: str, firewall_type: str, success: bool = True):
         """Record firewall activity for tracking."""
         try:
@@ -58,32 +58,32 @@ class FirewallActivityTracker:
                 'success': success,
                 'timestamp': time.time()
             }
-            
+
             # Also update the main activity tracking
             try:
                 from utils.config import DATA_DIR
                 activity_log_file = DATA_DIR / "activity_log.json"
-                
+
                 if activity_log_file.exists():
                     with open(activity_log_file, 'r') as f:
                         activity_log = json.load(f)
                 else:
                     activity_log = []
-                
+
                 activity_log.append({
                     'timestamp': time.time(),
                     'message': f"🔥 Firewall {action} via S&D application",
                     'type': 'firewall_activity'
                 })
-                
+
                 # Keep only last 100 entries
                 activity_log = activity_log[-100:]
-                
+
                 with open(activity_log_file, 'w') as f:
                     json.dump(activity_log, f)
             except (ImportError, IOError):
                 pass
-                
+
         except IOError:
             pass
 
@@ -159,7 +159,7 @@ class FirewallDetector:
     def get_firewall_status(self) -> Dict[str, str | bool | None]:
         """
         Get comprehensive firewall status information using non-invasive methods.
-        
+
         This method prioritizes cached activity data and system service status
         over privileged commands to avoid authentication prompts.
 
@@ -177,7 +177,7 @@ class FirewallDetector:
         if cached_status:
             cached_status["method"] = "activity_cache"
             return cached_status
-        
+
         fw_type, fw_name = self.detect_firewall()
 
         status_info = {
@@ -228,7 +228,7 @@ class FirewallDetector:
 
     def _get_ufw_status_non_invasive(self) -> Dict[str, str | bool]:
         """Get UFW firewall status without requiring elevated privileges."""
-        
+
         # Method 1: Check systemctl service status (most reliable, no sudo needed)
         try:
             result = run_secure(["systemctl", "is-active", "ufw"], timeout=5, capture_output=True, text=True)
@@ -284,7 +284,7 @@ class FirewallDetector:
         # NOTE: Removed this method as it was incorrectly detecting UFW as active
         # just because iptables modules are loaded. The presence of "filter" table
         # only means kernel modules are available, not that UFW is configured/active.
-        
+
         # If all methods fail, assume inactive
         return {"is_active": False, "status_text": "Inactive"}
 
@@ -348,10 +348,10 @@ class FirewallDetector:
                     "is_active": is_active,
                     "status_text": "Active" if is_active else "Inactive",
                 }
-            
+
             # Method 3: Fallback - assume inactive if service check failed
             return {"is_active": False, "status_text": "Inactive"}
-            
+
         except subprocess.TimeoutExpired:
             return {"error": "Command timed out"}
         except (OSError, FileNotFoundError) as e:
@@ -388,7 +388,7 @@ class FirewallDetector:
                     "is_active": is_active,
                     "status_text": "Active" if is_active else "Inactive",
                 }
-            
+
             # Method 3: Check /proc/net/ip_tables_names for loaded modules
             try:
                 if os.path.exists("/proc/net/ip_tables_names"):
@@ -398,9 +398,9 @@ class FirewallDetector:
                         return {"is_active": True, "status_text": "Active"}
             except (PermissionError, IOError):
                 pass
-                
+
             return {"is_active": False, "status_text": "Inactive"}
-            
+
         except subprocess.TimeoutExpired:
             return {"error": "Command timed out"}
         except (OSError, FileNotFoundError) as e:
@@ -423,9 +423,9 @@ class FirewallDetector:
                     "is_active": is_active,
                     "status_text": "Active" if is_active else "Inactive",
                 }
-            
+
             return {"is_active": False, "status_text": "Inactive"}
-            
+
         except subprocess.TimeoutExpired:
             return {"error": "Command timed out"}
         except (OSError, FileNotFoundError) as e:
@@ -461,7 +461,7 @@ class FirewallDetector:
             result = None
             if fw_type == "ufw":
                 result = self._toggle_ufw(enable)
-                
+
                 # If UFW failed with kernel module issues, provide diagnostic info
                 if not result["success"] and "error" in result:
                     error_msg = result["error"].lower()
@@ -494,7 +494,7 @@ class FirewallDetector:
             if result and result.get("success"):
                 action = "enabled" if enable else "disabled"
                 self.activity_tracker.record_activity(action, fw_type, True)
-                
+
                 # Update cached status immediately
                 updated_status = {
                     "is_active": enable,
@@ -522,7 +522,7 @@ class FirewallDetector:
 
     def _get_admin_cmd_prefix(self) -> list:
         """Get the appropriate command prefix for admin privileges.
-        
+
         Note: This method is deprecated. Use elevated_run() instead for better
         privilege escalation with GUI sudo priority order.
         """
@@ -537,11 +537,11 @@ class FirewallDetector:
         """Attempt to load required iptables kernel modules for UFW with cross-kernel compatibility."""
         required_modules = [
             "iptable_filter",
-            "iptable_nat", 
+            "iptable_nat",
             "ip_tables",
             "x_tables"
         ]
-        
+
         try:
             admin_cmd = self._get_admin_cmd_prefix()
             if not admin_cmd:
@@ -549,43 +549,43 @@ class FirewallDetector:
                     "success": False,
                     "message": "Cannot load kernel modules - no admin privileges",
                 }
-            
+
             env = os.environ.copy()
             loaded_modules = []
             failed_modules = []
             cross_kernel_attempts = []
-            
+
             # First, try standard module loading
             for module in required_modules:
                 cmd = admin_cmd + ["modprobe", module]
-                
+
                 try:
                     result = run_secure(
                         cmd,
                         timeout=30,
                         allow_root=True
                     )
-                    
+
                     if result.returncode == 0:
                         loaded_modules.append(module)
                         print(f"🔍 DEBUG: Successfully loaded module: {module}")
                     else:
                         failed_modules.append(module)
                         print(f"🔍 DEBUG: Failed to load module {module}: {result.stderr}")
-                        
+
                 except subprocess.TimeoutExpired:
                     failed_modules.append(module)
                     print(f"🔍 DEBUG: Timeout loading module: {module}")
-            
+
             # If some modules failed, try cross-kernel loading
             if failed_modules:
                 cross_kernel_result = self._try_cross_kernel_modules(failed_modules, admin_cmd, env)
                 loaded_modules.extend(cross_kernel_result.get("loaded", []))
                 cross_kernel_attempts = cross_kernel_result.get("attempts", [])
-                
+
                 # Remove successfully loaded modules from failed list
                 failed_modules = [m for m in failed_modules if m not in cross_kernel_result.get("loaded", [])]
-                    
+
             if loaded_modules:
                 message = f"Loaded kernel modules: {', '.join(loaded_modules)}"
                 if cross_kernel_attempts:
@@ -603,7 +603,7 @@ class FirewallDetector:
                     "message": "Failed to load any required kernel modules",
                     "failed": failed_modules,
                 }
-                
+
         except Exception as e:
             return {
                 "success": False,
@@ -614,40 +614,40 @@ class FirewallDetector:
         """Attempt to load modules from compatible kernel versions."""
         loaded = []
         attempts = []
-        
+
         try:
             # Get available kernel module directories
             module_base = "/lib/modules"
             available_kernels = []
-            
+
             if os.path.exists(module_base):
-                available_kernels = [d for d in os.listdir(module_base) 
+                available_kernels = [d for d in os.listdir(module_base)
                                    if os.path.isdir(os.path.join(module_base, d))]
                 available_kernels.sort(reverse=True)  # Try newer kernels first
-            
+
             current_kernel = os.uname().release
             print(f"🔍 DEBUG: Current kernel: {current_kernel}")
             print(f"🔍 DEBUG: Available kernel modules: {available_kernels}")
-            
+
             # Try each compatible kernel
             for kernel_version in available_kernels:
                 if kernel_version == current_kernel:
                     continue  # Skip current kernel, already tried
-                
+
                 # Check if this kernel has the modules we need
                 kernel_path = os.path.join(module_base, kernel_version)
-                
+
                 for module in failed_modules[:]:  # Use slice to allow modification
                     if module in loaded:
                         continue
-                        
+
                     # Look for the module file in this kernel's directory
                     module_found = self._find_module_in_kernel(kernel_path, module)
-                    
+
                     if module_found:
                         # Try to load using insmod with full path
                         cmd = admin_cmd + ["insmod", module_found]
-                        
+
                         try:
                             result = subprocess.run(
                                 cmd,
@@ -657,20 +657,20 @@ class FirewallDetector:
                                 check=False,
                                 env=env,
                             )
-                            
+
                             if result.returncode == 0:
                                 loaded.append(module)
                                 attempts.append(f"{module} from {kernel_version}")
                                 print(f"🔍 DEBUG: Cross-kernel loaded {module} from {kernel_version}")
                             else:
                                 print(f"🔍 DEBUG: Cross-kernel failed {module} from {kernel_version}: {result.stderr}")
-                                
+
                         except subprocess.TimeoutExpired:
                             print(f"🔍 DEBUG: Timeout cross-kernel loading {module} from {kernel_version}")
-        
+
         except Exception as e:
             print(f"🔍 DEBUG: Error in cross-kernel loading: {e}")
-        
+
         return {"loaded": loaded, "attempts": attempts}
 
     def _find_module_in_kernel(self, kernel_path: str, module_name: str) -> str | None:
@@ -679,21 +679,21 @@ class FirewallDetector:
             # Common paths where netfilter modules are located
             search_paths = [
                 f"kernel/net/ipv4/netfilter/{module_name}.ko*",
-                f"kernel/net/netfilter/{module_name}.ko*", 
+                f"kernel/net/netfilter/{module_name}.ko*",
                 f"kernel/net/{module_name}.ko*",
             ]
-            
+
             for pattern in search_paths:
                 full_pattern = os.path.join(kernel_path, pattern)
                 import glob
                 matches = glob.glob(full_pattern)
-                
+
                 if matches:
                     # Return the first match (could be .ko or .ko.zst)
                     return matches[0]
-            
+
             return None
-            
+
         except Exception as e:
             print(f"🔍 DEBUG: Error finding module {module_name} in {kernel_path}: {e}")
             return None
@@ -713,16 +713,16 @@ class FirewallDetector:
                         kernel_version = match.group(1)
             except Exception:
                 pass
-                
+
             # Check if required modules are loaded
             loaded_modules = []
             missing_modules = []
             required_modules = ["iptable_filter", "iptable_nat", "ip_tables", "x_tables"]
-            
+
             try:
                 with open("/proc/modules", "r") as f:
                     proc_modules = f.read()
-                    
+
                 for module in required_modules:
                     if module in proc_modules:
                         loaded_modules.append(module)
@@ -730,7 +730,7 @@ class FirewallDetector:
                         missing_modules.append(module)
             except Exception:
                 missing_modules = required_modules  # Assume all missing if we can't read
-                
+
             # Check available module directories
             module_dirs = []
             try:
@@ -740,7 +740,7 @@ class FirewallDetector:
                     module_dirs.sort()
             except Exception:
                 pass
-                
+
             return {
                 "success": True,
                 "kernel_version": kernel_version,
@@ -749,7 +749,7 @@ class FirewallDetector:
                 "available_module_dirs": module_dirs,
                 "diagnosis": self._generate_module_diagnosis(kernel_version, loaded_modules, missing_modules, module_dirs)
             }
-            
+
         except Exception as e:
             return {
                 "success": False,
@@ -760,31 +760,31 @@ class FirewallDetector:
         """Generate a human-readable diagnosis of the kernel module situation."""
         if not missing:
             return "All required iptables modules are loaded and available."
-            
+
         diagnosis = f"Kernel version: {kernel_version}\n"
-        
+
         if loaded:
             diagnosis += f"Loaded modules: {', '.join(loaded)}\n"
-            
+
         if missing:
             diagnosis += f"Missing modules: {', '.join(missing)}\n"
-            
+
         if dirs:
             diagnosis += f"Available module directories: {', '.join(dirs[-3:])}\n"  # Show last 3
-            
+
             # Check if current kernel matches available modules
             current_in_dirs = any(kernel_version in d for d in dirs)
             if not current_in_dirs:
                 diagnosis += f"⚠️  Current kernel ({kernel_version}) modules may not be available.\n"
-                
+
                 # Check for compatible kernels
                 compatible_kernels = []
                 base_version = kernel_version.split('-')[0]  # e.g., "6.15.8" from "6.15.8-zen1-2-zen"
-                
+
                 for d in dirs:
                     if base_version[:4] in d:  # Match major.minor version (e.g., "6.15")
                         compatible_kernels.append(d)
-                
+
                 if compatible_kernels:
                     diagnosis += f"📦 Compatible kernels available: {', '.join(compatible_kernels)}\n"
                     diagnosis += "💡 Solutions:\n"
@@ -802,7 +802,7 @@ class FirewallDetector:
         else:
             diagnosis += "❌ No kernel module directories found in /lib/modules\n"
             diagnosis += "💡 Solution: Reinstall kernel packages\n"
-            
+
         return diagnosis
 
     def _try_alternative_firewall_method(self, enable: bool) -> Dict[str, str | bool]:
@@ -814,16 +814,16 @@ class FirewallDetector:
                     "success": False,
                     "message": "Cannot use alternative firewall - no admin privileges",
                 }
-            
+
             env = os.environ.copy()
-            
+
             # Method 1: Try direct iptables commands (basic firewall rules)
             if enable:
                 # Enable basic firewall protection with iptables
                 iptables_rules = [
                     # Set default policies
                     ["iptables", "-P", "INPUT", "DROP"],
-                    ["iptables", "-P", "FORWARD", "DROP"], 
+                    ["iptables", "-P", "FORWARD", "DROP"],
                     ["iptables", "-P", "OUTPUT", "ACCEPT"],
                     # Allow loopback
                     ["iptables", "-A", "INPUT", "-i", "lo", "-j", "ACCEPT"],
@@ -832,7 +832,7 @@ class FirewallDetector:
                     # Allow SSH (port 22) - important to not lock out user
                     ["iptables", "-A", "INPUT", "-p", "tcp", "--dport", "22", "-j", "ACCEPT"],
                 ]
-                
+
                 successful_rules = 0
                 for rule in iptables_rules:
                     cmd = admin_cmd + rule
@@ -845,16 +845,16 @@ class FirewallDetector:
                             check=False,
                             env=env,
                         )
-                        
+
                         if result.returncode == 0:
                             successful_rules += 1
                             print(f"🔍 DEBUG: Applied iptables rule: {' '.join(rule)}")
                         else:
                             print(f"🔍 DEBUG: Failed iptables rule: {' '.join(rule)} - {result.stderr}")
-                            
+
                     except subprocess.TimeoutExpired:
                         print(f"🔍 DEBUG: Timeout applying rule: {' '.join(rule)}")
-                
+
                 if successful_rules >= 4:  # At least basic rules applied
                     return {
                         "success": True,
@@ -870,7 +870,7 @@ class FirewallDetector:
                     ["iptables", "-P", "FORWARD", "ACCEPT"],
                     ["iptables", "-P", "OUTPUT", "ACCEPT"],
                 ]
-                
+
                 successful_flushes = 0
                 for cmd_args in flush_commands:
                     cmd = admin_cmd + cmd_args
@@ -883,26 +883,26 @@ class FirewallDetector:
                             check=False,
                             env=env,
                         )
-                        
+
                         if result.returncode == 0:
                             successful_flushes += 1
                             print(f"🔍 DEBUG: Applied iptables flush: {' '.join(cmd_args)}")
                         else:
                             print(f"🔍 DEBUG: Failed iptables flush: {' '.join(cmd_args)} - {result.stderr}")
-                            
+
                     except subprocess.TimeoutExpired:
                         print(f"🔍 DEBUG: Timeout flushing: {' '.join(cmd_args)}")
-                
+
                 if successful_flushes >= 3:  # At least basic flush worked
                     return {
                         "success": True,
                         "message": f"Firewall disabled using iptables ({successful_flushes}/{len(flush_commands)} commands applied)",
                         "method": "iptables_direct"
                     }
-            
+
             # Method 2: Try systemd-based firewall if iptables direct fails
             return self._try_systemd_firewall_service(enable, admin_cmd, env)
-            
+
         except Exception as e:
             return {
                 "success": False,
@@ -914,11 +914,11 @@ class FirewallDetector:
         try:
             # Check if we can use systemd to manage networking/firewall
             service_commands = []
-            
+
             if enable:
                 # Try to start basic network security services
                 services_to_try = ["ufw", "iptables", "netfilter-persistent"]
-                
+
                 for service in services_to_try:
                     cmd = admin_cmd + ["systemctl", "start", service]
                     try:
@@ -930,7 +930,7 @@ class FirewallDetector:
                             check=False,
                             env=env,
                         )
-                        
+
                         if result.returncode == 0:
                             return {
                                 "success": True,
@@ -939,13 +939,13 @@ class FirewallDetector:
                             }
                         else:
                             print(f"🔍 DEBUG: Failed to start {service}: {result.stderr}")
-                            
+
                     except subprocess.TimeoutExpired:
                         print(f"🔍 DEBUG: Timeout starting service: {service}")
             else:
                 # Try to stop firewall services
                 services_to_try = ["ufw", "iptables"]
-                
+
                 for service in services_to_try:
                     cmd = admin_cmd + ["systemctl", "stop", service]
                     try:
@@ -957,7 +957,7 @@ class FirewallDetector:
                             check=False,
                             env=env,
                         )
-                        
+
                         if result.returncode == 0:
                             return {
                                 "success": True,
@@ -966,15 +966,15 @@ class FirewallDetector:
                             }
                         else:
                             print(f"🔍 DEBUG: Failed to stop {service}: {result.stderr}")
-                            
+
                     except subprocess.TimeoutExpired:
                         print(f"🔍 DEBUG: Timeout stopping service: {service}")
-            
+
             return {
                 "success": False,
                 "message": "All alternative firewall methods failed",
             }
-            
+
         except Exception as e:
             return {
                 "success": False,
@@ -987,10 +987,10 @@ class FirewallDetector:
         try:
             # Use elevated_run for consistent privilege escalation with GUI sudo priority
             cmd_args = ["ufw", "--force", "enable" if enable else "disable"]
-            
+
             # Debug: Print the command being executed
             print(f"DEBUG: Executing firewall command: ufw {' '.join(cmd_args[1:])}")
-            
+
             print("🔍 DEBUG: About to run elevated_run...")
             # Use elevated_run with GUI preference (same as RKHunter and ClamAV)
             result = elevated_run(
@@ -1000,7 +1000,7 @@ class FirewallDetector:
                 text=True,
                 gui=True  # Enable GUI sudo preference
             )
-            
+
             # Debug: Print result details
             print(f"DEBUG: Command exit code: {result.returncode}")
             print(f"DEBUG: Command stdout: {result.stdout}")
@@ -1015,7 +1015,7 @@ class FirewallDetector:
                 }
             else:
                 error_output = result.stderr.strip() or result.stdout.strip()
-                
+
                 # Check for common authentication cancellation messages
                 if (
                     "request dismissed" in error_output.lower()
@@ -1026,7 +1026,7 @@ class FirewallDetector:
                         "message": "Authentication cancelled by user",
                         "error": "User cancelled the authentication dialog",
                     }
-                
+
                 # Handle iptables kernel module issues specifically
                 if (
                     "can't initialize iptables" in error_output.lower()
@@ -1047,7 +1047,7 @@ class FirewallDetector:
                             text=True,
                             gui=True
                         )
-                        
+
                         if retry_result.returncode == 0:
                             action = "enabled" if enable else "disabled"
                             return {
@@ -1060,7 +1060,7 @@ class FirewallDetector:
                             alt_result = self._try_alternative_firewall_method(enable)
                             if alt_result["success"]:
                                 return alt_result
-                
+
                 return {
                     "success": False,
                     "message": f'Failed to {
@@ -1087,7 +1087,7 @@ class FirewallDetector:
         try:
             # Use elevated_run for consistent privilege escalation
             cmd_args = ["systemctl", "start" if enable else "stop", "firewalld"]
-            
+
             result = elevated_run(
                 cmd_args,
                 timeout=60,
@@ -1167,7 +1167,7 @@ class FirewallDetector:
 
                 if result.returncode != 0:
                     error_output = result.stderr.strip() or result.stdout.strip()
-                    
+
                     # Check for authentication cancellation
                     if (
                         "request dismissed" in error_output.lower()
@@ -1178,7 +1178,7 @@ class FirewallDetector:
                             "message": "Authentication cancelled by user",
                             "error": "User cancelled the authentication dialog",
                         }
-                    
+
                     return {
                         "success": False,
                         "message": f'Failed to {
@@ -1231,7 +1231,7 @@ class FirewallDetector:
                 with tempfile.NamedTemporaryFile(mode='w', suffix='.nft', delete=False) as f:
                     f.write(nft_rules)
                     temp_file = f.name
-                
+
                 try:
                     result = elevated_run(
                         ["nft", "-f", temp_file],
@@ -1265,7 +1265,7 @@ class FirewallDetector:
                 }
             else:
                 error_output = result.stderr.strip() or result.stdout.strip()
-                
+
                 # Check for authentication cancellation
                 if (
                     "request dismissed" in error_output.lower()
@@ -1276,7 +1276,7 @@ class FirewallDetector:
                         "message": "Authentication cancelled by user",
                         "error": "User cancelled the authentication dialog",
                     }
-                
+
                 return {
                     "success": False,
                     "message": f'Failed to {

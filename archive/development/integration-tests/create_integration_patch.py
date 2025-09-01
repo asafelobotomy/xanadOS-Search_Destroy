@@ -15,7 +15,7 @@ if str(app_dir) not in sys.path:
 
 def create_integration_patch():
     """Create a patch file to integrate non-invasive monitoring"""
-    
+
     patch_content = '''"""
 Integration patch for non-invasive status monitoring
 Replaces elevated privilege status checks with activity-based caching
@@ -30,11 +30,11 @@ Replaces elevated privilege status checks with activity-based caching
 def get_current_status_non_invasive(self) -> RKHunterStatus:
     """Get RKHunter status using non-invasive methods (PATCHED VERSION)"""
     from .rkhunter_monitor_non_invasive import get_rkhunter_status_non_invasive
-    
+
     try:
         # Use non-invasive monitor instead of elevated commands
         ni_status = get_rkhunter_status_non_invasive()
-        
+
         # Convert to original RKHunterStatus format for compatibility
         return RKHunterStatus(
             version=ni_status.version,
@@ -47,7 +47,7 @@ def get_current_status_non_invasive(self) -> RKHunterStatus:
             performance_metrics={},
             issues_found=ni_status.issues_found
         )
-        
+
     except Exception as e:
         logger.error(f"Error getting RKHunter status (non-invasive): {e}")
         return RKHunterStatus(
@@ -73,40 +73,40 @@ def run_non_invasive(self):
     if not self.optimizer:
         self.error_occurred.emit("RKHunter optimizer not available")
         return
-        
+
     try:
         self.progress_updated.emit("Initializing RKHunter optimizer...")
-        
+
         # Use non-invasive status checking instead of elevated commands
         self.progress_updated.emit("Checking current RKHunter status (non-invasive)...")
-        
+
         # Import non-invasive monitor
         from core.rkhunter_monitor_non_invasive import get_rkhunter_status_non_invasive, record_rkhunter_activity
-        
+
         # Record user activity for cache management
         record_rkhunter_activity("optimization_started", "User initiated RKHunter optimization")
-        
+
         # Get status using non-invasive method
         ni_status = get_rkhunter_status_non_invasive()
-        
+
         # Convert to original format for compatibility
         status = self.optimizer.get_current_status_non_invasive()
         self.status_updated.emit(status)
-        
+
         # Only proceed with optimization if RKHunter is available
         if ni_status.available:
             # Run optimization (this may still require elevated privileges for actual changes)
             self.progress_updated.emit("Applying configuration optimizations...")
             report = self.optimizer.optimize_configuration(self.config)
-            
+
             # Record completion
             record_rkhunter_activity("optimization_completed", "Optimization finished successfully")
-            
+
             self.progress_updated.emit("Optimization complete")
             self.optimization_complete.emit(report)
         else:
             self.error_occurred.emit("RKHunter is not installed or accessible")
-            
+
     except Exception as e:
         logger.error(f"Error in RKHunter optimization (non-invasive): {e}")
         self.error_occurred.emit(str(e))
@@ -121,10 +121,10 @@ def update_system_status_non_invasive(self):
     """Update all system status displays using non-invasive methods"""
     try:
         from core.non_invasive_monitor import get_system_status
-        
+
         # Get comprehensive system status without sudo requirements
         status = get_system_status()
-        
+
         # Update virus definitions display
         if hasattr(self, 'last_update_label'):
             if status.virus_definitions_age >= 0:
@@ -138,7 +138,7 @@ def update_system_status_non_invasive(self):
                     self.last_update_label.setText(f"Status: {status.virus_definitions_age} days old (update needed)")
             else:
                 self.last_update_label.setText("Status: Unknown")
-        
+
         # Update security services status
         if hasattr(self, 'security_services_label'):
             active_services = [name for name, state in status.system_services.items() if state == "active"]
@@ -146,9 +146,9 @@ def update_system_status_non_invasive(self):
                 self.security_services_label.setText(f"Active: {', '.join(active_services)}")
             else:
                 self.security_services_label.setText("No security services active")
-        
+
         print("✅ System status updated using non-invasive methods")
-        
+
     except Exception as e:
         print(f"⚠️ Error updating system status: {e}")
 
@@ -199,7 +199,7 @@ __all__ = [
     "get_system_status",
     "record_activity",
     "system_monitor",
-    "RKHunterMonitorNonInvasive", 
+    "RKHunterMonitorNonInvasive",
     "RKHunterStatusNonInvasive",
     "get_rkhunter_status_non_invasive",
     "record_rkhunter_activity",
@@ -213,7 +213,7 @@ __all__ = [
 """
 CRITICAL SUCCESS CRITERIA:
 1. ✅ Application runs 60+ seconds without authentication prompts
-2. ✅ Status displays work using non-invasive methods  
+2. ✅ Status displays work using non-invasive methods
 3. ✅ Only user-initiated actions trigger authentication
 4. ✅ Automatic timers never cause privilege escalation
 5. ✅ Firewall detection uses proven non-invasive approach (ALREADY IMPLEMENTED)
@@ -230,21 +230,21 @@ TESTING STRATEGY:
 - Test cache persistence across app sessions
 """
 '''
-    
+
     return patch_content
 
 def main():
     print("🔧 COMPREHENSIVE NON-INVASIVE STATUS INTEGRATION")
     print("=" * 60)
-    
+
     # Create the integration patch
     patch_content = create_integration_patch()
-    
+
     # Save patch to file
     patch_file = Path(__file__).parent / "INTEGRATION_PATCH.md"
     with open(patch_file, 'w') as f:
         f.write(patch_content)
-    
+
     print(f"✅ Integration patch created: {patch_file}")
     print()
     print("🎯 NEXT STEPS:")

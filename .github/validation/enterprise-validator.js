@@ -18,7 +18,7 @@ class EnterpriseValidator {
 
   async validateEnterpriseStandards(filePath) {
     this.perfMonitor.startTimer(`enterprise-${filePath}`);
-    
+
     const results = {
       wcagCompliance: await this.wcagChecker.checkFile(filePath),
       securityReview: await this.checkSecurityStandards(filePath),
@@ -27,7 +27,7 @@ class EnterpriseValidator {
     };
 
     this.perfMonitor.endTimer(`enterprise-${filePath}`);
-    
+
     return {
       ...results,
       overallScore: this.calculateEnterpriseScore(results),
@@ -38,7 +38,7 @@ class EnterpriseValidator {
   async checkSecurityStandards(filePath) {
     const content = await require('fs').promises.readFile(filePath, 'utf8');
     const violations = [];
-    
+
     // Check for exposed secrets
     this.enterpriseRules.securityKeywords.forEach(keyword => {
       const regex = new RegExp(`${keyword}\\s*[=:]\\s*['"\\`]([^'"\\`\\s]+)`, 'gi');
@@ -57,7 +57,7 @@ class EnterpriseValidator {
   async checkPerformanceStandards(filePath) {
     const stats = await require('fs').promises.stat(filePath);
     const issues = [];
-    
+
     if (stats.size > this.enterpriseRules.maxFileSize) {
       issues.push({
         type: 'FILE_SIZE_VIOLATION',
@@ -80,7 +80,7 @@ class EnterpriseValidator {
     };
 
     const score = Object.values(compliance).filter(Boolean).length / Object.keys(compliance).length;
-    
+
     return { ...compliance, score };
   }
 
@@ -103,19 +103,19 @@ class EnterpriseValidator {
 
   generateRecommendations(results) {
     const recommendations = [];
-    
+
     if (!results.wcagCompliance.isCompliant) {
       recommendations.push('Improve accessibility compliance (WCAG 2.1)');
     }
-    
+
     if (!results.securityReview.isSecure) {
       recommendations.push('Address security vulnerabilities');
     }
-    
+
     if (!results.performanceCheck.meetsStandards) {
       recommendations.push('Optimize file size and performance');
     }
-    
+
     if (results.enterpriseCompliance.score < 0.8) {
       recommendations.push('Add required enterprise metadata');
     }

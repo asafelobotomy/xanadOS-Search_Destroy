@@ -10,11 +10,11 @@ const testDir = join(tmpdir(), 'template-validation-test-' + Date.now());
 // Setup test environment
 test.before(async () => {
   await fs.mkdir(testDir, { recursive: true });
-  
+
   // Create test template files
   const templatesDir = join(testDir, '.github', 'chatmodes');
   await fs.mkdir(templatesDir, { recursive: true });
-  
+
   // Valid chat mode template
   const validChatMode = `# Expert Advisor Chat Mode
 
@@ -39,7 +39,7 @@ Act as a knowledgeable expert advisor who provides detailed guidance.
 `;
 
   await fs.writeFile(join(templatesDir, 'expert-advisor.md'), validChatMode);
-  
+
   // Invalid chat mode template (missing sections)
   const invalidChatMode = `# Incomplete Chat Mode
 
@@ -62,7 +62,7 @@ test('TemplateValidationSystem - Constructor', () => {
   const validator = new TemplateValidationSystem({
     rootPath: testDir
   });
-  
+
   assert.ok(validator);
   assert.equal(validator.rootPath, testDir);
   assert.ok(validator.templateSchemas);
@@ -73,7 +73,7 @@ test('TemplateValidationSystem - Template Discovery', async () => {
   const validator = new TemplateValidationSystem({
     rootPath: testDir
   });
-  
+
   const files = await validator.discoverTemplateFiles();
   assert.ok(Array.isArray(files));
   assert.ok(files.length >= 2);
@@ -85,10 +85,10 @@ test('TemplateValidationSystem - Template Type Detection', async () => {
   const validator = new TemplateValidationSystem({
     rootPath: testDir
   });
-  
+
   const chatModeFile = join(testDir, '.github', 'chatmodes', 'expert-advisor.chatmode.md');
   const content = await fs.readFile(chatModeFile, 'utf8');
-  
+
   const type = validator.determineTemplateType(chatModeFile, content);
   assert.equal(type, 'chat-mode');
 });
@@ -97,7 +97,7 @@ test('TemplateValidationSystem - Schema Validation - Valid Template', async () =
   const validator = new TemplateValidationSystem({
     rootPath: testDir
   });
-  
+
   const content = `# Expert Advisor Chat Mode
 
 ## Description
@@ -118,7 +118,7 @@ Provide factual information only.
 
   const schema = validator.templateSchemas.get('chat-mode');
   const result = validator.validateAgainstSchema(content, schema);
-  
+
   assert.equal(result.isValid, true);
   assert.equal(result.errors.length, 0);
 });
@@ -127,7 +127,7 @@ test('TemplateValidationSystem - Schema Validation - Invalid Template', async ()
   const validator = new TemplateValidationSystem({
     rootPath: testDir
   });
-  
+
   const content = `# Incomplete Template
 
 ## Description
@@ -136,7 +136,7 @@ Missing required sections.
 
   const schema = validator.templateSchemas.get('chat-mode');
   const result = validator.validateAgainstSchema(content, schema);
-  
+
   assert.equal(result.isValid, false);
   assert.ok(result.errors.length > 0);
   assert.ok(result.errors.some(e => e.includes('role')));
@@ -146,7 +146,7 @@ test('TemplateValidationSystem - Content Standards - Accessibility', () => {
   const validator = new TemplateValidationSystem({
     rootPath: testDir
   });
-  
+
   const goodContent = `# Title
 
 ## Section
@@ -159,7 +159,7 @@ Here is an image with alt text: ![Description](image.jpg)
   const result = validator.validateAccessibility(goodContent);
   assert.ok(result.score > 0.8);
   assert.equal(result.issues.length, 0);
-  
+
   const badContent = `# Title
 
 ### Skipped Level
@@ -178,7 +178,7 @@ test('TemplateValidationSystem - Content Standards - Formatting', () => {
   const validator = new TemplateValidationSystem({
     rootPath: testDir
   });
-  
+
   const goodContent = `# Title
 
 ## Section
@@ -196,7 +196,7 @@ console.log('Hello');
 
   const result = validator.validateFormatting(goodContent);
   assert.ok(result.score > 0.8);
-  
+
   const badContent = `# Title
 
 ## Section
@@ -218,7 +218,7 @@ test('TemplateValidationSystem - Content Standards - Style Guide', () => {
   const validator = new TemplateValidationSystem({
     rootPath: testDir
   });
-  
+
   const goodContent = `# Title
 
 ## Section
@@ -228,7 +228,7 @@ This is a well-written sentence. It follows good style guidelines. The content i
 
   const result = validator.validateStyleGuide(goodContent);
   assert.ok(result.score > 0.7);
-  
+
   const badContent = `# Title
 
 ## Section
@@ -247,7 +247,7 @@ test('TemplateValidationSystem - Content Standards - Internationalization', () =
   const validator = new TemplateValidationSystem({
     rootPath: testDir
   });
-  
+
   const goodContent = `# Title
 
 ## Section
@@ -257,7 +257,7 @@ This content follows international standards. Dates are in ISO format: 2024-01-1
 
   const result = validator.validateI18n(goodContent);
   assert.ok(result.score > 0.8);
-  
+
   const badContent = `# Title
 
 ## Section
@@ -274,21 +274,21 @@ test('TemplateValidationSystem - Full Validation', async () => {
   const validator = new TemplateValidationSystem({
     rootPath: testDir
   });
-  
+
   const result = await validator.validateTemplateSystem();
-  
+
   assert.ok(result);
   assert.ok(result.metrics);
   assert.ok(result.results);
   assert.ok(Array.isArray(result.results));
-  
+
   // Should have validation results for our test files
   assert.ok(validator.validationResults.length > 0);
-  
+
   // Should have found at least one valid template
   const validResults = validator.validationResults.filter(r => r.status === 'passed');
   assert.ok(validResults.length > 0);
-  
+
   // Should have found the invalid template
   const invalidResults = validator.validationResults.filter(r => r.status === 'error');
   assert.ok(invalidResults.length > 0);
@@ -298,10 +298,10 @@ test('TemplateValidationSystem - Performance Metrics', async () => {
   const validator = new TemplateValidationSystem({
     rootPath: testDir
   });
-  
+
   // Run a subset of validation to test performance tracking
   await validator.runPerformanceTests();
-  
+
   assert.ok(validator.performanceMetrics);
   assert.ok(typeof validator.performanceMetrics.totalValidationTime === 'number');
   assert.ok(typeof validator.performanceMetrics.averageFileProcessingTime === 'number');
@@ -313,7 +313,7 @@ test('TemplateValidationSystem - Recommendation Generation', async () => {
   const validator = new TemplateValidationSystem({
     rootPath: testDir
   });
-  
+
   // Add some mock validation results
   validator.validationResults = [
     {
@@ -327,7 +327,7 @@ test('TemplateValidationSystem - Recommendation Generation', async () => {
       message: 'Content quality issues'
     }
   ];
-  
+
   validator.integrationTests = [
     {
       type: 'mcp-server',
@@ -335,12 +335,12 @@ test('TemplateValidationSystem - Recommendation Generation', async () => {
       message: 'MCP server test failed'
     }
   ];
-  
+
   const recommendations = validator.generateRecommendations();
-  
+
   assert.ok(Array.isArray(recommendations));
   assert.ok(recommendations.length > 0);
-  
+
   // Should have high priority recommendation for structure errors
   const highPriorityRecs = recommendations.filter(r => r.priority === 'high');
   assert.ok(highPriorityRecs.length > 0);
@@ -350,7 +350,7 @@ test('TemplateValidationSystem - Report Generation', async () => {
   const validator = new TemplateValidationSystem({
     rootPath: testDir
   });
-  
+
   // Mock some data for report generation
   validator.metrics = {
     templatesValidated: 2,
@@ -360,27 +360,27 @@ test('TemplateValidationSystem - Report Generation', async () => {
     errors: 1,
     warnings: 1
   };
-  
+
   validator.qualityMetrics = {
     overallScore: 0.75,
     validationCoverage: 0.8,
     complianceRate: 0.7,
     integrationSuccess: 0.5
   };
-  
+
   validator.performanceMetrics = {
     totalValidationTime: 1000,
     averageFileProcessingTime: 50,
     filesProcessed: 2,
     throughput: 2
   };
-  
+
   validator.complianceStatus = {
     score: 0.75,
     isCompliant: true,
     checks: {}
   };
-  
+
   const mockReport = {
     timestamp: new Date().toISOString(),
     summary: validator.metrics,
@@ -391,9 +391,9 @@ test('TemplateValidationSystem - Report Generation', async () => {
     integrationTests: [],
     recommendations: []
   };
-  
+
   const readableReport = validator.generateReadableReport(mockReport);
-  
+
   assert.ok(typeof readableReport === 'string');
   assert.ok(readableReport.includes('# Template Validation Report'));
   assert.ok(readableReport.includes('Executive Summary'));
@@ -406,7 +406,7 @@ test('TemplateValidationSystem - MCP Server Detection', async () => {
   const validator = new TemplateValidationSystem({
     rootPath: testDir
   });
-  
+
   // This will return empty array since we don't have MCP servers in test env
   const mcpServers = await validator.findMCPServers();
   assert.ok(Array.isArray(mcpServers));
@@ -416,7 +416,7 @@ test('TemplateValidationSystem - Chat Mode Detection', async () => {
   const validator = new TemplateValidationSystem({
     rootPath: testDir
   });
-  
+
   const chatModes = await validator.findChatModes();
   assert.ok(Array.isArray(chatModes));
   assert.ok(chatModes.length >= 2); // Should find our test chat modes
@@ -426,7 +426,7 @@ test('TemplateValidationSystem - Error Handling', async () => {
   const validator = new TemplateValidationSystem({
     rootPath: '/nonexistent/path'
   });
-  
+
   // Should handle non-existent paths gracefully
   const files = await validator.discoverTemplateFiles();
   assert.ok(Array.isArray(files));

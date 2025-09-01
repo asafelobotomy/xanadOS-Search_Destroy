@@ -9,6 +9,7 @@ The issue was that when stopping an RKHunter scan within the 30-second grace per
 1. RKHunter scans run with elevated privileges (pkexec)
 
 2.
+
 When stopping within the grace period, the direct kill commands fail due to permission denied (expected)
 
 3. The old logic would then fall back to pkexec, causing the unnecessary authentication prompt
@@ -31,6 +32,7 @@ When stopping within the grace period, the direct kill commands fail due to perm
 **Improved Error Messages**: Changed warning messages to info messages for expected permission denied scenarios within grace period
 
 3.
+
 **Intelligent Fallback**: Only attempts pkexec authentication outside the grace period or when specifically needed
 
 ### Key Code Changes

@@ -15,6 +15,7 @@ This caused the calling code to fall back to pkexec authentication.
 Modified the logic in `_terminate_with_privilege_escalation()` to:
 
 1.
+
 **Within Grace Period**: Always return `True` (success), even if we can't actually kill the elevated process
 2.
 **Key Change**: Instead of returning `False`when direct kill fails, return`True` to prevent authentication prompts

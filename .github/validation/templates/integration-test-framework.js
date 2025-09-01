@@ -19,12 +19,12 @@ class IntegrationTestFramework {
   constructor(options = {}) {
     this.rootPath = options.rootPath || process.cwd();
     this.testResultsPath = join(this.rootPath, '.github', 'validation', 'reports', 'integration');
-    
+
     this.testSuites = new Map();
     this.testResults = [];
     this.setupStartTime = null;
     this.totalTestTime = 0;
-    
+
     this.metrics = {
       totalTests: 0,
       passed: 0,
@@ -33,7 +33,7 @@ class IntegrationTestFramework {
       setupTime: 0,
       executionTime: 0,
     };
-    
+
     this.setupTestSuites();
   }
 
@@ -89,38 +89,38 @@ class IntegrationTestFramework {
 
   async runIntegrationTests(options = {}) {
     console.log('🧪 Starting Integration Test Framework...\n');
-    
+
     try {
       await fs.mkdir(this.testResultsPath, { recursive: true });
-      
+
       this.setupStartTime = Date.now();
-      
+
       // Run test setup
       await this.setupTestEnvironment();
-      
+
       const executionStartTime = Date.now();
-      
+
       // Run all test suites
       for (const [suiteId, suite] of this.testSuites) {
         if (options.skipSuites && options.skipSuites.includes(suiteId)) {
           console.log(`⏭️  Skipping ${suite.name}...`);
           continue;
         }
-        
+
         console.log(`🔧 Running ${suite.name}...`);
         await this.runTestSuite(suiteId, suite, options);
         console.log();
       }
-      
+
       this.metrics.executionTime = Date.now() - executionStartTime;
       this.totalTestTime = Date.now() - this.setupStartTime;
-      
+
       // Generate comprehensive report
       await this.generateIntegrationReport();
-      
+
       // Display summary
       this.displayTestSummary();
-      
+
       return this.testResults;
     } catch (error) {
       console.error('❌ Integration tests failed:', error.message);
@@ -130,14 +130,14 @@ class IntegrationTestFramework {
 
   async setupTestEnvironment() {
     console.log('⚙️  Setting up test environment...');
-    
+
     const setupTasks = [
       { name: 'Validate Project Structure', function: this.validateProjectStructure.bind(this) },
       { name: 'Check Dependencies', function: this.checkDependencies.bind(this) },
       { name: 'Initialize Test Data', function: this.initializeTestData.bind(this) },
       { name: 'Verify File Permissions', function: this.verifyFilePermissions.bind(this) },
     ];
-    
+
     for (const task of setupTasks) {
       try {
         await task.function();
@@ -147,7 +147,7 @@ class IntegrationTestFramework {
         throw new Error(`Setup failed: ${task.name}`);
       }
     }
-    
+
     this.metrics.setupTime = Date.now() - this.setupStartTime;
     console.log(`  ⏱️  Setup completed in ${this.metrics.setupTime}ms\n`);
   }
@@ -161,17 +161,17 @@ class IntegrationTestFramework {
       endTime: null,
       duration: null,
     };
-    
+
     for (const test of suite.tests) {
       if (options.skipTests && options.skipTests.includes(test.name)) {
         console.log(`  ⏭️  Skipping: ${test.name}`);
         this.metrics.skipped++;
         continue;
       }
-      
+
       const testResult = await this.runSingleTest(test);
       suiteResults.tests.push(testResult);
-      
+
       if (testResult.status === 'passed') {
         this.metrics.passed++;
         console.log(`  ✅ ${test.name}`);
@@ -183,10 +183,10 @@ class IntegrationTestFramework {
         console.log(`  ⏭️  ${test.name}: ${testResult.reason}`);
       }
     }
-    
+
     suiteResults.endTime = Date.now();
     suiteResults.duration = suiteResults.endTime - suiteResults.startTime;
-    
+
     this.testResults.push(suiteResults);
   }
 
@@ -200,7 +200,7 @@ class IntegrationTestFramework {
       error: null,
       details: null,
     };
-    
+
     try {
       const result = await test.function();
       testResult.status = result.passed ? 'passed' : 'failed';
@@ -210,10 +210,10 @@ class IntegrationTestFramework {
       testResult.status = 'failed';
       testResult.error = error.message;
     }
-    
+
     testResult.endTime = Date.now();
     testResult.duration = testResult.endTime - testResult.startTime;
-    
+
     return testResult;
   }
 
@@ -225,7 +225,7 @@ class IntegrationTestFramework {
       '.github/mcp',
       '.github/validation',
     ];
-    
+
     for (const path of requiredPaths) {
       const fullPath = join(this.rootPath, path);
       try {
@@ -246,7 +246,7 @@ class IntegrationTestFramework {
       '.github/validation/templates/template-validation-system.js',
       '.github/mcp/mcp-servers.json',
     ];
-    
+
     for (const file of requiredFiles) {
       const fullPath = join(this.rootPath, file);
       try {
@@ -261,7 +261,7 @@ class IntegrationTestFramework {
     // Create test data directory if it doesn't exist
     const testDataPath = join(this.testResultsPath, 'test-data');
     await fs.mkdir(testDataPath, { recursive: true });
-    
+
     // Create sample test templates
     const sampleChatMode = `# Test Chat Mode
 
@@ -284,7 +284,7 @@ You are a test assistant for validating chat mode functionality.
 - Keep responses focused on testing
 - Validate all interactions
 `;
-    
+
     await fs.writeFile(join(testDataPath, 'test-chat-mode.md'), sampleChatMode);
   }
 
@@ -304,20 +304,20 @@ You are a test assistant for validating chat mode functionality.
     try {
       // Test chat mode template structure
       const chatModeFiles = await this.findFilesByPattern('.github/chatmodes/*.md');
-      
+
       if (chatModeFiles.length === 0) {
         return { passed: false, error: 'No chat mode files found' };
       }
-      
+
       const validationResults = [];
       for (const file of chatModeFiles) {
         const content = await fs.readFile(file, 'utf8');
         const validation = this.validateChatModeStructure(content);
         validationResults.push({ file, ...validation });
       }
-      
+
       const failedValidations = validationResults.filter(r => !r.valid);
-      
+
       return {
         passed: failedValidations.length === 0,
         details: {
@@ -335,16 +335,16 @@ You are a test assistant for validating chat mode functionality.
   async testPromptTemplateValidation() {
     try {
       const promptFiles = await this.findFilesByPattern('.github/prompts/*.md');
-      
+
       const validationResults = [];
       for (const file of promptFiles) {
         const content = await fs.readFile(file, 'utf8');
         const validation = this.validatePromptStructure(content);
         validationResults.push({ file, ...validation });
       }
-      
+
       const successfulValidations = validationResults.filter(r => r.valid);
-      
+
       return {
         passed: successfulValidations.length === validationResults.length,
         details: {
@@ -361,16 +361,16 @@ You are a test assistant for validating chat mode functionality.
   async testMCPServerTemplateCompliance() {
     try {
       const mcpServerFiles = await this.findFilesByPattern('.github/mcp/servers/*/index.js');
-      
+
       const complianceResults = [];
       for (const file of mcpServerFiles) {
         const content = await fs.readFile(file, 'utf8');
         const compliance = this.validateMCPServerCompliance(content);
         complianceResults.push({ file, ...compliance });
       }
-      
+
       const compliantServers = complianceResults.filter(r => r.compliant);
-      
+
       return {
         passed: compliantServers.length === complianceResults.length,
         details: {
@@ -388,10 +388,10 @@ You are a test assistant for validating chat mode functionality.
     try {
       // Get all markdown files
       const allMarkdownFiles = await this.findFilesByPattern('.github/**/*.md');
-      
+
       // Extract and validate internal references
       const referenceValidation = await this.validateCrossReferences(allMarkdownFiles);
-      
+
       return {
         passed: referenceValidation.brokenReferences.length === 0,
         details: {
@@ -410,7 +410,7 @@ You are a test assistant for validating chat mode functionality.
   async testStyleGuideCompliance() {
     try {
       const markdownFiles = await this.findFilesByPattern('.github/**/*.md');
-      
+
       const styleIssues = [];
       for (const file of markdownFiles) {
         const content = await fs.readFile(file, 'utf8');
@@ -419,7 +419,7 @@ You are a test assistant for validating chat mode functionality.
           styleIssues.push({ file, issues });
         }
       }
-      
+
       return {
         passed: styleIssues.length === 0,
         details: {
@@ -436,16 +436,16 @@ You are a test assistant for validating chat mode functionality.
   async testCodeExampleValidation() {
     try {
       const markdownFiles = await this.findFilesByPattern('.github/**/*.md');
-      
+
       const codeBlockValidation = [];
       for (const file of markdownFiles) {
         const content = await fs.readFile(file, 'utf8');
         const validation = this.validateCodeBlocks(content);
         codeBlockValidation.push({ file, ...validation });
       }
-      
+
       const filesWithInvalidCode = codeBlockValidation.filter(v => v.invalidBlocks.length > 0);
-      
+
       return {
         passed: filesWithInvalidCode.length === 0,
         details: {
@@ -468,20 +468,20 @@ You are a test assistant for validating chat mode functionality.
         { pattern: '.github/mcp/**/*.md', requiredSections: ['title', 'overview', 'configuration'] },
         { pattern: '.github/validation/**/*.md', requiredSections: ['title', 'overview'] },
       ];
-      
+
       const completenessResults = [];
       for (const requirement of requiredDocumentationSections) {
         const files = await this.findFilesByPattern(requirement.pattern);
-        
+
         for (const file of files) {
           const content = await fs.readFile(file, 'utf8');
           const completeness = this.checkDocumentationCompleteness(content, requirement.requiredSections);
           completenessResults.push({ file, ...completeness });
         }
       }
-      
+
       const incompleteFiles = completenessResults.filter(r => r.missingSections.length > 0);
-      
+
       return {
         passed: incompleteFiles.length === 0,
         details: {
@@ -498,7 +498,7 @@ You are a test assistant for validating chat mode functionality.
   async testAccessibilityStandards() {
     try {
       const markdownFiles = await this.findFilesByPattern('.github/**/*.md');
-      
+
       const accessibilityIssues = [];
       for (const file of markdownFiles) {
         const content = await fs.readFile(file, 'utf8');
@@ -507,7 +507,7 @@ You are a test assistant for validating chat mode functionality.
           accessibilityIssues.push({ file, issues });
         }
       }
-      
+
       return {
         passed: accessibilityIssues.length === 0,
         details: {
@@ -527,15 +527,15 @@ You are a test assistant for validating chat mode functionality.
       // Test MCP server configuration
       const mcpConfigPath = join(this.rootPath, '.github/mcp/mcp-servers.json');
       const mcpConfig = JSON.parse(await fs.readFile(mcpConfigPath, 'utf8'));
-      
+
       const connectivityResults = [];
       for (const [serverName, config] of Object.entries(mcpConfig.servers || {})) {
         const result = await this.testMCPServerConfiguration(serverName, config);
         connectivityResults.push({ serverName, ...result });
       }
-      
+
       const workingServers = connectivityResults.filter(r => r.configValid);
-      
+
       return {
         passed: workingServers.length === connectivityResults.length,
         details: {
@@ -553,16 +553,16 @@ You are a test assistant for validating chat mode functionality.
     try {
       // Test chat mode processing
       const chatModeFiles = await this.findFilesByPattern('.github/chatmodes/*.md');
-      
+
       const functionalityResults = [];
       for (const file of chatModeFiles) {
         const content = await fs.readFile(file, 'utf8');
         const functionality = this.testChatModeProcessing(content);
         functionalityResults.push({ file, ...functionality });
       }
-      
+
       const workingChatModes = functionalityResults.filter(r => r.functional);
-      
+
       return {
         passed: workingChatModes.length === functionalityResults.length,
         details: {
@@ -580,13 +580,13 @@ You are a test assistant for validating chat mode functionality.
     try {
       // Test meta-instruction validator integration
       const validatorPath = join(this.rootPath, '.github/validation/validators/meta-instruction-validator.js');
-      
+
       try {
         await fs.access(validatorPath);
-        
+
         // Test basic validator functionality
         const validatorIntegration = await this.testValidatorIntegration();
-        
+
         return {
           passed: validatorIntegration.working,
           details: validatorIntegration,
@@ -608,19 +608,19 @@ You are a test assistant for validating chat mode functionality.
         { name: 'Integration Validation', function: this.testIntegrationValidation.bind(this) },
         { name: 'Report Generation', function: this.testReportGeneration.bind(this) },
       ];
-      
+
       const stepResults = [];
       for (const step of workflowSteps) {
         const result = await step.function();
         stepResults.push({ stepName: step.name, ...result });
-        
+
         if (!result.passed) {
           break; // Stop on first failure
         }
       }
-      
+
       const completedSteps = stepResults.filter(r => r.passed);
-      
+
       return {
         passed: completedSteps.length === workflowSteps.length,
         details: {
@@ -638,27 +638,27 @@ You are a test assistant for validating chat mode functionality.
   async testTemplateGenerationPerformance() {
     try {
       const startTime = Date.now();
-      
+
       // Simulate template generation for different types
       const templates = await this.findFilesByPattern('.github/**/*.md');
-      
+
       const generationResults = [];
       for (const template of templates.slice(0, 10)) { // Test first 10 templates
         const templateStartTime = Date.now();
         const content = await fs.readFile(template, 'utf8');
         const processed = this.processTemplate(content);
         const templateEndTime = Date.now();
-        
+
         generationResults.push({
           template,
           processingTime: templateEndTime - templateStartTime,
           success: processed !== null,
         });
       }
-      
+
       const totalTime = Date.now() - startTime;
       const averageTime = totalTime / generationResults.length;
-      
+
       return {
         passed: averageTime < 100, // Should process in under 100ms on average
         details: {
@@ -676,10 +676,10 @@ You are a test assistant for validating chat mode functionality.
   async testValidationProcessingSpeed() {
     try {
       const startTime = Date.now();
-      
+
       // Test validation speed
       const files = await this.findFilesByPattern('.github/**/*.{md,js,json}');
-      
+
       let validatedFiles = 0;
       for (const file of files.slice(0, 20)) { // Test first 20 files
         try {
@@ -690,10 +690,10 @@ You are a test assistant for validating chat mode functionality.
           // Continue with other files
         }
       }
-      
+
       const totalTime = Date.now() - startTime;
       const averageTime = totalTime / validatedFiles;
-      
+
       return {
         passed: averageTime < 50, // Should validate in under 50ms on average
         details: {
@@ -710,20 +710,20 @@ You are a test assistant for validating chat mode functionality.
   async testMemoryUsageEfficiency() {
     try {
       const initialMemory = process.memoryUsage();
-      
+
       // Process multiple files to test memory usage
       const files = await this.findFilesByPattern('.github/**/*.md');
-      
+
       for (const file of files) {
         const content = await fs.readFile(file, 'utf8');
         // Simulate processing
         this.processTemplate(content);
       }
-      
+
       const finalMemory = process.memoryUsage();
       const memoryIncrease = finalMemory.heapUsed - initialMemory.heapUsed;
       const memoryIncreaseKB = memoryIncrease / 1024;
-      
+
       return {
         passed: memoryIncreaseKB < 10000, // Should not use more than 10MB
         details: {
@@ -743,20 +743,20 @@ You are a test assistant for validating chat mode functionality.
     try {
       const files = await this.findFilesByPattern('.github/**/*.md');
       const testFiles = files.slice(0, 10);
-      
+
       const startTime = Date.now();
-      
+
       // Test concurrent processing
       const concurrentPromises = testFiles.map(async (file) => {
         const content = await fs.readFile(file, 'utf8');
         return this.processTemplate(content);
       });
-      
+
       const results = await Promise.all(concurrentPromises);
       const endTime = Date.now();
-      
+
       const successfulResults = results.filter(r => r !== null);
-      
+
       return {
         passed: successfulResults.length === testFiles.length,
         details: {
@@ -781,10 +781,10 @@ You are a test assistant for validating chat mode functionality.
   async scanDirectoryForPattern(dir, pattern, files) {
     try {
       const entries = await fs.readdir(dir, { withFileTypes: true });
-      
+
       for (const entry of entries) {
         const fullPath = join(dir, entry.name);
-        
+
         if (entry.isDirectory()) {
           if (!entry.name.startsWith('.') || pattern.includes('/.github/')) {
             await this.scanDirectoryForPattern(fullPath, pattern, files);
@@ -809,7 +809,7 @@ You are a test assistant for validating chat mode functionality.
       .replace(/\*/g, '[^/]*')
       .replace(/\{([^}]+)\}/g, '($1)')
       .replace(/,/g, '|');
-    
+
     const regex = new RegExp('^' + regexPattern + '$');
     return regex.test(relativePath);
   }
@@ -818,13 +818,13 @@ You are a test assistant for validating chat mode functionality.
   validateChatModeStructure(content) {
     const requiredSections = ['# ', '## Description', '## Role', '## Response Style', '## Examples'];
     const missingSections = [];
-    
+
     for (const section of requiredSections) {
       if (!content.includes(section)) {
         missingSections.push(section);
       }
     }
-    
+
     return {
       valid: missingSections.length === 0,
       missingSections,
@@ -834,13 +834,13 @@ You are a test assistant for validating chat mode functionality.
   validatePromptStructure(content) {
     const requiredSections = ['# ', '## Description', '## Usage'];
     const missingSections = [];
-    
+
     for (const section of requiredSections) {
       if (!content.includes(section)) {
         missingSections.push(section);
       }
     }
-    
+
     return {
       valid: missingSections.length === 0,
       missingSections,
@@ -854,14 +854,14 @@ You are a test assistant for validating chat mode functionality.
       'setRequestHandler',
       'async run()',
     ];
-    
+
     const missingElements = [];
     for (const element of requiredElements) {
       if (!content.includes(element)) {
         missingElements.push(element);
       }
     }
-    
+
     return {
       compliant: missingElements.length === 0,
       missingElements,
@@ -873,18 +873,18 @@ You are a test assistant for validating chat mode functionality.
     let totalReferences = 0;
     let validReferences = 0;
     const brokenReferences = [];
-    
+
     for (const file of files) {
       const content = await fs.readFile(file, 'utf8');
       const links = content.match(/\[.*?\]\((?!https?:\/\/)([^)]+)\)/g) || [];
-      
+
       for (const link of links) {
         totalReferences++;
         const urlMatch = link.match(/\[.*?\]\(([^)]+)\)/);
         if (urlMatch) {
           const linkedFile = urlMatch[1];
           const resolvedPath = join(dirname(file.replace(this.rootPath + '/', '')), linkedFile).replace(/\\/g, '/');
-          
+
           if (allFiles.has(resolvedPath) || allFiles.has(linkedFile)) {
             validReferences++;
           } else {
@@ -897,7 +897,7 @@ You are a test assistant for validating chat mode functionality.
         }
       }
     }
-    
+
     return {
       totalReferences,
       validReferences,
@@ -908,21 +908,21 @@ You are a test assistant for validating chat mode functionality.
   checkStyleCompliance(content) {
     const issues = [];
     const lines = content.split('\n');
-    
+
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i];
-      
+
       // Check for trailing whitespace
       if (line.endsWith(' ') || line.endsWith('\t')) {
         issues.push({ line: i + 1, type: 'trailing-whitespace' });
       }
-      
+
       // Check for very long lines
       if (line.length > 120) {
         issues.push({ line: i + 1, type: 'line-too-long', length: line.length });
       }
     }
-    
+
     return issues;
   }
 
@@ -931,11 +931,11 @@ You are a test assistant for validating chat mode functionality.
     const totalBlocks = codeBlocks.length;
     let validBlocks = 0;
     const invalidBlocks = [];
-    
+
     for (const block of codeBlocks) {
       const lines = block.split('\n');
       const firstLine = lines[0];
-      
+
       // Check if code block has language specified
       if (firstLine === '```') {
         invalidBlocks.push({ block: block.substring(0, 50), issue: 'no-language-specified' });
@@ -943,7 +943,7 @@ You are a test assistant for validating chat mode functionality.
         validBlocks++;
       }
     }
-    
+
     return {
       totalBlocks,
       validBlocks,
@@ -953,14 +953,14 @@ You are a test assistant for validating chat mode functionality.
 
   checkDocumentationCompleteness(content, requiredSections) {
     const missingSections = [];
-    
+
     for (const section of requiredSections) {
       const sectionPattern = section === 'title' ? /^#\s+/ : new RegExp(`##\\s+${section}`, 'i');
       if (!sectionPattern.test(content)) {
         missingSections.push(section);
       }
     }
-    
+
     return {
       complete: missingSections.length === 0,
       missingSections,
@@ -969,7 +969,7 @@ You are a test assistant for validating chat mode functionality.
 
   checkAccessibilityCompliance(content) {
     const issues = [];
-    
+
     // Check for images without alt text
     const images = content.match(/!\[([^\]]*)\]\([^)]+\)/g) || [];
     for (const image of images) {
@@ -978,11 +978,11 @@ You are a test assistant for validating chat mode functionality.
         issues.push({ type: 'missing-alt-text', element: image });
       }
     }
-    
+
     // Check for proper heading hierarchy
     const headings = content.match(/^#+\s+.+$/gm) || [];
     let previousLevel = 0;
-    
+
     for (const heading of headings) {
       const level = heading.match(/^#+/)[0].length;
       if (level > previousLevel + 1) {
@@ -990,7 +990,7 @@ You are a test assistant for validating chat mode functionality.
       }
       previousLevel = level;
     }
-    
+
     return issues;
   }
 
@@ -1000,14 +1000,14 @@ You are a test assistant for validating chat mode functionality.
       // Basic configuration validation
       const requiredFields = ['command', 'args'];
       const missingFields = requiredFields.filter(field => !config[field]);
-      
+
       if (missingFields.length > 0) {
         return {
           configValid: false,
           error: `Missing required fields: ${missingFields.join(', ')}`,
         };
       }
-      
+
       // Check if server file exists
       const serverPath = join(this.rootPath, config.command);
       try {
@@ -1032,7 +1032,7 @@ You are a test assistant for validating chat mode functionality.
       // Simulate chat mode processing
       const structure = this.validateChatModeStructure(content);
       const hasExamples = content.includes('**User**') && content.includes('**Assistant**');
-      
+
       return {
         functional: structure.valid && hasExamples,
         issues: structure.missingSections,
@@ -1049,14 +1049,14 @@ You are a test assistant for validating chat mode functionality.
     try {
       // Test if validator can be imported and basic functionality works
       const validatorExists = await fs.access(join(this.rootPath, '.github/validation/validators/meta-instruction-validator.js')).then(() => true).catch(() => false);
-      
+
       if (!validatorExists) {
         return {
           working: false,
           error: 'Validator file not found',
         };
       }
-      
+
       return {
         working: true,
         features: ['file-validation', 'structure-checking', 'report-generation'],
@@ -1085,14 +1085,14 @@ You are a test assistant for validating chat mode functionality.
     try {
       const files = await this.findFilesByPattern('.github/**/*.md');
       let validatedFiles = 0;
-      
+
       for (const file of files.slice(0, 5)) {
         const content = await fs.readFile(file, 'utf8');
         if (this.performBasicValidation(content)) {
           validatedFiles++;
         }
       }
-      
+
       return {
         passed: validatedFiles > 0,
         validatedFiles,
@@ -1109,7 +1109,7 @@ You are a test assistant for validating chat mode functionality.
       const hasMCPServers = await fs.access(join(this.rootPath, '.github/mcp/mcp-servers.json')).then(() => true).catch(() => false);
       const hasChatModes = await fs.access(join(this.rootPath, '.github/chatmodes')).then(() => true).catch(() => false);
       const hasPrompts = await fs.access(join(this.rootPath, '.github/prompts')).then(() => true).catch(() => false);
-      
+
       return {
         passed: hasValidator && hasMCPServers && hasChatModes && hasPrompts,
         components: { hasValidator, hasMCPServers, hasChatModes, hasPrompts },
@@ -1126,14 +1126,14 @@ You are a test assistant for validating chat mode functionality.
         timestamp: new Date().toISOString(),
         testData: 'integration-test',
       };
-      
+
       const reportPath = join(this.testResultsPath, 'test-report.json');
       await fs.writeFile(reportPath, JSON.stringify(testReport, null, 2));
-      
+
       // Verify file was created
       await fs.access(reportPath);
       await fs.unlink(reportPath); // Clean up
-      
+
       return { passed: true };
     } catch (error) {
       return { passed: false, error: error.message };
@@ -1146,7 +1146,7 @@ You are a test assistant for validating chat mode functionality.
       if (!content || content.trim().length === 0) {
         return null;
       }
-      
+
       return {
         processed: true,
         contentLength: content.length,
@@ -1170,7 +1170,7 @@ You are a test assistant for validating chat mode functionality.
   async generateIntegrationReport() {
     const timestamp = new Date().toISOString();
     const reportFile = join(this.testResultsPath, `integration-test-report-${timestamp.split('T')[0]}.json`);
-    
+
     const report = {
       timestamp,
       framework: 'Integration Test Framework',
@@ -1187,21 +1187,21 @@ You are a test assistant for validating chat mode functionality.
       },
       recommendations: this.generateTestRecommendations(),
     };
-    
+
     await fs.writeFile(reportFile, JSON.stringify(report, null, 2));
-    
+
     // Generate readable report
     const readableReport = this.generateReadableTestReport(report);
     const readableFile = join(this.testResultsPath, `integration-test-report-${timestamp.split('T')[0]}.md`);
     await fs.writeFile(readableFile, readableReport);
-    
+
     console.log(`📊 Integration test report saved to: ${reportFile}`);
     console.log(`📝 Readable report saved to: ${readableFile}`);
   }
 
   generateTestRecommendations() {
     const recommendations = [];
-    
+
     if (this.metrics.failed > 0) {
       recommendations.push({
         priority: 'high',
@@ -1210,7 +1210,7 @@ You are a test assistant for validating chat mode functionality.
         action: 'Review failed test details and fix underlying issues',
       });
     }
-    
+
     if (this.metrics.skipped > this.metrics.totalTests * 0.1) {
       recommendations.push({
         priority: 'medium',
@@ -1219,7 +1219,7 @@ You are a test assistant for validating chat mode functionality.
         action: 'Review skipped tests and enable where appropriate',
       });
     }
-    
+
     if (this.totalTestTime > 30000) {
       recommendations.push({
         priority: 'low',
@@ -1228,30 +1228,30 @@ You are a test assistant for validating chat mode functionality.
         action: 'Consider optimizing test performance and parallel execution',
       });
     }
-    
+
     return recommendations;
   }
 
   generateReadableTestReport(report) {
     const { timestamp, duration, metrics, testSuites, summary, recommendations } = report;
-    
+
     let md = `# Integration Test Report\n\n`;
     md += `**Generated**: ${timestamp}\n`;
     md += `**Duration**: ${duration}ms\n\n`;
-    
+
     md += `## Summary\n\n`;
     md += `- **Total Tests**: ${summary.totalTests}\n`;
     md += `- **Passed**: ${summary.passed}\n`;
     md += `- **Failed**: ${summary.failed}\n`;
     md += `- **Skipped**: ${summary.skipped}\n`;
     md += `- **Success Rate**: ${summary.successRate}%\n\n`;
-    
+
     md += `## Test Suites\n\n`;
-    
+
     testSuites.forEach(suite => {
       md += `### ${suite.name}\n\n`;
       md += `**Duration**: ${suite.duration}ms\n\n`;
-      
+
       suite.tests.forEach(test => {
         const status = test.status === 'passed' ? '✅' : test.status === 'failed' ? '❌' : '⏭️';
         md += `- ${status} **${test.name}** (${test.duration}ms)\n`;
@@ -1261,7 +1261,7 @@ You are a test assistant for validating chat mode functionality.
       });
       md += `\n`;
     });
-    
+
     if (recommendations.length > 0) {
       md += `## Recommendations\n\n`;
       recommendations.forEach((rec, index) => {
@@ -1269,7 +1269,7 @@ You are a test assistant for validating chat mode functionality.
         md += `   - Action: ${rec.action}\n\n`;
       });
     }
-    
+
     return md;
   }
 
@@ -1283,10 +1283,10 @@ You are a test assistant for validating chat mode functionality.
     console.log(`⏱️  Setup Time:        ${this.metrics.setupTime}ms`);
     console.log(`⚡ Execution Time:    ${this.metrics.executionTime}ms`);
     console.log(`🕐 Total Time:        ${this.totalTestTime}ms`);
-    
+
     const successRate = ((this.metrics.passed / this.metrics.totalTests) * 100);
     console.log(`📊 Success Rate:      ${successRate.toFixed(1)}%`);
-    
+
     if (this.metrics.failed > 0) {
       console.log('\n🚨 Critical failures found that should be addressed immediately.');
     } else if (this.metrics.skipped > 0) {
@@ -1294,7 +1294,7 @@ You are a test assistant for validating chat mode functionality.
     } else {
       console.log('\n🎉 All integration tests passed successfully!');
     }
-    
+
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
   }
 }
@@ -1304,9 +1304,9 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   const framework = new IntegrationTestFramework({
     rootPath: process.cwd(),
   });
-  
+
   const options = {};
-  
+
   // Parse simple CLI arguments
   const args = process.argv.slice(2);
   for (let i = 0; i < args.length; i++) {
@@ -1316,7 +1316,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
       options.skipSuites = (options.skipSuites || []).concat(['system-integration']);
     }
   }
-  
+
   framework.runIntegrationTests(options)
     .then(() => {
       process.exit(framework.metrics.failed > 0 ? 1 : 0);

@@ -29,27 +29,27 @@ program
   .action(async (options) => {
     try {
       console.log(chalk.blue('🔧 GitHub Copilot Template Validation System\n'));
-      
+
       // Load configuration
       const config = await loadConfiguration(options.config);
-      
+
       // Override config with CLI options
       if (options.output) config.validation.outputDirectory = options.output;
       if (options.format) config.validation.reportFormat = options.format;
       if (options.strict) config.validation.strictMode = true;
       if (options.noIntegration) config.integration.enabled = false;
       if (options.noPerformance) config.performance.enabled = false;
-      
+
       // Create validation system
       const validator = new TemplateValidationSystem({
         rootPath: process.cwd(),
         config: config,
         verbose: options.verbose
       });
-      
+
       // Run validation
       const result = await validator.validateTemplateSystem();
-      
+
       if (result.success) {
         console.log(chalk.green('\n✅ Template validation completed successfully!'));
         process.exit(0);
@@ -57,7 +57,7 @@ program
         console.log(chalk.red('\n❌ Template validation failed!'));
         process.exit(1);
       }
-      
+
     } catch (error) {
       console.error(chalk.red('❌ Validation error:'), error.message);
       if (options.verbose) {
@@ -74,13 +74,13 @@ program
   .action(async (options) => {
     try {
       console.log(chalk.blue('🔧 Initializing template validation configuration...\n'));
-      
+
       const configDir = options.output;
       const configFile = join(configDir, 'validation-config.json');
-      
+
       // Create directory if it doesn't exist
       await fs.mkdir(configDir, { recursive: true });
-      
+
       // Check if config already exists
       try {
         await fs.access(configFile);
@@ -90,16 +90,16 @@ program
       } catch (error) {
         // File doesn't exist, continue
       }
-      
+
       // Create default configuration
       const defaultConfig = await getDefaultConfiguration();
       await fs.writeFile(configFile, JSON.stringify(defaultConfig, null, 2));
-      
+
       console.log(chalk.green('✅ Configuration initialized:'), configFile);
       console.log(chalk.blue('Next steps:'));
       console.log('  1. Review and customize the configuration');
       console.log('  2. Run validation: template-validator validate');
-      
+
     } catch (error) {
       console.error(chalk.red('❌ Initialization error:'), error.message);
       process.exit(1);
@@ -114,34 +114,34 @@ program
   .action(async (options) => {
     try {
       console.log(chalk.blue('🔍 Quick template validation check...\n'));
-      
+
       const validator = new TemplateValidationSystem({
         rootPath: process.cwd(),
         quickCheck: true
       });
-      
+
       let files = [];
-      
+
       if (options.file) {
         files = [options.file];
       } else {
         files = await validator.discoverTemplateFiles();
-        
+
         if (options.type) {
-          files = files.filter(file => 
+          files = files.filter(file =>
             validator.determineTemplateType(file, '') === options.type
           );
         }
       }
-      
+
       console.log(chalk.gray(`Checking ${files.length} file(s)...`));
-      
+
       let errors = 0;
       let warnings = 0;
-      
+
       for (const file of files) {
         const result = await validator.validateTemplateStructure(file);
-        
+
         if (result.errors > 0) {
           console.log(chalk.red('❌'), file.replace(process.cwd() + '/', ''));
           errors += result.errors;
@@ -152,12 +152,12 @@ program
           console.log(chalk.green('✅'), file.replace(process.cwd() + '/', ''));
         }
       }
-      
+
       console.log(chalk.blue('\nSummary:'));
       console.log(`  Files checked: ${files.length}`);
       console.log(`  Errors: ${errors}`);
       console.log(`  Warnings: ${warnings}`);
-      
+
       if (errors > 0) {
         console.log(chalk.red('\nRun full validation for detailed error information.'));
         process.exit(1);
@@ -165,7 +165,7 @@ program
         console.log(chalk.green('\n✅ Quick check completed successfully!'));
         process.exit(0);
       }
-      
+
     } catch (error) {
       console.error(chalk.red('❌ Check error:'), error.message);
       process.exit(1);
@@ -181,10 +181,10 @@ program
   .action(async (options) => {
     try {
       console.log(chalk.blue('📊 Generating validation report...\n'));
-      
+
       // Implementation for generating reports from existing data
       console.log(chalk.yellow('📋 Report generation functionality coming soon...'));
-      
+
     } catch (error) {
       console.error(chalk.red('❌ Report error:'), error.message);
       process.exit(1);
@@ -194,7 +194,7 @@ program
 async function loadConfiguration(configPath) {
   const defaultConfigPath = join(process.cwd(), '.github/validation/templates/validation-config.json');
   const targetPath = configPath || defaultConfigPath;
-  
+
   try {
     const configContent = await fs.readFile(targetPath, 'utf8');
     return JSON.parse(configContent);
@@ -202,7 +202,7 @@ async function loadConfiguration(configPath) {
     if (configPath) {
       throw new Error(`Could not load configuration from ${configPath}: ${error.message}`);
     }
-    
+
     // Return default configuration if no config file found
     console.log(chalk.yellow('⚠️  No configuration file found, using defaults'));
     return await getDefaultConfiguration();

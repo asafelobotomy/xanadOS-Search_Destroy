@@ -1219,9 +1219,7 @@ class FileScanner:
                                     file_size = file_stat.st_size
                                     file_hash = hashlib.sha256(
                                         Path(file_path).read_bytes()
-                                    ).hexdigest()[
-                                        :16
-                                    ]  # Short hash
+                                    ).hexdigest()[:16]  # Short hash
                                 except OSError:
                                     pass
 

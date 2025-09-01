@@ -80,8 +80,11 @@ install_uv() {
         exit 1
     fi
 
-    # Add uv to PATH for current session
-    export PATH="$HOME/.cargo/bin:$PATH"
+    # Add uv to PATH for current session (uv installs to ~/.local/bin by default)
+    export PATH="$HOME/.local/bin:$PATH"
+
+    # Give the system a moment to recognize the new installation
+    sleep 1
 
     if command_exists uv; then
         log_success "uv installed successfully"

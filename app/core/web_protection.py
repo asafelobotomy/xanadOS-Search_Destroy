@@ -23,6 +23,8 @@ import aiohttp
 # Guarded DNS import with fallback to a lightweight mock to avoid redefinition
 try:
     import dns.resolver  # type: ignore[import-not-found]
+
+    DNS_AVAILABLE = True
 except Exception:  # ImportError or environment without dnspython
 
     class _MockDNSResolver:
@@ -38,6 +40,7 @@ except Exception:  # ImportError or environment without dnspython
             NXDOMAIN = Exception
 
     dns = _MockDNSModule()  # type: ignore[assignment]
+    DNS_AVAILABLE = False
 
 
 class ThreatCategory(Enum):
@@ -1386,7 +1389,3 @@ class WebProtectionSystem:
     ):
         """Set callback for suspicious activity."""
         self.suspicious_activity_callback = callback
-
-    logging.getLogger(__name__).warning(
-        "DNS resolver not available, some features may not work"
-    )

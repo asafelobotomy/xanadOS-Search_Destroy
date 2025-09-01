@@ -73,10 +73,12 @@
 The update from 2.7.x to 2.8.0 follows semantic versioning principles:
 
 1. **New Features Added**:
+
 - Complete setup wizard implementation (1,174 lines)
 - Distribution detection system
 - Automated package installation for ClamAV, UFW, RKHunter
 - Enhanced GUI integration with themed widgets
+
 2. **Backward Compatibility**: All existing functionality preserved
 3. **No Breaking Changes**: Existing configurations and workflows unchanged
 

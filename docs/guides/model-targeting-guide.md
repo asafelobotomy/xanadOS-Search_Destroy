@@ -53,21 +53,28 @@ for security development, testing, and analysis scenarios.
 ### When to Use Advanced Models
 
 1. **Claude Sonnet 4** - Choose for:
+
 - Complex system architecture design
 - Advanced reasoning requirements
 - Comprehensive system analysis
 - Sophisticated problem-solving
+
 2. **GPT-5** - Choose for:
+
 - Next-generation development projects
 - Multimodal capabilities needed
 - Enhanced reasoning requirements
 - Complex project management
+
 3. **Gemini Pro** - Choose for:
+
 - Google ecosystem projects
 - Multimodal development needs
 - Advanced integration requirements
 - Comprehensive analysis tasks
+
 4. **OpenAI o1-preview** - Choose for:
+
 - Mathematical problem-solving
 - Deep reasoning requirements
 - Complex algorithmic development

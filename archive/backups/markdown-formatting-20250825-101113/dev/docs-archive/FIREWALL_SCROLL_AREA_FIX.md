@@ -52,7 +52,7 @@ def build_firewall_page(host):
     layout.setSpacing(20)  # Better spacing between sections
     layout.setContentsMargins(15, 15, 15, 15)  # Add margins
 
-## ... all content added to layout 
+## ... all content added to layout
 
 ## Set up scroll area
 

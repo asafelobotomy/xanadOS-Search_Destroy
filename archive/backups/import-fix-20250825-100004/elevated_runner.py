@@ -29,12 +29,12 @@ def _sanitize_env(gui: bool = True) -> dict:
         'HOME': '/root',
         'SHELL': '/bin/bash',
     }
-    
+
     if gui and os.environ.get('DISPLAY'):
         env['DISPLAY'] = os.environ['DISPLAY']
         if os.environ.get('XAUTHORITY'):
             env['XAUTHORITY'] = os.environ['XAUTHORITY']
-    
+
     return env
 
 
@@ -42,14 +42,14 @@ def elevated_run(argv: Sequence[str], *, timeout: int = 300, capture_output: boo
                 text: bool = True, gui: bool = True) -> subprocess.CompletedProcess:
     """
     Run command with elevated privileges using persistent GUI authentication.
-    
+
     Args:
         argv: Command to run (without sudo/pkexec prefix)
         timeout: Command timeout in seconds
         capture_output: Whether to capture stdout/stderr
         text: Whether to use text mode
         gui: Whether to prefer GUI authentication
-    
+
     Returns:
         subprocess.CompletedProcess result
     """
@@ -79,29 +79,29 @@ def _legacy_elevated_run(argv: Sequence[str], *, timeout: int = 300, capture_out
     # Find available privilege escalation tools
     sudo = _which("sudo")
     pkexec = _which("pkexec") if gui else None
-    
+
     if not (sudo or pkexec):
         return subprocess.CompletedProcess(argv, 1, "", "No privilege escalation tool available")
 
     # Prepare environment
     env = _sanitize_env(gui=gui)
-    
+
     # Try methods in priority order
     methods = []
-    
+
     if sudo:
         # 1. Passwordless sudo (first priority - fastest and most secure)
         methods.append(("sudo-nopass", [sudo, "-n"] + list(argv), env))
-    
+
     if sudo and gui and os.environ.get("DISPLAY"):
         # 2. GUI sudo with askpass helper (second priority - good user experience)
         askpass_helpers = [
             "/usr/bin/ksshaskpass",
-            "/usr/bin/ssh-askpass", 
+            "/usr/bin/ssh-askpass",
             "/usr/bin/x11-ssh-askpass",
             "/usr/bin/lxqt-openssh-askpass"
         ]
-        
+
         for helper in askpass_helpers:
             if _which(helper.split('/')[-1]):  # Check if helper exists
                 logger.info(f"Using GUI sudo with {helper}")
@@ -109,13 +109,13 @@ def _legacy_elevated_run(argv: Sequence[str], *, timeout: int = 300, capture_out
                 env_with_askpass["SUDO_ASKPASS"] = helper
                 methods.append(("sudo-gui", [sudo, "-A"] + list(argv), env_with_askpass))
                 break
-    
+
     # pkexec moved to lower priority (only as fallback)
     if gui and pkexec:
         # 3. pkexec (fallback GUI method - less persistent than sudo)
         env_wrap = [pkexec, "env"] + [f"{k}={v}" for k, v in env.items()]
         methods.append(("pkexec-fallback", env_wrap + list(argv), env))
-    
+
     if sudo:
         # 4. Terminal sudo (last resort)
         methods.append(("sudo-terminal", [sudo] + list(argv), env))
@@ -131,21 +131,21 @@ def _legacy_elevated_run(argv: Sequence[str], *, timeout: int = 300, capture_out
                 text=text,
                 env=method_env
             )
-            
+
             if result.returncode == 0:
                 logger.info(f"Success with {method_name}")
                 return result
             else:
                 logger.debug(f"{method_name} failed with return code {result.returncode}")
-                
+
         except subprocess.TimeoutExpired:
             logger.warning(f"{method_name} timed out")
         except Exception as e:
             logger.debug(f"{method_name} error: {e}")
-    
+
     # If all methods failed, return the last result or create a failure result
     return subprocess.CompletedProcess(argv, 1, "", "All privilege escalation methods failed")
-    
+
     # Try each method
     for method_name, cmd, method_env in methods:
         try:
@@ -157,18 +157,18 @@ def _legacy_elevated_run(argv: Sequence[str], *, timeout: int = 300, capture_out
                 text=text,
                 env=method_env
             )
-            
+
             if result.returncode == 0:
                 logger.info(f"Success with {method_name}")
                 return result
             else:
                 logger.debug(f"{method_name} failed with return code {result.returncode}")
-                
+
         except subprocess.TimeoutExpired:
             logger.warning(f"{method_name} timed out")
         except Exception as e:
             logger.debug(f"{method_name} error: {e}")
-    
+
     # If all methods failed, return the last result or create a failure result
     return subprocess.CompletedProcess(argv, 1, "", "All privilege escalation methods failed")
 
@@ -176,7 +176,7 @@ def _legacy_elevated_run(argv: Sequence[str], *, timeout: int = 300, capture_out
 def validate_auth_session() -> bool:
     """
     Simple authentication validation - just try a basic command.
-    
+
     Returns:
         True if authentication works, False otherwise
     """
@@ -192,14 +192,14 @@ def elevated_popen(argv: Sequence[str], *, gui: bool = True, text: bool = True,
                    stdout=subprocess.PIPE, stderr=subprocess.PIPE, bufsize: int = 1) -> subprocess.Popen:
     """
     Start a privileged process using persistent GUI authentication, returning Popen for streaming.
-    
+
     Args:
         argv: Command to run (without sudo/pkexec prefix)
         gui: Whether to prefer GUI authentication
         text: Whether to use text mode
         stdout, stderr: Pipe configuration
         bufsize: Buffer size
-    
+
     Returns:
         subprocess.Popen object
     """
@@ -229,29 +229,29 @@ def _legacy_elevated_popen(argv: Sequence[str], *, gui: bool = True, text: bool 
     # Find available privilege escalation tools
     sudo = _which("sudo")
     pkexec = _which("pkexec") if gui else None
-    
+
     if not (sudo or pkexec):
         raise RuntimeError("No privilege escalation tool available")
-    
+
     # Prepare environment
     env = _sanitize_env(gui=gui)
-    
+
     # Try methods in priority order
     methods = []
-    
+
     if sudo:
         # 1. Passwordless sudo (first priority - fastest and most secure)
         methods.append(("sudo-nopass", [sudo, "-n"] + list(argv), env))
-    
+
     if sudo and gui and os.environ.get("DISPLAY"):
         # 2. GUI sudo with askpass helper (second priority - good user experience)
         askpass_helpers = [
             "/usr/bin/ksshaskpass",
-            "/usr/bin/ssh-askpass", 
+            "/usr/bin/ssh-askpass",
             "/usr/bin/x11-ssh-askpass",
             "/usr/bin/lxqt-openssh-askpass"
         ]
-        
+
         for helper in askpass_helpers:
             if _which(helper.split('/')[-1]):  # Check if helper exists
                 logger.info(f"Using GUI sudo with {helper}")
@@ -259,17 +259,17 @@ def _legacy_elevated_popen(argv: Sequence[str], *, gui: bool = True, text: bool 
                 env_with_askpass["SUDO_ASKPASS"] = helper
                 methods.append(("sudo-gui", [sudo, "-A"] + list(argv), env_with_askpass))
                 break
-    
+
     # pkexec moved to lower priority (only as fallback)
     if gui and pkexec:
         # 3. pkexec (fallback GUI method - less persistent than sudo)
         env_wrap = [pkexec, "env"] + [f"{k}={v}" for k, v in env.items()]
         methods.append(("pkexec-fallback", env_wrap + list(argv), env))
-    
+
     if sudo:
         # 4. Terminal sudo (last resort)
         methods.append(("sudo-terminal", [sudo] + list(argv), env))
-    
+
     # Try each method until one works
     last_error = None
     for method_name, cmd, method_env in methods:
@@ -285,11 +285,11 @@ def _legacy_elevated_popen(argv: Sequence[str], *, gui: bool = True, text: bool 
             )
             logger.info(f"Process started with {method_name}, PID: {process.pid}")
             return process
-            
+
         except Exception as e:
             logger.debug(f"{method_name} popen error: {e}")
             last_error = e
-    
+
     # If all methods failed, raise the last error
     raise RuntimeError(f"All privilege escalation methods failed. Last error: {last_error}")
 
@@ -312,7 +312,7 @@ def cleanup_auth_session() -> None:
 def validate_auth_session() -> bool:
     """
     Validate authentication session using GUI authentication manager.
-    
+
     Returns:
         True if authentication works, False otherwise
     """
@@ -327,7 +327,7 @@ def validate_auth_session() -> bool:
         logger.debug("GUI authentication manager not available for validation")
     except Exception as e:
         logger.debug(f"Error validating GUI authentication session: {e}")
-    
+
     # Fallback to simple test
     try:
         result = elevated_run(["true"], timeout=30)

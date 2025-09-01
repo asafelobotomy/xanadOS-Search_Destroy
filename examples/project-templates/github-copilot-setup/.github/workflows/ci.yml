@@ -2,108 +2,55 @@ name: CI
 
 on:
   push:
-    branches: [ main,      - name: Run tests (if configured)
-        if: inputs.run-tests == true
-        run: |
-          if [ -f package.json ] && jq -e '.scripts.test' package.json >/dev/null 2>&1; then
-            npm test --silent -- --reporter=dot || npm test
-          elif [ -f pyproject.toml ] || [ -f requirements.txt ] || ls -1 tests 2>/dev/null | grep -q .; then
-            python -m pip install --upgrade pip || true
-            pip install pytest || true
-            pytest -q || pytest
-          else
-            echo "No tests detected; add minimal tests under tests/."
-            exit 1
-          fi
-
-      - name: Security scan
-        run: |
-          # Check for common secrets patterns
-          if command -v grep >/dev/null 2>&1; then
-            if grep -r --include="*.py" --include="*.js" --include="*.ts" --include="*.java" --include="*.go" --include="*.cs" --include="*.rb" --include="*.rs" -E "(password|secret|key|token|api_key)\s*=\s*['\"][^'\"]{8,}" . && exit 1; then
-              echo "Potential hardcoded secrets detected!"
-              exit 1
-            fi
-          fi
-          
-          # Run semgrep if available
-          if command -v semgrep >/dev/null 2>&1; then
-            semgrep --config=auto --error || echo "Semgrep scan completed with findings"
-          fi
-
-      - name: Dependency audit
-        run: |
-          if [ -f package.json ]; then
-            npm audit --audit-level=high || echo "npm audit found issues"
-          elif [ -f requirements.txt ]; then
-            pip install pip-audit 2>/dev/null || echo "pip-audit not available"
-            pip-audit 2>/dev/null || echo "pip-audit completed"
-          elif [ -f go.mod ]; then
-            go list -json -deps ./... | nancy sleuth 2>/dev/null || echo "nancy scan completed"
-          fi
-
-      - name: Accessibility check (if frontend)
-        run: |
-          if [ -d "src" ] && (ls src/**/*.{tsx,jsx,vue,svelte} 2>/dev/null | head -1); then
-            echo "Frontend code detected - consider running accessibility tests"
-            # Add axe-core or lighthouse CI when available
-            if command -v lighthouse >/dev/null 2>&1; then
-              echo "Run: lighthouse --accessibility --output json --output-path lighthouse-a11y.json http://localhost:3000"
-            fi
-          fi
-
-      - name: API documentation check
-        run: |
-          if [ -d "api" ] || grep -r "FastAPI\|Express\|Spring" . >/dev/null 2>&1; then
-            echo "API code detected - ensure OpenAPI/Swagger documentation is present"
-            find . -name "*.yaml" -o -name "*.yml" | grep -i "openapi\|swagger" || echo "Consider adding OpenAPI specification"
-          fipull_request:
-    branches: [ main, master ]
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
 
 jobs:
-  checks:
+  test:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
+      - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Verify structure
-        run: |
-          if [ -f scripts/verify-structure.sh ]; then
-            bash scripts/verify-structure.sh
-          else
-            echo "scripts/verify-structure.sh missing; copy from the Coding & Development Bible pack."
-            exit 1
-          fi
-
-      - name: Setup Node (if JS/TS)
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-        continue-on-error: true
-
-      - name: Install and Lint (if npm project)
-        run: |
-          if [ -f package.json ]; then
-            npm ci
-            if jq -e '.scripts.lint' package.json >/dev/null 2>&1; then npm run lint; fi
-          fi
-
-      - name: Setup Python (if Python)
-        uses: actions/setup-python@v5
+      - name: Set up Python
+        uses: actions/setup-python@v4
         with:
           python-version: '3.11'
-        continue-on-error: true
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+          if [ -f requirements-dev.txt ]; then pip install -r requirements-dev.txt; fi
 
       - name: Run tests
         run: |
-          if [ -f package.json ] && jq -e '.scripts.test' package.json >/dev/null 2>&1; then
-            npm test --silent -- --reporter=dot || npm test
-          elif ls -1 tests 2>/dev/null | grep -q .; then
-            python -m pip install --upgrade pip
-            pip install pytest
+          if [ -f pyproject.toml ] || [ -f requirements.txt ] || ls -1 tests 2>/dev/null | grep -q .; then
+            python -m pip install pytest || true
             pytest -q || pytest
           else
             echo "No tests detected; add minimal tests under tests/."
             exit 1
           fi
+
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install linting tools
+        run: |
+          python -m pip install --upgrade pip
+          pip install ruff
+
+      - name: Run linter
+        run: |
+          ruff check .
+          ruff format --check .

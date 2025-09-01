@@ -18,35 +18,47 @@ This is a major update featuring a complete theme system overhaul and comprehens
 ### 🔧 Technical Improvements
 
 1. **Enhanced Manifest (`io.GitHub.asafelobotomy.SearchAndDestroy.yml`)**:
+
 - Updated to use Git source instead of local directory
 - Proper ClamAV integration with system installation
 - Optimized filesystem permissions for security
 - Complete Python dependency specification
+
 2. **Metadata Enhancements (`io.GitHub.asafelobotomy.SearchAndDestroy.metainfo.XML`)**:
+
 - Added comprehensive release notes for v2.4.1
 - Included developer information and multiple URL types
 - Added placeholder for screenshots (to be added when available)
 - Updated categories and keywords for better discoverability
+
 3. **Build System (`python3-requirements.JSON`)**:
+
 - All Python dependencies with exact versions and checksums
 - Network-free build process compliance
 - Modular dependency management
+
 4. **Architecture Configuration (`flathub.JSON`)**:
+
 - Explicit support for x86_64 and aarch64
 - Proper architecture targeting
 
 ### 🛠️ Development Tools
 
 1. **Preparation Script (`scripts/prepare-flathub.sh`)**:
+
 - Validates all required files
 - Creates release tags automatically
 - Updates manifests with correct commit hashes
 - Provides step-by-step submission guidance
+
 2. **Build Testing Script (`scripts/test-flatpak-build.sh`)**:
+
 - Local Flatpak build testing
 - Automated installation and cleanup
 - Build validation and error reporting
+
 3. **Comprehensive Documentation (`docs/deployment/FLATHUB_SUBMISSION.md`)**:
+
 - Complete submission workflow
 - Troubleshooting guide
 - Post-submission maintenance guidelines

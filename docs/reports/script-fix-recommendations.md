@@ -5,7 +5,9 @@
 ### 1. scripts/validation/validate-agent-workflow.sh
 
 #### Issue: Array handling and file counting (Lines 84-89)
+
 **Current Code:**
+
 ```bash
 ROOT_FILES=($(ls -1 | grep -v "^[.]" | grep -v "^docs$" | grep -v "^scripts$" | grep -v "^archive$" | grep -v "^examples$" | wc -l))
 if [ "$ROOT_FILES" -le 10 ]; then
@@ -13,6 +15,7 @@ if [ "$ROOT_FILES" -le 10 ]; then
 ```
 
 **Fixed Code:**
+
 ```bash
 # Count files properly without ls | grep
 shopt -s nullglob dotglob
@@ -36,17 +39,21 @@ fi
 ```
 
 #### Issue: Unused function (Line 34)
+
 **Action:** Remove unused `print_warning()` function or add comment if intentionally reserved
 
 ### 2. scripts/validation/validate-version-control.sh
 
 #### Issue: Declare and assign separately (Multiple locations)
+
 **Current Pattern:**
+
 ```bash
 local template_file=$(git config --get commit.template)
 ```
 
 **Fixed Pattern:**
+
 ```bash
 local template_file
 template_file=$(git config --get commit.template)
@@ -55,12 +62,15 @@ template_file=$(git config --get commit.template)
 **Apply to lines:** 58, 69, 77, 164, 209, 253, 319
 
 #### Issue: Missing quotes (Line 254)
+
 **Current Code:**
+
 ```bash
 if [ $untracked_count -eq 0 ]; then
 ```
 
 **Fixed Code:**
+
 ```bash
 if [ "$untracked_count" -eq 0 ]; then
 ```
@@ -70,7 +80,9 @@ if [ "$untracked_count" -eq 0 ]; then
 ### 1. app/main.py
 
 #### Issue: Import order (Line 16)
+
 **Current Code:**
+
 ```python
 import logging
 import sys
@@ -82,6 +94,7 @@ from app.core.single_instance import SingleInstanceManager
 ```
 
 **Fixed Code:**
+
 ```python
 import logging
 import sys
@@ -93,7 +106,9 @@ from app.core.single_instance import SingleInstanceManager
 ```
 
 #### Issue: Broad exception handling (Line 42)
+
 **Current Code:**
+
 ```python
 try:
     # startup code
@@ -102,6 +117,7 @@ except Exception:
 ```
 
 **Fixed Code:**
+
 ```python
 try:
     # startup code
@@ -113,12 +129,15 @@ except (ImportError, RuntimeError) as e:
 ### 2. Security Improvements
 
 #### Subprocess Security Pattern
+
 **Current Pattern:**
+
 ```python
 result = subprocess.run([command, arg], capture_output=True)
 ```
 
 **Improved Pattern:**
+
 ```python
 def secure_subprocess_run(command_path, args, **kwargs):
     """Run subprocess with security validation."""
@@ -134,7 +153,9 @@ def secure_subprocess_run(command_path, args, **kwargs):
 ```
 
 #### Try/Except/Pass Improvement
+
 **Current Pattern:**
+
 ```python
 try:
     risky_operation()
@@ -143,6 +164,7 @@ except Exception:
 ```
 
 **Improved Pattern:**
+
 ```python
 try:
     risky_operation()
@@ -153,12 +175,15 @@ except Exception as e:
 ```
 
 #### Temporary Directory Security
+
 **Current Pattern:**
+
 ```python
 temp_dir = "/tmp"
 ```
 
 **Improved Pattern:**
+
 ```python
 import tempfile
 import os
@@ -209,16 +234,19 @@ echo "Fixes applied successfully!"
 ## Priority Implementation Order
 
 ### High Priority (Fix Immediately)
+
 1. **Shell Script Array Handling**: Fix the ROOT_FILES array issue in validate-agent-workflow.sh
 2. **Variable Quoting**: Add quotes around variables in shell scripts
 3. **Import Organization**: Fix Python import order issues
 
 ### Medium Priority (Fix in Next Sprint)
+
 1. **Exception Handling**: Replace broad exception catching with specific handlers
 2. **Subprocess Security**: Implement command validation for subprocess calls
 3. **Temporary Directory Security**: Replace hardcoded paths with secure alternatives
 
 ### Low Priority (Technical Debt)
+
 1. **Code Organization**: Split large files into smaller modules
 2. **Unused Functions**: Remove or document unused functions
 3. **Style Consistency**: Apply consistent formatting across all files
@@ -226,6 +254,7 @@ echo "Fixes applied successfully!"
 ## Testing Strategy
 
 ### Before Applying Fixes
+
 ```bash
 # Test current functionality
 ./scripts/validation/validate-agent-workflow.sh
@@ -234,6 +263,7 @@ python3 app/main.py --version
 ```
 
 ### After Applying Fixes
+
 ```bash
 # Verify functionality still works
 shellcheck scripts/validation/*.sh
@@ -243,6 +273,7 @@ python3 app/main.py --version
 ```
 
 ### Regression Testing
+
 ```bash
 # Full test suite
 npm run validate  # If available

@@ -721,7 +721,7 @@ def monitor_refactoring_impact():
 
     baseline_report = metrics.generate_metrics_report()
 
-## ... perform refactoring 
+## ... perform refactoring
 
 ## Post-refactoring metrics
 

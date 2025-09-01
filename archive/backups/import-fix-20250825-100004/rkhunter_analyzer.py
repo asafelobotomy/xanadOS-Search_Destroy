@@ -239,7 +239,7 @@ class RKHunterWarningAnalyzer:
         """Get color code for severity level."""
         colors = {
             SeverityLevel.LOW: "#28a745",      # Green
-            SeverityLevel.MEDIUM: "#ffc107",   # Yellow  
+            SeverityLevel.MEDIUM: "#ffc107",   # Yellow
             SeverityLevel.HIGH: "#fd7e14",     # Orange
             SeverityLevel.CRITICAL: "#dc3545"  # Red
         }
@@ -249,7 +249,7 @@ class RKHunterWarningAnalyzer:
         """Get icon for severity level."""
         icons = {
             SeverityLevel.LOW: "ℹ️",
-            SeverityLevel.MEDIUM: "⚠️", 
+            SeverityLevel.MEDIUM: "⚠️",
             SeverityLevel.HIGH: "🚨",
             SeverityLevel.CRITICAL: "🔴"
         }
@@ -258,7 +258,7 @@ class RKHunterWarningAnalyzer:
     def format_explanation(self, explanation: WarningExplanation, warning_text: str) -> str:
         """Format explanation as readable text."""
         icon = self.get_severity_icon(explanation.severity)
-        
+
         formatted = f"""
 {icon} {explanation.title}
 

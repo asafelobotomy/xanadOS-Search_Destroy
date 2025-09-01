@@ -13,23 +13,23 @@ finish-args:
   - --share=ipc
   - --socket=fallback-x11
   - --socket=wayland
-  
+
   # File system access through portal for security
   - --filesystem=xdg-run/app/org.freedesktop.portal.Documents:create
   # Limited read access for antivirus scanning
   - --filesystem=home:ro
   - --filesystem=xdg-download
   - --filesystem=xdg-documents
-  
+
   # Network access for virus definition updates
   - --share=network
-  
+
   # System integration and portals
   - --talk-name=org.freedesktop.Notifications
   - --talk-name=org.freedesktop.portal.FileChooser
   - --talk-name=org.freedesktop.portal.Desktop
   - --talk-name=org.freedesktop.portal.Documents
-  
+
   # ClamAV related access
   - --filesystem=/var/lib/clamav:ro
 

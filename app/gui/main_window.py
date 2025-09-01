@@ -1245,9 +1245,9 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
         else:
             # Just update the config if the protection tab doesn't exist yet
             self.config["security_settings"] = self.config.get("security_settings", {})
-            self.config["security_settings"][
-                "real_time_protection"
-            ] = self.monitoring_enabled
+            self.config["security_settings"]["real_time_protection"] = (
+                self.monitoring_enabled
+            )
             save_config(self.config)
 
             if self.monitoring_enabled:
@@ -5425,9 +5425,7 @@ System        {perf_status}"""
                     self._scan_directories_info = {}
                     self._last_displayed_directory = None
                     self._scanned_directories = []  # Use list to maintain order
-                    self._completed_directories = (
-                        []
-                    )  # Track truly completed directories
+                    self._completed_directories = []  # Track truly completed directories
 
                 # Track files by directory
                 if current_dir not in self._scan_directories_info:
@@ -5739,9 +5737,8 @@ System        {perf_status}"""
                 return
 
             # Handle system summary sections with better formatting
-            if (
-                formatted_line == "System checks summary"
-                or formatted_line == "=" * len(formatted_line)
+            if formatted_line == "System checks summary" or formatted_line == "=" * len(
+                formatted_line
             ):  # Handle separator lines
                 if formatted_line == "System checks summary":
                     self._append_with_autoscroll("")  # Add spacing
@@ -10824,9 +10821,9 @@ Common False Positives:
                     checkbox,
                 ) in self.settings_rkhunter_category_checkboxes.items():
                     rkhunter_categories[category_id] = checkbox.isChecked()
-                settings_updates["rkhunter_settings"][
-                    "categories"
-                ] = rkhunter_categories
+                settings_updates["rkhunter_settings"]["categories"] = (
+                    rkhunter_categories
+                )
 
             # Save all settings in one operation for efficiency
             success = update_multiple_settings(self.config, settings_updates)

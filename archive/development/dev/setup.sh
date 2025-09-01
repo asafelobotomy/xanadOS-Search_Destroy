@@ -18,7 +18,7 @@ fi
 if [ -f "$TOOLS_DIR/node/package.json" ]; then
     echo "📦 Setting up Node.js development tools..."
     cd "$TOOLS_DIR/node"
-    
+
     if command -v npm >/dev/null 2>&1; then
         npm install
         echo "✅ Node.js tools installed"
@@ -28,7 +28,7 @@ if [ -f "$TOOLS_DIR/node/package.json" ]; then
     else
         echo "⚠️  npm/yarn not found - Node.js tools skipped"
     fi
-    
+
     cd "$PROJECT_ROOT"
 fi
 

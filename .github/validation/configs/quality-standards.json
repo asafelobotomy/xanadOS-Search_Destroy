@@ -2,7 +2,7 @@
   "version": "1.0.0",
   "lastUpdated": "2025-08-22",
   "description": "Quality standards and scoring criteria for GitHub Copilot instructions",
-  
+
   "qualityMetrics": {
     "overall": {
       "minimumPassingScore": 0.7,
@@ -10,7 +10,7 @@
       "excellentThreshold": 0.95,
       "scoringMethod": "weighted"
     },
-    
+
     "categories": {
       "structural": {
         "weight": 0.3,
@@ -34,7 +34,7 @@
       }
     }
   },
-  
+
   "scoringCriteria": {
     "instructionClarity": {
       "excellent": {
@@ -75,7 +75,7 @@
         ]
       }
     },
-    
+
     "codeQuality": {
       "excellent": {
         "score": 1.0,
@@ -115,7 +115,7 @@
         ]
       }
     },
-    
+
     "mcpCompatibility": {
       "excellent": {
         "score": 1.0,
@@ -154,7 +154,7 @@
       }
     }
   },
-  
+
   "benchmarks": {
     "responseTime": {
       "excellent": "< 100ms",
@@ -162,7 +162,7 @@
       "fair": "< 1000ms",
       "poor": "> 1000ms"
     },
-    
+
     "fileSize": {
       "markdown": {
         "optimal": "< 50KB",
@@ -183,7 +183,7 @@
         "excessive": "> 75KB"
       }
     },
-    
+
     "complexity": {
       "cyclomaticComplexity": {
         "low": "< 10",
@@ -199,7 +199,7 @@
       }
     }
   },
-  
+
   "qualityGates": {
     "development": {
       "blockingErrors": false,
@@ -207,14 +207,14 @@
       "allowWarnings": true,
       "maxWarnings": 50
     },
-    
+
     "staging": {
       "blockingErrors": true,
       "requiredScore": 0.7,
       "allowWarnings": true,
       "maxWarnings": 10
     },
-    
+
     "production": {
       "blockingErrors": true,
       "requiredScore": 0.85,
@@ -222,7 +222,7 @@
       "maxWarnings": 3
     }
   },
-  
+
   "improvementRecommendations": {
     "automated": {
       "enabled": true,
@@ -235,7 +235,7 @@
       "prioritization": "impact",
       "maxRecommendations": 10
     },
-    
+
     "templates": {
       "lowClarity": "Consider breaking down complex sentences and adding more examples to improve clarity.",
       "missingExamples": "Add practical code examples to demonstrate usage and implementation.",
@@ -245,13 +245,13 @@
       "integrationProblems": "Ensure proper MCP protocol implementation and error handling."
     }
   },
-  
+
   "reporting": {
     "includeScores": true,
     "includeRecommendations": true,
     "includeTrends": true,
     "includeComparisons": false,
-    
+
     "formats": {
       "json": {
         "enabled": true,

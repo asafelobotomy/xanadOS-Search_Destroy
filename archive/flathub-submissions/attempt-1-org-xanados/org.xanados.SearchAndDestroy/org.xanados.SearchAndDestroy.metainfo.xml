@@ -5,8 +5,8 @@
   <summary>A modern graphical interface for ClamAV antivirus scanning</summary>
   <description>
     <p>
-      S&amp;D (Search &amp; Destroy) is a user-friendly graphical interface for ClamAV, 
-      the popular open-source antivirus engine. It provides an intuitive way to scan 
+      S&amp;D (Search &amp; Destroy) is a user-friendly graphical interface for ClamAV,
+      the popular open-source antivirus engine. It provides an intuitive way to scan
       files and directories for viruses, malware, and other threats.
     </p>
     <p>Features include:</p>
@@ -18,12 +18,12 @@
       <li>Sandboxed execution for enhanced security</li>
     </ul>
   </description>
-  
+
   <categories>
     <category>Security</category>
     <category>Utility</category>
   </categories>
-  
+
   <keywords>
     <keyword>antivirus</keyword>
     <keyword>scanner</keyword>
@@ -32,28 +32,28 @@
     <keyword>clamav</keyword>
     <keyword>virus</keyword>
   </keywords>
-  
+
   <url type="homepage">https://github.com/asafelobotomy/xanadOS-Search_Destroy</url>
   <url type="bugtracker">https://github.com/asafelobotomy/xanadOS-Search_Destroy/issues</url>
   <url type="help">https://github.com/asafelobotomy/xanadOS-Search_Destroy/blob/master/README.md</url>
   <url type="vcs-browser">https://github.com/asafelobotomy/xanadOS-Search_Destroy</url>
   <url type="contribute">https://github.com/asafelobotomy/xanadOS-Search_Destroy/blob/master/docs/developer/CONTRIBUTING.md</url>
-  
+
   <developer_name>asafelobotomy</developer_name>
-  
+
   <screenshots>
     <screenshot type="default">
       <caption>Dashboard interface with real-time protection monitoring and security status</caption>
       <image>https://raw.githubusercontent.com/asafelobotomy/xanadOS-Search_Destroy/v2.10.0/docs/screenshots/dashboard.png</image>
     </screenshot>
   </screenshots>
-  
+
   <launchable type="desktop-id">org.xanados.SearchAndDestroy.desktop</launchable>
-  
+
   <provides>
     <binary>search-and-destroy</binary>
   </provides>
-  
+
   <releases>
     <release version="2.8.0" date="2025-08-20">
       <description>
@@ -179,9 +179,9 @@
       </description>
     </release>
   </releases>
-  
+
   <content_rating type="oars-1.1" />
-  
+
   <metadata_license>CC0-1.0</metadata_license>
   <project_license>MIT</project_license>
 </component>

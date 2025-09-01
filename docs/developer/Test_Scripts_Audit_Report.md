@@ -16,22 +16,29 @@ The audit identified several critical issues that need immediate attention, alon
 **Dependencies**: Standard library only
 
 1. **`tests/conftest.py`**- ⭐**EXCELLENT**
+
 - **Purpose**: PyQt6 test configuration with auto-mocking
 - **Status**: Current and highly valuable
 - **Features**: Headless testing, elevated operation mocks, proper fixture setup
 - **Recommendation**: **KEEP** - Critical test infrastructure
+
 2. **`tests/test_gui.py`**- ✅**GOOD** (Fixed)
+
 - **Purpose**: GUI component validation and syntax checking
 - **Status**: Fixed syntax errors, now fully functional
 - **Coverage**: Main window, syntax validation, PyQt6 consistency, requirements validation
 - **Fixed Issues**: Corrected indentation errors in `all_warnings_dialog.py`
 - **Recommendation**: **KEEP** - Essential for GUI validation
+
 3. **`tests/test_implementation.py`**- ⚠️**OUTDATED**
+
 - **Purpose**: Legacy broad integration testing
 - **Status**: Deprecated with pytest.skip() directive
 - **Issues**: Missing pytest dependency, broad scope, superseded by focused tests
 - **Recommendation**: **ARCHIVE** - Move to archive with deprecation notice
+
 4. **`tests/test_monitoring.py`**- ❌**BROKEN**
+
 - **Purpose**: Real-time monitoring system validation
 - **Status**: Fails due to missing monitoring module implementations
 - **Issues**: Import failures, missing matplotlib dependency
@@ -44,22 +51,29 @@ The audit identified several critical issues that need immediate attention, alon
 **Status**: MIXED ⚠️
 
 5. **`dev/demos/theme_performance_test.py`**- ❌**BROKEN**
+
 - **Purpose**: Theme system performance benchmarking
 - **Status**: Missing optimized theme manager dependency
 - **Issues**: References deprecated/archived `optimized_theme_manager`
 - **Dependency Problem**: Imports `app.gui.optimized_theme_manager` (archived)
 - **Recommendation**: **UPDATE OR ARCHIVE** - Fix imports or archive as historical
+
 6. **`dev/testing/final_integration_test.py`**- ✅**EXCELLENT**
+
 - **Purpose**: RKHunter enhancements integration testing
 - **Status**: **FULLY FUNCTIONAL** - Executes and validates RKHunter improvements
 - **Results**: All tests pass, validates parsing fixes and warning analysis
 - **Recommendation**: **KEEP** - Valuable integration validation
+
 7. **`dev/testing/visual_test_enhancements.py`**- ✅**FUNCTIONAL**
+
 - **Purpose**: GUI enhancement visual testing and demonstration
 - **Status**: Launches application successfully, demonstrates new features
 - **Value**: Good for manual testing and feature demonstration
 - **Recommendation**: **KEEP** - Useful for UI validation
+
 8. **`dev/test-scripts/test_firewall_enhancement.py`**- ❌**BROKEN**
+
 - **Purpose**: Firewall detection and error handling testing
 - **Status**: Import path issues prevent execution
 - **Issues**: Cannot import `core.firewall_detector`(should be`app.core.firewall_detector`)

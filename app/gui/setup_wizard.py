@@ -45,12 +45,12 @@ from app.utils.config import load_config, save_config
 
 # Import theming support
 try:
-    from app.core.elevated_runner import (
+    from app.core.elevated_runner import (  # pylint: disable=import-outside-toplevel
         elevated_run,
-    )  # pylint: disable=import-outside-toplevel
-    from app.core.rkhunter_monitor_non_invasive import (
+    )
+    from app.core.rkhunter_monitor_non_invasive import (  # pylint: disable=import-outside-toplevel
         rkhunter_monitor,
-    )  # pylint: disable=import-outside-toplevel
+    )
     from app.gui.theme_manager import get_theme_manager
     from app.gui.themed_widgets import ThemedDialog
 

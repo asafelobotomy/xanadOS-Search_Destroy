@@ -20,11 +20,11 @@ class PerformanceMonitor {
 
   endTimer(operation) {
     if (!this.metrics[operation]) return null;
-    
+
     const duration = performance.now() - this.metrics[operation].start;
     const memoryEnd = process.memoryUsage();
     const memoryDiff = memoryEnd.heapUsed - this.metrics[operation].memoryStart.heapUsed;
-    
+
     this.metrics[operation] = {
       ...this.metrics[operation],
       duration,
@@ -51,7 +51,7 @@ class PerformanceMonitor {
       if (data.duration) {
         report.summary.totalDuration += data.duration;
         report.summary.peakMemory = Math.max(report.summary.peakMemory, data.memoryUsage);
-        
+
         report.operations[operation] = {
           duration: Math.round(data.duration * 100) / 100,
           memory: Math.round(data.memoryUsage / 1024 / 1024 * 100) / 100,

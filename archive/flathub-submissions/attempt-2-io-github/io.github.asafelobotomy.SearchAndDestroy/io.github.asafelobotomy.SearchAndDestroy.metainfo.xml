@@ -3,9 +3,9 @@
   <id>io.github.asafelobotomy.SearchAndDestroy</id>
   <name>S&amp;D - Search &amp; Destroy</name>
   <summary>A modern graphical interface for ClamAV antivirus scanning</summary>
-  
+
   <project_license>GPL-3.0-or-later</project_license>
-  
+
   <description>
     <p>
       S&amp;D (Search &amp; Destroy) is a user-friendly graphical interface for ClamAV,

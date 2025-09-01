@@ -35,18 +35,25 @@ All privilege escalation throughout the application now uses the same standardiz
 The `elevated_run` function (used by RKHunter and now all other operations) prioritizes methods in this order:
 
 1. **🥇 Passwordless sudo** (if configured)
+
 - Fastest and most secure option
 - No user interaction required
 - Uses `sudo -n` for non-interactive operation
+
 2. **🥈 GUI sudo with askpass helper** (e.g., `ksshaskpass`)
+
 - Provides native desktop integration
 - Shows GUI password dialog
 - Best user experience when password is required
+
 3. **🥉 pkexec**
+
 - Alternative GUI authentication method
 - PolicyKit-based authentication
 - System-wide privilege management
+
 4. **🏃 Terminal sudo** (final fallback)
+
 - For terminal environments or when GUI methods fail
 - Interactive password prompt in terminal
 

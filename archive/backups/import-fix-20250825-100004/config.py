@@ -198,14 +198,14 @@ def save_config(config_data, file_path=None):
 
 def update_config_setting(config_dict, section, key, value, file_path=None):
     """Update a specific setting in config and save to file immediately.
-    
+
     Args:
         config_dict: The configuration dictionary to update
         section: Configuration section (e.g., 'ui_settings', 'scan_settings')
         key: Setting key within the section
         value: New value for the setting
         file_path: Optional custom file path (uses default if None)
-    
+
     Returns:
         bool: True if successfully saved, False otherwise
     """
@@ -213,14 +213,14 @@ def update_config_setting(config_dict, section, key, value, file_path=None):
         # Ensure section exists
         if section not in config_dict:
             config_dict[section] = {}
-        
+
         # Update the setting
         config_dict[section][key] = value
-        
+
         # Save immediately to ensure persistence
         save_config(config_dict, file_path)
         return True
-        
+
     except Exception as e:
         logging.getLogger(APP_NAME).error(
             "Failed to update setting %s.%s: %s", section, key, e
@@ -230,15 +230,15 @@ def update_config_setting(config_dict, section, key, value, file_path=None):
 
 def update_multiple_settings(config_dict, updates, file_path=None):
     """Update multiple settings at once and save to file.
-    
+
     Args:
         config_dict: The configuration dictionary to update
         updates: Dict of {section: {key: value}} format
         file_path: Optional custom file path (uses default if None)
-    
+
     Returns:
         bool: True if successfully saved, False otherwise
-    
+
     Example:
         updates = {
             'ui_settings': {'theme': 'dark', 'minimize_to_tray': True},
@@ -250,14 +250,14 @@ def update_multiple_settings(config_dict, updates, file_path=None):
         for section, settings in updates.items():
             if section not in config_dict:
                 config_dict[section] = {}
-            
+
             for key, value in settings.items():
                 config_dict[section][key] = value
-        
+
         # Save once after all updates
         save_config(config_dict, file_path)
         return True
-        
+
     except Exception as e:
         logging.getLogger(APP_NAME).error(
             "Failed to update multiple settings: %s", e
@@ -267,13 +267,13 @@ def update_multiple_settings(config_dict, updates, file_path=None):
 
 def get_config_setting(config_dict, section, key, default=None):
     """Get a specific setting from config with optional default.
-    
+
     Args:
         config_dict: The configuration dictionary
         section: Configuration section
         key: Setting key within the section
         default: Default value if setting doesn't exist
-    
+
     Returns:
         The setting value or default
     """

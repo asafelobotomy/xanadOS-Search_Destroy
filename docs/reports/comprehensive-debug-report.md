@@ -9,6 +9,7 @@ This comprehensive debug analysis covers 134 shell scripts and 452+ Python files
 ## Tools Used
 
 ### Static Analysis Tools
+
 - **ShellCheck 0.11.0**: Shell script analysis and best practices
 - **Flake8**: Python code style and quality
 - **Bandit 1.8.6**: Python security vulnerability scanner
@@ -21,12 +22,14 @@ This comprehensive debug analysis covers 134 shell scripts and 452+ Python files
 ### Core Scripts Issues Found
 
 #### 1. scripts/setup-dev-environment.sh
+
 - **SC1091 (Info)**: Not following sourced file `.venv/bin/activate`
   - Location: Line 107
   - Impact: Low - informational warning about shellcheck not analyzing sourced files
   - Recommendation: Use `# shellcheck source=/dev/null` directive if needed
 
 #### 2. scripts/validation/validate-agent-workflow.sh
+
 - **SC2329 (Info)**: Function `print_warning()` never invoked
   - Location: Line 34
   - Impact: Low - unused function
@@ -48,6 +51,7 @@ This comprehensive debug analysis covers 134 shell scripts and 452+ Python files
   - Recommendation: Use proper array indexing or `"${array[@]}"`
 
 #### 3. scripts/validation/validate-version-control.sh
+
 - **SC2155 (Warning)**: Declare and assign separately (multiple instances)
   - Locations: Lines 58, 69, 77, 164, 209, 253, 319
   - Impact: Medium - masks return values from command substitution
@@ -63,6 +67,7 @@ This comprehensive debug analysis covers 134 shell scripts and 452+ Python files
 ### Core Application Issues (Flake8)
 
 #### app/main.py
+
 - **E402**: Module level import not at top of file
   - Location: Line 16
   - Impact: Low - style violation
@@ -71,6 +76,7 @@ This comprehensive debug analysis covers 134 shell scripts and 452+ Python files
 ### Security Analysis (Bandit)
 
 #### High-Level Security Summary
+
 - **Total Issues Found**: 59 security findings
 - **Severity Breakdown**:
   - HIGH Confidence: 59 issues
@@ -80,7 +86,9 @@ This comprehensive debug analysis covers 134 shell scripts and 452+ Python files
 #### Critical Security Issues
 
 ##### 1. Subprocess Usage (B603/B607) - 14 instances
+
 **Files Affected**:
+
 - `app/gui/main_window.py`: Lines 4984, 9011
 - `app/gui/rkhunter_optimization_tab.py`: Line 862
 - `app/gui/setup_wizard.py`: Lines 224, 791, 828, 904, 1496
@@ -90,27 +98,33 @@ This comprehensive debug analysis covers 134 shell scripts and 452+ Python files
 **Risk Level**: LOW to MEDIUM
 **Description**: Subprocess calls that could potentially execute untrusted input
 **Recommendations**:
+
 - Validate all command inputs before execution
 - Use full paths for executables when possible
 - Implement input sanitization
 - Consider using restricted execution environments
 
 ##### 2. Try/Except/Pass Patterns (B110) - 32 instances
+
 **Risk Level**: LOW
 **Description**: Broad exception handling that could mask important errors
 **Recommendations**:
+
 - Replace with specific exception handling
 - Add logging for caught exceptions
 - Ensure critical errors are not silently ignored
 
 ##### 3. Hardcoded Temporary Directories (B108) - 5 instances
+
 **Files Affected**:
+
 - `app/utils/standards_integration.py`: Line 357
 - `app/utils/system_paths.py`: Lines 54, 55, 90
 
 **Risk Level**: MEDIUM
 **Description**: Hardcoded `/tmp` and `/var/tmp` paths
 **Recommendations**:
+
 - Use `tempfile.gettempdir()` for temporary directories
 - Implement proper temporary file handling
 - Follow XDG Base Directory specification
@@ -120,6 +134,7 @@ This comprehensive debug analysis covers 134 shell scripts and 452+ Python files
 ### High-Priority Files for Review
 
 #### 1. app/gui/main_window.py (9,400+ lines)
+
 - **Issues**: 17 security findings, large file size
 - **Recommendations**:
   - Split into smaller, focused modules
@@ -127,6 +142,7 @@ This comprehensive debug analysis covers 134 shell scripts and 452+ Python files
   - Review subprocess security implementations
 
 #### 2. app/gui/setup_wizard.py (1,500+ lines)
+
 - **Issues**: 10 security findings
 - **Recommendations**:
   - Implement command validation
@@ -134,6 +150,7 @@ This comprehensive debug analysis covers 134 shell scripts and 452+ Python files
   - Add input sanitization for external commands
 
 #### 3. scripts/validation/validate-agent-workflow.sh
+
 - **Issues**: 6 shellcheck warnings
 - **Recommendations**:
   - Fix array handling patterns
@@ -145,6 +162,7 @@ This comprehensive debug analysis covers 134 shell scripts and 452+ Python files
 ### Immediate Actions (High Priority)
 
 1. **Fix Array Handling in Shell Scripts**
+
    ```bash
    # Instead of:
    ROOT_FILES=($(ls -1 | grep -v "pattern" | wc -l))
@@ -156,6 +174,7 @@ This comprehensive debug analysis covers 134 shell scripts and 452+ Python files
    ```
 
 2. **Improve Exception Handling in Python**
+
    ```python
    # Instead of:
    try:
@@ -171,6 +190,7 @@ This comprehensive debug analysis covers 134 shell scripts and 452+ Python files
    ```
 
 3. **Secure Temporary Directory Usage**
+
    ```python
    # Instead of:
    temp_dir = "/tmp"
@@ -212,12 +232,14 @@ This comprehensive debug analysis covers 134 shell scripts and 452+ Python files
 ## Quality Metrics
 
 ### Code Quality Scores
+
 - **Shell Scripts**: 6 major issues across core scripts
 - **Python Security**: 59 findings (mostly low severity)
 - **Code Organization**: Large files need refactoring
 - **Error Handling**: Needs improvement (32 try/except/pass patterns)
 
 ### Maintenance Indicators
+
 - **Technical Debt**: Medium - mostly addressable through refactoring
 - **Security Posture**: Good - no critical vulnerabilities found
 - **Code Complexity**: High in GUI components, manageable elsewhere
@@ -225,12 +247,14 @@ This comprehensive debug analysis covers 134 shell scripts and 452+ Python files
 ## Testing Recommendations
 
 ### Automated Testing
+
 1. Integrate shellcheck into CI/CD pipeline
 2. Add bandit security scanning to build process
 3. Implement pre-commit hooks for code quality
 4. Set up regular dependency vulnerability scanning
 
 ### Manual Testing
+
 1. Security review of subprocess implementations
 2. Exception handling behavior validation
 3. Temporary file handling testing
@@ -248,4 +272,4 @@ The project shows excellent modernization with enterprise-grade security tools a
 
 ---
 
-*This report generated by comprehensive static analysis using ShellCheck 0.11.0, Bandit 1.8.6, Flake8, and manual code review.*
+_This report generated by comprehensive static analysis using ShellCheck 0.11.0, Bandit 1.8.6, Flake8, and manual code review._

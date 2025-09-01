@@ -8,7 +8,7 @@ polkit.addRule(function(action, subject) {
             return polkit.Result.AUTH_ADMIN_KEEP;
         }
     }
-    
+
     // Also apply to generic pkexec when used by our application
     if (action.id == "org.freedesktop.policykit.exec") {
         // Check if this is being called by our application process

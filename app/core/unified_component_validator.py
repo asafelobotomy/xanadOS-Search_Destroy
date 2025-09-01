@@ -366,22 +366,14 @@ class UnifiedComponentValidator:
 
             # Test conditional imports work
             if UNIFIED_SECURITY_AVAILABLE:
-                from app.core import (
-                    ProtectionMode as _ProtectionMode,
-                )
-                from app.core import (
-                    ThreatLevel as _ThreatLevel,
-                )
-                from app.core import (
-                    UnifiedSecurityEngine as _UnifiedSecurityEngine,
-                )
+                from app.core import ProtectionMode as _ProtectionMode
+                from app.core import ThreatLevel as _ThreatLevel
+                from app.core import UnifiedSecurityEngine as _UnifiedSecurityEngine
             else:
                 warnings.append("Unified Security Engine not available")
 
             if UNIFIED_PERFORMANCE_AVAILABLE:
-                from app.core import (
-                    PerformanceMode as _PerformanceMode,
-                )
+                from app.core import PerformanceMode as _PerformanceMode
                 from app.core import (
                     UnifiedPerformanceOptimizer as _UnifiedPerformanceOptimizer,
                 )

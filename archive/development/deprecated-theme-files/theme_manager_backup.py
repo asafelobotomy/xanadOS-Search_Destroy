@@ -15,10 +15,10 @@ class ThemeManager(QObject):
     Centralized theme management system that automatically applies themes
     to all GUI components through Qt's style system and custom stylesheets.
     """
-    
+
     # Signal emitted when theme changes
     theme_changed = pyqtSignal(str)  # theme_name
-    
+
     def __init__(self):
         super().__init__()
         self._current_theme = "dark"
@@ -31,42 +31,42 @@ class ThemeManager(QObject):
                     "header_gradient_start": "#e57373",   # Softer coral/salmon
                     "header_gradient_end": "#c62828",     # Deeper but less harsh red
                     "header_text": "#ffffff",             # Pure white header text
-                    
+
                     # Core Application Colors - sophisticated grays like the dialog
                     "background": "#2b2b2b",              # Refined dark gray (not pure black)
                     "secondary_bg": "#363636",            # Medium dark gray for cards
                     "tertiary_bg": "#404040",             # Interactive elements background
                     "card_bg": "#333333",                 # Card backgrounds - more sophisticated
                     "elevated_bg": "#3d3d3d",             # Dialogs and modals - matches updates dialog
-                    
+
                     # Refined accent palette - more professional
                     "strawberry_primary": "#c62828",       # Deeper, more professional red
                     "strawberry_coral": "#e57373",        # Softer coral
                     "strawberry_peach": "#ffab91",        # Warm peach for highlights
                     "strawberry_sage": "#81c784",         # Sage green for success
-                    
+
                     # Text Colors - better contrast ratios
                     "primary_text": "#ffffff",            # Pure white for primary text
                     "secondary_text": "#e0e0e0",          # Light gray for secondary info
                     "muted_text": "#b0b0b0",              # Muted gray for subtle content
                     "accent_text": "#e57373",             # Softer coral for emphasis
                     "contrast_text": "#ffffff",           # High contrast white
-                    
+
                     # Interactive States - more refined and professional
                     "accent": "#c62828",                  # Professional deep red for primary actions
                     "accent_hover": "#e57373",            # Softer coral on hover
                     "accent_pressed": "#b71c1c",          # Deeper red when pressed
                     "focus_ring": "#e57373",              # Softer coral focus indicators
                     "glow": "rgba(229, 115, 115, 0.3)",   # Softer glow effect
-                    
+
                     # State Colors - semantic meanings (more muted)
                     "success": "#4caf50",                 # Green for success
                     "success_border": "#388e3c",          # Success borders
-                    "warning": "#ff9800",                 # Orange for warnings  
+                    "warning": "#ff9800",                 # Orange for warnings
                     "warning_border": "#f57c00",          # Warning borders
                     "error": "#f44336",                   # Red for errors
                     "error_border": "#d32f2f",            # Error borders
-                    
+
                     # Border System - hierarchical border colors
                     "border": "#c62828",                  # Professional red borders (outer containers/main borders)
                     "border_light": "#e57373",            # Lighter coral borders for subtle divisions
@@ -74,13 +74,13 @@ class ThemeManager(QObject):
                     "border_inner": "#ff8a80",            # Warm coral for inner borders and subdivisions (less pink, more coral)
                     "border_muted": "#404040",            # Subtle borders that blend well (for very minimal divisions)
                     "separator": "#c62828",               # Section separators - elegant red accent
-                    
+
                     # Interaction Feedback - refined and professional
                     "hover_bg": "#404040",                # Lighter hover backgrounds
                     "pressed_bg": "#2b2b2b",             # Pressed backgrounds
                     "selection_bg": "#c62828",            # Professional red selection
                     "selection_text": "#ffffff",          # Selection text
-                    
+
                     # Visual Depth & Effects - softer and more professional
                     "shadow": "rgba(0, 0, 0, 0.5)",       # Softer shadows
                     "gradient_bg_start": "#333333",       # Sophisticated gradient start
@@ -99,7 +99,7 @@ class ThemeManager(QObject):
                 "colors": {
                     "background": "#fafafa",
                     "secondary_bg": "#ffffff",
-                    "tertiary_bg": "#f5f5f5", 
+                    "tertiary_bg": "#f5f5f5",
                     "quaternary_bg": "#eeeeee",
                     "card_bg": "#ffffff",
                     "elevated_bg": "#ffffff",
@@ -141,33 +141,33 @@ class ThemeManager(QObject):
                 }
             }
         }
-        
+
         # Initialize application-wide stylesheet
         self._apply_global_theme()
-    
+
     def get_current_theme(self) -> str:
         """Get the current theme name."""
         return self._current_theme
-    
+
     def get_available_themes(self) -> Dict[str, str]:
         """Get available themes as {theme_id: display_name}."""
         return {
-            theme_id: theme_data["name"] 
+            theme_id: theme_data["name"]
             for theme_id, theme_data in self._theme_definitions.items()
         }
-    
+
     def get_color(self, color_key: str, theme: Optional[str] = None) -> str:
         """Get a color value from the current or specified theme."""
         theme_name = theme or self._current_theme
         theme_data = self._theme_definitions.get(theme_name, self._theme_definitions["dark"])
         return theme_data["colors"].get(color_key, "#FFFFFF")
-    
+
     def get_font_property(self, font_key: str, theme: Optional[str] = None) -> Any:
         """Get a font property from the current or specified theme."""
         theme_name = theme or self._current_theme
         theme_data = self._theme_definitions.get(theme_name, self._theme_definitions["dark"])
         return theme_data["fonts"].get(font_key, 11)
-    
+
     def _detect_system_theme(self) -> str:
         """Detect the system theme preference."""
         try:
@@ -182,40 +182,40 @@ class ThemeManager(QObject):
             pass
         # Default to dark theme if detection fails
         return "dark"
-    
+
     def _process_qt_stylesheet(self, css: str) -> str:
         """
         Process CSS to remove unsupported properties and add Qt-compatible alternatives.
         """
         import re
-        
+
         # Remove unsupported CSS properties that cause warnings
         unsupported_patterns = [
             r'^\s*transition[^;]*;.*$',      # Remove transition properties
-            r'^\s*transform[^;]*;.*$',       # Remove transform properties  
+            r'^\s*transform[^;]*;.*$',       # Remove transform properties
             r'^\s*box-shadow[^;]*;.*$',      # Remove box-shadow properties
             r'^\s*text-shadow[^;]*;.*$',     # Remove text-shadow properties
         ]
-        
+
         processed_css = css
         for pattern in unsupported_patterns:
             processed_css = re.sub(pattern, '', processed_css, flags=re.MULTILINE)
-        
+
         # Add Qt-compatible alternatives for some effects
-        
+
         # Replace hover effects that used transform with margin adjustments
         processed_css = re.sub(
             r'([^}]*):hover\s*\{([^}]*)\}',
             lambda m: self._enhance_hover_state(m.group(0)),
             processed_css
         )
-        
+
         # Clean up extra whitespace and empty lines
         processed_css = re.sub(r'\n\s*\n+', '\n\n', processed_css)
         processed_css = re.sub(r'^\s+', '', processed_css, flags=re.MULTILINE)
-        
+
         return processed_css
-    
+
     def _enhance_hover_state(self, hover_rule: str) -> str:
         """
         Enhance hover states with Qt-compatible effects instead of transforms.
@@ -225,9 +225,9 @@ class ThemeManager(QObject):
             # Add subtle margin effect for button press simulation
             if ':hover' in hover_rule and 'margin' not in hover_rule:
                 hover_rule = hover_rule.replace('{', '{\n            margin: 1px;')
-        
+
         return hover_rule
-    
+
     def apply_qt_effects(self, widget: QWidget, effect_type: str = "button"):
         """
         Apply Qt-native effects to widgets to replace CSS effects that don't work.
@@ -236,35 +236,35 @@ class ThemeManager(QObject):
             self._setup_button_effects(widget)
         elif effect_type == "shadow":
             self._setup_shadow_effect(widget)
-    
+
     def _setup_button_effects(self, button: QPushButton):
         """Setup hover and press animations for buttons."""
         # Store original geometry for animations
         if not hasattr(button, '_original_geometry'):
             button._original_geometry = button.geometry()
-        
+
         # Create animations
         button._hover_animation = QPropertyAnimation(button, b"geometry")
         button._hover_animation.setDuration(150)
         button._hover_animation.setEasingCurve(QEasingCurve.Type.OutCubic)
-        
+
         # Connect hover events
         original_enter_event = button.enterEvent
         original_leave_event = button.leaveEvent
         original_press_event = button.mousePressEvent
         original_release_event = button.mouseReleaseEvent
-        
+
         def enhanced_enter_event(event):
             """Enhanced mouse enter with animation."""
             original_enter_event(event)
             if hasattr(button, '_hover_animation'):
                 current_geo = button.geometry()
-                new_geo = QRect(current_geo.x(), current_geo.y() - 1, 
+                new_geo = QRect(current_geo.x(), current_geo.y() - 1,
                                current_geo.width(), current_geo.height())
                 button._hover_animation.setStartValue(current_geo)
                 button._hover_animation.setEndValue(new_geo)
                 button._hover_animation.start()
-        
+
         def enhanced_leave_event(event):
             """Enhanced mouse leave with animation."""
             original_leave_event(event)
@@ -275,7 +275,7 @@ class ThemeManager(QObject):
                 button._hover_animation.setStartValue(current_geo)
                 button._hover_animation.setEndValue(new_geo)
                 button._hover_animation.start()
-        
+
         def enhanced_press_event(event):
             """Enhanced mouse press with animation."""
             original_press_event(event)
@@ -286,7 +286,7 @@ class ThemeManager(QObject):
                 button._hover_animation.setStartValue(current_geo)
                 button._hover_animation.setEndValue(new_geo)
                 button._hover_animation.start()
-        
+
         def enhanced_release_event(event):
             """Enhanced mouse release with animation."""
             original_release_event(event)
@@ -297,30 +297,30 @@ class ThemeManager(QObject):
                 button._hover_animation.setStartValue(current_geo)
                 button._hover_animation.setEndValue(new_geo)
                 button._hover_animation.start()
-        
+
         button.enterEvent = enhanced_enter_event
         button.leaveEvent = enhanced_leave_event
         button.mousePressEvent = enhanced_press_event
         button.mouseReleaseEvent = enhanced_release_event
-    
+
     def _setup_shadow_effect(self, widget: QWidget):
         """Setup drop shadow effect as alternative to CSS box-shadow."""
         shadow = QGraphicsDropShadowEffect()
-        
+
         # Get current theme colors
         theme = self._theme_definitions.get(self._current_theme, {})
         colors = theme.get("colors", {})
-        
+
         # Configure shadow based on theme
         shadow_color = QColor(colors.get("shadow", "#000000"))
         shadow_color.setAlpha(100)  # Semi-transparent
-        
+
         shadow.setBlurRadius(8)
         shadow.setColor(shadow_color)
         shadow.setOffset(2, 2)
-        
+
         widget.setGraphicsEffect(shadow)
-    
+
     def setup_widget_effects(self, widget: QWidget):
         """
         Automatically setup Qt effects for a widget based on its type.
@@ -328,12 +328,12 @@ class ThemeManager(QObject):
         """
         if isinstance(widget, QPushButton):
             self.apply_qt_effects(widget, "button")
-        
+
         # Apply shadow effects to certain widget types
         widget_types_with_shadow = [QDialog, QMessageBox]
         if any(isinstance(widget, wtype) for wtype in widget_types_with_shadow):
             self.apply_qt_effects(widget, "shadow")
-    
+
     def set_theme(self, theme_name: str):
         """Change the current theme and apply it globally."""
         # Handle auto theme by detecting system preference
@@ -343,35 +343,35 @@ class ThemeManager(QObject):
             if theme_name not in self._theme_definitions:
                 raise ValueError(f"Unknown theme: {theme_name}")
             actual_theme = theme_name
-        
+
         self._current_theme = actual_theme
         self._apply_global_theme()
-        
+
         # Emit signal so existing widgets can update
         self.theme_changed.emit(actual_theme)
-    
+
     def _apply_global_theme(self):
         """Apply the current theme globally to the application."""
         app = QApplication.instance()
         if not app:
             return
-        
+
         # Generate comprehensive stylesheet
         stylesheet = self._generate_global_stylesheet()
-        
+
         # Process the stylesheet to remove unsupported CSS properties
         processed_stylesheet = self._process_qt_stylesheet(stylesheet)
-        
+
         app.setStyleSheet(processed_stylesheet)
-        
+
         # Set application palette for native Qt styling
         self._set_application_palette()
-    
+
     def _generate_global_stylesheet(self) -> str:
         """Generate a comprehensive stylesheet for all Qt widgets."""
         c = self.get_color  # Shorthand
         f = self.get_font_property
-        
+
         return f"""
         /* === GLOBAL APPLICATION STYLING === */
         QWidget {{
@@ -382,13 +382,13 @@ class ThemeManager(QObject):
             selection-background-color: {c('selection_bg')};
             selection-color: {c('selection_text')};
         }}
-        
+
         /* === MAIN WINDOW (Solid colors, no gradients) === */
         QMainWindow {{
             background-color: {c('background')};
             color: {c('primary_text')};
         }}
-        
+
         /* === DIALOGS === */
         QDialog {{
             background-color: {c('elevated_bg')};
@@ -396,7 +396,7 @@ class ThemeManager(QObject):
             border: 2px solid {c('border_accent')};
             border-radius: 12px;
         }}
-        
+
         /* === MESSAGE BOXES === */
         QMessageBox {{
             background-color: {c('elevated_bg')};
@@ -441,7 +441,7 @@ class ThemeManager(QObject):
             color: {c('contrast_text')};
             font-weight: 700;
         }}
-        
+
         /* === ENHANCED BUTTONS === */
         QPushButton {{
             background-color: {c('tertiary_bg')};
@@ -479,7 +479,7 @@ class ThemeManager(QObject):
         QPushButton:default:hover {{
             background-color: {c('accent_hover')};
         }}
-        
+
         /* === ENHANCED LABELS === */
         QLabel {{
             color: {c('primary_text')};
@@ -516,7 +516,7 @@ class ThemeManager(QObject):
             color: {c('error')};
             font-weight: 600;
         }}
-        
+
         /* === ENHANCED INPUT FIELDS === */
         QLineEdit, QTextEdit, QPlainTextEdit {{
             background-color: {c('card_bg')};
@@ -538,7 +538,7 @@ class ThemeManager(QObject):
             color: {c('muted_text')};
             border-color: {c('border_muted')};
         }}
-        
+
         /* === ENHANCED GROUP BOXES === */
         QGroupBox {{
             color: {c('primary_text')};
@@ -560,7 +560,7 @@ class ThemeManager(QObject):
             border: 1px solid {c('border')};
             border-radius: 6px;
         }}
-        
+
         /* === ENHANCED COMBO BOXES === */
         QComboBox {{
             background-color: {c('card_bg')};
@@ -595,7 +595,7 @@ class ThemeManager(QObject):
             selection-background-color: {c('accent')};
             selection-color: white;
         }}
-        
+
         /* === ENHANCED CHECK BOXES === */
         QCheckBox {{
             color: {c('primary_text')};
@@ -621,7 +621,7 @@ class ThemeManager(QObject):
         QCheckBox::indicator:checked:hover {{
             border-color: {c('strawberry_sage')};
         }}
-        
+
         /* === ENHANCED RADIO BUTTONS === */
         QRadioButton {{
             color: {c('primary_text')};
@@ -647,7 +647,7 @@ class ThemeManager(QObject):
             border-radius: 9px;
             transition: all 0.15s ease-in-out;
         }}
-        
+
         /* === ENHANCED PROGRESS BARS === */
         QProgressBar {{
             border: 2px solid {c('border')};
@@ -662,7 +662,7 @@ class ThemeManager(QObject):
             background-color: {c('accent')};
             border-radius: 6px;
         }}
-        
+
         /* === ENHANCED LIST WIDGETS === */
         QListWidget {{
             background: {c('card_bg')};
@@ -687,7 +687,7 @@ class ThemeManager(QObject):
             color: {c('contrast_text')};
             font-weight: 600;
         }}
-        
+
         /* === ENHANCED TREE WIDGETS === */
         QTreeWidget {{
             background: {c('card_bg')};
@@ -710,7 +710,7 @@ class ThemeManager(QObject):
             background-color: {c('accent')};
             color: {c('contrast_text')};
         }}
-        
+
         /* === ENHANCED SCROLL BARS === */
         QScrollBar:vertical {{
             background: {c('secondary_bg')};
@@ -746,14 +746,14 @@ class ThemeManager(QObject):
         QScrollBar::handle:horizontal:hover {{
             background-color: {c('accent_hover')};
         }}
-        
+
         /* === ENHANCED SCROLL AREAS === */
         QScrollArea {{
             border: 2px solid {c('border')};
             border-radius: 10px;
             background: {c('card_bg')};
         }}
-        
+
         /* === ENHANCED TAB WIDGETS === */
         QTabWidget::pane {{
             border: 2px solid {c('border')};
@@ -787,7 +787,7 @@ class ThemeManager(QObject):
             background-color: {c('hover_bg')};
             border-color: {c('focus_ring')};
         }}
-        
+
         /* === ENHANCED SLIDERS === */
         QSlider::groove:horizontal {{
             border: 2px solid {c('border')};
@@ -806,7 +806,7 @@ class ThemeManager(QObject):
             background-color: {c('accent_hover')};
             border-color: {c('accent')};
         }}
-        
+
         /* === ENHANCED SPIN BOXES === */
         QSpinBox, QDoubleSpinBox {{
             background-color: {c('card_bg')};
@@ -820,7 +820,7 @@ class ThemeManager(QObject):
             background-color: {c('card_bg')};
             box-shadow: 0 0 0 2px {c('glow')};
         }}
-        
+
         /* === ENHANCED MENU BAR === */
         QMenuBar {{
             background-color: {c('secondary_bg')};
@@ -837,7 +837,7 @@ class ThemeManager(QObject):
             background-color: {c('hover_bg')};
             color: {c('accent_text')};
         }}
-        
+
         /* === ENHANCED MENUS === */
         QMenu {{
             background: {c('card_bg')};
@@ -859,7 +859,7 @@ class ThemeManager(QObject):
             background: {c('border')};
             margin: 6px 0;
         }}
-        
+
         /* === ENHANCED STATUS BAR === */
         QStatusBar {{
             background-color: {c('secondary_bg')};
@@ -867,7 +867,7 @@ class ThemeManager(QObject):
             border-top: 2px solid {c('border_accent')};
             font-weight: 500;
         }}
-        
+
         /* === ENHANCED TOOL BARS === */
         QToolBar {{
             background-color: {c('secondary_bg')};
@@ -890,7 +890,7 @@ class ThemeManager(QObject):
         QToolButton:pressed {{
             background-color: {c('pressed_bg')};
         }}
-        
+
         /* === ENHANCED SPLITTERS === */
         QSplitter::handle {{
             background-color: {c('accent')};
@@ -904,7 +904,7 @@ class ThemeManager(QObject):
         QSplitter::handle:hover {{
             background-color: {c('accent_hover')};
         }}
-        
+
         /* === CUSTOM CARD STYLING === */
         QFrame[class="card"] {{
             background-color: {c('card_bg')};
@@ -918,7 +918,7 @@ class ThemeManager(QObject):
             border-radius: 12px;
             padding: 15px;
         }}
-        
+
         /* === STATUS CARDS (Dashboard) === */
         QFrame#statusCard {{
             background-color: {c('elevated_bg')};
@@ -933,7 +933,7 @@ class ThemeManager(QObject):
             border-color: {c('accent')};
             transform: translateY(-2px);
         }}
-        
+
         /* Status Card Components */
         QLabel#cardTitle {{
             color: {c('primary_text')};
@@ -954,7 +954,7 @@ class ThemeManager(QObject):
             line-height: 1.4;
             padding: 5px 0;
         }}
-        
+
         /* === ACTIVITY REPORT STYLING === */
         QFrame#activityReport {{
             background-color: {c('card_bg')};
@@ -962,7 +962,7 @@ class ThemeManager(QObject):
             border-radius: 12px;
             padding: 20px;
         }}
-        
+
         /* === TAB STYLING ENHANCEMENTS === */
         QTabWidget {{
             background: transparent;
@@ -970,7 +970,7 @@ class ThemeManager(QObject):
         QTabWidget::tab-bar {{
             alignment: left;
         }}
-        
+
         /* === ENHANCED STATUS COLORS === */
         .status-active {{
             color: {c('success_bright')};
@@ -985,19 +985,19 @@ class ThemeManager(QObject):
             color: {c('info_bright')};
         }}
         """
-    
+
     def _set_application_palette(self):
         """Set the application palette for native Qt controls."""
         app = QApplication.instance()
         if not app:
             return
-        
+
         palette = QPalette()
-        
+
         # Convert hex colors to QColor
         def hex_to_qcolor(hex_color: str) -> QColor:
             return QColor(hex_color)
-        
+
         # Base colors
         palette.setColor(QPalette.ColorRole.Window, hex_to_qcolor(self.get_color('background')))
         palette.setColor(QPalette.ColorRole.WindowText, hex_to_qcolor(self.get_color('primary_text')))
@@ -1010,22 +1010,22 @@ class ThemeManager(QObject):
         palette.setColor(QPalette.ColorRole.Link, hex_to_qcolor(self.get_color('accent')))
         palette.setColor(QPalette.ColorRole.Highlight, hex_to_qcolor(self.get_color('selection_bg')))
         palette.setColor(QPalette.ColorRole.HighlightedText, hex_to_qcolor(self.get_color('selection_text')))
-        
+
         # Disabled state
         palette.setColor(QPalette.ColorGroup.Disabled, QPalette.ColorRole.WindowText, hex_to_qcolor(self.get_color('disabled_text')))
         palette.setColor(QPalette.ColorGroup.Disabled, QPalette.ColorRole.Text, hex_to_qcolor(self.get_color('disabled_text')))
         palette.setColor(QPalette.ColorGroup.Disabled, QPalette.ColorRole.ButtonText, hex_to_qcolor(self.get_color('disabled_text')))
         palette.setColor(QPalette.ColorGroup.Disabled, QPalette.ColorRole.Base, hex_to_qcolor(self.get_color('disabled_bg')))
         palette.setColor(QPalette.ColorGroup.Disabled, QPalette.ColorRole.Button, hex_to_qcolor(self.get_color('disabled_bg')))
-        
+
         app.setPalette(palette)
-    
+
     def create_themed_message_box(self, parent: QWidget, msg_type: str, title: str, text: str, buttons=None) -> QMessageBox:
         """Create a message box that automatically uses the current theme."""
         msg_box = QMessageBox(parent)
         msg_box.setWindowTitle(title)
         msg_box.setText(text)
-        
+
         # Set message type
         if msg_type == "warning":
             msg_box.setIcon(QMessageBox.Icon.Warning)
@@ -1035,13 +1035,13 @@ class ThemeManager(QObject):
             msg_box.setIcon(QMessageBox.Icon.Critical)
         elif msg_type == "question":
             msg_box.setIcon(QMessageBox.Icon.Question)
-        
+
         # Set buttons
         if buttons:
             msg_box.setStandardButtons(buttons)
         else:
             msg_box.setStandardButtons(QMessageBox.StandardButton.Ok)
-        
+
         # Theme is automatically applied via global stylesheet
         return msg_box
 

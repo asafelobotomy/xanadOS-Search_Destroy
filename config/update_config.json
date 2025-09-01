@@ -1,6 +1,6 @@
 {
     "update_branch": "stable",
-    "repo_owner": "asafelobotomy", 
+    "repo_owner": "asafelobotomy",
     "repo_name": "xanadOS-Search_Destroy",
     "check_interval_hours": 24,
     "auto_download": false,

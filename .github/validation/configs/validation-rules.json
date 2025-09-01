@@ -2,7 +2,7 @@
   "version": "1.0.0",
   "lastUpdated": "2025-08-22",
   "description": "Core validation rules for GitHub Copilot meta-instructions",
-  
+
   "structuralRules": {
     "fileNaming": {
       "enabled": true,
@@ -15,7 +15,7 @@
       },
       "excludes": ["README.md", "CHANGELOG.md", "LICENSE"]
     },
-    
+
     "directoryStructure": {
       "enabled": true,
       "severity": "error",
@@ -30,7 +30,7 @@
       ],
       "allowCustomDirectories": true
     },
-    
+
     "templateCompliance": {
       "enabled": true,
       "severity": "warning",
@@ -41,7 +41,7 @@
       },
       "maxMissingSections": 1
     },
-    
+
     "dependencyIntegrity": {
       "enabled": true,
       "severity": "error",
@@ -55,7 +55,7 @@
       }
     }
   },
-  
+
   "contentQualityRules": {
     "markdownQuality": {
       "enabled": true,
@@ -65,7 +65,7 @@
       "requireHeadingSpacing": true,
       "maxConsecutiveEmptyLines": 2
     },
-    
+
     "instructionClarity": {
       "enabled": true,
       "severity": "warning",
@@ -76,7 +76,7 @@
       "requireActionableSteps": true,
       "clarityScoreThreshold": 0.7
     },
-    
+
     "codeQuality": {
       "enabled": true,
       "severity": "error",
@@ -87,7 +87,7 @@
       "maxComplexityScore": 100,
       "maxFunctionCount": 50
     },
-    
+
     "documentationStandards": {
       "enabled": true,
       "severity": "warning",
@@ -98,7 +98,7 @@
       "allowEmptyLinks": false
     }
   },
-  
+
   "integrationRules": {
     "mcpCompatibility": {
       "enabled": true,
@@ -110,7 +110,7 @@
       "requiredMethods": ["setupHandlers", "run"],
       "requiredHandlers": ["ListResourcesRequestSchema", "ReadResourceRequestSchema"]
     },
-    
+
     "chatModeIntegration": {
       "enabled": true,
       "severity": "warning",
@@ -118,7 +118,7 @@
       "minSectionCount": 3,
       "validatePersonaConsistency": true
     },
-    
+
     "crossReferences": {
       "enabled": true,
       "severity": "warning",
@@ -126,7 +126,7 @@
       "allowBrokenExternalLinks": true,
       "maxBrokenLinksPerFile": 2
     },
-    
+
     "versionCompatibility": {
       "enabled": true,
       "severity": "warning",
@@ -135,7 +135,7 @@
       "checkDependencyVersions": true
     }
   },
-  
+
   "performanceRules": {
     "fileSizeLimits": {
       "enabled": true,
@@ -149,7 +149,7 @@
       },
       "warningThreshold": 0.8
     },
-    
+
     "complexityMetrics": {
       "enabled": true,
       "severity": "warning",
@@ -158,7 +158,7 @@
       "maxConditionalCount": 30,
       "complexityScoreThreshold": 100
     },
-    
+
     "resourceEfficiency": {
       "enabled": true,
       "severity": "warning",
@@ -169,7 +169,7 @@
       "validateTimeouts": true
     }
   },
-  
+
   "globalSettings": {
     "excludePatterns": [
       "node_modules/**",
@@ -179,12 +179,12 @@
       ".DS_Store",
       "Thumbs.db"
     ],
-    
+
     "reportFormat": "both",
     "verboseOutput": false,
     "continueOnError": true,
     "maxErrorsBeforeStop": 100,
-    
+
     "customRules": {
       "enabled": false,
       "rulesDirectory": "./custom-rules"

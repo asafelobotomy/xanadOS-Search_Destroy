@@ -16,7 +16,7 @@ class ValidationReportingSystem {
   constructor(options = {}) {
     this.rootPath = options.rootPath || process.cwd();
     this.reportsPath = join(this.rootPath, '.github', 'validation', 'reports');
-    
+
     this.reportTypes = new Map([
       ['comprehensive', { name: 'Comprehensive Analysis', priority: 1 }],
       ['summary', { name: 'Executive Summary', priority: 2 }],
@@ -24,7 +24,7 @@ class ValidationReportingSystem {
       ['performance', { name: 'Performance Analysis', priority: 4 }],
       ['trends', { name: 'Trend Analysis', priority: 5 }],
     ]);
-    
+
     this.metrics = {
       validationResults: [],
       performanceData: [],
@@ -32,7 +32,7 @@ class ValidationReportingSystem {
       qualityScores: [],
       recommendations: [],
     };
-    
+
     this.templates = {
       report: this.getReportTemplate(),
       dashboard: this.getDashboardTemplate(),
@@ -42,28 +42,28 @@ class ValidationReportingSystem {
 
   async generateComprehensiveReport(validationData) {
     console.log('📊 Generating comprehensive validation report...');
-    
+
     try {
       await fs.mkdir(this.reportsPath, { recursive: true });
-      
+
       const timestamp = new Date().toISOString();
       const reportId = `validation-${timestamp.split('T')[0]}-${Date.now()}`;
-      
+
       // Process validation data
       const processedData = await this.processValidationData(validationData);
-      
+
       // Generate different report types
       const reports = await this.generateAllReportTypes(reportId, processedData);
-      
+
       // Create dashboard
       const dashboard = await this.generateDashboard(reportId, processedData);
-      
+
       // Generate trend analysis
       const trendAnalysis = await this.generateTrendAnalysis(processedData);
-      
+
       // Create notification summaries
       const notifications = await this.generateNotifications(processedData);
-      
+
       // Save report metadata
       const metadata = await this.saveReportMetadata(reportId, {
         timestamp,
@@ -73,10 +73,10 @@ class ValidationReportingSystem {
         notifications,
         processedData,
       });
-      
+
       console.log(`✅ Comprehensive report generated: ${reportId}`);
       return { reportId, metadata, files: reports };
-      
+
     } catch (error) {
       console.error('❌ Failed to generate comprehensive report:', error);
       throw error;
@@ -85,7 +85,7 @@ class ValidationReportingSystem {
 
   async processValidationData(rawData) {
     console.log('🔄 Processing validation data...');
-    
+
     const processed = {
       timestamp: new Date().toISOString(),
       summary: {
@@ -122,15 +122,15 @@ class ValidationReportingSystem {
     }
 
     // Calculate summary metrics
-    processed.summary.successRate = processed.summary.totalFiles > 0 
-      ? (processed.summary.validFiles / processed.summary.totalFiles) * 100 
+    processed.summary.successRate = processed.summary.totalFiles > 0
+      ? (processed.summary.validFiles / processed.summary.totalFiles) * 100
       : 0;
 
     // Calculate performance metrics
     if (processed.detailedResults.length > 0) {
-      processed.performanceMetrics.averageFileProcessingTime = 
+      processed.performanceMetrics.averageFileProcessingTime =
         processed.performanceMetrics.totalProcessingTime / processed.detailedResults.length;
-      
+
       // Sort by processing time
       const sortedByTime = [...processed.detailedResults].sort((a, b) => b.processingTime - a.processingTime);
       processed.performanceMetrics.slowestFiles = sortedByTime.slice(0, 5);
@@ -146,7 +146,7 @@ class ValidationReportingSystem {
 
   async processValidationResult(result, processed) {
     processed.summary.totalFiles++;
-    
+
     // Categorize result
     if (result.status === 'valid' || result.status === 'passed') {
       processed.summary.validFiles++;
@@ -155,7 +155,7 @@ class ValidationReportingSystem {
     } else if (result.status === 'warning') {
       processed.summary.warningFiles++;
     }
-    
+
     // Count errors and warnings
     if (result.errors) {
       processed.summary.errorCount += Array.isArray(result.errors) ? result.errors.length : 1;
@@ -163,7 +163,7 @@ class ValidationReportingSystem {
     if (result.warnings) {
       processed.summary.warningCount += Array.isArray(result.warnings) ? result.warnings.length : 1;
     }
-    
+
     // Categorize by file type or validation type
     const category = result.category || this.determineCategory(result.file || result.path);
     if (!processed.categories.has(category)) {
@@ -175,24 +175,24 @@ class ValidationReportingSystem {
         errors: [],
       });
     }
-    
+
     const categoryData = processed.categories.get(category);
     categoryData.total++;
-    
+
     if (result.status === 'valid' || result.status === 'passed') {
       categoryData.valid++;
     } else {
       categoryData.invalid++;
     }
-    
+
     if (result.warnings) {
       categoryData.warnings += Array.isArray(result.warnings) ? result.warnings.length : 1;
     }
-    
+
     if (result.errors) {
       categoryData.errors.push(...(Array.isArray(result.errors) ? result.errors : [result.errors]));
     }
-    
+
     // Track quality metrics
     if (result.qualityScore !== undefined) {
       if (!processed.qualityMetrics.has(category)) {
@@ -203,19 +203,19 @@ class ValidationReportingSystem {
           max: -Infinity,
         });
       }
-      
+
       const qualityData = processed.qualityMetrics.get(category);
       qualityData.scores.push(result.qualityScore);
       qualityData.min = Math.min(qualityData.min, result.qualityScore);
       qualityData.max = Math.max(qualityData.max, result.qualityScore);
       qualityData.average = qualityData.scores.reduce((sum, score) => sum + score, 0) / qualityData.scores.length;
     }
-    
+
     // Track performance
     if (result.processingTime !== undefined) {
       processed.performanceMetrics.totalProcessingTime += result.processingTime;
     }
-    
+
     // Store detailed result
     processed.detailedResults.push({
       file: result.file || result.path,
@@ -231,7 +231,7 @@ class ValidationReportingSystem {
 
   determineCategory(filePath) {
     if (!filePath) return 'unknown';
-    
+
     if (filePath.includes('/chatmodes/')) return 'chatmodes';
     if (filePath.includes('/prompts/')) return 'prompts';
     if (filePath.includes('/mcp/')) return 'mcp-servers';
@@ -239,13 +239,13 @@ class ValidationReportingSystem {
     if (filePath.endsWith('.md')) return 'documentation';
     if (filePath.endsWith('.js') || filePath.endsWith('.ts')) return 'code';
     if (filePath.endsWith('.json')) return 'configuration';
-    
+
     return 'other';
   }
 
   async generateRecommendations(processedData) {
     const recommendations = [];
-    
+
     // Quality-based recommendations
     if (processedData.summary.successRate < 80) {
       recommendations.push({
@@ -257,7 +257,7 @@ class ValidationReportingSystem {
         impact: 'high',
       });
     }
-    
+
     // Performance-based recommendations
     if (processedData.performanceMetrics.averageFileProcessingTime > 1000) {
       recommendations.push({
@@ -269,11 +269,11 @@ class ValidationReportingSystem {
         impact: 'medium',
       });
     }
-    
+
     // Category-specific recommendations
     for (const [category, data] of processedData.categories) {
       const successRate = (data.valid / data.total) * 100;
-      
+
       if (successRate < 70 && data.total > 3) {
         recommendations.push({
           priority: 'medium',
@@ -285,7 +285,7 @@ class ValidationReportingSystem {
         });
       }
     }
-    
+
     // Error pattern recommendations
     if (processedData.summary.errorCount > processedData.summary.totalFiles * 0.5) {
       recommendations.push({
@@ -297,7 +297,7 @@ class ValidationReportingSystem {
         impact: 'high',
       });
     }
-    
+
     return recommendations.sort((a, b) => {
       const priorityOrder = { high: 3, medium: 2, low: 1 };
       return priorityOrder[b.priority] - priorityOrder[a.priority];
@@ -306,36 +306,36 @@ class ValidationReportingSystem {
 
   async generateAllReportTypes(reportId, processedData) {
     console.log('📝 Generating report types...');
-    
+
     const reports = {};
-    
+
     // Comprehensive report
     reports.comprehensive = await this.generateComprehensiveReportFile(reportId, processedData);
-    
+
     // Executive summary
     reports.summary = await this.generateExecutiveSummary(reportId, processedData);
-    
+
     // Technical details
     reports.technical = await this.generateTechnicalReport(reportId, processedData);
-    
+
     // Performance analysis
     reports.performance = await this.generatePerformanceReport(reportId, processedData);
-    
+
     // Trends analysis (if historical data exists)
     reports.trends = await this.generateTrendsReport(reportId, processedData);
-    
+
     console.log('✅ All report types generated');
     return reports;
   }
 
   async generateComprehensiveReportFile(reportId, data) {
     const filePath = join(this.reportsPath, `${reportId}-comprehensive.md`);
-    
+
     let content = `# Comprehensive Validation Report\n\n`;
     content += `**Report ID**: ${reportId}\n`;
     content += `**Generated**: ${data.timestamp}\n`;
     content += `**Total Files Analyzed**: ${data.summary.totalFiles}\n\n`;
-    
+
     // Executive Summary
     content += `## Executive Summary\n\n`;
     content += `- **Success Rate**: ${data.summary.successRate.toFixed(1)}%\n`;
@@ -344,14 +344,14 @@ class ValidationReportingSystem {
     content += `- **Files with Warnings**: ${data.summary.warningFiles}\n`;
     content += `- **Total Errors**: ${data.summary.errorCount}\n`;
     content += `- **Total Warnings**: ${data.summary.warningCount}\n\n`;
-    
+
     // Quality Assessment
     const qualityLevel = data.summary.successRate >= 90 ? 'Excellent' :
                         data.summary.successRate >= 80 ? 'Good' :
                         data.summary.successRate >= 70 ? 'Fair' : 'Needs Improvement';
-    
+
     content += `### Overall Quality Assessment: ${qualityLevel}\n\n`;
-    
+
     // Category Analysis
     content += `## Category Analysis\n\n`;
     for (const [category, categoryData] of data.categories) {
@@ -361,7 +361,7 @@ class ValidationReportingSystem {
       content += `- **Success Rate**: ${categorySuccessRate.toFixed(1)}%\n`;
       content += `- **Errors**: ${categoryData.errors.length}\n`;
       content += `- **Warnings**: ${categoryData.warnings}\n\n`;
-      
+
       if (categoryData.errors.length > 0) {
         content += `**Common Errors:**\n`;
         const errorCounts = {};
@@ -369,7 +369,7 @@ class ValidationReportingSystem {
           const errorMsg = typeof error === 'string' ? error : error.message || 'Unknown error';
           errorCounts[errorMsg] = (errorCounts[errorMsg] || 0) + 1;
         });
-        
+
         Object.entries(errorCounts)
           .sort((a, b) => b[1] - a[1])
           .slice(0, 3)
@@ -379,7 +379,7 @@ class ValidationReportingSystem {
         content += `\n`;
       }
     }
-    
+
     // Quality Metrics
     if (data.qualityMetrics.size > 0) {
       content += `## Quality Metrics\n\n`;
@@ -391,12 +391,12 @@ class ValidationReportingSystem {
         content += `- **Score Distribution**: ${metrics.scores.length} files scored\n\n`;
       }
     }
-    
+
     // Performance Analysis
     content += `## Performance Analysis\n\n`;
     content += `- **Total Processing Time**: ${data.performanceMetrics.totalProcessingTime}ms\n`;
     content += `- **Average Time per File**: ${data.performanceMetrics.averageFileProcessingTime.toFixed(0)}ms\n\n`;
-    
+
     if (data.performanceMetrics.slowestFiles.length > 0) {
       content += `### Slowest Files\n\n`;
       data.performanceMetrics.slowestFiles.forEach((file, index) => {
@@ -404,7 +404,7 @@ class ValidationReportingSystem {
       });
       content += `\n`;
     }
-    
+
     // Recommendations
     if (data.recommendations.length > 0) {
       content += `## Recommendations\n\n`;
@@ -418,7 +418,7 @@ class ValidationReportingSystem {
         content += `**Recommended Action**: ${rec.action}\n\n`;
       });
     }
-    
+
     // Detailed Results
     content += `## Detailed Results\n\n`;
     const groupedResults = {};
@@ -428,11 +428,11 @@ class ValidationReportingSystem {
       }
       groupedResults[result.category].push(result);
     });
-    
+
     for (const [category, results] of Object.entries(groupedResults)) {
       content += `### ${category}\n\n`;
       results.forEach(result => {
-        const statusEmoji = result.status === 'valid' || result.status === 'passed' ? '✅' : 
+        const statusEmoji = result.status === 'valid' || result.status === 'passed' ? '✅' :
                            result.status === 'warning' ? '⚠️' : '❌';
         content += `- ${statusEmoji} **${result.file}**`;
         if (result.qualityScore !== undefined) {
@@ -442,13 +442,13 @@ class ValidationReportingSystem {
           content += ` (${result.processingTime}ms)`;
         }
         content += `\n`;
-        
+
         if (result.errors.length > 0) {
           result.errors.forEach(error => {
             content += `  - ❌ ${typeof error === 'string' ? error : error.message}\n`;
           });
         }
-        
+
         if (result.warnings.length > 0) {
           result.warnings.forEach(warning => {
             content += `  - ⚠️ ${typeof warning === 'string' ? warning : warning.message}\n`;
@@ -457,18 +457,18 @@ class ValidationReportingSystem {
       });
       content += `\n`;
     }
-    
+
     await fs.writeFile(filePath, content);
     return filePath;
   }
 
   async generateExecutiveSummary(reportId, data) {
     const filePath = join(this.reportsPath, `${reportId}-summary.md`);
-    
+
     let content = `# Executive Summary - Validation Report\n\n`;
     content += `**Report Date**: ${new Date(data.timestamp).toLocaleDateString()}\n`;
     content += `**Files Analyzed**: ${data.summary.totalFiles}\n\n`;
-    
+
     // Key Metrics
     content += `## Key Metrics\n\n`;
     content += `| Metric | Value | Status |\n`;
@@ -477,7 +477,7 @@ class ValidationReportingSystem {
     content += `| Valid Files | ${data.summary.validFiles} | - |\n`;
     content += `| Invalid Files | ${data.summary.invalidFiles} | ${data.summary.invalidFiles === 0 ? '✅ None' : '⚠️ Review Required'} |\n`;
     content += `| Total Errors | ${data.summary.errorCount} | ${data.summary.errorCount === 0 ? '✅ None' : '⚠️ Action Required'} |\n\n`;
-    
+
     // Top Priority Actions
     const highPriorityRecs = data.recommendations.filter(r => r.priority === 'high');
     if (highPriorityRecs.length > 0) {
@@ -489,18 +489,18 @@ class ValidationReportingSystem {
     } else {
       content += `## ✅ No High Priority Issues\n\n`;
     }
-    
+
     // Category Performance
     content += `## Category Performance\n\n`;
     const sortedCategories = Array.from(data.categories.entries())
       .sort((a, b) => (b[1].valid / b[1].total) - (a[1].valid / a[1].total));
-    
+
     sortedCategories.forEach(([category, categoryData]) => {
       const successRate = (categoryData.valid / categoryData.total) * 100;
       const status = successRate >= 80 ? '✅' : successRate >= 60 ? '⚠️' : '❌';
       content += `- ${status} **${category}**: ${successRate.toFixed(1)}% (${categoryData.valid}/${categoryData.total})\n`;
     });
-    
+
     content += `\n## Next Steps\n\n`;
     if (data.recommendations.length > 0) {
       content += `1. Address ${highPriorityRecs.length} high priority recommendations\n`;
@@ -512,14 +512,14 @@ class ValidationReportingSystem {
       content += `2. Continue regular validation monitoring\n`;
       content += `3. Consider advanced quality enhancements\n`;
     }
-    
+
     await fs.writeFile(filePath, content);
     return filePath;
   }
 
   async generateTechnicalReport(reportId, data) {
     const filePath = join(this.reportsPath, `${reportId}-technical.json`);
-    
+
     const technicalData = {
       reportId,
       timestamp: data.timestamp,
@@ -536,32 +536,32 @@ class ValidationReportingSystem {
       recommendations: data.recommendations,
       rawData: data,
     };
-    
+
     await fs.writeFile(filePath, JSON.stringify(technicalData, null, 2));
     return filePath;
   }
 
   async generatePerformanceReport(reportId, data) {
     const filePath = join(this.reportsPath, `${reportId}-performance.md`);
-    
+
     let content = `# Performance Analysis Report\n\n`;
     content += `**Report ID**: ${reportId}\n`;
     content += `**Analysis Date**: ${new Date(data.timestamp).toLocaleDateString()}\n\n`;
-    
+
     // Performance Summary
     content += `## Performance Summary\n\n`;
     content += `- **Total Processing Time**: ${data.performanceMetrics.totalProcessingTime}ms\n`;
     content += `- **Average Time per File**: ${data.performanceMetrics.averageFileProcessingTime.toFixed(2)}ms\n`;
     content += `- **Files Processed**: ${data.summary.totalFiles}\n`;
     content += `- **Processing Rate**: ${(data.summary.totalFiles / (data.performanceMetrics.totalProcessingTime / 1000)).toFixed(2)} files/second\n\n`;
-    
+
     // Performance Categories
     const performanceRating = data.performanceMetrics.averageFileProcessingTime < 100 ? 'Excellent' :
                              data.performanceMetrics.averageFileProcessingTime < 500 ? 'Good' :
                              data.performanceMetrics.averageFileProcessingTime < 1000 ? 'Fair' : 'Needs Improvement';
-    
+
     content += `### Performance Rating: ${performanceRating}\n\n`;
-    
+
     // Slowest Files
     if (data.performanceMetrics.slowestFiles.length > 0) {
       content += `## Slowest Processing Files\n\n`;
@@ -572,7 +572,7 @@ class ValidationReportingSystem {
       });
       content += `\n`;
     }
-    
+
     // Fastest Files
     if (data.performanceMetrics.fastestFiles.length > 0) {
       content += `## Fastest Processing Files\n\n`;
@@ -583,7 +583,7 @@ class ValidationReportingSystem {
       });
       content += `\n`;
     }
-    
+
     // Performance by Category
     content += `## Performance by Category\n\n`;
     const categoryPerformance = new Map();
@@ -600,16 +600,16 @@ class ValidationReportingSystem {
       catPerf.fileCount++;
       catPerf.averageTime = catPerf.totalTime / catPerf.fileCount;
     });
-    
+
     const sortedCategoryPerf = Array.from(categoryPerformance.entries())
       .sort((a, b) => b[1].averageTime - a[1].averageTime);
-    
+
     content += `| Category | Files | Average Time | Total Time |\n`;
     content += `|----------|-------|--------------|------------|\n`;
     sortedCategoryPerf.forEach(([category, perf]) => {
       content += `| ${category} | ${perf.fileCount} | ${perf.averageTime.toFixed(2)}ms | ${perf.totalTime}ms |\n`;
     });
-    
+
     // Performance Recommendations
     content += `\n## Performance Recommendations\n\n`;
     const perfRecommendations = data.recommendations.filter(r => r.category === 'performance');
@@ -621,33 +621,33 @@ class ValidationReportingSystem {
     } else {
       content += `✅ No specific performance recommendations at this time.\n\n`;
     }
-    
+
     await fs.writeFile(filePath, content);
     return filePath;
   }
 
   async generateTrendsReport(reportId, data) {
     const filePath = join(this.reportsPath, `${reportId}-trends.md`);
-    
+
     let content = `# Trends Analysis Report\n\n`;
     content += `**Report ID**: ${reportId}\n`;
     content += `**Analysis Date**: ${new Date(data.timestamp).toLocaleDateString()}\n\n`;
-    
+
     // Note about historical data
     content += `## Historical Trend Analysis\n\n`;
     content += `*This report shows trends based on available historical validation data.*\n\n`;
-    
+
     try {
       // Try to load historical data
       const historicalData = await this.loadHistoricalData();
-      
+
       if (historicalData.length > 1) {
         content += await this.generateTrendAnalysis(historicalData, data);
       } else {
         content += `### Insufficient Historical Data\n\n`;
         content += `This is the first report or insufficient historical data is available for trend analysis.\n`;
         content += `Trend analysis will be available after multiple validation runs.\n\n`;
-        
+
         content += `### Current Baseline Metrics\n\n`;
         content += `- **Success Rate**: ${data.summary.successRate.toFixed(1)}%\n`;
         content += `- **Average Processing Time**: ${data.performanceMetrics.averageFileProcessingTime.toFixed(2)}ms\n`;
@@ -657,14 +657,14 @@ class ValidationReportingSystem {
       content += `### Trend Analysis Unavailable\n\n`;
       content += `Unable to perform trend analysis: ${error.message}\n\n`;
     }
-    
+
     await fs.writeFile(filePath, content);
     return filePath;
   }
 
   async generateDashboard(reportId, data) {
     const filePath = join(this.reportsPath, `${reportId}-dashboard.html`);
-    
+
     const htmlContent = this.templates.dashboard
       .replace(/{{REPORT_ID}}/g, reportId)
       .replace(/{{TIMESTAMP}}/g, data.timestamp)
@@ -677,14 +677,14 @@ class ValidationReportingSystem {
       .replace(/{{PROCESSING_TIME}}/g, data.performanceMetrics.totalProcessingTime)
       .replace(/{{CATEGORIES_DATA}}/g, JSON.stringify(Array.from(data.categories.entries())))
       .replace(/{{RECOMMENDATIONS_DATA}}/g, JSON.stringify(data.recommendations));
-    
+
     await fs.writeFile(filePath, htmlContent);
     return filePath;
   }
 
   async generateNotifications(data) {
     const notifications = [];
-    
+
     // Critical notifications
     if (data.summary.successRate < 60) {
       notifications.push({
@@ -694,7 +694,7 @@ class ValidationReportingSystem {
         actions: ['Review failed validations', 'Fix critical errors', 'Update validation rules'],
       });
     }
-    
+
     // Warning notifications
     if (data.summary.errorCount > data.summary.totalFiles * 0.3) {
       notifications.push({
@@ -704,7 +704,7 @@ class ValidationReportingSystem {
         actions: ['Identify error patterns', 'Update documentation', 'Improve validation'],
       });
     }
-    
+
     // Performance notifications
     if (data.performanceMetrics.averageFileProcessingTime > 1000) {
       notifications.push({
@@ -714,7 +714,7 @@ class ValidationReportingSystem {
         actions: ['Optimize validation algorithms', 'Consider parallel processing'],
       });
     }
-    
+
     // Success notifications
     if (data.summary.successRate >= 95) {
       notifications.push({
@@ -724,17 +724,17 @@ class ValidationReportingSystem {
         actions: ['Maintain quality standards', 'Consider advanced features'],
       });
     }
-    
+
     // Save notifications
     const notificationsFile = join(this.reportsPath, 'notifications.json');
     await fs.writeFile(notificationsFile, JSON.stringify(notifications, null, 2));
-    
+
     return notifications;
   }
 
   async saveReportMetadata(reportId, reportData) {
     const metadataFile = join(this.reportsPath, `${reportId}-metadata.json`);
-    
+
     const metadata = {
       reportId,
       timestamp: reportData.timestamp,
@@ -749,7 +749,7 @@ class ValidationReportingSystem {
       },
       processingTime: Date.now() - new Date(reportData.timestamp).getTime(),
     };
-    
+
     await fs.writeFile(metadataFile, JSON.stringify(metadata, null, 2));
     return metadata;
   }
@@ -758,7 +758,7 @@ class ValidationReportingSystem {
     try {
       const files = await fs.readdir(this.reportsPath);
       const metadataFiles = files.filter(f => f.endsWith('-metadata.json'));
-      
+
       const historicalData = [];
       for (const file of metadataFiles) {
         try {
@@ -769,7 +769,7 @@ class ValidationReportingSystem {
           // Skip invalid metadata files
         }
       }
-      
+
       return historicalData.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
     } catch (error) {
       return [];
@@ -778,25 +778,25 @@ class ValidationReportingSystem {
 
   async generateTrendAnalysis(historicalData, currentData) {
     let content = `### Quality Trends\n\n`;
-    
+
     if (historicalData.length >= 2) {
       const latest = historicalData[historicalData.length - 1];
       const previous = historicalData[historicalData.length - 2];
-      
+
       const successRateTrend = currentData.summary.successRate - previous.summary.successRate;
-      const trendDirection = successRateTrend > 1 ? '📈 Improving' : 
+      const trendDirection = successRateTrend > 1 ? '📈 Improving' :
                            successRateTrend < -1 ? '📉 Declining' : '➡️ Stable';
-      
+
       content += `- **Success Rate Trend**: ${trendDirection} (${successRateTrend > 0 ? '+' : ''}${successRateTrend.toFixed(1)}%)\n`;
       content += `- **Current Success Rate**: ${currentData.summary.successRate.toFixed(1)}%\n`;
       content += `- **Previous Success Rate**: ${previous.summary.successRate.toFixed(1)}%\n\n`;
-      
+
       // Generate chart data for the last 10 reports
       const recentData = historicalData.slice(-10);
       content += `### Recent Success Rate History\n\n`;
       content += `| Date | Success Rate | Change |\n`;
       content += `|------|--------------|--------|\n`;
-      
+
       for (let i = 0; i < recentData.length; i++) {
         const report = recentData[i];
         const change = i > 0 ? report.summary.successRate - recentData[i-1].summary.successRate : 0;
@@ -804,7 +804,7 @@ class ValidationReportingSystem {
         content += `| ${new Date(report.timestamp).toLocaleDateString()} | ${report.summary.successRate.toFixed(1)}% | ${changeText} |\n`;
       }
     }
-    
+
     return content;
   }
 
@@ -856,7 +856,7 @@ class ValidationReportingSystem {
             <h1>Validation Dashboard</h1>
             <p>Report: {{REPORT_ID}} | Generated: {{TIMESTAMP}}</p>
         </div>
-        
+
         <div class="metrics">
             <div class="metric">
                 <div class="metric-value">{{SUCCESS_RATE}}%</div>
@@ -875,23 +875,23 @@ class ValidationReportingSystem {
                 <div class="metric-label">Errors</div>
             </div>
         </div>
-        
+
         <div class="chart-container">
             <h3>Category Analysis</h3>
             <div id="categoryChart"></div>
         </div>
-        
+
         <div class="recommendations">
             <h3>Recommendations</h3>
             <div id="recommendationsList"></div>
         </div>
     </div>
-    
+
     <script>
         // Simple visualization
         const categories = {{CATEGORIES_DATA}};
         const recommendations = {{RECOMMENDATIONS_DATA}};
-        
+
         // Render category chart
         const chartDiv = document.getElementById('categoryChart');
         categories.forEach(([name, data]) => {
@@ -905,7 +905,7 @@ class ValidationReportingSystem {
                 </div>
             \`;
         });
-        
+
         // Render recommendations
         const recDiv = document.getElementById('recommendationsList');
         recommendations.forEach(rec => {
@@ -944,13 +944,13 @@ Generated by Validation Reporting System
 
   async generateQuickReport(data) {
     console.log('⚡ Generating quick validation report...');
-    
+
     const timestamp = new Date().toISOString();
     const quickReportPath = join(this.reportsPath, `quick-report-${timestamp.split('T')[0]}.md`);
-    
+
     let content = `# Quick Validation Report\n\n`;
     content += `**Generated**: ${timestamp}\n\n`;
-    
+
     if (data.summary) {
       content += `## Summary\n\n`;
       content += `- **Files**: ${data.summary.totalFiles || 0}\n`;
@@ -958,7 +958,7 @@ Generated by Validation Reporting System
       content += `- **Errors**: ${data.summary.errorCount || 0}\n`;
       content += `- **Warnings**: ${data.summary.warningCount || 0}\n\n`;
     }
-    
+
     if (data.recommendations && data.recommendations.length > 0) {
       const criticalRecs = data.recommendations.filter(r => r.priority === 'high');
       if (criticalRecs.length > 0) {
@@ -969,14 +969,14 @@ Generated by Validation Reporting System
         content += `\n`;
       }
     }
-    
+
     content += `## Status\n\n`;
     const overallStatus = (data.summary?.successRate || 0) >= 80 ? '✅ Good' : '⚠️ Needs Attention';
     content += `Overall: ${overallStatus}\n`;
-    
+
     await fs.mkdir(this.reportsPath, { recursive: true });
     await fs.writeFile(quickReportPath, content);
-    
+
     console.log(`✅ Quick report saved: ${quickReportPath}`);
     return quickReportPath;
   }
@@ -987,7 +987,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   const reportingSystem = new ValidationReportingSystem({
     rootPath: process.cwd(),
   });
-  
+
   // Example usage - in real usage, this would receive actual validation data
   const sampleData = {
     validationResults: [
@@ -995,7 +995,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
       { file: 'test2.md', status: 'failed', category: 'chatmodes', errors: ['Missing description'], processingTime: 200 },
     ],
   };
-  
+
   if (process.argv.includes('--quick')) {
     reportingSystem.generateQuickReport({ summary: { totalFiles: 2, successRate: 50, errorCount: 1, warningCount: 0 } });
   } else {

@@ -52,16 +52,21 @@ instruction sets used in xanadOS.
 **Comprehensive Configuration Files**:
 
 1. **validation-rules.JSON** (200+ lines)
+
 - Detailed rule definitions with severity levels
 - Customizable patterns and thresholds
 - Environment-specific rule overrides
 - Global settings and exclusion patterns
+
 2. **quality-standards.JSON** (250+ lines)
+
 - Quality metrics and scoring criteria
 - Benchmarks for different quality levels
 - Quality gates for different environments
 - Automated improvement recommendations
+
 3. **Configuration Documentation**
+
 - Setup and customization guidelines
 - Environment-specific configurations
 - Best practices for rule management

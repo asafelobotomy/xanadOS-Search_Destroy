@@ -31,11 +31,11 @@ WORKSPACE_ID=$(find ~/.config/Code/User/workspaceStorage -maxdepth 1 -type d -ex
 
 if [ -n "$WORKSPACE_ID" ]; then
     echo "🧹 Cleaning VS Code workspace cache for project..."
-    
+
     # Remove any cached file references that might cause restoration
     find ~/.config/Code/User/workspaceStorage/$WORKSPACE_ID -name "*recent*" -type f -delete 2>/dev/null
     find ~/.config/Code/User/workspaceStorage/$WORKSPACE_ID -name "*history*" -type f -delete 2>/dev/null
-    
+
     echo "✅ VS Code workspace cache cleaned."
 fi
 

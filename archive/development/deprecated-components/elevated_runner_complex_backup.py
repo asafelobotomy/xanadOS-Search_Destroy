@@ -106,27 +106,27 @@ def elevated_run(argv: Sequence[str], *, timeout: int = 300, capture_output: boo
     errors = []
 
     methods: list[tuple[str,list[str],dict]] = []
-    
+
     # Check current session and preferred authentication method
     session_active = _is_sudo_session_active()
     session_auth_method = _get_session_auth_method() if session_active else ""
-    
-    logger.info("🔍 Session check: active=%s, method='%s', prefer_sudo=%s", 
+
+    logger.info("🔍 Session check: active=%s, method='%s', prefer_sudo=%s",
                session_active, session_auth_method, prefer_sudo)
-    
+
     # Automatically prefer the same method used in the active session
     should_prefer_sudo = prefer_sudo or (session_active and session_auth_method == "sudo")
     should_prefer_pkexec = session_active and session_auth_method == "pkexec"
-    
+
     if should_prefer_sudo:
-        logger.info("🔄 Preferring sudo for session reuse (active=%s, method=%s, requested=%s)", 
+        logger.info("🔄 Preferring sudo for session reuse (active=%s, method=%s, requested=%s)",
                     session_active, session_auth_method, prefer_sudo)
     elif should_prefer_pkexec:
-        logger.info("🔄 Preferring pkexec for session consistency (active=%s, method=%s)", 
+        logger.info("🔄 Preferring pkexec for session consistency (active=%s, method=%s)",
                     session_active, session_auth_method)
     else:
         logger.info("🔄 Using default method priority (no active session or preference)")
-    
+
     # Adjust method priority based on session consistency and preferences
     if should_prefer_pkexec and pkexec:
         # When pkexec session is active, use pkexec consistently
@@ -226,7 +226,7 @@ def validate_auth_session() -> bool:
     Validate/refresh authentication session to minimize prompts.
     Uses GUI-friendly authentication methods when possible.
     Uses file-based session tracking for cross-thread/process communication.
-    
+
     Returns:
         True if authentication is valid/refreshed, False otherwise
     """
@@ -234,15 +234,15 @@ def validate_auth_session() -> bool:
     if _is_sudo_session_active():
         logger.debug("Authentication session already active")
         return True
-        
+
     # Try GUI-friendly authentication first (pkexec), then sudo
     pkexec = _which("pkexec")
     sudo = _which("sudo")
-    
+
     if not (pkexec or sudo):
         logger.error("No authentication method available (pkexec or sudo)")
         return False
-    
+
     # Method 1: Try pkexec with a simple command (GUI-friendly)
     if pkexec:
         try:
@@ -254,13 +254,13 @@ def validate_auth_session() -> bool:
                 text=True,
                 env=_sanitize_env(gui=True)
             )
-            
-            logger.debug("pkexec result: returncode=%d, stdout='%s', stderr='%s'", 
+
+            logger.debug("pkexec result: returncode=%d, stdout='%s', stderr='%s'",
                         result.returncode, result.stdout.strip(), result.stderr.strip())
-            
+
             if result.returncode == 0:
                 logger.info("✅ GUI authentication successful with pkexec")
-                
+
                 # Also establish a sudo session for subsequent command reuse
                 # This prevents multiple pkexec prompts since pkexec doesn't persist sessions
                 if sudo:
@@ -284,7 +284,7 @@ def validate_auth_session() -> bool:
                         _set_sudo_session_active(True, "pkexec")
                 else:
                     _set_sudo_session_active(True, "pkexec")
-                
+
                 return True
             elif result.returncode == 126:
                 logger.info("❌ pkexec cancelled by user")
@@ -295,14 +295,14 @@ def validate_auth_session() -> bool:
             logger.warning("pkexec authentication timed out")
         except Exception as e:
             logger.debug("pkexec authentication error: %s", e)
-    
+
     # Method 2: Try sudo with askpass helper (GUI-friendly)
     if sudo and os.environ.get("DISPLAY"):
         askpass_helpers = [
-            "/usr/bin/ssh-askpass", "/usr/bin/x11-ssh-askpass", 
+            "/usr/bin/ssh-askpass", "/usr/bin/x11-ssh-askpass",
             "/usr/bin/ksshaskpass", "/usr/bin/lxqt-openssh-askpass"
         ]
-        
+
         for helper in askpass_helpers:
             if os.path.exists(helper):
                 try:
@@ -316,34 +316,34 @@ def validate_auth_session() -> bool:
                         text=True,
                         env=env
                     )
-                    
+
                     if result.returncode == 0:
                         logger.info("GUI authentication successful with sudo + askpass")
                         _set_sudo_session_active(True, "sudo")
                         return True
                     else:
                         logger.debug("sudo + askpass failed (rc=%d)", result.returncode)
-                        
+
                 except subprocess.TimeoutExpired:
                     logger.warning("sudo + askpass authentication timed out")
                 except Exception as e:
                     logger.debug("sudo + askpass authentication error: %s", e)
-                    
+
                 # Only try the first available askpass helper
                 break
-    
+
     # Method 3: Fallback to regular sudo -v (may prompt in terminal)
     if sudo:
         try:
             logger.debug("Attempting terminal authentication with sudo -v")
             result = subprocess.run(
-                [sudo, "-v"], 
+                [sudo, "-v"],
                 timeout=60,
-                capture_output=True, 
+                capture_output=True,
                 text=True,
                 env=_sanitize_env(gui=True)
             )
-            
+
             if result.returncode == 0:
                 logger.info("Terminal authentication successful with sudo")
                 _set_sudo_session_active(True, "sudo")
@@ -352,7 +352,7 @@ def validate_auth_session() -> bool:
                 logger.warning("Sudo authentication validation failed (rc=%d)", result.returncode)
                 _set_sudo_session_active(False)
                 return False
-                
+
         except subprocess.TimeoutExpired:
             logger.warning("Sudo authentication validation timed out")
             _set_sudo_session_active(False)
@@ -361,7 +361,7 @@ def validate_auth_session() -> bool:
             logger.warning("Sudo authentication validation error: %s", e)
             _set_sudo_session_active(False)
             return False
-    
+
     logger.error("All authentication methods failed")
     _set_sudo_session_active(False)
     return False
@@ -375,12 +375,12 @@ def _set_sudo_session_active(active: bool, auth_method: str = "sudo") -> None:
                 f.write(str(time.time()))
             # Set restrictive permissions (owner only)
             os.chmod(_SESSION_FILE, 0o600)
-            
+
             # Store the authentication method used
             with open(_AUTH_METHOD_FILE, 'w') as f:
                 f.write(auth_method)
             os.chmod(_AUTH_METHOD_FILE, 0o600)
-            
+
             logger.debug("Authentication session file created: %s (method: %s)", _SESSION_FILE, auth_method)
         else:
             # Remove session files
@@ -396,11 +396,11 @@ def _is_sudo_session_active() -> bool:
     try:
         if not os.path.exists(_SESSION_FILE):
             return False
-        
+
         # Check if session file is recent enough
         stat = os.stat(_SESSION_FILE)
         session_age = time.time() - stat.st_mtime
-        
+
         if session_age > _SESSION_TIMEOUT:
             # Session too old, remove files
             try:
@@ -411,10 +411,10 @@ def _is_sudo_session_active() -> bool:
                 pass
             logger.debug("Authentication session expired (age: %.1fs)", session_age)
             return False
-        
+
         logger.debug("Authentication session active (age: %.1fs)", session_age)
         return True
-        
+
     except Exception as e:
         logger.warning("Failed to check authentication session state: %s", e)
         return False
@@ -424,7 +424,7 @@ def _get_session_auth_method() -> str:
     try:
         if not _is_sudo_session_active():
             return ""
-        
+
         if os.path.exists(_AUTH_METHOD_FILE):
             with open(_AUTH_METHOD_FILE, 'r') as f:
                 return f.read().strip()
@@ -471,14 +471,14 @@ def elevated_popen(argv: Sequence[str], *, gui: bool = True, allow_script: bool 
     sudo = _which("sudo")
     base_env = _sanitize_env(env, gui=gui)
     attempts: list[tuple[str,list[str],dict]] = []
-    
+
     # Automatically prefer sudo if session is active, or if explicitly requested
     should_prefer_sudo = prefer_sudo or _is_sudo_session_active()
-    
+
     if should_prefer_sudo:
-        logger.debug("Preferring sudo for popen session reuse (active=%s, requested=%s)", 
+        logger.debug("Preferring sudo for popen session reuse (active=%s, requested=%s)",
                     _is_sudo_session_active(), prefer_sudo)
-    
+
     # Adjust method priority based on prefer_sudo flag or active session
     if should_prefer_sudo and sudo:
         # When prefer_sudo is True or session is active, try sudo methods first for session reuse

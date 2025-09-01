@@ -32,15 +32,15 @@ class GitHubStatusMCPServer {
         },
       }
     );
-    
+
     this.octokit = new Octokit({
       auth: process.env.GITHUB_TOKEN,
     });
-    
+
     this.orgName = process.env.GITHUB_ORG || '';
     this.cache = new Map();
     this.cacheTimeout = 2 * 60 * 1000; // 2 minutes for status data
-    
+
     this.setupHandlers();
   }
 
@@ -50,7 +50,7 @@ class GitHubStatusMCPServer {
       try {
         const repositories = await this.getRepositories();
         const resources = [];
-        
+
         for (const repo of repositories.slice(0, 20)) { // Limit to avoid rate limits
           resources.push({
             uri: `github://status/${repo.name}/actions`,
@@ -58,14 +58,14 @@ class GitHubStatusMCPServer {
             name: `${repo.name} Actions Status`,
             description: `GitHub Actions workflow status for ${repo.name}`,
           });
-          
+
           resources.push({
             uri: `github://status/${repo.name}/pulls`,
             mimeType: 'application/json',
             name: `${repo.name} Pull Requests`,
             description: `Open pull requests for ${repo.name}`,
           });
-          
+
           resources.push({
             uri: `github://status/${repo.name}/issues`,
             mimeType: 'application/json',
@@ -73,7 +73,7 @@ class GitHubStatusMCPServer {
             description: `Open issues for ${repo.name}`,
           });
         }
-        
+
         // Add organization-wide resources
         resources.push({
           uri: `github://status/org/overview`,
@@ -81,7 +81,7 @@ class GitHubStatusMCPServer {
           name: 'Organization Overview',
           description: 'Overall status across all repositories',
         });
-        
+
         return { resources };
       } catch (error) {
         throw new McpError(
@@ -94,21 +94,21 @@ class GitHubStatusMCPServer {
     // Read status data
     this.server.setRequestHandler(ReadResourceRequestSchema, async (request) => {
       const { uri } = request.params;
-      
+
       try {
-        const match = uri.match(/^github:\/\/status\/(.+?)\/(.+)$/) || 
+        const match = uri.match(/^github:\/\/status\/(.+?)\/(.+)$/) ||
                      uri.match(/^github:\/\/status\/(org)\/(overview)$/);
-        
+
         if (!match) {
           throw new McpError(
             ErrorCode.InvalidRequest,
             `Invalid GitHub status URI: ${uri}`
           );
         }
-        
+
         const [, repoOrOrg, statusType] = match;
         let content = {};
-        
+
         if (repoOrOrg === 'org' && statusType === 'overview') {
           content = await this.getOrganizationOverview();
         } else {
@@ -129,7 +129,7 @@ class GitHubStatusMCPServer {
               );
           }
         }
-        
+
         return {
           contents: [
             {
@@ -274,7 +274,7 @@ class GitHubStatusMCPServer {
     // Handle tool calls
     this.server.setRequestHandler(CallToolRequestSchema, async (request) => {
       const { name, arguments: args } = request.params;
-      
+
       try {
         switch (name) {
           case 'get_workflow_runs':
@@ -309,7 +309,7 @@ class GitHubStatusMCPServer {
     const cacheKey = 'repositories';
     const cached = this.getCachedData(cacheKey);
     if (cached) return cached;
-    
+
     try {
       const { data } = await this.octokit.rest.repos.listForOrg({
         org: this.orgName,
@@ -317,7 +317,7 @@ class GitHubStatusMCPServer {
         sort: 'updated',
         per_page: 100,
       });
-      
+
       this.setCachedData(cacheKey, data);
       return data;
     } catch (error) {
@@ -329,14 +329,14 @@ class GitHubStatusMCPServer {
     const cacheKey = `actions:${repoName}`;
     const cached = this.getCachedData(cacheKey);
     if (cached) return cached;
-    
+
     try {
       const { data: runs } = await this.octokit.rest.actions.listWorkflowRunsForRepo({
         owner: this.orgName,
         repo: repoName,
         per_page: 20,
       });
-      
+
       const summary = {
         repository: repoName,
         total_runs: runs.total_count,
@@ -355,7 +355,7 @@ class GitHubStatusMCPServer {
         })),
         status_summary: this.summarizeWorkflowStatus(runs.workflow_runs),
       };
-      
+
       this.setCachedData(cacheKey, summary);
       return summary;
     } catch (error) {
@@ -367,7 +367,7 @@ class GitHubStatusMCPServer {
     const cacheKey = `pulls:${repoName}`;
     const cached = this.getCachedData(cacheKey);
     if (cached) return cached;
-    
+
     try {
       const { data: pulls } = await this.octokit.rest.pulls.list({
         owner: this.orgName,
@@ -377,7 +377,7 @@ class GitHubStatusMCPServer {
         direction: 'desc',
         per_page: 20,
       });
-      
+
       const pullRequestsWithStatus = await Promise.all(
         pulls.map(async (pr) => {
           try {
@@ -387,14 +387,14 @@ class GitHubStatusMCPServer {
               repo: repoName,
               ref: pr.head.sha,
             });
-            
+
             // Get PR reviews
             const { data: reviews } = await this.octokit.rest.pulls.listReviews({
               owner: this.orgName,
               repo: repoName,
               pull_number: pr.number,
             });
-            
+
             return {
               number: pr.number,
               title: pr.title,
@@ -442,7 +442,7 @@ class GitHubStatusMCPServer {
           }
         })
       );
-      
+
       const summary = {
         repository: repoName,
         total_open: pulls.length,
@@ -456,7 +456,7 @@ class GitHubStatusMCPServer {
           checks_failing: pullRequestsWithStatus.filter(pr => pr.status_checks.state === 'failure').length,
         },
       };
-      
+
       this.setCachedData(cacheKey, summary);
       return summary;
     } catch (error) {
@@ -468,7 +468,7 @@ class GitHubStatusMCPServer {
     const cacheKey = `issues:${repoName}`;
     const cached = this.getCachedData(cacheKey);
     if (cached) return cached;
-    
+
     try {
       const { data: issues } = await this.octokit.rest.issues.listForRepo({
         owner: this.orgName,
@@ -478,10 +478,10 @@ class GitHubStatusMCPServer {
         direction: 'desc',
         per_page: 20,
       });
-      
+
       // Filter out pull requests (they show up in issues API)
       const actualIssues = issues.filter(issue => !issue.pull_request);
-      
+
       const summary = {
         repository: repoName,
         total_open: actualIssues.length,
@@ -503,7 +503,7 @@ class GitHubStatusMCPServer {
           labeled: actualIssues.filter(issue => issue.labels.length > 0).length,
         },
       };
-      
+
       this.setCachedData(cacheKey, summary);
       return summary;
     } catch (error) {
@@ -515,10 +515,10 @@ class GitHubStatusMCPServer {
     const cacheKey = 'org:overview';
     const cached = this.getCachedData(cacheKey);
     if (cached) return cached;
-    
+
     try {
       const repositories = await this.getRepositories();
-      
+
       // Get a sample of recent activity
       const recentActivity = [];
       for (const repo of repositories.slice(0, 10)) {
@@ -528,7 +528,7 @@ class GitHubStatusMCPServer {
             repo: repo.name,
             per_page: 5,
           });
-          
+
           recentActivity.push(...runs.workflow_runs.map(run => ({
             repository: repo.name,
             type: 'workflow_run',
@@ -544,10 +544,10 @@ class GitHubStatusMCPServer {
           continue;
         }
       }
-      
+
       // Sort by most recent
       recentActivity.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-      
+
       const overview = {
         organization: this.orgName,
         total_repositories: repositories.length,
@@ -560,7 +560,7 @@ class GitHubStatusMCPServer {
         },
         generated_at: new Date().toISOString(),
       };
-      
+
       this.setCachedData(cacheKey, overview);
       return overview;
     } catch (error) {
@@ -570,20 +570,20 @@ class GitHubStatusMCPServer {
 
   async getWorkflowRuns(args) {
     const { repository, status = 'all', limit = 10 } = args;
-    
+
     try {
       const params = {
         owner: this.orgName,
         repo: repository,
         per_page: Math.min(limit, 100),
       };
-      
+
       if (status !== 'all') {
         params.status = status;
       }
-      
+
       const { data } = await this.octokit.rest.actions.listWorkflowRunsForRepo(params);
-      
+
       const runs = data.workflow_runs.map(run => ({
         id: run.id,
         name: run.name,
@@ -599,7 +599,7 @@ class GitHubStatusMCPServer {
         workflow_id: run.workflow_id,
         run_number: run.run_number,
       }));
-      
+
       return {
         content: [
           {
@@ -615,14 +615,14 @@ class GitHubStatusMCPServer {
 
   async getPRStatus(args) {
     const { repository, pr_number } = args;
-    
+
     try {
       const { data: pr } = await this.octokit.rest.pulls.get({
         owner: this.orgName,
         repo: repository,
         pull_number: pr_number,
       });
-      
+
       // Get detailed status information
       const [statusResponse, reviewsResponse, checksResponse] = await Promise.all([
         this.octokit.rest.repos.getCombinedStatusForRef({
@@ -641,7 +641,7 @@ class GitHubStatusMCPServer {
           ref: pr.head.sha,
         }).catch(() => ({ data: { check_runs: [] } })), // Fallback if checks not available
       ]);
-      
+
       const prStatus = {
         number: pr.number,
         title: pr.title,
@@ -677,7 +677,7 @@ class GitHubStatusMCPServer {
           body: review.body,
         })),
       };
-      
+
       return {
         content: [
           {
@@ -693,20 +693,20 @@ class GitHubStatusMCPServer {
 
   async getDeploymentStatus(args) {
     const { repository, environment } = args;
-    
+
     try {
       const params = {
         owner: this.orgName,
         repo: repository,
         per_page: 10,
       };
-      
+
       if (environment) {
         params.environment = environment;
       }
-      
+
       const { data: deployments } = await this.octokit.rest.repos.listDeployments(params);
-      
+
       const deploymentsWithStatus = await Promise.all(
         deployments.map(async (deployment) => {
           try {
@@ -715,7 +715,7 @@ class GitHubStatusMCPServer {
               repo: repository,
               deployment_id: deployment.id,
             });
-            
+
             return {
               id: deployment.id,
               sha: deployment.sha.substring(0, 7),
@@ -744,7 +744,7 @@ class GitHubStatusMCPServer {
           }
         })
       );
-      
+
       return {
         content: [
           {
@@ -760,14 +760,14 @@ class GitHubStatusMCPServer {
 
   async getSecurityAlerts(args) {
     const { repository, state = 'open' } = args;
-    
+
     try {
       const { data: alerts } = await this.octokit.rest.secretScanning.listAlertsForRepo({
         owner: this.orgName,
         repo: repository,
         state,
       });
-      
+
       const securityAlerts = alerts.map(alert => ({
         number: alert.number,
         state: alert.state,
@@ -783,7 +783,7 @@ class GitHubStatusMCPServer {
           end_line: loc.details?.end_line,
         })),
       }));
-      
+
       return {
         content: [
           {
@@ -799,7 +799,7 @@ class GitHubStatusMCPServer {
 
   async triggerWorkflow(args) {
     const { repository, workflow_id, ref = 'main', inputs = {} } = args;
-    
+
     try {
       const { data } = await this.octokit.rest.actions.createWorkflowDispatch({
         owner: this.orgName,
@@ -808,7 +808,7 @@ class GitHubStatusMCPServer {
         ref,
         inputs,
       });
-      
+
       return {
         content: [
           {
@@ -837,7 +837,7 @@ class GitHubStatusMCPServer {
       cancelled: 0,
       skipped: 0,
     };
-    
+
     runs.forEach(run => {
       if (run.status === 'completed') {
         if (run.conclusion === 'success') {
@@ -853,7 +853,7 @@ class GitHubStatusMCPServer {
         summary.in_progress++;
       }
     });
-    
+
     return summary;
   }
 
@@ -864,7 +864,7 @@ class GitHubStatusMCPServer {
         languages[repo.language] = (languages[repo.language] || 0) + 1;
       }
     });
-    
+
     return Object.entries(languages)
       .sort(([, a], [, b]) => b - a)
       .slice(0, 10)

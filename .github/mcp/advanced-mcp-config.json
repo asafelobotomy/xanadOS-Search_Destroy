@@ -22,7 +22,7 @@
       }
     },
     "security-mcp": {
-      "command": "node", 
+      "command": "node",
       "args": [".github/mcp/servers/security-mcp/index.js"],
       "features": {
         "vulnerabilityScanning": true,

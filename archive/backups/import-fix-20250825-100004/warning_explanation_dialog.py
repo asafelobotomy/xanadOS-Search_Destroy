@@ -27,7 +27,7 @@ sys.path.insert(0, str(project_root))
 from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtGui import QFont, QIcon, QPixmap
 from PyQt6.QtWidgets import (
-    QDialog, QVBoxLayout, QHBoxLayout, QLabel, 
+    QDialog, QVBoxLayout, QHBoxLayout, QLabel,
     QPushButton, QTextEdit, QFrame, QScrollArea,
     QWidget, QMessageBox, QSpacerItem, QSizePolicy,
     QGridLayout
@@ -41,32 +41,32 @@ from app.gui.themed_widgets import ThemedDialog
 
 class WarningExplanationDialog(ThemedDialog):
     """Dialog to display detailed warning explanations."""
-    
+
     # Signals
     mark_as_safe = pyqtSignal(str)  # Emit warning text when marked as safe
     investigate_requested = pyqtSignal(str)  # Emit warning text for investigation
-    
+
     def __init__(self, warning_text: str, explanation: WarningExplanation, parent=None):
         super().__init__(parent)
         self.warning_text = warning_text
         self.explanation = explanation
         self.parent_window = parent
-        
+
         self.setWindowTitle("RKHunter Warning Explanation")
         self.setMinimumSize(600, 500)
         self.setModal(True)
-        
+
         self._setup_ui()
         self._apply_styles()
-        
+
         # Theme is now handled by global theme manager automatically
-    
+
     def _get_severity_icon(self) -> QPixmap:
         """Get icon based on severity level."""
         # Create a simple colored circle icon based on severity
         pixmap = QPixmap(32, 32)
         pixmap.fill(Qt.GlobalColor.transparent)
-        
+
         # In a real implementation, you'd use proper icons
         # For now, we'll use the text-based icons from the analyzer
         icon_text = {
@@ -75,16 +75,16 @@ class WarningExplanationDialog(ThemedDialog):
             SeverityLevel.HIGH: "🚨",
             SeverityLevel.CRITICAL: "🔴"
         }.get(self.explanation.severity, "❓")
-        
+
         # For simplicity, return empty pixmap (icon text will be in badge)
         return pixmap
-    
+
     def _create_severity_badge(self) -> QLabel:
         """Create severity level badge."""
         badge = QLabel(self.explanation.severity.value.upper())
         badge.setAlignment(Qt.AlignmentFlag.AlignCenter)
         badge.setMinimumSize(80, 30)
-        
+
         # Color based on severity - using theme colors where appropriate
         colors = {
             SeverityLevel.LOW: get_theme_manager().get_color("success"),      # Green
@@ -92,7 +92,7 @@ class WarningExplanationDialog(ThemedDialog):
             SeverityLevel.HIGH: get_theme_manager().get_color("warning"),     # Orange
             SeverityLevel.CRITICAL: get_theme_manager().get_color("error")    # Red
         }
-        
+
         color = colors.get(self.explanation.severity, get_theme_manager().get_color("muted_text"))
         badge.setStyleSheet(f"""
             QLabel {{
@@ -103,13 +103,13 @@ class WarningExplanationDialog(ThemedDialog):
                 font-size: 12px;
             }}
         """)
-        
+
         return badge
-    
+
     def _apply_styles(self):
         """Apply custom styles to the dialog."""
         # Removed: Now handled by global theme manager
-    
+
     def get_theme_color(self, color_key):
         """Get theme-appropriate color from theme manager."""
         try:
@@ -118,7 +118,7 @@ class WarningExplanationDialog(ThemedDialog):
             # Fallback colors for dark theme if theme manager fails
             fallback_colors = {
                 "background": "#1a1a1a",
-                "secondary_bg": "#2a2a2a", 
+                "secondary_bg": "#2a2a2a",
                 "tertiary_bg": "#3a3a3a",
                 "primary_text": "#FFCDAA",
                 "secondary_text": "#999",
@@ -131,8 +131,8 @@ class WarningExplanationDialog(ThemedDialog):
                 "pressed_bg": "#2a2a2a",
             }
             return fallback_colors.get(color_key, "#FFCDAA")
-    
-    
+
+
     def _show_themed_message_box(self, msg_type, title, text, buttons=None):
         """Show a message box with proper theming."""
         msg_box = QMessageBox(self)
@@ -225,12 +225,12 @@ class WarningExplanationDialog(ThemedDialog):
             f"3. Review recent system changes\n"
             f"4. Consult security forums if concerned"
         )
-    
+
     def _on_mark_safe(self):
         """Handle mark as safe button click."""
         if not self.mark_safe_checkbox.isChecked():
             return
-            
+
         reply = self._show_themed_message_box(
             "question",
             "Mark Warning as Safe",
@@ -242,7 +242,7 @@ class WarningExplanationDialog(ThemedDialog):
             f"Only do this if you're confident the warning is harmless.",
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
         )
-        
+
         if reply == QMessageBox.StandardButton.Yes:
             self.mark_as_safe.emit(self.warning_text)
             self.accept()

@@ -363,15 +363,15 @@ class RKHunterScanThread(QThread, CooperativeCancellationMixin):
         self.cooperative_cancel()
         self._scan_cancelled = True
         self.logger.info("Stop scan requested for RKHunter")
-        
+
         # Use the wrapper's terminate method for safe process termination
         success = self.rkhunter.terminate_current_scan()
-        
+
         if success:
             self.progress_updated.emit("🛑 RKHunter scan cancellation requested")
         else:
             self.progress_updated.emit("⚠️ RKHunter scan termination failed - scan may continue briefly")
-        
+
         # Force the thread to exit quickly by setting cancellation flag
         # The run() method will check this flag and exit early
 
@@ -404,18 +404,18 @@ class RKHunterScanThread(QThread, CooperativeCancellationMixin):
 
             # Start the scan - this will handle authentication internally
             # Only start emitting progress once we know scan started successfully
-            
+
             # Import here to avoid import delays
             import time
             from PyQt6.QtCore import QTimer
             import threading
             from typing import Any
-            
+
             scan_completed = threading.Event()
             scan_result: list[Any] = [None]  # Use list to allow modification from inner function
             scan_error: list[Any] = [None]
             scan_started = threading.Event()  # Track when scan actually starts
-            
+
             # Define output callback to emit real-time output and detect scan start
             def output_callback(line: str):
                 """Handle real-time output from RKHunter."""
@@ -423,10 +423,10 @@ class RKHunterScanThread(QThread, CooperativeCancellationMixin):
                 if self._scan_cancelled:
                     self.logger.info("Cancellation detected in output callback")
                     return
-                    
+
                 if line.strip():  # Only emit non-empty lines
                     self.output_updated.emit(line)
-                    
+
                     # Look for indicators that the scan has actually started
                     # (not just authentication or initialization)
                     # Use very specific indicators that won't conflict with stage detection
@@ -435,20 +435,20 @@ class RKHunterScanThread(QThread, CooperativeCancellationMixin):
                         "Starting to create file hashes",
                         "Please wait while the file hash values are"
                     ]
-                    
+
                     if any(indicator in line for indicator in scan_start_indicators):
                         if not scan_started.is_set():
                             scan_started.set()
                             # Don't emit progress value here - let main window handle all progress
                             self.progress_updated.emit("RKHunter scan is now running...")
-            
+
             def run_scan():
                 try:
                     # Check for cancellation before starting
                     if self._scan_cancelled:
                         self.logger.info("Scan cancelled before starting")
                         return
-                    
+
                     # Simple authentication check
                     self.logger.info("Checking authentication for scan thread...")
                     try:
@@ -462,46 +462,46 @@ class RKHunterScanThread(QThread, CooperativeCancellationMixin):
                             return
                     except Exception as e:
                         self.logger.warning("Could not check auth session in scan thread: %s", e)
-                        
+
                     result = self.rkhunter.scan_system_with_output_callback(
                         test_categories=self.test_categories,
                         update_database=True,  # Include database update to avoid double authentication
                         output_callback=output_callback)
-                    
+
                     # Check for cancellation after scan completes
                     if self._scan_cancelled:
                         self.logger.info("Scan cancelled after completion")
                         return
-                        
+
                     scan_result[0] = result
                 except Exception as e:
                     self.logger.error("Error in RKHunter scan execution: %s", e)
                     scan_error[0] = e
                 finally:
                     scan_completed.set()
-            
+
             # Check for early cancellation
             if self._scan_cancelled:
                 self.progress_updated.emit("🛑 RKHunter scan cancelled before start")
                 return
-            
+
             # Start scan in background thread
             scan_thread = threading.Thread(target=run_scan)
             scan_thread.start()
-            
+
             # Wait for scan to actually start before emitting progress
             scan_started.wait(timeout=120)  # Wait up to 2 minutes for scan to start
-            
+
             if not scan_started.is_set():
                 # If scan hasn't started after timeout, something went wrong
                 self.progress_updated.emit("❌ Scan failed to start - authentication may have been cancelled")
                 scan_thread.join(timeout=5)
                 return
-            
+
             # Now we rely on real-time output parsing for progress updates
             # The main window will handle progress based on actual scan output
             # No need for simulated progress steps here since we have real output
-            
+
             # Just wait for scan to complete while real-time output handles progress
             # Check for cancellation periodically while waiting
             while scan_thread.is_alive():
@@ -509,19 +509,19 @@ class RKHunterScanThread(QThread, CooperativeCancellationMixin):
                     self.logger.info("Cancellation detected, breaking wait loop")
                     break
                 scan_thread.join(timeout=1)  # Check every second
-            
+
             # If cancelled, don't wait for thread - force cleanup
             if self._scan_cancelled:
                 self.logger.info("Scan cancelled, forcing thread cleanup")
                 if scan_thread.is_alive():
                     # Give the thread a few seconds to clean up
                     scan_thread.join(timeout=3)
-                    
+
                 # Create cancelled result immediately
                 self.progress_updated.emit("🛑 RKHunter scan cancelled")
                 from datetime import datetime
                 from core.rkhunter_wrapper import RKHunterScanResult
-                
+
                 cancelled_result = RKHunterScanResult(
                     scan_id=f"rkhunter_cancelled_{int(time.time())}",
                     start_time=datetime.now(),
@@ -531,14 +531,14 @@ class RKHunterScanThread(QThread, CooperativeCancellationMixin):
                 )
                 self.scan_completed.emit(cancelled_result)
                 return
-            
+
             # Wait for final completion if not cancelled
             if scan_thread.is_alive():
                 scan_thread.join()
-            
+
             if scan_error[0]:
                 raise scan_error[0]
-            
+
             result = scan_result[0]
 
             self.progress_updated.emit("Rootkit scan completed successfully")

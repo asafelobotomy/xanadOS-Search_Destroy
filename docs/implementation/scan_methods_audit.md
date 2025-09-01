@@ -72,10 +72,15 @@
 ### **Priority Order in `start_scan()` Method**
 
 1. **First Priority**: `quick_scan` parameter
+
 - If `quick_scan=True`→`effective_scan_type = "QUICK"`
+
 2. **Second Priority**: `scan_type_combo.currentData()`
+
 - If combo has data → `effective_scan_type = scan_type_data`
+
 3. **Default**: Fall back to FULL
+
 - If no parameter or combo data → `effective_scan_type = "FULL"`
 
 ### **✅ CORRECT BEHAVIOR**: This logic properly handles both scan triggering methods

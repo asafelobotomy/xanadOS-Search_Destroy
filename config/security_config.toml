@@ -11,36 +11,32 @@ quarantine_enabled = true
 # Malware analysis engines
 [security.engines]
 # YARA rule engine configuration
-yara = {
-    enabled = true,
-    rules_path = "config/yara_rules/",
-    custom_rules = true,
-    update_frequency = "daily"
-}
+[security.engines.yara]
+enabled = true
+rules_path = "config/yara_rules/"
+custom_rules = true
+update_frequency = "daily"
 
 # ClamAV integration
-clamav = {
-    enabled = true,
-    database_path = "/var/lib/clamav/",
-    signature_updates = "automatic",
-    scan_archives = true
-}
+[clamav]
+enabled = true
+database_path = "/var/lib/clamav/"
+signature_updates = "automatic"
+scan_archives = true
 
 # Memory forensics with Volatility
-volatility = {
-    enabled = true,
-    profile_autodetect = true,
-    dump_analysis = true,
-    process_analysis = true
-}
+[volatility]
+enabled = true
+profile_autodetect = true
+dump_analysis = true
+process_analysis = true
 
 # Network packet analysis
-network_analysis = {
-    enabled = true,
-    deep_packet_inspection = true,
-    protocol_analysis = ["TCP", "UDP", "HTTP", "HTTPS", "DNS"],
-    anomaly_detection = true
-}
+[network_analysis]
+enabled = true
+deep_packet_inspection = true
+protocol_analysis = ["TCP", "UDP", "HTTP", "HTTPS", "DNS"]
+anomaly_detection = true
 
 [security.automation]
 # Automated threat response
@@ -50,20 +46,18 @@ notification_alerts = true
 log_all_actions = true
 
 # Scheduled scanning
-scheduled_scans = {
-    full_system = "weekly",
-    quick_scan = "daily",
-    memory_scan = "hourly",
-    network_monitor = "continuous"
-}
+[scheduled_scans]
+full_system = "weekly"
+quick_scan = "daily"
+memory_scan = "hourly"
+network_monitor = "continuous"
 
 # Threat intelligence integration
-threat_intel = {
-    feeds_enabled = true,
-    ioc_matching = true,
-    reputation_checking = true,
-    sandbox_analysis = true
-}
+[threat_intel]
+feeds_enabled = true
+ioc_matching = true
+reputation_checking = true
+sandbox_analysis = true
 
 [security.performance]
 # Performance optimization for security operations
@@ -73,12 +67,11 @@ cpu_priority = "high"
 io_priority = "normal"
 
 # Cache configuration for faster analysis
-analysis_cache = {
-    enabled = true,
-    max_size_gb = 5,
-    retention_days = 30,
-    hash_verification = true
-}
+[analysis_cache]
+enabled = true
+max_size_gb = 5
+retention_days = 30
+hash_verification = true
 
 [security.logging]
 # Comprehensive security logging
@@ -98,28 +91,27 @@ events = [
 
 [security.advanced]
 # Advanced security features for 2025
-machine_learning = {
-    enabled = true,
-    model_updates = "automatic",
-    behavioral_analysis = true,
-    anomaly_threshold = 0.85
-}
+
+# Machine learning
+[machine_learning]
+enabled = true
+model_updates = "automatic"
+behavioral_analysis = true
+anomaly_threshold = 0.85
 
 # Zero-day detection capabilities
-zero_day_detection = {
-    enabled = true,
-    heuristic_analysis = true,
-    sandbox_timeout = 300,
-    emulation_enabled = true
-}
+[zero_day_detection]
+enabled = true
+heuristic_analysis = true
+sandbox_timeout = 300
+emulation_enabled = true
 
 # Cryptographic analysis
-crypto_analysis = {
-    enabled = true,
-    encryption_detection = true,
-    key_recovery = false,  # Ethical use only
-    hash_analysis = true
-}
+[crypto_analysis]
+enabled = true
+encryption_detection = true
+key_recovery = false  # Ethical use only
+hash_analysis = true
 
 [security.compliance]
 # Security compliance and standards

@@ -25,7 +25,7 @@ count_and_remove() {
     local description="$2"
     local count
     count=$(find . -name "$pattern" -not -path "./.venv/*" | wc -l)
-    
+
     if [ "$count" -gt 0 ]; then
         echo -e "${YELLOW}  Removing $count $description files...${NC}"
         find . -name "$pattern" -not -path "./.venv/*" -delete 2>/dev/null || true

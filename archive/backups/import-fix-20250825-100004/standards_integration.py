@@ -29,35 +29,35 @@ from .performance_standards import PerformanceOptimizer, PerformanceLevel, PERFO
 class ConfigurationLevel(Enum):
     """Configuration complexity levels"""
     MINIMAL = "minimal"
-    STANDARD = "standard" 
+    STANDARD = "standard"
     ADVANCED = "advanced"
     EXPERT = "expert"
 
 class StandardsManager:
     """Unified manager for all standardized libraries"""
-    
+
     def __init__(self, app_name: str = "xanados-search-destroy"):
         self.app_name = app_name
         self.app_paths = ApplicationPaths(app_name)
         self.security_standards = SecurityStandards()
         self.process_manager = PROCESS_MANAGER
         self.performance_optimizer = PERFORMANCE_OPTIMIZER
-        
+
         # Initialize directories
         self.app_paths.ensure_all_directories()
-        
+
         # Setup logging
         self._setup_logging()
-        
+
         # Current configuration
         self._config_cache = {}
         self._config_dirty = False
-    
+
     def _setup_logging(self):
         """Setup centralized logging"""
         log_dir = self.app_paths.get_path("logs")
         log_file = log_dir / "standards.log"
-        
+
         logging.basicConfig(
             level=logging.INFO,
             format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -66,12 +66,12 @@ class StandardsManager:
                 logging.StreamHandler()
             ]
         )
-        
+
         self.logger = logging.getLogger(f"{self.app_name}.standards")
-    
+
     def get_unified_config(self, level: ConfigurationLevel = ConfigurationLevel.STANDARD) -> Dict[str, Any]:
         """Get unified configuration for all standards"""
-        
+
         # Map configuration levels to specific settings
         level_mappings = {
             ConfigurationLevel.MINIMAL: {
@@ -103,11 +103,11 @@ class StandardsManager:
                 "scan_depth": 12,
             },
         }
-        
+
         base_settings = level_mappings[level]
         security_policy = self.security_standards.get_security_policy(base_settings["security_level"])
         performance_settings = self.performance_optimizer.optimize_for_level(base_settings["performance_level"])
-        
+
         unified_config = {
             "application": {
                 "name": self.app_name,
@@ -145,9 +145,9 @@ class StandardsManager:
                 "max_concurrent": base_settings["max_threads"],
             },
         }
-        
+
         return unified_config
-    
+
     def save_config(self, config: Dict[str, Any], config_type: str = "main") -> bool:
         """Save configuration to file"""
         try:
@@ -157,20 +157,20 @@ class StandardsManager:
                 config_file = self.app_paths.user_config_file
             else:
                 config_file = self.app_paths.config_dir / f"{config_type}.json"
-            
+
             # Ensure config directory exists
             config_file.parent.mkdir(parents=True, exist_ok=True)
-            
+
             with open(config_file, 'w', encoding='utf-8') as f:
                 json.dump(config, f, indent=2, default=str)
-            
+
             self.logger.info(f"Configuration saved to {config_file}")
             return True
-            
+
         except Exception as e:
             self.logger.error(f"Failed to save configuration: {e}")
             return False
-    
+
     def load_config(self, config_type: str = "main") -> Dict[str, Any]:
         """Load configuration from file"""
         try:
@@ -180,25 +180,25 @@ class StandardsManager:
                 config_file = self.app_paths.user_config_file
             else:
                 config_file = self.app_paths.config_dir / f"{config_type}.json"
-            
+
             if not config_file.exists():
                 # Return default configuration
                 return self.get_unified_config()
-            
+
             with open(config_file, 'r', encoding='utf-8') as f:
                 config = json.load(f)
-            
+
             self.logger.info(f"Configuration loaded from {config_file}")
             return config
-            
+
         except Exception as e:
             self.logger.error(f"Failed to load configuration: {e}")
             return self.get_unified_config()
-    
+
     def validate_paths(self) -> Dict[str, bool]:
         """Validate all application paths"""
         validation_results = {}
-        
+
         paths_to_check = [
             ("config_dir", self.app_paths.config_dir),
             ("data_dir", self.app_paths.data_dir),
@@ -207,7 +207,7 @@ class StandardsManager:
             ("logs_dir", self.app_paths.logs_dir),
             ("temp_dir", self.app_paths.temp_dir),
         ]
-        
+
         for name, path in paths_to_check:
             validation_results[name] = {
                 "exists": path.exists(),
@@ -215,29 +215,29 @@ class StandardsManager:
                 "writable": os.access(path, os.W_OK) if path.exists() else False,
                 "secure": self._check_path_security(path),
             }
-        
+
         return validation_results
-    
+
     def _check_path_security(self, path: Path) -> bool:
         """Check if path has secure permissions"""
         try:
             if not path.exists():
                 return False
-            
+
             stat_info = path.stat()
             mode = stat_info.st_mode & 0o777
-            
+
             # Should be 700 (owner only)
             return mode == 0o700
-            
+
         except Exception:
             return False
-    
+
     def get_system_compatibility_info(self) -> Dict[str, Any]:
         """Get system compatibility information"""
         import platform
         import sys
-        
+
         return {
             "platform": {
                 "system": platform.system(),
@@ -267,23 +267,23 @@ class StandardsManager:
                 "optimal_threads": self.performance_optimizer.get_optimal_thread_count(),
             },
         }
-    
+
     def _check_security_executables(self) -> Dict[str, bool]:
         """Check availability of security executables"""
         executables = ["clamscan", "freshclam", "rkhunter", "sudo", "pkexec"]
         results = {}
-        
+
         for exe in executables:
             path = SystemPaths.get_executable_path(exe)
             results[exe] = path is not None
-        
+
         return results
-    
+
     def optimize_for_environment(self) -> Dict[str, Any]:
         """Optimize configuration based on current environment"""
         system_info = self.get_system_compatibility_info()
         current_metrics = self.performance_optimizer.get_current_metrics()
-        
+
         # Determine optimal configuration level
         if current_metrics.memory_percent > 80:
             recommended_level = ConfigurationLevel.MINIMAL
@@ -291,48 +291,48 @@ class StandardsManager:
             recommended_level = ConfigurationLevel.STANDARD
         else:
             recommended_level = ConfigurationLevel.ADVANCED
-        
+
         # Generate optimized configuration
         optimized_config = self.get_unified_config(recommended_level)
-        
+
         # Add environment-specific adjustments
         optimized_config["environment_adjustments"] = {
             "recommended_level": recommended_level.value,
             "reasons": self._get_optimization_reasons(current_metrics),
             "system_compatibility": system_info,
         }
-        
+
         return optimized_config
-    
+
     def _get_optimization_reasons(self, metrics) -> List[str]:
         """Get reasons for optimization recommendations"""
         reasons = []
-        
+
         if metrics.memory_percent > 80:
             reasons.append("High memory usage detected")
         if metrics.cpu_percent > 70:
             reasons.append("High CPU usage detected")
         if metrics.thread_count > 10:
             reasons.append("High thread count detected")
-        
+
         return reasons
-    
+
     def create_migration_script(self, old_config: Dict[str, Any]) -> List[str]:
         """Create migration script for updating old configurations"""
         migration_steps = []
-        
+
         # Check for old path structures
         if "temp_dir" in old_config and old_config["temp_dir"] in ["/tmp", "/var/tmp"]:
             migration_steps.append("Update temp_dir to use tempfile.gettempdir()")
-        
+
         # Check for old security settings
         if "allowed_commands" in old_config:
             migration_steps.append("Migrate allowed_commands to new ALLOWED_BINARIES format")
-        
+
         # Check for old performance settings
         if "max_workers" in old_config:
             migration_steps.append("Migrate max_workers to performance-based thread management")
-        
+
         return migration_steps
 
 # Global standards manager instance
@@ -349,7 +349,7 @@ def get_secure_path(path_type: str) -> Path:
 
 def execute_secure_command(command: Union[str, list], timeout: int = 300):
     """Execute command with security validation"""
-    return STANDARDS_MANAGER.process_manager.execute_command(command, 
+    return STANDARDS_MANAGER.process_manager.execute_command(command,
                                                            ProcessConfig(timeout=timeout))
 
 def optimize_performance(file_count: int = 1000):

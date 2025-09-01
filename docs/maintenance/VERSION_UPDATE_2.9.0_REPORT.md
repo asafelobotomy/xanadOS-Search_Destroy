@@ -19,6 +19,7 @@
 6. **app/gui/main_window.py** → Fallback version: 2.8.0 → 2.9.0
 
 7.
+
 **app/gui/user_manual_window.py** → Manual version: v2.8.0 → v2.9.0 (date updated to Aug 22, 2025)
 
 8. **app/utils/config.py** → Setup version: 2.8.0 → 2.9.0
@@ -34,6 +35,7 @@
 12. **dev/README.md** → Project version: v2.8.0 → v2.9.0
 
 13.
+
 **dev/demos/enhanced_hardening_demo.py** → Header version: v2.8.0 → v2.9.0, display version: v2.7.1 → v2.9.0
 
 ## Version Update Details

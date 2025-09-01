@@ -16,14 +16,14 @@ from pathlib import Path
 
 def add_required_imports():
     """Add back necessary typing and other imports that are actually used."""
-    
+
     # Common imports needed by most files
     common_typing_imports = {
         "app/core/async_scanner.py": [
             "from typing import AsyncIterator, Callable, Dict, List, Optional",
             "import os",
             "from concurrent.futures import as_completed",
-            "from dataclasses import asdict", 
+            "from dataclasses import asdict",
             "from queue import Empty"
         ],
         "app/core/automatic_updates.py": [
@@ -79,13 +79,13 @@ def add_required_imports():
             "import os"
         ]
     }
-    
+
     for file_path, imports_to_add in common_typing_imports.items():
         file_obj = Path(file_path)
         if file_obj.exists():
             content = file_obj.read_text()
             lines = content.split('\n')
-            
+
             # Find where to insert imports (after existing imports)
             insert_index = 0
             for i, line in enumerate(lines):
@@ -93,20 +93,20 @@ def add_required_imports():
                     insert_index = i + 1
                 elif line.strip() == '' and insert_index > 0:
                     break
-            
+
             # Add imports that aren't already present
             for import_line in imports_to_add:
                 if import_line not in content:
                     lines.insert(insert_index, import_line)
                     insert_index += 1
-            
+
             file_obj.write_text('\n'.join(lines))
             print(f"✅ Added imports to {file_path}")
 
 
 def fix_remaining_syntax_errors():
     """Fix the remaining syntax and indentation errors."""
-    
+
     # Fix app/core/__init__.py
     init_file = Path("app/core/__init__.py")
     if init_file.exists():
@@ -124,13 +124,13 @@ from .clamav_wrapper import ClamAVWrapper
 
 __all__ = [
     'FileScanner',
-    'AsyncFileScanner', 
+    'AsyncFileScanner',
     'ClamAVWrapper'
 ]
 '''
         init_file.write_text(fixed_content)
         print(f"✅ Fixed {init_file}")
-    
+
     # Fix app/core/advanced_reporting.py
     reporting_file = Path("app/core/advanced_reporting.py")
     if reporting_file.exists():
@@ -144,7 +144,7 @@ __all__ = [
                 break
         reporting_file.write_text('\n'.join(lines))
         print(f"✅ Fixed {reporting_file}")
-    
+
     # Fix app/core/file_scanner.py
     scanner_file = Path("app/core/file_scanner.py")
     if scanner_file.exists():
@@ -157,7 +157,7 @@ __all__ = [
                 lines[469] = line.lstrip()
         scanner_file.write_text('\n'.join(lines))
         print(f"✅ Fixed {scanner_file}")
-    
+
     # Fix app/gui/__init__.py
     gui_init = Path("app/gui/__init__.py")
     if gui_init.exists():
@@ -168,7 +168,7 @@ Contains all graphical user interface components.
 
 try:
     from .main_window import MainWindow
-    from .scan_dialog import ScanDialog  
+    from .scan_dialog import ScanDialog
     from .settings_dialog import SettingsDialog
 except ImportError as e:
     print(f"Warning: Could not import GUI components: {e}")
@@ -184,7 +184,7 @@ __all__ = [
 '''
         gui_init.write_text(content)
         print(f"✅ Fixed {gui_init}")
-    
+
     # Fix app/gui/main_window.py and rkhunter_components.py indentation
     for gui_file in ["app/gui/main_window.py", "app/gui/rkhunter_components.py"]:
         file_obj = Path(gui_file)
@@ -208,7 +208,7 @@ __all__ = [
 
 def fix_escape_sequences():
     """Fix invalid escape sequences."""
-    
+
     heuristic_file = Path("app/core/heuristic_analysis.py")
     if heuristic_file.exists():
         content = heuristic_file.read_text()
@@ -220,22 +220,22 @@ def fix_escape_sequences():
 
 def remove_unused_variables():
     """Remove or comment out obvious unused variables."""
-    
+
     files_with_unused = [
         "app/core/async_scanner.py",
-        "app/core/firewall_detector.py", 
+        "app/core/firewall_detector.py",
         "app/core/multi_language_support.py",
         "app/core/network_security.py",
         "app/core/system_service.py",
         "app/utils/scan_reports.py"
     ]
-    
+
     for file_path in files_with_unused:
         file_obj = Path(file_path)
         if file_obj.exists():
             content = file_obj.read_text()
             lines = content.split('\n')
-            
+
             # Simple pattern to fix obvious unused variables
             for i, line in enumerate(lines):
                 # Fix unused variables by adding underscore prefix
@@ -245,7 +245,7 @@ def remove_unused_variables():
                         lines[i] = line.replace(' = ', ' = ')  # Keep as is but add comment
                         if not '# noqa' in line:
                             lines[i] += '  # noqa: F841'
-            
+
             file_obj.write_text('\n'.join(lines))
             print(f"✅ Added noqa comments to {file_path}")
 
@@ -253,22 +253,22 @@ def remove_unused_variables():
 def main():
     """Run all final fixes."""
     print("🔧 Running final cleanup fixes...")
-    
+
     # Change to repository root dynamically
     os.chdir(Path(__file__).resolve().parents[2])
-    
+
     print("\n1. Adding required imports...")
     add_required_imports()
-    
+
     print("\n2. Fixing syntax errors...")
     fix_remaining_syntax_errors()
-    
+
     print("\n3. Fixing escape sequences...")
     fix_escape_sequences()
-    
+
     print("\n4. Handling unused variables...")
     remove_unused_variables()
-    
+
     print("\n✅ Final cleanup completed!")
 
 

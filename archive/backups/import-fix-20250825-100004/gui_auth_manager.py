@@ -18,14 +18,14 @@ class GUIAuthManager:
     Manages GUI-based authentication with persistent sessions.
     Prioritizes GUI sudo over pkexec for better user experience.
     """
-    
+
     def __init__(self):
         self._sudo_session_active = False
         self._session_start_time = 0
         self._session_timeout = 900  # 15 minutes default sudo timeout
         self._gui_helper = None
         self._discover_gui_helper()
-    
+
     def _discover_gui_helper(self) -> None:
         """Discover available GUI authentication helpers."""
         # Priority order for GUI authentication helpers
@@ -37,24 +37,24 @@ class GUIAuthManager:
             "/usr/bin/zenity",            # GNOME zenity (can be used for passwords)
             "/usr/bin/kdialog",           # KDE dialog (can be used for passwords)
         ]
-        
+
         for helper in helpers:
             if os.path.isfile(helper) and os.access(helper, os.X_OK):
                 self._gui_helper = helper
                 logger.info(f"Found GUI authentication helper: {helper}")
                 break
-        
+
         if not self._gui_helper:
             logger.warning("No GUI authentication helper found")
-    
+
     def is_gui_available(self) -> bool:
         """Check if GUI authentication is available."""
         return self._gui_helper is not None and bool(os.environ.get("DISPLAY"))
-    
+
     def get_gui_helper(self) -> Optional[str]:
         """Get the discovered GUI helper path."""
         return self._gui_helper
-    
+
     def _which(self, name: str) -> Optional[str]:
         """Find executable in PATH."""
         try:
@@ -62,7 +62,7 @@ class GUIAuthManager:
             return result.stdout.strip() if result.returncode == 0 else None
         except Exception:
             return None
-    
+
     def _is_sudo_session_active(self) -> bool:
         """Check if a sudo session is currently active."""
         try:
@@ -72,9 +72,9 @@ class GUIAuthManager:
                 capture_output=True,
                 timeout=5
             )
-            
+
             current_time = time.time()
-            
+
             if result.returncode == 0:
                 # Update session tracking
                 if not self._sudo_session_active:
@@ -89,76 +89,76 @@ class GUIAuthManager:
                     if elapsed > self._session_timeout:
                         self._sudo_session_active = False
                         logger.info("Sudo session expired")
-                
+
                 return False
-                
+
         except Exception as e:
             logger.debug(f"Error checking sudo session: {e}")
             self._sudo_session_active = False
             return False
-    
+
     def _create_zenity_password_helper(self) -> str:
         """Create a temporary script to use zenity for password prompts."""
         import tempfile
         import stat
-        
+
         # Create a temporary script that uses zenity for password input
         script_content = '''#!/bin/bash
 zenity --password --title="Authentication Required" --text="Enter your password for administrative access:"
 '''
-        
+
         # Create temporary file
         fd, script_path = tempfile.mkstemp(suffix='.sh', prefix='sudo_helper_')
         try:
             with os.fdopen(fd, 'w') as f:
                 f.write(script_content)
-            
+
             # Make executable
             os.chmod(script_path, stat.S_IRWXU)
-            
+
             return script_path
         except Exception:
             os.unlink(script_path)
             raise
-    
+
     def _create_kdialog_password_helper(self) -> str:
         """Create a temporary script to use kdialog for password prompts."""
         import tempfile
         import stat
-        
+
         # Create a temporary script that uses kdialog for password input
         script_content = '''#!/bin/bash
 kdialog --password "Enter your password for administrative access:"
 '''
-        
+
         # Create temporary file
         fd, script_path = tempfile.mkstemp(suffix='.sh', prefix='sudo_helper_')
         try:
             with os.fdopen(fd, 'w') as f:
                 f.write(script_content)
-            
+
             # Make executable
             os.chmod(script_path, stat.S_IRWXU)
-            
+
             return script_path
         except Exception:
             os.unlink(script_path)
             raise
-    
+
     def _establish_gui_sudo_session(self) -> bool:
         """Establish a GUI sudo session with password caching."""
         if self._is_sudo_session_active():
             logger.info("Sudo session already active")
             return True
-        
+
         if not self._gui_helper:
             logger.error("No GUI helper available for sudo authentication")
             return False
-        
+
         # Prepare environment for GUI sudo
         env = os.environ.copy()
         temp_script = None
-        
+
         try:
             # Set up the appropriate SUDO_ASKPASS helper
             if "ksshaskpass" in self._gui_helper or "ssh-askpass" in self._gui_helper:
@@ -172,7 +172,7 @@ kdialog --password "Enter your password for administrative access:"
             else:
                 logger.error(f"Unsupported GUI helper: {self._gui_helper}")
                 return False
-            
+
             # Establish sudo session with GUI password prompt
             logger.info(f"Establishing GUI sudo session using {self._gui_helper}")
             result = subprocess.run(
@@ -181,7 +181,7 @@ kdialog --password "Enter your password for administrative access:"
                 timeout=60,  # Give user time to enter password
                 capture_output=True
             )
-            
+
             if result.returncode == 0:
                 self._sudo_session_active = True
                 self._session_start_time = time.time()
@@ -190,7 +190,7 @@ kdialog --password "Enter your password for administrative access:"
             else:
                 logger.error(f"Failed to establish sudo session: {result.stderr.decode()}")
                 return False
-                
+
         except subprocess.TimeoutExpired:
             logger.error("Timeout waiting for password input")
             return False
@@ -204,30 +204,30 @@ kdialog --password "Enter your password for administrative access:"
                     os.unlink(temp_script)
                 except Exception:
                     pass
-    
-    def run_with_gui_auth(self, argv: Sequence[str], *, timeout: int = 300, 
+
+    def run_with_gui_auth(self, argv: Sequence[str], *, timeout: int = 300,
                          capture_output: bool = True, text: bool = True) -> subprocess.CompletedProcess:
         """
         Run command with GUI authentication, using persistent sudo session.
-        
+
         Args:
             argv: Command to run (without sudo prefix)
             timeout: Command timeout in seconds
             capture_output: Whether to capture stdout/stderr
             text: Whether to use text mode
-        
+
         Returns:
             subprocess.CompletedProcess result
         """
         if not argv:
             return subprocess.CompletedProcess([], 1, "", "No command provided")
-        
+
         # Check if sudo is available
         sudo_path = self._which("sudo")
         if not sudo_path:
             logger.error("sudo not found on system")
             return subprocess.CompletedProcess(argv, 1, "", "sudo not available")
-        
+
         # Try to use existing session first
         if self._is_sudo_session_active():
             logger.info("Using existing sudo session")
@@ -238,19 +238,19 @@ kdialog --password "Enter your password for administrative access:"
                     capture_output=capture_output,
                     text=text
                 )
-                
+
                 if result.returncode == 0:
                     return result
                 else:
                     logger.warning(f"Command failed with existing session: {result.returncode}")
             except Exception as e:
                 logger.warning(f"Error using existing session: {e}")
-        
+
         # Establish new GUI session if needed
         if not self._establish_gui_sudo_session():
             logger.error("Failed to establish GUI sudo session")
             return subprocess.CompletedProcess(argv, 1, "", "Authentication failed")
-        
+
         # Run the command with the established session
         try:
             logger.info(f"Running command with GUI sudo session: {' '.join(argv[:3])}...")
@@ -260,46 +260,46 @@ kdialog --password "Enter your password for administrative access:"
                 capture_output=capture_output,
                 text=text
             )
-            
+
             if result.returncode == 0:
                 logger.info("✅ Command completed successfully")
             else:
                 logger.warning(f"⚠️ Command failed with return code {result.returncode}")
-            
+
             return result
-            
+
         except subprocess.TimeoutExpired:
             logger.error("Command timed out")
             return subprocess.CompletedProcess(argv, 124, "", "Command timed out")
         except Exception as e:
             logger.error(f"Error running command: {e}")
             return subprocess.CompletedProcess(argv, 1, "", str(e))
-    
+
     def start_gui_auth_process(self, argv: Sequence[str], *, text: bool = True,
                               stdout=subprocess.PIPE, stderr=subprocess.PIPE) -> subprocess.Popen:
         """
         Start a privileged process with GUI authentication, returning Popen for streaming.
-        
+
         Args:
             argv: Command to run (without sudo prefix)
             text: Whether to use text mode
             stdout, stderr: Pipe configuration
-        
+
         Returns:
             subprocess.Popen object
         """
         if not argv:
             raise ValueError("No command provided")
-        
+
         sudo_path = self._which("sudo")
         if not sudo_path:
             raise RuntimeError("sudo not available")
-        
+
         # Ensure we have an active session
         if not self._is_sudo_session_active():
             if not self._establish_gui_sudo_session():
                 raise RuntimeError("Failed to establish GUI sudo session")
-        
+
         # Start the process with the established session
         try:
             logger.info(f"Starting GUI sudo process: {' '.join(argv[:3])}...")
@@ -311,16 +311,16 @@ kdialog --password "Enter your password for administrative access:"
             )
             logger.info(f"Process started with GUI sudo, PID: {process.pid}")
             return process
-            
+
         except Exception as e:
             logger.error(f"Error starting GUI sudo process: {e}")
             raise RuntimeError(f"Failed to start privileged process: {e}")
-    
+
     def refresh_session(self) -> bool:
         """Refresh the sudo session to extend its lifetime."""
         if not self._is_sudo_session_active():
             return self._establish_gui_sudo_session()
-        
+
         try:
             # Refresh with a simple command
             result = subprocess.run(
@@ -328,7 +328,7 @@ kdialog --password "Enter your password for administrative access:"
                 timeout=5,
                 capture_output=True
             )
-            
+
             if result.returncode == 0:
                 self._session_start_time = time.time()
                 logger.debug("Sudo session refreshed")
@@ -337,11 +337,11 @@ kdialog --password "Enter your password for administrative access:"
                 # Session might have expired, try to re-establish
                 self._sudo_session_active = False
                 return self._establish_gui_sudo_session()
-                
+
         except Exception as e:
             logger.error(f"Error refreshing sudo session: {e}")
             return False
-    
+
     def cleanup_session(self) -> None:
         """Clean up the authentication session."""
         try:
@@ -358,13 +358,13 @@ kdialog --password "Enter your password for administrative access:"
         finally:
             self._sudo_session_active = False
             self._session_start_time = 0
-    
+
     def get_session_info(self) -> Dict[str, any]:
         """Get information about the current authentication session."""
         current_time = time.time()
         elapsed = current_time - self._session_start_time if self._session_start_time else 0
         remaining = max(0, self._session_timeout - elapsed) if self._sudo_session_active else 0
-        
+
         return {
             "active": self._sudo_session_active,
             "gui_helper": self._gui_helper,

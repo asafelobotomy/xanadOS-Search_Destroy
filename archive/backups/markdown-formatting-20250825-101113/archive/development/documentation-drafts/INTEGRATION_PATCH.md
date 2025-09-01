@@ -205,7 +205,7 @@ from .rkhunter_monitor_non_invasive import (
 
 **all** = [
 
-## ... existing exports 
+## ... existing exports
 
     "NonInvasiveSystemMonitor",
     "SystemStatus",

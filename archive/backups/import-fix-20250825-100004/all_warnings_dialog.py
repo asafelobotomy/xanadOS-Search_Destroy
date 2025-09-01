@@ -42,7 +42,7 @@ Part of xanadOS Search & Destroy
 
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import (
-    QDialog, QVBoxLayout, QHBoxLayout, 
+    QDialog, QVBoxLayout, QHBoxLayout,
     QLabel, QPushButton, QTextEdit, QSplitter, QListWidget,
     QListWidgetItem, QGroupBox, QMessageBox, QFileDialog
 )
@@ -50,39 +50,39 @@ from PyQt6.QtWidgets import (
 
 class AllWarningsDialog(QDialog):
     """Dialog showing comprehensive view of all scan warnings."""
-    
+
     def __init__(self, warnings, parent=None):
         super().__init__(parent)
-        
+
         # Validate input
         if not warnings:
             warnings = []
-        
+
         self.warnings = warnings
         self.current_warning_index = 0
         self.parent_window = parent
-        
+
         self.setWindowTitle("⚠️ Scan Warnings - Detailed Explanations")
         self.setModal(True)
         self.resize(900, 700)
-        
+
         # Initialize UI components
         self.warning_list = None
         self.warning_title = None
         self.warning_details = None
         self.investigate_btn = None
         self.mark_safe_single_btn = None
-        
+
         try:
             self._setup_ui()
             self._populate_warnings()
-            
+
             # Apply parent theme if available
             if parent and hasattr(parent, "current_theme"):
                 self._apply_theme(parent.current_theme)
             else:
                 self._apply_theme("dark")
-            
+
             # Select first warning if available
             if self.warnings and self.warning_list:
                 self.warning_list.setCurrentRow(0)
@@ -100,52 +100,52 @@ class AllWarningsDialog(QDialog):
         """Set up the user interface."""
         layout = QVBoxLayout(self)
         layout.setSpacing(10)
-        
+
         # Header
         header_label = QLabel("⚠️ Security Warnings Found")
         header_label.setObjectName("headerLabel")  # For themed styling
         layout.addWidget(header_label)
-        
+
         # Summary info
         summary_label = QLabel(f"Found {len(self.warnings)} warnings that require attention")
         summary_label.setObjectName("summaryLabel")  # For themed styling
         layout.addWidget(summary_label)
-        
+
         # Main content area with splitter
         splitter = QSplitter(Qt.Orientation.Horizontal)
         layout.addWidget(splitter)
-        
+
         # Left panel - warnings list
         left_panel = self._create_warnings_list_panel()
         splitter.addWidget(left_panel)
-        
+
         # Right panel - warning details
         right_panel = self._create_warning_details_panel()
         splitter.addWidget(right_panel)
-        
+
         # Set splitter proportions (30% left, 70% right)
         splitter.setSizes([270, 630])
-        
+
         # Bottom buttons
         button_layout = QHBoxLayout()
-        
+
         # Mark all as safe button (for advanced users)
         mark_safe_btn = QPushButton("Mark All as Safe")
         mark_safe_btn.clicked.connect(self._mark_all_as_safe)
         button_layout.addWidget(mark_safe_btn)
-        
+
         button_layout.addStretch()
-        
+
         # Export warnings button
         export_btn = QPushButton("Export Report")
         export_btn.clicked.connect(self._export_warnings_report)
         button_layout.addWidget(export_btn)
-        
+
         # Close button
         close_btn = QPushButton("Close")
         close_btn.clicked.connect(self.accept)
         button_layout.addWidget(close_btn)
-        
+
         layout.addLayout(button_layout)
 
     def _apply_theme(self, theme_name: str):
@@ -223,9 +223,9 @@ class AllWarningsDialog(QDialog):
                 padding: 0 5px 0 5px;
             }
         """)
-        
+
         layout = QVBoxLayout(panel)
-        
+
         # Warnings list
         self.warning_list = QListWidget()
         self.warning_list.setStyleSheet("""
@@ -253,7 +253,7 @@ class AllWarningsDialog(QDialog):
         """)
         self.warning_list.currentRowChanged.connect(self._show_warning_details)
         layout.addWidget(self.warning_list)
-        
+
         return panel
 
     def _create_warning_details_panel(self):
@@ -273,9 +273,9 @@ class AllWarningsDialog(QDialog):
                 padding: 0 5px 0 5px;
             }
         """)
-        
+
         layout = QVBoxLayout(panel)
-        
+
         # Warning title
         self.warning_title = QLabel("Select a warning to view details")
         self.warning_title.setStyleSheet("""
@@ -290,7 +290,7 @@ class AllWarningsDialog(QDialog):
             }
         """)
         layout.addWidget(self.warning_title)
-        
+
         # Warning details text area
         self.warning_details = QTextEdit()
         self.warning_details.setStyleSheet("""
@@ -306,10 +306,10 @@ class AllWarningsDialog(QDialog):
         """)
         self.warning_details.setReadOnly(True)
         layout.addWidget(self.warning_details)
-        
+
         # Action buttons for current warning
         action_layout = QHBoxLayout()
-        
+
         self.investigate_btn = QPushButton("🔍 Investigate This Warning")
         self.investigate_btn.setStyleSheet("""
             QPushButton {
@@ -324,7 +324,7 @@ class AllWarningsDialog(QDialog):
         """)
         self.investigate_btn.clicked.connect(self._investigate_current_warning)
         action_layout.addWidget(self.investigate_btn)
-        
+
         self.mark_safe_single_btn = QPushButton("✓ Mark as Safe")
         self.mark_safe_single_btn.setStyleSheet("""
             QPushButton {
@@ -339,26 +339,26 @@ class AllWarningsDialog(QDialog):
         """)
         self.mark_safe_single_btn.clicked.connect(self._mark_current_warning_as_safe)
         action_layout.addWidget(self.mark_safe_single_btn)
-        
+
         action_layout.addStretch()
         layout.addLayout(action_layout)
-        
+
         return panel
 
     def _populate_warnings(self):
         """Populate the warnings list."""
         self.warning_list.clear()
-        
+
         for i, warning in enumerate(self.warnings):
             # Get warning description/title
             title = getattr(warning, 'description', f'Warning {i+1}')
             if hasattr(warning, 'check_name'):
                 title = f"{warning.check_name}: {title}"
-            
+
             # Truncate if too long
             if len(title) > 50:
                 title = title[:47] + "..."
-            
+
             # Create list item
             item = QListWidgetItem(f"⚠️ {title}")
             item.setToolTip(f"Warning {i+1}: {getattr(warning, 'description', 'No description available')}")
@@ -368,39 +368,39 @@ class AllWarningsDialog(QDialog):
         """Show details for the selected warning."""
         if index < 0 or index >= len(self.warnings):
             return
-            
+
         self.current_warning_index = index
         warning = self.warnings[index]
-        
+
         # Update title
         title = getattr(warning, 'description', f'Warning {index+1}')
         if hasattr(warning, 'check_name'):
             title = f"{warning.check_name}"
         self.warning_title.setText(f"⚠️ {title}")
-        
+
         # Build detailed explanation
         details = []
-        
+
         # Basic warning info
         details.append("📋 WARNING DETAILS")
         details.append("=" * 50)
-        
+
         if hasattr(warning, 'description'):
             details.append(f"Description: {warning.description}")
-        
+
         if hasattr(warning, 'file_path'):
             details.append(f"File/Path: {warning.file_path}")
-            
+
         if hasattr(warning, 'check_name'):
             details.append(f"Check: {warning.check_name}")
-            
+
         details.append("")
-        
+
         # Detailed explanation
         if hasattr(warning, 'explanation') and warning.explanation:
             details.append("📖 DETAILED EXPLANATION")
             details.append("=" * 50)
-            
+
             # Handle WarningExplanation object properly
             try:
                 if hasattr(warning.explanation, 'description'):
@@ -435,14 +435,14 @@ class AllWarningsDialog(QDialog):
             details.append("=" * 50)
             details.append(self._get_generic_warning_explanation(warning))
             details.append("")
-        
+
         # Recommendations
         details.append("💡 RECOMMENDED ACTIONS")
         details.append("=" * 50)
         recommendations = self._get_warning_recommendations(warning)
         for rec in recommendations:
             details.append(f"• {rec}")
-        
+
         # Set the details text
         self.warning_details.setPlainText("\n".join(details))
 
@@ -462,7 +462,7 @@ class AllWarningsDialog(QDialog):
     def _get_warning_recommendations(self, warning):
         """Get recommendations for addressing the warning."""
         recommendations = []
-        
+
         # First, try to get specific recommendations from WarningExplanation
         try:
             if hasattr(warning, 'explanation') and warning.explanation:
@@ -474,7 +474,7 @@ class AllWarningsDialog(QDialog):
         except Exception as e:
             # Log error but continue with fallback recommendations
             print(f"Warning: Error extracting specific recommendations: {e}")
-        
+
         # Add generic recommendations if none were found or to supplement specific ones
         if not recommendations:
             recommendations = [
@@ -486,7 +486,7 @@ class AllWarningsDialog(QDialog):
                 "If confirmed safe, mark the warning as a false positive",
                 "If suspicious, take appropriate security measures"
             ]
-        
+
         # Add specific recommendations based on warning type
         try:
             if hasattr(warning, 'check_name') and warning.check_name:
@@ -500,7 +500,7 @@ class AllWarningsDialog(QDialog):
         except Exception as e:
             # Continue without type-specific recommendations if there's an error
             print(f"Warning: Error adding type-specific recommendations: {e}")
-        
+
         # Ensure all recommendations are strings
         return [str(rec) for rec in recommendations]
 
@@ -508,9 +508,9 @@ class AllWarningsDialog(QDialog):
         """Provide investigation guidance for current warning."""
         if self.current_warning_index >= len(self.warnings):
             return
-            
+
         warning = self.warnings[self.current_warning_index]
-        
+
         # Create investigation dialog
         if hasattr(self.parent_window, 'show_themed_message_box'):
             self.parent_window.show_themed_message_box(
@@ -543,7 +543,7 @@ class AllWarningsDialog(QDialog):
         """Mark the current warning as safe."""
         if self.current_warning_index >= len(self.warnings):
             return
-            
+
         if hasattr(self.parent_window, 'show_themed_message_box'):
             reply = self.parent_window.show_themed_message_box(
                 "question",
@@ -561,7 +561,7 @@ class AllWarningsDialog(QDialog):
                 "don't represent actual security threats.",
                 QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
             )
-        
+
         if reply == QMessageBox.StandardButton.Yes:
             if hasattr(self.parent_window, 'show_themed_message_box'):
                 self.parent_window.show_themed_message_box(
@@ -600,7 +600,7 @@ class AllWarningsDialog(QDialog):
                 QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
                 QMessageBox.StandardButton.No
             )
-        
+
         if reply == QMessageBox.StandardButton.Yes:
             # Second confirmation
             if hasattr(self.parent_window, 'show_themed_message_box'):
@@ -619,7 +619,7 @@ class AllWarningsDialog(QDialog):
                     QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
                     QMessageBox.StandardButton.No
                 )
-            
+
             if reply2 == QMessageBox.StandardButton.Yes:
                 if hasattr(self.parent_window, 'show_themed_message_box'):
                     self.parent_window.show_themed_message_box(
@@ -641,7 +641,7 @@ class AllWarningsDialog(QDialog):
         from PyQt6.QtWidgets import QFileDialog
         from datetime import datetime
         import json
-        
+
         # Get save location
         default_name = f"warnings_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt"
         file_path, _ = QFileDialog.getSaveFileName(
@@ -650,10 +650,10 @@ class AllWarningsDialog(QDialog):
             default_name,
             "Text Files (*.txt);;JSON Files (*.json);;All Files (*)"
         )
-        
+
         if not file_path:
             return
-            
+
         try:
             # Generate report content
             report_lines = []
@@ -662,11 +662,11 @@ class AllWarningsDialog(QDialog):
             report_lines.append(f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
             report_lines.append(f"Total Warnings: {len(self.warnings)}")
             report_lines.append("")
-            
+
             for i, warning in enumerate(self.warnings):
                 report_lines.append(f"WARNING #{i+1}")
                 report_lines.append("-" * 30)
-                
+
                 if hasattr(warning, 'description'):
                     report_lines.append(f"Description: {warning.description}")
                 if hasattr(warning, 'check_name'):
@@ -675,13 +675,13 @@ class AllWarningsDialog(QDialog):
                     report_lines.append(f"File/Path: {warning.file_path}")
                 if hasattr(warning, 'explanation') and warning.explanation:
                     report_lines.append(f"Explanation: {warning.explanation}")
-                
+
                 report_lines.append("")
-            
+
             # Write to file
             with open(file_path, 'w', encoding='utf-8') as f:
                 f.write("\n".join(report_lines))
-            
+
             if hasattr(self.parent_window, 'show_themed_message_box'):
                 self.parent_window.show_themed_message_box(
                     "information",
@@ -694,7 +694,7 @@ class AllWarningsDialog(QDialog):
                     "Report Exported",
                     f"Warnings report has been exported to:\n{file_path}"
                 )
-            
+
         except Exception as e:
             if hasattr(self.parent_window, 'show_themed_message_box'):
                 self.parent_window.show_themed_message_box(

@@ -39,9 +39,9 @@ def test_auth_session_manager_import():
         print("✅ Session start working correctly")
 
         manager.end_session("test")
-        assert not manager.is_session_valid(
-            "test"
-        ), "Session should be invalid after end"
+        assert not manager.is_session_valid("test"), (
+            "Session should be invalid after end"
+        )
         print("✅ Session end working correctly")
 
         print("\n🎉 All basic auth session manager tests passed!")

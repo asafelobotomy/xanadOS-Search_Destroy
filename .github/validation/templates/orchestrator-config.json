@@ -8,7 +8,7 @@
     "enabledPhases": [
       "setup",
       "validation",
-      "integration", 
+      "integration",
       "reporting"
     ],
     "parallelExecution": false,
@@ -31,7 +31,7 @@
       "retryAttempts": 1,
       "tasks": [
         "validateProjectStructure",
-        "checkDependencies", 
+        "checkDependencies",
         "initializeWorkingDirectories",
         "loadConfigurationFiles",
         "verifySystemResources"
@@ -55,7 +55,7 @@
       "retryAttempts": 1,
       "testSuites": [
         "template-structure",
-        "content-standards", 
+        "content-standards",
         "system-integration"
       ],
       "skipOnValidationFailure": true
@@ -106,7 +106,7 @@
     "requiredDirectories": [
       ".github/chatmodes",
       ".github/prompts",
-      ".github/validation", 
+      ".github/validation",
       ".github/mcp"
     ],
     "requiredFiles": [
@@ -161,7 +161,7 @@
       },
       "summary": {
         "enabled": true,
-        "format": "markdown", 
+        "format": "markdown",
         "executiveFocus": true,
         "includeMetrics": true
       },

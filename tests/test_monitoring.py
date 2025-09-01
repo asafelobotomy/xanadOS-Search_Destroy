@@ -64,9 +64,9 @@ try:
             stats = monitor.get_statistics()
             assert isinstance(stats, dict) and stats, "Statistics should not be empty"
             # Ensure no errors recorded during basic operation
-            assert not events[
-                "errors"
-            ], f"Unexpected monitor errors: {events['errors']}"
+            assert not events["errors"], (
+                f"Unexpected monitor errors: {events['errors']}"
+            )
 
             logger.info("Stopping monitor...")
             monitor.stop()

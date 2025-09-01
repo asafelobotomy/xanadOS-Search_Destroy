@@ -19,6 +19,7 @@ Successfully migrated xanadOS Search & Destroy from pkexec-based authentication 
 
 - **Updated**: Priority order for authentication methods
 - **New Priority Order**:
+
 1. GUI Authentication Manager (preferred - persistent sessions)
 2. Passwordless sudo
 3. GUI sudo with askpass helpers

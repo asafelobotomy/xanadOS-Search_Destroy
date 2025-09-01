@@ -8,19 +8,19 @@ class WCAGComplianceChecker {
 
   async checkFile(filePath) {
     const content = await fs.readFile(filePath, 'utf8');
-    
+
     // Check for alt text on images
     this.checkImageAltText(content, filePath);
-    
+
     // Check heading hierarchy
     this.checkHeadingHierarchy(content, filePath);
-    
+
     // Check color contrast indicators
     this.checkColorContrast(content, filePath);
-    
+
     // Check keyboard navigation hints
     this.checkKeyboardNavigation(content, filePath);
-    
+
     return {
       violations: this.violations,
       warnings: this.warnings,
@@ -31,7 +31,7 @@ class WCAGComplianceChecker {
   checkImageAltText(content, filePath) {
     const imageRegex = /!\[([^\]]*)\]\([^)]+\)/g;
     let match;
-    
+
     while ((match = imageRegex.exec(content)) !== null) {
       const altText = match[1];
       if (!altText || altText.trim() === '') {
@@ -55,7 +55,7 @@ class WCAGComplianceChecker {
   checkHeadingHierarchy(content, filePath) {
     const headings = content.match(/^#+\s+.+$/gm) || [];
     let previousLevel = 0;
-    
+
     headings.forEach((heading, index) => {
       const level = heading.match(/^#+/)[0].length;
       if (level > previousLevel + 1) {
@@ -74,7 +74,7 @@ class WCAGComplianceChecker {
     // Check for color-only information indicators
     const colorOnlyRegex = /(red|green|blue|yellow|orange|purple)\s+(text|color|background)/gi;
     let match;
-    
+
     while ((match = colorOnlyRegex.exec(content)) !== null) {
       this.warnings.push({
         file: filePath,
@@ -89,7 +89,7 @@ class WCAGComplianceChecker {
     // Check for interactive elements without keyboard hints
     const interactiveRegex = /(click here|press|button|link)/gi;
     let match;
-    
+
     while ((match = interactiveRegex.exec(content)) !== null) {
       if (!content.includes('Tab') && !content.includes('Enter') && !content.includes('Space')) {
         this.warnings.push({

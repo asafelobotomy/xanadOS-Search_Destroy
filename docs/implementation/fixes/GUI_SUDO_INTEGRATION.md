@@ -19,17 +19,24 @@ Previously, the RKHunter optimization settings would prompt for sudo passwords i
 The system now uses the same `elevated_run` module as the scan tab, with this priority order:
 
 1. **pkexec** (Primary - GUI-friendly)
+
 - Graphical privilege escalation tool
 - Preferred method for GUI applications
 - Shows system authentication dialog
+
 2. **sudo -n** (Passwordless)
+
 - Attempts passwordless sudo first
 - Fails gracefully if password required
+
 3. **sudo -A** (GUI Askpass)
+
 - Uses GUI askpass helpers for password input
 - Requires DISPLAY environment and askpass helper
 - Available helpers: ssh-askpass, ksshaskpass, lxqt-openssh-askpass
+
 4. **sudo** (Terminal fallback)
+
 - Traditional terminal sudo as last resort
 - Only used if all GUI methods fail
 

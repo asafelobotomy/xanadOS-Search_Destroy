@@ -57,7 +57,6 @@
   "files.trimTrailingWhitespace": true,
   "files.insertFinalNewline": true,
   "files.trimFinalNewlines": true,
-  // Exclude backup/archives and performance-heavy dirs from Problems and search
   "files.exclude": {
     "**/.python-backups/**": true,
     "**/.markdown-backups/**": true,
@@ -81,7 +80,6 @@
     "dev/performance-analysis/**": true,
     "packaging/**": true
   },
-  // Python analysis excludes - optimized for large workspace performance
   "python.analysis.exclude": [
     "**/.python-backups/**",
     "**/.markdown-backups/**",
@@ -100,19 +98,16 @@
     "packaging/**",
     "releases/**"
   ],
-  // Pylance performance optimization settings
   "python.analysis.autoImportCompletions": true,
   "python.analysis.indexing": true,
   "python.analysis.packageIndexDepths": [
     { "name": "", "depth": 2, "includeAllSymbols": false }
   ],
   "python.analysis.userFileIndexingLimit": 2000,
-  // Ruff extension excludes (if present)
   "ruff.lint.args": [
     "--exclude",
     ".python-backups,.markdown-backups,archive,node_modules,.venv,venv,.python-env,__pycache__"
   ],
-  // Additional performance optimizations
   "files.watcherExclude": {
     "**/__pycache__/**": true,
     "**/node_modules/**": true,
@@ -124,14 +119,10 @@
     "**/dev/node/**": true,
     "**/packaging/**": true
   },
-  // Typescript/JavaScript performance (for node modules)
   "typescript.preferences.includePackageJsonAutoImports": "off",
   "typescript.suggest.autoImports": false,
-  // Pylance performance settings
-  "python.analysis.indexing": true,
   "python.analysis.autoSearchPaths": false,
   "python.defaultInterpreterPath": "./.venv/bin/python",
-  // Python formatting settings
   "[python]": {
     "editor.defaultFormatter": "ms-python.black-formatter"
   }

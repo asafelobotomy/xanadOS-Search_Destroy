@@ -54,7 +54,7 @@ Updated `validate_auth_session()` to set session state:
 ```Python
 def validate_auth_session() -> bool:
 
-## ... sudo -v validation logic 
+## ... sudo -v validation logic
 
     if result.returncode == 0:
         logger.info("Sudo authentication session validated/refreshed successfully")
@@ -81,7 +81,7 @@ if should_prefer_sudo and sudo:
 
     methods.append(("sudo -n", [sudo, "-n"] + list(argv), base_env))
 
-## ... other sudo methods 
+## ... other sudo methods
 
 ## Add pkexec as fallback ONLY if no sudo session is active
 

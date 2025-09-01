@@ -36,19 +36,19 @@ class MonitoringMCPServer {
         },
       }
     );
-    
+
     this.cache = new Map();
     this.cacheTimeout = 30 * 1000; // 30 seconds for system metrics
     this.alertsFile = process.env.ALERTS_FILE || '/tmp/monitoring-alerts.json';
     this.metricsEndpoints = this.parseMetricsEndpoints();
-    
+
     this.setupHandlers();
   }
 
   parseMetricsEndpoints() {
     const endpoints = process.env.METRICS_ENDPOINTS || '';
     if (!endpoints) return [];
-    
+
     return endpoints.split(',').map(endpoint => {
       const [name, url] = endpoint.split('=');
       return { name: name.trim(), url: url.trim() };
@@ -91,7 +91,7 @@ class MonitoringMCPServer {
             description: 'Historical alert data and trends',
           },
         ];
-        
+
         // Add endpoint-specific resources
         this.metricsEndpoints.forEach(endpoint => {
           resources.push({
@@ -101,7 +101,7 @@ class MonitoringMCPServer {
             description: `Metrics from ${endpoint.url}`,
           });
         });
-        
+
         return { resources };
       } catch (error) {
         throw new McpError(
@@ -114,7 +114,7 @@ class MonitoringMCPServer {
     // Read monitoring data
     this.server.setRequestHandler(ReadResourceRequestSchema, async (request) => {
       const { uri } = request.params;
-      
+
       try {
         const match = uri.match(/^monitor:\/\/(.+?)\/(.+)$/);
         if (!match) {
@@ -123,10 +123,10 @@ class MonitoringMCPServer {
             `Invalid monitoring URI: ${uri}`
           );
         }
-        
+
         const [, category, type] = match;
         let content = {};
-        
+
         switch (category) {
           case 'system':
             switch (type) {
@@ -170,7 +170,7 @@ class MonitoringMCPServer {
               `Unknown monitoring category: ${category}`
             );
         }
-        
+
         return {
           contents: [
             {
@@ -319,7 +319,7 @@ class MonitoringMCPServer {
     // Handle tool calls
     this.server.setRequestHandler(CallToolRequestSchema, async (request) => {
       const { name, arguments: args } = request.params;
-      
+
       try {
         switch (name) {
           case 'check_service_health':
@@ -354,7 +354,7 @@ class MonitoringMCPServer {
     const cacheKey = 'system:health';
     const cached = this.getCachedData(cacheKey);
     if (cached) return cached;
-    
+
     try {
       const [cpuInfo, memInfo, diskInfo, loadAvg] = await Promise.all([
         this.getCPUUsage(),
@@ -362,7 +362,7 @@ class MonitoringMCPServer {
         this.getDiskUsage(),
         this.getLoadAverage(),
       ]);
-      
+
       const health = {
         status: this.calculateOverallHealth(cpuInfo, memInfo, diskInfo, loadAvg),
         timestamp: new Date().toISOString(),
@@ -373,7 +373,7 @@ class MonitoringMCPServer {
         load_average: loadAvg,
         alerts: await this.getSystemAlerts(cpuInfo, memInfo, diskInfo),
       };
-      
+
       this.setCachedData(cacheKey, health);
       return health;
     } catch (error) {
@@ -386,11 +386,11 @@ class MonitoringMCPServer {
       // Get CPU usage using top command
       const { stdout } = await execAsync("top -bn1 | grep 'Cpu(s)' | awk '{print $2}' | cut -d'%' -f1");
       const usage = parseFloat(stdout.trim());
-      
+
       // Get CPU info
       const { stdout: cpuInfo } = await execAsync("cat /proc/cpuinfo | grep 'processor' | wc -l");
       const cores = parseInt(cpuInfo.trim());
-      
+
       return {
         usage_percent: isNaN(usage) ? 0 : usage,
         cores: cores,
@@ -414,9 +414,9 @@ class MonitoringMCPServer {
       const used = parseInt(parts[2]);
       const free = parseInt(parts[3]);
       const available = parseInt(parts[6]) || free;
-      
+
       const usage_percent = (used / total) * 100;
-      
+
       return {
         total_mb: total,
         used_mb: used,
@@ -445,7 +445,7 @@ class MonitoringMCPServer {
       const used = parts[2];
       const available = parts[3];
       const usage_percent = parseInt(parts[4].replace('%', ''));
-      
+
       return {
         total: total,
         used: used,
@@ -469,7 +469,7 @@ class MonitoringMCPServer {
     try {
       const { stdout } = await execAsync("cat /proc/loadavg");
       const loads = stdout.trim().split(' ').slice(0, 3).map(parseFloat);
-      
+
       return {
         '1min': loads[0],
         '5min': loads[1],
@@ -500,12 +500,12 @@ class MonitoringMCPServer {
     const cacheKey = 'system:processes';
     const cached = this.getCachedData(cacheKey);
     if (cached) return cached;
-    
+
     try {
       const { stdout } = await execAsync("ps aux --sort=-%cpu | head -20");
       const lines = stdout.trim().split('\n');
       const headers = lines[0].trim().split(/\s+/);
-      
+
       const processes = lines.slice(1).map(line => {
         const parts = line.trim().split(/\s+/);
         return {
@@ -516,7 +516,7 @@ class MonitoringMCPServer {
           command: parts.slice(10).join(' '),
         };
       });
-      
+
       const processInfo = {
         timestamp: new Date().toISOString(),
         top_processes_by_cpu: processes,
@@ -526,7 +526,7 @@ class MonitoringMCPServer {
           high_memory_count: processes.filter(p => p.memory_percent > 5).length,
         },
       };
-      
+
       this.setCachedData(cacheKey, processInfo);
       return processInfo;
     } catch (error) {
@@ -547,20 +547,20 @@ class MonitoringMCPServer {
     const cacheKey = 'system:network';
     const cached = this.getCachedData(cacheKey);
     if (cached) return cached;
-    
+
     try {
       const [interfaces, connections] = await Promise.all([
         this.getNetworkInterfaces(),
         this.getNetworkConnections(),
       ]);
-      
+
       const networkStatus = {
         timestamp: new Date().toISOString(),
         interfaces: interfaces,
         active_connections: connections,
         connectivity: await this.checkConnectivity(),
       };
-      
+
       this.setCachedData(cacheKey, networkStatus);
       return networkStatus;
     } catch (error) {
@@ -573,16 +573,16 @@ class MonitoringMCPServer {
       const { stdout } = await execAsync("ip addr show");
       const interfaces = [];
       const interfaceBlocks = stdout.split(/^\d+:/m).filter(block => block.trim());
-      
+
       for (const block of interfaceBlocks) {
         const lines = block.split('\n');
         const firstLine = lines[0];
         const name = firstLine.split(':')[0].trim();
-        
+
         if (name && name !== 'lo') { // Skip loopback
           const isUp = firstLine.includes('UP');
           const ipMatch = block.match(/inet (\d+\.\d+\.\d+\.\d+)/);
-          
+
           interfaces.push({
             name: name,
             status: isUp ? 'up' : 'down',
@@ -590,7 +590,7 @@ class MonitoringMCPServer {
           });
         }
       }
-      
+
       return interfaces;
     } catch (error) {
       return [];
@@ -633,7 +633,7 @@ class MonitoringMCPServer {
     try {
       const alertsData = await this.loadAlerts();
       const activeAlerts = alertsData.alerts.filter(alert => alert.status === 'active');
-      
+
       return {
         total_active: activeAlerts.length,
         alerts: activeAlerts,
@@ -653,11 +653,11 @@ class MonitoringMCPServer {
     try {
       const alertsData = await this.loadAlerts();
       const last24h = new Date(Date.now() - 24 * 60 * 60 * 1000);
-      
-      const recentAlerts = alertsData.alerts.filter(alert => 
+
+      const recentAlerts = alertsData.alerts.filter(alert =>
         new Date(alert.created_at) > last24h
       );
-      
+
       return {
         total_last_24h: recentAlerts.length,
         alerts: recentAlerts.sort((a, b) => new Date(b.created_at) - new Date(a.created_at)),
@@ -678,11 +678,11 @@ class MonitoringMCPServer {
     if (!endpoint) {
       throw new Error(`Endpoint ${endpointName} not found`);
     }
-    
+
     const cacheKey = `endpoint:${endpointName}`;
     const cached = this.getCachedData(cacheKey);
     if (cached) return cached;
-    
+
     try {
       const response = await fetch(endpoint.url, {
         timeout: 10000,
@@ -690,13 +690,13 @@ class MonitoringMCPServer {
           'User-Agent': 'monitoring-mcp/1.0.0',
         },
       });
-      
+
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
-      
+
       const data = await response.json();
-      
+
       const metrics = {
         endpoint: endpointName,
         url: endpoint.url,
@@ -705,7 +705,7 @@ class MonitoringMCPServer {
         timestamp: new Date().toISOString(),
         data: data,
       };
-      
+
       this.setCachedData(cacheKey, metrics);
       return metrics;
     } catch (error) {
@@ -716,7 +716,7 @@ class MonitoringMCPServer {
         error: error.message,
         timestamp: new Date().toISOString(),
       };
-      
+
       this.setCachedData(cacheKey, errorMetrics);
       return errorMetrics;
     }
@@ -724,10 +724,10 @@ class MonitoringMCPServer {
 
   async checkServiceHealth(args) {
     const { service, timeout = 10 } = args;
-    
+
     try {
       let result;
-      
+
       if (service.startsWith('http://') || service.startsWith('https://')) {
         // HTTP endpoint check
         const startTime = Date.now();
@@ -736,7 +736,7 @@ class MonitoringMCPServer {
           method: 'GET',
         });
         const endTime = Date.now();
-        
+
         result = {
           service,
           type: 'http',
@@ -766,7 +766,7 @@ class MonitoringMCPServer {
           };
         }
       }
-      
+
       return {
         content: [
           {
@@ -782,10 +782,10 @@ class MonitoringMCPServer {
 
   async createAlert(args) {
     const { name, description, severity, condition, tags = [] } = args;
-    
+
     try {
       const alertsData = await this.loadAlerts();
-      
+
       const newAlert = {
         id: this.generateAlertId(),
         name,
@@ -797,10 +797,10 @@ class MonitoringMCPServer {
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       };
-      
+
       alertsData.alerts.push(newAlert);
       await this.saveAlerts(alertsData);
-      
+
       return {
         content: [
           {
@@ -820,15 +820,15 @@ class MonitoringMCPServer {
 
   async resolveAlert(args) {
     const { alert_id, resolution_note } = args;
-    
+
     try {
       const alertsData = await this.loadAlerts();
       const alertIndex = alertsData.alerts.findIndex(alert => alert.id === alert_id);
-      
+
       if (alertIndex === -1) {
         throw new Error(`Alert with ID ${alert_id} not found`);
       }
-      
+
       alertsData.alerts[alertIndex] = {
         ...alertsData.alerts[alertIndex],
         status: 'resolved',
@@ -836,9 +836,9 @@ class MonitoringMCPServer {
         resolution_note,
         updated_at: new Date().toISOString(),
       };
-      
+
       await this.saveAlerts(alertsData);
-      
+
       return {
         content: [
           {
@@ -858,10 +858,10 @@ class MonitoringMCPServer {
 
   async getMetrics(args) {
     const { metric_type, time_range = '5m', aggregation = 'avg' } = args;
-    
+
     try {
       let metrics;
-      
+
       switch (metric_type) {
         case 'cpu':
           metrics = await this.getCPUUsage();
@@ -881,7 +881,7 @@ class MonitoringMCPServer {
         default:
           throw new Error(`Unknown metric type: ${metric_type}`);
       }
-      
+
       return {
         content: [
           {
@@ -903,34 +903,34 @@ class MonitoringMCPServer {
 
   async runHealthCheck(args) {
     const { include_external = false, detailed = false } = args;
-    
+
     try {
       const healthCheck = {
         timestamp: new Date().toISOString(),
         overall_status: 'unknown',
         checks: {},
       };
-      
+
       // System checks
       const [systemHealth, processes, network] = await Promise.all([
         this.getSystemHealth(),
         detailed ? this.getSystemProcesses() : null,
         this.getNetworkStatus(),
       ]);
-      
+
       healthCheck.checks.system = {
         status: systemHealth.status,
         cpu: systemHealth.cpu.status,
         memory: systemHealth.memory.status,
         disk: systemHealth.disk.status,
       };
-      
+
       healthCheck.checks.network = {
         status: network.connectivity.internet ? 'healthy' : 'unhealthy',
         interfaces: network.interfaces.length,
         connectivity: network.connectivity,
       };
-      
+
       if (detailed) {
         healthCheck.checks.processes = {
           total: processes.summary.total_processes,
@@ -938,7 +938,7 @@ class MonitoringMCPServer {
           high_memory: processes.summary.high_memory_count,
         };
       }
-      
+
       // External checks
       if (include_external) {
         const externalChecks = await Promise.all(
@@ -959,15 +959,15 @@ class MonitoringMCPServer {
             }
           })
         );
-        
+
         healthCheck.checks.external = externalChecks;
       }
-      
+
       // Calculate overall status
-      const allStatuses = Object.values(healthCheck.checks).flat().map(check => 
+      const allStatuses = Object.values(healthCheck.checks).flat().map(check =>
         typeof check === 'object' && check.status ? check.status : check
       );
-      
+
       if (allStatuses.some(status => status === 'critical' || status === 'unhealthy')) {
         healthCheck.overall_status = 'unhealthy';
       } else if (allStatuses.some(status => status === 'warning')) {
@@ -975,7 +975,7 @@ class MonitoringMCPServer {
       } else {
         healthCheck.overall_status = 'healthy';
       }
-      
+
       return {
         content: [
           {
@@ -991,7 +991,7 @@ class MonitoringMCPServer {
 
   calculateOverallHealth(cpu, memory, disk, loadAvg) {
     const statuses = [cpu.status, memory.status, disk.status, loadAvg.status];
-    
+
     if (statuses.includes('critical')) return 'critical';
     if (statuses.includes('warning')) return 'warning';
     return 'normal';
@@ -999,7 +999,7 @@ class MonitoringMCPServer {
 
   async getSystemAlerts(cpu, memory, disk) {
     const alerts = [];
-    
+
     if (cpu.status === 'critical') {
       alerts.push({
         type: 'cpu',
@@ -1007,7 +1007,7 @@ class MonitoringMCPServer {
         message: `High CPU usage: ${cpu.usage_percent}%`,
       });
     }
-    
+
     if (memory.status === 'critical') {
       alerts.push({
         type: 'memory',
@@ -1015,7 +1015,7 @@ class MonitoringMCPServer {
         message: `High memory usage: ${memory.usage_percent}%`,
       });
     }
-    
+
     if (disk.status === 'critical') {
       alerts.push({
         type: 'disk',
@@ -1023,7 +1023,7 @@ class MonitoringMCPServer {
         message: `High disk usage: ${disk.usage_percent}%`,
       });
     }
-    
+
     return alerts;
   }
 
@@ -1069,13 +1069,13 @@ class MonitoringMCPServer {
 
   calculateAlertTrends(alerts) {
     const now = Date.now();
-    const last24h = alerts.filter(alert => 
+    const last24h = alerts.filter(alert =>
       now - new Date(alert.created_at).getTime() < 24 * 60 * 60 * 1000
     );
-    const last7d = alerts.filter(alert => 
+    const last7d = alerts.filter(alert =>
       now - new Date(alert.created_at).getTime() < 7 * 24 * 60 * 60 * 1000
     );
-    
+
     return {
       last_24h: last24h.length,
       last_7d: last7d.length,

@@ -25,12 +25,12 @@ if os.environ.get("XDG_SESSION_TYPE") == "wayland":
 def main():
     # Check for existing instance before creating QApplication
     instance_manager = SingleInstanceManager()
-    
+
     if instance_manager.is_already_running():
         print("Application is already running. Bringing existing instance to front...")
         instance_manager.notify_existing_instance()
         sys.exit(0)  # Exit silently, existing instance will be shown
-    
+
     # Create QApplication first
     app = QApplication(sys.argv)
     app.setApplicationName("S&D - Search & Destroy")
@@ -43,22 +43,22 @@ def main():
     progress_tracker = StartupProgressTracker(splash)
     splash.show()
     progress_tracker.start_tracking()
-    
+
     # Process events to show splash screen
     app.processEvents()
-    
+
     # Phase 1: UI Initialization
     progress_tracker.complete_phase("ui_init")
     app.processEvents()
-    
+
     # Initialize telemetry early
     from core.telemetry import initialize_telemetry, shutdown_telemetry
     from utils.config import load_config
-    
+
     config = load_config()
     telemetry = initialize_telemetry(config)
-    
-    # Phase 2: Cache Initialization  
+
+    # Phase 2: Cache Initialization
     progress_tracker.complete_phase("cache_init")
     app.processEvents()
 
@@ -76,10 +76,10 @@ def main():
 
     # Create main window with progressive loading
     window = MainWindow(splash_screen=splash, progress_tracker=progress_tracker)
-    
+
     # Set up single instance server to listen for new launch attempts
     instance_manager.setup_instance_server(window)
-    
+
     # Clean up when application exits
     app.aboutToQuit.connect(instance_manager.cleanup)
     app.aboutToQuit.connect(shutdown_telemetry)

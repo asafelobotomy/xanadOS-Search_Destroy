@@ -717,7 +717,7 @@ class WebProtectionSystem:
                 context = ssl.create_default_context()
                 context.check_hostname = True
                 context.verify_mode = ssl.CERT_REQUIRED
-                
+
                 with socket.create_connection((domain, 443), timeout=10) as sock:
                     with context.wrap_socket(sock, server_hostname=domain) as ssock:
                         cert = ssock.getpeercert()
@@ -729,7 +729,7 @@ class WebProtectionSystem:
                     context = ssl.create_default_context()
                     context.check_hostname = False
                     context.verify_mode = ssl.CERT_NONE
-                    
+
                     with socket.create_connection((domain, 443), timeout=10) as sock:
                         with context.wrap_socket(sock, server_hostname=domain) as ssock:
                             cert = ssock.getpeercert()

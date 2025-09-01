@@ -2,7 +2,7 @@
 # Original location: app/gui/main_window.py.backup
 # Archive category: old-versions
 # ========================================
-# 
+#
 # WARNING: This file contains syntax errors and is kept for reference only
 # This is a corrupted backup from the cleanup operation that broke the app
 # DO NOT ATTEMPT TO RUN OR IMPORT THIS FILE

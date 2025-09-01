@@ -262,4 +262,3 @@
    1130     809 /usr/bin/ksystemstats        0.3  0.2
     167       2 [kworker/2:2-i915-unordered  0.0  0.2
     693       1 /usr/bin/NetworkManager --n  0.3  0.1
-

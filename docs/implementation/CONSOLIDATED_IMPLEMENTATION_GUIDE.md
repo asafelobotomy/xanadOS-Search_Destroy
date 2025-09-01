@@ -78,14 +78,19 @@ The application now provides comprehensive scan type selection, advanced configu
 ### Code Changes Made
 
 1. **`app/gui/main_window.py`**: 200+ lines of enhancements
+
 - New UI elements and layouts
 - Enhanced scan logic
 - Event handlers and methods
 - Custom styling integration
+
 2. **`app/gui/scan_thread.py`**: Updated constructor
+
 - Added scan_options parameter support
 - Maintained compatibility
+
 3. **Testing**: Comprehensive test suite
+
 - Feature validation
 - Integration testing
 - Visual testing capabilities

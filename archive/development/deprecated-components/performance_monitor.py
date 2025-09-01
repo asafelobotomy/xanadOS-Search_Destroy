@@ -67,7 +67,7 @@ class PerformanceMonitor:
 
         # Optimization callbacks
         self.optimization_callbacks: List[Callable] = []
-        
+
         # Warning suppression to reduce spam
         self.last_warning_time = {}
         self.warning_cooldown = 30.0  # seconds between same warning types

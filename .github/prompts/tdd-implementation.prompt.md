@@ -24,6 +24,7 @@ Follow the Red-Green-Refactor cycle to build robust, well-tested code with compr
 2. **Second Law**: You may not write more of a unit test than is sufficient to fail
 
 3.
+
 **Third Law**: You may not write more production code than is sufficient to pass the currently failing test
 
 ## TDD Implementation Framework

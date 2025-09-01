@@ -32,15 +32,15 @@ class GitHubDocsMCPServer {
         },
       }
     );
-    
+
     this.octokit = new Octokit({
       auth: process.env.GITHUB_TOKEN,
     });
-    
+
     this.orgName = process.env.GITHUB_ORG || '';
     this.cache = new Map();
     this.cacheTimeout = 5 * 60 * 1000; // 5 minutes
-    
+
     this.setupHandlers();
   }
 
@@ -50,7 +50,7 @@ class GitHubDocsMCPServer {
       try {
         const repositories = await this.getRepositories();
         const resources = [];
-        
+
         for (const repo of repositories) {
           // Add README resource
           resources.push({
@@ -59,7 +59,7 @@ class GitHubDocsMCPServer {
             name: `${repo.name} README`,
             description: `README documentation for ${repo.name}`,
           });
-          
+
           // Add Wiki resource if wiki is enabled
           if (repo.has_wiki) {
             resources.push({
@@ -69,7 +69,7 @@ class GitHubDocsMCPServer {
               description: `Wiki documentation for ${repo.name}`,
             });
           }
-          
+
           // Add docs directory if it exists
           try {
             await this.octokit.rest.repos.getContent({
@@ -77,7 +77,7 @@ class GitHubDocsMCPServer {
               repo: repo.name,
               path: 'docs',
             });
-            
+
             resources.push({
               uri: `github://docs/${repo.name}/docs`,
               mimeType: 'text/markdown',
@@ -88,7 +88,7 @@ class GitHubDocsMCPServer {
             // docs directory doesn't exist, skip
           }
         }
-        
+
         return { resources };
       } catch (error) {
         throw new McpError(
@@ -101,7 +101,7 @@ class GitHubDocsMCPServer {
     // Read documentation content
     this.server.setRequestHandler(ReadResourceRequestSchema, async (request) => {
       const { uri } = request.params;
-      
+
       try {
         const match = uri.match(/^github:\/\/docs\/(.+?)\/(.+)$/);
         if (!match) {
@@ -110,10 +110,10 @@ class GitHubDocsMCPServer {
             `Invalid GitHub docs URI: ${uri}`
           );
         }
-        
+
         const [, repoName, docType] = match;
         let content = '';
-        
+
         switch (docType) {
           case 'readme':
             content = await this.getReadmeContent(repoName);
@@ -130,7 +130,7 @@ class GitHubDocsMCPServer {
               `Unknown documentation type: ${docType}`
             );
         }
-        
+
         return {
           contents: [
             {
@@ -223,7 +223,7 @@ class GitHubDocsMCPServer {
     // Handle tool calls
     this.server.setRequestHandler(CallToolRequestSchema, async (request) => {
       const { name, arguments: args } = request.params;
-      
+
       try {
         switch (name) {
           case 'search_documentation':
@@ -254,7 +254,7 @@ class GitHubDocsMCPServer {
     const cacheKey = 'repositories';
     const cached = this.getCachedData(cacheKey);
     if (cached) return cached;
-    
+
     try {
       const { data } = await this.octokit.rest.repos.listForOrg({
         org: this.orgName,
@@ -262,7 +262,7 @@ class GitHubDocsMCPServer {
         sort: 'updated',
         per_page: 100,
       });
-      
+
       this.setCachedData(cacheKey, data);
       return data;
     } catch (error) {
@@ -274,13 +274,13 @@ class GitHubDocsMCPServer {
     const cacheKey = `readme:${repoName}`;
     const cached = this.getCachedData(cacheKey);
     if (cached) return cached;
-    
+
     try {
       const { data } = await this.octokit.rest.repos.getReadme({
         owner: this.orgName,
         repo: repoName,
       });
-      
+
       const content = Buffer.from(data.content, 'base64').toString('utf-8');
       this.setCachedData(cacheKey, content);
       return content;
@@ -296,7 +296,7 @@ class GitHubDocsMCPServer {
     const cacheKey = `wiki:${repoName}`;
     const cached = this.getCachedData(cacheKey);
     if (cached) return cached;
-    
+
     try {
       // Get wiki pages using GitHub API
       const { data: pages } = await this.octokit.request(
@@ -306,9 +306,9 @@ class GitHubDocsMCPServer {
           repo: repoName,
         }
       );
-      
+
       let wikiContent = `# ${repoName} Wiki\n\n`;
-      
+
       for (const page of pages) {
         const { data: pageContent } = await this.octokit.request(
           'GET /repos/{owner}/{repo}/wiki/{page_name}',
@@ -318,10 +318,10 @@ class GitHubDocsMCPServer {
             page_name: page.title,
           }
         );
-        
+
         wikiContent += `## ${page.title}\n\n${pageContent.content}\n\n`;
       }
-      
+
       this.setCachedData(cacheKey, wikiContent);
       return wikiContent;
     } catch (error) {
@@ -336,16 +336,16 @@ class GitHubDocsMCPServer {
     const cacheKey = `docs:${repoName}`;
     const cached = this.getCachedData(cacheKey);
     if (cached) return cached;
-    
+
     try {
       const { data: contents } = await this.octokit.rest.repos.getContent({
         owner: this.orgName,
         repo: repoName,
         path: 'docs',
       });
-      
+
       let docsContent = `# ${repoName} Documentation\n\n`;
-      
+
       for (const item of contents) {
         if (item.type === 'file' && item.name.endsWith('.md')) {
           const { data: fileContent } = await this.octokit.rest.repos.getContent({
@@ -353,12 +353,12 @@ class GitHubDocsMCPServer {
             repo: repoName,
             path: item.path,
           });
-          
+
           const content = Buffer.from(fileContent.content, 'base64').toString('utf-8');
           docsContent += `## ${item.name}\n\n${content}\n\n`;
         }
       }
-      
+
       this.setCachedData(cacheKey, docsContent);
       return docsContent;
     } catch (error) {
@@ -371,23 +371,23 @@ class GitHubDocsMCPServer {
 
   async searchDocumentation(args) {
     const { query, repository, type = 'all' } = args;
-    
+
     try {
       let repositories = [];
-      
+
       if (repository) {
         repositories = [{ name: repository }];
       } else {
         repositories = await this.getRepositories();
       }
-      
+
       const results = [];
-      
+
       for (const repo of repositories) {
         const searchResults = await this.searchInRepository(repo.name, query, type);
         results.push(...searchResults);
       }
-      
+
       return {
         content: [
           {
@@ -404,7 +404,7 @@ class GitHubDocsMCPServer {
   async searchInRepository(repoName, query, type) {
     const results = [];
     const searchQuery = query.toLowerCase();
-    
+
     try {
       if (type === 'readme' || type === 'all') {
         const readme = await this.getReadmeContent(repoName);
@@ -418,7 +418,7 @@ class GitHubDocsMCPServer {
           });
         }
       }
-      
+
       if (type === 'wiki' || type === 'all') {
         const wiki = await this.getWikiContent(repoName);
         if (wiki.toLowerCase().includes(searchQuery)) {
@@ -431,7 +431,7 @@ class GitHubDocsMCPServer {
           });
         }
       }
-      
+
       if (type === 'docs' || type === 'all') {
         const docs = await this.getDocsContent(repoName);
         if (docs.toLowerCase().includes(searchQuery)) {
@@ -448,37 +448,37 @@ class GitHubDocsMCPServer {
       // Skip repositories that can't be accessed
       console.warn(`Could not search in repository ${repoName}: ${error.message}`);
     }
-    
+
     return results;
   }
 
   extractExcerpt(content, query, contextLength = 200) {
     const index = content.toLowerCase().indexOf(query.toLowerCase());
     if (index === -1) return '';
-    
+
     const start = Math.max(0, index - contextLength / 2);
     const end = Math.min(content.length, index + query.length + contextLength / 2);
-    
+
     let excerpt = content.substring(start, end);
-    
+
     if (start > 0) excerpt = '...' + excerpt;
     if (end < content.length) excerpt = excerpt + '...';
-    
+
     return excerpt;
   }
 
   async getRepositoryInfo(args) {
     const { repository } = args;
-    
+
     try {
       const { data: repo } = await this.octokit.rest.repos.get({
         owner: this.orgName,
         repo: repository,
       });
-      
+
       // Check for documentation structure
       const docStructure = await this.analyzeDocumentationStructure(repository);
-      
+
       const info = {
         name: repo.name,
         description: repo.description,
@@ -492,7 +492,7 @@ class GitHubDocsMCPServer {
         updated_at: repo.updated_at,
         created_at: repo.created_at,
       };
-      
+
       return {
         content: [
           {
@@ -513,7 +513,7 @@ class GitHubDocsMCPServer {
       has_wiki: false,
       documentation_files: [],
     };
-    
+
     try {
       // Check for README
       await this.octokit.rest.repos.getReadme({
@@ -524,7 +524,7 @@ class GitHubDocsMCPServer {
     } catch (error) {
       // README doesn't exist
     }
-    
+
     try {
       // Check for docs directory
       const { data: contents } = await this.octokit.rest.repos.getContent({
@@ -539,7 +539,7 @@ class GitHubDocsMCPServer {
     } catch (error) {
       // docs directory doesn't exist
     }
-    
+
     try {
       // Check for wiki
       await this.octokit.request('GET /repos/{owner}/{repo}/wiki', {
@@ -550,13 +550,13 @@ class GitHubDocsMCPServer {
     } catch (error) {
       // Wiki doesn't exist
     }
-    
+
     return structure;
   }
 
   async getFileContent(args) {
     const { repository, path, branch = 'main' } = args;
-    
+
     try {
       const { data } = await this.octokit.rest.repos.getContent({
         owner: this.orgName,
@@ -564,13 +564,13 @@ class GitHubDocsMCPServer {
         path,
         ref: branch,
       });
-      
+
       if (data.type !== 'file') {
         throw new Error(`Path ${path} is not a file`);
       }
-      
+
       const content = Buffer.from(data.content, 'base64').toString('utf-8');
-      
+
       return {
         content: [
           {

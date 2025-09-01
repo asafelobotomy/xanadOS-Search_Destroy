@@ -466,9 +466,9 @@ class AutoUpdateSystem:  # pylint: disable=too-many-instance-attributes
             # Check GitHub releases for newer versions
             # Use centralized version from app package (reads root VERSION)
             try:
-                from app import (
+                from app import (  # local import to avoid cycles at module load
                     get_version,
-                )  # local import to avoid cycles at module load
+                )
 
                 current_version = get_version()
             except Exception:  # pylint: disable=broad-exception-caught

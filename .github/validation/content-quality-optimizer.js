@@ -13,23 +13,23 @@ class ContentQualityOptimizer {
 
     // Fix heading hierarchy - ensure no level skips
     content = this.fixHeadingHierarchy(content);
-    
+
     // Fix code blocks missing language specification
     content = this.fixCodeBlockLanguages(content);
-    
+
     // Fix list formatting (blank lines before lists)
     content = this.fixListFormatting(content);
-    
+
     // Fix table formatting
     content = this.fixTableFormatting(content);
-    
+
     // Write back if changed
     if (content !== originalContent) {
       await fs.writeFile(filePath, content, 'utf8');
       console.log(`  ✅ Fixed: ${filePath}`);
       return true;
     }
-    
+
     return false;
   }
 
@@ -41,11 +41,11 @@ class ContentQualityOptimizer {
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i];
       const headingMatch = line.match(/^(#+)\s+(.+)$/);
-      
+
       if (headingMatch) {
         const currentLevel = headingMatch[1].length;
         const headingText = headingMatch[2];
-        
+
         // Fix skipped levels
         if (currentLevel > lastHeadingLevel + 1) {
           const correctedLevel = lastHeadingLevel + 1;
@@ -98,15 +98,15 @@ class ContentQualityOptimizer {
 
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i];
-      
+
       // Check if this line looks like a table header
       if (line.includes('|') && line.split('|').length >= 3) {
         const nextLine = i + 1 < lines.length ? lines[i + 1] : '';
-        
+
         // If next line is not a table separator, add one
         if (!nextLine.match(/^\|?[-:]+\|[-:|\s]+$/)) {
           result.push(line);
-          
+
           // Generate separator based on number of columns
           const columns = line.split('|').length - 2;
           const separator = '|' + '---|'.repeat(columns);
@@ -127,7 +127,7 @@ class ContentQualityOptimizer {
 // Main execution
 async function main() {
   const optimizer = new ContentQualityOptimizer();
-  
+
   const filesToFix = [
     '.github/chatmodes/documentation.chatmode.md',
     '.github/chatmodes/security.chatmode.md',
@@ -153,7 +153,7 @@ async function main() {
 
   console.log(`\n🎯 Optimization complete!`);
   console.log(`📊 Total fixes applied: ${optimizer.fixes.length}`);
-  
+
   if (optimizer.fixes.length > 0) {
     console.log('\n📋 Summary of fixes:');
     optimizer.fixes.forEach(fix => console.log(`  - ${fix}`));

@@ -6,7 +6,7 @@ echo "========================================================"
 echo
 echo "📊 IMPLEMENTATION SUMMARY:"
 echo "   ✅ Extended grace period: 30 minutes (1800 seconds)"
-echo "   ✅ Maximum grace period: 60 minutes (3600 seconds)" 
+echo "   ✅ Maximum grace period: 60 minutes (3600 seconds)"
 echo "   ✅ Enhanced security monitoring and logging"
 echo "   ✅ Configurable security policies"
 echo "   ✅ Multi-layer validation maintained"
