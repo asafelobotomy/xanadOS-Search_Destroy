@@ -7145,7 +7145,7 @@ Common False Positives:
         # Note: Most components are handled by the main setStyleSheet() calls
         # in apply_dark_theme() and apply_light_theme()
 
-    def _configure_platform_dropdown_behavior(self):
+    def _configure_platform_dropdown_behavior(self) -> None:
         """Configure application to prevent popup window issues on Wayland"""
         try:
             # Get Qt application instance
@@ -7157,7 +7157,7 @@ Common False Positives:
         except Exception as e:
             print(f"Warning: Could not configure platform dropdown behavior: {e}")
 
-    def stop_scan(self):
+    def stop_scan(self) -> None:
         print("\n🛑 === STOP_SCAN CALLED ===")
         print("DEBUG: stop_scan() called")
         print(f"DEBUG: Current scan state: {self._scan_state}")
