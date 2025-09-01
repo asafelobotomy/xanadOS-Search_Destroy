@@ -286,7 +286,10 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
         # 7. Post-start self checks
         QTimer.singleShot(0, self._run_startup_self_check)
 
-        # 8. Complete progressive loading initialization
+        # 8. Check for first-time setup needs
+        QTimer.singleShot(1000, self._check_first_launch_setup)
+
+        # 9. Complete progressive loading initialization
         if self.splash_screen and self.progress_tracker:
             QTimer.singleShot(100, self._complete_progressive_loading)
 
@@ -10974,6 +10977,201 @@ Common False Positives:
 
         except Exception as e:
             print(f"Background startup check error: {e}")
+
+    def _check_first_launch_setup(self):
+        """Check if first-time setup is needed and offer guided setup."""
+        try:
+            from app.utils.config import load_config
+
+            config = load_config()
+            setup_config = config.get("setup", {})
+
+            # Check if first-time setup is complete
+            setup_completed = setup_config.get("first_time_setup_completed", False)
+
+            if not setup_completed:
+                self._show_setup_welcome_dialog()
+            else:
+                # Check if any critical components are missing
+                self._check_missing_components()
+
+        except Exception as e:
+            print(f"Setup check error: {e}")
+
+    def _show_setup_welcome_dialog(self):
+        """Show friendly welcome dialog for first-time setup."""
+        try:
+            from PyQt6.QtWidgets import QMessageBox
+
+            reply = QMessageBox.question(
+                self,
+                "Welcome to Search & Destroy!",
+                "Welcome! To provide the best protection, we need to set up some security tools.\n\n"
+                "This will install and configure:\n"
+                "• ClamAV Antivirus (virus scanning)\n"
+                "• RKHunter (rootkit detection)\n"
+                "• UFW Firewall (network protection)\n\n"
+                "Would you like to run the quick setup now? (Recommended)\n\n"
+                "You can always run setup later from the Tools menu.",
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                QMessageBox.StandardButton.Yes,
+            )
+
+            if reply == QMessageBox.StandardButton.Yes:
+                self._run_express_setup()
+            else:
+                # Mark that user was offered setup (but declined)
+                self._mark_setup_offered()
+
+        except Exception as e:
+            print(f"Setup welcome dialog error: {e}")
+
+    def _check_missing_components(self):
+        """Check for missing components and offer to install them."""
+        try:
+            missing_components = self._detect_missing_critical_components()
+
+            if missing_components:
+                self._show_missing_components_dialog(missing_components)
+
+        except Exception as e:
+            print(f"Missing components check error: {e}")
+
+    def _detect_missing_critical_components(self):
+        """Detect which critical security components are missing or misconfigured."""
+        missing = []
+
+        try:
+            # Use the same comprehensive detection as setup wizard
+            from app.gui.setup_wizard import check_existing_installations
+
+            status = check_existing_installations()
+
+            # Check each critical component
+            if not status.get("clamav", {}).get("ready", False):
+                clamav_details = status.get("clamav", {})
+                if not clamav_details.get("installed", False):
+                    missing.append("ClamAV Antivirus")
+                elif not clamav_details.get("service_running", False):
+                    missing.append("ClamAV Daemon (not running)")
+
+            if not status.get("rkhunter", {}).get("ready", False):
+                rkhunter_details = status.get("rkhunter", {})
+                if not rkhunter_details.get("installed", False):
+                    missing.append("RKHunter")
+                else:
+                    missing.append("RKHunter (needs configuration)")
+
+            if not status.get("ufw", {}).get("ready", False):
+                ufw_details = status.get("ufw", {})
+                if not ufw_details.get("installed", False):
+                    missing.append("UFW Firewall")
+                else:
+                    missing.append("UFW Firewall (not enabled)")
+
+        except Exception as e:
+            print(f"Component detection error: {e}")
+
+        return missing
+
+    def _is_service_enabled(self, service_name):
+        """Check if a systemd service is enabled."""
+        try:
+            import subprocess
+
+            result = subprocess.run(
+                ["systemctl", "is-enabled", service_name],
+                capture_output=True,
+                text=True,
+                timeout=5,
+                check=False,
+            )
+            return result.returncode == 0
+        except Exception:
+            return False
+
+    def _show_missing_components_dialog(self, missing_components):
+        """Show dialog about missing components."""
+        try:
+            from PyQt6.QtWidgets import QMessageBox
+
+            components_text = "\n".join(f"• {comp}" for comp in missing_components)
+
+            reply = QMessageBox.question(
+                self,
+                "Missing Security Components",
+                f"The following security components are not properly configured:\n\n"
+                f"{components_text}\n\n"
+                "Would you like to set them up now for better protection?",
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                QMessageBox.StandardButton.Yes,
+            )
+
+            if reply == QMessageBox.StandardButton.Yes:
+                self._run_express_setup()
+
+        except Exception as e:
+            print(f"Missing components dialog error: {e}")
+
+    def _run_express_setup(self):
+        """Run express setup with all recommended components."""
+        try:
+            # Import here to avoid circular imports
+            from app.gui.setup_wizard import show_setup_wizard_express
+
+            result = show_setup_wizard_express(self)
+
+            if result:
+                # Setup completed successfully
+                self._mark_setup_completed()
+                self.show_themed_message_box(
+                    "information",
+                    "Setup Complete!",
+                    "Security components have been installed and configured.\n"
+                    "Your system is now better protected!",
+                )
+                # Refresh system status
+                self.update_security_status()
+                self.refresh_components()
+
+        except Exception as e:
+            print(f"Express setup error: {e}")
+            self.show_themed_message_box(
+                "warning",
+                "Setup Error",
+                f"There was an issue with the setup process: {e}\n\n"
+                "You can try again from Tools → Setup Wizard",
+            )
+
+    def _mark_setup_completed(self):
+        """Mark first-time setup as completed."""
+        try:
+            from app import __version__
+            from app.utils.config import load_config, save_config
+
+            config = load_config()
+            config.setdefault("setup", {})
+            config["setup"]["first_time_setup_completed"] = True
+            config["setup"]["setup_version"] = __version__
+            config["setup"]["last_setup_check"] = str(datetime.now())
+            save_config(config)
+
+        except Exception as e:
+            print(f"Mark setup completed error: {e}")
+
+    def _mark_setup_offered(self):
+        """Mark that setup was offered to user (but declined)."""
+        try:
+            from app.utils.config import load_config, save_config
+
+            config = load_config()
+            config.setdefault("setup", {})
+            config["setup"]["setup_offered"] = True
+            config["setup"]["setup_offered_date"] = str(datetime.now())
+            save_config(config)
+
+        except Exception as e:
+            print(f"Mark setup offered error: {e}")
 
     def block_settings_signals(self, block):
         """Block or unblock signals from settings controls to prevent auto-save during loading."""

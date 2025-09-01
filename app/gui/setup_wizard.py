@@ -10,6 +10,7 @@ Notes:
 
 # pylint: disable=too-many-lines  # UI-heavy module; tracked for later decomposition
 
+import os
 import subprocess
 import sys
 from dataclasses import dataclass
@@ -422,7 +423,13 @@ class SetupWizard(ThemedDialog):  # pylint: disable=too-many-instance-attributes
                 },
                 check_command="clamscan --version",
                 service_name="clamav-daemon",
-                post_install_commands=["freshclam"],
+                post_install_commands=[
+                    "freshclam",  # Update virus definitions
+                    "systemctl enable clamav-daemon",  # Enable daemon
+                    "systemctl start clamav-daemon",  # Start daemon
+                    "systemctl enable clamav-freshclam",  # Auto-update service
+                    "systemctl start clamav-freshclam",  # Start auto-update
+                ],
                 is_critical=True,
             ),
             "ufw": PackageInfo(
@@ -468,9 +475,15 @@ class SetupWizard(ThemedDialog):  # pylint: disable=too-many-instance-attributes
                 },
                 check_command="which rkhunter",
                 post_install_commands=[
-                    'sh -c "chmod 755 /usr/bin/rkhunter"',
-                    "/usr/bin/rkhunter --update",
-                    "/usr/bin/rkhunter --propupd",
+                    'sh -c "chmod 755 /usr/bin/rkhunter"',  # Fix permissions
+                    "/usr/bin/rkhunter --update",  # Update definitions
+                    "/usr/bin/rkhunter --propupd",  # Create baseline
+                    # Create user config directory
+                    'sh -c "mkdir -p ~/.config/search-and-destroy"',
+                    # Generate optimized RKHunter config (split for readability)
+                    'sh -c "echo \\"DISABLE_TESTS=suspscan hidden_procs '
+                    'deleted_files packet_cap_apps apps\\" > '
+                    '~/.config/search-and-destroy/rkhunter.conf"',
                 ],
                 is_critical=False,
             ),
@@ -883,20 +896,25 @@ class SetupWizard(ThemedDialog):  # pylint: disable=too-many-instance-attributes
         return status
 
     def check_if_setup_needed(self) -> bool:
-        """Check if setup is needed (any critical packages missing)"""
-        critical_missing = any(
-            not self.package_status.get(name, False)
+        """Check if setup is needed (any critical packages missing or misconfigured)"""
+        # Use comprehensive status check instead of just package availability
+        detailed_status = check_existing_installations()
+
+        critical_missing_or_misconfigured = any(
+            not detailed_status.get(name, {}).get("ready", False)
             for name, info in self.packages.items()
             if info.is_critical
         )
 
-        if not critical_missing:
-            # All critical packages available, offer to skip setup
+        if not critical_missing_or_misconfigured:
+            # All critical packages properly configured, offer to skip setup
             reply = QMessageBox.question(
                 self,
                 "Setup Complete",
-                "All critical components are already installed!\n\n"
-                "Would you like to review the setup anyway or continue to the application?",
+                "All critical components are properly installed and "
+                "configured!\n\n"
+                "Would you like to review the setup anyway or continue "
+                "to the application?",
                 QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
                 QMessageBox.StandardButton.No,
             )
@@ -1563,6 +1581,253 @@ def show_setup_wizard(parent=None) -> bool:
     wizard = SetupWizard(parent)
     _dlg_result = wizard.exec()
     return _dlg_result == QDialog.DialogCode.Accepted
+
+
+def show_setup_wizard_express(parent=None):
+    """Show setup wizard in express mode with recommended packages selected.
+
+    Args:
+        parent: Parent widget for the dialog
+
+    Returns:
+        bool: True if setup completed successfully, False otherwise
+    """
+    try:
+        from PyQt6.QtCore import QTimer
+
+        wizard = SetupWizard(parent)
+
+        # Pre-select all critical packages for express setup
+        recommended_packages = ["clamav", "rkhunter", "ufw"]
+        for package_name, package_info in wizard.packages.items():
+            if package_info.is_critical or package_name in recommended_packages:
+                if package_name in wizard.package_cards:
+                    card = wizard.package_cards[package_name]
+                    if hasattr(card, "install_checkbox"):
+                        card.install_checkbox.setChecked(True)
+
+        # Auto-start installation after a brief delay to show selections
+        QTimer.singleShot(500, wizard.start_installation)
+
+        _dlg_result = wizard.exec()
+        return _dlg_result == QDialog.DialogCode.Accepted
+
+    except Exception as e:
+        print(f"Express setup error: {e}")
+        return False
+
+
+def check_existing_installations():
+    """Check what security components are already installed and configured.
+
+    Returns:
+        dict: Status of each component with installation and config state
+    """
+    status = {}
+
+    # Check ClamAV
+    try:
+        import shutil
+        import subprocess
+
+        status["clamav"] = {
+            "installed": shutil.which("clamscan") is not None,
+            "daemon_installed": shutil.which("clamdscan") is not None,
+            "service_enabled": _check_service_status("clamav-daemon"),
+            "service_running": _check_service_running("clamav-daemon"),
+            "ready": False,
+        }
+
+        # ClamAV is ready if installed and daemon is running
+        status["clamav"]["ready"] = (
+            status["clamav"]["installed"]
+            and status["clamav"]["daemon_installed"]
+            and status["clamav"]["service_running"]
+        )
+    except Exception as e:
+        print(f"Error checking ClamAV: {e}")
+        status["clamav"] = {
+            "installed": False,
+            "daemon_installed": False,
+            "service_enabled": False,
+            "service_running": False,
+            "ready": False,
+        }
+
+    # Check RKHunter
+    try:
+        # Check RKHunter - use consistent detection logic
+        rkhunter_installed = False
+        rkhunter_actual_path = None
+
+        # First try shutil.which (fastest if in PATH)
+        rkhunter_actual_path = shutil.which("rkhunter")
+        if rkhunter_actual_path:
+            rkhunter_installed = True
+        else:
+            # Check specific paths in case it's not in PATH
+            rkhunter_paths = [
+                "/usr/bin/rkhunter",
+                "/usr/local/bin/rkhunter",
+                "/bin/rkhunter",
+            ]
+            for path in rkhunter_paths:
+                if os.path.exists(path):
+                    rkhunter_installed = True
+                    rkhunter_actual_path = path
+                    break
+
+        status["rkhunter"] = {
+            "installed": rkhunter_installed,
+            "executable": False,
+            "configured": False,
+            "ready": False,
+        }
+
+        if status["rkhunter"]["installed"] and rkhunter_actual_path:
+            # Check if executable has proper permissions
+            try:
+                import stat
+
+                st = os.stat(rkhunter_actual_path)
+                status["rkhunter"]["executable"] = bool(st.st_mode & stat.S_IXUSR)
+            except OSError:
+                pass
+
+            # Check if it has been configured (has run --propupd)
+            try:
+                # Try to check configuration without running privileged commands
+                # First, check if RKHunter database/config files exist
+                config_paths = [
+                    "/etc/rkhunter.conf",
+                    "/var/lib/rkhunter/db/rkhunter.dat",
+                    "/var/lib/rkhunter/db/rkhunter_prop_list.dat",
+                ]
+
+                config_exists = any(os.path.exists(path) for path in config_paths)
+
+                if config_exists:
+                    # If config files exist, assume configured
+                    status["rkhunter"]["configured"] = True
+                else:
+                    # Only try --list if we can't determine from config files
+                    # and catch permission errors gracefully
+                    try:
+                        result = subprocess.run(
+                            [rkhunter_actual_path, "--list"],
+                            capture_output=True,
+                            timeout=10,
+                            stderr=subprocess.DEVNULL,
+                            check=False,  # Suppress errors
+                        )
+                        status["rkhunter"]["configured"] = result.returncode == 0
+                    except subprocess.TimeoutExpired:
+                        # Timeout - assume not configured
+                        status["rkhunter"]["configured"] = False
+                    except (subprocess.SubprocessError, PermissionError, OSError):
+                        # Permission denied or other error - use config check
+                        status["rkhunter"]["configured"] = config_exists
+
+            except Exception:
+                # Any other error - assume not configured
+                status["rkhunter"]["configured"] = False
+
+        status["rkhunter"]["ready"] = (
+            status["rkhunter"]["installed"]
+            and status["rkhunter"]["executable"]
+            and status["rkhunter"]["configured"]
+        )
+    except Exception as e:
+        print(f"Error checking RKHunter: {e}")
+        status["rkhunter"] = {
+            "installed": False,
+            "executable": False,
+            "configured": False,
+            "ready": False,
+        }
+
+    # Check UFW
+    try:
+        status["ufw"] = {
+            "installed": shutil.which("ufw") is not None,
+            "enabled": False,
+            "ready": False,
+        }
+
+        if status["ufw"]["installed"]:
+            # Use systemctl to check UFW status (non-invasive, no sudo)
+            try:
+                result = subprocess.run(
+                    ["systemctl", "is-active", "ufw"],
+                    capture_output=True,
+                    text=True,
+                    timeout=5,
+                    check=False,
+                )
+                status["ufw"]["enabled"] = (
+                    result.returncode == 0 and result.stdout.strip() == "active"
+                )
+            except (subprocess.TimeoutExpired, subprocess.SubprocessError):
+                # Fallback: Try systemctl is-enabled
+                try:
+                    result = subprocess.run(
+                        ["systemctl", "is-enabled", "ufw"],
+                        capture_output=True,
+                        text=True,
+                        timeout=5,
+                        check=False,
+                    )
+                    enabled_states = ["enabled", "static", "enabled-runtime"]
+                    status["ufw"]["enabled"] = (
+                        result.returncode == 0
+                        and result.stdout.strip() in enabled_states
+                    )
+                except (subprocess.TimeoutExpired, subprocess.SubprocessError):
+                    pass
+
+        status["ufw"]["ready"] = status["ufw"]["installed"] and status["ufw"]["enabled"]
+    except Exception as e:
+        print(f"Error checking UFW: {e}")
+        status["ufw"] = {
+            "installed": False,
+            "enabled": False,
+            "ready": False,
+        }
+
+    return status
+
+
+def _check_service_status(service_name):
+    """Check if a systemd service is enabled."""
+    try:
+        import subprocess
+
+        result = subprocess.run(
+            ["systemctl", "is-enabled", service_name],
+            capture_output=True,
+            timeout=5,
+            check=False,
+        )
+        return result.returncode == 0
+    except Exception:
+        return False
+
+
+def _check_service_running(service_name):
+    """Check if a systemd service is running."""
+    try:
+        import subprocess
+
+        result = subprocess.run(
+            ["systemctl", "is-active", service_name],
+            capture_output=True,
+            text=True,
+            timeout=5,
+            check=False,
+        )
+        return result.stdout.strip() == "active"
+    except Exception:
+        return False
 
 
 if __name__ == "__main__":

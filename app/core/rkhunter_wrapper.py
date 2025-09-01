@@ -629,11 +629,7 @@ class RKHunterWrapper:
             cmd_args,
         )
         if not is_valid:
-            self.logger.error(
-                "Security validation failed: %s".replace(
-                    "%s", "{error_message}"
-                ).replace("%d", "{error_message}")
-            )
+            self.logger.error("Security validation failed: %s", error_message)
             return subprocess.CompletedProcess(
                 args=cmd_args,
                 returncode=1,
@@ -733,8 +729,8 @@ class RKHunterWrapper:
                     "ALLOWHIDDENDIR=/dev/.udev",
                     "ALLOWHIDDENDIR=/dev/.mount",
                     "",
-                    "# Package manager",
-                    "PKGMGR=PACMAN",
+                    "# Package manager - use NONE for Arch Linux",
+                    "PKGMGR=NONE",
                     'SCRIPTWHITELIST=""',
                     'ALLOWHIDDENDIR="/etc/.java"',
                     'ALLOWHIDDENFILE="/etc/.java"',
@@ -744,8 +740,8 @@ class RKHunterWrapper:
                     "WHITELISTED_IS_WHITE=1",
                     "SUPPRESS_DEPRECATION_WARNINGS=1",
                     "",
-                    "# Reduce grep warnings by using simpler patterns",
-                    "USE_SYSLOG=0",
+                    "# Disable syslog to avoid facility/priority errors",
+                    "#USE_SYSLOG=authpriv.notice",
                     "",
                 ]
                 try:

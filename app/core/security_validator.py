@@ -5,6 +5,7 @@ Implements strict command validation and privilege restrictions.
 
 import os
 import re
+from pathlib import Path
 
 
 class SecureRKHunterValidator:
@@ -70,6 +71,8 @@ class SecureRKHunterValidator:
         self.allowed_config_paths: set[str] = {
             "/etc/rkhunter.conf",
             "/usr/local/etc/rkhunter.conf",
+            # User-specific config path for Search & Destroy
+            str(Path.home() / ".config" / "search-and-destroy" / "rkhunter.conf"),
         }
 
         # Allowed temporary directory paths
