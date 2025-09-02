@@ -65,6 +65,36 @@ err() { echo -e "${RED}[FAIL]${NC} $*"; failures=$((failures+1)); }
 # Detect tools
 has() { command -v "$1" >/dev/null 2>&1; }
 
+# Enhanced: Check for uv environment tools first
+UV_AVAILABLE=false
+RUFF_CMD="ruff"
+BLACK_CMD="black"
+MYPY_CMD="mypy"
+FLAKE8_CMD="flake8"
+
+if has uv && [[ -f "$REPO_ROOT/pyproject.toml" ]]; then
+    info "Found uv environment, checking for tools"
+    UV_AVAILABLE=true
+
+    # Test if tools are available in uv environment
+    if cd "$REPO_ROOT" && uv run ruff --version >/dev/null 2>&1; then
+        RUFF_CMD="uv run ruff"
+        info "Using ruff from uv environment"
+    fi
+
+    if cd "$REPO_ROOT" && uv run black --version >/dev/null 2>&1; then
+        BLACK_CMD="uv run black"
+    fi
+
+    if cd "$REPO_ROOT" && uv run mypy --version >/dev/null 2>&1; then
+        MYPY_CMD="uv run mypy"
+    fi
+
+    if cd "$REPO_ROOT" && uv run flake8 --version >/dev/null 2>&1; then
+        FLAKE8_CMD="uv run flake8"
+    fi
+fi
+
 PY_MSG_PREFIX="Python validation"
 
 info "Starting $PY_MSG_PREFIX (strict=$STRICT, fix=$AUTO_FIX)"
@@ -79,23 +109,23 @@ fi
 
 # Ruff checks (and optional auto-fix)
 if $RUN_RUFF; then
-  if has ruff; then
+  if has ruff || [[ "$RUFF_CMD" == "uv run ruff" ]]; then
     if $AUTO_FIX; then
       info "ruff --fix: applying autofixes"
-      ruff check --fix "${RUFF_TARGETS[@]}" || true
+      $RUFF_CMD check --fix "${RUFF_TARGETS[@]}" || true
       info "ruff format: applying code formatting"
-      ruff format "${RUFF_TARGETS[@]}" || true
+      $RUFF_CMD format "${RUFF_TARGETS[@]}" || true
       ok "ruff auto-fix completed"
     fi
 
-    if ruff check --quiet "${RUFF_TARGETS[@]}"; then
+    if $RUFF_CMD check --quiet "${RUFF_TARGETS[@]}"; then
       ok "ruff check passed"
     else
       err "ruff check found issues"
     fi
     # Format verification (non-destructive)
     if ! $STRICT; then
-      if ruff format --check "${RUFF_TARGETS[@]}"; then
+      if $RUFF_CMD format --check "${RUFF_TARGETS[@]}"; then
         ok "ruff format check passed"
       else
         err "ruff format check failed (run: ruff format)"
@@ -115,14 +145,14 @@ PY_DIRS=("app")
 
 # Black check (optional alongside ruff)
 if $RUN_BLACK; then
-  if has black; then
+  if has black || [[ "$BLACK_CMD" == "uv run black" ]]; then
     if $AUTO_FIX; then
       info "black: applying code formatting"
-      black "${PY_DIRS[@]}" || true
+      $BLACK_CMD "${PY_DIRS[@]}" || true
       ok "black format completed"
     fi
 
-    if black --check "${PY_DIRS[@]}"; then
+    if $BLACK_CMD --check "${PY_DIRS[@]}"; then
       ok "black --check passed"
     else
       err "black check failed (run: black .)"
@@ -134,9 +164,9 @@ fi
 
 # Flake8 (legacy guard; uses config from pyproject)
 if $RUN_FLAKE8; then
-  if has flake8; then
+  if has flake8 || [[ "$FLAKE8_CMD" == "uv run flake8" ]]; then
     # Prefer pyproject.toml (flake8>=7); otherwise pass minimal CLI config and limit scope
-    FLAKE8_VER_RAW="$(flake8 --version | awk '{print $1}')" || FLAKE8_VER_RAW="0.0.0"
+    FLAKE8_VER_RAW="$($FLAKE8_CMD --version | awk '{print $1}')" || FLAKE8_VER_RAW="0.0.0"
     FLAKE8_MAJOR="${FLAKE8_VER_RAW%%.*}"
     FLAKE8_TARGETS=("${PY_DIRS[@]}")
 
@@ -148,7 +178,7 @@ if $RUN_FLAKE8; then
       info "flake8 v$FLAKE8_VER_RAW detected (legacy). Running limited, non-blocking scan with enforced CLI tolerances."
     fi
 
-    if flake8 --max-line-length 88 \
+    if $FLAKE8_CMD --max-line-length 88 \
               --extend-ignore E203,E266,E501,W503 \
               --exclude "$FLAKE8_EXCLUDES" \
               "${FLAKE8_TARGETS[@]}"; then
@@ -163,9 +193,9 @@ fi
 
 # mypy type checking (strict mode only by default)
 if $RUN_MYPY; then
-  if has mypy; then
+  if has mypy || [[ "$MYPY_CMD" == "uv run mypy" ]]; then
     # Capture output to handle the "no files" case gracefully
-    MYPY_OUTPUT="$(mypy . 2>&1 || true)"
+    MYPY_OUTPUT="$($MYPY_CMD . 2>&1 || true)"
     if echo "$MYPY_OUTPUT" | grep -qi "There are no .py\[i\] files"; then
       ok "mypy skipped (no Python files matched config)"
     elif echo "$MYPY_OUTPUT" | grep -q '^Success:'; then

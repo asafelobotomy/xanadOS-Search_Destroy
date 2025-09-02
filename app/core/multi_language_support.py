@@ -504,7 +504,7 @@ class MultiLanguageSupport:
                 return f"0 {unit_list[0]}"
 
             size = abs(size_bytes)
-            unit_index = min(int(math.floor(math.log(size, 1024))), len(unit_list) - 1)
+            unit_index = min(math.floor(math.log(size, 1024)), len(unit_list) - 1)
 
             if unit_index == 0:
                 return f"{size_bytes} {unit_list[0]}"
