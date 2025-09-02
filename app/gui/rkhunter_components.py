@@ -408,13 +408,13 @@ class RKHunterScanThread(QThread, CooperativeCancellationMixin):
             # Only emit initial status, no progress bar updates until scan actually starts
             self.progress_updated.emit("Preparing RKHunter scan...")
 
-            # Check authentication methods available
-            pkexec_available = self.rkhunter._find_executable("pkexec")
+            # Check if GUI sudo authentication is available
+            sudo_available = self.rkhunter._find_executable("sudo")
 
             if not self.rkhunter.is_functional():
-                if pkexec_available:
+                if sudo_available:
                     self.progress_updated.emit(
-                        "🔐 Waiting for authentication... Please enter your password in the dialog."
+                        "🔐 Waiting for GUI authentication... Please enter your password."
                     )
                 else:
                     self.progress_updated.emit(

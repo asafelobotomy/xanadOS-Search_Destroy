@@ -108,7 +108,7 @@ class SystemPaths:
         "freshclam": ["/usr/bin/freshclam", "/usr/local/bin/freshclam"],
         "rkhunter": ["/usr/bin/rkhunter", "/usr/local/bin/rkhunter"],
         "sudo": ["/usr/bin/sudo", "/bin/sudo"],
-        "pkexec": ["/usr/bin/pkexec"],
+        # No pkexec - GUI sudo authentication only
         "systemctl": ["/usr/bin/systemctl", "/bin/systemctl"],
         "ufw": ["/usr/sbin/ufw", "/sbin/ufw"],
         "iptables": ["/usr/sbin/iptables", "/sbin/iptables"],

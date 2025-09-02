@@ -148,7 +148,9 @@
   "Runbooks",
   "clamav",
   "freshclam",
-  "docstrings"
+  "docstrings",
+  "inotify",
+  "dnspython"
   ],
   "flagWords": [
     "hte",

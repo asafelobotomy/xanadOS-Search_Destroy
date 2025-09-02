@@ -40,7 +40,7 @@ check_project_root() {
 check_venv() {
     if [[ ! -d ".venv" ]]; then
         log_warning "Virtual environment not found. Creating one..."
-        
+
         # Check for UV first
         if command -v uv >/dev/null 2>&1; then
             log_info "Using UV to create virtual environment..."
@@ -49,7 +49,7 @@ check_venv() {
             log_info "Using standard venv..."
             python3 -m venv .venv
         fi
-        
+
         log_success "Virtual environment created"
     else
         log_success "Virtual environment found"
@@ -59,10 +59,10 @@ check_venv() {
 # Install dependencies using UV or pip
 install_dependencies() {
     log_info "Installing dependencies..."
-    
+
     # Activate virtual environment
     source .venv/bin/activate
-    
+
     # Use UV if available for faster installation
     if command -v uv >/dev/null 2>&1; then
         log_info "Using UV for fast dependency installation..."
@@ -74,36 +74,36 @@ install_dependencies() {
         pip install -e .
         pip install -e ".[dev]"
     fi
-    
+
     log_success "Dependencies installed"
 }
 
 # Validate critical modules
 validate_modules() {
     log_info "Validating critical modules..."
-    
+
     source .venv/bin/activate
-    
+
     # Critical modules for application functionality
     local modules=(
         "numpy:Unified Security Engine"
         "schedule:Scheduled scanning"
-        "aiohttp:Async operations" 
+        "aiohttp:Async operations"
         "inotify:File system monitoring"
         "dns:DNS analysis"
         "PyQt6:GUI framework"
         "psutil:System monitoring"
         "cryptography:Security features"
     )
-    
+
     local failed_modules=()
-    
+
     for module_info in "${modules[@]}"; do
         local module
         local purpose
         module=$(echo "$module_info" | cut -d: -f1)
         purpose=$(echo "$module_info" | cut -d: -f2)
-        
+
         if python -c "import $module" 2>/dev/null; then
             log_success "$module (${purpose})"
         else
@@ -111,7 +111,7 @@ validate_modules() {
             failed_modules+=("$module")
         fi
     done
-    
+
     if [[ ${#failed_modules[@]} -eq 0 ]]; then
         log_success "All critical modules validated successfully!"
         return 0
@@ -124,9 +124,9 @@ validate_modules() {
 # Test application startup
 test_startup() {
     log_info "Testing application startup..."
-    
+
     source .venv/bin/activate
-    
+
     # Test import without starting GUI
     if timeout 10s python -c "
 import sys
@@ -163,12 +163,12 @@ main() {
         validate_only=true
         shift
     fi
-    
+
     echo "🔧 xanadOS Search & Destroy - Dependency Setup & Validation"
     echo "============================================================"
-    
+
     check_project_root
-    
+
     if [[ "$validate_only" == "true" ]]; then
         # Only validate, don't install
         log_info "Validation-only mode"
@@ -179,14 +179,14 @@ main() {
         validate_modules
         exit $?
     fi
-    
+
     check_venv
     install_dependencies
-    
+
     if validate_modules; then
         test_startup
         update_lockfile
-        
+
         echo ""
         log_success "🎉 Environment setup complete!"
         echo ""

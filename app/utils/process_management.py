@@ -464,18 +464,15 @@ def execute_with_privilege(
                 else ProcessState.FAILED
             ),
         )
-    elif method == "pkexec":
-        elevated_command = ["pkexec"] + (
-            command if isinstance(command, list) else [command]
-        )
     elif method == "sudo":
+        # Legacy sudo support - prefer GUI auth manager
         elevated_command = ["sudo"] + (
             command if isinstance(command, list) else [command]
         )
     else:
         raise ValueError(f"Unknown privilege escalation method: {method}")
 
-    # Fallback for legacy pkexec/sudo methods
+    # Fallback for legacy sudo methods (pkexec removed)
     config = ProcessConfig(timeout=timeout)
     return PROCESS_MANAGER.execute_command(elevated_command, config)
 

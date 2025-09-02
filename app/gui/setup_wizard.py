@@ -134,8 +134,9 @@ class InstallationWorker(QThread):  # pylint: disable=too-many-instance-attribut
                 # Use elevated_run for package installation with GUI authentication
 
                 # Parse the command properly for elevated execution
-                if install_cmd.startswith("pkexec sh -c"):
-                    # Extract shell command from pkexec wrapper
+                # Legacy command handling - no longer supports pkexec prefix
+                if install_cmd.startswith("sh -c"):
+                    # Extract shell command from sh wrapper
                     shell_cmd = install_cmd.split('"')[
                         1
                     ]  # Extract the command between quotes
@@ -163,10 +164,9 @@ class InstallationWorker(QThread):  # pylint: disable=too-many-instance-attribut
                             # Fallback to simple splitting
                             cmd_parts = install_cmd.split()
                     else:
-                        # Handle simple commands - remove any pkexec prefix
+                        # Handle simple commands
                         cmd_parts = install_cmd.split()
-                        if cmd_parts[0] == "pkexec":
-                            cmd_parts = cmd_parts[1:]  # Remove pkexec prefix
+                        # pkexec no longer supported - use GUI sudo only
 
                     # For better GUI authentication, try elevated_run with retries
                     max_retries = 2

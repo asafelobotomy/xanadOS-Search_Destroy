@@ -114,7 +114,7 @@ class SecurityStandards:
         "dig",
         # Privilege escalation (use with caution)
         "sudo",
-        "pkexec",
+        # pkexec removed - GUI sudo only
         "su",
         # Package management (for updates)
         "apt",

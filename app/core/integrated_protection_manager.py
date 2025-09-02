@@ -451,9 +451,9 @@ class IntegratedProtectionManager:
 
             if optimal_mode != self.current_mode:
                 self.logger.info(
-                    f"🔧 Optimization opportunity: switching from {self.current_mode} to {
-                        optimal_mode
-                    }"
+                    f"🔧 Optimization opportunity: switching from {
+                        self.current_mode
+                    } to {optimal_mode}"
                 )
                 await self._change_protection_mode(optimal_mode)
 

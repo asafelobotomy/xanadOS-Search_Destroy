@@ -302,7 +302,7 @@ class StandardsManager:
 
     def _check_security_executables(self) -> Dict[str, bool]:
         """Check availability of security executables"""
-        executables = ["clamscan", "freshclam", "rkhunter", "sudo", "pkexec"]
+        executables = ["clamscan", "freshclam", "rkhunter", "sudo"]  # pkexec removed
         results = {}
 
         for exe in executables:

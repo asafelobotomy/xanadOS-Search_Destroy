@@ -321,7 +321,7 @@ validate_setup() {
     # Check critical dependencies for core functionality
     local critical_deps=("numpy" "schedule" "aiohttp" "inotify" "dnspython" "PyQt6" "psutil" "cryptography")
     local failed_deps=()
-    
+
     for dep in "${critical_deps[@]}"; do
         if python -c "import ${dep}" 2>/dev/null; then
             log_success "$dep import OK"

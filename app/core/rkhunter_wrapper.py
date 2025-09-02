@@ -181,6 +181,33 @@ class RKHunterWrapper:
         else:
             self.logger.warning("RKHunter not available on system")
 
+    # --- Logger helper methods (avoid attribute errors and unify usage) ---
+    def _log(self, fn: Callable[[str], None], msg: str, *args, **kwargs) -> None:
+        """Internal safe logger call that tolerates odd format strings."""
+        try:
+            if args or kwargs:
+                fn(msg, *args, **kwargs)
+            else:
+                fn(str(msg))
+        except Exception:
+            # Last-resort fallback to avoid raising from logging
+            try:
+                fn(str(msg))
+            except Exception:
+                pass
+
+    def loginfo(self, msg: str, *args, **kwargs) -> None:
+        self._log(self.logger.info, msg, *args, **kwargs)
+
+    def logdebug(self, msg: str, *args, **kwargs) -> None:
+        self._log(self.logger.debug, msg, *args, **kwargs)
+
+    def logwarning(self, msg: str, *args, **kwargs) -> None:
+        self._log(self.logger.warning, msg, *args, **kwargs)
+
+    def logerror(self, msg: str, *args, **kwargs) -> None:
+        self._log(self.logger.error, msg, *args, **kwargs)
+
     def get_version(self) -> tuple[str, str]:
         """Return (version_string, status). Single authoritative implementation."""
         if not self.available or self.rkhunter_path is None:

@@ -24,8 +24,8 @@ ALLOWED_BINARIES = {
     "rkhunter",
     "systemctl",
     "kill",
-    "pkexec",  # still allow, but can gate
-    "sudo",  # consider removing; prefer pkexec GUI
+    # Removed pkexec - GUI sudo authentication only
+    "sudo",  # use GUI authentication manager
     "ufw",
     "firewall-cmd",
     "iptables",
@@ -38,6 +38,21 @@ ALLOWED_BINARIES = {
     "stop",
     "restart",
     "sigtool",
+    # Safe status/info commands
+    "echo",
+    "which",
+    "whoami",
+    "id",
+    "date",
+    "uptime",
+    "ps",
+    "ls",
+    "cat",
+    "head",
+    "tail",
+    "grep",
+    "true",
+    "false",
 }
 
 # Simple disallowed pattern for arguments (shell metachars not expected in argv elements)

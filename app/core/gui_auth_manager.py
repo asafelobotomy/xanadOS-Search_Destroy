@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 
 class GUIAuthManager:
     """Manages GUI-based authentication with persistent sessions.
-    Prioritizes GUI sudo over pkexec for better user experience.
+    Uses only GUI sudo authentication for consistency and security.
     """
 
     def __init__(self):
@@ -58,8 +58,17 @@ class GUIAuthManager:
         return self._gui_helper
 
     def _which(self, name: str) -> str | None:
-        """Find executable in PATH."""
+        """Find executable in PATH - GUI sudo only version."""
         try:
+            # Directly check for sudo at standard locations
+            if name == "sudo":
+                sudo_paths = ["/usr/bin/sudo", "/bin/sudo", "/usr/local/bin/sudo"]
+                for path in sudo_paths:
+                    if os.path.isfile(path) and os.access(path, os.X_OK):
+                        return path
+                return None
+
+            # For other commands, use standard which
             result = run_secure(
                 ["which", name], check=False, capture_output=True, text=True, timeout=5
             )
@@ -435,13 +444,55 @@ def elevated_run_gui(
 def elevated_popen_gui(
     argv: Sequence[str],
     *,
-    text: bool = True,
+    stdin=None,
     stdout=subprocess.PIPE,
     stderr=subprocess.PIPE,
+    text: bool = True,
+    env: dict | None = None,
+    **kwargs,
 ) -> subprocess.Popen:
     """Convenience function for starting privileged processes with GUI authentication.
     Uses the global GUI authentication manager.
     """
-    return get_gui_auth_manager().start_gui_auth_process(
-        argv, text=text, stdout=stdout, stderr=stderr
-    )
+    # Get the manager instance
+    manager = get_gui_auth_manager()
+
+    # Start the process directly with the manager's method
+    if not argv:
+        raise ValueError("No command provided")
+
+    sudo_path = manager._which("sudo")
+    if not sudo_path:
+        raise RuntimeError("sudo not available")
+
+    # Ensure we have an active session
+    if not manager._is_sudo_session_active():
+        if not manager._establish_gui_sudo_session():
+            raise RuntimeError("Failed to establish GUI sudo session")
+
+    # Build the sudo command
+    sudo_cmd = [sudo_path, "-n"] + list(argv)
+
+    # Create environment if needed
+    proc_env = None
+    if env:
+        proc_env = os.environ.copy()
+        proc_env.update(env)
+
+    # Filter out timeout from kwargs since Popen doesn't accept it
+    popen_kwargs = {k: v for k, v in kwargs.items() if k != "timeout"}
+
+    # Start the process
+    try:
+        return subprocess.Popen(
+            sudo_cmd,
+            stdin=stdin,
+            stdout=stdout,
+            stderr=stderr,
+            text=text,
+            env=proc_env,
+            **popen_kwargs,
+        )
+    except Exception as e:
+        logger.error(f"Failed to start elevated process: {e}")
+        raise RuntimeError(f"Failed to start elevated process: {e}")

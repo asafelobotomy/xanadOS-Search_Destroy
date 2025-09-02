@@ -124,12 +124,15 @@ if $RUN_RUFF; then
       err "ruff check found issues"
     fi
     # Format verification (non-destructive)
-    if ! $STRICT; then
+    # Skip ruff format check if black is also running to avoid conflicts
+    if ! $STRICT && ! $RUN_BLACK; then
       if $RUFF_CMD format --check "${RUFF_TARGETS[@]}"; then
         ok "ruff format check passed"
       else
         err "ruff format check failed (run: ruff format)"
       fi
+    elif $RUN_BLACK; then
+      info "skipping ruff format check (black formatting takes precedence)"
     else
       info "skipping ruff format check in strict mode (use non-strict to verify formatting)"
     fi

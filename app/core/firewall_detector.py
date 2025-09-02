@@ -695,17 +695,18 @@ class FirewallDetector:
                     module_found = self._find_module_in_kernel(kernel_path, module)
 
                     if module_found:
-                        # Try to load using insmod with full path
-                        cmd = admin_cmd + ["insmod", module_found]
+                        # Try to load using insmod with full path - USE ELEVATED_RUN
+                        cmd = ["insmod", module_found]  # Remove admin_cmd prefix
 
                         try:
-                            result = subprocess.run(
+                            from .elevated_runner import elevated_run
+
+                            result = elevated_run(
                                 cmd,
+                                timeout=30,
                                 capture_output=True,
                                 text=True,
-                                timeout=30,
-                                check=False,
-                                env=env,
+                                gui=True,
                             )
 
                             if result.returncode == 0:
@@ -934,15 +935,12 @@ class FirewallDetector:
 
                 successful_rules = 0
                 for rule in iptables_rules:
-                    cmd = admin_cmd + rule
+                    cmd = rule  # Remove admin_cmd prefix, use elevated_run
                     try:
-                        result = subprocess.run(
-                            cmd,
-                            capture_output=True,
-                            text=True,
-                            timeout=30,
-                            check=False,
-                            env=env,
+                        from .elevated_runner import elevated_run
+
+                        result = elevated_run(
+                            cmd, timeout=30, capture_output=True, text=True, gui=True
                         )
 
                         if result.returncode == 0:
