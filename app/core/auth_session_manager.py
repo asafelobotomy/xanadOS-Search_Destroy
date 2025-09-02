@@ -20,6 +20,8 @@ from contextlib import contextmanager
 from datetime import datetime
 from typing import Any
 
+from .secure_subprocess import run_secure
+
 logger = logging.getLogger(__name__)
 
 
@@ -152,12 +154,13 @@ class AuthenticationSessionManager:
             return None
 
         try:
-            result = subprocess.run(
+            result = run_secure(
                 ["sudo", "-n"] + cmd,
                 check=False,
                 capture_output=True,
                 text=True,
                 timeout=timeout,
+                allow_root=True,  # Allow since we're explicitly using sudo
             )
 
             if result.returncode == 0:

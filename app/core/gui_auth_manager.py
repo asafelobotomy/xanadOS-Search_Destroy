@@ -11,6 +11,8 @@ import tempfile
 import time
 from collections.abc import Sequence
 
+from .secure_subprocess import popen_secure, run_secure
+
 logger = logging.getLogger(__name__)
 
 
@@ -58,7 +60,7 @@ class GUIAuthManager:
     def _which(self, name: str) -> str | None:
         """Find executable in PATH."""
         try:
-            result = subprocess.run(
+            result = run_secure(
                 ["which", name], check=False, capture_output=True, text=True, timeout=5
             )
             return result.stdout.strip() if result.returncode == 0 else None
@@ -69,8 +71,12 @@ class GUIAuthManager:
         """Check if a sudo session is currently active."""
         try:
             # Quick test with sudo -n (non-interactive)
-            result = subprocess.run(
-                ["sudo", "-n", "true"], check=False, capture_output=True, timeout=5
+            result = run_secure(
+                ["sudo", "-n", "true"],
+                check=False,
+                capture_output=True,
+                timeout=5,
+                allow_root=True,
             )
 
             current_time = time.time()
@@ -169,12 +175,13 @@ kdialog --password "Enter your password for administrative access:"
 
             # Establish sudo session with GUI password prompt
             logger.info(f"Establishing GUI sudo session using {self._gui_helper}")
-            result = subprocess.run(
+            result = run_secure(
                 ["sudo", "-A", "true"],
                 check=False,
                 env=env,
                 timeout=60,  # Give user time to enter password
                 capture_output=True,
+                allow_root=True,
             )
 
             if result.returncode == 0:
@@ -234,12 +241,13 @@ kdialog --password "Enter your password for administrative access:"
         if self._is_sudo_session_active():
             logger.info("Using existing sudo session")
             try:
-                result = subprocess.run(
+                result = run_secure(
                     [sudo_path] + list(argv),
                     check=False,
                     timeout=timeout,
                     capture_output=capture_output,
                     text=text,
+                    allow_root=True,
                 )
 
                 if result.returncode == 0:
@@ -261,12 +269,13 @@ kdialog --password "Enter your password for administrative access:"
             logger.info(
                 f"Running command with GUI sudo session: {' '.join(argv[:3])}..."
             )
-            result = subprocess.run(
+            result = run_secure(
                 [sudo_path] + list(argv),
                 check=False,
                 timeout=timeout,
                 capture_output=capture_output,
                 text=text,
+                allow_root=True,
             )
 
             if result.returncode == 0:
@@ -316,8 +325,12 @@ kdialog --password "Enter your password for administrative access:"
         # Start the process with the established session
         try:
             logger.info(f"Starting GUI sudo process: {' '.join(argv[:3])}...")
-            process = subprocess.Popen(
-                [sudo_path] + list(argv), stdout=stdout, stderr=stderr, text=text
+            process = popen_secure(
+                [sudo_path] + list(argv),
+                stdout=stdout,
+                stderr=stderr,
+                text=text,
+                allow_root=True,
             )
             logger.info(f"Process started with GUI sudo, PID: {process.pid}")
             return process
@@ -333,11 +346,12 @@ kdialog --password "Enter your password for administrative access:"
 
         try:
             # Refresh with a simple command
-            result = subprocess.run(
+            result = run_secure(
                 ["sudo", "-v"],
                 check=False,
                 timeout=5,
                 capture_output=True,  # Refresh timestamp
+                allow_root=True,
             )
 
             if result.returncode == 0:
@@ -358,8 +372,12 @@ kdialog --password "Enter your password for administrative access:"
         try:
             if self._sudo_session_active:
                 # Invalidate sudo timestamp
-                subprocess.run(
-                    ["sudo", "-k"], check=False, timeout=5, capture_output=True
+                run_secure(
+                    ["sudo", "-k"],
+                    check=False,
+                    timeout=5,
+                    capture_output=True,
+                    allow_root=True,
                 )
                 logger.info("Sudo session cleaned up")
         except Exception as e:

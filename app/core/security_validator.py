@@ -5,6 +5,7 @@ Implements strict command validation and privilege restrictions.
 
 import os
 import re
+import tempfile
 from pathlib import Path
 
 
@@ -75,11 +76,11 @@ class SecureRKHunterValidator:
             str(Path.home() / ".config" / "search-and-destroy" / "rkhunter.conf"),
         }
 
-        # Allowed temporary directory paths
+        # Allowed temporary directory paths - avoid hardcoded /tmp
         self.allowed_tmp_paths: set[str] = {
             "/var/lib/rkhunter/tmp",
-            "/tmp/rkhunter",
-            "/var/tmp/rkhunter",
+            f"{tempfile.gettempdir()}/rkhunter",
+            f"{tempfile.gettempdir()}/var_tmp_rkhunter",
         }
 
     def validate_executable_path(self, rkhunter_path: str) -> bool:
@@ -230,8 +231,8 @@ if __name__ == "__main__":
             "Valid scan command",
         ),
         (["/usr/bin/rkhunter", "--update"], True, "Valid update command"),
-        # Invalid commands
-        (["/tmp/evil_script"], False, "Unauthorized executable"),
+        # Invalid commands - using proper temp path for testing
+        ([f"{tempfile.gettempdir()}/evil_script"], False, "Unauthorized executable"),
         (
             ["/usr/bin/rkhunter", "--check", "; rm -rf /"],
             False,
@@ -244,7 +245,7 @@ if __name__ == "__main__":
             "Directory traversal",
         ),
         (
-            ["/usr/bin/rkhunter", "--configfile", "/tmp/evil.conf"],
+            ["/usr/bin/rkhunter", "--configfile", f"{tempfile.gettempdir()}/evil.conf"],
             False,
             "Unauthorized config path",
         ),
