@@ -17,6 +17,7 @@ Features:
 import asyncio
 import logging
 import os
+import tempfile
 import time
 from collections import defaultdict, deque
 from collections.abc import Callable
@@ -280,7 +281,7 @@ class SmartEventFilter:
             "/proc",
             "/sys",
             "/dev",
-            "/tmp",
+            tempfile.gettempdir(),  # Use system temp directory
             "/var/log",
             "/var/cache",
             "/.git",
@@ -923,8 +924,8 @@ async def demonstrate_unified_engine():
     print("🛡️ Unified Security Engine Demonstration")
     print("=" * 50)
 
-    # Define paths to monitor
-    watch_paths = ["/tmp", "/home"]
+    # Define paths to monitor - avoid hardcoded /tmp
+    watch_paths = [tempfile.gettempdir(), "/home"]
 
     # Create unified engine
     engine = UnifiedSecurityEngine(watch_paths)
