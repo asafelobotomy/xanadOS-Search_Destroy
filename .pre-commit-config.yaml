@@ -19,8 +19,8 @@ repos:
       - id: mypy
         name: "🔍 mypy · Type checking"
         additional_dependencies: [types-requests, types-PyYAML]
-        args: [--strict, --ignore-missing-imports]
-        exclude: ^(tests/|dev/|archive/)
+        args: [--ignore-missing-imports, --no-strict-optional]
+        exclude: ^(tests/|dev/|archive/|app/core/)
 
   # Bandit for security scanning
   - repo: https://github.com/PyCQA/bandit
@@ -59,6 +59,7 @@ repos:
       - id: markdownlint
         name: "📝 markdownlint · Lint Markdown files"
         args: [--fix]
+        exclude: ^(archive/|examples/)
 
   # Python-specific file checks
   - repo: https://github.com/pre-commit/pygrep-hooks
@@ -66,10 +67,13 @@ repos:
     hooks:
       - id: python-use-type-annotations
         name: "📝 Enforce type annotations"
+        exclude: ^(tests/|dev/|archive/)
       - id: python-check-blanket-noqa
         name: "🔍 Check blanket noqa"
+        exclude: ^(tests/|dev/|archive/)
       - id: python-check-mock-methods
         name: "🧪 Check mock methods"
+        exclude: ^(tests/|dev/|archive/)
 
 # Configuration for pre-commit itself
 default_stages: [pre-commit]

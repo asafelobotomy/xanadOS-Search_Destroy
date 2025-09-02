@@ -477,9 +477,9 @@ class LoadingIndicator(QObject):
 
 
 # Global instances
-responsive_ui = None  # type: Optional[ResponsiveUI]
-scan_progress = None  # type: Optional[ScanProgressManager]
-loading_indicator = None  # type: Optional[LoadingIndicator]
+responsive_ui: ResponsiveUI | None = None
+scan_progress: ScanProgressManager | None = None
+loading_indicator: LoadingIndicator | None = None
 
 
 def initialize_responsive_ui(main_window=None):

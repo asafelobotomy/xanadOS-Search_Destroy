@@ -427,7 +427,7 @@ class SecureNetworkManager:
             socket.setdefaulttimeout(None)  # Reset timeout
 
         # This should never be reached due to the logic above, but added for
-        # type safety
+        # safety and completeness
         return False, "Download failed - unknown error"
 
     def _verify_download_signature(self, file_path: Path) -> bool:
