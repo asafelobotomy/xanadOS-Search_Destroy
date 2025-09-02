@@ -1298,8 +1298,8 @@ class RKHunterOptimizer:
     def _get_available_disk_space(self) -> int | None:
         """Get available disk space in MB with better error handling"""
         try:
-            # Try different directories to check space
-            test_paths = ["/var/log", "/var", "/tmp", "/"]
+            # Try different directories to check space - avoid hardcoded /tmp
+            test_paths = ["/var/log", "/var", tempfile.gettempdir(), "/"]
 
             for path in test_paths:
                 try:

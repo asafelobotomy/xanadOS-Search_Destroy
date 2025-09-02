@@ -146,7 +146,11 @@ class RKHunterWrapper:
                 # Try to get a safe path
                 safe_path = self.security_validator.get_safe_rkhunter_path()
                 if safe_path:
-                    self.logger.info("Using safe RKHunter path: %s", safe_path)
+                    self.loginfo(
+                        "Using safe RKHunter path: %s".replace(
+                            "%s", "{safe_path}"
+                        ).replace("%d", "{safe_path}")
+                    )
                     self.rkhunter_path = safe_path
                 else:
                     self.logger.error(
@@ -637,7 +641,11 @@ class RKHunterWrapper:
             cmd_args,
         )
         if not is_valid:
-            self.logger.error("Security validation failed: %s", error_message)
+            self.logerror(
+                "Security validation failed: %s".replace(
+                    "%s", "{error_message}"
+                ).replace("%d", "{error_message}")
+            )
             return subprocess.CompletedProcess(
                 args=cmd_args,
                 returncode=1,
@@ -998,7 +1006,9 @@ class RKHunterWrapper:
             result.end_time = datetime.now()
             result.success = False
             result.error_message = f"Scan error: {e!s}"
-            self.logger.error("RKHunter scan failed: %s", e)
+            self.logerror(
+                "RKHunter scan failed: %s".replace("%s", "{e}").replace("%d", "{e}")
+            )
 
         return result
 
@@ -1112,7 +1122,9 @@ class RKHunterWrapper:
             result.end_time = datetime.now()
             result.success = False
             result.error_message = f"Scan error: {e!s}"
-            self.logger.error("RKHunter scan failed: %s", e)
+            self.logerror(
+                "RKHunter scan failed: %s".replace("%s", "{e}").replace("%d", "{e}")
+            )
 
         return result
 
@@ -1371,8 +1383,10 @@ class RKHunterWrapper:
                             False,
                             "Installation appeared successful but RKHunter not found",
                         )
-                    self.logger.warning(
-                        "Installation with %s failed: %s", pm_name, result.stderr
+                    self.logwarning(
+                        "Installation with %s failed: %s".replace(
+                            "%s", "{pm_name, result.stderr}"
+                        ).replace("%d", "{pm_name, result.stderr}")
                     )
 
                 except Exception:
