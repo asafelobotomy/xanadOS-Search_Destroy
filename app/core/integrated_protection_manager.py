@@ -10,6 +10,7 @@ Combines all 2025 optimization techniques into a unified system:
 
 import asyncio
 import logging
+import tempfile
 import time
 from collections.abc import Callable
 from dataclasses import dataclass
@@ -450,9 +451,9 @@ class IntegratedProtectionManager:
 
             if optimal_mode != self.current_mode:
                 self.logger.info(
-                    f"🔧 Optimization opportunity: switching from {
-                        self.current_mode
-                    } to {optimal_mode}"
+                    f"🔧 Optimization opportunity: switching from {self.current_mode} to {
+                        optimal_mode
+                    }"
                 )
                 await self._change_protection_mode(optimal_mode)
 
@@ -566,8 +567,8 @@ async def demonstrate_integrated_protection():
     print("🛡️  Enhanced Real-Time Protection Integration Demo")
     print("=" * 60)
 
-    # Define paths to monitor (adjust for your system)
-    watch_paths = ["/tmp", "/home"]  # Example paths
+    # Define paths to monitor (adjust for your system) - avoid hardcoded /tmp
+    watch_paths = [tempfile.gettempdir(), "/home"]  # Example paths
 
     # Create integrated protection manager
     protection_manager = IntegratedProtectionManager(watch_paths)
