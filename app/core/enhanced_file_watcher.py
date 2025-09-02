@@ -12,6 +12,7 @@ import asyncio
 import logging
 import os
 import select
+import tempfile
 import threading
 import time
 from collections import defaultdict, deque
@@ -743,8 +744,8 @@ async def test_enhanced_watcher():
                 f"Latency: {(time.time() - event.timestamp) * 1000:.1f}ms"
             )
 
-    # Test paths (adjust for your system)
-    test_paths = ["/tmp", "/home"]
+    # Test paths (adjust for your system) - avoid hardcoded /tmp
+    test_paths = [tempfile.gettempdir(), "/home"]
 
     # Create watcher
     watcher = EnhancedFileSystemWatcher(test_paths, event_handler)
