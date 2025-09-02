@@ -121,6 +121,12 @@ setup_python_environment() {
         log_warning "Failed to install dev dependencies, continuing with basic setup..."
     }
 
+    # Ensure critical runtime dependencies are installed
+    log_info "Installing critical runtime dependencies..."
+    uv pip install "numpy>=1.24.0" "schedule>=1.2.0" "aiohttp>=3.9.0" "inotify>=0.2.10" "dnspython>=2.6.0" || {
+        log_warning "Some critical dependencies failed to install"
+    }
+
     # Install additional optional dependency groups
     local optional_groups=("security" "docs" "debugging")
     for group in "${optional_groups[@]}"; do
@@ -312,15 +318,36 @@ validate_setup() {
         log_error "Python environment validation failed"
     fi
 
-    # Check key dependencies
-    local key_deps=("yara" "pycryptodome" "scapy")
-    for dep in "${key_deps[@]}"; do
+    # Check critical dependencies for core functionality
+    local critical_deps=("numpy" "schedule" "aiohttp" "inotify" "dnspython" "PyQt6" "psutil" "cryptography")
+    local failed_deps=()
+    
+    for dep in "${critical_deps[@]}"; do
         if python -c "import ${dep}" 2>/dev/null; then
             log_success "$dep import OK"
+        else
+            log_warning "$dep import failed"
+            failed_deps+=("$dep")
+        fi
+    done
+
+    # Check optional dependencies
+    local optional_deps=("yara" "pycryptodome" "scapy")
+    for dep in "${optional_deps[@]}"; do
+        if python -c "import ${dep}" 2>/dev/null; then
+            log_success "$dep import OK (optional)"
         else
             log_warning "$dep import failed (optional)"
         fi
     done
+
+    # Report results
+    if [[ ${#failed_deps[@]} -eq 0 ]]; then
+        log_success "All critical dependencies validated!"
+    else
+        log_warning "Some critical dependencies failed: ${failed_deps[*]}"
+        log_info "Run 'scripts/setup/ensure-deps.sh' to fix missing dependencies"
+    fi
 
     # Check configuration files
     if [ -f "config/security_config.toml" ]; then
@@ -338,19 +365,24 @@ print_next_steps() {
     echo "1. Activate the virtual environment:"
     echo "   source .venv/bin/activate"
     echo ""
-    echo "2. Run the application:"
+    echo "2. Verify all dependencies (recommended):"
+    echo "   ./scripts/setup/ensure-deps.sh"
+    echo ""
+    echo "3. Run the application:"
     echo "   python -m app.main"
+    echo "   # OR using Make: make run"
     echo ""
-    echo "3. Run tests:"
+    echo "4. Run tests:"
     echo "   pytest"
+    echo "   # OR using Make: make test"
     echo ""
-    echo "4. Run security scan:"
+    echo "5. Run security scan:"
     echo "   bandit -r app/"
     echo ""
-    echo "5. Format code:"
+    echo "6. Format code:"
     echo "   ruff format ."
     echo ""
-    echo "6. For development with uv:"
+    echo "7. For development with uv:"
     echo "   uv run python -m app.main"
     echo "   uv add <package-name>  # Add new dependencies"
     echo "   uv sync               # Sync dependencies"

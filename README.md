@@ -92,8 +92,11 @@ This repository includes development automation tools enhanced with AI assistanc
 git clone https://github.com/asafelobotomy/xanadOS-Search_Destroy.git
 cd xanadOS-Search_Destroy
 
-# Install Python dependencies
-pip install -r requirements.txt
+# 🚀 RECOMMENDED: Complete setup with automatic dependency management
+make setup
+
+# Alternative: Manual Python dependency installation
+pip install -e .
 
 # Install system dependencies (Ubuntu/Debian)
 sudo apt update && sudo apt install clamav clamav-daemon
@@ -102,21 +105,50 @@ sudo apt update && sudo apt install clamav clamav-daemon
 sudo freshclam
 
 # Launch the application
-python -m app.main
+make run  # OR: python -m app.main
+```
+
+### **🔍 Verify Installation**
+
+After setup, verify all dependencies are working correctly:
+
+```bash
+# Validate all critical dependencies
+make validate-deps
+
+# Quick dependency check and auto-fix
+./scripts/setup/ensure-deps.sh
+
+# Test application startup
+make run
 ```
 
 ### **Development Setup (with AI Enhancement Tools)**
 
 ```bash
+# Complete development environment with all tools
+make setup
+
 # Install Node.js dependencies for validation tools
 npm install
 
-# Set up development environment
+# Set up development environment with AI tools
 ./scripts/tools/git/setup-repository.sh
 
 # Run validation and tests
 npm run quick:validate
 ```
+
+### **🛠️ Setup Options**
+
+- **`make setup`** - Complete development environment (recommended)
+- **`make install`** - Runtime dependencies only
+- **`make install-dev`** - Development dependencies
+- **`make install-advanced`** - Advanced features (ML, analytics, cloud)
+- **`make install-all`** - Complete feature set
+
+All critical dependencies (numpy, schedule, aiohttp, inotify, dnspython) are now
+included by default! 🎉
 
 ---
 

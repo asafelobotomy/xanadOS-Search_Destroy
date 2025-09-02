@@ -75,6 +75,7 @@ setup: ## 🔧 Complete development environment setup (UV-based)
 	@$(MAKE) _install-uv-if-needed
 	@$(MAKE) _create-venv
 	@$(MAKE) install-dev
+	@$(MAKE) validate-deps
 	@echo "$(GREEN)✅ Development environment ready!$(NC)"
 	@echo "$(CYAN)💡 Next: make run (to start app) or make test (to run tests)$(NC)"
 
@@ -88,35 +89,55 @@ setup-standard: ## 🔧 Standard Python venv setup (no UV)
 install: ## 🔧 Install runtime dependencies only
 	@echo "$(BLUE)Installing runtime dependencies...$(NC)"
 	@$(MAKE) _ensure-venv
-	@if [ -f "pyproject.toml" ]; then \
-		$(PIP) install --use-pep517 -e . ; \
+	@if [ "$(HAS_UV)" = "true" ]; then \
+		echo "$(CYAN)Using UV for fast dependency installation...$(NC)"; \
+		uv pip install -e .; \
 	else \
-		$(PIP) install -r requirements.txt; \
+		$(PIP) install --use-pep517 -e .; \
 	fi
 	@echo "$(GREEN)✅ Runtime dependencies installed$(NC)"
+	@echo "$(CYAN)💡 Includes: numpy, schedule, aiohttp, inotify for core functionality$(NC)"
 
 install-dev: ## 🔧 Install development dependencies
 	@echo "$(BLUE)Installing development dependencies...$(NC)"
 	@$(MAKE) _ensure-venv
-	@if [ -f "pyproject.toml" ]; then \
-		$(PIP) install --use-pep517 -e ".[dev]" ; \
+	@if [ "$(HAS_UV)" = "true" ]; then \
+		echo "$(CYAN)Using UV for fast dependency installation...$(NC)"; \
+		uv pip install -e ".[dev]"; \
 	else \
-		$(PIP) install -r requirements.txt -r requirements-dev.txt; \
+		$(PIP) install --use-pep517 -e ".[dev]"; \
 	fi
 	@echo "$(GREEN)✅ Development dependencies installed$(NC)"
 
-install-advanced: ## 🔧 Install advanced features (numpy, ML, analytics)
+install-advanced: ## 🔧 Install advanced features (pandas, ML, analytics, cloud)
 	@echo "$(BOLD)$(BLUE)Installing advanced features...$(NC)"
 	@$(MAKE) _ensure-venv
-	@$(PIP) install --use-pep517 -e ".[advanced]"
+	@if [ "$(HAS_UV)" = "true" ]; then \
+		uv pip install -e ".[advanced]"; \
+	else \
+		$(PIP) install --use-pep517 -e ".[advanced]"; \
+	fi
 	@echo "$(GREEN)✅ Advanced features available:$(NC)"
-	@echo "  - Unified Security Engine, Web Protection, ML Analytics"
+	@echo "  - Data Analytics (pandas), ML (scikit-learn), Cloud (boto3)"
 
 install-all: ## 🔧 Install all dependencies (complete feature set)
 	@echo "$(BOLD)$(BLUE)Installing complete feature set...$(NC)"
 	@$(MAKE) _ensure-venv
-	@$(PIP) install --use-pep517 -e ".[all]"
+	@if [ "$(HAS_UV)" = "true" ]; then \
+		uv pip install -e ".[dev,advanced,security,malware-analysis]"; \
+	else \
+		$(PIP) install --use-pep517 -e ".[dev,advanced,security,malware-analysis]"; \
+	fi
 	@echo "$(GREEN)✅ All features installed$(NC)"
+
+# Add a new target for dependency validation
+validate-deps: ## 🧪 Validate all critical dependencies are working
+	@echo "$(BLUE)Validating critical dependencies...$(NC)"
+	@$(MAKE) _ensure-venv
+	@./scripts/setup/ensure-deps.sh --validate-only || { \
+		echo "$(YELLOW)Dependencies not fully validated. Run './scripts/setup/ensure-deps.sh' to fix.$(NC)"; \
+		exit 1; \
+	}
 
 # === Application Execution ===
 run: ## 🚀 Run the application
