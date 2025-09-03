@@ -1,7 +1,7 @@
 # Contributing
 
-Thanks for contributing to **xanadOS Search & Destroy**! This repository contains
-a Linux security application with AI-enhanced development tools.
+Thanks for contributing to **xanadOS Search & Destroy**! This repository contains a Linux security
+application with AI-enhanced development tools.
 
 ## Before you start
 

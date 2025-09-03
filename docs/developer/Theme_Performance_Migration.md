@@ -70,7 +70,7 @@
 
 The optimized theme manager is a drop-in replacement:
 
-```Python
+````Python
 
 ## Old way
 
@@ -85,3 +85,4 @@ get_optimized_theme_manager().set_theme("dark")
 ```text
 
 All existing functionality is preserved with significant performance improvements.
+````

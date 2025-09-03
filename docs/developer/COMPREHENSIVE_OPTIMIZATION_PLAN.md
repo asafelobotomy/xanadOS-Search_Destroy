@@ -108,21 +108,17 @@ Move these to `archive/deprecated-components/`:
 
 #### file_scanner.py
 
-**Issue**: Synchronous file scanning
-**Solution**: Implement async scanning with thread pools
+**Issue**: Synchronous file scanning **Solution**: Implement async scanning with thread pools
 **Impact**: high
 
 #### clamav_wrapper.py
 
-**Issue**: Single-threaded ClamAV operations
-**Solution**: Implement ClamAV connection pooling
+**Issue**: Single-threaded ClamAV operations **Solution**: Implement ClamAV connection pooling
 **Impact**: high
 
 #### gui/main_window.py
 
-**Issue**: Blocking UI during scans
-**Solution**: Implement proper QThread usage
-**Impact**: medium
+**Issue**: Blocking UI during scans **Solution**: Implement proper QThread usage **Impact**: medium
 
 ## 📅 Implementation Timeline
 

@@ -1,7 +1,7 @@
 # Tutorials Directory
 
-This directory contains step-by-step learning-oriented guides for using the GitHub
-development infrastructure for xanadOS.
+This directory contains step-by-step learning-oriented guides for using the GitHub development
+infrastructure for xanadOS.
 
 ## Available Tutorials
 

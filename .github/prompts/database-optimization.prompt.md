@@ -1,7 +1,8 @@
 # Database Optimization Prompt
 
-You are optimizing database performance and design for scalability, reliability, and maintainability.
-Apply systematic analysis to identify bottlenecks and implement comprehensive optimization strategies across schema design, query performance, and infrastructure.
+You are optimizing database performance and design for scalability, reliability, and
+maintainability. Apply systematic analysis to identify bottlenecks and implement comprehensive
+optimization strategies across schema design, query performance, and infrastructure.
 
 ## Database Optimization Methodology
 
@@ -9,7 +10,7 @@ Apply systematic analysis to identify bottlenecks and implement comprehensive op
 
 ### Query Performance Analysis
 
-```SQL
+````SQL
 
 -- PostgreSQL: Enable query timing and logging
 SET log_statement = 'all';
@@ -1284,3 +1285,4 @@ def update_order_status(order_id, new_status):
 Remember: Database optimization is an iterative process.
 Start with the biggest bottlenecks, measure the impact of changes, and continuously monitor performance
 Always test optimizations in a staging environment before applying to production.
+````

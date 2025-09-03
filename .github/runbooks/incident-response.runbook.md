@@ -56,7 +56,7 @@ Use this runbook to drive a fast, consistent response to production incidents.
 
 ## Quick commands (optional)
 
-```bash
+````bash
 
 ## create an incident scratch doc (optional placeholder)
 
@@ -67,3 +67,4 @@ DATE=$(date -u +%Y-%m-%dT%H:%MZ); echo "Incident $DATE" > /tmp/incident-$DATE.md
 uptime; free -m; df -h; top -b -n1 | head -n 20
 
 ```text
+````

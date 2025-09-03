@@ -2,8 +2,8 @@
 
 ## Overview
 
-A new setting has been added to the Settings > Interface section that allows users to customize the text alignment in scan results.
-Users can now choose between three alignment options:
+A new setting has been added to the Settings > Interface section that allows users to customize the
+text alignment in scan results. Users can now choose between three alignment options:
 
 - **Left Aligned**: Text aligns to the left side
 - **Centered**: Text is centered (default behavior)
@@ -19,7 +19,7 @@ Users can now choose between three alignment options:
 - **Added text orientation combo box**: Creates a dropdown with three alignment options
 - **Connected real-time updates**: Changes apply immediately when user selects a different option
 
-```Python
+````Python
 def build_interface_page(host):
 
 ## Creates QComboBox with 'Left Aligned', 'Centered', 'Right Aligned' options
@@ -169,3 +169,4 @@ self.results_text.update()  # Force repaint
 Date: August 11, 2025
 Status: ✅ COMPLETED AND TESTED
 Feature Version: 1.0
+````

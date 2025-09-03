@@ -1,6 +1,7 @@
 # Configuration Guide
 
-This guide covers advanced configuration options for **S&D - Search & Destroy** to customize the application for your specific needs.
+This guide covers advanced configuration options for **S&D - Search & Destroy** to customize the
+application for your specific needs.
 
 ## Configuration Files
 
@@ -8,7 +9,7 @@ This guide covers advanced configuration options for **S&D - Search & Destroy** 
 
 S&D uses a hierarchical configuration system:
 
-```text
+````text
 config/
 ├── default_config.JSON     # Default application settings
 ├── user_config.JSON        # User-specific overrides
@@ -458,3 +459,4 @@ Python -m JSON.tool config/user_config.JSON
 ---
 
 **Next Steps**: See the [Troubleshooting Guide](../../README.md#troubleshooting) for common configuration issues.
+````

@@ -1,7 +1,6 @@
 # Runbook: Test Adoption (TDD)
 
-Adopt tests incrementally and use TDD to drive safe changes.
-Use with Copilot agent mode.
+Adopt tests incrementally and use TDD to drive safe changes. Use with Copilot agent mode.
 
 ## Prerequisites
 

@@ -7,6 +7,7 @@ import fcntl
 import os
 import socket
 import tempfile
+from typing import Any
 
 from PyQt6.QtCore import QTimer
 
@@ -14,17 +15,17 @@ from PyQt6.QtCore import QTimer
 class SingleInstanceManager:
     """Manages single instance enforcement for the application."""
 
-    def __init__(self, app_name="search-and-destroy"):
+    def __init__(self, app_name: str = "search-and-destroy") -> None:
         self.app_name = app_name
-        self.lock_fd = None
-        self.socket_server = None
+        self.lock_fd: int | None = None
+        self.socket_server: socket.socket | None = None
 
         # Create lock file path in temp directory
         temp_dir = tempfile.gettempdir()
         self.lock_file_path = os.path.join(temp_dir, f"{app_name}.lock")
         self.socket_file_path = os.path.join(temp_dir, f"{app_name}.sock")
 
-    def is_already_running(self):
+    def is_already_running(self) -> bool:
         """Check if another instance is already running."""
         try:
             # Try to acquire lock file
@@ -49,7 +50,7 @@ class SingleInstanceManager:
                 self.lock_fd = None
             return True  # Already running
 
-    def notify_existing_instance(self):
+    def notify_existing_instance(self) -> bool:
         """Notify the existing instance to show itself."""
         try:
             # Try to connect to the existing instance's socket
@@ -62,7 +63,7 @@ class SingleInstanceManager:
             print(f"Could not notify existing instance: {e}")
             return False
 
-    def setup_instance_server(self, main_window):
+    def setup_instance_server(self, main_window: Any) -> bool:
         """Set up socket server to listen for other instances."""
         try:
             # Remove old socket file if it exists
@@ -87,16 +88,17 @@ class SingleInstanceManager:
             print(f"Failed to setup instance server: {e}")
             return False
 
-    def _check_connections(self, main_window):
+    def _check_connections(self, main_window: Any) -> None:
         """Check for incoming connections from other instances."""
         try:
-            client_socket, _ = self.socket_server.accept()
-            data = client_socket.recv(1024)
-            client_socket.close()
+            if self.socket_server:
+                client_socket, _ = self.socket_server.accept()
+                data = client_socket.recv(1024)
+                client_socket.close()
 
-            if data == b"SHOW":
-                # Another instance wants us to show the window
-                self._bring_to_front(main_window)
+                if data == b"SHOW":
+                    # Another instance wants us to show the window
+                    self._bring_to_front(main_window)
 
         except OSError:
             # No connection waiting, which is normal
@@ -104,7 +106,7 @@ class SingleInstanceManager:
         except Exception as e:
             print(f"Error handling connection: {e}")
 
-    def _bring_to_front(self, main_window):
+    def _bring_to_front(self, main_window: Any) -> None:
         """Bring the main window to the front."""
         try:
             # Use the main window's own method for bringing to front
@@ -126,7 +128,7 @@ class SingleInstanceManager:
         except Exception as e:
             print(f"❌ Error bringing window to front: {e}")
 
-    def cleanup(self):
+    def cleanup(self) -> None:
         """Clean up resources when application exits."""
         try:
             # Stop the connection timer

@@ -1,7 +1,7 @@
 # Performance Optimization Prompt
 
-You are conducting a comprehensive performance optimization review.
-Follow this systematic approach to identify bottlenecks and optimization opportunities.
+You are conducting a comprehensive performance optimization review. Follow this systematic approach
+to identify bottlenecks and optimization opportunities.
 
 ## Performance Optimization Framework
 
@@ -9,7 +9,7 @@ Follow this systematic approach to identify bottlenecks and optimization opportu
 
 Before making any optimizations, establish current performance baselines:
 
-```bash
+````bash
 
 ## Example performance measurement commands
 
@@ -664,3 +664,4 @@ class PerformanceTestUser(HttpUser):
 
 Remember: Performance optimization is an iterative process.
 Always measure before and after changes, and focus on optimizations that provide the biggest impact for your specific use case and user patterns.
+````

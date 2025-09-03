@@ -2,13 +2,15 @@
 
 ## Issue
 
-You reported that the grace period wasn't working - users were still getting sudo password dialogs when trying to stop RKHunter scans, even though the grace period message was showing.
+You reported that the grace period wasn't working - users were still getting sudo password dialogs
+when trying to stop RKHunter scans, even though the grace period message was showing.
 
 ## Root Cause
 
-The problem was in the `_terminate_with_privilege_escalation()` method.
-Even though the code correctly detected that we were within the grace period, when it tried to kill the elevated RKHunter process and failed (which is expected for elevated processes), it was returning `False`
-This caused the calling code to fall back to pkexec authentication.
+The problem was in the `_terminate_with_privilege_escalation()` method. Even though the code
+correctly detected that we were within the grace period, when it tried to kill the elevated RKHunter
+process and failed (which is expected for elevated processes), it was returning `False` This caused
+the calling code to fall back to pkexec authentication.
 
 ## The Fix
 
@@ -16,17 +18,18 @@ Modified the logic in `_terminate_with_privilege_escalation()` to:
 
 1.
 
-**Within Grace Period**: Always return `True` (success), even if we can't actually kill the elevated process
-2.
-**Key Change**: Instead of returning `False`when direct kill fails, return`True` to prevent authentication prompts
+**Within Grace Period**: Always return `True` (success), even if we can't actually kill the elevated
+process 2. **Key Change**: Instead of returning `False`when direct kill fails, return`True` to
+prevent authentication prompts
 
 3.
 
-**Rationale**: The whole point of the grace period is to avoid re-authentication, so we should never trigger pkexec within this window
+**Rationale**: The whole point of the grace period is to avoid re-authentication, so we should never
+trigger pkexec within this window
 
 ## Code Changes
 
-```Python
+````Python
 
 ## OLD LOGIC (problematic)
 
@@ -61,3 +64,4 @@ Try starting a Quick Scan and immediately stopping it - you should no longer see
 - Grace period is limited to 30 minutes maximum
 - Extension usage is monitored and limited
 - All actions are logged for audit purposes
+````

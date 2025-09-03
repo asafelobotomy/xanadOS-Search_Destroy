@@ -67,7 +67,7 @@
 
 ### **Input Validation Framework**
 
-```Python
+````Python
 class SecureRKHunterValidator:
 
 ## Whitelist-based validation for
@@ -160,3 +160,4 @@ The grace period mechanism is **secure by design** and does not introduce additi
 All privilege escalation is now **strictly validated**and**highly restricted**.
 
 **Security Status: HARDENED** 🛡️
+````

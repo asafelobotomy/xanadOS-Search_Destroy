@@ -12,5 +12,5 @@ Use with Copilot agent mode.
 
 ## Prompts
 
-- "Add a minimal tsconfig and convert src/utils/*.js to .ts with inferred types."
+- "Add a minimal tsconfig and convert src/utils/\*.js to .ts with inferred types."
 - "Add tests for converted modules with edge cases."

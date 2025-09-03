@@ -50,11 +50,11 @@ class HardeningReport:
 class SystemHardeningChecker:
     """Advanced system hardening detection and validation"""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.proc_path = Path("/proc")
         self.sys_path = Path("/sys")
-        self.security_features = {}
-        self.sysctl_cache = {}
+        self.security_features: dict[str, Any] = {}
+        self.sysctl_cache: dict[str, str] = {}
 
     def check_all_hardening_features(self) -> HardeningReport:
         """Perform comprehensive system hardening assessment"""
@@ -312,15 +312,19 @@ class SystemHardeningChecker:
                 else f"{param} properly configured"
             )
 
+            # Extract and safely convert score value
+            score_value = config.get("score", 0)
+            score_impact = score_value if isinstance(score_value, int) else 0
+
             features.append(
                 SecurityFeature(
                     name=f"Sysctl: {param}",
                     enabled=enabled,
                     status=status,
-                    description=config["description"],
+                    description=str(config["description"]),
                     recommendation=recommendation,
-                    severity=config["severity"],
-                    score_impact=config["score"],
+                    severity=str(config["severity"]),
+                    score_impact=score_impact,
                 )
             )
 
@@ -572,7 +576,7 @@ class SystemHardeningChecker:
     def _get_sysctl_value(self, param: str) -> str | None:
         """Get sysctl parameter value"""
         if param in self.sysctl_cache:
-            return self.sysctl_cache[param]
+            return str(self.sysctl_cache[param])
 
         try:
             result = subprocess.run(

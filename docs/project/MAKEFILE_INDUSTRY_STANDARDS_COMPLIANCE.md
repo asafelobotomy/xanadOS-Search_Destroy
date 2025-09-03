@@ -2,7 +2,9 @@
 
 ## Overview
 
-This document outlines the comprehensive improvements made to the project's Makefile to align with industry best practices and standards as defined by the [Make Tutorial](HTTPS://makefiletutorial.com/) and GNU Make documentation.
+This document outlines the comprehensive improvements made to the project's Makefile to align with
+industry best practices and standards as defined by the
+[Make Tutorial](HTTPS://makefiletutorial.com/) and GNU Make documentation.
 
 ## Industry Standards Implemented
 
@@ -10,7 +12,7 @@ This document outlines the comprehensive improvements made to the project's Make
 
 ### Before
 
-```makefile
+````makefile
 
 ## Variables defined without explicit assignment type
 
@@ -330,3 +332,4 @@ make V=1 status
 **Status**: ✅ Fully compliant with industry standards
 **Last Updated**: August 10, 2025
 **Version**: 2.0.0
+````

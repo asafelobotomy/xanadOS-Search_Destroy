@@ -9,7 +9,7 @@ from dataclasses import asdict, dataclass
 from datetime import datetime, timedelta
 from enum import Enum
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any
 
 from .config import DATA_DIR, setup_logging
 
@@ -55,13 +55,13 @@ class ScanResult:
     start_time: str
     end_time: str
     duration: float
-    scanned_paths: List[str]
+    scanned_paths: list[str]
     total_files: int
     scanned_files: int
     threats_found: int
-    threats: List[ThreatInfo]
-    errors: List[str]
-    scan_settings: Dict[str, Any]
+    threats: list[ThreatInfo]
+    errors: list[str]
+    scan_settings: dict[str, Any]
     engine_version: str
     signature_version: str
     success: bool
@@ -236,35 +236,19 @@ class ScanReportManager:
                 try:
                     data["scan_type"] = ScanType(scan_type_str)
                 except ValueError:
-                    # Handle legacy format "ScanType.CUSTOM" -> "custom"
-                    if scan_type_str.startswith("ScanType."):
-                        legacy_value = scan_type_str.split(".", 1)[1].lower()
-                        try:
-                            data["scan_type"] = ScanType(legacy_value)
-                        except ValueError:
-                            self.logger.warning(
-                                "Unknown scan type: %s, defaulting to CUSTOM",
-                                scan_type_str,
-                            )
-                            data["scan_type"] = ScanType.CUSTOM
-                    else:
-                        self.logger.warning(
-                            "Unknown scan type: %s, defaulting to CUSTOM",
-                            scan_type_str,
-                        )
-                        data["scan_type"] = ScanType.CUSTOM
+                    self.logger.warning(
+                        "Unknown scan type: %s, defaulting to CUSTOM",
+                        scan_type_str,
+                    )
+                    data["scan_type"] = ScanType.CUSTOM
 
             return ScanResult(**data)
 
-        except (OSError, json.JSONDecodeError, TypeError, ValueError):
-            self.logerror(
-                "Failed to load scan result %s: %s".replace(
-                    "%s", "{scan_id, e}"
-                ).replace("%d", "{scan_id, e}")
-            )
+        except (OSError, json.JSONDecodeError, TypeError, ValueError) as e:
+            self.logger.error(f"Failed to load scan result {scan_id}: {e}")
             return None
 
-    def get_recent_scans(self, limit: int = 10) -> List[Dict[str, Any]]:
+    def get_recent_scans(self, limit: int = 10) -> list[dict[str, Any]]:
         """Get list of recent scan summaries."""
         scan_files = sorted(
             self.daily_reports.glob("scan_*.json"),
@@ -300,7 +284,7 @@ class ScanReportManager:
 
         return recent_scans
 
-    def get_threat_statistics(self, days: int = 30) -> Dict[str, Any]:
+    def get_threat_statistics(self, days: int = 30) -> dict[str, Any]:
         """Get threat statistics for the last N days."""
 
         end_date = datetime.now()
@@ -378,19 +362,11 @@ class ScanReportManager:
                     ):
                         report_file.unlink()
                         deleted_count += 1
-                except OSError:
-                    self.logwarning(
-                        "Failed to delete old report %s: %s".replace(
-                            "%s", "{report_file, e}"
-                        ).replace("%d", "{report_file, e}")
-                    )
+                except OSError as e:
+                    self.logwarning(f"Failed to delete old report {report_file}: {e}")
 
         if deleted_count > 0:
-            self.loginfo(
-                "Cleaned up %d old report files".replace(
-                    "%s", "{deleted_count}"
-                ).replace("%d", "{deleted_count}")
-            )
+            self.loginfo(f"Cleaned up {deleted_count} old report files")
 
     def export_reports(
         self,

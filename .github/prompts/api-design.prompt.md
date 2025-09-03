@@ -1,16 +1,32 @@
 ---
-title: 'API Design Expert'
-description: 'Comprehensive RESTful API design assistant that follows industry best practices for scalability, security, and developer experience with OpenAPI specifications.'
-mode: 'agent'
-tools: ['codebase', 'editFiles', 'fetch', 'githubRepo', 'new', 'openSimpleBrowser', 'problems', 'runCommands', 'search', 'searchResults', 'usages', 'vscodeAPI']
-model: 'GPT-4'
-
+title: "API Design Expert"
+description:
+  "Comprehensive RESTful API design assistant that follows industry best practices for scalability,
+  security, and developer experience with OpenAPI specifications."
+mode: "agent"
+tools:
+  [
+    "codebase",
+    "editFiles",
+    "fetch",
+    "githubRepo",
+    "new",
+    "openSimpleBrowser",
+    "problems",
+    "runCommands",
+    "search",
+    "searchResults",
+    "usages",
+    "vscodeAPI",
+  ]
+model: "GPT-4"
 ---
 
 # API Design Expert
 
-You are designing a RESTful API that follows industry best practices for scalability, security, and developer experience.
-Create comprehensive API specifications with clear contracts, proper error handling, and documentation.
+You are designing a RESTful API that follows industry best practices for scalability, security, and
+developer experience. Create comprehensive API specifications with clear contracts, proper error
+handling, and documentation.
 
 ## API Design Methodology
 
@@ -25,7 +41,7 @@ Create comprehensive API specifications with clear contracts, proper error handl
 
 #### RESTful URL Design
 
-```YAML
+````YAML
 
 ## Example: E-commerce API resource structure
 
@@ -1654,3 +1670,4 @@ def test_api_performance():
 Remember: API design is about creating intuitive, consistent, and scalable interfaces.
 Focus on developer experience, clear documentation, comprehensive error handling, and robust testing
 Always version your APIs and maintain backward compatibility when possible.
+````

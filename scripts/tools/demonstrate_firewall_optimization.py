@@ -18,7 +18,7 @@ Requirements:
 import logging
 import sys
 import time
-from typing import Dict, Any
+from typing import Any
 
 from PyQt6.QtCore import QTimer
 from PyQt6.QtGui import QCloseEvent
@@ -104,7 +104,7 @@ class FirewallStatusDemo(QMainWindow):
         self.test_button.clicked.connect(self.simulate_change)
         layout.addWidget(self.test_button)
 
-    def on_status_changed(self, status: Dict[str, Any]) -> None:
+    def on_status_changed(self, status: dict[str, Any]) -> None:
         """Handle firewall status changes."""
         timestamp = time.strftime("%H:%M:%S")
         status_text = status.get("status_text", "Unknown")
@@ -184,7 +184,7 @@ Callbacks Registered: {stats.get('callbacks_registered', 0)}"""
 
         logger.info("Simulated firewall change")
 
-    def closeEvent(self, event: QCloseEvent | None) -> None:
+    def closeEvent(self, event: QCloseEvent | None) -> None:  # noqa: N802
         """Handle window close event."""
         logger.info("Shutting down firewall status demo")
 

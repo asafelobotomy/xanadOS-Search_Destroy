@@ -2,7 +2,8 @@
 
 ### Problem Solved
 
-The issue was that when stopping an RKHunter scan within the 30-second grace period, the system was still prompting for sudo/pkexec authentication even though the scan was successfully stopping.
+The issue was that when stopping an RKHunter scan within the 30-second grace period, the system was
+still prompting for sudo/pkexec authentication even though the scan was successfully stopping.
 
 ### Root Cause
 
@@ -10,7 +11,8 @@ The issue was that when stopping an RKHunter scan within the 30-second grace per
 
 2.
 
-When stopping within the grace period, the direct kill commands fail due to permission denied (expected)
+When stopping within the grace period, the direct kill commands fail due to permission denied
+(expected)
 
 3. The old logic would then fall back to pkexec, causing the unnecessary authentication prompt
 4. However, the scan was actually stopping naturally due to the cancellation flag
@@ -19,7 +21,8 @@ When stopping within the grace period, the direct kill commands fail due to perm
 
 1.
 
-**Enhanced Grace Period Logic**: Within the 30-second grace period, if direct kill fails (indicating an elevated process), the system now:
+**Enhanced Grace Period Logic**: Within the 30-second grace period, if direct kill fails (indicating
+an elevated process), the system now:
 
 - Attempts direct kill first (as expected)
 - If it fails due to permissions, logs it as info rather than warning
@@ -29,11 +32,13 @@ When stopping within the grace period, the direct kill commands fail due to perm
 
 2.
 
-**Improved Error Messages**: Changed warning messages to info messages for expected permission denied scenarios within grace period
+**Improved Error Messages**: Changed warning messages to info messages for expected permission
+denied scenarios within grace period
 
 3.
 
-**Intelligent Fallback**: Only attempts pkexec authentication outside the grace period or when specifically needed
+**Intelligent Fallback**: Only attempts pkexec authentication outside the grace period or when
+specifically needed
 
 ### Key Code Changes
 

@@ -2,7 +2,8 @@
 
 ## Overview
 
-Successfully migrated xanadOS Search & Destroy from pkexec-based authentication to persistent GUI sudo sessions to eliminate multiple password prompts and improve user experience.
+Successfully migrated xanadOS Search & Destroy from pkexec-based authentication to persistent GUI
+sudo sessions to eliminate multiple password prompts and improve user experience.
 
 ## What Was Changed
 
@@ -128,4 +129,5 @@ The system maintains full backward compatibility:
 
 ---
 
-**Result**: Successfully eliminated multiple password prompts through persistent GUI sudo sessions while maintaining full system compatibility and security standards.
+**Result**: Successfully eliminated multiple password prompts through persistent GUI sudo sessions
+while maintaining full system compatibility and security standards.

@@ -2,13 +2,15 @@
 
 ## 🎉 S&D - Search & Destroy v2.5.0 - Ready for Flathub
 
-This release prepares the S&D - Search & Destroy application for submission to Flathub, the official application repository for Linux desktops using Flatpak.
-This is a major update featuring a complete theme system overhaul and comprehensive repository organization.
+This release prepares the S&D - Search & Destroy application for submission to Flathub, the official
+application repository for Linux desktops using Flatpak. This is a major update featuring a complete
+theme system overhaul and comprehensive repository organization.
 
 ### 📦 Flathub Compliance Achieved
 
 - ✅ **Complete Flatpak Manifest**: Proper runtime, SDK, and dependency specifications
-- ✅ **AppStream Metadata**: Comprehensive metainfo.XML with descriptions, screenshots, and release notes
+- ✅ **AppStream Metadata**: Comprehensive metainfo.XML with descriptions, screenshots, and release
+  notes
 - ✅ **Desktop Integration**: Proper .desktop file with categories and MIME types
 - ✅ **Icon Package**: Complete icon set including SVG and multiple PNG sizes (16px to 128px)
 - ✅ **Dependency Management**: All Python packages specified with exact URLs and checksums
@@ -109,13 +111,11 @@ Once published on Flathub, users will be able to:
 - Run the application in a secure sandbox environment
 - Access the application across all major Linux distributions
 
-The S&D - Search & Destroy application is now fully prepared for Flathub
-submission with professional-grade packaging, comprehensive documentation, and
-all required compliance measures in place.
+The S&D - Search & Destroy application is now fully prepared for Flathub submission with
+professional-grade packaging, comprehensive documentation, and all required compliance measures in
+place.
 
 ---
 
-**Ready for Release** 🚢
-**Release Date**: August 12, 2025
-**Version**: 2.4.1
-**Target**: Flathub Official Repository
+**Ready for Release** 🚢 **Release Date**: August 12, 2025 **Version**: 2.4.1 **Target**: Flathub
+Official Repository

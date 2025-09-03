@@ -71,7 +71,7 @@ class SystemHealth:
 class PerformanceOptimizer:
     """Intelligent performance optimizer based on system conditions."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.logger = logging.getLogger(__name__)
 
         # Performance thresholds
@@ -80,8 +80,8 @@ class PerformanceOptimizer:
         self.disk_high_threshold = 90.0
 
         # Optimization history
-        self.optimization_history = []
-        self.last_optimization = None
+        self.optimization_history: list[dict[str, Any]] = []
+        self.last_optimization: dict[str, Any] | None = None
 
         # Performance modes
         self.modes = {
@@ -187,7 +187,7 @@ class PerformanceOptimizer:
         """Get optimization settings for a specific mode."""
         return self.modes.get(mode, self.modes["balanced"])
 
-    def record_optimization(self, mode: str, performance_impact: float):
+    def record_optimization(self, mode: str, performance_impact: float) -> None:
         """Record optimization results for learning."""
         optimization_record = {
             "timestamp": datetime.now().isoformat(),
@@ -253,8 +253,8 @@ class IntegratedProtectionManager:
             )
 
             # Initialize protection engine
-            self.protection_engine = EnhancedRealTimeProtection()
-            await self.protection_engine.initialize()
+            self.protection_engine = EnhancedRealTimeProtection()  # type: ignore[no-untyped-call]
+            await self.protection_engine.initialize()  # type: ignore[attr-defined]
 
             # Optimize initial settings
             await self._optimize_settings()
@@ -277,11 +277,12 @@ class IntegratedProtectionManager:
             self.logger.info("🚀 Starting Integrated Protection System...")
 
             # Start file system monitoring
-            if not self.file_watcher.start_monitoring():
+            if self.file_watcher is None or not self.file_watcher.start_monitoring():
                 raise Exception("Failed to start file system monitoring")
 
             # Start protection engine
-            await self.protection_engine.start_protection()
+            if self.protection_engine is not None:
+                await self.protection_engine.start_protection()
 
             # Start background monitoring tasks
             self.health_monitor_task = asyncio.create_task(self._health_monitor_loop())
@@ -300,7 +301,7 @@ class IntegratedProtectionManager:
             await self.stop_protection()
             return False
 
-    async def stop_protection(self):
+    async def stop_protection(self) -> None:
         """Stop the integrated protection system."""
         self.logger.info("🛑 Stopping Integrated Protection System...")
 
@@ -314,14 +315,14 @@ class IntegratedProtectionManager:
 
         # Stop components
         if self.file_watcher:
-            self.file_watcher.stop_monitoring()
+            self.file_watcher.stop_monitoring()  # type: ignore[no-untyped-call]
 
         if self.protection_engine:
-            await self.protection_engine.stop_protection()
+            await self.protection_engine.stop_protection()  # type: ignore[no-untyped-call]
 
         self.logger.info("✅ Integrated Protection System stopped")
 
-    def _handle_file_events(self, events: list[WatchEvent]):
+    def _handle_file_events(self, events: list[WatchEvent]) -> None:
         """Handle file system events from the watcher."""
         try:
             # Convert file events to protection events
@@ -346,7 +347,7 @@ class IntegratedProtectionManager:
             # Process events through protection engine
             if self.protection_engine:
                 asyncio.create_task(
-                    self.protection_engine.process_events(protection_events)
+                    self.protection_engine.process_events(protection_events)  # type: ignore[attr-defined]
                 )
 
             # Update metrics
@@ -371,7 +372,7 @@ class IntegratedProtectionManager:
         # Low-risk events
         return ThreatLevel.LOW
 
-    async def _health_monitor_loop(self):
+    async def _health_monitor_loop(self) -> None:
         """Background task for monitoring system health."""
         while self.is_running:
             try:
@@ -401,7 +402,7 @@ class IntegratedProtectionManager:
                 self.logger.error(f"Error in health monitor loop: {e}")
                 await asyncio.sleep(5.0)
 
-    async def _performance_monitor_loop(self):
+    async def _performance_monitor_loop(self) -> None:
         """Background task for performance monitoring and optimization."""
         while self.is_running:
             try:
@@ -426,7 +427,9 @@ class IntegratedProtectionManager:
                 self.logger.error(f"Error in performance monitor loop: {e}")
                 await asyncio.sleep(10.0)
 
-    def _update_performance_averages(self, cpu_usage: float, memory_usage: float):
+    def _update_performance_averages(
+        self, cpu_usage: float, memory_usage: float
+    ) -> None:
         """Update rolling performance averages."""
         # Simple exponential moving average
         alpha = 0.1  # Smoothing factor
@@ -440,7 +443,7 @@ class IntegratedProtectionManager:
             + (1 - alpha) * self.performance_metrics["memory_usage_avg"]
         )
 
-    async def _check_optimization_opportunities(self):
+    async def _check_optimization_opportunities(self) -> None:
         """Check for performance optimization opportunities."""
         try:
             # Get current health
@@ -460,7 +463,7 @@ class IntegratedProtectionManager:
         except Exception as e:
             self.logger.error(f"Error checking optimization opportunities: {e}")
 
-    async def _change_protection_mode(self, new_mode: str):
+    async def _change_protection_mode(self, new_mode: str) -> None:
         """Change protection mode with optimization."""
         try:
             old_mode = self.current_mode
@@ -471,7 +474,7 @@ class IntegratedProtectionManager:
 
             # Apply settings to protection engine
             if self.protection_engine:
-                await self.protection_engine.update_settings(settings)
+                await self.protection_engine.update_settings(settings)  # type: ignore[attr-defined]
 
             self.logger.info(f"🔄 Protection mode changed: {old_mode} → {new_mode}")
 
@@ -482,16 +485,16 @@ class IntegratedProtectionManager:
         except Exception as e:
             self.logger.error(f"Error changing protection mode: {e}")
 
-    async def _optimize_settings(self):
+    async def _optimize_settings(self) -> None:
         """Optimize initial settings based on system state."""
         health = self.performance_optimizer.analyze_system_health()
         await self._change_protection_mode(health.protection_mode)
 
-    def add_threat_callback(self, callback: Callable):
+    def add_threat_callback(self, callback: Callable) -> None:
         """Add callback for threat notifications."""
         self.threat_callbacks.append(callback)
 
-    def add_performance_callback(self, callback: Callable):
+    def add_performance_callback(self, callback: Callable) -> None:
         """Add callback for performance monitoring."""
         self.performance_callbacks.append(callback)
 
@@ -540,7 +543,7 @@ class IntegratedProtectionManager:
             "exported_at": datetime.now().isoformat(),
         }
 
-    async def import_configuration(self, config: dict[str, Any]):
+    async def import_configuration(self, config: dict[str, Any]) -> None:
         """Import configuration from backup/sharing."""
         try:
             if config.get("version") != "1.0":
@@ -562,7 +565,7 @@ class IntegratedProtectionManager:
 
 
 # Example usage and integration
-async def demonstrate_integrated_protection():
+async def demonstrate_integrated_protection() -> None:
     """Demonstrate the integrated protection system."""
     print("🛡️  Enhanced Real-Time Protection Integration Demo")
     print("=" * 60)
@@ -574,10 +577,10 @@ async def demonstrate_integrated_protection():
     protection_manager = IntegratedProtectionManager(watch_paths)
 
     # Add callbacks for monitoring
-    def threat_callback(threat_info):
+    def threat_callback(threat_info: Any) -> None:
         print(f"🚨 THREAT DETECTED: {threat_info}")
 
-    def performance_callback(health: SystemHealth):
+    def performance_callback(health: SystemHealth) -> None:
         print(
             f"📊 System Health - CPU: {health.cpu_usage:.1f}%, "
             f"Memory: {health.memory_usage:.1f}%, Mode: {health.protection_mode}"

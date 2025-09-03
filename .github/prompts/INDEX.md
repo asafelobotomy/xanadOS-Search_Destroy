@@ -1,7 +1,7 @@
 # Prompt Templates Index
 
-Quick reference for reusable prompt files in `.GitHub/prompts/`.
-Each is a starting point; adapt to your task.
+Quick reference for reusable prompt files in `.GitHub/prompts/`. Each is a starting point; adapt to
+your task.
 
 ## Available prompts
 

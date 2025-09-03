@@ -2,8 +2,9 @@
 
 ## Overview
 
-The Template Validation System provides comprehensive validation capabilities for GitHub Copilot instruction templates.
-It ensures that all templates meet quality standards, follow best practices, and maintain consistency across the entire instruction system.
+The Template Validation System provides comprehensive validation capabilities for GitHub Copilot
+instruction templates. It ensures that all templates meet quality standards, follow best practices,
+and maintain consistency across the entire instruction system.
 
 This system builds upon the xanadOS development tools, extending:
 
@@ -108,7 +109,7 @@ This system builds upon the xanadOS development tools, extending:
 
 ### Command Line Interface
 
-```bash
+````bash
 
 ## Basic validation
 
@@ -400,3 +401,4 @@ The development tools include comprehensive validation capabilities with:
 The Template Validation System completes the xanadOS development toolset,
 providing a robust, scalable, and comprehensive solution for maintaining
 high-quality GitHub Copilot instructions across all categories and use cases.
+````

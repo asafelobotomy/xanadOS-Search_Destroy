@@ -1,14 +1,14 @@
 # xanadOS Search & Destroy v2.7.2 Release Notes
 
-**Release Date**: August 20, 2025
-**Release Type**: Patch Release (Repository Maintenance)
+**Release Date**: August 20, 2025 **Release Type**: Patch Release (Repository Maintenance)
 
 ---
 
 ## 📋 **Overview**
 
-Version 2.7.2 is a maintenance release focused on repository organization and improved developer experience.
-This update includes comprehensive archival of deprecated testing scripts and historical documentation, creating a cleaner workspace while preserving important development artifacts.
+Version 2.7.2 is a maintenance release focused on repository organization and improved developer
+experience. This update includes comprehensive archival of deprecated testing scripts and historical
+documentation, creating a cleaner workspace while preserving important development artifacts.
 
 ---
 
@@ -20,7 +20,8 @@ We've moved 7 obsolete test scripts to `archive/deprecated-testing/` including:
 
 - **SELinux-related scripts** - No longer needed after transition to AppArmor-only approach
 - **Dangerous parameter testing** - Scripts for functionality intentionally removed for user safety
-- **Fixed security issue verification** - Diagnostic scripts no longer needed after successful integration
+- **Fixed security issue verification** - Diagnostic scripts no longer needed after successful
+  integration
 - **One-time security reports** - Historical documentation moved to proper structure
 
 ### **Historical Documentation Archive**
@@ -37,7 +38,8 @@ Moved 12+ completed project documents to `archive/docs/` with organized subdirec
 - **Comprehensive README files** - Clear explanations for archival decisions
 - **Logical organization** - Structured archive categories for easy reference
 - **Development tool updates** - Updated `dev/README.md` reflecting cleaner structure
-- **Preservation strategy** - Historical artifacts remain accessible without cluttering active workspace
+- **Preservation strategy** - Historical artifacts remain accessible without cluttering active
+  workspace
 
 ---
 
@@ -81,7 +83,8 @@ Moved 12+ completed project documents to `archive/docs/` with organized subdirec
 
 ### **For Existing Users**
 
-No action required - this is purely an organizational improvement that doesn't affect application functionality.
+No action required - this is purely an organizational improvement that doesn't affect application
+functionality.
 
 ### **For Developers**
 
@@ -116,4 +119,5 @@ For questions about this release or the new repository organization:
 
 ### Thank you for using xanadOS Search & Destroy
 
-_The development team continues to focus on both feature improvements and maintainable development practices to ensure the best possible experience for users and contributors._
+_The development team continues to focus on both feature improvements and maintainable development
+practices to ensure the best possible experience for users and contributors._

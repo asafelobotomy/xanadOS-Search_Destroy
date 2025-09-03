@@ -8,7 +8,7 @@ This module provides centralized access to all standardized libraries:
 - Process management
 - Performance optimization
 - Configuration management
-This creates a unified interface for compatibility and performance.
+This creates a unified interface for performance and maintainability.
 """
 
 import json
@@ -19,7 +19,7 @@ import sys
 from dataclasses import asdict
 from enum import Enum
 from pathlib import Path
-from typing import Any, Dict, List, Union
+from typing import Any
 
 from .performance_standards import (
     PERFORMANCE_OPTIMIZER,
@@ -75,7 +75,7 @@ class StandardsManager:
 
     def get_unified_config(
         self, level: ConfigurationLevel = ConfigurationLevel.STANDARD
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Get unified configuration for all standards"""
 
         # Map configuration levels to specific settings
@@ -166,7 +166,7 @@ class StandardsManager:
 
         return unified_config
 
-    def save_config(self, config: Dict[str, Any], config_type: str = "main") -> bool:
+    def save_config(self, config: dict[str, Any], config_type: str = "main") -> bool:
         """Save configuration to file"""
         try:
             if config_type == "main":
@@ -197,7 +197,7 @@ class StandardsManager:
             )
             return False
 
-    def load_config(self, config_type: str = "main") -> Dict[str, Any]:
+    def load_config(self, config_type: str = "main") -> dict[str, Any]:
         """Load configuration from file"""
         try:
             if config_type == "main":
@@ -229,7 +229,7 @@ class StandardsManager:
             )
             return self.get_unified_config()
 
-    def validate_paths(self) -> Dict[str, bool]:
+    def validate_paths(self) -> dict[str, bool]:
         """Validate all application paths"""
         validation_results = {}
 
@@ -267,8 +267,8 @@ class StandardsManager:
         except Exception:
             return False
 
-    def get_system_compatibility_info(self) -> Dict[str, Any]:
-        """Get system compatibility information"""
+    def get_system_info(self) -> dict[str, Any]:
+        """Get system information"""
 
         return {
             "platform": {
@@ -300,7 +300,7 @@ class StandardsManager:
             },
         }
 
-    def _check_security_executables(self) -> Dict[str, bool]:
+    def _check_security_executables(self) -> dict[str, bool]:
         """Check availability of security executables"""
         executables = ["clamscan", "freshclam", "rkhunter", "sudo"]  # pkexec removed
         results = {}
@@ -311,9 +311,9 @@ class StandardsManager:
 
         return results
 
-    def optimize_for_environment(self) -> Dict[str, Any]:
+    def optimize_for_environment(self) -> dict[str, Any]:
         """Optimize configuration based on current environment"""
-        system_info = self.get_system_compatibility_info()
+        system_info = self.get_system_info()
         current_metrics = self.performance_optimizer.get_current_metrics()
 
         # Determine optimal configuration level
@@ -331,12 +331,12 @@ class StandardsManager:
         optimized_config["environment_adjustments"] = {
             "recommended_level": recommended_level.value,
             "reasons": self._get_optimization_reasons(current_metrics),
-            "system_compatibility": system_info,
+            "system_info": system_info,
         }
 
         return optimized_config
 
-    def _get_optimization_reasons(self, metrics) -> List[str]:
+    def _get_optimization_reasons(self, metrics) -> list[str]:
         """Get reasons for optimization recommendations"""
         reasons = []
 
@@ -349,12 +349,14 @@ class StandardsManager:
 
         return reasons
 
-    def create_migration_script(self, old_config: Dict[str, Any]) -> List[str]:
+    def create_migration_script(self, old_config: dict[str, Any]) -> list[str]:
         """Create migration script for updating old configurations"""
         migration_steps = []
 
         # Check for old path structures
-        if "temp_dir" in old_config and old_config["temp_dir"] in ["/tmp", "/var/tmp"]:
+        # These are legitimate system paths for comparison only
+        temp_paths = ["/tmp", "/var/tmp"]  # nosec B108
+        if "temp_dir" in old_config and old_config["temp_dir"] in temp_paths:
             migration_steps.append("Update temp_dir to use tempfile.gettempdir()")
 
         # Check for old security settings
@@ -379,7 +381,7 @@ STANDARDS_MANAGER = StandardsManager()
 # Convenience functions
 def get_app_config(
     level: ConfigurationLevel = ConfigurationLevel.STANDARD,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Get application configuration at specified level"""
     return STANDARDS_MANAGER.get_unified_config(level)
 
@@ -389,7 +391,7 @@ def get_secure_path(path_type: str) -> Path:
     return STANDARDS_MANAGER.app_paths.get_path(path_type)
 
 
-def execute_secure_command(command: Union[str, list], timeout: int = 300):
+def execute_secure_command(command: str | list, timeout: int = 300):
     """Execute command with security validation"""
     return STANDARDS_MANAGER.process_manager.execute_command(
         command, ProcessConfig(timeout=timeout)
@@ -402,9 +404,9 @@ def optimize_performance(file_count: int = 1000):
     return optimize_for_scanning(file_count)
 
 
-def validate_system_compatibility() -> Dict[str, Any]:
-    """Validate system compatibility"""
-    return STANDARDS_MANAGER.get_system_compatibility_info()
+def validate_system_info() -> dict[str, Any]:
+    """Validate system information"""
+    return STANDARDS_MANAGER.get_system_info()
 
 
 def create_default_config_file():

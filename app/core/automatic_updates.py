@@ -125,8 +125,11 @@ class AutoUpdateSystem:  # pylint: disable=too-many-instance-attributes
     """
 
     def __init__(
-        self, current_version=None, clamav_wrapper=None, config: UpdateConfig = None
-    ):
+        self,
+        current_version: str | None = None,
+        clamav_wrapper: Any | None = None,
+        config: UpdateConfig | None = None,
+    ) -> None:
         self.logger = logging.getLogger(__name__)
         self.clamav = clamav_wrapper
         self.config = config or UpdateConfig()
@@ -184,27 +187,27 @@ class AutoUpdateSystem:  # pylint: disable=too-many-instance-attributes
         self.logger.info("Auto-update system initialized")
 
     # --- Lightweight logging helpers to match call sites across the module ---
-    def logdebug(self, msg: str, *args, **kwargs) -> None:
+    def logdebug(self, msg: str, *args: Any, **kwargs: Any) -> None:
         """Proxy to logger.debug."""
         self.logger.debug(msg, *args, **kwargs)
 
-    def loginfo(self, msg: str, *args, **kwargs) -> None:
+    def loginfo(self, msg: str, *args: Any, **kwargs: Any) -> None:
         """Proxy to logger.info."""
         self.logger.info(msg, *args, **kwargs)
 
-    def logwarning(self, msg: str, *args, **kwargs) -> None:
+    def logwarning(self, msg: str, *args: Any, **kwargs: Any) -> None:
         """Proxy to logger.warning."""
         self.logger.warning(msg, *args, **kwargs)
 
-    def logerror(self, msg: str, *args, **kwargs) -> None:
+    def logerror(self, msg: str, *args: Any, **kwargs: Any) -> None:
         """Proxy to logger.error."""
         self.logger.error(msg, *args, **kwargs)
 
-    def logcritical(self, msg: str, *args, **kwargs) -> None:
+    def logcritical(self, msg: str, *args: Any, **kwargs: Any) -> None:
         """Proxy to logger.critical."""
         self.logger.critical(msg, *args, **kwargs)
 
-    def _load_persistent_state(self):
+    def _load_persistent_state(self) -> None:
         """Load persistent state from config file."""
         try:
             if self.config_file.exists():
@@ -225,7 +228,7 @@ class AutoUpdateSystem:  # pylint: disable=too-many-instance-attributes
                 )
             )
 
-    def _save_persistent_state(self):
+    def _save_persistent_state(self) -> None:
         """Save persistent state to config file."""
         try:
             state = {}
@@ -283,7 +286,7 @@ class AutoUpdateSystem:  # pylint: disable=too-many-instance-attributes
             self.is_running = False
             return False
 
-    async def stop_update_system(self):
+    async def stop_update_system(self) -> None:
         """Stop the automatic update system."""
         self.is_running = False
 
@@ -306,7 +309,7 @@ class AutoUpdateSystem:  # pylint: disable=too-many-instance-attributes
 
         self.logger.info("Auto-update system stopped")
 
-    def _setup_scheduled_updates(self):
+    def _setup_scheduled_updates(self) -> None:
         """Setup scheduled update checks and installations."""
         # Schedule virus definition updates every 4 hours
         self.scheduler.every(self.config.check_interval_hours).hours.do(
@@ -321,7 +324,7 @@ class AutoUpdateSystem:  # pylint: disable=too-many-instance-attributes
         # Schedule weekly threat intelligence updates
         self.scheduler.every().sunday.at("01:00").do(self._schedule_threat_intel_update)
 
-    def _run_scheduler(self):
+    def _run_scheduler(self) -> None:
         """Run the update scheduler."""
         while self.is_running:
             try:
@@ -335,17 +338,17 @@ class AutoUpdateSystem:  # pylint: disable=too-many-instance-attributes
                 )
                 time.sleep(60)
 
-    def _schedule_update_check(self):
+    def _schedule_update_check(self) -> None:
         """Schedule update check (called by scheduler)."""
         if self.is_running:
             asyncio.create_task(self.check_for_updates_async())
 
-    def _schedule_update_installation(self):
+    def _schedule_update_installation(self) -> None:
         """Schedule update installation (called by scheduler)."""
         if self.is_running and self.pending_updates:
             asyncio.create_task(self.install_pending_updates())
 
-    def _schedule_threat_intel_update(self):
+    def _schedule_threat_intel_update(self) -> None:
         """Schedule threat intelligence update (called by scheduler)."""
         if self.is_running:
             asyncio.create_task(self.update_threat_intelligence())
@@ -544,7 +547,7 @@ class AutoUpdateSystem:  # pylint: disable=too-many-instance-attributes
 
     async def install_pending_updates(self) -> list[UpdateResult]:
         """Install all pending updates."""
-        results = []
+        results: list[UpdateResult] = []
 
         with self.status_lock:
             if self.status != UpdateStatus.IDLE:
@@ -784,7 +787,10 @@ class AutoUpdateSystem:  # pylint: disable=too-many-instance-attributes
             )
 
     async def _download_file(
-        self, url: str, dest_path: Path, progress_callback=None
+        self,
+        url: str,
+        dest_path: Path,
+        progress_callback: Callable[[int, int], None] | None = None,
     ) -> int:
         """Download file with progress tracking."""
         try:
@@ -912,7 +918,7 @@ class AutoUpdateSystem:  # pylint: disable=too-many-instance-attributes
         except Exception:  # pylint: disable=broad-exception-caught
             return False
 
-    async def _reload_clamav_database(self):
+    async def _reload_clamav_database(self) -> None:
         """Reload ClamAV database after updates."""
         try:
             if hasattr(self.clamav, "reload_database"):
@@ -956,7 +962,7 @@ class AutoUpdateSystem:  # pylint: disable=too-many-instance-attributes
             # Simplified implementation - would use aiohttp in production
             loop = asyncio.get_event_loop()
 
-            def sync_request():
+            def sync_request() -> dict[str, Any]:
                 response = requests.request(method, url, timeout=30)
                 response.raise_for_status()
 
@@ -1043,7 +1049,7 @@ class AutoUpdateSystem:  # pylint: disable=too-many-instance-attributes
             )
             return {}
 
-    async def _store_threat_intel(self, intel_data: dict[str, Any]):
+    async def _store_threat_intel(self, intel_data: dict[str, Any]) -> None:
         """Store threat intelligence data for use by protection engine."""
         try:
             intel_db_path = self.db_dir / "threat_intel.json"
@@ -1063,7 +1069,7 @@ class AutoUpdateSystem:  # pylint: disable=too-many-instance-attributes
                 )
             )
 
-    async def _update_monitoring_loop(self):
+    async def _update_monitoring_loop(self) -> None:
         """Monitor update system health and progress."""
         while self.is_running:
             try:
@@ -1097,7 +1103,7 @@ class AutoUpdateSystem:  # pylint: disable=too-many-instance-attributes
                 )
                 await asyncio.sleep(10.0)
 
-    async def _wait_for_tasks(self):
+    async def _wait_for_tasks(self) -> None:
         """Wait for async tasks to complete."""
         tasks = []
         if self.update_loop_task:
@@ -1157,19 +1163,25 @@ class AutoUpdateSystem:  # pylint: disable=too-many-instance-attributes
         return self.last_check_time
 
     # Callback setters
-    def set_update_available_callback(self, callback: Callable[[UpdateInfo], None]):
+    def set_update_available_callback(
+        self, callback: Callable[[UpdateInfo], None]
+    ) -> None:
         """Set callback for when updates are available."""
         self.update_available_callback = callback
 
-    def set_update_completed_callback(self, callback: Callable[[UpdateResult], None]):
+    def set_update_completed_callback(
+        self, callback: Callable[[UpdateResult], None]
+    ) -> None:
         """Set callback for when updates complete."""
         self.update_completed_callback = callback
 
-    def set_update_progress_callback(self, callback: Callable[[UpdateType, int], None]):
+    def set_update_progress_callback(
+        self, callback: Callable[[UpdateType, int], None]
+    ) -> None:
         """Set callback for update progress."""
         self.update_progress_callback = callback
 
-    def set_update_error_callback(self, callback: Callable[[str], None]):
+    def set_update_error_callback(self, callback: Callable[[str], None]) -> None:
         """Set callback for update errors."""
         self.update_error_callback = callback
 
@@ -1178,7 +1190,7 @@ class AutoUpdateSystem:  # pylint: disable=too-many-instance-attributes
         self.logger.info("Forcing update check...")
         return await self.check_for_updates_async()
 
-    async def update_threat_intelligence(self):
+    async def update_threat_intelligence(self) -> None:
         """Update threat intelligence specifically."""
         if UpdateType.THREAT_INTELLIGENCE in self.available_updates:
             update_info = self.available_updates[UpdateType.THREAT_INTELLIGENCE]

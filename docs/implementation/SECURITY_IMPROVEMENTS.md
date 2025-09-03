@@ -16,7 +16,8 @@ _Date: August 9, 2025_
 - Added `shlex.quote()` for proper shell escaping
 - Implemented `_validate_command_security()` method
 
-- Added validation for dangerous shell metacharacters: `;`, `&&`, `||`, `\``,`$`,`|`,`>`,`<`,`&`,`\n`,`\r`
+- Added validation for dangerous shell metacharacters: `;`, `&&`, `||`,
+  `\``,`$`,`|`,`>`,`<`,`&`,`\n`,`\r`
 - **Impact**: Prevents privilege escalation through command injection
 
 #### 2. **Hardcoded Path Vulnerability**
@@ -24,7 +25,8 @@ _Date: August 9, 2025_
 - **File**: `app/core/rkhunter_wrapper.py`
 - **Issue**: Absolute hardcoded paths reduce portability and could fail
 - **Fix**:
-- Replaced hardcoded paths with relative path calculation using `Path(**file**).parent.parent.parent`
+- Replaced hardcoded paths with relative path calculation using
+  `Path(**file**).parent.parent.parent`
 - Updated all script references to use dynamic path resolution
 - **Impact**: Improved portability and reduced attack surface
 
@@ -49,7 +51,8 @@ _Date: August 9, 2025_
 - **File**: `app/core/input_validation.py`
 - **Issues**: Insufficient validation of dangerous characters and injection patterns
 - **Fixes**:
-- Enhanced `sanitize_filename()`to handle shell metacharacters:`;`, `\``,`$`,`&`,`(`,`)`,`\n`,`\r`,`\t`
+- Enhanced `sanitize_filename()`to handle shell metacharacters:`;`,
+  `\``,`$`,`&`,`(`,`)`,`\n`,`\r`,`\t`
 - Added `_validate_option_security()` for scan option validation
 - Enhanced `validate_scan_request()` with additional security checks
 - **Impact**: Prevents path traversal, command injection, and other input-based attacks
@@ -127,7 +130,7 @@ _Date: August 9, 2025_
 
 ### Security Test Results
 
-```text
+````text
 test_command_injection_prevention ... ok
 test_safe_commands_allowed ... ok
 test_path_traversal_prevention ... ok
@@ -197,3 +200,4 @@ The implemented fixes address:
 - ✅ **CWE-404** (Resource Management)
 
 **Conclusion**: The xanadOS Search & Destroy application now has a robust security foundation with comprehensive protection against common attack vectors.
+````

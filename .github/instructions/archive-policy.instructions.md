@@ -6,7 +6,8 @@
 
 ## 📋 Policy Overview
 
-All Copilot agents must implement comprehensive `/archive/` directory structures following these standardized best practices when organizing or restructuring repositories.
+All Copilot agents must implement comprehensive `/archive/` directory structures following these
+standardized best practices when organizing or restructuring repositories.
 
 ## ✅ MANDATORY REQUIREMENTS
 
@@ -14,7 +15,7 @@ All Copilot agents must implement comprehensive `/archive/` directory structures
 
 **REQUIRED**: Every repository MUST include a `/archive/` directory with the following structure:
 
-```Markdown
+````Markdown
 archive/
 ├── README.md                   # Archive policy and documentation
 ├── ARCHIVE_INDEX.md           # Comprehensive content index
@@ -223,3 +224,4 @@ Compliance is mandatory and non-negotiable.
 ## MANDATORY COMPLIANCE: ALL Copilot AGENTS
 
 ## MANDATORY COMPLIANCE: ALL Copilot AGENTS 2
+````

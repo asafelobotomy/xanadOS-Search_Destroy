@@ -1,7 +1,6 @@
 # Runbook: Releases with SemVer and Changelog
 
-Automate versioning and changelogs using conventional commits.
-Use with Copilot agent mode.
+Automate versioning and changelogs using conventional commits. Use with Copilot agent mode.
 
 ## Prerequisites
 

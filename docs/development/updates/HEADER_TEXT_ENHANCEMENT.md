@@ -2,7 +2,8 @@
 
 ## 🔤 Much Bigger Header Text Applied
 
-I've significantly increased the header text size across all three themes for better visibility and prominence!
+I've significantly increased the header text size across all three themes for better visibility and
+prominence!
 
 ### 📊 Size Improvements
 
@@ -61,7 +62,9 @@ I've significantly increased the header text size across all three themes for be
 - **Accessibility**: High contrast theme has extra-large headers (32px)
 - **Consistency**: All themes now have properly sized headers
 
-The "S&D - Search & Destroy" header text is now significantly more prominent and professional-looking across all themes! 🎯
+The "S&D - Search & Destroy" header text is now significantly more prominent and
+professional-looking across all themes! 🎯
 
 ---
+
 _Header text enhancement complete - much bigger and better! 📏✨_

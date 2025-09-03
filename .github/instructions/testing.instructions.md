@@ -1,6 +1,5 @@
 ---
 applyTo: "**/{test,tests,spec,**tests**}/**/*"
-
 ---
 
 # Testing Excellence Standards
@@ -85,12 +84,12 @@ applyTo: "**/{test,tests,spec,**tests**}/**/*"
 
 ### Pre-Built Testing and Quality Tools
 
-Before creating custom testing scripts, GitHub Copilot agents MUST use the
-comprehensive testing and quality tools available in the toolshed:
+Before creating custom testing scripts, GitHub Copilot agents MUST use the comprehensive testing and
+quality tools available in the toolshed:
 
 #### Pre-Commit Testing Hooks
 
-```bash
+````bash
 
 ## Setup comprehensive pre-commit testing hooks
 
@@ -188,3 +187,4 @@ comprehensive testing and quality tools available in the toolshed:
 - **Reporting**: Comprehensive test reports and coverage analysis
 
 **Reference**: See `scripts/tools/README.md` for complete testing tool documentation.
+````

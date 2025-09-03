@@ -1,6 +1,5 @@
 ---
 applyTo: "**/*"
-
 ---
 
 # Placeholder/TODO Tracking - MANDATORY

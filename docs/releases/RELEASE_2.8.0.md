@@ -4,7 +4,8 @@ _Released: August 20, 2025_
 
 ## 🚀 **Major Feature Release: Setup Wizard Implementation**
 
-This release introduces a comprehensive first-time setup system that significantly enhances the user onboarding experience and streamlines the installation of security components.
+This release introduces a comprehensive first-time setup system that significantly enhances the user
+onboarding experience and streamlines the installation of security components.
 
 ---
 
@@ -55,7 +56,7 @@ This release introduces a comprehensive first-time setup system that significant
 
 ### **Setup Wizard Components**
 
-```Python
+````Python
 class SetupWizard(QDialog):
 
 ## Main wizard class with distribution detection
@@ -150,3 +151,4 @@ This release contains significant local development that needs to be pushed to G
 **Release Date**: August 20, 2025
 **Build Status**: Local development (pending GitHub sync)
 **Semantic Version**: 2.8.0 (MINOR increment for new features)
+````

@@ -2,11 +2,14 @@
 
 ## Overview
 
-This document explains how the RKHunter optimization settings have been updated to use GUI sudo dialogs instead of terminal password prompts, providing a consistent user experience with the scan tab.
+This document explains how the RKHunter optimization settings have been updated to use GUI sudo
+dialogs instead of terminal password prompts, providing a consistent user experience with the scan
+tab.
 
 ## Problem Statement
 
-Previously, the RKHunter optimization settings would prompt for sudo passwords in the terminal, which was:
+Previously, the RKHunter optimization settings would prompt for sudo passwords in the terminal,
+which was:
 
 - Inconsistent with the scan tab's GUI dialogs
 - Poor user experience requiring terminal interaction
@@ -44,7 +47,7 @@ The system now uses the same `elevated_run` module as the scan tab, with this pr
 
 #### `_execute_rkhunter_command()`
 
-```Python
+````Python
 
 ## Before: Plain sudo with terminal prompt
 
@@ -163,3 +166,4 @@ Please enter your password to continue:
 - Potential integration with biometric authentication
 - Enhanced error messages for authentication failures
 - Possible caching of authentication for short periods (if security policy allows)
+````

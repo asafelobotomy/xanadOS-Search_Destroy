@@ -4,7 +4,8 @@
 
 ### 🎯 **Issue Identified and Resolved**
 
-**Problem**: VS Code was automatically opening old/deleted empty files every time it started, cluttering the workspace with files that had been moved or deleted.
+**Problem**: VS Code was automatically opening old/deleted empty files every time it started,
+cluttering the workspace with files that had been moved or deleted.
 
 **Root Cause**:
 
@@ -54,7 +55,7 @@
 
 ### Settings Applied
 
-```JSON
+````JSON
 {
     "files.restoreUndoStack": false,
     "workbench.editor.restoreViewState": false,
@@ -114,3 +115,4 @@ When you next open VS Code in this workspace:
 - ✅ All actual project files remain accessible in organized structure
 
 ## Status**: 🎯 **ISSUE RESOLVED - VS Code will now start clean
+````

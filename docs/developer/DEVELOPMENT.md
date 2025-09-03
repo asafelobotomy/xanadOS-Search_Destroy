@@ -6,7 +6,7 @@
 
 This project uses a Python virtual environment for dependency management:
 
-```bash
+````bash
 
 ## Clone and navigate to project
 
@@ -126,3 +126,4 @@ make run-flatpak
 - `data/reports/` - Generated scan reports (ignored)
 - `data/quarantine/` - Quarantined files (ignored)
 - `.venv/` - Python virtual environment (ignored)
+````

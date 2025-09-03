@@ -17,7 +17,7 @@
 
 ## Release Commit Message
 
-```bash
+````bash
 feat: release v2.3.0 with enhanced RKHunter integration and progress tracking improvements
 
 ```text
@@ -130,3 +130,4 @@ The foundation is now optimized for continued development of advanced security f
 ---
 
 ## The xanadOS-Search & Destroy project is now at version 2.3.0 with enhanced RKHunter integration, robust progress tracking, and professional user experience - ready for advanced security scanning workflows
+````

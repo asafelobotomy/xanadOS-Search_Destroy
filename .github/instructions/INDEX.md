@@ -8,7 +8,8 @@ Purpose: quick map of instruction files, their scopes, and purpose. Keep scopes 
 - `documentation-awareness.instructions.md`— applyTo:`docs/**` — prefer existing docs
 - `toolshed-usage.instructions.md`— applyTo:`scripts/**` — prefer toolshed over new scripts
 - `testing.instructions.md`— applyTo:`**/{test,tests,spec,**tests**}/**/*` — testing standards
-- `security.instructions.md`— applyTo:`**/*.{js,ts,py,rb,go,java,php,cs,rs,kt,swift}` — security rules
+- `security.instructions.md`— applyTo:`**/*.{js,ts,py,rb,go,java,php,cs,rs,kt,swift}` — security
+  rules
 - `version-control.instructions.md`— applyTo:`.GitHub/**` — version control policies
 
   (repo-level; Copilot cues added)

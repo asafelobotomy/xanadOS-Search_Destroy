@@ -2,9 +2,9 @@
 
 ## Overview
 
-These tools provide automated validation and quality assurance for GitHub Copilot
-instructions, ensuring consistency, effectiveness, and maintainability across all
-instruction sets used in xanadOS development.
+These tools provide automated validation and quality assurance for GitHub Copilot instructions,
+ensuring consistency, effectiveness, and maintainability across all instruction sets used in xanadOS
+development.
 
 ## Validation Categories
 
@@ -63,7 +63,7 @@ instruction sets used in xanadOS development.
 
 The validation framework is organized into the following components:
 
-```text
+````text
 .GitHub/validation/
 ├── validators/          # Individual validation modules
 ├── configs/            # Validation configuration files
@@ -92,3 +92,4 @@ The validation framework is organized into the following components:
 - Real-time validation during development
 - IDE integration for immediate feedback
 - Collaborative validation and review processes
+````

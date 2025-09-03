@@ -1,6 +1,7 @@
 # CSS to Qt Effects Migration Guide
 
-This document explains how the xanadOS Search & Destroy application handles CSS effects that aren't supported by Qt's stylesheet system, and provides Qt-native alternatives.
+This document explains how the xanadOS Search & Destroy application handles CSS effects that aren't
+supported by Qt's stylesheet system, and provides Qt-native alternatives.
 
 ## Problem: Unsupported CSS Properties
 
@@ -31,7 +32,7 @@ The `_process_qt_stylesheet()` method automatically:
 
 ### Original CSS
 
-```CSS
+````CSS
 QPushButton:hover {
     transform: translateY(-1px);
     transition: all 0.12s ease-out;
@@ -236,3 +237,4 @@ Python dev/qt_effects_demo.py
 - `_setup_shadow_effect(widget)` - Internal shadow effect setup
 
 This system provides a seamless upgrade from CSS effects to Qt-native effects while maintaining the visual design and improving performance.
+````

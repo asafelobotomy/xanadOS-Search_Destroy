@@ -56,7 +56,7 @@ make run
 3. Run `install-hooks.sh` to set up Git hooks
 4. Run `install-security-hardening.sh` for security setup
 5. Run `setup-security.sh` to configure security settings
-4. Use `activate.sh` to activate development environment
+6. Use `activate.sh` to activate development environment
 
 ## Requirements
 

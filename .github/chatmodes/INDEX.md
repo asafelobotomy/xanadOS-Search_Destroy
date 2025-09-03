@@ -2,8 +2,8 @@
 
 ## Overview
 
-Index of available chat modes and when to use each. Use this file to choose a
-mode before starting a session.
+Index of available chat modes and when to use each. Use this file to choose a mode before starting a
+session.
 
 ## Description
 
@@ -11,8 +11,7 @@ Quick descriptions and selection guidance for each chat mode in this repository.
 
 ## Role
 
-Acts as a navigation aid for selecting the most suitable chat mode; it is not a
-chat mode itself.
+Acts as a navigation aid for selecting the most suitable chat mode; it is not a chat mode itself.
 
 ## Response Style
 

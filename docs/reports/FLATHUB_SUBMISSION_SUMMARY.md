@@ -22,11 +22,12 @@ All required Flathub files are prepared and validated:
 
 #### Step 1: Fork Flathub Repository
 
-Visit <<HTTPS://GitHub.com/flathub/flathub>> and click Fork (ensure "Copy the master branch only" is UNCHECKED)
+Visit <<HTTPS://GitHub.com/flathub/flathub>> and click Fork (ensure "Copy the master branch only" is
+UNCHECKED)
 
 #### Step 2: Clone and Setup
 
-```bash
+````bash
 Git clone --branch=new-pr Git@GitHub.com:YOUR_USERNAME/flathub.Git
 cd flathub
 Git checkout -b add-search-and-destroy new-pr
@@ -73,3 +74,4 @@ Your app will be available in the Flathub app store once approved, reaching mill
 
 _Generated: $(date)_
 _xanadOS Search & Destroy v2.11.0 Flathub Submission Package_
+````

@@ -2,9 +2,11 @@
 
 ## Problem
 
-VS Code was showing a performance warning: "Enumeration of workspace source files is taking a long time" when opening the xanadOS-Search_Destroy repository.
+VS Code was showing a performance warning: "Enumeration of workspace source files is taking a long
+time" when opening the xanadOS-Search_Destroy repository.
 
-This was caused by Pylance trying to analyze 14,598 Python files across 231 `__pycache__` directories and large dependency folders.
+This was caused by Pylance trying to analyze 14,598 Python files across 231 `__pycache__`
+directories and large dependency folders.
 
 ## Root Cause Analysis
 

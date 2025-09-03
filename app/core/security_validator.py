@@ -14,7 +14,7 @@ class SecureRKHunterValidator:
     Implements whitelist-based approach for all privileged operations.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         # Allowed RKHunter executable paths (strict whitelist)
         self.allowed_rkhunter_paths: set[str] = {
             "/usr/bin/rkhunter",

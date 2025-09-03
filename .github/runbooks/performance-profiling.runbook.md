@@ -1,7 +1,6 @@
 # Runbook: Performance Profiling and Optimization
 
-Measure before optimizing; adopt repeatable profiling.
-Use with Copilot agent mode.
+Measure before optimizing; adopt repeatable profiling. Use with Copilot agent mode.
 
 ## Prerequisites
 

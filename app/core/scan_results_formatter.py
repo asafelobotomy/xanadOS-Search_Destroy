@@ -35,9 +35,9 @@ class ModernScanResultsFormatter:
     Focuses on readability, organization, and visual hierarchy.
     """
 
-    def __init__(self):
-        self.sections = []
-        self.current_section = None
+    def __init__(self) -> None:
+        self.sections: list[str] = []
+        self.current_section: str | None = None
 
         # Formatting constants
         self.HEADER_LINE = "═" * 60
@@ -205,7 +205,7 @@ class ModernScanResultsFormatter:
             return []
 
         # Group items by result type
-        grouped = {
+        grouped: dict[ScanResultType, list[str]] = {
             ScanResultType.CLEAN: [],
             ScanResultType.WARNING: [],
             ScanResultType.INFECTION: [],
@@ -515,7 +515,7 @@ class ModernScanResultsFormatter:
 _formatter = ModernScanResultsFormatter()
 
 
-def format_scan_results(scan_type: str, raw_output: str, **kwargs) -> str:
+def format_scan_results(scan_type: str, raw_output: str, **kwargs: Any) -> str:
     """Main entry point for formatting scan results."""
     if scan_type.lower() == "rkhunter":
         lines = _formatter.format_rkhunter_output(raw_output)

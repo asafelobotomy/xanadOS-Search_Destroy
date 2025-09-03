@@ -20,18 +20,18 @@ from urllib.parse import urlparse
 
 import aiohttp
 
-# Guarded DNS import with fallback to a lightweight mock to avoid redefinition
+# DNS import with mock for environments without dnspython
 try:
-    import dns.resolver  # type: ignore[import-not-found]
+    import dns.resolver
 
     DNS_AVAILABLE = True
 except Exception:  # ImportError or environment without dnspython
 
     class _MockDNSResolver:
-        def __init__(self):
-            self.nameservers = []
+        def __init__(self) -> None:
+            self.nameservers: list[Any] = []
 
-        def resolve(self, domain, record_type):
+        def resolve(self, domain: str, record_type: str) -> list[Any]:
             return []
 
     class _MockDNSModule:
@@ -132,7 +132,11 @@ class WebProtectionSystem:
     threat detection, and browser security integration.
     """
 
-    def __init__(self, config: WebProtectionConfig = None, database_path: str = None):
+    def __init__(
+        self,
+        config: WebProtectionConfig | None = None,
+        database_path: str | None = None,
+    ):
         self.logger = logging.getLogger(__name__)
         self.config = config or WebProtectionConfig()
 
@@ -149,6 +153,15 @@ class WebProtectionSystem:
         # URL analysis cache
         self.url_cache: dict[str, URLAnalysis] = {}
         self.cache_expiry: dict[str, datetime] = {}
+
+    def logerror(self, msg: str, *args: object) -> None:
+        self.logger.error(msg, *args)
+
+    def logdebug(self, msg: str, *args: object) -> None:
+        self.logger.debug(msg, *args)
+
+    def loginfo(self, msg: str, *args: object) -> None:
+        self.logger.info(msg, *args)
 
         # Real-time monitoring
         self.active_requests: dict[str, dict[str, Any]] = {}
@@ -183,7 +196,7 @@ class WebProtectionSystem:
 
         self.logger.info("Web protection system initialized")
 
-    def _init_database(self):
+    def _init_database(self) -> None:
         """Initialize web protection database."""
         try:
             with sqlite3.connect(self.db_path) as conn:
@@ -259,7 +272,7 @@ class WebProtectionSystem:
                 ).replace("%d", "{e}")
             )
 
-    def _load_default_threat_lists(self):
+    def _load_default_threat_lists(self) -> None:
         """Load default threat intelligence lists."""
         try:
             # Load from database first
@@ -309,7 +322,7 @@ class WebProtectionSystem:
                 )
             )
 
-    def _load_cached_threat_lists(self):
+    def _load_cached_threat_lists(self) -> None:
         """Load threat lists from database cache."""
         try:
             with sqlite3.connect(self.db_path) as conn:
@@ -380,7 +393,7 @@ class WebProtectionSystem:
             self.running = False
             return False
 
-    async def stop_protection(self):
+    async def stop_protection(self) -> None:
         """Stop web protection system."""
         self.running = False
 
@@ -529,7 +542,7 @@ class WebProtectionSystem:
                 analysis_time=0.0,
             )
 
-    async def check_url_safety(self, url: str) -> tuple[bool, WebThreat]:
+    async def check_url_safety(self, url: str) -> tuple[bool, WebThreat | None]:
         """Check if URL is safe to visit.
 
         Args:
@@ -755,7 +768,7 @@ class WebProtectionSystem:
     async def _analyze_ssl_certificate(self, domain: str) -> dict[str, Any]:
         """Analyze SSL certificate for suspicious characteristics."""
         try:
-            ssl_info = {}
+            ssl_info: dict[str, Any] = {}
             cert = None
 
             # First try with proper certificate verification
@@ -794,16 +807,30 @@ class WebProtectionSystem:
                 ssl_info.update(
                     {
                         "ssl_available": True,
-                        "subject": dict(x[0] for x in cert.get("subject", [])),
-                        "issuer": dict(x[0] for x in cert.get("issuer", [])),
+                        "subject": {
+                            k: v
+                            for item in cert.get("subject", [])
+                            if isinstance(item, tuple)
+                            for k, v in [item]
+                        },
+                        "issuer": {
+                            k: v
+                            for item in cert.get("issuer", [])
+                            if isinstance(item, tuple)
+                            for k, v in [item]
+                        },
                         "version": cert.get("version"),
                         "serial_number": cert.get("serialNumber"),
                         "not_before": cert.get("notBefore"),
                         "not_after": cert.get("notAfter"),
                         "subject_alt_names": [
-                            x[1] for x in cert.get("subjectAltName", [])
+                            x[1]
+                            for x in cert.get("subjectAltName", [])
+                            if isinstance(x, tuple)
                         ],
-                        "suspicious": False,
+                        "is_self_signed": False,
+                        "is_suspicious": False,
+                        "suspicious_reason": None,
                     }
                 )
 
@@ -812,7 +839,8 @@ class WebProtectionSystem:
 
                 # Self-signed certificates
                 if ssl_info.get("subject") == ssl_info.get("issuer"):
-                    ssl_info["suspicious"] = True
+                    ssl_info["is_self_signed"] = True
+                    ssl_info["is_suspicious"] = True
                     ssl_info["suspicious_reason"] = "self_signed"
 
                 # Check for suspicious issuers
@@ -828,7 +856,7 @@ class WebProtectionSystem:
                 if any(
                     suspicious in issuer_cn.lower() for suspicious in suspicious_issuers
                 ):
-                    ssl_info["suspicious"] = True
+                    ssl_info["is_suspicious"] = True
                     ssl_info["suspicious_reason"] = "suspicious_issuer"
 
                 # Check certificate validity period
@@ -845,7 +873,7 @@ class WebProtectionSystem:
                     # Very short validity period (less than 30 days)
                     validity_days = (not_after - not_before).days
                     if validity_days < 30:
-                        ssl_info["suspicious"] = True
+                        ssl_info["is_suspicious"] = True
                         ssl_info["suspicious_reason"] = "short_validity"
 
                 except Exception:
@@ -995,7 +1023,7 @@ class WebProtectionSystem:
                     content_type = headers.get("Content-Type", "").lower()
                     if "text/html" in content_type:
                         # Read limited content for analysis
-                        content = await response.read(8192)  # First 8KB
+                        content = await response.read()  # Read all content
 
                         if content:
                             content_str = content.decode(
@@ -1099,7 +1127,7 @@ class WebProtectionSystem:
 
         return None
 
-    def _cache_analysis(self, analysis: URLAnalysis):
+    def _cache_analysis(self, analysis: URLAnalysis) -> None:
         """Cache URL analysis result."""
         with self.lock:
             self.url_cache[analysis.url] = analysis
@@ -1118,7 +1146,7 @@ class WebProtectionSystem:
                     self.url_cache.pop(url_to_remove, None)
                     self.cache_expiry.pop(url_to_remove, None)
 
-    def _store_analysis_result(self, analysis: URLAnalysis):
+    def _store_analysis_result(self, analysis: URLAnalysis) -> None:
         """Store analysis result in database."""
         try:
             with sqlite3.connect(self.db_path) as conn:
@@ -1153,7 +1181,7 @@ class WebProtectionSystem:
                 )
             )
 
-    def _store_threat_detection(self, threat: WebThreat):
+    def _store_threat_detection(self, threat: WebThreat) -> None:
         """Store threat detection in database."""
         try:
             conn = sqlite3.connect(self.db_path)
@@ -1188,18 +1216,18 @@ class WebProtectionSystem:
                 )
             )
 
-    def _threat_intel_update_loop(self):
+    def _threat_intel_update_loop(self) -> None:
         """Background thread for updating threat intelligence."""
         while self.running:
             try:
                 # Update threat lists every hour
                 self._update_threat_intelligence()
 
-                # Sleep for 1 hour
-                for _ in range(3600):
-                    if not self.running:
-                        break
+                # Sleep for 1 hour, checking every second if we should stop
+                sleep_count = 0
+                while sleep_count < 3600 and self.running:
                     time.sleep(1)
+                    sleep_count += 1
 
             except Exception:
                 self.logerror(
@@ -1209,7 +1237,7 @@ class WebProtectionSystem:
                 )
                 time.sleep(300)  # Sleep 5 minutes on error
 
-    def _update_threat_intelligence(self):
+    def _update_threat_intelligence(self) -> None:
         """Update threat intelligence from feeds."""
         try:
             self.logger.info("Updating threat intelligence...")
@@ -1248,7 +1276,7 @@ class WebProtectionSystem:
 
     def add_blocked_domain(
         self, domain: str, threat_category: ThreatCategory, source: str = "manual"
-    ):
+    ) -> None:
         """Add domain to blocked list."""
         try:
             # Add to appropriate in-memory list
@@ -1288,7 +1316,7 @@ class WebProtectionSystem:
                 )
             )
 
-    def remove_blocked_domain(self, domain: str):
+    def remove_blocked_domain(self, domain: str) -> None:
         """Remove domain from blocked list."""
         try:
             # Remove from in-memory lists
@@ -1376,16 +1404,20 @@ class WebProtectionSystem:
         ]
 
     # Callback setters
-    def set_threat_detected_callback(self, callback: Callable[[WebThreat], None]):
+    def set_threat_detected_callback(
+        self, callback: Callable[[WebThreat], None]
+    ) -> None:
         """Set callback for threat detection."""
         self.threat_detected_callback = callback
 
-    def set_request_blocked_callback(self, callback: Callable[[str, str], None]):
+    def set_request_blocked_callback(
+        self, callback: Callable[[str, str], None]
+    ) -> None:
         """Set callback for blocked requests."""
         self.request_blocked_callback = callback
 
     def set_suspicious_activity_callback(
         self, callback: Callable[[str, dict[str, Any]], None]
-    ):
+    ) -> None:
         """Set callback for suspicious activity."""
         self.suspicious_activity_callback = callback

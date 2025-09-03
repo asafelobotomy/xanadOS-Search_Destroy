@@ -4,26 +4,31 @@
 
 ### 1. **Authentication Problem**
 
-**Issue**: RKHunter was falling back to `sudo` which requires terminal input, causing "sudo: a terminal is required to read the password" errors.
+**Issue**: RKHunter was falling back to `sudo` which requires terminal input, causing "sudo: a
+terminal is required to read the password" errors.
 
 **Solutions Implemented**:
 
-- ✅ **Enhanced privilege escalation**: Improved GUI environment handling with proper DISPLAY and XAUTHORITY variables
+- ✅ **Enhanced privilege escalation**: Improved GUI environment handling with proper DISPLAY and
+  XAUTHORITY variables
 - ✅ **Polkit policy installation**: Created and installed polkit policy for GUI authentication
 - ✅ **pkexec preference**: System now prefers GUI password dialogs over terminal prompts
 
 ### 2. **Script Directory Error**
 
-**Issue**: "Invalid SCRIPTDIR configuration option: Non-existent pathname: /usr/share/rkhunter/scripts"
+**Issue**: "Invalid SCRIPTDIR configuration option: Non-existent pathname:
+/usr/share/rkhunter/scripts"
 
 **Solution**:
 
-- ✅ **Arch-specific paths**: Updated configuration to use `/usr/lib/rkhunter/scripts` (correct Arch Linux path)
+- ✅ **Arch-specific paths**: Updated configuration to use `/usr/lib/rkhunter/scripts` (correct Arch
+  Linux path)
 - ✅ **Automatic path detection**: System now uses correct Arch Linux directory structure
 
 ### 3. **Grep Warnings Spam**
 
-**Issue**: Hundreds of harmless `grep: warning: stray \`and`egrep: warning: egrep is obsolescent` messages cluttering output.
+**Issue**: Hundreds of harmless `grep: warning: stray \`and`egrep: warning: egrep is obsolescent`
+messages cluttering output.
 
 **Solutions**:
 
@@ -45,7 +50,7 @@
 
 ### Configuration Updates (`rkhunter_wrapper.py`)
 
-```Python
+````Python
 
 ## Arch Linux specific configuration
 
@@ -187,3 +192,4 @@ sudo rkhunter --update --propupd
 ✅ **System Services**: Compatible with systemd and modern Arch setup
 
 The integration now provides a professional, clean RKHunter scanning experience specifically optimized for Arch Linux systems!
+````

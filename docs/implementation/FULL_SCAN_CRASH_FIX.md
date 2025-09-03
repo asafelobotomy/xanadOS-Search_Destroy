@@ -1,6 +1,6 @@
 # Full Scan Crash Fix Summary
 
-_Applied on: Fri  8 Aug 21:46:52 BST 2025_
+_Applied on: Fri 8 Aug 21:46:52 BST 2025_
 
 ## Issues Identified and Fixed
 

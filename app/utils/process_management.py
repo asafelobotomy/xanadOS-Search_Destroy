@@ -18,7 +18,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from contextlib import contextmanager
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any, Dict, List, Union
+from typing import Any
 
 import psutil
 
@@ -56,7 +56,7 @@ class ProcessConfig:
     capture_output: bool = True
     text: bool = True
     shell: bool = False
-    env: Dict[str, str] | None = None
+    env: dict[str, str] | None = None
     cwd: str | None = None
     max_memory_mb: int = 1024
     cpu_limit_percent: float | None = None
@@ -66,7 +66,7 @@ class ProcessConfig:
 class ProcessResult:
     """Result of process execution"""
 
-    command: List[str]
+    command: list[str]
     returncode: int
     stdout: str
     stderr: str
@@ -81,13 +81,13 @@ class SecureProcessManager:
     """Secure process execution with monitoring and resource control"""
 
     def __init__(self):
-        self.active_processes: Dict[int, psutil.Process] = {}
-        self.process_history: List[ProcessResult] = []
+        self.active_processes: dict[int, psutil.Process] = {}
+        self.process_history: list[ProcessResult] = []
         self._executor = ThreadPoolExecutor(max_workers=4)
         self._lock = threading.Lock()
 
     def execute_command(
-        self, command: Union[str, List[str]], config: ProcessConfig | None = None
+        self, command: str | list[str], config: ProcessConfig | None = None
     ) -> ProcessResult:
         """Execute command with security validation and monitoring"""
         if config is None:
@@ -197,7 +197,7 @@ class SecureProcessManager:
 
     def execute_async(
         self,
-        command: Union[str, List[str]],
+        command: str | list[str],
         config: ProcessConfig | None = None,
         callback: Callable[[ProcessResult], None] | None = None,
     ) -> threading.Thread:
@@ -214,10 +214,10 @@ class SecureProcessManager:
 
     def execute_batch(
         self,
-        commands: List[Union[str, List[str]]],
+        commands: list[str | list[str]],
         config: ProcessConfig | None = None,
         max_concurrent: int = 4,
-    ) -> List[ProcessResult]:
+    ) -> list[ProcessResult]:
         """Execute multiple commands concurrently"""
         results = []
 
@@ -245,8 +245,8 @@ class SecureProcessManager:
         return results
 
     def _prepare_environment(
-        self, extra_env: Dict[str, str] | None = None
-    ) -> Dict[str, str]:
+        self, extra_env: dict[str, str] | None = None
+    ) -> dict[str, str]:
         """Prepare secure environment for subprocess"""
         env = {
             "PATH": SystemPaths.SAFE_PATH,
@@ -274,7 +274,7 @@ class SecureProcessManager:
 
         return env
 
-    def get_system_info(self) -> Dict[str, Any]:
+    def get_system_info(self) -> dict[str, Any]:
         """Get system resource information"""
         try:
             cpu_count = psutil.cpu_count()
@@ -309,7 +309,7 @@ class SecureProcessManager:
                 except (psutil.NoSuchProcess, psutil.AccessDenied):
                     pass
 
-    def get_process_history(self, limit: int = 10) -> List[ProcessResult]:
+    def get_process_history(self, limit: int = 10) -> list[ProcessResult]:
         """Get recent process execution history"""
         with self._lock:
             return self.process_history[-limit:]
@@ -319,8 +319,8 @@ class ProcessMonitor:
     """Monitor running processes for security and resource usage"""
 
     def __init__(self):
-        self.monitored_processes: Dict[int, psutil.Process] = {}
-        self.suspicious_processes: List[Dict[str, Any]] = []
+        self.monitored_processes: dict[int, psutil.Process] = {}
+        self.suspicious_processes: list[dict[str, Any]] = []
         self._monitoring = False
         self._monitor_thread: threading.Thread | None = None
 
@@ -381,7 +381,7 @@ class ProcessMonitor:
         except Exception:
             pass
 
-    def _is_suspicious_process(self, proc_info: Dict[str, Any]) -> bool:
+    def _is_suspicious_process(self, proc_info: dict[str, Any]) -> bool:
         """Check if process exhibits suspicious behavior"""
         name = proc_info.get("name", "").lower()
         cmdline = " ".join(proc_info.get("cmdline", [])).lower()
@@ -422,7 +422,7 @@ class ProcessMonitor:
 
         return False
 
-    def get_suspicious_processes(self, limit: int = 10) -> List[Dict[str, Any]]:
+    def get_suspicious_processes(self, limit: int = 10) -> list[dict[str, Any]]:
         """Get recent suspicious processes"""
         return self.suspicious_processes[-limit:]
 
@@ -433,7 +433,7 @@ PROCESS_MANAGER = SecureProcessManager()
 
 # Convenience functions
 def execute_secure(
-    command: Union[str, List[str]], timeout: int = 300, capture_output: bool = True
+    command: str | list[str], timeout: int = 300, capture_output: bool = True
 ) -> ProcessResult:
     """Execute command securely with default settings"""
     config = ProcessConfig(timeout=timeout, capture_output=capture_output)
@@ -441,7 +441,7 @@ def execute_secure(
 
 
 def execute_with_privilege(
-    command: Union[str, List[str]], method: str = "elevated_run", timeout: int = 300
+    command: str | list[str], method: str = "elevated_run", timeout: int = 300
 ) -> ProcessResult:
     """Execute command with elevated privileges using standardized GUI sudo method"""
     if method == "elevated_run":
@@ -464,17 +464,8 @@ def execute_with_privilege(
                 else ProcessState.FAILED
             ),
         )
-    elif method == "sudo":
-        # Legacy sudo support - prefer GUI auth manager
-        elevated_command = ["sudo"] + (
-            command if isinstance(command, list) else [command]
-        )
     else:
         raise ValueError(f"Unknown privilege escalation method: {method}")
-
-    # Fallback for legacy sudo methods (pkexec removed)
-    config = ProcessConfig(timeout=timeout)
-    return PROCESS_MANAGER.execute_command(elevated_command, config)
 
 
 @contextmanager

@@ -1,13 +1,16 @@
 # Release Documentation
 
-This directory contains release notes, summaries, and related documentation for xanadOS Search & Destroy releases.
+This directory contains release notes, summaries, and related documentation for xanadOS Search &
+Destroy releases.
 
 ## Release Documentation Files
 
 ### Version 2.9.0 (August 22, 2025)
 
-- **[RELEASE_NOTES_v2.9.0.md](./RELEASE_NOTES_v2.9.0.md)** - Comprehensive release notes for v2.9.0 featuring the modern test suite
-- **[RELEASE_UPDATE_SUMMARY.md](./RELEASE_UPDATE_SUMMARY.md)** - Summary of version update process and repository synchronization
+- **[RELEASE_NOTES_v2.9.0.md](./RELEASE_NOTES_v2.9.0.md)** - Comprehensive release notes for v2.9.0
+  featuring the modern test suite
+- **[RELEASE_UPDATE_SUMMARY.md](./RELEASE_UPDATE_SUMMARY.md)** - Summary of version update process
+  and repository synchronization
 
 ## Release Management
 

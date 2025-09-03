@@ -943,4 +943,5 @@ tab-width = 4
 [dependency-groups]
 dev = [
     "flake8>=7.3.0",
+    "prettier>=0.0.7",
 ]

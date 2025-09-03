@@ -2,11 +2,9 @@
 
 ## 🎯 **SUBMISSION STATUS: READY**
 
-**App ID**: `io.GitHub.asafelobotomy.SearchAndDestroy`
-**Version**: `2.11.0`
-**Repository**: `<HTTPS://GitHub.com/asafelobotomy/xanadOS-Search_Destroy`>
-**Commit**: `1259106378521bfec9492f5d14d5f0e999dba772`
-**Tag**: `v2.11.0`
+**App ID**: `io.GitHub.asafelobotomy.SearchAndDestroy` **Version**: `2.11.0` **Repository**:
+`<HTTPS://GitHub.com/asafelobotomy/xanadOS-Search_Destroy`> **Commit**:
+`1259106378521bfec9492f5d14d5f0e999dba772` **Tag**: `v2.11.0`
 
 ## 📋 **Pre-Submission Verification Complete**
 
@@ -46,7 +44,7 @@
 
 ### **Step 1: Fork Flathub Repository**
 
-```bash
+````bash
 
 ## Visit GitHub and fork: <HTTPS://GitHub.com/flathub/flathub>
 
@@ -146,3 +144,4 @@ The application follows all Flathub guidelines and should pass automated validat
 **Generated**: $(date)
 **Repository**: xanadOS-Search_Destroy v2.11.0
 **Submission Assistant**: GitHub Copilot
+````

@@ -6,7 +6,7 @@ This document describes the organization structure of the xanadOS Search & Destr
 
 ## 📁 Directory Structure
 
-```text
+````text
 xanadOS-Search_Destroy/
 ├── app/                          # 🎯 Main application code
 │   ├── **init**.py
@@ -161,3 +161,4 @@ Python scripts/check-organization.py
 ```text
 
 This will identify any organizational issues and suggest fixes.
+````

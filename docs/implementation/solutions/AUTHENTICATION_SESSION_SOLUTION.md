@@ -2,9 +2,11 @@
 
 ## Problem Solved
 
-**Issue**: Users were being asked for sudo password 6+ times during a single RKHunter optimization session, creating a frustrating user experience.
+**Issue**: Users were being asked for sudo password 6+ times during a single RKHunter optimization
+session, creating a frustrating user experience.
 
-**Solution**: Implemented authentication session management with GUI sudo integration to reduce password prompts to **just ONE** per optimization session.
+**Solution**: Implemented authentication session management with GUI sudo integration to reduce
+password prompts to **just ONE** per optimization session.
 
 ## Implementation Overview
 
@@ -12,7 +14,7 @@
 
 Added to `RKHunterOptimizer` class:
 
-```Python
+````Python
 
 ## Session management properties
 
@@ -186,3 +188,4 @@ The authentication session management solution successfully addresses the user's
 By implementing intelligent session caching with GUI integration, we've reduced authentication requests from 6+ times to just once per optimization session, while maintaining security best practices and providing a professional user experience.
 
 **Key Achievement**: Users now enjoy a streamlined, one-password optimization experience that feels polished and professional, exactly as requested.
+````

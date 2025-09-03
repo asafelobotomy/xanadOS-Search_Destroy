@@ -8,8 +8,9 @@ _Your comprehensive guide to protecting your Linux system from malware and secur
 
 ## 🎯 What is S&D - Search & Destroy
 
-**S&D (Search & Destroy)** is a powerful, user-friendly security application designed specifically for Linux systems.
-It combines multiple security tools into one elegant interface to protect your computer from:
+**S&D (Search & Destroy)** is a powerful, user-friendly security application designed specifically
+for Linux systems. It combines multiple security tools into one elegant interface to protect your
+computer from:
 
 - **🦠 Viruses & Malware** - Traditional computer viruses and malicious software
 - **🕷️ Rootkits** - Hidden threats that can compromise your entire system
@@ -18,11 +19,10 @@ It combines multiple security tools into one elegant interface to protect your c
 
 ### Why Choose S&D
 
-✅ **Easy to Use** - Simple, modern interface that anyone can understand
-✅ **Powerful Protection** - Professional-grade security with ClamAV + RKHunter
-✅ **Real-time Monitoring** - Continuous protection while you work
-✅ **No Performance Impact** - Lightweight design that won't slow down your computer
-✅ **Open Source** - Transparent, community-driven security you can trust
+✅ **Easy to Use** - Simple, modern interface that anyone can understand ✅ **Powerful
+Protection** - Professional-grade security with ClamAV + RKHunter ✅ **Real-time Monitoring** -
+Continuous protection while you work ✅ **No Performance Impact** - Lightweight design that won't
+slow down your computer ✅ **Open Source** - Transparent, community-driven security you can trust
 
 ---
 
@@ -36,23 +36,21 @@ It combines multiple security tools into one elegant interface to protect your c
 - 💻 **Terminal**: Run `./run.sh` from the S&D directory
 - ⌨️ **Command Line**: Execute `Python -m app.main`
 
-> 🔒 **Security Note**: S&D automatically prevents multiple instances from running simultaneously for your security.
->
->
->
->
+> 🔒 **Security Note**: S&D automatically prevents multiple instances from running simultaneously
+> for your security.
+
 ### Step 2: Understand the Interface
 
 S&D has a clean, tabbed interface with six main sections:
 
-| Tab | Purpose | What You'll Do Here |
-|-----|---------|-------------------|
-| 🏠 **Dashboard** | System overview and status | See your protection status at a glance |
-| 🔍 **Scan** | Run security scans | Check your computer for threats |
-| 🛡️ **Protection** | Real-time monitoring | Enable continuous protection |
-| 📊 **Reports** | View scan results | See what was found and take action |
-| 🗃️ **Quarantine** | Manage isolated threats | Handle suspicious files safely |
-| ⚙️ **Settings** | Configure the app | Customize how S&D works |
+| Tab               | Purpose                    | What You'll Do Here                    |
+| ----------------- | -------------------------- | -------------------------------------- |
+| 🏠 **Dashboard**  | System overview and status | See your protection status at a glance |
+| 🔍 **Scan**       | Run security scans         | Check your computer for threats        |
+| 🛡️ **Protection** | Real-time monitoring       | Enable continuous protection           |
+| 📊 **Reports**    | View scan results          | See what was found and take action     |
+| 🗃️ **Quarantine** | Manage isolated threats    | Handle suspicious files safely         |
+| ⚙️ **Settings**   | Configure the app          | Customize how S&D works                |
 
 ### Step 3: Run Your First Scan
 
@@ -64,10 +62,7 @@ S&D has a clean, tabbed interface with six main sections:
 4. **Review any findings** in the Reports tab
 
 > 💡 **Tip**: Your first scan helps establish a security baseline for your system.
->
->
->
->
+
 ### Step 4: Enable Real-time Protection
 
 1. **Go to the 🛡️ Protection tab**
@@ -82,8 +77,7 @@ S&D offers three types of scans, each designed for different needs:
 
 ### 🚀 Quick Scan (Recommended for Daily Use)
 
-**What it does:** Scans your personal files and common threat locations
-**How long:** 2-10 minutes
+**What it does:** Scans your personal files and common threat locations **How long:** 2-10 minutes
 **Best for:** Daily security checks, new file verification
 
 ### When to use
@@ -94,8 +88,7 @@ S&D offers three types of scans, each designed for different needs:
 
 ### 🔍 Full System Scan (Weekly Deep Clean)
 
-**What it does:** Scans your entire computer, including system files
-**How long:** 30-90 minutes
+**What it does:** Scans your entire computer, including system files **How long:** 30-90 minutes
 **Best for:** Comprehensive security auditing
 
 ### When to use 2
@@ -106,9 +99,8 @@ S&D offers three types of scans, each designed for different needs:
 
 ### ⚙️ Custom Directory Scan (Targeted Analysis)
 
-**What it does:** Scans only the folders you choose
-**How long:** Varies by selection
-**Best for:** Checking specific files or directories
+**What it does:** Scans only the folders you choose **How long:** Varies by selection **Best for:**
+Checking specific files or directories
 
 ### When to use 3
 
@@ -122,8 +114,8 @@ S&D offers three types of scans, each designed for different needs:
 
 ### What are Rootkits
 
-**Rootkits** are sophisticated threats that hide deep in your system, often invisible to regular antivirus software.
-They can:
+**Rootkits** are sophisticated threats that hide deep in your system, often invisible to regular
+antivirus software. They can:
 
 - Steal passwords and personal information
 - Control your computer remotely
@@ -144,7 +136,7 @@ RKHunter is a specialized tool for detecting these hidden threats:
 - 🔴 **Red** = Threat detected
 
 > 🔐 **Why Password Required?** RKHunter needs administrator access to check system-level security.
-This is normal and secure.
+> This is normal and secure.
 
 ### Understanding RKHunter Results
 
@@ -161,8 +153,8 @@ This is normal and secure.
 
 ### What is Real-time Protection
 
-Real-time protection is like having a security guard for your computer that **never sleeps**.
-It continuously monitors your system and immediately responds to threats.
+Real-time protection is like having a security guard for your computer that **never sleeps**. It
+continuously monitors your system and immediately responds to threats.
 
 ### How to Enable Protection
 
@@ -197,17 +189,17 @@ When a threat is detected, S&D can automatically:
 
 After any scan, you'll see a summary with key information:
 
-| Metric | What It Means | Good/Bad |
-|--------|---------------|----------|
-| **Files Scanned** | Total files checked | More = more thorough |
+| Metric            | What It Means            | Good/Bad                       |
+| ----------------- | ------------------------ | ------------------------------ |
+| **Files Scanned** | Total files checked      | More = more thorough           |
 | **Threats Found** | Dangerous items detected | 0 = good, >0 = needs attention |
-| **Scan Time** | How long the scan took | Varies by scan type |
-| **System Health** | Overall security rating | Green = good, Red = needs work |
+| **Scan Time**     | How long the scan took   | Varies by scan type            |
+| **System Health** | Overall security rating  | Green = good, Red = needs work |
 
 ### When Threats Are Found
 
-**Don't panic!** Finding threats is normal, especially on new systems or after browsing the internet.
-Here's what to do:
+**Don't panic!** Finding threats is normal, especially on new systems or after browsing the
+internet. Here's what to do:
 
 1. **🗃️ Quarantine First** (recommended for beginners)
 
@@ -434,19 +426,17 @@ Think of quarantine as a **secure jail** for suspicious files. Files in quaranti
 
 ### What Makes a File Dangerous
 
-**🦠 Viruses** - Code that spreads by infecting other files
-**🐴 Trojans** - Legitimate-looking programs that hide malicious functions
-**🕷️ Rootkits** - Deep system infections that hide their presence
-**🎣 Phishing** - Fake programs that steal passwords and personal info
-**💣 Ransomware** - Malware that encrypts your files and demands payment
+**🦠 Viruses** - Code that spreads by infecting other files **🐴 Trojans** - Legitimate-looking
+programs that hide malicious functions **🕷️ Rootkits** - Deep system infections that hide their
+presence **🎣 Phishing** - Fake programs that steal passwords and personal info **💣 Ransomware** -
+Malware that encrypts your files and demands payment
 
 ### How S&D Protects You
 
-**🔍 Signature Detection** - Recognizes known threats by their "fingerprints"
-**🧠 Heuristic Analysis** - Identifies suspicious behavior patterns
-**🌐 Cloud Intelligence** - Uses global threat data for latest protections
-**⚡ Real-time Monitoring** - Catches threats as they appear
-**🔒 Safe Quarantine** - Isolates threats without damaging evidence
+**🔍 Signature Detection** - Recognizes known threats by their "fingerprints" **🧠 Heuristic
+Analysis** - Identifies suspicious behavior patterns **🌐 Cloud Intelligence** - Uses global threat
+data for latest protections **⚡ Real-time Monitoring** - Catches threats as they appear **🔒 Safe
+Quarantine** - Isolates threats without damaging evidence
 
 ### Building Security Awareness
 
@@ -516,26 +506,26 @@ Think of quarantine as a **secure jail** for suspicious files. Files in quaranti
 
 ### Essential Commands Summary
 
-| Action | How To Do It | When to Use |
-|--------|-------------|-------------|
-| **Quick Scan** | Scan tab → Quick Scan → Start | Daily, after downloads |
-| **Full Scan** | Scan tab → Full Scan → Start | Weekly, deep cleaning |
-| **RKHunter Scan** | Scan tab → RKHunter Scan → Enter password | Monthly, after issues |
-| **Enable Protection** | Protection tab → Toggle ON | Always (continuous protection) |
-| **Check Quarantine** | Quarantine tab → Review items | After threats found |
-| **View Reports** | Reports tab → Select report | After any scan |
-| **Update Definitions** | Automatic (daily) or Settings → Update | Keep current |
-| **Open Manual** | Help menu → User Manual or F1 | When you need help |
+| Action                 | How To Do It                              | When to Use                    |
+| ---------------------- | ----------------------------------------- | ------------------------------ |
+| **Quick Scan**         | Scan tab → Quick Scan → Start             | Daily, after downloads         |
+| **Full Scan**          | Scan tab → Full Scan → Start              | Weekly, deep cleaning          |
+| **RKHunter Scan**      | Scan tab → RKHunter Scan → Enter password | Monthly, after issues          |
+| **Enable Protection**  | Protection tab → Toggle ON                | Always (continuous protection) |
+| **Check Quarantine**   | Quarantine tab → Review items             | After threats found            |
+| **View Reports**       | Reports tab → Select report               | After any scan                 |
+| **Update Definitions** | Automatic (daily) or Settings → Update    | Keep current                   |
+| **Open Manual**        | Help menu → User Manual or F1             | When you need help             |
 
 ### Common File Locations
 
-| Item | Location | Purpose |
-|------|----------|---------|
-| **Application** | `/usr/local/bin/search-and-destroy/` | Main program files |
-| **User Config** | `~/.config/search-and-destroy/` | Your personal settings |
-| **Quarantine** | `~/.local/share/search-and-destroy/quarantine/` | Isolated threats |
-| **Scan Reports** | `~/.local/share/search-and-destroy/reports/` | Scan history |
-| **Log Files** | `~/.local/share/search-and-destroy/logs/` | Troubleshooting info |
+| Item             | Location                                        | Purpose                |
+| ---------------- | ----------------------------------------------- | ---------------------- |
+| **Application**  | `/usr/local/bin/search-and-destroy/`            | Main program files     |
+| **User Config**  | `~/.config/search-and-destroy/`                 | Your personal settings |
+| **Quarantine**   | `~/.local/share/search-and-destroy/quarantine/` | Isolated threats       |
+| **Scan Reports** | `~/.local/share/search-and-destroy/reports/`    | Scan history           |
+| **Log Files**    | `~/.local/share/search-and-destroy/logs/`       | Troubleshooting info   |
 
 ### Emergency Procedures
 
@@ -558,7 +548,8 @@ Think of quarantine as a **secure jail** for suspicious files. Files in quaranti
 ---
 
 _This manual is your complete guide to protecting your Linux system with S&D - Search & Destroy.
-Keep it handy for reference, and remember: when in doubt about security, it's always better to be cautious!_
+Keep it handy for reference, and remember: when in doubt about security, it's always better to be
+cautious!_
 
 ### 📞 Need More Help
 
@@ -566,10 +557,10 @@ Keep it handy for reference, and remember: when in doubt about security, it's al
 - 🌐 Online community: Visit our GitHub page for discussions and updates
 - 🐛 Bug reports: Help us improve S&D by reporting issues you encounter
 
-**🔄 Stay Updated:** This manual is updated with each S&D release.
-Check for updates regularly to stay current with new features and security improvements.
+**🔄 Stay Updated:** This manual is updated with each S&D release. Check for updates regularly to
+stay current with new features and security improvements.
 
 ---
 
-_Last Updated: August 22, 2025 - Version 2.9.0_
-_Thank you for choosing S&D - Search & Destroy for your Linux security needs!_
+_Last Updated: August 22, 2025 - Version 2.9.0_ _Thank you for choosing S&D - Search & Destroy for
+your Linux security needs!_

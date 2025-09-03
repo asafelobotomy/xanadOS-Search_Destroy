@@ -1,7 +1,6 @@
 # Runbook: Security Hardening
 
-Add automated security checks and guidance.
-Use with Copilot agent mode.
+Add automated security checks and guidance. Use with Copilot agent mode.
 
 ## Prerequisites
 

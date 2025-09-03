@@ -1,11 +1,12 @@
 # MCP Server Configuration
 
-This directory contains Model Context Protocol (MCP) server configurations and integrations that enhance the GitHub Copilot instruction system with real-time capabilities.
+This directory contains Model Context Protocol (MCP) server configurations and integrations that
+enhance the GitHub Copilot instruction system with real-time capabilities.
 
 ## Overview
 
-MCP servers provide dynamic context and external integrations to supplement the static instruction files.
-They enable:
+MCP servers provide dynamic context and external integrations to supplement the static instruction
+files. They enable:
 
 - **Real-time Documentation Access** - Live documentation retrieval from external sources
 - **API Integration** - Dynamic data from external services and APIs
@@ -62,5 +63,5 @@ MCP servers automatically provide context to GitHub Copilot through:
 
 ## Setup and Deployment
 
-See individual server directories for specific setup instructions.
-All servers follow the MCP specification for consistent integration with GitHub Copilot.
+See individual server directories for specific setup instructions. All servers follow the MCP
+specification for consistent integration with GitHub Copilot.

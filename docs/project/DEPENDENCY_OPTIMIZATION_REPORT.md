@@ -2,7 +2,8 @@
 
 ## Summary
 
-Successfully optimized the application dependencies by removing unused packages and organizing requirements into logical groups.
+Successfully optimized the application dependencies by removing unused packages and organizing
+requirements into logical groups.
 
 ## Changes Made
 
@@ -91,7 +92,7 @@ All required dependencies are properly installed and importable:
 
 To install optimized dependencies:
 
-```bash
+````bash
 cd /path/to/xanadOS-Search_Destroy
 source venv/bin/activate
 pip install -r requirements.txt
@@ -104,3 +105,4 @@ pip install -r requirements.txt
 - ClamAV operations continue to work using command-line tools
 - No changes required to application code
 - Dependencies are logically grouped for better maintenance
+````

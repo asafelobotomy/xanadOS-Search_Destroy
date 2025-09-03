@@ -43,7 +43,8 @@
     "url": "https://github.com/YOUR_ORG/YOUR_REPO.git"
   },
   "devDependencies": {
-    "markdownlint-cli": "^0.45.0"
+    "markdownlint-cli": "^0.45.0",
+    "prettier": "^3.3.3"
   },
   "engines": {
     "node": ">=18.0.0"

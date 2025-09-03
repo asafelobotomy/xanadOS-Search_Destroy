@@ -129,8 +129,8 @@ def popen_secure(
     allow_root: bool = False,
     env: Mapping[str, str] | None = None,
     text: bool = True,
-    stdout=subprocess.PIPE,
-    stderr=subprocess.PIPE,
+    stdout: int = subprocess.PIPE,
+    stderr: int = subprocess.PIPE,
     bufsize: int = 1,
 ) -> subprocess.Popen:
     """Popen variant with same security constraints as run_secure.

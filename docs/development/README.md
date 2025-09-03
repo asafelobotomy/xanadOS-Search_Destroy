@@ -1,6 +1,7 @@
 # Development Documentation
 
-This directory contains development-related documentation, reports, and updates for the xanadOS Search & Destroy project.
+This directory contains development-related documentation, reports, and updates for the xanadOS
+Search & Destroy project.
 
 ## Directory Structure
 

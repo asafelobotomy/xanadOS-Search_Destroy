@@ -1,8 +1,6 @@
 # Release v2.11.0 Deployment Complete
 
-**Date**: August 24, 2025
-**Repository**: xanadOS Search & Destroy
-**Release Version**: v2.11.0
+**Date**: August 24, 2025 **Repository**: xanadOS Search & Destroy **Release Version**: v2.11.0
 
 ## Status**: ✅**DEPLOYMENT SUCCESSFUL
 
@@ -30,7 +28,8 @@
 
 ### ✅ GitHub Release Created
 
-**Release URL**: <<HTTPS://GitHub.com/asafelobotomy/agent-instructions-co-pilot/releases/tag/v2.11.0>>
+**Release URL**:
+<<HTTPS://GitHub.com/asafelobotomy/agent-instructions-co-pilot/releases/tag/v2.11.0>>
 
 **Release Highlights**:
 
@@ -105,10 +104,10 @@
 2. **Create App Directory**: `io.GitHub.asafelobotomy.SearchAndDestroy/`
 3. **Copy Submission Files**:
 
-  ```bash
-  cp packaging/flatpak/io.GitHub.asafelobotomy.SearchAndDestroy.yml flathub/
-  cp packaging/flatpak/io.GitHub.asafelobotomy.SearchAndDestroy.metainfo.XML flathub/
-  cp packaging/flatpak/io.GitHub.asafelobotomy.SearchAndDestroy.desktop flathub/
+````bash
+cp packaging/flatpak/io.GitHub.asafelobotomy.SearchAndDestroy.yml flathub/
+cp packaging/flatpak/io.GitHub.asafelobotomy.SearchAndDestroy.metainfo.XML flathub/
+cp packaging/flatpak/io.GitHub.asafelobotomy.SearchAndDestroy.desktop flathub/
 
 ```text
 
@@ -136,3 +135,4 @@ The xanadOS Search & Destroy project is now enterprise-ready with complete Flath
 _Deployment completed successfully on August 24, 2025_
 _Release: v2.11.0_
 _Status: Ready for Flathub submission_
+````

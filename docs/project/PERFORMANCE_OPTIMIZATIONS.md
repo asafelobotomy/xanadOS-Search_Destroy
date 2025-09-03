@@ -2,7 +2,8 @@
 
 ## Overview
 
-Successfully implemented comprehensive performance optimizations for the S&D - Search & Destroy security application to reduce system resource usage while maintaining full functionality.
+Successfully implemented comprehensive performance optimizations for the S&D - Search & Destroy
+security application to reduce system resource usage while maintaining full functionality.
 
 ## 🚀 Key Optimizations Implemented
 
@@ -10,7 +11,8 @@ Successfully implemented comprehensive performance optimizations for the S&D - S
 
 **File:** `app/monitoring/file_watcher.py`
 
-- **Event Debouncing:** Added intelligent event batching with 0.5-second delay to prevent excessive processing
+- **Event Debouncing:** Added intelligent event batching with 0.5-second delay to prevent excessive
+  processing
 - **Event Deduplication:** Groups similar events by directory and processes only unique changes
 - **Memory-Conscious Processing:** Reduces redundant file system event callbacks
 
@@ -137,7 +139,7 @@ Successfully implemented comprehensive performance optimizations for the S&D - S
 
 ### Performance Settings (via config)
 
-```Python
+````Python
 'performance': {
     'scan_batch_size': 50,        # Files per batch
     'max_memory_mb': 256,         # Memory limit for batching
@@ -191,3 +193,4 @@ Users can view performance information by:
 3. **Background monitoring** - Continuous performance tracking with minimal overhead
 
 This implementation provides significant performance improvements while maintaining full security functionality and adding valuable performance insights for users.
+````

@@ -1,8 +1,7 @@
 # Flathub Compliance Handoff
 
-This document summarizes the repository-wide Flathub compliance effort.
-It captures recent operations, tool results, the current working state,
-and a concrete continuation plan.
+This document summarizes the repository-wide Flathub compliance effort. It captures recent
+operations, tool results, the current working state, and a concrete continuation plan.
 
 ## Overview
 
@@ -25,7 +24,8 @@ Scope covered:
 
 - Repo-wide Flathub compliance review: Done
 - Organize repo, archive deprecations: Done (legacy icon naming archived/documented)
-- Align App ID and names across manifest/desktop/metainfo/icons: Done (io.GitHub.asafelobotomy.SearchAndDestroy)
+- Align App ID and names across manifest/desktop/metainfo/icons: Done
+  (io.GitHub.asafelobotomy.SearchAndDestroy)
 - Tighten permissions/finish-args and prefer portals: Done
 - Flatpak-aware runtime behavior (no daemons/system paths; avoid freshclam): Done
 - Dependency alignment between code and Flatpak manifest: Pending (see Risks)
@@ -64,7 +64,8 @@ Scope covered:
 ## Technical Inventory
 
 - App ID: `io.GitHub.asafelobotomy.SearchAndDestroy`
-- Runtime/SDK: org.kde.Platform 6.7 / org.kde.Sdk 6.7; BaseApp: com.riverbankcomputing.PyQt.BaseApp 6.7
+- Runtime/SDK: org.kde.Platform 6.7 / org.kde.Sdk 6.7; BaseApp: com.riverbankcomputing.PyQt.BaseApp
+  6.7
 - Packaging files:
 - `packaging/flatpak/io.GitHub.asafelobotomy.SearchAndDestroy.yml`
 - `packaging/flatpak/io.GitHub.asafelobotomy.SearchAndDestroy.metainfo.XML`
@@ -122,8 +123,7 @@ Scope covered:
 
 - Code imports numpy, pandas, matplotlib, boto3, aiofiles, aiohttp (and their
 
-  transitives), but the manifest currently installs only a subset.
-  Options:
+  transitives), but the manifest currently installs only a subset. Options:
 
 - Add full offline sources (wheels or sdist + build-from-source) for all
 
@@ -199,4 +199,4 @@ Optional refinements:
 
 - packaging/flatpak/search-and-destroy.sh — Runtime launcher script
 - app/core/clamav_wrapper.py — ClamAV integration with Flatpak-aware logic
-- archive/legacy-icons/README.md — Documentation for archived org.xanados.* icons
+- archive/legacy-icons/README.md — Documentation for archived org.xanados.\* icons

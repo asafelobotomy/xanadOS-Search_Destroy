@@ -46,7 +46,7 @@ class WarningExplanation:
     technical_details: str = ""
     remediation_steps: list[str] | None = None
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         if self.remediation_steps is None:
             self.remediation_steps = []
 
@@ -54,7 +54,7 @@ class WarningExplanation:
 class RKHunterWarningAnalyzer:
     """Analyzes and explains RKHunter warnings."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.warning_patterns = self._initialize_warning_patterns()
 
     def _initialize_warning_patterns(

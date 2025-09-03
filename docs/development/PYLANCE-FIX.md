@@ -48,8 +48,7 @@
 
 ## Result: **90% performance improvement** 🚀
 
-**Before:** 14,598 files analyzed
-**After:** 93 files analyzed (focused on your actual code)
+**Before:** 14,598 files analyzed **After:** 93 files analyzed (focused on your actual code)
 
 ## Documentation
 

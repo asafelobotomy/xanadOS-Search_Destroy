@@ -403,12 +403,8 @@ class RKHunterWrapper:
                     "RKHunter process was started with elevated privileges and cannot be terminated by non-elevated process",
                 )
                 return True  # Still consider this a "success" since the process will eventually finish
-            except Exception:
-                self.logger.error(
-                    "Error terminating RKHunter scan: %s".replace("%s", "{e}").replace(
-                        "%d", "{e}"
-                    )
-                )
+            except Exception as e:
+                self.logger.error(f"Error terminating RKHunter scan: {e}")
                 return False
             finally:
                 self._current_process = None
@@ -536,7 +532,7 @@ class RKHunterWrapper:
         self._grace_period_extensions = 0
 
     def _terminate_with_privilege_escalation(self, pid: int) -> bool:
-        """Legacy compatibility wrapper now using kill_sequence abstraction.
+        """Process termination using kill_sequence abstraction.
         Prefer graceful TERM then KILL; escalate only when outside grace
         period (to avoid unnecessary auth prompts) and direct signals denied.
         """
@@ -1033,9 +1029,7 @@ class RKHunterWrapper:
             result.end_time = datetime.now()
             result.success = False
             result.error_message = f"Scan error: {e!s}"
-            self.logerror(
-                "RKHunter scan failed: %s".replace("%s", "{e}").replace("%d", "{e}")
-            )
+            self.logger.error(f"RKHunter scan failed: {e}")
 
         return result
 
@@ -1149,9 +1143,7 @@ class RKHunterWrapper:
             result.end_time = datetime.now()
             result.success = False
             result.error_message = f"Scan error: {e!s}"
-            self.logerror(
-                "RKHunter scan failed: %s".replace("%s", "{e}").replace("%d", "{e}")
-            )
+            self.logger.error(f"RKHunter scan failed: {e}")
 
         return result
 

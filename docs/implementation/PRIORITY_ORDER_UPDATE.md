@@ -2,7 +2,8 @@
 
 ## Overview
 
-Updated the priority order for privilege escalation methods in the `elevated_run` function to prioritize passwordless sudo authentication.
+Updated the priority order for privilege escalation methods in the `elevated_run` function to
+prioritize passwordless sudo authentication.
 
 ## Changes Made
 
@@ -45,7 +46,7 @@ Updated the priority order for privilege escalation methods in the `elevated_run
 
 ### Code Changes
 
-```Python
+````Python
 
 ## New priority order in elevated_run()
 
@@ -126,3 +127,4 @@ if sudo:
 2. **Seamless Scans**: RKHunter scans start instantly without password prompts
 3. **Better Performance**: Reduced latency for all privileged operations
 4. **Maintained Security**: Same security model with optimized performance
+````

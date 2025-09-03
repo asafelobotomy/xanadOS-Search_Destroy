@@ -1,9 +1,7 @@
 # Performance Monitoring Report
 
-**Generated**: Mon 25 Aug 09:26:46 BST 2025
-**Repository**: xanadOS-Search_Destroy
-**Monitoring Duration**: 60 seconds
-**Sampling Interval**: 1 seconds
+**Generated**: Mon 25 Aug 09:26:46 BST 2025 **Repository**: xanadOS-Search_Destroy **Monitoring
+Duration**: 60 seconds **Sampling Interval**: 1 seconds
 
 ## Executive Summary
 
@@ -55,8 +53,7 @@ Container data not available
 
 ### Resource Utilization Trends
 
-**CPU Trend**: Increasing
-**Memory Trend**: Increasing
+**CPU Trend**: Increasing **Memory Trend**: Increasing
 
 ### Bottleneck Identification
 
@@ -116,5 +113,5 @@ No benchmark data available
 
 ---
 
-_This report provides a comprehensive analysis of system and application performance.
-Use the recommendations to improve overall system efficiency._
+_This report provides a comprehensive analysis of system and application performance. Use the
+recommendations to improve overall system efficiency._

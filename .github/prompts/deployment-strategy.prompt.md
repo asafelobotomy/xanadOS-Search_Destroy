@@ -1,8 +1,7 @@
 # Deployment Strategy Prompt
 
-Design and implement deployment strategies for modern applications.
-Create automated pipelines with testing, monitoring, and rollbacks.
-Support multiple environments and infrastructure types.
+Design and implement deployment strategies for modern applications. Create automated pipelines with
+testing, monitoring, and rollbacks. Support multiple environments and infrastructure types.
 
 ## Deployment Strategy Framework
 
@@ -10,7 +9,7 @@ Support multiple environments and infrastructure types.
 
 ### Multi-Environment Setup
 
-```YAML
+````YAML
 
 ## environments.yml - Environment configuration structure
 
@@ -2227,3 +2226,4 @@ Remember: Deployment strategy should match your application's requirements,
 risk tolerance, and operational capabilities. Start with simpler strategies
 and evolve to more sophisticated approaches as your infrastructure and
 processes mature.
+````

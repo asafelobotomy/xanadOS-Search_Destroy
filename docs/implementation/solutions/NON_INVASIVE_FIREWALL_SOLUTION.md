@@ -2,7 +2,9 @@
 
 ## Overview
 
-This document describes the enhanced firewall status monitoring system that eliminates the need for sudo privileges during routine status checks, preventing authentication loops and improving user experience.
+This document describes the enhanced firewall status monitoring system that eliminates the need for
+sudo privileges during routine status checks, preventing authentication loops and improving user
+experience.
 
 ## Problem Solved
 
@@ -25,7 +27,7 @@ This document describes the enhanced firewall status monitoring system that elim
 - Maintains persistent state across app sessions
 - Provides immediate status updates after user actions
 
-```Python
+````Python
 
 ## Example: User enables firewall → immediately cached as "Active"
 
@@ -185,3 +187,4 @@ This test verifies:
 
 The non-invasive firewall monitoring system successfully eliminates authentication loops while providing accurate, timely firewall status information.
 Users can now enjoy uninterrupted application usage while maintaining full firewall monitoring capabilities.
+````

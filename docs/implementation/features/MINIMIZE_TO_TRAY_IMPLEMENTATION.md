@@ -2,7 +2,8 @@
 
 ### Problem
 
-When the "Minimize to System Tray" setting was enabled, clicking the [X] button or selecting "File > Exit" would still fully close the application instead of minimizing to the system tray as expected.
+When the "Minimize to System Tray" setting was enabled, clicking the [X] button or selecting "File >
+Exit" would still fully close the application instead of minimizing to the system tray as expected.
 
 ### Solution Implemented
 

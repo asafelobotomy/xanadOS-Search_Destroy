@@ -31,7 +31,7 @@ class CacheEntry:
         elapsed = time.time() - self.timestamp
         return elapsed > (self.ttl * stale_threshold)
 
-    def access(self):
+    def access(self) -> None:
         """Mark this entry as accessed."""
         self.access_count += 1
         self.last_access = time.time()
@@ -163,12 +163,12 @@ class SystemStatusCache:
     Implements stale-while-revalidate for optimal user experience.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.cache = ModernMemoryCache(max_size=100, default_ttl=30)  # 30 second TTL
         self.refresh_callbacks: dict[str, Callable] = {}
-        self._background_refresh_active = set()
+        self._background_refresh_active: set[str] = set()
 
-    def register_refresh_callback(self, key: str, callback: Callable):
+    def register_refresh_callback(self, key: str, callback: Callable) -> None:
         """Register a callback to refresh stale data."""
         self.refresh_callbacks[key] = callback
 
@@ -189,7 +189,7 @@ class SystemStatusCache:
 
         return cached_value
 
-    def set_system_status(self, component: str, status: Any, ttl: float = 30):
+    def set_system_status(self, component: str, status: Any, ttl: float = 30) -> None:
         """Set system status in cache."""
         self.cache.set(f"status_{component}", status, ttl)
 
@@ -203,7 +203,7 @@ class SystemStatusCache:
             print(f"Failed to refresh {component} status: {e}")
             return None
 
-    def _trigger_background_refresh(self, component: str):
+    def _trigger_background_refresh(self, component: str) -> None:
         """Trigger background refresh for a component."""
         if component in self._background_refresh_active:
             return  # Already refreshing
@@ -215,7 +215,7 @@ class SystemStatusCache:
 
         # Use QTimer for background refresh in Qt application
 
-        def refresh_and_cleanup():
+        def refresh_and_cleanup() -> None:
             try:
                 callback = self.refresh_callbacks[component]
                 fresh_status = callback()
@@ -228,7 +228,7 @@ class SystemStatusCache:
 
         QTimer.singleShot(0, refresh_and_cleanup)
 
-    def invalidate_component(self, component: str):
+    def invalidate_component(self, component: str) -> None:
         """Invalidate cache for a specific component."""
         self.cache.delete(f"status_{component}")
 

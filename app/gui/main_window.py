@@ -59,6 +59,15 @@ except ImportError:
     record_activity = None
     get_rkhunter_status_non_invasive = None
 
+# Import firewall status optimization
+try:
+    from app.gui.firewall_optimization_patch import apply_firewall_optimization
+
+    FIREWALL_OPTIMIZATION_AVAILABLE = True
+except ImportError:
+    FIREWALL_OPTIMIZATION_AVAILABLE = False
+    apply_firewall_optimization = None
+
 from threading import Thread
 
 from PyQt6.QtCore import QDate, Qt, QTime, QTimer, pyqtSignal
@@ -278,6 +287,12 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
         except Exception as e:
             print(f"Warning: Could not initialize auto-updater: {e}")
 
+        # Initialize firewall status optimization
+        try:
+            self._initialize_firewall_optimization()
+        except Exception as e:
+            print(f"Warning: Could not initialize firewall optimization: {e}")
+
         # 8. Debounced settings saver
         self._settings_save_timer = QTimer(self)
         self._settings_save_timer.setSingleShot(True)
@@ -347,8 +362,16 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
     def _refresh_firewall_status(self):
         """Refresh firewall status in background."""
         try:
-            # Mock firewall status for now
-            return {"status": "active", "rules_count": 25}
+            # Use optimized firewall status if available
+            if hasattr(self, "firewall_patch") and self.firewall_patch:
+                optimizer = self.firewall_patch.firewall_integration.optimizer
+                return optimizer.get_firewall_status(use_cache=True)
+            else:
+                # Fallback to direct firewall detection
+                from app.core.firewall_detector import FirewallDetector
+
+                detector = FirewallDetector()
+                return detector.get_firewall_status()
         except Exception as e:
             print(f"Background firewall refresh failed: {e}")
             return None
@@ -506,7 +529,7 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
         return bool(getattr(rk, "available", False))
 
     def create_settings_tab(self):
-        """Create the settings tab (modular layout only; legacy removed)."""
+        """Create the settings tab."""
         return self._create_settings_tab_modular()
 
     # --- Settings Widget Factories (used by external builders) ---
@@ -818,7 +841,7 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
             # Re-enable firewall status updates now that they use non-invasive methods
             # Only update firewall status every 5 cycles (5 seconds)
             if self.timer_cycle_count % 5 == 0:
-                self.update_firewall_status()
+                self.update_firewall_status_full()
 
             # Only update monitoring stats every 10 cycles (10 seconds)
             if self.timer_cycle_count % 10 == 0:
@@ -1576,13 +1599,32 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
             print("⚠️ Protection status label not found")
 
     def update_firewall_status(self):
-        """Update the firewall status display."""
+        """Update the firewall status display - CONSOLIDATED METHOD."""
         if not hasattr(self, "firewall_status_label"):
             return
 
         try:
-            # Use cached status with time-based refresh to balance responsiveness and
-            # avoid frequent sudo prompts
+            # Use single method to get firewall status to avoid conflicts
+            status = self._get_consolidated_firewall_status()
+
+            if not status:
+                return
+
+            # Update cache
+            self._firewall_status_cache = status
+            self._firewall_status_cache_time = time.time()
+
+            # Update the status card if available
+            if hasattr(self, "update_firewall_status_card"):
+                self.update_firewall_status_card()
+
+        except Exception as e:
+            print(f"Error updating firewall status: {e}")
+
+    def _get_consolidated_firewall_status(self):
+        """Get firewall status from single consolidated source."""
+        try:
+            # Use cached status with time-based refresh to balance responsiveness
             current_time = time.time()
             cache_max_age = 30  # Refresh cache every 30 seconds at most
 
@@ -1591,12 +1633,38 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
                 and hasattr(self, "_firewall_status_cache_time")
                 and current_time - self._firewall_status_cache_time < cache_max_age
             ):
-                status = self._firewall_status_cache
+                return self._firewall_status_cache
+
+            # Cache expired or first time - get fresh status
+            # Use optimized firewall status if available
+            if hasattr(self, "firewall_patch") and self.firewall_patch:
+                integration = self.firewall_patch.firewall_integration
+                if hasattr(integration, "optimizer"):
+                    optimizer = integration.optimizer
+                    status = optimizer.get_firewall_status(use_cache=True)
+                else:
+                    status = get_firewall_status()
             else:
-                # Cache expired or first time - get fresh status
+                # Fallback to standard method
                 status = get_firewall_status()
-                self._firewall_status_cache = status
-                self._firewall_status_cache_time = current_time
+
+            return status
+
+        except Exception as e:
+            print(f"Error getting consolidated firewall status: {e}")
+            return None
+
+    def update_firewall_status_full(self):
+        """Full firewall status update with GUI elements (called by unified timer)."""
+        try:
+            # Get consolidated status
+            status = self._get_consolidated_firewall_status()
+            if not status:
+                return
+
+            # Update cache
+            self._firewall_status_cache = status
+            self._firewall_status_cache_time = time.time()
 
             # Check if status has changed from previous check
             current_active_state = status.get("is_active", False)
@@ -1677,18 +1745,40 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
         except Exception as e:
             print(f"⚠️ Error updating firewall status: {e}")
             # Fallback to unknown state
-            self.firewall_on_off_label.setText("UNKNOWN")
-            self.firewall_on_off_label.setStyleSheet(
-                f"font-weight: bold; font-size: 16px; color: {get_theme_manager().get_color('muted_text')};"
-            )
-            self.firewall_status_circle.setStyleSheet(
-                f"font-size: 20px; color: {get_theme_manager().get_color('muted_text')};"
-            )
+            if hasattr(self, "firewall_on_off_label"):
+                self.firewall_on_off_label.setText("UNKNOWN")
+                self.firewall_on_off_label.setStyleSheet(
+                    f"font-weight: bold; font-size: 16px; color: {get_theme_manager().get_color('muted_text')};"
+                )
+            if hasattr(self, "firewall_status_circle"):
+                self.firewall_status_circle.setStyleSheet(
+                    f"font-size: 20px; color: {get_theme_manager().get_color('muted_text')};"
+                )
             if hasattr(self, "firewall_name_label"):
                 self.firewall_name_label.setText("Unable to detect")
 
     def _clear_firewall_status_cache(self):
         """Clear the firewall status cache to force immediate refresh."""
+        # Clear optimization cache if available (but don't restart timers)
+        if hasattr(self, "firewall_patch") and self.firewall_patch:
+            # Get fresh status without restarting optimization timers
+            try:
+                integration = self.firewall_patch.firewall_integration
+                if hasattr(integration, "optimizer"):
+                    optimizer = integration.optimizer
+                    # Clear cache and get fresh status
+                    optimizer.invalidate_cache()
+                    # Get updated status immediately (without cache)
+                    fresh_status = optimizer.get_firewall_status(use_cache=False)
+                    # Update main window cache
+                    self._firewall_status_cache = fresh_status
+                    self._firewall_status_cache_time = time.time()
+                    print("🔄 Firewall optimization cache cleared and refreshed")
+                    return
+            except Exception as e:
+                print(f"⚠️ Error refreshing optimization cache: {e}")
+
+        # Fallback: Clear standard cache
         if hasattr(self, "_firewall_status_cache"):
             delattr(self, "_firewall_status_cache")
         if hasattr(self, "_firewall_status_cache_time"):
@@ -4051,6 +4141,43 @@ System        {perf_status}"""
 
         except Exception as e:
             print(f"❌ Error initializing auto-updater: {e}")
+
+    def _initialize_firewall_optimization(self):
+        """Initialize the firewall status optimization system."""
+        try:
+            if not FIREWALL_OPTIMIZATION_AVAILABLE:
+                print("Firewall optimization not available, using standard monitoring")
+                return
+
+            # Apply the firewall status optimization
+            self.firewall_patch = apply_firewall_optimization(self)
+
+            if self.firewall_patch:
+                print("✅ Firewall status optimization applied successfully")
+                self.logger.info("Firewall status optimization enabled")
+
+                # Disable optimization timers to prevent threading issues
+                # The main window's unified timer will handle status updates
+                if hasattr(self.firewall_patch, "firewall_integration"):
+                    integration = self.firewall_patch.firewall_integration
+                    if hasattr(integration, "optimizer"):
+                        optimizer = integration.optimizer
+                        # Stop any auto-timers to prevent thread conflicts
+                        optimizer.stop_monitoring()
+                        print(
+                            "🔧 Optimization timers disabled to prevent threading conflicts"
+                        )
+
+                # Log optimization statistics
+                stats = self.firewall_patch.get_optimization_stats()
+                self.logger.debug(f"Firewall optimization stats: {stats}")
+            else:
+                print("⚠️  Firewall optimization could not be applied")
+                self.logger.warning("Firewall optimization failed to initialize")
+
+        except Exception as e:
+            print(f"❌ Error initializing firewall optimization: {e}")
+            self.logger.error(f"Firewall optimization initialization failed: {e}")
 
     def check_for_updates_manual(self):
         """Manually check for updates when user clicks Help menu item."""
@@ -7838,7 +7965,7 @@ Common False Positives:
             )
             self.reset_quick_scan_button()
         elif hasattr(self, "is_quick_scan_running") and self.is_quick_scan_running:
-            print("DEBUG: 🔄 Resetting Quick Scan button (legacy check)")
+            print("DEBUG: 🔄 Resetting Quick Scan button")
             self.reset_quick_scan_button()
 
         if "error" in result:
@@ -9694,7 +9821,7 @@ Common False Positives:
                     self._show_report_error(f"Unknown report type: {report_type}")
                 return
 
-            # Legacy format handling for old ClamAV reports
+            # Handle ClamAV report format
             scan_id = report_info
             if not scan_id:
                 if get_theme_manager().get_current_theme() == "dark":
@@ -11930,7 +12057,18 @@ Common False Positives:
             return
 
         try:
-            status = get_firewall_status()
+            # Use optimized firewall status if available
+            if hasattr(self, "firewall_patch") and self.firewall_patch:
+                # Get status from optimizer without forcing timer refresh
+                integration = self.firewall_patch.firewall_integration
+                if hasattr(integration, "optimizer"):
+                    optimizer = integration.optimizer
+                    status = optimizer.get_firewall_status(use_cache=False)
+                else:
+                    status = get_firewall_status()
+            else:
+                # Fallback to standard method
+                status = get_firewall_status()
 
             # Update firewall name display
             fw_name = status.get("firewall_name", "Unknown")

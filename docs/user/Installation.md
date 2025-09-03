@@ -13,13 +13,13 @@ This guide covers installation methods for **S&D - Search & Destroy** on Linux s
 
 ### Software Requirements
 
-| Component | Requirement | Installation Command |
-|-----------|-------------|---------------------|
-| **Operating System** | Linux (tested on Ubuntu/Debian, designed for xanadOS) | N/A |
-| **Python** | Python 3.10 or higher | `sudo apt install python3 python3-pip` |
-| **ClamAV Engine** | ClamAV antivirus engine | `sudo apt install clamav clamav-daemon` |
-| **GUI Framework** | PyQt6 | `pip install PyQt6>=6.5.0` |
-| **RKHunter** | Rootkit scanner (optional) | `sudo apt install rkhunter` |
+| Component            | Requirement                                           | Installation Command                    |
+| -------------------- | ----------------------------------------------------- | --------------------------------------- |
+| **Operating System** | Linux (tested on Ubuntu/Debian, designed for xanadOS) | N/A                                     |
+| **Python**           | Python 3.10 or higher                                 | `sudo apt install python3 python3-pip`  |
+| **ClamAV Engine**    | ClamAV antivirus engine                               | `sudo apt install clamav clamav-daemon` |
+| **GUI Framework**    | PyQt6                                                 | `pip install PyQt6>=6.5.0`              |
+| **RKHunter**         | Rootkit scanner (optional)                            | `sudo apt install rkhunter`             |
 
 ## Installation Methods
 
@@ -27,7 +27,7 @@ This guide covers installation methods for **S&D - Search & Destroy** on Linux s
 
 Flatpak provides the most secure and isolated installation method.
 
-```bash
+````bash
 
 ## Install Flatpak if not present
 
@@ -260,3 +260,4 @@ rm -rf .venv
 ---
 
 **Next Steps**: After installation, see the [User Manual](User_Manual.md) for usage instructions.
+````

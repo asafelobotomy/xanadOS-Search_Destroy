@@ -5,8 +5,8 @@
 [![PyQt6](https://img.shields.io/badge/GUI-PyQt6-blue.svg)](https://riverbankcomputing.com/software/pyqt/)
 [![ClamAV](https://img.shields.io/badge/Engine-ClamAV-red.svg)](https://www.clamav.net/)
 
-**A comprehensive Linux security scanner and system protection suite with advanced
-malware detection, real-time monitoring, and enterprise-grade security hardening.**
+**A comprehensive Linux security scanner and system protection suite with advanced malware
+detection, real-time monitoring, and enterprise-grade security hardening.**
 
 _Security Rating: **A- (Excellent)** | Production Ready | Current Version: 2.11.2_
 
@@ -147,8 +147,8 @@ npm run quick:validate
 - **`make install-advanced`** - Advanced features (ML, analytics, cloud)
 - **`make install-all`** - Complete feature set
 
-All critical dependencies (numpy, schedule, aiohttp, inotify, dnspython) are now
-included by default! 🎉
+All critical dependencies (numpy, schedule, aiohttp, inotify, dnspython) are now included by
+default! 🎉
 
 ---
 
@@ -156,7 +156,8 @@ included by default! 🎉
 
 ### **Security Rating: A- (Excellent)**
 
-Based on comprehensive security analysis ([full report](docs/project/SECURITY_PERFORMANCE_REPORT.md)):
+Based on comprehensive security analysis
+([full report](docs/project/SECURITY_PERFORMANCE_REPORT.md)):
 
 **✅ Security Strengths:**
 
@@ -286,10 +287,10 @@ AI development tools are included for development productivity:
 
 ### **🛡️ Security Application Documentation**
 
-- 📋 **[Complete User Guide](docs/implementation/CONSOLIDATED_IMPLEMENTATION_GUIDE.md)**
-  Full feature overview and usage instructions
-- 🔒 **[Security Analysis Report](docs/project/SECURITY_PERFORMANCE_REPORT.md)**
-  Comprehensive security assessment and ratings
+- 📋 **[Complete User Guide](docs/implementation/CONSOLIDATED_IMPLEMENTATION_GUIDE.md)** Full
+  feature overview and usage instructions
+- 🔒 **[Security Analysis Report](docs/project/SECURITY_PERFORMANCE_REPORT.md)** Comprehensive
+  security assessment and ratings
 - 🚀 **[Performance Benchmarks](docs/project/SECURITY_PERFORMANCE_REPORT.md#performance-analysis)**
   System optimization metrics
 - 📈 **[Release Notes](releases/)** - Version history, features, and improvements
@@ -297,7 +298,8 @@ AI development tools are included for development productivity:
 
 ### **🔧 Development Tools Documentation**
 
-- 🎯 **[Model Targeting Guide](docs/guides/model-targeting-guide.md)** - AI model selection for development
+- 🎯 **[Model Targeting Guide](docs/guides/model-targeting-guide.md)** - AI model selection for
+  development
 - �️ **[Project Structure Guide](docs/guides/PROJECT_STRUCTURE.md)** - Repository organization
 - 🛠️ **[Toolshed Reference](scripts/tools/README.md)** - 20+ automation and quality tools
 - 📋 **[Development Instructions](.github/instructions/)** - AI guidance for coding
@@ -395,11 +397,11 @@ Always maintain system backups and test in non-production environments first.
 
 **xanadOS Search & Destroy** - Comprehensive Linux security with modern development tools. 🛡️
 
-  ```bash
+````bash
 
 ## Copy to VS Code settings directory
 
-  cp .GitHub/Copilot-instructions.md ~/.VS Code/Copilot-instructions.md
+cp .GitHub/Copilot-instructions.md ~/.VS Code/Copilot-instructions.md
 ```text
 
 2. **Or use VS Code command palette**:
@@ -537,3 +539,4 @@ This project is open source and available under standard licensing terms.
 **🎯 Ready to enhance your GitHub Copilot experience?** Start with the
 [Project Structure Guide](docs/guides/PROJECT_STRUCTURE.md) or explore our
 [specialized chatmodes](.GitHub/chatmodes/).
+````

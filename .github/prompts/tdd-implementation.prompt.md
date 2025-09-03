@@ -2,13 +2,12 @@
 applyTo: "**/{src,lib,app,test,tests,spec}/**/*.{js,ts,py,rb,go,java,php,cs}"
 description: "TDD implementation guidance for source and test files"
 priority: "medium"
-
 ---
 
 # Test-Driven Development (TDD) Prompt
 
-You are implementing Test-Driven Development (TDD) methodology.
-Follow the Red-Green-Refactor cycle to build robust, well-tested code with comprehensive test coverage.
+You are implementing Test-Driven Development (TDD) methodology. Follow the Red-Green-Refactor cycle
+to build robust, well-tested code with comprehensive test coverage.
 
 ## TDD Core Principles
 
@@ -25,7 +24,8 @@ Follow the Red-Green-Refactor cycle to build robust, well-tested code with compr
 
 3.
 
-**Third Law**: You may not write more production code than is sufficient to pass the currently failing test
+**Third Law**: You may not write more production code than is sufficient to pass the currently
+failing test
 
 ## TDD Implementation Framework
 
@@ -40,7 +40,7 @@ Follow the Red-Green-Refactor cycle to build robust, well-tested code with compr
 
 #### Example: User Registration Feature
 
-```Markdown
+````Markdown
 
 **User Story**: As a new user, I want to register an account so I can access the application.
 
@@ -810,3 +810,4 @@ def test_password_validation_behavior():
 
 Remember: TDD is not just about testing - it's a design methodology that leads to better code architecture, higher quality, and more maintainable software.
 The tests are a byproduct of good design practices.
+````

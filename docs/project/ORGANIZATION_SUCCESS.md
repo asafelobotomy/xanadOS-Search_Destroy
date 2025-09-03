@@ -27,7 +27,7 @@
 
 ### Daily Development
 
-```bash
+````bash
 
 ## Check organization (automatic via Git hook)
 
@@ -183,3 +183,4 @@ For ongoing questions about organization, see:
 - `docs/project/ORGANIZATION_QUICK_REFERENCE.md` - Quick commands
 - `docs/project/REPOSITORY_ORGANIZATION.md` - Complete guide
 - `dev/README.md` - Development tools documentation
+````

@@ -4,12 +4,12 @@ This document describes the architecture and organization of the xanadOS-Search_
 
 ## Overview
 
-S&D (Search & Destroy) is a modern GUI application for ClamAV antivirus scanning, built with Python and PyQt6.
-The application follows a modular architecture with clear separation of concerns.
+S&D (Search & Destroy) is a modern GUI application for ClamAV antivirus scanning, built with Python
+and PyQt6. The application follows a modular architecture with clear separation of concerns.
 
 ## Directory Structure
 
-```text
+````text
 xanadOS-Search_Destroy/
 │
 ├── app/                           # Main application package
@@ -211,3 +211,4 @@ Python app/main.py
 - **CPU Usage**: Adaptive based on system resources
 - **Storage**: Minimal footprint, configurable cache
 - **Network**: Optional cloud features, local by default
+````

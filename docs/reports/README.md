@@ -31,4 +31,5 @@ This directory contains all project reports organized by category.
 
 ## Usage
 
-These reports document the development process, quality improvements, security enhancements, and achievements of the xanadOS Search & Destroy project.
+These reports document the development process, quality improvements, security enhancements, and
+achievements of the xanadOS Search & Destroy project.

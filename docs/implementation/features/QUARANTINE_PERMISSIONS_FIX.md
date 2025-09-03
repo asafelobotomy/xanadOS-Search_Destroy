@@ -4,7 +4,7 @@
 
 During application startup, users were seeing this warning:
 
-```text
+````text
 Startup self-check warnings:
 Weak permissions on quarantine (0o755); expected 0o700
 
@@ -206,3 +206,4 @@ Date: August 11, 2025
 Status: ✅ COMPLETED AND TESTED
 Security Impact: HIGH (Improved isolation of potentially malicious files)
 User Impact: LOW (Silent fix, no user action required)
+````

@@ -36,7 +36,7 @@ except ImportError as e:
         f"Unified Performance Optimizer unavailable: {e}"
     )
 
-# Legacy components (maintained for compatibility)
+# Core components
 try:
     from .async_scanner import AsyncFileScanner
 except ImportError:
@@ -46,7 +46,7 @@ from .rate_limiting import AdaptiveRateLimiter
 from .telemetry import TelemetryManager
 from .ui_responsiveness import initialize_responsive_ui
 
-# Performance optimization components (legacy fallback)
+# Performance optimization components
 try:
     from .memory_optimizer import MemoryOptimizer
 except ImportError:

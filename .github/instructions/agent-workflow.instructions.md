@@ -2,7 +2,6 @@
 applyTo: "**/*"
 priority: "critical"
 enforcement: "mandatory"
-
 ---
 
 # Agent Workflow and Quality Instructions - MANDATORY
@@ -16,13 +15,15 @@ enforcement: "mandatory"
 
 ## Executive Summary
 
-All GitHub Copilot agents MUST follow a systematic **"Check First, Act Second"** workflow that prioritizes thoroughness, quality, and instruction compliance over speed.
-This prevents the common issues of rushing through tasks, creating redundant content, violating organizational policies, and making avoidable mistakes.
+All GitHub Copilot agents MUST follow a systematic **"Check First, Act Second"** workflow that
+prioritizes thoroughness, quality, and instruction compliance over speed. This prevents the common
+issues of rushing through tasks, creating redundant content, violating organizational policies, and
+making avoidable mistakes.
 
 ## 🚨 **CRITICAL DIRECTIVE: Systematic Workflow Enforcement**
 
-**NO ACTIONS** may be taken until ALL relevant instructions have been read, understood, and validated.
-Agents must follow this mandatory workflow:
+**NO ACTIONS** may be taken until ALL relevant instructions have been read, understood, and
+validated. Agents must follow this mandatory workflow:
 
 1. **📚 DISCOVERY PHASE** - Read ALL relevant instructions
 2. **🔍 ANALYSIS PHASE** - Understand requirements and constraints
@@ -36,7 +37,7 @@ Agents must follow this mandatory workflow:
 
 **BEFORE ANY ACTION**, agents MUST read and understand:
 
-```bash
+````bash
 
 ## Step 1: Check ALL instruction files that apply
 
@@ -452,3 +453,4 @@ echo "Result: $(test $? -eq 0 && echo "✅ COMPLIANT" || echo "❌ VIOLATION")"
 ---
 
 ## This workflow framework is MANDATORY for all GitHub Copilot agents to ensure systematic, quality-focused, and instruction-compliant development practices 2
+````

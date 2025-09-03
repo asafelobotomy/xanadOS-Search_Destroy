@@ -8,7 +8,8 @@
 2. Again via a GUI dialog (pkexec prompt)
 3. Sometimes additional prompts during the scan process
 
-**Root Cause**: Each privileged operation (is_functional(), update_database(), actual scan) was using separate authentication methods without session reuse, causing multiple prompts.
+**Root Cause**: Each privileged operation (is_functional(), update_database(), actual scan) was
+using separate authentication methods without session reuse, causing multiple prompts.
 
 ## 🔍 **TECHNICAL ANALYSIS**
 
@@ -31,7 +32,7 @@
 
 Added global session state management in `elevated_runner.py`:
 
-```Python
+````Python
 
 ## Global state to track sudo session activity
 
@@ -198,3 +199,4 @@ The fix is:
 ---
 
 **Issue Resolution**: Users will now be prompted for their password only **once** at the beginning of an RKHunter scan, eliminating the frustrating multiple authentication prompts that occurred previously.
+````

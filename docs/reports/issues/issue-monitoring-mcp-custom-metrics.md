@@ -10,8 +10,8 @@
 
 ## Summary
 
-Define, implement, and document custom metrics for the Monitoring MCP server, replacing the
-current placeholder in `getCustomMetrics`.
+Define, implement, and document custom metrics for the Monitoring MCP server, replacing the current
+placeholder in `getCustomMetrics`.
 
 ## Background
 

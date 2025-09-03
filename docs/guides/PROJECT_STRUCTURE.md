@@ -1,7 +1,7 @@
 # Project Structure
 
-This document outlines the organized repository structure for xanadOS Search & Destroy
-with integrated AI development tools.
+This document outlines the organized repository structure for xanadOS Search & Destroy with
+integrated AI development tools.
 
 ## 📁 Repository Organization
 
@@ -151,14 +151,14 @@ xanadOS-Search_Destroy/
 
 ## 📖 Navigation Guide
 
-| Need | Location | Key Files |
-|------|----------|-----------|
-| **Launch App** | `app/main.py` | Main application entry point |
-| **Security Guide** | `docs/project/` | `SECURITY_PERFORMANCE_REPORT.md` |
-| **Implementation** | `docs/implementation/` | `CONSOLIDATED_IMPLEMENTATION_GUIDE.md` |
-| **AI Tools** | `.github/chatmodes/` | `security.chatmode.md`, `testing.chatmode.md` |
-| **Development** | `scripts/tools/` | Quality, validation, and automation tools |
-| **Configuration** | `config/` | Security policies and application settings |
+| Need               | Location               | Key Files                                     |
+| ------------------ | ---------------------- | --------------------------------------------- |
+| **Launch App**     | `app/main.py`          | Main application entry point                  |
+| **Security Guide** | `docs/project/`        | `SECURITY_PERFORMANCE_REPORT.md`              |
+| **Implementation** | `docs/implementation/` | `CONSOLIDATED_IMPLEMENTATION_GUIDE.md`        |
+| **AI Tools**       | `.github/chatmodes/`   | `security.chatmode.md`, `testing.chatmode.md` |
+| **Development**    | `scripts/tools/`       | Quality, validation, and automation tools     |
+| **Configuration**  | `config/`              | Security policies and application settings    |
 
 ## 🎨 Benefits of This Organization
 
@@ -183,6 +183,5 @@ xanadOS-Search_Destroy/
 - ✅ Scalable architecture for both security features and development tools
 - ✅ Comprehensive documentation for both end users and developers
 
-This structure supports both a production-ready security application and
-advanced AI-assisted development workflow, making it an exemplary
-repository for modern software development practices.
+This structure supports both a production-ready security application and advanced AI-assisted
+development workflow, making it an exemplary repository for modern software development practices.

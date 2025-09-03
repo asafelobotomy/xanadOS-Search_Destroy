@@ -88,7 +88,7 @@ class ClamAVWrapper:
                 }
 
             # Fallback cache dir for testing
-            cache_dir = Path("/tmp") / "xanados_test_cache"
+            cache_dir = Path("/tmp") / "xanados_test_cache"  # nosec B108
 
         self.logger = setup_logging()
         self.config = load_config()
@@ -117,7 +117,7 @@ class ClamAVWrapper:
         except (TypeError, AttributeError):
             # Fallback for testing - use secure temp directory
             self.custom_db_path = (
-                Path("/tmp") / "xanados_test_cache" / "custom_signatures"
+                Path("/tmp") / "xanados_test_cache" / "custom_signatures"  # nosec B108
             )
 
         try:

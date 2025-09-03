@@ -6,7 +6,7 @@ This document outlines the maintenance practices for the xanadOS-Search_Destroy 
 
 ### Automated Cleanup
 
-```bash
+````bash
 
 ## Clean Python cache files
 
@@ -139,3 +139,4 @@ Monitor:
 - Code complexity metrics
 - Documentation completeness
 - Issue resolution time
+````

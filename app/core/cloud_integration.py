@@ -32,7 +32,7 @@ except ImportError:  # pragma: no cover - fallback mocks
 
     class _MockBoto3:
         @staticmethod
-        def client(*_args, **_kwargs):
+        def client(*_args: Any, **_kwargs: Any) -> Any:
             return type(
                 "",
                 (),
@@ -51,8 +51,8 @@ except ImportError:  # pragma: no cover - fallback mocks
                 },
             )()
 
-    boto3 = _MockBoto3()  # type: ignore
-    ClientError = Exception  # type: ignore
+    boto3 = _MockBoto3()
+    ClientError = Exception
 
 try:
     from cryptography.fernet import Fernet
@@ -61,28 +61,28 @@ try:
 except ImportError:  # pragma: no cover - fallback mocks
 
     class Fernet:  # type: ignore
-        def __init__(self, _key):
+        def __init__(self, _key: Any) -> None:
             pass
 
         @staticmethod
-        def encrypt(data):
+        def encrypt(data: Any) -> Any:
             return data
 
         @staticmethod
-        def decrypt(data):
+        def decrypt(data: Any) -> Any:
             return data
 
-    class _MockHashes:  # type: ignore
+    class _MockHashes:
         @staticmethod
-        def SHA256():
+        def SHA256() -> None:
             return None
 
     class PBKDF2HMAC:  # type: ignore
-        def __init__(self, **_kwargs):
+        def __init__(self, **_kwargs: Any) -> None:
             pass
 
         @staticmethod
-        def derive(_password):
+        def derive(_password: Any) -> bytes:
             return b"mock_key" * 4
 
     hashes = _MockHashes()  # type: ignore
@@ -186,8 +186,8 @@ class CloudIntegrationSystem:
 
     def __init__(
         self,
-        cloud_config: CloudConfig = None,
-        threat_intel_config: ThreatIntelConfig = None,
+        cloud_config: CloudConfig | None = None,
+        threat_intel_config: ThreatIntelConfig | None = None,
     ):
         self.logger = logging.getLogger(__name__)
 
@@ -203,22 +203,22 @@ class CloudIntegrationSystem:
         self.encryption_key = self._generate_encryption_key()
 
         # Cloud clients
-        self.cloud_client = None
-        self.session = None
+        self.cloud_client: Any = None
+        self.session: aiohttp.ClientSession | None = None
 
         # Sync status
         self.sync_status = CloudSyncStatus()
 
         # Rate limiting
-        self.rate_limiters = {}
+        self.rate_limiters: dict[str, dict[str, Any]] = {}
 
         # Background tasks
-        self.sync_task = None
-        self.threat_intel_task = None
+        self.sync_task: asyncio.Task[None] | None = None
+        self.threat_intel_task: asyncio.Task[None] | None = None
 
         self.logger.info("Cloud integration system initialized")
 
-    async def initialize(self):
+    async def initialize(self) -> None:
         """Initialize cloud integration system."""
         try:
             # Initialize HTTP session
@@ -248,7 +248,7 @@ class CloudIntegrationSystem:
             self.logger.error("Error initializing cloud integration: %s", e)
             raise
 
-    async def cleanup(self):
+    async def cleanup(self) -> None:
         """Cleanup cloud integration system."""
         try:
             # Cancel background tasks
@@ -325,7 +325,7 @@ class CloudIntegrationSystem:
             return False
 
     async def download_threat_intelligence(
-        self, hash_value: str = None
+        self, hash_value: str | None = None
     ) -> list[ThreatIntelligence]:
         """Download threat intelligence from cloud sources.
 
@@ -409,7 +409,7 @@ class CloudIntegrationSystem:
             return False
 
     async def restore_scan_data(
-        self, backup_date: datetime = None
+        self, backup_date: datetime | None = None
     ) -> list[dict[str, Any]]:
         """Restore scan data from cloud backup.
 
@@ -528,7 +528,7 @@ class CloudIntegrationSystem:
         self,
         file_hash: str,
         detection_name: str,
-        additional_info: dict[str, Any] = None,
+        additional_info: dict[str, Any] | None = None,
     ) -> bool:
         """Submit false positive report to improve community detection.
 
@@ -615,7 +615,7 @@ class CloudIntegrationSystem:
 
     # Private methods
 
-    def _init_database(self):
+    def _init_database(self) -> None:
         """Initialize threat intelligence database."""
         try:
             with sqlite3.connect(self.db_path) as conn:
@@ -693,7 +693,7 @@ class CloudIntegrationSystem:
             self.logger.error("Error generating encryption key: %s", e)
             raise
 
-    async def _init_cloud_client(self):
+    async def _init_cloud_client(self) -> None:
         """Initialize cloud provider client."""
         try:
             if self.cloud_config.provider == CloudProvider.AWS_S3:
@@ -731,7 +731,7 @@ class CloudIntegrationSystem:
             self.logger.error("Error initializing cloud client: %s", e)
             raise
 
-    async def _init_threat_intel_sources(self):
+    async def _init_threat_intel_sources(self) -> None:
         """Initialize threat intelligence sources."""
         try:
             for source in self.threat_intel_config.sources:
@@ -755,7 +755,7 @@ class CloudIntegrationSystem:
         except Exception as e:
             self.logger.error("Error initializing threat intel sources: %s", e)
 
-    async def _sync_loop(self):
+    async def _sync_loop(self) -> None:
         """Background synchronization loop."""
         try:
             while True:
@@ -772,7 +772,7 @@ class CloudIntegrationSystem:
         except asyncio.CancelledError:
             self.logger.info("Sync loop cancelled")
 
-    async def _threat_intel_loop(self):
+    async def _threat_intel_loop(self) -> None:
         """Background threat intelligence update loop."""
         try:
             while True:
@@ -940,7 +940,7 @@ class CloudIntegrationSystem:
             return None
 
     async def _query_threat_source(
-        self, source: ThreatIntelSource, hash_value: str = None
+        self, source: ThreatIntelSource, hash_value: str | None = None
     ) -> list[ThreatIntelligence]:
         """Query specific threat intelligence source."""
         try:
@@ -964,7 +964,7 @@ class CloudIntegrationSystem:
             return []
 
     async def _query_virustotal(
-        self, hash_value: str = None
+        self, hash_value: str | None = None
     ) -> list[ThreatIntelligence]:
         """Query VirusTotal API."""
         try:
@@ -994,14 +994,14 @@ class CloudIntegrationSystem:
             return []
 
     async def _query_malwarebytes(
-        self, hash_value: str = None
+        self, hash_value: str | None = None
     ) -> list[ThreatIntelligence]:
         """Query Malwarebytes threat intelligence."""
         # Placeholder implementation
         return []
 
     async def _query_community_db(
-        self, hash_value: str = None
+        self, hash_value: str | None = None
     ) -> list[ThreatIntelligence]:
         """Query community threat database."""
         try:
@@ -1097,7 +1097,7 @@ class CloudIntegrationSystem:
         """Filter and deduplicate threat intelligence."""
         try:
             # Group by hash value
-            hash_groups = {}
+            hash_groups: dict[str, list[ThreatIntelligence]] = {}
             for intel in intelligence_list:
                 if intel.hash_value not in hash_groups:
                     hash_groups[intel.hash_value] = []
@@ -1134,7 +1134,7 @@ class CloudIntegrationSystem:
 
     async def _cache_threat_intelligence(
         self, intelligence_list: list[ThreatIntelligence]
-    ):
+    ) -> None:
         """Cache threat intelligence in local database."""
         try:
             with sqlite3.connect(self.db_path) as conn:
@@ -1247,7 +1247,7 @@ class CloudIntegrationSystem:
             self.logger.error("Error checking rate limit: %s", e)
             return True
 
-    async def _record_upload(self, threat_data: dict[str, Any]):
+    async def _record_upload(self, threat_data: dict[str, Any]) -> None:
         """Record upload in database log."""
         try:
             with sqlite3.connect(self.db_path) as conn:
@@ -1268,7 +1268,9 @@ class CloudIntegrationSystem:
         except Exception as e:
             self.logger.error("Error recording upload: %s", e)
 
-    async def _list_backup_files(self, backup_date: datetime = None) -> list[str]:
+    async def _list_backup_files(
+        self, backup_date: datetime | None = None
+    ) -> list[str]:
         """List available backup files."""
         # Placeholder implementation
         return []
@@ -1289,7 +1291,9 @@ class CloudIntegrationSystem:
             self.logger.error("Error downloading community signatures: %s", e)
             return []
 
-    async def _update_signature_database(self, signatures: list[dict[str, Any]]):
+    async def _update_signature_database(
+        self, signatures: list[dict[str, Any]]
+    ) -> None:
         """Update local signature database."""
         # This would update the local antivirus signature database
         # Placeholder implementation

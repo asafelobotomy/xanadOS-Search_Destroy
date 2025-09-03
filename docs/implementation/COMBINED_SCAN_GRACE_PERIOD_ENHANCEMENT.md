@@ -6,7 +6,8 @@ _Date: January 15, 2025_
 
 ## 🎯 **Problem Solved**
 
-Combined scans ("Enhanced Quick Security Scan - RKHunter + ClamAV") now fully support the 30-second authentication grace period for stopping RKHunter scans without re-authentication.
+Combined scans ("Enhanced Quick Security Scan - RKHunter + ClamAV") now fully support the 30-second
+authentication grace period for stopping RKHunter scans without re-authentication.
 
 ## ✅ **Enhancements Implemented**
 
@@ -21,7 +22,7 @@ Combined scans ("Enhanced Quick Security Scan - RKHunter + ClamAV") now fully su
 
 #### **Combined Scan Start Messages**
 
-```text
+````text
 🔍 Starting RKHunter scan (part of combined security scan)...
 ⏱️ Grace period: You can stop this scan without re-authentication for 30 seconds after it starts
 
@@ -121,3 +122,4 @@ def _terminate_with_privilege_escalation(self, pid: int) -> bool:
 
 Users can now start a combined security scan, authenticate once, and then stop the scan within 30 seconds without needing to re-authenticate.
 This greatly improves the user experience while maintaining security standards.
+````

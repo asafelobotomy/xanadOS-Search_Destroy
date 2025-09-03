@@ -1,6 +1,5 @@
 ---
 applyTo: "**/*.{js,ts,py,rb,go,java,php,cs,rs,kt,swift}"
-
 ---
 
 # Security Guidelines for All Code Files
@@ -95,4 +94,5 @@ applyTo: "**/*.{js,ts,py,rb,go,java,php,cs,rs,kt,swift}"
 - **Secrets Detection**: `security-scan.sh --secrets-only` for credential leak prevention
 - **Comprehensive Analysis**: `security-scan.sh --all` for complete security assessment
 
-**CRITICAL**: When security conflicts with performance or usability, security takes absolute precedence.
+**CRITICAL**: When security conflicts with performance or usability, security takes absolute
+precedence.

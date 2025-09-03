@@ -2,7 +2,6 @@
 applyTo: "docs/**"
 priority: "critical"
 enforcement: "mandatory"
-
 ---
 
 # Documentation Awareness Instructions - MANDATORY
@@ -16,10 +15,9 @@ enforcement: "mandatory"
 
 ## Executive Summary
 
-All GitHub Copilot agents MUST check and utilize the existing comprehensive
-documentation system in `/docs/` before creating any documentation files. This
-prevents redundant documentation creation, ensures consistency, and maintains
-quality standards across all projects.
+All GitHub Copilot agents MUST check and utilize the existing comprehensive documentation system in
+`/docs/` before creating any documentation files. This prevents redundant documentation creation,
+ensures consistency, and maintains quality standards across all projects.
 
 ## 🚨 **CRITICAL DIRECTIVE: Check Documentation Repository First**
 
@@ -46,7 +44,7 @@ Before writing ANY documentation, guides, or README files, agents MUST:
 
 **Usage Example**:
 
-```bash
+````bash
 
 ## Instead of writing custom documentation
 
@@ -364,3 +362,4 @@ cat /docs/guides/organization-custom-instructions.md  # Enterprise setup
 **This documentation awareness is MANDATORY for all GitHub Copilot agents to
 ensure efficient, consistent, and high-quality documentation across all
 projects.**
+````

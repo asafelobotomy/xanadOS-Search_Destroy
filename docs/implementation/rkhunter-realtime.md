@@ -2,8 +2,9 @@
 
 ## Overview
 
-Successfully enhanced the RKHunter integration to display real-time command output in the Scan Results section while maintaining progress bar functionality.
-Users now see both visual progress and live text output during RKHunter scans.
+Successfully enhanced the RKHunter integration to display real-time command output in the Scan
+Results section while maintaining progress bar functionality. Users now see both visual progress and
+live text output during RKHunter scans.
 
 ## New Features Added
 
@@ -25,7 +26,7 @@ Users now see both visual progress and live text output during RKHunter scans.
 
 ### New Signal Added to RKHunterScanThread
 
-```Python
+````Python
 class RKHunterScanThread(QThread):
     progress_updated = pyqtSignal(str)           # Status messages
     progress_value_updated = pyqtSignal(int)     # Progress bar (0-100)
@@ -192,3 +193,4 @@ When users run an RKHunter scan (standalone or combined), they now experience:
 - Results for each check (OK, WARNING, etc.)
 
 The implementation provides professional, responsive feedback that keeps users informed throughout the entire rootkit detection process, making the scanning experience much more transparent and engaging.
+````

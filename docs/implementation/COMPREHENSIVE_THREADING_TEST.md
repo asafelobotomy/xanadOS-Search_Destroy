@@ -2,13 +2,16 @@
 
 ## Overview
 
-This document outlines the test sequence for the new comprehensive state management system that handles ThreadPoolExecutor cancellation limitations through proper state tracking and timer-based completion monitoring.
+This document outlines the test sequence for the new comprehensive state management system that
+handles ThreadPoolExecutor cancellation limitations through proper state tracking and timer-based
+completion monitoring.
 
 ## Technical Background
 
 Based on online research, we discovered:
 
-- **ThreadPoolExecutor Limitation**: Running tasks cannot be cancelled (Future.cancel() returns False)
+- **ThreadPoolExecutor Limitation**: Running tasks cannot be cancelled (Future.cancel() returns
+  False)
 - **Qt Threading Best Practice**: Use requestInterruption() instead of dangerous terminate()
 - **Solution**: State management with completion monitoring instead of forced cancellation
 
@@ -76,7 +79,7 @@ Based on online research, we discovered:
 
 Look for these debug messages in terminal:
 
-```text
+````text
 DEBUG: Starting [quick/full] scan, current state: idle
 DEBUG: Scan state set to: scanning
 DEBUG: Stop scan requested, current state: scanning
@@ -122,3 +125,4 @@ If immediate stopping proves impossible, the system will:
 4. Provide clear status updates
 
 This ensures users always get responsive behavior even if underlying cancellation has limitations.
+````

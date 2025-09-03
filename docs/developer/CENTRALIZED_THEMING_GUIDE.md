@@ -2,13 +2,14 @@
 
 ## Overview
 
-The new centralized theming system addresses the scalability and maintenance issues of manual theme application by providing automatic, consistent theming across all GUI components.
+The new centralized theming system addresses the scalability and maintenance issues of manual theme
+application by providing automatic, consistent theming across all GUI components.
 
 ## Problem Solved
 
 ### Before (Manual Theming)
 
-```Python
+````Python
 
 ## Every dialog needed manual theme application
 
@@ -409,3 +410,4 @@ This architectural improvement provides:
 - **Better developer experience** and productivity
 
 This system ensures that all current and future GUI components automatically receive consistent, professional theming without any manual effort from developers.
+````

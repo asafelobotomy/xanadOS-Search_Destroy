@@ -2,7 +2,8 @@
 
 ## Latest Research Findings (2024-2025)
 
-Based on the most current research and official ClamAV developments, this guide incorporates cutting-edge optimization techniques for both performance and security.
+Based on the most current research and official ClamAV developments, this guide incorporates
+cutting-edge optimization techniques for both performance and security.
 
 ## 🚀 ClamAV 1.4 LTS (January 2025) - Key Improvements
 
@@ -25,7 +26,7 @@ Based on the most current research and official ClamAV developments, this guide 
 
 ### 1. Daemon-Based Scanning (Primary Optimization)
 
-```bash
+````bash
 
 ## Enable and start ClamAV daemon
 
@@ -284,3 +285,4 @@ security_status = wrapper.apply_2025_security_hardening()
 
 This guide represents the cutting-edge of ClamAV optimization based on the latest 2024-2025 research and official developments.
 Implementation of these techniques will provide maximum performance while maintaining the highest security standards.
+````

@@ -485,7 +485,3 @@ def get_async_scanner():
     if _async_scanner is None:
         _async_scanner = AsyncFileScanner()
     return _async_scanner
-
-
-# For backward compatibility
-async_scanner = get_async_scanner

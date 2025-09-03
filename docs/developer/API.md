@@ -1,9 +1,9 @@
 # API Documentation
 
-This document provides comprehensive API documentation for the xanadOS-Search_Destroy application (S&D - Search & Destroy).
+This document provides comprehensive API documentation for the xanadOS-Search_Destroy application
+(S&D - Search & Destroy).
 
-**Version**: 2.7.0
-**Updated**: August 19, 2025
+**Version**: 2.7.0 **Updated**: August 19, 2025
 
 ## Core Modules
 
@@ -13,7 +13,7 @@ This document provides comprehensive API documentation for the xanadOS-Search_De
 
 Enhanced ClamAV integration with full feature support and performance optimizations.
 
-```Python
+````Python
 class ClamAVWrapper:
     def **init**(self, config: Optional[Dict[str, Any]] = None)
     def scan_file(self, file_path: str, use_daemon: bool = True, **kwargs) -> ScanFileResult
@@ -268,3 +268,4 @@ For detailed implementation examples and usage patterns, see the comprehensive i
 ---
 
 **Last updated:**August 19, 2025 |**Version:** 2.7.0
+````

@@ -1,16 +1,11 @@
 # !/usr/bin/env python3
 
-"""
-Theme Migration Script
-Automatically converts existing dialogs to use the new centralized theming system.
-"""
+""" Theme Migration Script Automatically converts existing dialogs to use the new centralized
+theming system. """
 
-import os
-import re
-from pathlib import Path
+import os import re from pathlib import Path
 
-def migrate_dialog_files():
-    """Convert all dialog files to use the new theming system."""
+def migrate_dialog_files(): """Convert all dialog files to use the new theming system."""
 
     gui_dir = Path(**file**).parent
 
@@ -87,20 +82,20 @@ def migrate_dialog_files():
 
         print(f"✓ Migrated {file_name}")
 
-def create_theme_usage_guide():
-    """Create a guide for developers on using the new theming system."""
+def create_theme_usage_guide(): """Create a guide for developers on using the new theming system."""
 
     guide_content = """# Theme System Usage Guide
 
 ## Overview
 
-The new centralized theming system automatically applies consistent themes to all GUI components without manual intervention.
+The new centralized theming system automatically applies consistent themes to all GUI components
+without manual intervention.
 
 ## Quick Start
 
 ### For New Dialogs
 
-```Python
+````Python
 from .themed_widgets import ThemedDialog
 
 class MyDialog(ThemedDialog):
@@ -253,3 +248,4 @@ if **name** == "**main**":
     print("1. Test the application to ensure theming works correctly")
     print("2. Read THEME_SYSTEM_GUIDE.md for usage instructions")
     print("3. Remove any remaining manual theme application code")
+````

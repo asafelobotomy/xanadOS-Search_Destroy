@@ -40,6 +40,7 @@ def elevated_run(
             from .gui_auth_manager import elevated_run_gui
 
             logger.info("Using persistent GUI sudo authentication")
+            # Filter out the gui parameter since elevated_run_gui doesn't accept it
             return elevated_run_gui(
                 argv, timeout=timeout, capture_output=capture_output, text=text
             )
@@ -70,6 +71,7 @@ def elevated_popen(
     stderr: int | str = subprocess.PIPE,
     text: bool = True,
     env: dict | None = None,
+    gui: bool = True,
     **kwargs,
 ) -> subprocess.Popen:
     """Start a privileged process using GUI authentication.
@@ -79,6 +81,7 @@ def elevated_popen(
         stdin, stdout, stderr: Standard I/O streams
         text: Whether to use text mode
         env: Environment variables
+        gui: Whether to prefer GUI authentication (always True)
         **kwargs: Additional Popen arguments
 
     Returns:
@@ -94,6 +97,7 @@ def elevated_popen(
         from .gui_auth_manager import elevated_popen_gui
 
         logger.info("Starting privileged process with GUI sudo")
+        # Note: gui parameter is accepted for compatibility but not passed through
         return elevated_popen_gui(
             argv,
             stdin=stdin,
@@ -152,16 +156,3 @@ def validate_auth_session() -> bool:
     except Exception as e:
         logger.error(f"Authentication validation failed: {e}")
         return False
-
-
-# Legacy aliases for backward compatibility
-def _legacy_elevated_run(*args, **kwargs):
-    """Legacy function - redirects to GUI sudo only."""
-    logger.warning("Legacy function called - using GUI sudo only")
-    return elevated_run(*args, **kwargs)
-
-
-def _legacy_elevated_popen(*args, **kwargs):
-    """Legacy function - redirects to GUI sudo only."""
-    logger.warning("Legacy function called - using GUI sudo only")
-    return elevated_popen(*args, **kwargs)

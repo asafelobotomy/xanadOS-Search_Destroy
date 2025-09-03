@@ -1,18 +1,13 @@
 # Release Notes - xanadOS Search & Destroy v2.6.0
 
-> Note: This document predates the app-id migration to
-> `io.GitHub.asafelobotomy.SearchAndDestroy`. When following commands, replace
-> `org.xanados.SearchAndDestroy`with`io.GitHub.asafelobotomy.SearchAndDestroy`
-> and update manifest/metainfo filenames accordingly.
->
->
->
->
+> Note: This document predates the app-id migration to `io.GitHub.asafelobotomy.SearchAndDestroy`.
+> When following commands, replace
+> `org.xanados.SearchAndDestroy`with`io.GitHub.asafelobotomy.SearchAndDestroy` and update
+> manifest/metainfo filenames accordingly.
+
 ## 🎉 S&D - Search & Destroy v2.6.0 - Comprehensive Optimization Release
 
-**Release Date**: January 7, 2025
-**Version**: 2.6.0
-**Type**: Minor Release (Feature Enhancement)
+**Release Date**: January 7, 2025 **Version**: 2.6.0 **Type**: Minor Release (Feature Enhancement)
 
 ---
 
@@ -20,9 +15,9 @@
 
 ### ⚡ **Comprehensive Performance Optimizations**
 
-This release focuses on optimization and enhancement of existing features rather
-than adding new functionality. Version 2.6.0 provides significant improvements
-to system performance, security, and development workflow.
+This release focuses on optimization and enhancement of existing features rather than adding new
+functionality. Version 2.6.0 provides significant improvements to system performance, security, and
+development workflow.
 
 ### 🔧 **Enhanced Development Infrastructure**
 
@@ -131,7 +126,7 @@ to system performance, security, and development workflow.
 
 #### Via Flathub (Recommended)
 
-```bash
+````bash
 flatpak install flathub io.GitHub.asafelobotomy.SearchAndDestroy
 
 ```text
@@ -199,3 +194,4 @@ _Happy scanning and stay secure!_ 🛡️
 ---
 
 _Last Updated: January 7, 2025 - Version 2.6.0_
+````

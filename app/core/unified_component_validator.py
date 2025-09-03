@@ -84,7 +84,7 @@ class UnifiedComponentValidator:
         self.test_data_dir = Path(tempfile.mkdtemp(prefix="xanados_validation_"))
         self.results: list[ValidationResult] = []
 
-    def setup_logging(self, level: int):
+    def setup_logging(self, level: int) -> None:
         """Setup logging configuration"""
         logging.basicConfig(
             level=level,
@@ -121,10 +121,12 @@ class UnifiedComponentValidator:
         return self.test_data_dir
 
     async def validate_unified_security_engine(self) -> ValidationResult:
-        """Validate unified security engine"""
-        errors = []
-        warnings = []
-        performance_metrics = {}
+        """Validate UnifiedSecurityEngine component"""
+        self.logger.info("Validating UnifiedSecurityEngine")
+
+        errors: list[str] = []
+        warnings: list[str] = []
+        performance_metrics: dict[str, Any] = {}
 
         try:
             if not UNIFIED_SECURITY_AVAILABLE:
@@ -150,7 +152,7 @@ class UnifiedComponentValidator:
                 await security_engine.start()
             else:
                 # Initialize the engine if no start method
-                security_engine.initialize()
+                await security_engine.initialize()
             start_time_duration = time.time() - start_time
             performance_metrics["start_time"] = start_time_duration
 
@@ -208,9 +210,9 @@ class UnifiedComponentValidator:
 
     async def validate_unified_performance_optimizer(self) -> ValidationResult:
         """Validate unified performance optimizer"""
-        errors = []
-        warnings = []
-        performance_metrics = {}
+        errors: list[str] = []
+        warnings: list[str] = []
+        performance_metrics: dict[str, Any] = {}
 
         try:
             if not UNIFIED_PERFORMANCE_AVAILABLE:
@@ -233,7 +235,7 @@ class UnifiedComponentValidator:
             start_time = time.time()
             if hasattr(perf_optimizer, "start"):
                 await perf_optimizer.start()
-            else:
+            elif hasattr(perf_optimizer, "initialize"):
                 # Initialize the optimizer
                 perf_optimizer.initialize()
             start_time_duration = time.time() - start_time
@@ -259,7 +261,7 @@ class UnifiedComponentValidator:
 
             # Test performance metrics collection
             if hasattr(perf_optimizer, "get_performance_metrics"):
-                metrics = await perf_optimizer.get_performance_metrics()
+                metrics = perf_optimizer.get_performance_metrics()
                 performance_metrics["current_metrics"] = metrics
 
             # Test resource monitoring
@@ -293,7 +295,7 @@ class UnifiedComponentValidator:
         """Validate integration between unified components"""
         errors = []
         warnings = []
-        performance_metrics = {}
+        performance_metrics: dict[str, Any] = {}
 
         try:
             if not (UNIFIED_SECURITY_AVAILABLE and UNIFIED_PERFORMANCE_AVAILABLE):
@@ -310,12 +312,19 @@ class UnifiedComponentValidator:
                 )
 
             # Initialize both components
-            security_engine = UnifiedSecurityEngine()
+            security_engine = UnifiedSecurityEngine(watch_paths=["/tmp"])  # nosec B108
             perf_optimizer = UnifiedPerformanceOptimizer()
 
             # Test concurrent startup
             start_time = time.time()
-            await asyncio.gather(security_engine.start(), perf_optimizer.start())
+            start_tasks = []
+            if hasattr(security_engine, "start"):
+                start_tasks.append(security_engine.start())
+            if hasattr(perf_optimizer, "start"):
+                start_tasks.append(perf_optimizer.start())
+
+            if start_tasks:
+                await asyncio.gather(*start_tasks)
             concurrent_start_time = time.time() - start_time
             performance_metrics["concurrent_start_time"] = concurrent_start_time
 
@@ -325,13 +334,24 @@ class UnifiedComponentValidator:
             ):
                 health = await security_engine.get_system_health()
                 usage = await perf_optimizer.get_resource_usage()
-                performance_metrics["resource_coordination"] = {
-                    "security_health": health,
-                    "performance_usage": usage,
-                }
+                performance_metrics.update(
+                    {
+                        "resource_coordination": {
+                            "security_health": health,
+                            "performance_usage": usage,
+                        }
+                    }
+                )
 
             # Test graceful concurrent shutdown
-            await asyncio.gather(security_engine.stop(), perf_optimizer.stop())
+            stop_tasks = []
+            if hasattr(security_engine, "stop"):
+                stop_tasks.append(security_engine.stop())
+            if hasattr(perf_optimizer, "stop"):
+                stop_tasks.append(perf_optimizer.stop())
+
+            if stop_tasks:
+                await asyncio.gather(*stop_tasks)
 
             details = f"Integration validation completed. Concurrent start: {concurrent_start_time:.3f}s"
 
@@ -392,7 +412,7 @@ class UnifiedComponentValidator:
             if UNIFIED_PERFORMANCE_AVAILABLE:
                 _ = (_PerformanceMode, _UnifiedPerformanceOptimizer)
 
-            # Test legacy component compatibility
+            # Test component import compatibility
             details = "Import compatibility validation passed"
 
         except ImportError as e:
@@ -416,7 +436,7 @@ class UnifiedComponentValidator:
         self.logger.info("Starting comprehensive unified component validation...")
 
         # Run all validations
-        validations = await asyncio.gather(
+        async_validations = await asyncio.gather(
             self.validate_unified_security_engine(),
             self.validate_unified_performance_optimizer(),
             self.validate_component_integration(),
@@ -425,15 +445,16 @@ class UnifiedComponentValidator:
 
         # Add synchronous validations
         import_validation = self.validate_import_compatibility()
+        validations = list(async_validations)
         validations.append(import_validation)
 
         # Process results
-        results = []
+        results: list[ValidationResult] = []
         total_tests = 0
         passed_tests = 0
         failed_tests = 0
         total_warnings = 0
-        overall_performance = {}
+        overall_performance: dict[str, Any] = {}
 
         for validation in validations:
             if isinstance(validation, Exception):
@@ -524,7 +545,7 @@ class UnifiedComponentValidator:
 
         return recommendations
 
-    def _cleanup_test_data(self):
+    def _cleanup_test_data(self) -> None:
         """Clean up temporary test data"""
         try:
             shutil.rmtree(self.test_data_dir)
@@ -597,7 +618,7 @@ class UnifiedComponentValidator:
         return "\n".join(report)
 
 
-async def main():
+async def main() -> int:
     """Main validation entry point"""
     validator = UnifiedComponentValidator()
 

@@ -4,7 +4,7 @@
 
 ## Directory Structure
 
-```text
+````text
 xanadOS-Search_Destroy/
 ├── app/                    # Main application code
 │   ├── core/              # Core functionality
@@ -76,3 +76,4 @@ No organization issues found.
 ---
 
 _This report is automatically generated. Do not edit manually._
+````

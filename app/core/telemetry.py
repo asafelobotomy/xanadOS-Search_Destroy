@@ -34,9 +34,9 @@ class TelemetryEvent:
 class PrivacyManager:
     """Manages privacy settings and data anonymization."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.logger = logging.getLogger(__name__)
-        self._salt = None
+        self._salt: str | None = None
 
     def get_salt(self) -> str:
         """Get or create a consistent salt for hashing."""
@@ -77,7 +77,7 @@ class PrivacyManager:
 
     def anonymize_user_data(self, data: dict[str, Any]) -> dict[str, Any]:
         """Remove or anonymize personally identifiable information."""
-        anonymized = {}
+        anonymized: dict[str, Any] = {}
 
         for key, value in data.items():
             if key in ["username", "hostname", "ip_address", "mac_address"]:
@@ -111,7 +111,7 @@ class TelemetryCollector:
         self.session_start = time.time()
 
         # Event storage
-        self.events_queue = queue.Queue(maxsize=1000)
+        self.events_queue: queue.Queue[TelemetryEvent] = queue.Queue(maxsize=1000)
         self.events_lock = threading.RLock()
 
         # Periodic flush
@@ -147,7 +147,7 @@ class TelemetryCollector:
         event_type: str,
         data: dict[str, Any] | None = None,
         privacy_level: str | None = None,
-    ):
+    ) -> None:
         """Record a telemetry event."""
         if not self.enabled:
             return
@@ -184,7 +184,7 @@ class TelemetryCollector:
         except Exception as e:
             self.logger.error(f"Failed to record telemetry event: {e}")
 
-    def _update_counters(self, event_type: str, data: dict[str, Any]):
+    def _update_counters(self, event_type: str, data: dict[str, Any]) -> None:
         """Update aggregated counters."""
         with self.events_lock:
             if event_type == "scan_completed":
@@ -199,9 +199,10 @@ class TelemetryCollector:
                 self.counters["gui_interactions"] += 1
 
             # Update session duration
-            self.counters["session_duration"] = time.time() - self.session_start
+            session_duration = int(time.time() - self.session_start)
+            self.counters["session_duration"] = session_duration
 
-    def _flush_events(self):
+    def _flush_events(self) -> None:
         """Flush events to storage."""
         if not self.enabled:
             return
@@ -259,7 +260,7 @@ class TelemetryCollector:
                 "events_queued": self.events_queue.qsize(),
             }
 
-    def cleanup_old_data(self, days_to_keep: int = 30):
+    def cleanup_old_data(self, days_to_keep: int = 30) -> None:
         """Clean up old telemetry data."""
         cutoff_date = datetime.now() - timedelta(days=days_to_keep)
 
@@ -271,8 +272,8 @@ class TelemetryCollector:
         except Exception as e:
             self.logger.error(f"Failed to cleanup old telemetry data: {e}")
 
-    def export_summary(self, output_path: str):
-        """Export aggregated summary for analysis."""
+    def export_summary(self, output_path: str) -> None:
+        """Export a summary of telemetry data."""
         try:
             summary = {
                 "export_timestamp": datetime.now().isoformat(),
@@ -312,7 +313,7 @@ class TelemetryCollector:
 
         return info
 
-    def shutdown(self):
+    def shutdown(self) -> None:
         """Shutdown telemetry and flush remaining events."""
         if self.enabled:
             self._flush_events()
@@ -347,7 +348,7 @@ class TelemetryManager:
         duration: float,
         threats_found: int = 0,
         errors: int = 0,
-    ):
+    ) -> None:
         """Record a scan completion event."""
         self.collector.record_event(
             "scan_completed",
@@ -363,24 +364,24 @@ class TelemetryManager:
             },
         )
 
-    def record_threat_event(self, threat_type: str, action_taken: str):
+    def record_threat_event(self, threat_type: str, action_taken: str) -> None:
         """Record a threat detection event."""
         self.collector.record_event(
             "threat_detected",
             {"threat_type": threat_type, "action_taken": action_taken},
         )
 
-    def record_gui_interaction(self, component: str, action: str):
+    def record_gui_interaction(self, component: str, action: str) -> None:
         """Record a GUI interaction event."""
         self.collector.record_event(
             "gui_interaction", {"component": component, "action": action}
         )
 
-    def record_performance_metrics(self, metrics: dict[str, Any]):
+    def record_performance_metrics(self, metrics: dict[str, Any]) -> None:
         """Record performance metrics."""
         self.collector.record_event("performance_metrics", metrics)
 
-    def record_error(self, error_type: str, component: str, details: str = ""):
+    def record_error(self, error_type: str, component: str, details: str = "") -> None:
         """Record an error event."""
         self.collector.record_event(
             "error_occurred",
@@ -400,7 +401,7 @@ class TelemetryManager:
             "anonymous_only": self.collector.privacy_level == "anonymous",
         }
 
-    def update_privacy_settings(self, enabled: bool, privacy_level: str):
+    def update_privacy_settings(self, enabled: bool, privacy_level: str) -> None:
         """Update privacy settings."""
         self.collector.enabled = enabled
         self.collector.privacy_level = privacy_level
@@ -410,7 +411,7 @@ class TelemetryManager:
             {"enabled": enabled, "privacy_level": privacy_level},
         )
 
-    def shutdown(self):
+    def shutdown(self) -> None:
         """Shutdown telemetry."""
         self.collector.record_event(
             "app_shutdown",
@@ -431,12 +432,12 @@ def get_telemetry_manager(config: dict[str, Any] | None = None) -> TelemetryMana
     return _telemetry_manager
 
 
-def initialize_telemetry(config: dict[str, Any] | None = None):
+def initialize_telemetry(config: dict[str, Any] | None = None) -> TelemetryManager:
     """Initialize global telemetry system."""
     return get_telemetry_manager(config)
 
 
-def shutdown_telemetry():
+def shutdown_telemetry() -> None:
     """Shutdown global telemetry system."""
     global _telemetry_manager
     if _telemetry_manager:
@@ -445,27 +446,30 @@ def shutdown_telemetry():
 
 
 # Convenience functions
-def record_scan(scan_type: str, file_count: int, duration: float, **kwargs):
+def record_scan(
+    scan_type: str, file_count: int, duration: float, **kwargs: Any
+) -> None:
     """Record a scan event."""
-    get_telemetry_manager().record_scan_event(scan_type, file_count, duration, **kwargs)
+    manager = get_telemetry_manager()
+    manager.record_scan_event(scan_type, file_count, duration, **kwargs)
 
 
-def record_threat(threat_type: str, action_taken: str):
+def record_threat(threat_type: str, action_taken: str) -> None:
     """Record a threat event."""
     get_telemetry_manager().record_threat_event(threat_type, action_taken)
 
 
-def record_gui_action(component: str, action: str):
+def record_gui_action(component: str, action: str) -> None:
     """Record a GUI interaction."""
     get_telemetry_manager().record_gui_interaction(component, action)
 
 
-def record_performance(metrics: dict[str, Any]):
+def record_performance(metrics: dict[str, Any]) -> None:
     """Record performance metrics."""
     get_telemetry_manager().record_performance_metrics(metrics)
 
 
-def record_error(error_type: str, component: str, details: str = ""):
+def record_error(error_type: str, component: str, details: str = "") -> None:
     """Record an error."""
     get_telemetry_manager().record_error(error_type, component, details)
 

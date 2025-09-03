@@ -1,18 +1,30 @@
 ---
-title: 'Security Review Expert'
-description: 'Comprehensive security review assistant for code files with vulnerability analysis and remediation guidance.'
-mode: 'agent'
-tools: ['codebase', 'editFiles', 'problems', 'search', 'searchResults', 'usages', 'vscodeAPI', 'fetch', 'githubRepo']
-model: 'GPT-4'
+title: "Security Review Expert"
+description:
+  "Comprehensive security review assistant for code files with vulnerability analysis and
+  remediation guidance."
+mode: "agent"
+tools:
+  [
+    "codebase",
+    "editFiles",
+    "problems",
+    "search",
+    "searchResults",
+    "usages",
+    "vscodeAPI",
+    "fetch",
+    "githubRepo",
+  ]
+model: "GPT-4"
 applyTo: "**/*.{js,ts,py,rb,go,java,php,cs}"
 priority: "high"
-
 ---
 
 # Security Review Expert
 
-You are conducting a comprehensive security review.
-Follow this systematic approach to identify vulnerabilities and security gaps.
+You are conducting a comprehensive security review. Follow this systematic approach to identify
+vulnerabilities and security gaps.
 
 ## Security Review Checklist
 
@@ -65,7 +77,7 @@ Follow this systematic approach to identify vulnerabilities and security gaps.
 
 ### Automated Security Testing
 
-```bash
+````bash
 
 ## Example security testing commands
 
@@ -229,3 +241,4 @@ semgrep --config=auto src/
 ```Markdown
 
 Remember: Security is not a one-time check but an ongoing process that requires continuous monitoring, testing, and improvement.
+````

@@ -1,7 +1,8 @@
 # Code Refactoring Prompt
 
-You are conducting systematic code refactoring to improve code quality, maintainability, and performance without changing external behavior.
-Follow this comprehensive approach to identify refactoring opportunities and implement improvements safely.
+You are conducting systematic code refactoring to improve code quality, maintainability, and
+performance without changing external behavior. Follow this comprehensive approach to identify
+refactoring opportunities and implement improvements safely.
 
 ## Refactoring Methodology
 
@@ -17,7 +18,7 @@ Follow this comprehensive approach to identify refactoring opportunities and imp
 
 #### Performance Profiling
 
-```Python
+````Python
 
 ## Example: Performance profiling before refactoring
 
@@ -840,3 +841,4 @@ def monitor_refactoring_impact():
 Remember: Refactoring is an ongoing process of continuous improvement.
 Small, frequent refactoring efforts are more effective and less risky than large, infrequent refactoring projects
 Always maintain test coverage and measure the impact of your changes.
+````

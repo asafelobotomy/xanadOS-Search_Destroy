@@ -2,25 +2,25 @@
 
 ## Overview
 
-Fixed multiple critical inconsistencies in the scan reporting system that were causing incorrect statistics and misleading scan options.
+Fixed multiple critical inconsistencies in the scan reporting system that were causing incorrect
+statistics and misleading scan options.
 
 ## Issues Identified & Fixed
 
 ### 1. **Files Scanned Count Showing 0**
 
 **Problem**: Scan completed with files listed as scanned, but final report showed "Files scanned: 0"
-**Root Cause**: ScanThread was not passing scan_options to FileScanner
-**Fix**:
+**Root Cause**: ScanThread was not passing scan_options to FileScanner **Fix**:
 
 - Added `**self.scan_options` to both scan_directory calls in ScanThread
 - Added progress tracking in detailed_scan_progress to track actual files processed
-- Added fallback logic in display_scan_results to use progress tracking count if FileScanner result is incorrect
+- Added fallback logic in display_scan_results to use progress tracking count if FileScanner result
+  is incorrect
 
 ### 2. **Duration Showing 0.0 Seconds**
 
-**Problem**: Scans taking 6+ minutes showed "Duration: 0.0 seconds"
-**Root Cause**: Scan start time not being tracked properly
-**Fix**:
+**Problem**: Scans taking 6+ minutes showed "Duration: 0.0 seconds" **Root Cause**: Scan start time
+not being tracked properly **Fix**:
 
 - Added `_scan_start_time`tracking in`_clear_results_with_header()`
 - Calculate actual duration from tracked start time when result duration is 0
@@ -28,9 +28,8 @@ Fixed multiple critical inconsistencies in the scan reporting system that were c
 
 ### 3. **Scan Options Not Applied**
 
-**Problem**: UI showed "Executable files only" but scan included all file types (.png, .md, .JSON, etc.)
-**Root Cause**: FileScanner wasn't implementing file filtering options
-**Fix**:
+**Problem**: UI showed "Executable files only" but scan included all file types (.png, .md, .JSON,
+etc.) **Root Cause**: FileScanner wasn't implementing file filtering options **Fix**:
 
 - Implemented file filtering logic in `scan_directory()` method:
 - `file_filter='executables'` - Only scan executable files
@@ -41,8 +40,7 @@ Fixed multiple critical inconsistencies in the scan reporting system that were c
 
 ### 4. **Depth Limiting Not Working**
 
-**Problem**: Depth options displayed but not applied
-**Fix**:
+**Problem**: Depth options displayed but not applied **Fix**:
 
 - Implemented depth-limited scanning with `_scan_directory_with_depth()` method
 - Added depth parameter parsing and validation
@@ -59,8 +57,8 @@ Fixed multiple critical inconsistencies in the scan reporting system that were c
 
 ### 6. **Target Description Mismatch**
 
-**Problem**: Said "Multiple directories (8 user directories, 3 system directories)" but only showed 3 total
-**Fix**:
+**Problem**: Said "Multiple directories (8 user directories, 3 system directories)" but only showed
+3 total **Fix**:
 
 - Added debugging for scan options to verify what's being passed
 - Enhanced `format_target_display()` to handle different path types consistently
@@ -70,7 +68,7 @@ Fixed multiple critical inconsistencies in the scan reporting system that were c
 
 ### FileScanner Enhancements
 
-```Python
+````Python
 
 ## Added comprehensive option handling
 
@@ -188,3 +186,4 @@ DEBUG: Using progress tracking count: 45 files
 - `/app/gui/main_window.py` - Enhanced progress tracking, duration calculation, statistics correction
 
 The scan reporting system now provides accurate, consistent information that matches the actual scan behavior and applied options.
+````

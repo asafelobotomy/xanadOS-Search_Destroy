@@ -2,7 +2,8 @@
 
 ## Overview
 
-All privilege escalation throughout the application now uses the same standardized GUI sudo method that RKHunter uses, providing a consistent user experience.
+All privilege escalation throughout the application now uses the same standardized GUI sudo method
+that RKHunter uses, providing a consistent user experience.
 
 ## Changes Made
 
@@ -32,7 +33,8 @@ All privilege escalation throughout the application now uses the same standardiz
 
 ## Privilege Escalation Priority Order
 
-The `elevated_run` function (used by RKHunter and now all other operations) prioritizes methods in this order:
+The `elevated_run` function (used by RKHunter and now all other operations) prioritizes methods in
+this order:
 
 1. **🥇 Passwordless sudo** (if configured)
 
@@ -75,7 +77,7 @@ The `elevated_run` function (used by RKHunter and now all other operations) prio
 
 ### Standard Pattern
 
-```Python
+````Python
 from .elevated_runner import elevated_run
 
 ## All privilege escalation now uses this pattern
@@ -121,3 +123,4 @@ Users will now see the same password dialog style for all operations requiring p
 - Policy file installations
 
 This provides a more professional and consistent user experience throughout the application.
+````

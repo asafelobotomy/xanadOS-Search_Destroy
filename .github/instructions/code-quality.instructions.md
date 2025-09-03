@@ -1,6 +1,5 @@
 ---
 applyTo: "**/*.{js,ts,tsx,jsx,py,rb,go,java,php,cs,rs,kt,swift,sh,md}"
-
 ---
 
 # Code Quality and Formatting Standards - MANDATORY
@@ -32,11 +31,10 @@ applyTo: "**/*.{js,ts,tsx,jsx,py,rb,go,java,php,cs,rs,kt,swift,sh,md}"
 
 ## Executive Summary
 
-This policy establishes comprehensive standards for code quality, linting, and
-formatting based on industry best practices from ShellCheck, markdownlint,
-Prettier, and EditorConfig standards. All GitHub Copilot agents MUST implement
-and maintain these standards to ensure consistent, high-quality code across all
-repositories.
+This policy establishes comprehensive standards for code quality, linting, and formatting based on
+industry best practices from ShellCheck, markdownlint, Prettier, and EditorConfig standards. All
+GitHub Copilot agents MUST implement and maintain these standards to ensure consistent, high-quality
+code across all repositories.
 
 ## Placeholders, TODOs, and Stubs Policy (MANDATORY)
 
@@ -64,7 +62,7 @@ repositories.
 
 #### ShellCheck Installation and Usage
 
-```bash
+````bash
 
 ## Docker-based linting (recommended)
 
@@ -852,3 +850,4 @@ Non-compliance will result in repository quality issues and additional oversight
 procedures. All code work must follow these standards without exception.
 
 ## Version control implementation is a prerequisite for all development work
+````

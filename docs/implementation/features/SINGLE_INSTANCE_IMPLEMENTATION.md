@@ -90,11 +90,10 @@ The application could run multiple instances simultaneously, which could lead to
 
 ## Testing Results
 
-✅ **First Instance**: Starts normally and acquires lock
-✅ **Second Instance**: Detects existing instance and exits gracefully
-✅ **Window Restoration**: Successfully brings existing window to front
-✅ **Cleanup**: Properly releases locks when application exits
-✅ **Restart**: Can start new instance after previous one exits
+✅ **First Instance**: Starts normally and acquires lock ✅ **Second Instance**: Detects existing
+instance and exits gracefully ✅ **Window Restoration**: Successfully brings existing window to
+front ✅ **Cleanup**: Properly releases locks when application exits ✅ **Restart**: Can start new
+instance after previous one exits
 
 ## Benefits
 
@@ -103,4 +102,5 @@ The application could run multiple instances simultaneously, which could lead to
 3. **System Integration**: Works well with system tray minimize functionality
 4. **Reliability**: Robust handling of edge cases and cleanup scenarios
 
-The implementation ensures that only one instance of S&D - Search & Destroy can run at a time, while providing a smooth user experience when multiple launch attempts are made.
+The implementation ensures that only one instance of S&D - Search & Destroy can run at a time, while
+providing a smooth user experience when multiple launch attempts are made.

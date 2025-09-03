@@ -16,16 +16,16 @@ We follow a **Git Flow** branching model for organized development:
 
 1. **Feature Development**
 
-  ```bash
-  Git checkout develop
-  Git pull origin develop
-  Git checkout -b feature/your-feature-name
+````bash
+Git checkout develop
+Git pull origin develop
+Git checkout -b feature/your-feature-name
 
 ## Make changes
 
-  Git add .
-  Git commit -m "feat: add feature description"
-  Git push origin feature/your-feature-name
+Git add .
+Git commit -m "feat: add feature description"
+Git push origin feature/your-feature-name
 
 ## Create pull request to develop
 
@@ -33,24 +33,24 @@ We follow a **Git Flow** branching model for organized development:
 
 2. **Bug Fixes**
 
-  ```bash
-  Git checkout develop
-  Git checkout -b bugfix/issue-description
+```bash
+Git checkout develop
+Git checkout -b bugfix/issue-description
 
 ## Fix the bug
 
-  Git commit -m "fix: resolve issue description"
+Git commit -m "fix: resolve issue description"
 ```text
 
 3. **Hotfixes** (Critical production issues)
 
-  ```bash
-  Git checkout master
-  Git checkout -b hotfix/critical-issue
+```bash
+Git checkout master
+Git checkout -b hotfix/critical-issue
 
 ## Fix the issue
 
-  Git commit -m "hotfix: resolve critical issue"
+Git commit -m "hotfix: resolve critical issue"
 
 ## Merge to both master and develop
 
@@ -136,38 +136,38 @@ Git pull origin branch-name
 
 1. **Create Release Branch**
 
-  ```bash
-  Git checkout develop
-  Git checkout -b release/2.1.0
+```bash
+Git checkout develop
+Git checkout -b release/2.1.0
 ```text
 
 2. **Update Version Files**
 
-  ```bash
-  echo "2.1.0" > VERSION
+```bash
+echo "2.1.0" > VERSION
 
 ## Update CHANGELOG.md with release notes
 
-  Git add VERSION CHANGELOG.md
-  Git commit -m "chore(release): bump version to 2.9.0"
+Git add VERSION CHANGELOG.md
+Git commit -m "chore(release): bump version to 2.9.0"
 
 ```text
 
 3. **Merge to Master and Tag**
 
-  ```bash
-  Git checkout master
-  Git merge release/2.1.0
-  Git tag -a v2.9.0 -m "Release version 2.9.0"
-  Git push origin master --tags
+```bash
+Git checkout master
+Git merge release/2.1.0
+Git tag -a v2.9.0 -m "Release version 2.9.0"
+Git push origin master --tags
 ```text
 
 4. **Merge Back to Develop**
 
-  ```bash
-  Git checkout develop
-  Git merge release/2.1.0
-  Git push origin develop
+```bash
+Git checkout develop
+Git merge release/2.1.0
+Git push origin develop
 
 ```text
 
@@ -410,3 +410,4 @@ Git release-finish 2.1.0
 4. **Monitoring**: Track commit quality and workflow effectiveness
 
 This implementation follows industry best practices from the GitHub version control resource and provides a solid foundation for collaborative development.
+````

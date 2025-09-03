@@ -4,18 +4,19 @@ _Essential reference for GitHub Copilot agents to avoid recreating functionality
 
 ## 🚨 **CRITICAL REMINDER: Always Check Toolshed First**
 
-Before creating ANY script or automation, GitHub Copilot agents MUST check the existing toolshed in `scripts/tools/`.
+Before creating ANY script or automation, GitHub Copilot agents MUST check the existing toolshed in
+`scripts/tools/`.
 
 ## 📂 **Available Tools at a Glance**
 
 ### ⚡ **Most Used Tools**
 
-| Tool | Purpose | Usage |
-|------|---------|-------|
-| `scripts/tools/Git/setup-repository.sh`| Complete Git repository setup |`./scripts/tools/Git/setup-repository.sh --help` |
-| `scripts/tools/validation/validate-structure.sh`| Repository validation (97% compliance) |`./scripts/tools/validation/validate-structure.sh --quick` |
-| `scripts/tools/quality/check-quality.sh`| Code quality with auto-fix |`./scripts/tools/quality/check-quality.sh --fix` |
-| `scripts/tools/implement-toolshed.sh`| Deploy toolshed to new repos |`./scripts/tools/implement-toolshed.sh --help` |
+| Tool                                             | Purpose                                | Usage                                                      |
+| ------------------------------------------------ | -------------------------------------- | ---------------------------------------------------------- |
+| `scripts/tools/Git/setup-repository.sh`          | Complete Git repository setup          | `./scripts/tools/Git/setup-repository.sh --help`           |
+| `scripts/tools/validation/validate-structure.sh` | Repository validation (97% compliance) | `./scripts/tools/validation/validate-structure.sh --quick` |
+| `scripts/tools/quality/check-quality.sh`         | Code quality with auto-fix             | `./scripts/tools/quality/check-quality.sh --fix`           |
+| `scripts/tools/implement-toolshed.sh`            | Deploy toolshed to new repos           | `./scripts/tools/implement-toolshed.sh --help`             |
 
 ### 🔧 **Tool Categories**
 
@@ -27,7 +28,7 @@ Before creating ANY script or automation, GitHub Copilot agents MUST check the e
 
 ## 🚀 **Quick Commands**
 
-```bash
+````bash
 
 ## Check what tools are available
 
@@ -65,3 +66,4 @@ Before creating scripts, always:
 ---
 
 **Remember: The toolshed prevents redundant work and ensures consistency!** 🛠️
+````

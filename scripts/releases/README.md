@@ -19,7 +19,7 @@ These scripts support the release workflow documented in `docs/releases/`.
 
 Scripts in this directory should be run from the project root:
 
-```bash
+````bash
 
 ## Example usage (when scripts are implemented)
 
@@ -37,3 +37,4 @@ Scripts in this directory should be run from the project root:
 ---
 
 _This directory is part of the repository organization initiative._
+````

@@ -2,7 +2,8 @@
 
 ## 🎯 Problem Identified and Solved
 
-You were absolutely right! I had updated the theme manager's font definitions, but the main application header was using **hardcoded font sizing** instead of the global theme styling.
+You were absolutely right! I had updated the theme manager's font definitions, but the main
+application header was using **hardcoded font sizing** instead of the global theme styling.
 
 ### 🚫 **The Problem:**
 
@@ -14,7 +15,7 @@ You were absolutely right! I had updated the theme manager's font definitions, b
 
 #### **1. Added Global Styling for App Title**
 
-```CSS
+````CSS
 QLabel#appTitle {
     color: {header_text_color};
     font-size: {header_size}px;  /_Now uses 28px for Dark/Light, 32px for High Contrast_/
@@ -71,3 +72,4 @@ Now the header text properly uses the global theme styling system instead of har
 
 ---
 _Global styling fix complete - headers now properly use theme manager! 🔧✨_
+````

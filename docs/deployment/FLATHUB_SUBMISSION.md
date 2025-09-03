@@ -14,15 +14,15 @@ This guide walks you through the process of submitting S&D - Search & Destroy to
 
 1. **Prepare the submission:**
 
-  ```bash
-  ./scripts/prepare-flathub.sh
+````bash
+./scripts/prepare-flathub.sh
 
 ```text
 
 2. **Test the build locally:**
 
-  ```bash
-  ./scripts/test-flatpak-build.sh
+```bash
+./scripts/test-flatpak-build.sh
 ```text
 
 3. **Submit to Flathub following the steps below.**
@@ -49,18 +49,18 @@ flatpak run io.GitHub.asafelobotomy.SearchAndDestroy
 
 1. Ensure all changes are committed and pushed:
 
-  ```bash
-  Git add .
-  Git commit -m "feat: Prepare for Flathub submission"
-  Git push origin master
+```bash
+Git add .
+Git commit -m "feat: Prepare for Flathub submission"
+Git push origin master
 
 ```text
 
 2. Create and push the release tag:
 
-  ```bash
-  Git tag -a v2.5.0 -m "Release version 2.5.0 for Flathub"
-  Git push origin v2.5.0
+```bash
+Git tag -a v2.5.0 -m "Release version 2.5.0 for Flathub"
+Git push origin v2.5.0
 ```text
 
 ### Step 3: Fork and Clone Flathub Repository
@@ -68,9 +68,9 @@ flatpak run io.GitHub.asafelobotomy.SearchAndDestroy
 1. Fork the Flathub repository: <HTTPS://GitHub.com/flathub/flathub>
 2. Clone your fork:
 
-  ```bash
-  Git clone --branch=new-pr Git@GitHub.com:YOUR_USERNAME/flathub.Git
-  cd flathub
+```bash
+Git clone --branch=new-pr Git@GitHub.com:YOUR_USERNAME/flathub.Git
+cd flathub
 
 ```text
 
@@ -133,10 +133,10 @@ flatpak run --command=flathub-build org.flatpak.Builder io.GitHub.asafelobotomy.
 
 1. Commit and push your changes:
 
-  ```bash
-  Git add .
-  Git commit -m "Add io.GitHub.asafelobotomy.SearchAndDestroy"
-  Git push origin add-search-and-destroy
+```bash
+Git add .
+Git commit -m "Add io.GitHub.asafelobotomy.SearchAndDestroy"
+Git push origin add-search-and-destroy
 ```text
 
 2. Open a pull request on GitHub:
@@ -203,3 +203,4 @@ If you encounter issues during submission:
 4. Open an issue in the Flathub repository
 
 Good luck with your submission! 🚀
+````

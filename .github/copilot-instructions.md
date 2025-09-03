@@ -1,12 +1,11 @@
 ---
 applyTo: "**/*"
-
 ---
 
 # Repository custom instructions (lean)
 
-Purpose: give Copilot only what it needs to build, test, lint, and open mergeable PRs here.
-Keep details in `/docs`; keep this file short and operational.
+Purpose: give Copilot only what it needs to build, test, lint, and open mergeable PRs here. Keep
+details in `/docs`; keep this file short and operational.
 
 ## Build, test, lint
 

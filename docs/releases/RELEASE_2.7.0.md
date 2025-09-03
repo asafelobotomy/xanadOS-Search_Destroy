@@ -2,17 +2,16 @@
 
 🔥 **Major Feature Release - Firewall Management Integration**
 
-**Version**: 2.7.0
-**Release Date**: August 17, 2025
-**Release Type**: Minor Version (Feature Release)
-**Compatibility**: Linux (xanadOS, Ubuntu, Debian)
+**Version**: 2.7.0 **Release Date**: August 17, 2025 **Release Type**: Minor Version (Feature
+Release) **Compatibility**: Linux (xanadOS, Ubuntu, Debian)
 
 ---
 
 ## 🎯 Release Overview
 
-This release focuses on **comprehensive firewall management integration**and**significant performance improvements**.
-Version 2.7.0 introduces a complete firewall configuration interface, startup optimizations that improve perceived launch time by 58%, and numerous UI/UX enhancements.
+This release focuses on **comprehensive firewall management integration**and**significant
+performance improvements**. Version 2.7.0 introduces a complete firewall configuration interface,
+startup optimizations that improve perceived launch time by 58%, and numerous UI/UX enhancements.
 
 ## 🔥 Major Features
 
@@ -107,7 +106,7 @@ Version 2.7.0 introduces a complete firewall configuration interface, startup op
 
 ### Upgrade Path
 
-```bash
+````bash
 
 ## Standard upgrade
 
@@ -138,3 +137,4 @@ Version 2.8.0 will focus on:
 ---
 
 _Last Updated: August 17, 2025 - Version 2.7.0_
+````

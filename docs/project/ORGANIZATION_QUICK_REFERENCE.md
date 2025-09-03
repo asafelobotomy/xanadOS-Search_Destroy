@@ -2,7 +2,7 @@
 
 ## 🚀 Quick Commands
 
-```bash
+````bash
 
 ## Check if repository is organized
 
@@ -80,3 +80,4 @@ xanadOS-Search_Destroy/
 ---
 
 💡 **Tip**: The Git hook will automatically prevent commits with organization issues!
+````

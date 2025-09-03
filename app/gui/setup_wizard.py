@@ -134,7 +134,6 @@ class InstallationWorker(QThread):  # pylint: disable=too-many-instance-attribut
                 # Use elevated_run for package installation with GUI authentication
 
                 # Parse the command properly for elevated execution
-                # Legacy command handling - no longer supports pkexec prefix
                 if install_cmd.startswith("sh -c"):
                     # Extract shell command from sh wrapper
                     shell_cmd = install_cmd.split('"')[

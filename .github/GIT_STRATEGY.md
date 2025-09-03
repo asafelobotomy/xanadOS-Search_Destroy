@@ -2,8 +2,8 @@
 
 ## Branch Structure
 
-This repository follows the **GitHub Flow** branching strategy, optimized for
-continuous integration and deployment. There is no long‑lived `develop` branch.
+This repository follows the **GitHub Flow** branching strategy, optimized for continuous integration
+and deployment. There is no long‑lived `develop` branch.
 
 ### Main Branch
 
@@ -25,7 +25,7 @@ This project uses [Conventional Commits](HTTPS://conventionalcommits.org/) speci
 
 ### Format
 
-```text
+````text
 <type>[optional scope]: <description>
 
 [optional body]
@@ -302,3 +302,4 @@ fi
 
 _This document should be reviewed and updated regularly to reflect evolving best
 practices and project needs._
+````

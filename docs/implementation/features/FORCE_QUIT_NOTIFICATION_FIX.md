@@ -2,7 +2,8 @@
 
 ## Issue Identified
 
-When users force quit the application (via Ctrl+C, kill command, or system termination), the application would incorrectly display a notification stating "Application minimized to system tray.
+When users force quit the application (via Ctrl+C, kill command, or system termination), the
+application would incorrectly display a notification stating "Application minimized to system tray.
 Click the tray icon to restore." even though the app was actually terminating, not minimizing.
 
 ## Root Cause Analysis
@@ -30,7 +31,7 @@ The `closeEvent()` method couldn't distinguish between:
 
 Added a flag to track when force termination is occurring:
 
-```Python
+````Python
 
 ## Initialize force quit tracking
 
@@ -255,3 +256,4 @@ Date: August 11, 2025
 Status: ✅ COMPLETED AND TESTED
 Issue Type: User Experience Bug Fix
 Priority: High (User confusion about app state)
+````

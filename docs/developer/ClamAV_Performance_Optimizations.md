@@ -2,7 +2,8 @@
 
 ## Overview
 
-These optimizations significantly improve ClamAV scanning speed while maintaining security effectiveness.
+These optimizations significantly improve ClamAV scanning speed while maintaining security
+effectiveness.
 
 ## Key Optimizations Implemented
 
@@ -39,7 +40,7 @@ These optimizations significantly improve ClamAV scanning speed while maintainin
 
 ### Performance Settings (`config/performance_config_template.JSON`)
 
-```JSON
+````JSON
 {
   "performance": {
     "enable_clamav_daemon": true,           // Use daemon for speed
@@ -171,3 +172,4 @@ The application logs will indicate:
 - Performance metrics and timing
 
 This provides a comprehensive performance boost while maintaining the security integrity of the scanning process.
+````

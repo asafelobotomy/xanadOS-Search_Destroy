@@ -33,7 +33,7 @@
 
 ### Repository Structure After Cleanup
 
-```text
+````text
 xanadOS-Search_Destroy/
 ├── app/                    # Main application code
 ├── archive/               # Archived files and old versions
@@ -71,3 +71,4 @@ xanadOS-Search_Destroy/
 ✅ **Clean and Organized**: Repository is now properly tidied with no unnecessary files
 ✅ **Functional**: Main application compiles and runs correctly
 ✅ **Version Control Ready**: .gitignore properly configured to prevent future clutter
+````

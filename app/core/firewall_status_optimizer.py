@@ -35,9 +35,7 @@ class FirewallStatusOptimizer(QObject):
     status_changed = pyqtSignal(dict)  # Emitted when firewall status changes
     cache_invalidated = pyqtSignal(str)  # Emitted when cache is invalidated
 
-    def __init__(
-        self, firewall_detector: FirewallDetector | None = None
-    ) -> None:
+    def __init__(self, firewall_detector: FirewallDetector | None = None) -> None:
         super().__init__()
         self.logger = logging.getLogger(__name__)
 

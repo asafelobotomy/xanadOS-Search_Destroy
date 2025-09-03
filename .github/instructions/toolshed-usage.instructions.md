@@ -2,7 +2,6 @@
 applyTo: "scripts/**"
 priority: "critical"
 enforcement: "mandatory"
-
 ---
 
 # Toolshed Usage Instructions - MANDATORY
@@ -16,9 +15,9 @@ enforcement: "mandatory"
 
 ## Executive Summary
 
-All GitHub Copilot agents MUST check and utilize the existing toolshed in `scripts/tools/`
-before creating any scripts, automation, or development tools. This prevents redundant
-work, ensures consistency, and maintains quality standards across all projects.
+All GitHub Copilot agents MUST check and utilize the existing toolshed in `scripts/tools/` before
+creating any scripts, automation, or development tools. This prevents redundant work, ensures
+consistency, and maintains quality standards across all projects.
 
 ## 🚨 **CRITICAL DIRECTIVE: Check Toolshed First**
 
@@ -43,7 +42,7 @@ Before writing ANY script or automation tool, agents MUST:
 
 **Usage Example**:
 
-```bash
+````bash
 
 ## Instead of writing custom Git setup
 
@@ -477,3 +476,4 @@ cat scripts/tools/README.md                 # Read full tool catalog
 
 **This toolshed usage is MANDATORY for all GitHub Copilot agents to ensure efficient,
 consistent, and high-quality automation across all projects.**
+````

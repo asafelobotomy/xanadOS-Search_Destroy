@@ -8,7 +8,7 @@
 
 **Solution**: This repository uses GitHub Flow (main branch only). Avoid GitFlow setup:
 
-```bash
+````bash
 
 ## Use GitHub Flow instead
 
@@ -144,3 +144,4 @@ applyTo: "**/*.js"
 2. Check existing documentation in `docs/`
 3. Validate repository structure
 4. Create issue with detailed error information
+````

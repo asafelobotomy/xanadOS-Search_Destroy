@@ -1,7 +1,6 @@
 # Runbook: Docs Quickstart Uplift
 
-Improve onboarding docs and troubleshooting.
-Use with Copilot agent mode.
+Improve onboarding docs and troubleshooting. Use with Copilot agent mode.
 
 ## Prerequisites
 

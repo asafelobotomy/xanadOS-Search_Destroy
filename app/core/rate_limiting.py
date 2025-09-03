@@ -104,7 +104,8 @@ class AdaptiveRateLimiter:
     def _default_load_monitor(self) -> float:
         """Default system load monitor using CPU percentage."""
         try:
-            return psutil.cpu_percent(interval=0.1) / 100.0
+            cpu_percent = psutil.cpu_percent(interval=0.1)
+            return float(cpu_percent) / 100.0
         except ImportError:
             return 0.5  # Default moderate load
 
@@ -146,7 +147,7 @@ class AdaptiveRateLimiter:
 class GlobalRateLimitManager:
     """Global rate limit manager for different operation types."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.limiters: dict[str, RateLimiter] = {}
         self.adaptive_limiters: dict[str, AdaptiveRateLimiter] = {}
         self.lock = threading.RLock()
@@ -155,7 +156,7 @@ class GlobalRateLimitManager:
         # Default rate limits for different operations
         self._setup_default_limits()
 
-    def _setup_default_limits(self):
+    def _setup_default_limits(self) -> None:
         """Setup default rate limits for common operations."""
         default_limits = {
             "file_scan": RateLimit(
@@ -181,7 +182,7 @@ class GlobalRateLimitManager:
 
     def set_rate_limit(
         self, operation: str, rate_limit: RateLimit, adaptive: bool = False
-    ):
+    ) -> None:
         """Set rate limit for an operation type."""
         with self.lock:
             if adaptive:
@@ -220,7 +221,9 @@ class GlobalRateLimitManager:
 rate_limit_manager = GlobalRateLimitManager()
 
 
-def rate_limit(operation: str, tokens: int = 1, wait_on_limit: bool = False):
+def rate_limit(
+    operation: str, tokens: int = 1, wait_on_limit: bool = False
+) -> Callable:
     """Decorator for rate limiting function calls.
 
     Args:
@@ -231,7 +234,7 @@ def rate_limit(operation: str, tokens: int = 1, wait_on_limit: bool = False):
 
     def decorator(func: Callable) -> Callable:
         @wraps(func)
-        def wrapper(*args, **kwargs):
+        def wrapper(*args: Any, **kwargs: Any) -> Any:
             if not rate_limit_manager.acquire(operation, tokens):
                 if wait_on_limit:
                     wait_time = rate_limit_manager.wait_time(operation)
@@ -257,14 +260,14 @@ def rate_limit(operation: str, tokens: int = 1, wait_on_limit: bool = False):
 class RequestTracker:
     """Track request patterns and detect potential abuse."""
 
-    def __init__(self, window_size: int = 1000):
+    def __init__(self, window_size: int = 1000) -> None:
         self.window_size = window_size
-        self.requests = deque(maxlen=window_size)
-        self.request_counts = defaultdict(int)
+        self.requests: deque[dict[str, Any]] = deque(maxlen=window_size)
+        self.request_counts: defaultdict[str, int] = defaultdict(int)
         self.lock = threading.RLock()
         self.logger = logging.getLogger(__name__)
 
-    def record_request(self, client_id: str, operation: str):
+    def record_request(self, client_id: str, operation: str) -> None:
         """Record a request for tracking."""
         with self.lock:
             now = time.time()
@@ -302,9 +305,9 @@ class RequestTracker:
                 "top_operations": self._get_top_operations(recent_requests),
             }
 
-    def _get_top_operations(self, requests) -> dict[str, int]:
+    def _get_top_operations(self, requests: list[dict[str, Any]]) -> dict[str, int]:
         """Get top operations from request list."""
-        operation_counts = defaultdict(int)
+        operation_counts: defaultdict[str, int] = defaultdict(int)
         for request in requests:
             operation_counts[request["operation"]] += 1
 
@@ -317,7 +320,7 @@ class RequestTracker:
 request_tracker = RequestTracker()
 
 
-def configure_rate_limits(config: dict[str, Any]):
+def configure_rate_limits(config: dict[str, Any]) -> None:
     """Configure rate limits from configuration dictionary."""
     for operation, limit_config in config.get("rate_limits", {}).items():
         rate_limit = RateLimit(
@@ -335,7 +338,7 @@ if __name__ == "__main__":
 
     # Test basic rate limiting
     @rate_limit("test_operation", tokens=1)
-    def test_function():
+    def test_function() -> str:
         print("Function called")
         return "success"
 

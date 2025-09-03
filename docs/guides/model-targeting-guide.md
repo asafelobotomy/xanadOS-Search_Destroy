@@ -2,9 +2,9 @@
 
 ## Overview
 
-The AI development framework included with **xanadOS Search & Destroy** provides advanced
-model targeting capabilities, allowing developers to select specialized AI models optimized
-for security development, testing, and analysis scenarios.
+The AI development framework included with **xanadOS Search & Destroy** provides advanced model
+targeting capabilities, allowing developers to select specialized AI models optimized for security
+development, testing, and analysis scenarios.
 
 ## Supported Models
 
@@ -95,7 +95,7 @@ If advanced models are not available:
 
 Each template includes model targeting in its frontmatter:
 
-```YAML
+````YAML
 
 ---
 model: "Claude-Sonnet-4"
@@ -166,3 +166,4 @@ The model targeting system is designed for extensibility:
 - Enhanced model-specific optimizations
 - Improved automatic model selection
 - Advanced routing based on task complexity
+````

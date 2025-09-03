@@ -1,6 +1,5 @@
 ---
 applyTo: "docs/**"
-
 ---
 
 # Documentation Directory Policy (/docs/) - MANDATORY
@@ -32,16 +31,16 @@ applyTo: "docs/**"
 
 ## Executive Summary
 
-This policy establishes comprehensive standards for `/docs/` directory organization
-based on GitHub best practices, Microsoft documentation architecture, and modern
-documentation platform standards. All GitHub Copilot agents MUST implement and
-maintain these standards in any repository containing documentation.
+This policy establishes comprehensive standards for `/docs/` directory organization based on GitHub
+best practices, Microsoft documentation architecture, and modern documentation platform standards.
+All GitHub Copilot agents MUST implement and maintain these standards in any repository containing
+documentation.
 
 ## Directory Structure Standards
 
 ### Primary Structure
 
-```text
+````text
 /docs/
 ├── README.md                          # Documentation overview and navigation
 ├── guides/                           # User-facing documentation
@@ -187,3 +186,4 @@ maintain these standards in any repository containing documentation.
 Non-compliance will result in repository standardization requirements and
 additional oversight procedures. All documentation work must follow these
 standards without exception.
+````

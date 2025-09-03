@@ -2,8 +2,9 @@
 
 ## Overview
 
-The S&D - Search & Destroy application now supports automatic updates from a dedicated `stable` branch.
-This approach provides better control over release stability by separating development work from production updates.
+The S&D - Search & Destroy application now supports automatic updates from a dedicated `stable`
+branch. This approach provides better control over release stability by separating development work
+from production updates.
 
 ## Branch Structure
 
@@ -16,7 +17,7 @@ This approach provides better control over release stability by separating devel
 
 The auto-updater is configured via `/config/update_config.JSON`:
 
-```JSON
+````JSON
 {
     "update_branch": "stable",
     "repo_owner": "asafelobotomy",
@@ -256,3 +257,4 @@ Git push origin stable --tags
 ```text
 
 This setup provides a robust, configurable auto-update system that prioritizes stability while maintaining flexibility for different use cases and environments.
+````

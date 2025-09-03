@@ -2,7 +2,8 @@
 
 ## Overview
 
-I've successfully implemented a comprehensive auto-update feature for the S&D - Search & Destroy application that checks for updates via GitHub and can automatically download and install them.
+I've successfully implemented a comprehensive auto-update feature for the S&D - Search & Destroy
+application that checks for updates via GitHub and can automatically download and install them.
 
 ## Features Implemented
 
@@ -45,7 +46,7 @@ I've successfully implemented a comprehensive auto-update feature for the S&D - 
 
 #### AutoUpdater Class
 
-```Python
+````Python
 class AutoUpdater:
     def **init**(self, current_version, repo_owner, repo_name):
 
@@ -322,3 +323,4 @@ Date: August 11, 2025
 Status: ✅ COMPLETED AND TESTED
 Implementation: Fully functional auto-update system
 Integration: Complete settings and UI integration
+````

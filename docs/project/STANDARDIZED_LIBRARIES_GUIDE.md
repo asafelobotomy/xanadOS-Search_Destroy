@@ -2,8 +2,9 @@
 
 ## 🎯 Overview
 
-The xanadOS Search & Destroy project now includes a comprehensive set of standardized libraries designed to improve compatibility, performance, and maintainability.
-These libraries centralize common patterns and provide consistent interfaces across the entire application.
+The xanadOS Search & Destroy project now includes a comprehensive set of standardized libraries
+designed to improve compatibility, performance, and maintainability. These libraries centralize
+common patterns and provide consistent interfaces across the entire application.
 
 ## 📚 Library Structure
 
@@ -21,7 +22,7 @@ These libraries centralize common patterns and provide consistent interfaces acr
 
 **Example Usage**:
 
-```Python
+````Python
 from utils.system_paths import get_temp_dir, get_executable, APP_PATHS
 
 ## Get system temp directory (respects system configuration)
@@ -455,3 +456,4 @@ These libraries transform the application from a collection of independent modul
 ---
 
 _For detailed API documentation, see the individual library files in `app/utils/`_
+````

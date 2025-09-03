@@ -8,8 +8,8 @@ Professional-grade tools for maintaining code quality, formatting, and standards
 
 **Version**: 1.0.0 - **✅ Complete Python quality suite for pylint/pylance issues**
 
-A professional-grade Python code quality tool that addresses the 1000+ pylint/pylance
-problems in the repository.
+A professional-grade Python code quality tool that addresses the 1000+ pylint/pylance problems in
+the repository.
 
 ### 🚀 Python Tool Features
 
@@ -45,12 +45,12 @@ problems in the repository.
 
 #### 🎯 Fix Strategies
 
-| Strategy | Description | Use Case |
-|----------|-------------|----------|
-| **safe** | Only safe formatting fixes | Default, minimal risk |
-| **aggressive** | All available fixes | Major cleanup, addresses pylint/pylance issues |
-| **imports-only** | Import organization only | Import-related problems |
-| **format-only** | Code formatting only | Style consistency |
+| Strategy         | Description                | Use Case                                       |
+| ---------------- | -------------------------- | ---------------------------------------------- |
+| **safe**         | Only safe formatting fixes | Default, minimal risk                          |
+| **aggressive**   | All available fixes        | Major cleanup, addresses pylint/pylance issues |
+| **imports-only** | Import organization only   | Import-related problems                        |
+| **format-only**  | Code formatting only       | Style consistency                              |
 
 #### 🔧 Tool Support
 
@@ -62,7 +62,7 @@ problems in the repository.
 
 #### 📋 Python Usage Examples
 
-```bash
+````bash
 
 ---
 
@@ -122,7 +122,7 @@ A professional-grade Markdown fixing tool with comprehensive coverage for all ma
 ## Verbose output with custom config
 
 ./fix-markdown.sh --verbose --config .markdownlint-strict.JSON
-```
+````
 
 ### 🔧 Fix Strategies
 
@@ -314,8 +314,8 @@ CHANGELOG.md
 
 ### Supersedes Previous Scripts
 
-This tool consolidates and replaces legacy scripts. The following have been
-archived under `archive/deprecated/scripts/tools/`:
+This tool consolidates and replaces legacy scripts. The following have been archived under
+`archive/deprecated/scripts/tools/`:
 
 - `scripts/tools/fix-markdown-formatting.sh`
 - `scripts/tools/fix-markdown-targeted.sh`
@@ -469,30 +469,30 @@ Post-fix validation using markdownlint ensures:
 
 ### Command Line Options
 
-| Option | Description | Default |
-|--------|-------------|---------|
-| `-h, --help` | Show help message | - |
-| `--version` | Show version info | - |
-| `-v, --verbose` | Enable verbose output | false |
-| `-n, --dry-run` | Preview mode | false |
-| `-s, --strategy` | Fix strategy: safe/aggressive/custom | safe |
-| `-c, --config` | Custom config file | .markdownlint.JSON |
-| `-i, --ignore` | Ignore pattern (repeatable) | [] |
-| `-t, --target` | Target path | workspace root |
-| `-l, --line-length` | Maximum line length | 120 |
-| `--no-backup` | Disable backups | false |
-| `--no-validation` | Skip validation | false |
-| `--force` | Continue on errors | false |
+| Option              | Description                          | Default            |
+| ------------------- | ------------------------------------ | ------------------ |
+| `-h, --help`        | Show help message                    | -                  |
+| `--version`         | Show version info                    | -                  |
+| `-v, --verbose`     | Enable verbose output                | false              |
+| `-n, --dry-run`     | Preview mode                         | false              |
+| `-s, --strategy`    | Fix strategy: safe/aggressive/custom | safe               |
+| `-c, --config`      | Custom config file                   | .markdownlint.JSON |
+| `-i, --ignore`      | Ignore pattern (repeatable)          | []                 |
+| `-t, --target`      | Target path                          | workspace root     |
+| `-l, --line-length` | Maximum line length                  | 120                |
+| `--no-backup`       | Disable backups                      | false              |
+| `--no-validation`   | Skip validation                      | false              |
+| `--force`           | Continue on errors                   | false              |
 
 ### Exit Codes
 
-| Code | Meaning |
-|------|---------|
-| 0 | Success |
-| 1 | General error |
-| 2 | Invalid arguments |
-| 3 | Missing dependencies |
-| 4 | No Markdown files found |
+| Code | Meaning                 |
+| ---- | ----------------------- |
+| 0    | Success                 |
+| 1    | General error           |
+| 2    | Invalid arguments       |
+| 3    | Missing dependencies    |
+| 4    | No Markdown files found |
 
 ## Version History
 

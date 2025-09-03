@@ -2,7 +2,8 @@
 
 ## 🔧 Debug Coverage Added
 
-I've added extensive debugging throughout the entire scan lifecycle to track exactly what happens during start → stop → start processes and all reporting features.
+I've added extensive debugging throughout the entire scan lifecycle to track exactly what happens
+during start → stop → start processes and all reporting features.
 
 ### 🎯 **START SCAN DEBUGGING**
 
@@ -10,7 +11,7 @@ I've added extensive debugging throughout the entire scan lifecycle to track exa
 
 **Added Debug Output**:
 
-```text
+````text
 🔄 === START_SCAN CALLED ===
 DEBUG: start_scan() called with quick_scan={bool}
 DEBUG: Current scan state: {state}
@@ -297,3 +298,4 @@ DEBUG: Starting new scan, state set to: scanning
 ```text
 
 This comprehensive debugging will show exactly where any issues occur in the start→stop→start cycle and help identify if problems are in state management, thread handling, report generation, or UI updates.
+````

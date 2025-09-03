@@ -1,7 +1,7 @@
 # Script API
 
-Reference for the toolshed scripts. Scripts are POSIX shell with Bash,
-provide `--help`, and return non-zero on error.
+Reference for the toolshed scripts. Scripts are POSIX shell with Bash, provide `--help`, and return
+non-zero on error.
 
 ## Core scripts
 

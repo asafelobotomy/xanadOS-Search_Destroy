@@ -2,7 +2,8 @@
 
 ## Overview
 
-Successfully integrated RKHunter scans with the main application's progress bar system, providing users with visual feedback during rootkit scans that matches the ClamAV scan experience.
+Successfully integrated RKHunter scans with the main application's progress bar system, providing
+users with visual feedback during rootkit scans that matches the ClamAV scan experience.
 
 ## Changes Made
 
@@ -10,7 +11,8 @@ Successfully integrated RKHunter scans with the main application's progress bar 
 
 ### Added new signal
 
-- `progress_value_updated = pyqtSignal(int)` - Emits numeric progress values (0-100) for the progress bar
+- `progress_value_updated = pyqtSignal(int)` - Emits numeric progress values (0-100) for the
+  progress bar
 
 ### Enhanced progress tracking
 
@@ -69,7 +71,7 @@ Successfully integrated RKHunter scans with the main application's progress bar 
 
 ### Thread-Safe Progress Updates
 
-```Python
+````Python
 
 ## Progress simulation during actual scan execution
 
@@ -133,3 +135,4 @@ When users run an RKHunter scan (standalone or combined), they will now see:
 4. **Completion at 100%** when scan finishes successfully
 
 The experience is now consistent with ClamAV scans and provides much better user feedback during the rootkit detection process.
+````

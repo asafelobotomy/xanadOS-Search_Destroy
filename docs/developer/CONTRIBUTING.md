@@ -1,6 +1,7 @@
 # # Contributing to xanadOS-Search_Destroy
 
-Thank you for your interest in contributing to xanadOS-Search_Destroy! This document provides guidelines for contributing to the project.
+Thank you for your interest in contributing to xanadOS-Search_Destroy! This document provides
+guidelines for contributing to the project.
 
 ## Development Setup
 
@@ -15,7 +16,7 @@ Thank you for your interest in contributing to xanadOS-Search_Destroy! This docu
 
 1. Clone the repository:
 
-```bash
+````bash
 Git clone <HTTPS://GitHub.com/asafelobotomy/xanadOS-Search_Destroy.Git>
 cd xanadOS-Search_Destroy
 
@@ -209,3 +210,4 @@ Contributors will be acknowledged in:
 - Release notes for major features
 
 Thank you for contributing to xanadOS-Search_Destroy!
+````

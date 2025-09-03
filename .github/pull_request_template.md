@@ -10,7 +10,8 @@ Please delete options that are not relevant.
 
 - [ ] Bug fix (non-breaking change which fixes an issue)
 - [ ] New feature (non-breaking change which adds functionality)
-- [ ] Breaking change (fix or feature that would cause existing functionality to not work as expected)
+- [ ] Breaking change (fix or feature that would cause existing functionality to not work as
+      expected)
 - [ ] Documentation update
 - [ ] Performance improvement
 - [ ] Code refactoring
@@ -44,8 +45,7 @@ Include screenshots for UI changes or visual improvements.
 
 ## Related Issues
 
-Closes #(issue number)
-Relates to #(issue number)
+Closes #(issue number) Relates to #(issue number)
 
 ## Deployment Notes
 

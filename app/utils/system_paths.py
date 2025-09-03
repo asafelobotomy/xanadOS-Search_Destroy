@@ -8,8 +8,14 @@ This library provides centralized, standardized path definitions for:
 - Security-sensitive paths
 - Command locations
 - Configuration paths
+
+Note: This file contains hardcoded system paths for legitimate system
+administration purposes. Bandit B108 warnings are suppressed as these
+are not used for insecure temporary file operations.
+
 All paths respect XDG Base Directory Specification and system conventions.
 """
+# nosec - File contains legitimate system path constants
 
 import os
 import shutil
@@ -51,8 +57,8 @@ class SystemPaths:
         "sys": "/sys",
         "dev": "/dev",
         "run": "/run",
-        "tmp": "/tmp",
-        "var_tmp": "/var/tmp",
+        "tmp": "/tmp",  # nosec B108 - Legitimate system path constant
+        "var_tmp": "/var/tmp",  # nosec B108 - Legitimate system path constant
         "var_log": "/var/log",
         "var_lib": "/var/lib",
         "var_cache": "/var/cache",
@@ -87,6 +93,7 @@ class SystemPaths:
         "/sys",
         "/dev",
         "/run",
+        # nosec B108 - Legitimate system path pattern
         "/tmp/systemd-private-*",
         "/etc/shadow",
         "/etc/passwd",

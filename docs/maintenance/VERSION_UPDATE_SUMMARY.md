@@ -4,7 +4,9 @@
 
 ### Rationale for Minor Version Bump
 
-The version has been updated from **2.9.0**to**2.10.0**following [Semantic Versioning](HTTPS://semver.org/) guidelines due to significant**backward-compatible functionality additions**:
+The version has been updated from **2.9.0**to**2.10.0**following
+[Semantic Versioning](HTTPS://semver.org/) guidelines due to significant**backward-compatible
+functionality additions**:
 
 ### Major Changes Warranting Version Bump
 
@@ -38,7 +40,7 @@ The version has been updated from **2.9.0**to**2.10.0**following [Semantic Versi
 
 ### Verification Results
 
-```text
+````text
 ✅ App version from **version**: 2.10.0
 ✅ Version from get_version(): 2.10.0
 ✅ VERSION file contents: 2.10.0
@@ -68,3 +70,4 @@ Version 2.10.0 is ready for release with:
 - Enhanced user experience delivered
 
 **Release Notes**: Persistent GUI authentication eliminates multiple password prompts, providing seamless security operations across all desktop environments.
+````

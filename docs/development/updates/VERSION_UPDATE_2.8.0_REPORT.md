@@ -62,7 +62,8 @@
 ### **Changelog Historical Entries**
 
 - Previous version entries in CHANGELOG.md preserved for historical record
-- Version progression: 2.1.0 → 2.2.0 → 2.3.0 → 2.4.0 → 2.4.1 → 2.5.0 → 2.6.0 → 2.7.0 → 2.7.1 → **2.8.0**
+- Version progression: 2.1.0 → 2.2.0 → 2.3.0 → 2.4.0 → 2.4.1 → 2.5.0 → 2.6.0 → 2.7.0 → 2.7.1 →
+  **2.8.0**
 
 ---
 
@@ -94,7 +95,7 @@ The update from 2.7.x to 2.8.0 follows semantic versioning principles:
 
 ### **All Core Version References Updated**
 
-```bash
+````bash
 VERSION file: 2.8.0 ✅
 app/**init**.py: 2.8.0 fallbacks ✅
 app/gui/**init**.py: 2.8.0 fallbacks ✅
@@ -125,3 +126,4 @@ Flatpak metadata: 2.8.0 release entry ✅
 **All Files Reviewed**: 45+ files checked and updated as needed
 **Version Consistency**: Achieved across all application and documentation files
 **Semantic Versioning**: Properly applied (MINOR increment for new features)
+````

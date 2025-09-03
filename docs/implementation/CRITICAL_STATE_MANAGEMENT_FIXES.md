@@ -12,21 +12,21 @@ After implementing the comprehensive state management system, users experienced:
 
 ### Issue 1: Missing State Reset in Natural Completion
 
-**Location**: `scan_completed()`method in`main_window.py`
-**Problem**: When scans completed naturally (not stopped), the `_scan_state` remained "scanning"
-**Impact**: Next scan attempt would fail with "already in progress" message
+**Location**: `scan_completed()`method in`main_window.py` **Problem**: When scans completed
+naturally (not stopped), the `_scan_state` remained "scanning" **Impact**: Next scan attempt would
+fail with "already in progress" message
 
 ### Issue 2: Permanent Manual Stop Flag
 
-**Location**: `_check_stop_completion()`method in`main_window.py`
-**Problem**: `_scan_manually_stopped`flag was set to`True`on stop but never reset to`False`
-**Impact**: All subsequent scan completions were ignored, causing fake results
+**Location**: `_check_stop_completion()`method in`main_window.py` **Problem**:
+`_scan_manually_stopped`flag was set to`True`on stop but never reset to`False` **Impact**: All
+subsequent scan completions were ignored, causing fake results
 
 ## ✅ Fixes Applied
 
 ### Fix 1: Reset State on Natural Completion
 
-```Python
+````Python
 
 ## In scan_completed() method - ADDED
 
@@ -122,3 +122,4 @@ IDLE → [Start] → SCANNING → [Stop] → STOPPING → [Timer Check] → IDLE
 ✅ **Debug Visibility**: Clear logging for state transitions
 
 The fixes ensure that the application properly manages scan lifecycle regardless of how scans end (natural completion vs manual stop), preventing state corruption and providing consistent user experience.
+````

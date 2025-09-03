@@ -2,8 +2,9 @@
 
 ## Overview
 
-This directory contains configuration files for the meta-instruction validation framework.
-These configurations define validation rules, quality standards, and compliance requirements for GitHub Copilot instructions.
+This directory contains configuration files for the meta-instruction validation framework. These
+configurations define validation rules, quality standards, and compliance requirements for GitHub
+Copilot instructions.
 
 ## Configuration Files
 
@@ -36,8 +37,8 @@ Specifies compliance requirements for different file types:
 
 ## Usage
 
-The validation framework automatically loads these configuration files during execution.
-You can customize the validation behavior by modifying these files according to your project requirements.
+The validation framework automatically loads these configuration files during execution. You can
+customize the validation behavior by modifying these files according to your project requirements.
 
 ### Customization Guidelines
 

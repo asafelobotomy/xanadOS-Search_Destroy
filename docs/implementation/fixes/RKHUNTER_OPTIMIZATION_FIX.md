@@ -2,7 +2,8 @@
 
 ## Problem Identified
 
-The user reported that RKHunter optimization settings were not working, showing cryptic "Permission denied: 'rkhunter'" errors.
+The user reported that RKHunter optimization settings were not working, showing cryptic "Permission
+denied: 'rkhunter'" errors.
 
 ## Root Cause Analysis
 
@@ -20,7 +21,7 @@ Investigation revealed that RKHunter was not installed on the system:
 
 Added comprehensive availability checking methods:
 
-```Python
+````Python
 def _check_rkhunter_availability(self) -> bool:
     """Check if RKHunter is available and executable."""
 
@@ -169,3 +170,4 @@ The solution was tested and verified to:
 - ✅ Maintain functionality when RKHunter is available
 
 The RKHunter optimization functionality now provides a professional, user-friendly experience that guides users through any setup requirements instead of showing confusing error messages.
+````

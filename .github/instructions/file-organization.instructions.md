@@ -20,9 +20,9 @@
 
 ## 🎯 **Mandatory File Placement Rules**
 
-All GitHub Copilot agents **MUST** follow these directory placement rules to
-maintain a clean, organized repository structure. **NO FILES** should be
-created in the root directory unless explicitly specified in this policy.
+All GitHub Copilot agents **MUST** follow these directory placement rules to maintain a clean,
+organized repository structure. **NO FILES** should be created in the root directory unless
+explicitly specified in this policy.
 
 ## 📁 **Directory Structure and File Placement**
 
@@ -30,7 +30,7 @@ created in the root directory unless explicitly specified in this policy.
 
 ### Only these files are allowed in the root directory
 
-```Markdown
+````Markdown
 /
 ├── README.md                    # Main project documentation
 ├── CONTRIBUTING.md              # Contribution guidelines
@@ -203,3 +203,4 @@ Add to `.VS Code/settings.JSON`:
 **This policy is MANDATORY for all GitHub Copilot agents working on this
 repository to maintain professional organization and prevent directory
 clutter.**
+````

@@ -2,7 +2,8 @@
 
 ## 🎯 Overview
 
-The Makefile has been completely updated and modernized with comprehensive functionality, better organization, improved user experience, and integration with the new repository organization system.
+The Makefile has been completely updated and modernized with comprehensive functionality, better
+organization, improved user experience, and integration with the new repository organization system.
 
 ## ✅ Major Improvements
 
@@ -61,66 +62,66 @@ The Makefile has been completely updated and modernized with comprehensive funct
 
 ### 🏗️ Build Targets
 
-| Target | Description |
-|--------|-------------|
-| `all` | Build Flatpak (default) |
-| `build-flatpak` | Build Flatpak package |
-| `install-flatpak` | Install Flatpak locally |
-| `full-install` | Build and install Flatpak |
+| Target            | Description               |
+| ----------------- | ------------------------- |
+| `all`             | Build Flatpak (default)   |
+| `build-flatpak`   | Build Flatpak package     |
+| `install-flatpak` | Install Flatpak locally   |
+| `full-install`    | Build and install Flatpak |
 
 ### 🛠️ Development Targets
 
-| Target | Description |
-|--------|-------------|
-| `dev-setup` | Complete development environment setup |
-| `install` | Install Python dependencies only |
-| `update-deps` | Update Python dependencies |
-| `status` | Show repository and environment status |
+| Target        | Description                            |
+| ------------- | -------------------------------------- |
+| `dev-setup`   | Complete development environment setup |
+| `install`     | Install Python dependencies only       |
+| `update-deps` | Update Python dependencies             |
+| `status`      | Show repository and environment status |
 
 ### 🧹 Cleaning Targets
 
-| Target | Description |
-|--------|-------------|
-| `clean` | Clean build artifacts |
-| `clean-cache` | Clean Python cache files |
-| `clean-dev` | Info about development file cleanup |
+| Target            | Description                               |
+| ----------------- | ----------------------------------------- |
+| `clean`           | Clean build artifacts                     |
+| `clean-cache`     | Clean Python cache files                  |
+| `clean-dev`       | Info about development file cleanup       |
 | `clean-dev-force` | Remove dev/ directory (with confirmation) |
-| `clean-all` | Clean everything |
+| `clean-all`       | Clean everything                          |
 
 ### 🔍 Quality Targets
 
-| Target | Description |
-|--------|-------------|
-| `test` | Run tests |
-| `check-style` | Check code style |
-| `format` | Format code with black |
-| `lint` | Lint code with flake8 |
-| `type-check` | Type checking with mypy |
-| `security-check` | Security analysis |
+| Target           | Description             |
+| ---------------- | ----------------------- |
+| `test`           | Run tests               |
+| `check-style`    | Check code style        |
+| `format`         | Format code with black  |
+| `lint`           | Lint code with flake8   |
+| `type-check`     | Type checking with mypy |
+| `security-check` | Security analysis       |
 
 ### 📁 Organization Targets
 
-| Target | Description |
-|--------|-------------|
-| `check-organization` | Check repository organization |
-| `fix-organization` | Fix repository organization issues |
-| `install-hooks` | Install Git hooks |
-| `organize` | Alias for fix-organization |
+| Target               | Description                        |
+| -------------------- | ---------------------------------- |
+| `check-organization` | Check repository organization      |
+| `fix-organization`   | Fix repository organization issues |
+| `install-hooks`      | Install Git hooks                  |
+| `organize`           | Alias for fix-organization         |
 
 ### 🚀 Run Targets
 
-| Target | Description |
-|--------|-------------|
-| `run` | Run application (traditional) |
-| `run-flatpak` | Run Flatpak version |
+| Target        | Description                   |
+| ------------- | ----------------------------- |
+| `run`         | Run application (traditional) |
+| `run-flatpak` | Run Flatpak version           |
 
 ### 🔧 Utility Targets
 
-| Target | Description |
-|--------|-------------|
-| `prepare` | Run build preparation script |
-| `verify` | Run build verification script |
-| `help` | Show comprehensive help |
+| Target    | Description                   |
+| --------- | ----------------------------- |
+| `prepare` | Run build preparation script  |
+| `verify`  | Run build verification script |
+| `help`    | Show comprehensive help       |
 
 ## 🔧 Technical Improvements
 
@@ -152,7 +153,7 @@ The Makefile has been completely updated and modernized with comprehensive funct
 
 ### Quick Start (New Developer)
 
-```bash
+````bash
 make dev-setup    # Set up everything
 make status       # Check what's available
 make test         # Run tests
@@ -240,3 +241,4 @@ make install-flatpak   # Install locally
 ---
 
 **The Makefile is now a comprehensive development and build management system that integrates seamlessly with the repository organization system!** 🎊
+````

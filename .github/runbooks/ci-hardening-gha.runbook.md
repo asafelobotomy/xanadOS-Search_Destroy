@@ -1,7 +1,6 @@
 # Runbook: CI Hardening (GitHub Actions)
 
-Establish a reliable, fast CI with caching and protections.
-Use with Copilot agent mode.
+Establish a reliable, fast CI with caching and protections. Use with Copilot agent mode.
 
 ## Prerequisites
 

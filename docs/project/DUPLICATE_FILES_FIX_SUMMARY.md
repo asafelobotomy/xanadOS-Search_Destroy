@@ -4,7 +4,7 @@
 
 The scan results were showing duplicate file entries like:
 
-```text
+````text
 📁 Scanning Directory: ~/Documents
 📊 Directories scanned: 1 | Remaining: 2
     ✅ CHANGELOG.md
@@ -116,3 +116,4 @@ After the fix:
 
 Date: August 11, 2025
 Status: ✅ COMPLETED
+````

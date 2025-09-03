@@ -16,9 +16,27 @@ try:
     from app.core.secure_subprocess import run_secure
 except ImportError:
     import subprocess
+    from collections.abc import Mapping, Sequence
+    from typing import Any
 
-    def run_secure(cmd, **kwargs):
-        return subprocess.run(cmd, **kwargs)
+    def run_secure(
+        argv: Sequence[str],
+        *,
+        timeout: int = 10,
+        check: bool = True,
+        allow_root: bool = False,
+        env: Mapping[str, str] | None = None,
+        capture_output: bool = True,
+        text: bool = True,
+    ) -> subprocess.CompletedProcess[Any]:
+        return subprocess.run(
+            argv,
+            timeout=timeout,
+            check=check,
+            env=env,
+            capture_output=capture_output,
+            text=text,
+        )
 
 
 @dataclass
@@ -58,7 +76,7 @@ class NonInvasiveSystemMonitor:
         # Load persistent cache
         self._load_persistent_cache()
 
-    def _load_persistent_cache(self):
+    def _load_persistent_cache(self) -> None:
         """Load cached status from disk"""
         try:
             if self.cache_file.exists():
@@ -88,7 +106,7 @@ class NonInvasiveSystemMonitor:
         except Exception as e:
             print(f"⚠️ Error loading persistent cache: {e}")
 
-    def _save_persistent_cache(self):
+    def _save_persistent_cache(self) -> None:
         """Save current cache to disk"""
         try:
             if self._status_cache and self._cache_time:
@@ -378,7 +396,7 @@ class NonInvasiveSystemMonitor:
             print(f"⚠️ Error checking firewall: {e}")
             return f"error: {e!s}"
 
-    def record_user_activity(self, activity_type: str, details: str = ""):
+    def record_user_activity(self, activity_type: str, details: str = "") -> None:
         """Record user activity to improve status caching"""
         with self._lock:
             if self._status_cache:
@@ -398,7 +416,7 @@ def get_system_status(force_refresh: bool = False) -> SystemStatus:
     return system_monitor.get_system_status(force_refresh)
 
 
-def record_activity(activity_type: str, details: str = ""):
+def record_activity(activity_type: str, details: str = "") -> None:
     """Convenience function to record user activity"""
     system_monitor.record_user_activity(activity_type, details)
 
