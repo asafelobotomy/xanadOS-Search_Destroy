@@ -24,7 +24,7 @@ from .secure_subprocess import run_secure
 class FirewallActivityTracker:
     """Tracks firewall state changes through activity monitoring."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.activity_file = (
             Path.home() / ".local/share/search-and-destroy/firewall_activity.json"
         )
@@ -44,7 +44,7 @@ class FirewallActivityTracker:
             pass
         return None
 
-    def update_status(self, status: dict[str, Any]):
+    def update_status(self, status: dict[str, Any]) -> None:
         """Update cached firewall status."""
         try:
             data = {"status": status, "timestamp": time.time()}
@@ -96,7 +96,7 @@ class FirewallActivityTracker:
 class FirewallDetector:
     """Detects and monitors firewall status on Linux systems."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.activity_tracker = FirewallActivityTracker()
         self.supported_firewalls = {
             "ufw": {
@@ -237,34 +237,7 @@ class FirewallDetector:
 
     def _get_ufw_status_non_invasive(self) -> dict[str, str | bool]:
         """Get UFW firewall status without requiring elevated privileges."""
-        # Method 1: Check systemctl service status (most reliable, no sudo needed)
-        try:
-            result = run_secure(
-                ["systemctl", "is-active", "ufw"],
-                timeout=5,
-                capture_output=True,
-                text=True,
-            )
-            if result.returncode == 0 and result.stdout.strip() == "active":
-                return {"is_active": True, "status_text": "Active"}
-        except (subprocess.SubprocessError, OSError):
-            pass
-
-        # Method 2: Check if UFW is enabled via systemctl is-enabled
-        try:
-            result = run_secure(
-                ["systemctl", "is-enabled", "ufw"],
-                timeout=5,
-                capture_output=True,
-                text=True,
-            )
-            enabled_states = ["enabled", "static", "enabled-runtime"]
-            if result.returncode == 0 and result.stdout.strip() in enabled_states:
-                return {"is_active": True, "status_text": "Active"}
-        except (subprocess.SubprocessError, OSError):
-            pass
-
-        # Method 3: Check UFW configuration files (read-only, no sudo needed for most systems)
+        # Method 1: Check UFW configuration files FIRST (most accurate for UFW enabled/disabled state)
         ufw_config_paths = ["/etc/ufw/ufw.conf", "/etc/default/ufw"]
         for config_path in ufw_config_paths:
             try:
@@ -274,29 +247,75 @@ class FirewallDetector:
                     # Look for ENABLED=yes in the config
                     if "ENABLED=yes" in content:
                         return {"is_active": True, "status_text": "Active"}
+                    # If we find ENABLED=no, UFW is explicitly disabled
+                    elif "ENABLED=no" in content:
+                        return {"is_active": False, "status_text": "Inactive"}
             except (OSError, PermissionError):
                 continue
 
-        # Method 4: Check for UFW rule files (indicates UFW has been configured)
-        # NOTE: This method has been improved to avoid false positives.
-        # Simply having rule files doesn't mean UFW is active - UFW can be
-        # disabled even with rule files present. Only check /var/lib/ paths
-        # as they're more likely to indicate actual active configuration.
+        # Method 2: Check systemctl service status only as secondary confirmation
+        # NOTE: UFW service can be running while UFW rules are disabled, so this
+        # is only used when config files are not accessible
+        try:
+            result = run_secure(
+                ["systemctl", "is-active", "ufw"],
+                timeout=5,
+                capture_output=True,
+                text=True,
+            )
+            # Only consider service status if config files were not readable
+            if result.returncode == 0 and result.stdout.strip() == "active":
+                # Additional check: verify UFW service is not just running but actually active
+                # by checking if systemctl shows it as enabled AND active
+                try:
+                    enabled_result = run_secure(
+                        ["systemctl", "is-enabled", "ufw"],
+                        timeout=5,
+                        capture_output=True,
+                        text=True,
+                    )
+                    enabled_states = ["enabled", "static", "enabled-runtime"]
+                    if (
+                        enabled_result.returncode == 0
+                        and enabled_result.stdout.strip() in enabled_states
+                    ):
+                        # Service is both active and enabled, but we still can't be sure UFW rules are active
+                        # without config file confirmation, so return with uncertainty
+                        return {
+                            "is_active": False,
+                            "status_text": "Service running but status uncertain",
+                        }
+                except (subprocess.SubprocessError, OSError):
+                    pass
+        except (subprocess.SubprocessError, OSError):
+            pass
+
+        # Method 3: Check for UFW rule files only as additional confirmation
+        # NOTE: Only check rule files if config files weren't accessible
+        # Rule files can exist even when UFW is disabled, so this is unreliable
         ufw_rule_paths = ["/var/lib/ufw/user.rules", "/var/lib/ufw/user6.rules"]
         for rule_path in ufw_rule_paths:
             try:
                 if (
-                    os.path.exists(rule_path) and os.path.getsize(rule_path) > 500
-                ):  # Significantly larger rule file
-                    # Additional check: look for actual user rules, not just template
+                    os.path.exists(rule_path) and os.path.getsize(rule_path) > 1000
+                ):  # Only very large rule files indicate active config
+                    # Additional check: look for actual user rules AND markers
                     with open(rule_path, encoding="utf-8") as f:
                         content = f.read()
-                    # Only consider active if there are actual user-defined rules
-                    if "### tuple ###" in content or (
-                        "-A ufw-user-" in content and "allow" in content.lower()
+                    # Only consider if there are actual user-defined rules AND
+                    # the rules indicate an active state
+                    if (
+                        "### tuple ###" in content
+                        and "ACCEPT" in content
+                        and "-A ufw-user-" in content
+                        and "allow" in content.lower()
                     ):
-                        return {"is_active": True, "status_text": "Active"}
-            except (OSError, PermissionError):
+                        # Even with rules, we can't be sure without config
+                        return {
+                            "is_active": False,
+                            "status_text": "Rules exist but status uncertain",
+                        }
+            except OSError:
                 continue
 
         # Method 5: Check netfilter/iptables rules indirectly via /proc (last resort)
@@ -570,8 +589,7 @@ class FirewallDetector:
         Note: This method is deprecated. Use elevated_run() instead for better
         privilege escalation with GUI sudo priority order.
         """
-        # Legacy method - kept for compatibility with module loading code
-        # New firewall toggle methods should use elevated_run() directly
+        # Deprecated method - use elevated_run() for better escalation
         if shutil.which("sudo"):
             return ["sudo"]
         else:
