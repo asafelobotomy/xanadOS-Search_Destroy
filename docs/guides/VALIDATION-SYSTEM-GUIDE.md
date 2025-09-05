@@ -36,7 +36,7 @@ npm run quick:validate
 #### 2. Spell Checking
 
 - **Tool**: cspell
-- **Configuration**: `cspell.json`
+- **Configuration**: `config/cspell.json`
 - **Coverage**: Main documentation files (README.md, CONTRIBUTING.md, CHANGELOG.md)
 - **Purpose**: Maintains professional documentation quality
 
@@ -199,7 +199,7 @@ npm run validate:python:strict # Strict mode with enforcement
 | File                 | Purpose                      |
 | -------------------- | ---------------------------- |
 | `.markdownlint.json` | Markdown linting rules       |
-| `cspell.json`        | Spell checking configuration |
+| `config/cspell.json` | Spell checking configuration |
 | `pyproject.toml`     | Python project configuration |
 | `config/mypy.ini`    | Python type checking rules   |
 | `config/pytest.ini`  | Python testing configuration |

@@ -150,7 +150,8 @@
   "freshclam",
   "docstrings",
   "inotify",
-  "dnspython"
+  "dnspython",
+  "UNHIDE"
   ],
   "flagWords": [
     "hte",
