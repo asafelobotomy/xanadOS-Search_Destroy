@@ -16,7 +16,6 @@ def test_auth_session_manager_import():
     try:
         from app.core.auth_session_manager import (
             AuthenticationSessionManager,
-            auth_manager,
         )
 
         print("✅ Successfully imported AuthenticationSessionManager")
@@ -58,7 +57,7 @@ def test_auth_session_manager_import():
 def test_elevated_runner_import():
     """Test that we can import the elevated runner"""
     try:
-        from app.core.elevated_runner import elevated_run
+        from app.core.elevated_runner import elevated_run  # noqa: F401
 
         print("✅ Successfully imported elevated_run")
         return True

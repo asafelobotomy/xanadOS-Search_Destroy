@@ -6,7 +6,7 @@ Implements modern progressive loading patterns for optimal startup performance.
 import time
 from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from PyQt6.QtCore import QObject, QTimer, pyqtSignal
 from PyQt6.QtWidgets import QLabel, QWidget

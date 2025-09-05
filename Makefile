@@ -1,386 +1,386 @@
-# Makefile for xanadOS Search & Destroy - 2025 Edition
-# Modern Python security application with comprehensive development workflow
+# xanadOS Search & Destroy - Modern Development Makefile
+# Enhanced with 2025 best practices and modern tooling
 
-# === Configuration ===
-PROJECT_NAME := xanadOS-Search-Destroy
-VERSION := $(shell cat VERSION 2>/dev/null || echo "2.11.2")
+.PHONY: help setup setup-modern setup-full clean test validate install-deps
+.PHONY: dev dev-gui run run-tests benchmark security-scan docs
+.PHONY: docker-build docker-run docker-dev update-deps check-env
+.PHONY: pre-commit format lint type-check audit release
 
-# Environment Setup
-PYTHON := python3
-VENV_DIR := .venv
-VENV_PYTHON := $(VENV_DIR)/bin/python
-VENV_PIP := $(VENV_DIR)/bin/pip
-
-# Directory Structure
-SRC_DIR := app
-TEST_DIR := tests
-DOCS_DIR := docs
-TOOLS_DIR := scripts/tools
-
-# Tool Detection
-HAS_VENV := $(shell test -d $(VENV_DIR) && echo true || echo false)
-HAS_UV := $(shell command -v uv >/dev/null 2>&1 && echo true || echo false)
-HAS_NPM := $(shell command -v npm >/dev/null 2>&1 && echo true || echo false)
-
-# Python Commands (auto-detect environment)
-ifeq ($(HAS_VENV),true)
-	PY := $(VENV_PYTHON)
-	PIP := $(VENV_PIP)
-else
-	PY := $(PYTHON)
-	PIP := $(PYTHON) -m pip
-endif
-
-# Colors for better UX
-RED := \033[0;31m
-GREEN := \033[0;32m
-YELLOW := \033[0;33m
-BLUE := \033[0;34m
-CYAN := \033[0;36m
-BOLD := \033[1m
-NC := \033[0m
-
-# === Main Targets ===
-.PHONY: help setup install run test lint build clean status
-
-help: ## 📖 Show this help message
-	@echo "$(BOLD)$(BLUE)$(PROJECT_NAME) v$(VERSION)$(NC)"
-	@echo "$(CYAN)Comprehensive development workflow for modern Python$(NC)"
-	@echo ""
-	@echo "$(BOLD)$(YELLOW)🚀 Quick Start:$(NC)"
-	@echo "  $(GREEN)make setup$(NC)     - Complete development environment setup"
-	@echo "  $(GREEN)make install$(NC)   - Install dependencies (basic/dev/advanced/all)"
-	@echo "  $(GREEN)make run$(NC)       - Run the application"
-	@echo "  $(GREEN)make test$(NC)      - Run comprehensive test suite"
-	@echo "  $(GREEN)make build$(NC)     - Build distribution packages"
-	@echo ""
-	@echo "$(BOLD)$(YELLOW)🔧 Development:$(NC)"
-	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## .*🔧/ {gsub(/.*🔧 /, "", $$2); printf "  $(GREEN)%-15s$(NC) %s\n", $$1, $$2}' $(MAKEFILE_LIST)
-	@echo ""
-	@echo "$(BOLD)$(YELLOW)🧪 Quality & Testing:$(NC)"
-	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## .*🧪/ {gsub(/.*🧪 /, "", $$2); printf "  $(GREEN)%-15s$(NC) %s\n", $$1, $$2}' $(MAKEFILE_LIST)
-	@echo ""
-	@echo "$(BOLD)$(YELLOW)🔒 Security:$(NC)"
-	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## .*🔒/ {gsub(/.*🔒 /, "", $$2); printf "  $(GREEN)%-15s$(NC) %s\n", $$1, $$2}' $(MAKEFILE_LIST)
-	@echo ""
-	@echo "$(BOLD)$(YELLOW)📊 Information:$(NC)"
-	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## .*📊/ {gsub(/.*📊 /, "", $$2); printf "  $(GREEN)%-15s$(NC) %s\n", $$1, $$2}' $(MAKEFILE_LIST)
-	@echo ""
-	@echo "$(BOLD)$(YELLOW)⚡ Modernization:$(NC)"
-	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## .*⚡/ {gsub(/.*⚡ /, "", $$2); printf "  $(GREEN)%-15s$(NC) %s\n", $$1, $$2}' $(MAKEFILE_LIST)
-
-# === Environment Setup ===
-setup: ## 🔧 Complete development environment setup (UV-based)
-	@echo "$(BOLD)$(BLUE)🔧 Setting up development environment...$(NC)"
-	@$(MAKE) _install-uv-if-needed
-	@$(MAKE) _create-venv
-	@$(MAKE) install-dev
-	@$(MAKE) validate-deps
-	@echo "$(GREEN)✅ Development environment ready!$(NC)"
-	@echo "$(CYAN)💡 Next: make run (to start app) or make test (to run tests)$(NC)"
-
-setup-standard: ## 🔧 Standard Python venv setup (no UV)
-	@echo "$(BLUE)Setting up standard Python environment...$(NC)"
-	@$(MAKE) _create-venv-standard
-	@$(MAKE) install-dev
-	@echo "$(GREEN)✅ Standard environment ready!$(NC)"
-
-# === Installation Targets ===
-install: ## 🔧 Install runtime dependencies only
-	@echo "$(BLUE)Installing runtime dependencies...$(NC)"
-	@$(MAKE) _ensure-venv
-	@if [ "$(HAS_UV)" = "true" ]; then \
-		echo "$(CYAN)Using UV for fast dependency installation...$(NC)"; \
-		uv pip install -e .; \
-	else \
-		$(PIP) install --use-pep517 -e .; \
-	fi
-	@echo "$(GREEN)✅ Runtime dependencies installed$(NC)"
-	@echo "$(CYAN)💡 Includes: numpy, schedule, aiohttp, inotify for core functionality$(NC)"
-
-install-dev: ## 🔧 Install development dependencies
-	@echo "$(BLUE)Installing development dependencies...$(NC)"
-	@$(MAKE) _ensure-venv
-	@if [ "$(HAS_UV)" = "true" ]; then \
-		echo "$(CYAN)Using UV for fast dependency installation...$(NC)"; \
-		uv pip install -e ".[dev]"; \
-	else \
-		$(PIP) install --use-pep517 -e ".[dev]"; \
-	fi
-	@echo "$(GREEN)✅ Development dependencies installed$(NC)"
-
-install-advanced: ## 🔧 Install advanced features (pandas, ML, analytics, cloud)
-	@echo "$(BOLD)$(BLUE)Installing advanced features...$(NC)"
-	@$(MAKE) _ensure-venv
-	@if [ "$(HAS_UV)" = "true" ]; then \
-		uv pip install -e ".[advanced]"; \
-	else \
-		$(PIP) install --use-pep517 -e ".[advanced]"; \
-	fi
-	@echo "$(GREEN)✅ Advanced features available:$(NC)"
-	@echo "  - Data Analytics (pandas), ML (scikit-learn), Cloud (boto3)"
-
-install-all: ## 🔧 Install all dependencies (complete feature set)
-	@echo "$(BOLD)$(BLUE)Installing complete feature set...$(NC)"
-	@$(MAKE) _ensure-venv
-	@if [ "$(HAS_UV)" = "true" ]; then \
-		uv pip install -e ".[dev,advanced,security,malware-analysis]"; \
-	else \
-		$(PIP) install --use-pep517 -e ".[dev,advanced,security,malware-analysis]"; \
-	fi
-	@echo "$(GREEN)✅ All features installed$(NC)"
-
-# Add a new target for dependency validation
-validate-deps: ## 🧪 Validate all critical dependencies are working
-	@echo "$(BLUE)Validating critical dependencies...$(NC)"
-	@$(MAKE) _ensure-venv
-	@./scripts/setup/ensure-deps.sh --validate-only || { \
-		echo "$(YELLOW)Dependencies not fully validated. Run './scripts/setup/ensure-deps.sh' to fix.$(NC)"; \
-		exit 1; \
-	}
-
-# === Application Execution ===
-run: ## 🚀 Run the application
-	@echo "$(BOLD)$(BLUE)Starting $(PROJECT_NAME)...$(NC)"
-	@$(MAKE) _ensure-venv
-	$(PY) -m app.main
-
-run-debug: ## 🔧 Run with debug logging enabled
-	@echo "$(BLUE)Starting with debug logging...$(NC)"
-	@$(MAKE) _ensure-venv
-	DEBUG=1 PYTHONPATH=. $(PY) -m app.main
-
-run-console: ## 🔧 Run in console mode (no GUI)
-	@echo "$(BLUE)Starting in console mode...$(NC)"
-	@$(MAKE) _ensure-venv
-	CONSOLE_MODE=1 $(PY) -m app.main
-
-# === Testing & Quality ===
-test: ## 🧪 Run comprehensive test suite
-	@echo "$(BOLD)$(BLUE)Running comprehensive test suite...$(NC)"
-	@$(MAKE) _ensure-venv
-	$(PY) -m pytest $(TEST_DIR)/ -v --cov=$(SRC_DIR) --cov-report=term-missing --cov-report=html
-
-test-quick: ## 🧪 Quick smoke tests
-	@echo "$(BLUE)Running quick tests...$(NC)"
-	@$(MAKE) _ensure-venv
-	$(PY) -m pytest $(TEST_DIR)/ -x --tb=line -q
-
-test-gui: ## 🧪 GUI-specific tests
-	@echo "$(BLUE)Running GUI tests...$(NC)"
-	@$(MAKE) _ensure-venv
-	$(PY) -m pytest $(TEST_DIR)/test_gui.py -v
-
-lint: ## 🧪 Complete code quality check (ruff + type + security)
-	@echo "$(BOLD)$(BLUE)Running comprehensive code quality checks...$(NC)"
-	@$(MAKE) _ensure-venv
-	@echo "$(CYAN)🔍 Ruff linting...$(NC)"
-	@$(PY) -m ruff check $(SRC_DIR) $(TEST_DIR) --fix || true
-	@echo "$(CYAN)🎨 Code formatting...$(NC)"
-	@$(PY) -m ruff format $(SRC_DIR) $(TEST_DIR)
-	@echo "$(CYAN)🔍 Type checking...$(NC)"
-	@$(PY) -m mypy $(SRC_DIR) --ignore-missing-imports || true
-	@echo "$(CYAN)🔒 Security scan...$(NC)"
-	@$(PY) -m bandit -r $(SRC_DIR) -f json -o security-report.json || true
-	@echo "$(GREEN)✅ Code quality check complete$(NC)"
-
-format: ## 🧪 Format code with ruff
-	@echo "$(BLUE)Formatting code...$(NC)"
-	@$(MAKE) _ensure-venv
-	$(PY) -m ruff format $(SRC_DIR) $(TEST_DIR)
-	$(PY) -m ruff check $(SRC_DIR) $(TEST_DIR) --fix
-
-# === Security & Analysis ===
-security: ## 🔒 Comprehensive security analysis
-	@echo "$(BOLD)$(BLUE)Running security analysis...$(NC)"
-	@$(MAKE) _ensure-venv
-	@echo "$(CYAN)🔍 Dependency vulnerabilities...$(NC)"
-	@$(PY) -m pip_audit --format=json --output=security-report.json || true
-	@echo "$(CYAN)🔍 Code security scan...$(NC)"
-	@$(PY) -m bandit -r $(SRC_DIR) -ll || true
-	@if command -v semgrep >/dev/null 2>&1; then \
-		echo "$(CYAN)🔍 Advanced code analysis...$(NC)"; \
-		semgrep --config=auto $(SRC_DIR) --json --output=semgrep-report.json || true; \
-	fi
-	@echo "$(GREEN)✅ Security analysis complete$(NC)"
-
-deps-check: ## 🔒 Check dependencies for updates and vulnerabilities
-	@echo "$(BLUE)Checking dependencies...$(NC)"
-	@$(MAKE) _ensure-venv
-	$(PIP) list --outdated
-	@$(PY) -m pip_audit || echo "$(YELLOW)⚠️  Install pip-audit for vulnerability scanning$(NC)"
-
-deps-diagnose: ## 📊 Diagnose missing dependencies
-	@echo "$(BOLD)$(BLUE)🔍 Dependency Diagnostics$(NC)"
-	@$(MAKE) _ensure-venv
-	@$(PY) -c "import numpy; print('✅ numpy: Available')" 2>/dev/null || echo "❌ numpy: Missing"
-	@$(PY) -c "import schedule; print('✅ schedule: Available')" 2>/dev/null || echo "❌ schedule: Missing"
-	@$(PY) -c "import aiohttp; print('✅ aiohttp: Available')" 2>/dev/null || echo "❌ aiohttp: Missing"
-	@$(PY) -c "import dns.resolver; print('✅ dnspython: Available')" 2>/dev/null || echo "❌ dnspython: Missing"
-	@$(PY) -c "import inotify; print('✅ inotify: Available')" 2>/dev/null || echo "❌ inotify: Missing"
-	@echo ""
-	@echo "$(CYAN)📦 Solutions: make install-advanced | make install-all$(NC)"
-
-# === Build & Distribution ===
-build: ## 📦 Build distribution packages
-	@echo "$(BOLD)$(BLUE)Building distribution packages...$(NC)"
-	@$(MAKE) _ensure-venv
-	@$(MAKE) clean
-	$(PY) -m build
-	@echo "$(GREEN)✅ Packages built in dist/$(NC)"
-
-clean: ## 🧹 Clean build artifacts and cache
-	@echo "$(BLUE)Cleaning build artifacts...$(NC)"
-	rm -rf build dist *.egg-info
-	rm -rf $(SRC_DIR)/__pycache__ $(TEST_DIR)/__pycache__
-	find . -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
-	find . -type f \( -name "*.pyc" -o -name "*.pyo" \) -delete
-	rm -rf .pytest_cache .mypy_cache .ruff_cache htmlcov .coverage
-	rm -f security-report.json semgrep-report.json
-	@echo "$(GREEN)✅ Cleanup complete$(NC)"
-
-# === Information & Status ===
-status: ## 📊 Show project and environment status
-	@echo "$(BOLD)$(BLUE)📊 Project Status$(NC)"
-	@echo ""
-	@echo "$(BOLD)$(CYAN)📦 Project$(NC)"
-	@echo "  Name: $(PROJECT_NAME)"
-	@echo "  Version: $(GREEN)$(VERSION)$(NC)"
-	@echo "  Location: $(shell pwd)"
-	@echo ""
-	@echo "$(BOLD)$(CYAN)🐍 Python Environment$(NC)"
-	@echo "  Python: $(shell $(PY) --version 2>/dev/null || echo 'Not available')"
-	@echo "  Virtual Env: $(if $(filter true,$(HAS_VENV)),$(GREEN)✅ Active$(NC) ($(VENV_DIR)),$(RED)❌ Not found$(NC))"
-	@echo "  Package Manager: $(if $(filter true,$(HAS_UV)),$(GREEN)UV available$(NC),$(YELLOW)UV not installed$(NC))"
-	@echo ""
-	@echo "$(BOLD)$(CYAN)🔧 Development Tools$(NC)"
-	@printf "  Node.js/npm: "; command -v npm >/dev/null && echo "$(GREEN)✅ Available$(NC)" || echo "$(YELLOW)Not installed$(NC)"
-	@printf "  Ruff: "; command -v ruff >/dev/null && echo "$(GREEN)✅ Available$(NC)" || echo "$(YELLOW)Not installed$(NC)"
-	@printf "  MyPy: "; $(PY) -c "import mypy" 2>/dev/null && echo "$(GREEN)✅ Available$(NC)" || echo "$(YELLOW)Not installed$(NC)"
-	@echo ""
-	@echo "$(BOLD)$(CYAN)🔒 Security Tools$(NC)"
-	@printf "  Bandit: "; $(PY) -c "import bandit" 2>/dev/null && echo "$(GREEN)✅ Available$(NC)" || echo "$(YELLOW)Not installed$(NC)"
-	@printf "  pip-audit: "; command -v pip-audit >/dev/null && echo "$(GREEN)✅ Available$(NC)" || echo "$(YELLOW)Not installed$(NC)"
-	@printf "  Semgrep: "; command -v semgrep >/dev/null && echo "$(GREEN)✅ Available$(NC)" || echo "$(YELLOW)Not installed$(NC)"
-
-version: ## 📊 Show version information
-	@echo "$(BOLD)$(BLUE)$(PROJECT_NAME) v$(VERSION)$(NC)"
-	@echo "Python: $(shell $(PY) --version 2>/dev/null || echo 'Not available')"
-	@echo "Location: $(shell pwd)"
-
-# === Modernization Tools ===
-modernize-check: ## ⚡ Check for deprecated patterns and suggest upgrades
-	@echo "$(BOLD)$(BLUE)🔍 Modernization Analysis$(NC)"
-	@echo ""
-	@echo "$(BOLD)$(CYAN)📋 Build System$(NC)"
-	@[ -f "pyproject.toml" ] && echo "  $(GREEN)✅ pyproject.toml present$(NC)" || echo "  $(RED)❌ Missing pyproject.toml$(NC)"
-	@echo ""
-	@echo "$(BOLD)$(CYAN)📦 Package Management$(NC)"
-	@[ "$(HAS_UV)" = "true" ] && echo "  $(GREEN)✅ UV available$(NC)" || echo "  $(YELLOW)💡 Consider installing UV$(NC)"
-	@echo ""
-	@echo "$(BOLD)$(CYAN)🔧 Development Tools$(NC)"
-	@command -v ruff >/dev/null && echo "  $(GREEN)✅ Ruff available$(NC)" || echo "  $(YELLOW)💡 Install ruff$(NC)"
-	@[ -f ".pre-commit-config.yaml" ] && echo "  $(GREEN)✅ Pre-commit configured$(NC)" || echo "  $(YELLOW)💡 Add pre-commit hooks$(NC)"
-	@echo ""
-	@echo "$(CYAN)💡 Run 'make migrate-to-modern' for automated fixes$(NC)"
-
-migrate-to-modern: ## ⚡ Automatically apply modern Python practices
-	@echo "$(BOLD)$(BLUE)🚀 Applying modernization...$(NC)"
-	@$(MAKE) _install-uv-if-needed
-	@$(MAKE) _setup-precommit-if-needed
-	@$(MAKE) install-dev
-	@echo "$(GREEN)✅ Modernization complete$(NC)"
-
-deprecation-check: ## ⚡ Check for Python deprecation warnings
-	@echo "$(BLUE)Checking for deprecation warnings...$(NC)"
-	@$(MAKE) _ensure-venv
-	@PYTHONWARNINGS=default $(PY) -Wd -c "import $(SRC_DIR)" 2>&1 | \
-		grep -E "(DeprecationWarning|FutureWarning)" || echo "$(GREEN)✅ No deprecation warnings$(NC)"
-
-# === Development Workflows ===
-dev: ## 🔧 Complete development workflow (setup + test + lint)
-	@echo "$(BOLD)$(BLUE)🔧 Development workflow...$(NC)"
-	@$(MAKE) setup
-	@$(MAKE) test-quick
-	@$(MAKE) lint
-	@echo "$(GREEN)🎉 Development workflow complete$(NC)"
-
-quick: ## ⚡ Quick validation (lint + quick tests)
-	@echo "$(BLUE)Quick validation...$(NC)"
-	@$(MAKE) _ensure-venv
-	@$(MAKE) format
-	@$(MAKE) test-quick
-	@echo "$(GREEN)✅ Quick validation complete$(NC)"
-
-pre-commit: ## 🧪 Run all pre-commit checks
-	@echo "$(BLUE)Running pre-commit checks...$(NC)"
-	@$(MAKE) format
-	@$(MAKE) test-quick
-	@$(MAKE) security
-	@echo "$(GREEN)✅ Pre-commit checks complete$(NC)"
-
-ci-test: ## 🧪 CI/CD test suite
-	@echo "$(BLUE)Running CI test suite...$(NC)"
-	@$(MAKE) _ensure-venv
-	@$(MAKE) modernize-check
-	@$(MAKE) deprecation-check
-	@$(PY) -m pytest $(TEST_DIR)/ --cov=$(SRC_DIR) --cov-report=xml --maxfail=3
-	@echo "$(GREEN)✅ CI tests complete$(NC)"
-
-release-check: ## 📊 Comprehensive release preparation validation
-	@echo "$(BOLD)$(BLUE)🔍 Release validation...$(NC)"
-	@$(MAKE) clean
-	@$(MAKE) modernize-check
-	@$(MAKE) ci-test
-	@$(MAKE) build
-	@echo "$(GREEN)🎉 Release validation complete$(NC)"
-
-# === Internal Helper Targets ===
-_ensure-venv:
-	@if [ "$(HAS_VENV)" != "true" ]; then \
-		echo "$(RED)❌ Virtual environment not found$(NC)"; \
-		echo "$(CYAN)💡 Run 'make setup' first$(NC)"; \
-		exit 1; \
-	fi
-
-_create-venv:
-	@if [ "$(HAS_UV)" = "true" ]; then \
-		echo "$(CYAN)Creating UV-based virtual environment...$(NC)"; \
-		uv venv $(VENV_DIR) --python $(PYTHON); \
-	else \
-		$(MAKE) _create-venv-standard; \
-	fi
-
-_create-venv-standard:
-	@echo "$(CYAN)Creating standard virtual environment...$(NC)"
-	$(PYTHON) -m venv $(VENV_DIR)
-
-_install-uv-if-needed:
-	@if [ "$(HAS_UV)" != "true" ]; then \
-		echo "$(CYAN)Installing UV package manager...$(NC)"; \
-		curl -LsSf https://astral.sh/uv/install.sh | sh; \
-		echo "$(GREEN)✅ UV installed$(NC)"; \
-	fi
-
-_setup-precommit-if-needed:
-	@if [ ! -f ".pre-commit-config.yaml" ]; then \
-		echo "$(CYAN)Setting up pre-commit hooks...$(NC)"; \
-		echo 'repos:' > .pre-commit-config.yaml; \
-		echo '  - repo: https://github.com/astral-sh/ruff-pre-commit' >> .pre-commit-config.yaml; \
-		echo '    rev: v0.1.8' >> .pre-commit-config.yaml; \
-		echo '    hooks:' >> .pre-commit-config.yaml; \
-		echo '      - id: ruff' >> .pre-commit-config.yaml; \
-		echo '      - id: ruff-format' >> .pre-commit-config.yaml; \
-		echo "$(GREEN)✅ Pre-commit configured$(NC)"; \
-	fi
-
-# === Special Targets ===
+# Default goal
 .DEFAULT_GOAL := help
 
-# Declare all targets as phony to prevent conflicts
-.PHONY: help setup setup-standard install install-dev install-advanced install-all
-.PHONY: run run-debug run-console test test-quick test-gui lint format security
-.PHONY: deps-check deps-diagnose build clean status version
-.PHONY: modernize-check migrate-to-modern deprecation-check
-.PHONY: dev quick pre-commit ci-test release-check
-.PHONY: _ensure-venv _create-venv _create-venv-standard _install-uv-if-needed _setup-precommit-if-needed
+# Colors for output
+CYAN := \033[36m
+GREEN := \033[32m
+YELLOW := \033[33m
+RED := \033[31m
+NC := \033[0m # No Color
+BOLD := \033[1m
+
+# Project configuration
+PROJECT_NAME := xanadOS-Search_Destroy
+VERSION := 2.11.2
+PYTHON_VERSION := 3.11
+NODE_VERSION := lts
+
+# Directory paths
+SCRIPTS_DIR := scripts
+TOOLS_DIR := $(SCRIPTS_DIR)/tools
+SETUP_DIR := $(SCRIPTS_DIR)/setup
+DOCS_DIR := docs
+TESTS_DIR := tests
+
+# Package managers and tools
+PYTHON := python3
+UV := uv
+PNPM := pnpm
+FNM := fnm
+
+# Environment detection
+SHELL_NAME := $(shell basename $$SHELL)
+OS := $(shell uname -s)
+ARCH := $(shell uname -m)
+
+##@ Help
+
+help: ## Display this help
+	@echo -e "$(BOLD)$(CYAN)🚀 xanadOS Search & Destroy - Development Commands$(NC)"
+	@echo ""
+	@echo -e "$(BOLD)Usage:$(NC) make [target]"
+	@echo ""
+	@awk 'BEGIN {FS = ":.*##"; printf ""} /^[a-zA-Z_0-9-]+:.*?##/ { printf "  $(CYAN)%-20s$(NC) %s\n", $$1, $$2 } /^##@/ { printf "\n$(BOLD)$(YELLOW)%s$(NC)\n", substr($$0, 5) } ' $(MAKEFILE_LIST)
+
+##@ Environment Setup
+
+setup: ## Quick setup with modern tools (recommended)
+	@echo -e "$(BOLD)$(GREEN)🔧 Setting up modern development environment...$(NC)"
+	@chmod +x $(SETUP_DIR)/modern-dev-setup.sh
+	@$(SETUP_DIR)/modern-dev-setup.sh
+
+setup-modern: setup ## Alias for modern setup
+
+setup-full: ## Full setup with all optional components
+	@echo -e "$(BOLD)$(GREEN)🔧 Setting up complete development environment...$(NC)"
+	@chmod +x $(SCRIPTS_DIR)/setup-dev-environment.sh
+	@$(SCRIPTS_DIR)/setup-dev-environment.sh
+	@make setup-modern
+
+setup-legacy: ## Legacy setup (fallback)
+	@echo -e "$(BOLD)$(YELLOW)⚠️  Running legacy setup...$(NC)"
+	@chmod +x $(SCRIPTS_DIR)/setup-dev-environment.sh
+	@$(SCRIPTS_DIR)/setup-dev-environment.sh
+
+##@ Development
+
+dev: install-deps ## Start development environment
+	@echo -e "$(BOLD)$(GREEN)🚀 Starting development environment...$(NC)"
+	@if command -v direnv >/dev/null 2>&1; then \
+		echo -e "$(CYAN)Using direnv for automatic environment activation$(NC)"; \
+		direnv allow; \
+	else \
+		echo -e "$(YELLOW)Activating Python virtual environment...$(NC)"; \
+		if [ -d ".venv" ]; then source .venv/bin/activate; fi; \
+	fi
+
+dev-gui: install-deps ## Start GUI development environment
+	@echo -e "$(BOLD)$(GREEN)🖥️  Starting GUI development environment...$(NC)"
+	@if [ -d ".venv" ]; then \
+		source .venv/bin/activate && python -m app.main; \
+	else \
+		echo -e "$(RED)❌ Virtual environment not found. Run 'make setup' first.$(NC)"; \
+		exit 1; \
+	fi
+
+run: ## Run the application
+	@echo -e "$(BOLD)$(GREEN)🎯 Running xanadOS Search & Destroy...$(NC)"
+	@if [ -d ".venv" ]; then \
+		source .venv/bin/activate && python -m app.main; \
+	else \
+		echo -e "$(RED)❌ Virtual environment not found. Run 'make setup' first.$(NC)"; \
+		exit 1; \
+	fi
+
+##@ Dependencies
+
+install-deps: check-env ## Install all dependencies with modern package managers
+	@echo -e "$(BOLD)$(GREEN)📦 Installing dependencies...$(NC)"
+	@if command -v $(UV) >/dev/null 2>&1; then \
+		echo -e "$(CYAN)Installing Python dependencies with uv...$(NC)"; \
+		$(UV) sync --all-extras; \
+	else \
+		echo -e "$(YELLOW)Installing Python dependencies with pip...$(NC)"; \
+		pip install -e .; \
+	fi
+	@if [ -f "package.json" ] && command -v $(PNPM) >/dev/null 2>&1; then \
+		echo -e "$(CYAN)Installing JavaScript dependencies with pnpm...$(NC)"; \
+		$(PNPM) install; \
+	elif [ -f "package.json" ]; then \
+		echo -e "$(YELLOW)Installing JavaScript dependencies with npm...$(NC)"; \
+		npm install; \
+	fi
+
+update-deps: ## Update all dependencies
+	@echo -e "$(BOLD)$(GREEN)🔄 Updating dependencies...$(NC)"
+	@if command -v $(UV) >/dev/null 2>&1; then \
+		$(UV) sync --upgrade; \
+	fi
+	@if [ -f "package.json" ] && command -v $(PNPM) >/dev/null 2>&1; then \
+		$(PNPM) update; \
+	elif [ -f "package.json" ]; then \
+		npm update; \
+	fi
+
+##@ Quality Assurance
+
+validate: ## Run comprehensive validation (recommended)
+	@echo -e "$(BOLD)$(GREEN)✅ Running comprehensive validation...$(NC)"
+	@if command -v $(PNPM) >/dev/null 2>&1; then \
+		$(PNPM) run quick:validate; \
+	else \
+		npm run quick:validate; \
+	fi
+
+test: run-tests ## Run tests
+
+run-tests: ## Run all tests
+	@echo -e "$(BOLD)$(GREEN)🧪 Running tests...$(NC)"
+	@if [ -d ".venv" ]; then \
+		source .venv/bin/activate && python -m pytest $(TESTS_DIR) -v; \
+	else \
+		echo -e "$(RED)❌ Virtual environment not found. Run 'make setup' first.$(NC)"; \
+		exit 1; \
+	fi
+
+benchmark: ## Run performance benchmarks
+	@echo -e "$(BOLD)$(GREEN)📊 Running performance benchmarks...$(NC)"
+	@if [ -d ".venv" ]; then \
+		source .venv/bin/activate && python -m pytest $(TESTS_DIR) -v --benchmark-only; \
+	fi
+
+lint: ## Run linting tools
+	@echo -e "$(BOLD)$(GREEN)🔍 Running linting tools...$(NC)"
+	@if command -v $(PNPM) >/dev/null 2>&1; then \
+		$(PNPM) run lint; \
+	else \
+		npm run lint; \
+	fi
+	@if [ -d ".venv" ] && command -v ruff >/dev/null 2>&1; then \
+		source .venv/bin/activate && ruff check .; \
+	fi
+
+format: ## Format code
+	@echo -e "$(BOLD)$(GREEN)✨ Formatting code...$(NC)"
+	@if [ -d ".venv" ]; then \
+		source .venv/bin/activate; \
+		if command -v ruff >/dev/null 2>&1; then \
+			ruff format .; \
+		elif command -v black >/dev/null 2>&1; then \
+			black .; \
+		fi; \
+		if command -v isort >/dev/null 2>&1; then \
+			isort .; \
+		fi; \
+	fi
+	@if command -v $(PNPM) >/dev/null 2>&1; then \
+		$(PNPM) run lint:fix; \
+	elif [ -f "package.json" ]; then \
+		npm run lint:fix; \
+	fi
+
+type-check: ## Run type checking
+	@echo -e "$(BOLD)$(GREEN)🔍 Running type checking...$(NC)"
+	@if [ -d ".venv" ] && command -v mypy >/dev/null 2>&1; then \
+		source .venv/bin/activate && mypy app/; \
+	fi
+
+audit: ## Run security audit
+	@echo -e "$(BOLD)$(GREEN)🔒 Running security audit...$(NC)"
+	@if [ -d ".venv" ] && command -v bandit >/dev/null 2>&1; then \
+		source .venv/bin/activate && bandit -r app/; \
+	fi
+	@if [ -d ".venv" ] && command -v safety >/dev/null 2>&1; then \
+		source .venv/bin/activate && safety check; \
+	fi
+	@if [ -f "package.json" ] && command -v $(PNPM) >/dev/null 2>&1; then \
+		$(PNPM) audit; \
+	elif [ -f "package.json" ]; then \
+		npm audit; \
+	fi
+
+##@ Security
+
+security-scan: ## Run comprehensive security scan
+	@echo -e "$(BOLD)$(GREEN)🛡️  Running security scan...$(NC)"
+	@if command -v $(PNPM) >/dev/null 2>&1; then \
+		$(PNPM) run security:check; \
+	else \
+		npm run security:check; \
+	fi
+	@chmod +x $(TOOLS_DIR)/security/security-scan.sh
+	@$(TOOLS_DIR)/security/security-scan.sh --quick
+
+pre-commit: format lint type-check ## Run pre-commit checks
+	@echo -e "$(BOLD)$(GREEN)✅ Pre-commit checks completed$(NC)"
+
+##@ Documentation
+
+docs: ## Generate documentation
+	@echo -e "$(BOLD)$(GREEN)📚 Generating documentation...$(NC)"
+	@if [ -d ".venv" ] && command -v sphinx-build >/dev/null 2>&1; then \
+		source .venv/bin/activate && make -C docs html; \
+	fi
+
+docs-serve: docs ## Serve documentation locally
+	@echo -e "$(BOLD)$(GREEN)🌐 Serving documentation at http://localhost:8000$(NC)"
+	@if [ -d ".venv" ] && command -v python >/dev/null 2>&1; then \
+		source .venv/bin/activate && cd docs/_build/html && python -m http.server 8000; \
+	fi
+
+##@ Docker
+
+docker-build: ## Build Docker image
+	@echo -e "$(BOLD)$(GREEN)🐳 Building Docker image...$(NC)"
+	@docker build -t $(PROJECT_NAME):$(VERSION) .
+
+docker-run: docker-build ## Run application in Docker
+	@echo -e "$(BOLD)$(GREEN)🐳 Running application in Docker...$(NC)"
+	@docker run --rm -it \
+		-v $(PWD):/workspace \
+		-p 8080:8080 \
+		$(PROJECT_NAME):$(VERSION)
+
+docker-dev: ## Run development environment in Docker
+	@echo -e "$(BOLD)$(GREEN)🐳 Starting development environment in Docker...$(NC)"
+	@docker run --rm -it \
+		-v $(PWD):/workspace \
+		-w /workspace \
+		-p 8080:8080 \
+		--entrypoint /bin/bash \
+		$(PROJECT_NAME):$(VERSION)
+
+##@ Maintenance
+
+clean: ## Clean build artifacts and caches
+	@echo -e "$(BOLD)$(YELLOW)🧹 Cleaning build artifacts...$(NC)"
+	@find . -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
+	@find . -type d -name "*.egg-info" -exec rm -rf {} + 2>/dev/null || true
+	@find . -type d -name ".pytest_cache" -exec rm -rf {} + 2>/dev/null || true
+	@find . -type d -name ".mypy_cache" -exec rm -rf {} + 2>/dev/null || true
+	@find . -type d -name ".ruff_cache" -exec rm -rf {} + 2>/dev/null || true
+	@rm -rf build/ dist/ .coverage .tox/ 2>/dev/null || true
+	@if [ -d "node_modules" ]; then rm -rf node_modules; fi
+	@if [ -f "package-lock.json" ]; then rm -f package-lock.json; fi
+	@echo -e "$(GREEN)✅ Cleanup completed$(NC)"
+
+clean-env: ## Remove virtual environment
+	@echo -e "$(BOLD)$(YELLOW)🗑️  Removing virtual environment...$(NC)"
+	@if [ -d ".venv" ]; then rm -rf .venv; fi
+	@echo -e "$(GREEN)✅ Virtual environment removed$(NC)"
+
+reset: clean clean-env ## Reset environment completely
+	@echo -e "$(BOLD)$(YELLOW)🔄 Resetting environment...$(NC)"
+	@echo -e "$(GREEN)✅ Environment reset completed$(NC)"
+
+##@ Utilities
+
+check-env: ## Check environment status
+	@echo -e "$(BOLD)$(CYAN)🔍 Environment Status$(NC)"
+	@echo -e "$(BOLD)System Information:$(NC)"
+	@echo -e "  OS: $(CYAN)$(OS) $(ARCH)$(NC)"
+	@echo -e "  Shell: $(CYAN)$(SHELL_NAME)$(NC)"
+	@echo ""
+	@echo -e "$(BOLD)Package Managers:$(NC)"
+	@if command -v $(UV) >/dev/null 2>&1; then \
+		echo -e "  uv: $(GREEN)✅ $(shell $(UV) --version)$(NC)"; \
+	else \
+		echo -e "  uv: $(RED)❌ Not installed$(NC)"; \
+	fi
+	@if command -v $(PNPM) >/dev/null 2>&1; then \
+		echo -e "  pnpm: $(GREEN)✅ $(shell $(PNPM) --version)$(NC)"; \
+	else \
+		echo -e "  pnpm: $(RED)❌ Not installed$(NC)"; \
+	fi
+	@if command -v $(FNM) >/dev/null 2>&1; then \
+		echo -e "  fnm: $(GREEN)✅ $(shell $(FNM) --version)$(NC)"; \
+	else \
+		echo -e "  fnm: $(RED)❌ Not installed$(NC)"; \
+	fi
+	@if command -v node >/dev/null 2>&1; then \
+		echo -e "  Node.js: $(GREEN)✅ $(shell node --version)$(NC)"; \
+	else \
+		echo -e "  Node.js: $(RED)❌ Not installed$(NC)"; \
+	fi
+	@if command -v $(PYTHON) >/dev/null 2>&1; then \
+		echo -e "  Python: $(GREEN)✅ $(shell $(PYTHON) --version)$(NC)"; \
+	else \
+		echo -e "  Python: $(RED)❌ Not installed$(NC)"; \
+	fi
+	@echo ""
+	@echo -e "$(BOLD)Virtual Environment:$(NC)"
+	@if [ -d ".venv" ]; then \
+		echo -e "  Status: $(GREEN)✅ Active$(NC)"; \
+	else \
+		echo -e "  Status: $(RED)❌ Not found$(NC)"; \
+	fi
+
+version: ## Show version information
+	@echo -e "$(BOLD)$(CYAN)📋 Version Information$(NC)"
+	@echo -e "  Project: $(CYAN)$(PROJECT_NAME)$(NC)"
+	@echo -e "  Version: $(CYAN)$(VERSION)$(NC)"
+	@echo -e "  Python Target: $(CYAN)$(PYTHON_VERSION)+$(NC)"
+	@echo -e "  Node Target: $(CYAN)$(NODE_VERSION)$(NC)"
+
+upgrade-tools: ## Upgrade development tools
+	@echo -e "$(BOLD)$(GREEN)⬆️  Upgrading development tools...$(NC)"
+	@if command -v $(UV) >/dev/null 2>&1; then \
+		curl -LsSf https://astral.sh/uv/install.sh | sh; \
+	fi
+	@if command -v $(PNPM) >/dev/null 2>&1; then \
+		$(PNPM) add -g pnpm; \
+	fi
+	@if command -v $(FNM) >/dev/null 2>&1; then \
+		curl -fsSL https://fnm.vercel.app/install | bash; \
+	fi
+
+info: check-env version ## Show comprehensive environment information
+
+##@ Release
+
+release: validate test ## Prepare release
+	@echo -e "$(BOLD)$(GREEN)🚀 Preparing release $(VERSION)...$(NC)"
+	@echo -e "$(CYAN)Running final validation...$(NC)"
+	@make validate
+	@echo -e "$(GREEN)✅ Release $(VERSION) is ready$(NC)"
+
+# Advanced targets for power users
+##@ Advanced
+
+nix-setup: ## Setup Nix development environment (experimental)
+	@echo -e "$(BOLD)$(CYAN)❄️  Setting up Nix development environment...$(NC)"
+	@if command -v nix >/dev/null 2>&1; then \
+		echo "use flake" > .envrc; \
+		direnv allow; \
+	else \
+		echo -e "$(RED)❌ Nix not installed. Install Nix first.$(NC)"; \
+		exit 1; \
+	fi
+
+devcontainer: ## Setup VS Code DevContainer
+	@echo -e "$(BOLD)$(CYAN)📦 Setting up VS Code DevContainer...$(NC)"
+	@mkdir -p .devcontainer
+	@if [ ! -f ".devcontainer/devcontainer.json" ]; then \
+		echo '{"name": "xanadOS Dev", "image": "mcr.microsoft.com/devcontainers/python:3.11", "features": {"ghcr.io/devcontainers/features/node:1": {}}}' > .devcontainer/devcontainer.json; \
+	fi
+
+perf-profile: ## Profile application performance
+	@echo -e "$(BOLD)$(GREEN)📈 Profiling application performance...$(NC)"
+	@if [ -d ".venv" ]; then \
+		source .venv/bin/activate && python -m cProfile -o profile.stats -m app.main; \
+		python -c "import pstats; p = pstats.Stats('profile.stats'); p.sort_stats('cumulative').print_stats(20)"; \
+	fi
+
+# Make sure we can run setup even without make
+bootstrap: ## Bootstrap development environment (no deps)
+	@echo -e "$(BOLD)$(GREEN)🥾 Bootstrapping development environment...$(NC)"
+	@chmod +x $(SETUP_DIR)/modern-dev-setup.sh
+	@$(SETUP_DIR)/modern-dev-setup.sh

@@ -148,24 +148,9 @@ class InstallationWorker(QThread):  # pylint: disable=too-many-instance-attribut
                         gui=True,
                     )
                 else:
-                    # Handle shell commands and simple commands properly
-                    if install_cmd.startswith('sh -c "') and install_cmd.endswith('"'):
-                        # This is a shell command like: sh -c "command && other_command"
-                        # Extract the shell command between quotes
-                        parts = install_cmd.split('"')
-                        if len(parts) >= 2:
-                            shell_cmd = parts[1]
-                            cmd_parts = ["sh", "-c", shell_cmd]
-                            self.output_updated.emit(
-                                f"Executing shell command: {shell_cmd}"
-                            )
-                        else:
-                            # Fallback to simple splitting
-                            cmd_parts = install_cmd.split()
-                    else:
-                        # Handle simple commands
-                        cmd_parts = install_cmd.split()
-                        # pkexec no longer supported - use GUI sudo only
+                    # Handle simple commands directly - no shell wrapper needed
+                    cmd_parts = install_cmd.split()
+                    self.output_updated.emit(f"Executing command: {' '.join(cmd_parts)}")
 
                     # For better GUI authentication, try elevated_run with retries
                     max_retries = 2
@@ -189,6 +174,8 @@ class InstallationWorker(QThread):  # pylint: disable=too-many-instance-attribut
                                 self.output_updated.emit(
                                     f"Attempt {attempt + 1} failed with code {install_result.returncode}"
                                 )
+                                if install_result.stderr:
+                                    self.output_updated.emit(f"Error: {install_result.stderr}")
                                 if attempt < max_retries - 1:
                                     self.output_updated.emit(
                                         "Retrying with fresh authentication..."
@@ -239,48 +226,107 @@ class InstallationWorker(QThread):  # pylint: disable=too-many-instance-attribut
                 # Run post-installation commands if any
                 if self.package_info.post_install_commands:
                     for cmd in self.package_info.post_install_commands:
-                        self.output_updated.emit(f"Running: {cmd}")
+                        self.output_updated.emit(f"Running post-install: {cmd}")
                         try:
-                            post_result = subprocess.run(
-                                cmd.split(), capture_output=True, text=True, check=False
-                            )
+                            # Check if command needs elevated privileges
+                            if any(keyword in cmd for keyword in ["freshclam", "systemctl", "sudo"]):
+                                # Use elevated_run for commands that need privileges
+                                if " || " in cmd:
+                                    # Handle shell commands with fallback
+                                    post_result = elevated_run(
+                                        ["sh", "-c", cmd],
+                                        capture_output=True,
+                                        text=True,
+                                        timeout=60,
+                                        gui=True,
+                                    )
+                                else:
+                                    post_result = elevated_run(
+                                        cmd.split(),
+                                        capture_output=True,
+                                        text=True,
+                                        timeout=60,
+                                        gui=True,
+                                    )
+                            else:
+                                # Regular command execution
+                                post_result = subprocess.run(
+                                    cmd.split(), capture_output=True, text=True, check=False, timeout=60
+                                )
+
                             if post_result.returncode != 0 and post_result.stderr:
                                 self.output_updated.emit(
-                                    f"Post-install warning: {post_result.stderr}"
+                                    f"Post-install note: {post_result.stderr.strip()}"
                                 )
-                        except (OSError, subprocess.SubprocessError, ValueError) as e:
-                            self.output_updated.emit(f"Post-install error: {e}")
+                            elif post_result.stdout:
+                                self.output_updated.emit(f"Post-install: {post_result.stdout.strip()}")
+                        except subprocess.TimeoutExpired:
+                            self.output_updated.emit(f"Post-install timeout: {cmd}")
+                        except Exception as e:
+                            self.output_updated.emit(f"Post-install note: {e}")
 
                 # Start service if specified
                 if self.package_info.service_name:
                     try:
                         self.output_updated.emit(
-                            f"Starting service: {self.package_info.service_name}"
+                            f"Enabling and starting service: {self.package_info.service_name}"
                         )
-                        service_result = elevated_run(
-                            [
-                                "systemctl",
-                                "enable",
-                                "--now",
-                                self.package_info.service_name,
-                            ],
+
+                        # Enable the service first
+                        enable_result = elevated_run(
+                            ["systemctl", "enable", self.package_info.service_name],
                             timeout=60,
                             capture_output=True,
                             text=True,
                             gui=True,
                         )
-                        if service_result.returncode == 0:
+
+                        if enable_result.returncode == 0:
+                            self.output_updated.emit(
+                                f"Enabled {self.package_info.service_name} service"
+                            )
+                        else:
+                            self.output_updated.emit(
+                                f"Note: Could not enable service: {enable_result.stderr}"
+                            )
+
+                        # Start the service
+                        start_result = elevated_run(
+                            ["systemctl", "start", self.package_info.service_name],
+                            timeout=60,
+                            capture_output=True,
+                            text=True,
+                            gui=True,
+                        )
+
+                        if start_result.returncode == 0:
                             self.output_updated.emit(
                                 f"Started {self.package_info.service_name} service"
                             )
+
+                            # For ClamAV daemon, also handle freshclam service
+                            if self.package_info.service_name == "clamav-daemon":
+                                self.output_updated.emit("Setting up ClamAV auto-update service...")
+                                freshclam_enable = elevated_run(
+                                    ["systemctl", "enable", "clamav-freshclam"],
+                                    timeout=30,
+                                    capture_output=True,
+                                    text=True,
+                                    gui=True,
+                                )
+                                if freshclam_enable.returncode == 0:
+                                    self.output_updated.emit("Enabled ClamAV auto-update service")
+                                else:
+                                    self.output_updated.emit("Note: ClamAV auto-update service setup skipped")
+
                         else:
                             # Ensure clean formatting of stderr output
                             self.output_updated.emit(
-                                f"Note: Could not start service: {service_result.stderr}"
+                                f"Note: Could not start service: {start_result.stderr}"
                             )
                     except Exception as e:  # pylint: disable=broad-exception-caught
                         # elevated_run can surface diverse OS/auth/Qt errors; keep UX stable
-                        self.output_updated.emit(f"Note: Could not start service: {e}")
+                        self.output_updated.emit(f"Note: Could not manage service: {e}")
 
                 self.progress_updated.emit(
                     f"{self.package_info.display_name} installed successfully!", 100
@@ -406,9 +452,7 @@ class SetupWizard(ThemedDialog):  # pylint: disable=too-many-instance-attributes
                 ),
                 purpose=("Core virus scanning and real-time protection capabilities"),
                 install_commands={
-                    "arch": (
-                        'sh -c "rm -f /var/lib/pacman/db.lck && pacman -S --noconfirm clamav"'
-                    ),
+                    "arch": "pacman -S --noconfirm clamav",
                     "ubuntu": (
                         'sh -c "apt update && apt install -y clamav clamav-daemon"'
                     ),
@@ -423,11 +467,7 @@ class SetupWizard(ThemedDialog):  # pylint: disable=too-many-instance-attributes
                 check_command="clamscan --version",
                 service_name="clamav-daemon",
                 post_install_commands=[
-                    "freshclam",  # Update virus definitions
-                    "systemctl enable clamav-daemon",  # Enable daemon
-                    "systemctl start clamav-daemon",  # Start daemon
-                    "systemctl enable clamav-freshclam",  # Auto-update service
-                    "systemctl start clamav-freshclam",  # Start auto-update
+                    "freshclam || echo 'Freshclam update will be retried later'",  # Update virus definitions
                 ],
                 is_critical=True,
             ),
@@ -440,9 +480,7 @@ class SetupWizard(ThemedDialog):  # pylint: disable=too-many-instance-attributes
                 ),
                 purpose="Network security and firewall management",
                 install_commands={
-                    "arch": (
-                        'sh -c "rm -f /var/lib/pacman/db.lck && pacman -S --noconfirm ufw"'
-                    ),
+                    "arch": "pacman -S --noconfirm ufw",
                     "ubuntu": 'sh -c "apt update && apt install -y ufw"',
                     "debian": 'sh -c "apt update && apt install -y ufw"',
                     "fedora": "dnf install -y ufw",
@@ -463,9 +501,7 @@ class SetupWizard(ThemedDialog):  # pylint: disable=too-many-instance-attributes
                 ),
                 purpose=("Advanced rootkit detection and system integrity checking"),
                 install_commands={
-                    "arch": (
-                        'sh -c "rm -f /var/lib/pacman/db.lck && pacman -S --noconfirm rkhunter"'
-                    ),
+                    "arch": "pacman -S --noconfirm rkhunter",
                     "ubuntu": 'sh -c "apt update && apt install -y rkhunter"',
                     "debian": 'sh -c "apt update && apt install -y rkhunter"',
                     "fedora": "dnf install -y rkhunter",

@@ -4,7 +4,7 @@
 import logging
 import threading
 import time
-from typing import Any, List, Optional
+from typing import Any
 
 from PyQt6.QtCore import QThread, pyqtSignal
 from PyQt6.QtWidgets import (

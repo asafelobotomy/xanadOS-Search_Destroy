@@ -3,8 +3,6 @@
 A modern GUI for ClamAV antivirus scanning with real-time monitoring.
 """
 
-import os
-
 
 def get_version():
     """Delegate to root app.get_version() for a single source of truth."""

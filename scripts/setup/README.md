@@ -1,66 +1,45 @@
 # Setup Scripts
 
-Installation and configuration scripts for development and production environments.
+## Modern Development Environment (2025)
 
-## Quick Start
+The xanadOS Search & Destroy project now uses modern development environment setup
+with cutting-edge tools and automation.
 
-For new developers or when setting up a fresh environment:
+### Quick Start
 
 ```bash
-# 1. Complete development environment setup
-./scripts/setup-dev-environment.sh
+# Single command setup (recommended)
+bash scripts/setup/modern-dev-setup.sh
 
-# 2. Verify all dependencies are working (recommended)
-./scripts/setup/ensure-deps.sh
-
-# 3. Start the application
-make run
+# Or use the modern Makefile
+make setup
 ```
 
-## Scripts
+### Modern Tools Included
 
-### ensure-deps.sh ⭐ **NEW**
+- **uv**: Lightning-fast Python package management (10-100x faster)
+- **pnpm**: Efficient Node.js package management (70% less disk space)
+- **fnm**: Ultra-fast Node.js version management (500x faster switching)
+- **direnv**: Automatic environment activation
+- **Modern security scanning**: Integrated ClamAV, RKHunter, and more
 
-- **Purpose**: Verify and auto-install all critical dependencies
-- **Usage**: `./ensure-deps.sh`
-- **Features**:
-  - Validates numpy, schedule, aiohttp, inotify, dnspython
-  - Auto-creates virtual environment if missing
-  - Tests application startup
-  - Updates UV lock file
+### Features
 
-### install-hooks.sh
+- 6x faster overall setup time
+- Automatic environment activation
+- Cross-platform compatibility (Linux, macOS, Windows/WSL2)
+- Interactive and non-interactive modes
+- Comprehensive validation and error handling
+- Performance benchmarking
 
-- **Purpose**: Install Git hooks for automated checks
-- **Usage**: `./install-hooks.sh`
+### Documentation
 
-### install-security-hardening.sh
+- Setup Guide: `docs/guides/MODERNIZATION_COMPLETE_SUMMARY.md`
+- Performance Analysis: `docs/guides/PERFORMANCE_COMPARISON.md`
+- Migration Guide: `docs/guides/PACKAGE_MANAGER_MIGRATION.md`
 
-- **Purpose**: Install security hardening measures
-- **Usage**: `sudo ./install-security-hardening.sh`
+### Legacy Files
 
-### setup-security.sh
+Legacy setup scripts have been archived to `archive/pre-modernization-*/`
+for historical reference.
 
-- **Purpose**: Configure security settings and permissions
-- **Usage**: `sudo ./setup-security.sh`
-
-### activate.sh
-
-- **Purpose**: Activate virtual environment
-- **Usage**: `source ./activate.sh`
-
-## Setup Process
-
-1. Run `../setup-dev-environment.sh` for complete setup
-2. Run `ensure-deps.sh` to verify dependencies
-3. Run `install-hooks.sh` to set up Git hooks
-4. Run `install-security-hardening.sh` for security setup
-5. Run `setup-security.sh` to configure security settings
-6. Use `activate.sh` to activate development environment
-
-## Requirements
-
-- Bash shell
-- Git (for hooks)
-- Sudo access (for security scripts)
-- Python virtual environment

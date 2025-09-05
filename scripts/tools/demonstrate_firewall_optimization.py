@@ -119,9 +119,7 @@ class FirewallStatusDemo(QMainWindow):
         else:
             color = "red"
 
-        style = (
-            f"font-size: 16px; font-weight: bold; padding: 10px; " f"color: {color};"
-        )
+        style = f"font-size: 16px; font-weight: bold; padding: 10px; color: {color};"
         self.status_label.setStyleSheet(style)
 
         # Log the change
@@ -145,11 +143,11 @@ class FirewallStatusDemo(QMainWindow):
             stats = self.optimizer.get_performance_stats()
 
             stats_text = f"""Performance Statistics:
-Monitoring Active: {stats.get('monitoring_active', False)}
-Cache Duration: {stats.get('cache_duration', 0)}s
-File Watcher Active: {stats.get('file_watcher_active', False)}
-Last Status: {stats.get('last_status', 'None')}
-Callbacks Registered: {stats.get('callbacks_registered', 0)}"""
+Monitoring Active: {stats.get("monitoring_active", False)}
+Cache Duration: {stats.get("cache_duration", 0)}s
+File Watcher Active: {stats.get("file_watcher_active", False)}
+Last Status: {stats.get("last_status", "None")}
+Callbacks Registered: {stats.get("callbacks_registered", 0)}"""
 
             if "events_processed" in stats:
                 stats_text += f"\nEvents Processed: {stats['events_processed']}"

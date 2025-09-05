@@ -8,7 +8,6 @@
 Automatically handle theme changes and provide theme utilities.
 """
 
-from typing import Optional
 
 from PyQt6.QtWidgets import QDialog, QWidget
 

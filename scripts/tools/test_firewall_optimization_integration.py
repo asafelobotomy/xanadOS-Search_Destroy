@@ -29,7 +29,17 @@ def test_optimization_imports() -> bool:
         from app.core.firewall_status_optimizer import FirewallStatusOptimizer
         from app.gui.firewall_optimization_patch import apply_firewall_optimization
 
+        # Verify the imports are valid classes/functions
+        assert (
+            FirewallStatusOptimizer is not None
+        ), "FirewallStatusOptimizer class not found"
+        assert (
+            apply_firewall_optimization is not None
+        ), "apply_firewall_optimization function not found"
+
         logger.info("✅ All optimization components imported successfully")
+        logger.info(f"   - FirewallStatusOptimizer: {FirewallStatusOptimizer}")
+        logger.info(f"   - apply_firewall_optimization: {apply_firewall_optimization}")
         return True
     except ImportError as e:
         logger.error(f"❌ Import failed: {e}")

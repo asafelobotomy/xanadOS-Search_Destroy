@@ -31,7 +31,7 @@ def test_ufw_detection() -> None:
     # Test 2: Compare with systemctl (what was causing the issue)
     try:
         systemctl_result = subprocess.run(
-            ["systemctl", "is-active", "ufw"],
+            ["/usr/bin/systemctl", "is-active", "ufw"],
             capture_output=True,
             text=True,
             timeout=5,
@@ -50,7 +50,7 @@ def test_ufw_detection() -> None:
     # Test 3: Check actual UFW command (with sudo)
     try:
         ufw_result = subprocess.run(
-            ["sudo", "ufw", "status"],
+            ["/usr/bin/sudo", "/usr/sbin/ufw", "status"],
             capture_output=True,
             text=True,
             timeout=10,

@@ -1,0 +1,172 @@
+# PyQt6 Application Configuration - 2025 Optimizations
+# GUI performance and threading configuration for security applications
+
+[application]
+name = "xanadOS Search & Destroy"
+version = "2.11.2"
+organization = "xanadOS Development Team"
+
+[gui.performance]
+# Modern PyQt6 performance optimizations
+enable_opengl = true
+use_software_renderer = false
+high_dpi_scaling = true
+fractional_scaling = true
+pixmap_cache_mb = 256
+font_cache_enabled = true
+
+[gui.threading]
+# Threading configuration for security operations
+max_worker_threads = 8
+gui_thread_priority = "high"
+background_thread_priority = "normal"
+long_operation_timeout = 300
+thread_pool_cleanup_interval = 60
+
+# QThreadPool optimization
+qthreadpool_max_threads = 8
+qthreadpool_expiry_timeout = 30000
+qthreadpool_stack_size = 1048576  # 1MB stack size
+
+[gui.memory]
+# Memory management for large-scale scanning
+max_model_cache_items = 1000
+pixmap_cache_limit = 268435456  # 256MB
+widget_cache_enabled = true
+lazy_loading = true
+garbage_collection_threshold = 100
+
+[gui.responsiveness]
+# UI responsiveness during intensive operations
+progress_update_interval_ms = 100
+ui_refresh_rate_fps = 60
+event_loop_timeout_ms = 50
+force_repaint_interval_ms = 16
+
+# Prevent GUI freezing during scans
+chunk_processing_size = 100
+yield_after_operations = 50
+background_operation_yield_ms = 10
+
+[gui.widgets]
+# Widget-specific optimizations
+table_view_row_height = 24
+tree_view_cache_enabled = true
+list_view_uniform_item_sizes = true
+text_edit_max_blocks = 10000
+
+# Custom widget performance
+progress_bar_smooth_animation = false
+status_bar_update_throttle_ms = 250
+
+[gui.painting]
+# QPainter optimizations for custom widgets
+antialiasing = true
+smooth_pixmap_transform = true
+text_antialiasing = true
+render_hints = ["Antialiasing", "TextAntialiasing", "SmoothPixmapTransform"]
+
+# Performance vs quality balance
+quality_mode = "balanced"  # options: fast, balanced, high_quality
+
+[gui.system_integration]
+# System tray and desktop integration
+system_tray_enabled = true
+minimize_to_tray = true
+close_to_tray = false
+desktop_notifications = true
+
+# Platform-specific optimizations
+native_menu_bar = true
+native_dialogs = true
+platform_theme = "auto"
+
+[gui.accessibility]
+# Accessibility features
+screen_reader_support = true
+high_contrast_support = true
+keyboard_navigation = true
+focus_indicators = true
+
+[gui.security_display]
+# Security-specific UI optimizations
+real_time_threat_updates = true
+scan_progress_detail_level = "medium"  # options: minimal, medium, detailed
+threat_visualization = "charts"  # options: list, charts, both
+
+# Alert system
+popup_alerts = true
+sound_alerts = false
+flash_taskbar = true
+persistent_notifications = false
+
+[gui.advanced]
+# Advanced PyQt6 features for 2025
+stylesheet_caching = true
+svg_icon_caching = true
+locale_aware_sorting = true
+drag_drop_optimization = true
+
+# Experimental features
+compositor_bypass = false
+vsync_enabled = true
+triple_buffering = false
+
+[gui.debugging]
+# Development and debugging options
+widget_debug_mode = false
+paint_debug_rectangles = false
+memory_leak_detection = false
+performance_profiling = false
+
+# Logging
+gui_event_logging = false
+paint_event_logging = false
+resize_event_logging = false
+
+[gui.startup]
+# Application startup optimization
+splash_screen_enabled = true
+splash_screen_timeout_ms = 3000
+lazy_widget_initialization = true
+deferred_style_loading = true
+
+# Window state restoration
+restore_window_geometry = true
+restore_dock_layout = true
+restore_toolbar_state = true
+
+[gui.shutdown]
+# Clean shutdown procedures
+save_settings_on_exit = true
+cleanup_temp_files = true
+graceful_thread_termination = true
+shutdown_timeout_ms = 5000
+
+[gui.themes]
+# Theme and styling configuration
+default_theme = "dark"
+follow_system_theme = true
+custom_stylesheet_path = ""
+icon_theme = "material"
+
+# Color schemes
+dark_theme_colors = {
+    primary = "#2196F3",
+    secondary = "#FF9800",
+    background = "#121212",
+    surface = "#1E1E1E",
+    error = "#F44336",
+    success = "#4CAF50",
+    warning = "#FF9800"
+}
+
+light_theme_colors = {
+    primary = "#1976D2",
+    secondary = "#F57C00",
+    background = "#FFFFFF",
+    surface = "#F5F5F5",
+    error = "#D32F2F",
+    success = "#388E3C",
+    warning = "#F57C00"
+}

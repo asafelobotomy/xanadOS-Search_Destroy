@@ -314,7 +314,11 @@ class RKHunterWrapper:
         )
 
     def _find_rkhunter(self) -> str | None:
-        """Find RKHunter executable."""
+        """Find RKHunter executable.
+
+        Note: RKHunter is often installed with root-only permissions,
+        so we check for existence rather than executability by current user.
+        """
         possible_paths = [
             "/usr/bin/rkhunter",
             "/usr/local/bin/rkhunter",
@@ -322,17 +326,28 @@ class RKHunterWrapper:
         ]
 
         for path in possible_paths:
-            if Path(path).exists():
-                return path
+            path_obj = Path(path)
+            if path_obj.exists():
+                self.logger.debug(f"Found RKHunter at: {path}")
+                # Check if it's executable by root (even if not by current user)
+                stat_info = path_obj.stat()
+                if stat_info.st_mode & 0o100:  # Owner execute bit
+                    self.logger.debug(f"RKHunter executable confirmed: {path}")
+                    return path
+                else:
+                    self.logger.warning(f"RKHunter found but not executable: {path}")
 
-        # Try which command
+        # Try which command (this may fail if rkhunter requires root)
         try:
             result = run_secure(["which", "rkhunter"], timeout=5)
             if result.returncode == 0 and result.stdout:
-                return result.stdout.strip()
-        except Exception:
-            pass
+                found_path = result.stdout.strip()
+                self.logger.debug(f"Found RKHunter via which: {found_path}")
+                return found_path
+        except Exception as e:
+            self.logger.debug(f"Which command failed (expected for root-only executables): {e}")
 
+        self.logger.warning("RKHunter not found in any standard location")
         return None
 
     def _find_executable(self, name: str) -> str | None:
@@ -659,16 +674,14 @@ class RKHunterWrapper:
         Returns:
             subprocess.CompletedProcess with stdout collected line-by-line.
         """
+        self.logger.debug(f"Starting privilege escalation for command: {cmd_args[:2]}...")
+
         # SECURITY: Validate command arguments before any execution
         is_valid, error_message = self.security_validator.validate_command_args(
             cmd_args,
         )
         if not is_valid:
-            self.logerror(
-                "Security validation failed: %s".replace(
-                    "%s", "{error_message}"
-                ).replace("%d", "{error_message}")
-            )
+            self.logger.error(f"Security validation failed: {error_message}")
             return subprocess.CompletedProcess(
                 args=cmd_args,
                 returncode=1,
@@ -684,27 +697,55 @@ class RKHunterWrapper:
         # Lazy import to allow tests to monkeypatch without escalations
         from .elevated_runner import elevated_popen
 
-        # Launch process with GUI auth for consistent UX
-        process = elevated_popen(cmd_args, gui=True)
-        self._current_process = process
-        stdout_lines: list[str] = []
         try:
+            self.logger.debug("Launching elevated process...")
+            # Launch process with GUI auth for consistent UX
+            process = elevated_popen(cmd_args, gui=True)
+            self._current_process = process
+            self.logger.debug(f"Process launched with PID: {process.pid if process else 'None'}")
+
+            stdout_lines: list[str] = []
+            line_count = 0
+
             if process.stdout:
+                self.logger.debug("Starting output capture...")
                 for line in iter(process.stdout.readline, ""):
                     if not line:
                         break
                     line_clean = line.rstrip()
                     stdout_lines.append(line_clean)
+                    line_count += 1
+
+                    if line_count % 50 == 0:  # Log every 50 lines
+                        self.logger.debug(f"Captured {line_count} output lines...")
+
                     if output_callback:
                         output_callback(line_clean)
+
+                self.logger.debug(f"Output capture completed. Total lines: {line_count}")
+            else:
+                self.logger.warning("Process stdout is None - no output will be captured")
+
+            self.logger.debug("Waiting for process completion...")
             process.wait(timeout=timeout)
-        except subprocess.TimeoutExpired:
+            self.logger.debug(f"Process completed with return code: {process.returncode}")
+
+        except subprocess.TimeoutExpired as timeout_err:
+            self.logger.error(f"Process timed out after {timeout} seconds: {timeout_err}")
             process.kill()
             return subprocess.CompletedProcess(
                 args=cmd_args,
                 returncode=124,
                 stdout="\n".join(stdout_lines),
                 stderr="timeout",
+            )
+        except Exception as process_err:
+            self.logger.error(f"Error during process execution: {process_err}")
+            return subprocess.CompletedProcess(
+                args=cmd_args,
+                returncode=1,
+                stdout="\n".join(stdout_lines),
+                stderr=f"Process execution error: {process_err}",
             )
         finally:
             self._current_process = None
@@ -715,6 +756,8 @@ class RKHunterWrapper:
             stdout="\n".join(stdout_lines),
             stderr="",
         )
+
+        self.logger.debug(f"Returning result: returncode={result.returncode}, stdout_length={len(result.stdout)}")
 
         if result.returncode in (0, 1) and (
             "Info: End date is" in result.stdout
@@ -727,11 +770,16 @@ class RKHunterWrapper:
     def _initialize_config(self):
         """Initialize RKHunter configuration."""
         try:
+            self.logger.debug("Starting RKHunter configuration initialization")
+
             # Create config directory if it doesn't exist
             self.config_path.parent.mkdir(parents=True, exist_ok=True)
+            self.logger.debug(f"Config directory ensured: {self.config_path.parent}")
 
             # Create basic configuration if it doesn't exist
             if not self.config_path.exists():
+                self.logger.debug("Creating new RKHunter configuration file")
+
                 config_lines = [
                     "# RKHunter configuration for S&D Search & Destroy",
                     "# This file configures RKHunter behavior within",
@@ -744,7 +792,6 @@ class RKHunterWrapper:
                     "",
                     "# Scan behavior",
                     "SCANROOTKITMODE=THOROUGH",
-                    "UNHIDETCPUDP=1",
                     "ALLOW_SSH_ROOT_USER=no",
                     "ALLOW_SSH_PROT_V1=0",
                     "",
@@ -762,8 +809,7 @@ class RKHunterWrapper:
                     "",
                     "# Suppress common warnings and false positives",
                     # Disable tests causing false positives on modern systems
-                    'DISABLE_TESTS="suspscan hidden_procs deleted_files"',
-                    'DISABLE_TESTS="$DISABLE_TESTS packet_cap_apps apps"',
+                    'DISABLE_TESTS="suspscan hidden_procs deleted_files packet_cap_apps apps"',
                     "",
                     "# Enhanced Script Whitelisting - Modern Linux Wrappers",
                     "# Based on ArchWiki recommendations and research",
@@ -795,21 +841,18 @@ class RKHunterWrapper:
                     "",
                     "# Package manager - Enhanced Arch Linux configuration",
                     "PKGMGR=NONE",
-                    "PKGMGR_NO_VRFY=1",
+                    "PKGMGR_NO_VRFY=\"\"",
                     "",
                     "# File Property Whitelisting - Handle system changes",
                     "# These settings prevent false positives for files",
                     "EXISTWHITELIST=/usr/bin/egrep",
                     "EXISTWHITELIST=/usr/bin/fgrep",
                     "EXISTWHITELIST=/usr/bin/ldd",
-                    "RTKT_FILE_WHITELIST=/tmp/go-build*",
-                    "RTKT_FILE_WHITELIST=/var/tmp/go-build*",
                     "",
                     "",
                     "# Disable GUI prompts (for automated scanning)",
                     "AUTO_X_DETECT=1",
                     "WHITELISTED_IS_WHITE=1",
-                    "SUPPRESS_DEPRECATION_WARNINGS=1",
                     "",
                     "# Disable syslog to avoid facility/priority errors",
                     "#USE_SYSLOG=authpriv.notice",
@@ -822,14 +865,25 @@ class RKHunterWrapper:
                         "Created RKHunter configuration at %s",
                         self.config_path,
                     )
-                except Exception:
+                    self.logger.debug(f"Configuration content preview (first 5 lines):")
+                    for i, line in enumerate(config_lines[:5]):
+                        self.logger.debug(f"  {i+1}: {line}")
+                    self.logger.debug(f"  ... and {len(config_lines)-5} more lines")
+
+                    # Validate DISABLE_TESTS configuration specifically
+                    disable_tests_lines = [line for line in config_lines if 'DISABLE_TESTS' in line]
+                    self.logger.debug(f"DISABLE_TESTS configuration: {disable_tests_lines}")
+
+                except Exception as write_err:
                     self.logger.warning(
                         "Failed writing RKHunter config: %s".replace(
                             "%s", "{write_err}"
                         ).replace("%d", "{write_err}")
                     )
+            else:
+                self.logger.debug(f"RKHunter configuration already exists at {self.config_path}")
 
-        except Exception:
+        except Exception as e:
             self.logger.error(
                 "Failed to initialize RKHunter config: %s".replace("%s", "{e}").replace(
                     "%d", "{e}"
@@ -837,44 +891,70 @@ class RKHunterWrapper:
             )
 
     def is_available(self) -> bool:
-        """Check if RKHunter is available and functional."""
+        """Check if RKHunter is available and functional.
+
+        For root-only executables, we check file existence rather than
+        trying to execute them directly.
+        """
         if not self.available or self.rkhunter_path is None:
+            self.logger.debug("RKHunter marked as unavailable or path is None")
             return False
 
-        # For GUI applications, we'll use a less intrusive check
-        # Just verify the executable exists and is executable
         try:
             path_obj = Path(self.rkhunter_path)
-            return path_obj.exists() and path_obj.is_file()
-        except Exception:
+            exists = path_obj.exists() and path_obj.is_file()
+            if exists:
+                self.logger.debug(f"RKHunter executable exists: {self.rkhunter_path}")
+            else:
+                self.logger.debug(f"RKHunter executable not found: {self.rkhunter_path}")
+            return exists
+        except Exception as e:
+            self.logger.debug(f"Error checking RKHunter availability: {e}")
             return False
 
     def is_functional(self) -> bool:
-        """Check if RKHunter is functional (may require privilege escalation)."""
+        """Check if RKHunter is functional (may require privilege escalation).
+
+        This method tests actual execution, which may require root privileges.
+        """
         if not self.available or self.rkhunter_path is None:
+            self.logger.debug("RKHunter not available for functionality test")
             return False
 
         try:
-            # First try without privilege escalation
+            self.logger.debug("Testing RKHunter functionality with version check...")
 
+            # First try without privilege escalation
             result = run_secure([self.rkhunter_path, "--version"], timeout=10)
             if result.returncode == 0:
+                self.logger.debug("RKHunter version check succeeded without escalation")
                 return True
-        except PermissionError:
-            pass
-        except (subprocess.SubprocessError, FileNotFoundError):
+
+        except PermissionError as perm_err:
+            self.logger.debug(f"Permission denied for direct execution (expected for root-only): {perm_err}")
+        except (subprocess.SubprocessError, FileNotFoundError) as exec_err:
+            self.logger.debug(f"Execution error: {exec_err}")
             return False
 
         # If direct execution failed, try with privilege escalation
-        # elevated_run now automatically prefers sudo when session is active
+        # This is expected for root-only RKHunter installations
         try:
+            self.logger.debug("Testing RKHunter with privilege escalation...")
             result = self._run_with_privilege_escalation(
                 [self.rkhunter_path, "--version"],
                 capture_output=True,
                 timeout=10,
             )
-            return result.returncode == 0
-        except Exception:
+            if result.returncode == 0:
+                self.logger.debug("RKHunter version check succeeded with privilege escalation")
+                return True
+            else:
+                self.logger.debug(f"RKHunter version check failed with return code: {result.returncode}")
+                return False
+
+        except Exception as escalation_err:
+            self.logger.debug(f"Privilege escalation test failed: {escalation_err}")
+            return False
             return False
 
     def update_database(self) -> bool:
@@ -937,6 +1017,9 @@ class RKHunterWrapper:
         scan_id = f"rkhunter_scan_{int(time.time())}"
         start_time = datetime.now()
 
+        self.logger.info(f"Starting RKHunter scan with ID: {scan_id}")
+        self.logger.debug(f"Scan parameters: test_categories={test_categories}, skip_keypress={skip_keypress}, update_database={update_database}")
+
         result = RKHunterScanResult(
             scan_id=scan_id,
             start_time=start_time,
@@ -944,16 +1027,46 @@ class RKHunterWrapper:
         )
 
         if not self.available or self.rkhunter_path is None:
+            error_msg = f"RKHunter not available: available={self.available}, path={self.rkhunter_path}"
+            self.logger.error(error_msg)
             result.error_message = "RKHunter not available"
             result.end_time = datetime.now()
             return result
 
         try:
+            self.logger.debug("Initializing RKHunter configuration...")
+            self._initialize_config()
+
+            # Verify configuration was created properly
+            if self.config_path.exists():
+                self.logger.debug(f"Configuration file exists at: {self.config_path}")
+                # Read and validate config content
+                try:
+                    with open(self.config_path, 'r') as f:
+                        config_content = f.read()
+
+                    # Check for problematic patterns
+                    if '$DISABLE_TESTS' in config_content:
+                        self.logger.error("FOUND PROBLEMATIC SHELL VARIABLE IN CONFIG: $DISABLE_TESTS")
+                    else:
+                        self.logger.debug("Configuration appears clean (no shell variables)")
+
+                    # Show DISABLE_TESTS lines specifically
+                    disable_lines = [line for line in config_content.split('\n') if 'DISABLE_TESTS' in line and not line.strip().startswith('#')]
+                    self.logger.debug(f"Active DISABLE_TESTS configuration: {disable_lines}")
+
+                except Exception as config_read_err:
+                    self.logger.warning(f"Could not validate config file: {config_read_err}")
+            else:
+                self.logger.warning(f"Configuration file was not created at: {self.config_path}")
+
             # Build command arguments (without sudo/pkexec prefix)
             cmd_args = [self.rkhunter_path, "--check"]
+            self.logger.debug(f"Base command: {' '.join(cmd_args)}")
 
             if skip_keypress:
                 cmd_args.append("--sk")  # Skip keypress
+                self.logger.debug("Added --sk (skip keypress) flag")
 
             cmd_args.extend(
                 [
@@ -961,6 +1074,7 @@ class RKHunterWrapper:
                     "--no-mail-on-warning",  # Don't try to send mail
                 ],
             )
+            self.logger.debug("Added output formatting flags")
 
             # Skip specific test categories for now - RKHunter will run all tests by default
             # if test_categories:
@@ -972,46 +1086,76 @@ class RKHunterWrapper:
             # Prefer the app-managed config to avoid invalid system settings
             if self.config_path.exists():
                 cmd_args.extend(["--configfile", str(self.config_path)])
+                self.logger.debug(f"Using app-managed config: {self.config_path}")
             elif os.path.exists("/etc/rkhunter.conf"):
                 cmd_args.extend(["--configfile", "/etc/rkhunter.conf"])
+                self.logger.debug("Using system config: /etc/rkhunter.conf")
+            else:
+                self.logger.warning("No RKHunter configuration file found!")
+
             # Use secure temp dir regardless of config source
             cmd_args.extend(
                 ["--tmpdir", "/var/lib/rkhunter/tmp"]
             )  # Use secure temp dir
+            self.logger.debug("Added secure temp directory")
 
             self.logger.info(
                 "Running RKHunter scan with command: %s",
                 " ".join(cmd_args),
             )
 
+            # Log full command for debugging
+            self.logger.debug(f"Full command to execute: {cmd_args}")
+
             # Run the scan with real-time output capture
+            self.logger.debug("Starting privilege escalation and scan execution...")
             scan_result = self._run_with_privilege_escalation_streaming(
                 cmd_args,
                 output_callback=output_callback,
                 timeout=1800,
             )
 
+            self.logger.debug(f"Scan execution completed with return code: {scan_result.returncode}")
+            self.logger.debug(f"Stdout length: {len(scan_result.stdout) if scan_result.stdout else 0} characters")
+            self.logger.debug(f"Stderr content: {scan_result.stderr[:200] if scan_result.stderr else 'None'}...")
+
             result.end_time = datetime.now()
 
+            # Log scan duration
+            scan_duration = (result.end_time - result.start_time).total_seconds()
+            self.logger.info(f"Scan completed in {scan_duration:.2f} seconds")
+
             # Parse results
+            self.logger.debug("Starting result parsing...")
             self._parse_scan_results(scan_result, result)
+            self.logger.debug(f"Parsing completed. Findings: {len(result.findings) if result.findings else 0}")
 
             if scan_result.returncode == 0:
                 result.success = True
                 result.scan_summary = "System appears clean"
+                self.logger.info("Scan result: System appears clean")
             elif scan_result.returncode == 1:
                 result.success = True
                 result.scan_summary = f"Warnings found: {result.warnings_found}"
+                self.logger.info(f"Scan result: Warnings found ({result.warnings_found})")
             elif scan_result.returncode == 2:
                 result.success = True  # Still successful scan, but infections found
                 result.scan_summary = (
                     f"Potential rootkits detected: {result.infections_found}"
                 )
+                self.logger.warning(f"Scan result: Potential rootkits detected ({result.infections_found})")
             else:
                 result.success = False
                 result.error_message = (
                     f"Scan failed with return code {scan_result.returncode}"
                 )
+                self.logger.error(f"Scan failed with return code: {scan_result.returncode}")
+
+                # Log additional error details for debugging
+                if scan_result.stderr:
+                    self.logger.error(f"Error output: {scan_result.stderr}")
+                if scan_result.stdout:
+                    self.logger.debug(f"Stdout (last 500 chars): ...{scan_result.stdout[-500:]}")
 
             self.logger.info(
                 "RKHunter scan completed: %s".replace(
@@ -1019,17 +1163,20 @@ class RKHunterWrapper:
                 ).replace("%d", "{result.scan_summary}")
             )
 
-        except subprocess.TimeoutExpired:
+        except subprocess.TimeoutExpired as timeout_err:
             result.end_time = datetime.now()
             result.success = False
             result.error_message = "Scan timed out after 30 minutes"
-            self.logger.error("RKHunter scan timed out")
+            self.logger.error(f"RKHunter scan timed out: {timeout_err}")
 
         except Exception as e:
             result.end_time = datetime.now()
             result.success = False
             result.error_message = f"Scan error: {e!s}"
-            self.logger.error(f"RKHunter scan failed: {e}")
+            self.logger.error(f"RKHunter scan failed with exception: {e}")
+            self.logger.debug(f"Exception details: {type(e).__name__}: {e}")
+            import traceback
+            self.logger.debug(f"Traceback: {traceback.format_exc()}")
 
         return result
 

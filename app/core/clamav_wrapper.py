@@ -899,17 +899,53 @@ class ClamAVWrapper:
             return False
 
         try:
-            # Start daemon in background
+            # Try to start daemon using systemctl first (preferred method)
+            try:
+                from .elevated_runner import elevated_run
+
+                # Enable the daemon service
+                enable_result = elevated_run(
+                    ["systemctl", "enable", "clamav-daemon"],
+                    timeout=30,
+                    capture_output=True,
+                    text=True,
+                    gui=True,
+                )
+
+                # Start the daemon service
+                start_result = elevated_run(
+                    ["systemctl", "start", "clamav-daemon"],
+                    timeout=30,
+                    capture_output=True,
+                    text=True,
+                    gui=True,
+                )
+
+                if start_result.returncode == 0:
+                    self.logger.info("ClamAV daemon started via systemctl")
+                    time.sleep(2)  # Give it time to initialize
+
+                    if self._is_clamd_running():
+                        return True
+                    else:
+                        self.logger.warning("systemctl start succeeded but daemon not responding")
+                else:
+                    self.logger.warning(f"systemctl start failed: {start_result.stderr}")
+
+            except Exception as e:
+                self.logger.warning(f"systemctl approach failed: {e}")
+
+            # Fallback: Try direct daemon start
+            self.logger.info("Trying direct daemon startup as fallback")
             subprocess.Popen(
                 [self.clamd_path], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
             )
 
             # Wait a moment for it to start
-
-            time.sleep(2)
+            time.sleep(3)
 
             if self._is_clamd_running():
-                self.logger.info("ClamAV daemon started successfully")
+                self.logger.info("ClamAV daemon started successfully (direct)")
                 return True
             else:
                 self.logger.warning("Failed to start ClamAV daemon")

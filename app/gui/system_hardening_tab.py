@@ -9,7 +9,6 @@ import logging
 import os
 import shutil
 from datetime import datetime
-from typing import List, Tuple
 
 from PyQt6.QtCore import Qt, QThread, pyqtSignal
 from PyQt6.QtGui import QColor

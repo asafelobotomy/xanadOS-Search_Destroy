@@ -205,3 +205,59 @@ For questions about archived content:
 
 **This index is automatically maintained and updated during archive operations. Manual
 edits should be avoided to maintain data integrity.**
+
+## Pre-Modernization Archive (2025-09-05)
+
+**Location**: `archive/pre-modernization-20250905/`  
+**Reason**: Files replaced by modern development environment setup  
+**Status**: Archived after successful modernization validation  
+
+### Archived Components
+- Legacy setup scripts superseded by modern-dev-setup.sh
+- Deprecated configuration files replaced by modern tooling
+- Redundant documentation replaced by comprehensive guides
+- Old dependency management replaced by modern package managers
+
+### Modern Replacements
+- Setup: `scripts/setup/modern-dev-setup.sh`
+- Commands: `Makefile.modern`
+- Environment: `.envrc` with direnv automation
+- Documentation: `docs/guides/MODERNIZATION_COMPLETE_SUMMARY.md`
+
+
+## Makefile Consolidation (2025-09-05)
+
+**Location**: `archive/legacy-makefile-20250905/`  
+**Reason**: Consolidated legacy and modern Makefiles for solo development  
+**Status**: Legacy Makefile replaced with enhanced modern version  
+
+### Changes
+- Replaced legacy Python-focused Makefile with modern multi-language version
+- Enhanced with modern development tools integration
+- Improved command organization and help system
+- Added support for modern package managers and automation
+
+### Benefits
+- 6x faster development environment setup
+- Automatic environment activation
+- Cross-platform compatibility
+- Better developer experience
+
+
+## Final Cleanup - 2025-09-05
+
+**Archive Location**: `archive/final-cleanup-20250905/`
+
+### Deprecated Content
+- `org.xanados.searchanddestroy.hardened.policy` — Archived 2025-09-05 (deprecated PolicyKit superseded by io.github.asafelobotomy.* policies)
+- `org.xanados.searchanddestroy.policy` — Archived 2025-09-05 (deprecated PolicyKit superseded by io.github.asafelobotomy.* policies)
+- `org.xanados.searchanddestroy.rkhunter.policy` — Archived 2025-09-05 (deprecated PolicyKit superseded by io.github.asafelobotomy.* policies)
+
+### Test Files  
+- `test_gui_fix.py` — Archived 2025-09-05 (root directory organization compliance)
+
+### Legacy Tests
+- `tests/test_implementation.py` — Archived 2025-09-05 (umbrella test superseded by focused suites)
+
+**Status**: Repository modernization and cleanup COMPLETE
+**Next Action**: Regular maintenance using modern development workflow

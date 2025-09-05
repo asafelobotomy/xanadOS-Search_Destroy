@@ -1,0 +1,42 @@
+{
+    "update_branch": "stable",
+    "repo_owner": "asafelobotomy",
+    "repo_name": "xanadOS-Search_Destroy",
+    "check_interval_hours": 24,
+    "auto_download": false,
+    "include_prereleases": false,
+    "security_verification": {
+        "verify_signatures": true,
+        "check_checksums": true,
+        "validate_certificates": true,
+        "trusted_keys": [],
+        "signature_algorithm": "Ed25519"
+    },
+    "rollback_capability": true,
+    "backup_before_update": true,
+    "update_validation": {
+        "test_mode": true,
+        "validation_timeout_seconds": 300,
+        "required_tests": ["basic_functionality", "security_scan"],
+        "rollback_on_failure": true
+    },
+    "notification": {
+        "notify_on_update_available": true,
+        "notify_on_update_complete": true,
+        "notify_on_update_failure": true,
+        "notification_methods": ["desktop", "log"]
+    },
+    "bandwidth_management": {
+        "max_download_speed_kbps": 0,
+        "preferred_download_time": "off_peak",
+        "retry_attempts": 3,
+        "retry_delay_seconds": 60
+    },
+    "compatibility_check": {
+        "check_python_version": true,
+        "check_dependencies": true,
+        "check_system_requirements": true,
+        "minimum_disk_space_mb": 500
+    },
+    "description": "Enhanced auto-update configuration for S&D - Search & Destroy application with 2025 security standards"
+}

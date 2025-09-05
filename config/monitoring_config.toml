@@ -1,0 +1,232 @@
+# Modern Monitoring and Observability Configuration - 2025
+# Comprehensive monitoring for security applications
+
+[monitoring]
+enabled = true
+collection_interval_seconds = 30
+retention_days = 30
+timezone = "UTC"
+
+[monitoring.metrics]
+# Application performance metrics
+response_time = true
+throughput = true
+error_rate = true
+resource_utilization = true
+
+# Security-specific metrics
+threats_detected = true
+false_positives = true
+scan_duration = true
+signature_updates = true
+quarantine_actions = true
+
+[monitoring.performance]
+# System performance monitoring
+cpu_usage = true
+memory_usage = true
+disk_io = true
+network_io = true
+thread_count = true
+file_handles = true
+
+# Application-specific performance
+scan_queue_depth = true
+cache_hit_ratio = true
+database_query_time = true
+ui_responsiveness = true
+
+[monitoring.security_events]
+# Security event monitoring
+malware_detection = true
+suspicious_behavior = true
+privilege_escalation = true
+network_anomalies = true
+file_integrity_changes = true
+
+# Threat intelligence
+ioc_matches = true
+reputation_alerts = true
+sandbox_results = true
+ml_model_predictions = true
+
+[monitoring.logs]
+# Structured logging configuration
+format = "json"
+level = "INFO"
+correlation_ids = true
+request_tracing = true
+
+# Log destinations
+console = true
+file = true
+syslog = false
+remote_logging = false
+
+# Log file management
+max_size_mb = 100
+backup_count = 10
+compression = "gzip"
+rotation_schedule = "daily"
+
+[monitoring.health_checks]
+# Application health monitoring
+enabled = true
+check_interval_seconds = 60
+timeout_seconds = 30
+
+# Health check endpoints
+database_connectivity = true
+external_services = true
+disk_space = true
+memory_pressure = true
+thread_pool_health = true
+
+[monitoring.alerts]
+# Alert configuration
+enabled = true
+notification_channels = ["log", "desktop"]
+alert_cooldown_minutes = 5
+escalation_enabled = false
+
+# Alert thresholds
+cpu_threshold_percent = 80
+memory_threshold_percent = 85
+disk_threshold_percent = 90
+error_rate_threshold_percent = 5
+response_time_threshold_ms = 5000
+
+[monitoring.alerts.security]
+# Security alert thresholds
+threat_detection_immediate = true
+quarantine_action_immediate = true
+privilege_escalation_immediate = true
+suspicious_network_activity = true
+failed_login_attempts = 5
+
+[monitoring.dashboards]
+# Real-time dashboard configuration
+enabled = true
+refresh_interval_seconds = 5
+auto_refresh = true
+
+# Dashboard components
+system_overview = true
+security_status = true
+performance_graphs = true
+threat_timeline = true
+scan_progress = true
+
+[monitoring.export]
+# Metrics export configuration
+prometheus_enabled = true
+prometheus_port = 9090
+prometheus_path = "/metrics"
+
+statsd_enabled = false
+statsd_host = "localhost"
+statsd_port = 8125
+
+graphite_enabled = false
+influxdb_enabled = false
+
+[monitoring.tracing]
+# Distributed tracing
+enabled = true
+sampling_rate = 0.1
+trace_retention_hours = 24
+
+# Trace exporters
+jaeger_enabled = false
+zipkin_enabled = false
+console_exporter = true
+
+[monitoring.profiling]
+# Performance profiling
+cpu_profiling = false
+memory_profiling = false
+blocking_profiling = false
+profile_duration_seconds = 60
+
+# Profiling triggers
+auto_profile_on_high_cpu = false
+auto_profile_on_high_memory = false
+manual_profiling_enabled = true
+
+[monitoring.compliance]
+# Compliance and audit logging
+gdpr_compliant_logging = true
+audit_trail = true
+data_retention_policy = true
+anonymization = true
+
+# Audit events
+configuration_changes = true
+user_actions = true
+security_policy_changes = true
+system_access = true
+
+[monitoring.storage]
+# Monitoring data storage
+backend = "sqlite"  # options: sqlite, postgresql, mysql
+connection_string = "sqlite:///monitoring.db"
+connection_pool_size = 10
+query_timeout_seconds = 30
+
+# Data compression and archiving
+compress_old_data = true
+archive_threshold_days = 7
+cleanup_old_data = true
+cleanup_threshold_days = 90
+
+[monitoring.api]
+# Monitoring API configuration
+enabled = true
+port = 8080
+host = "127.0.0.1"
+authentication = false
+
+# API endpoints
+metrics_endpoint = "/api/metrics"
+health_endpoint = "/api/health"
+alerts_endpoint = "/api/alerts"
+dashboard_endpoint = "/api/dashboard"
+
+[monitoring.privacy]
+# Privacy protection in monitoring
+anonymize_user_data = true
+mask_sensitive_fields = true
+encrypt_stored_data = false
+data_minimization = true
+
+# Sensitive data patterns
+mask_patterns = [
+    "email",
+    "ip_address",
+    "file_path",
+    "username"
+]
+
+[monitoring.integrations]
+# Third-party integrations
+slack_enabled = false
+discord_enabled = false
+email_enabled = false
+webhook_enabled = false
+
+# SIEM integration
+splunk_enabled = false
+elastic_enabled = false
+qradar_enabled = false
+
+[monitoring.development]
+# Development and testing features
+debug_mode = false
+mock_data = false
+test_alerts = false
+verbose_logging = false
+
+# Performance testing
+load_testing_mode = false
+stress_testing_mode = false
+benchmark_mode = false
