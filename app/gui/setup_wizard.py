@@ -42,6 +42,7 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
+from app.core.secure_subprocess import run_secure
 from app.utils.config import load_config, save_config
 
 # Import theming support
@@ -250,7 +251,7 @@ class InstallationWorker(QThread):  # pylint: disable=too-many-instance-attribut
                                     )
                             else:
                                 # Regular command execution
-                                post_result = subprocess.run(
+                                post_result = run_secure(
                                     cmd.split(), capture_output=True, text=True, check=False, timeout=60
                                 )
 
@@ -870,7 +871,7 @@ class SetupWizard(ThemedDialog):  # pylint: disable=too-many-instance-attributes
 
         for pm, distro in package_managers.items():
             try:
-                result = subprocess.run(
+                result = run_secure(
                     ["which", pm], check=False, capture_output=True, timeout=3
                 )
                 if result.returncode == 0:
@@ -918,7 +919,7 @@ class SetupWizard(ThemedDialog):  # pylint: disable=too-many-instance-attributes
                         os.path.exists(path) for path in rkhunter_paths
                     )
                 else:
-                    check_result = subprocess.run(
+                    check_result = run_secure(
                         package_info.check_command.split(),
                         capture_output=True,
                         timeout=5,
@@ -999,7 +1000,7 @@ class SetupWizard(ThemedDialog):  # pylint: disable=too-many-instance-attributes
         try:
             # Prefer running pip as a module of current interpreter
             cmd = [sys.executable, "-m", "pip", "install", "--user", package]
-            result = subprocess.run(
+            result = run_secure(
                 cmd, capture_output=True, text=True, check=False, timeout=900
             )
             output = (result.stdout or "") + (
@@ -1573,7 +1574,11 @@ class InstallationDialog(QDialog):  # pylint: disable=too-many-instance-attribut
 
 
 def needs_setup() -> bool:
-    """Check if first-time setup is needed."""
+    """Check if first-time setup is needed.
+
+    Returns True if setup is needed, False if setup has been completed
+    or critical packages are already available.
+    """
     try:
         config = load_config()
 
@@ -1582,8 +1587,26 @@ def needs_setup() -> bool:
         if setup_info.get("first_time_setup_completed", False):
             return False
 
+        # Additional check: if setup was offered recently and user has packages
+        # installed, we can skip setup even without the completion flag
+        if setup_info.get("setup_offered", False):
+            try:
+                # Check if we have a functioning ClamAV installation
+                result = run_secure(
+                    ["clamscan", "--version"], capture_output=True, timeout=5, check=False
+                )
+                if result.returncode == 0:
+                    # ClamAV is working, mark setup as completed automatically
+                    config["setup"]["first_time_setup_completed"] = True
+                    config["setup"]["auto_completed_reason"] = "clamav_detected"
+                    config["setup"]["last_setup_check"] = datetime.now().isoformat()
+                    save_config(config)
+                    return False
+            except Exception:  # pylint: disable=broad-exception-caught
+                pass
+
     except (OSError, ValueError, TypeError):
-        # If config loading fails, assume setup is needed (non-critical path)
+        # If config loading fails, continue with package detection
         pass
 
     # Check if critical packages are available
@@ -1591,10 +1614,21 @@ def needs_setup() -> bool:
 
     for package in critical_packages:
         try:
-            ver_result = subprocess.run(
+            ver_result = run_secure(
                 [package, "--version"], capture_output=True, timeout=5, check=False
             )
             if ver_result.returncode == 0:
+                # Package is available, try to auto-mark setup as complete
+                try:
+                    config = load_config()
+                    if "setup" not in config:
+                        config["setup"] = {}
+                    config["setup"]["first_time_setup_completed"] = True
+                    config["setup"]["auto_completed_reason"] = f"{package}_detected"
+                    config["setup"]["last_setup_check"] = datetime.now().isoformat()
+                    save_config(config)
+                except Exception:  # pylint: disable=broad-exception-caught
+                    pass  # Don't fail if we can't save config
                 return False  # At least one critical package is available
         except (
             FileNotFoundError,
@@ -1663,7 +1697,6 @@ def check_existing_installations():
     # Check ClamAV
     try:
         import shutil
-        import subprocess
 
         status["clamav"] = {
             "installed": shutil.which("clamscan") is not None,
@@ -1748,7 +1781,7 @@ def check_existing_installations():
                     # Only try --list if we can't determine from config files
                     # and catch permission errors gracefully
                     try:
-                        result = subprocess.run(
+                        result = run_secure(
                             [rkhunter_actual_path, "--list"],
                             capture_output=True,
                             timeout=10,
@@ -1792,7 +1825,7 @@ def check_existing_installations():
         if status["ufw"]["installed"]:
             # Use systemctl to check UFW status (non-invasive, no sudo)
             try:
-                result = subprocess.run(
+                result = run_secure(
                     ["systemctl", "is-active", "ufw"],
                     capture_output=True,
                     text=True,
@@ -1805,7 +1838,7 @@ def check_existing_installations():
             except (subprocess.TimeoutExpired, subprocess.SubprocessError):
                 # Fallback: Try systemctl is-enabled
                 try:
-                    result = subprocess.run(
+                    result = run_secure(
                         ["systemctl", "is-enabled", "ufw"],
                         capture_output=True,
                         text=True,
@@ -1835,9 +1868,7 @@ def check_existing_installations():
 def _check_service_status(service_name):
     """Check if a systemd service is enabled."""
     try:
-        import subprocess
-
-        result = subprocess.run(
+        result = run_secure(
             ["systemctl", "is-enabled", service_name],
             capture_output=True,
             timeout=5,
@@ -1851,9 +1882,7 @@ def _check_service_status(service_name):
 def _check_service_running(service_name):
     """Check if a systemd service is running."""
     try:
-        import subprocess
-
-        result = subprocess.run(
+        result = run_secure(
             ["systemctl", "is-active", service_name],
             capture_output=True,
             text=True,

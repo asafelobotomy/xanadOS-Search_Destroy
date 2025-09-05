@@ -100,6 +100,7 @@ npm run version:sync:check
 - **Python:** 3.11 or higher
 - **GUI Framework:** PyQt6
 - **Security Engine:** ClamAV (for malware detection)
+- **Task Scheduler:** Cron daemon (for automated scans and updates)
 - **Memory:** 2GB RAM minimum, 4GB recommended
 
 ### **Quick Installation**
@@ -116,7 +117,13 @@ make setup
 pip install -e .
 
 # Install system dependencies (Ubuntu/Debian)
-sudo apt update && sudo apt install clamav clamav-daemon
+sudo apt update && sudo apt install clamav clamav-daemon cron
+
+# Install system dependencies (Arch Linux)
+sudo pacman -S clamav rkhunter cronie
+
+# Install system dependencies (Fedora/RHEL)
+sudo dnf install clamav rkhunter cronie
 
 # Update ClamAV signatures
 sudo freshclam

@@ -14,7 +14,6 @@ import hashlib
 import json
 import logging
 import shutil
-import subprocess
 import tempfile
 import threading
 import time
@@ -30,10 +29,12 @@ import schedule
 
 try:
     from .secure_subprocess import run_secure  # centralized secure subprocess
-except (
-    ImportError
-):  # pragma: no cover - optional dependency; fallback handled at call sites
-    run_secure = None  # type: ignore
+except ImportError:
+    # Secure subprocess is required for security compliance
+    raise ImportError(
+        "secure_subprocess module is required for security compliance. "
+        "Please ensure app.core.secure_subprocess is available."
+    )
 
 
 class UpdateType(Enum):
@@ -897,20 +898,14 @@ class AutoUpdateSystem:  # pylint: disable=too-many-instance-attributes
             # Use sigtool to verify if available
             sigtool_path = shutil.which("sigtool")
             if sigtool_path:
-                if run_secure is not None:
+                try:
                     result = run_secure(
                         [sigtool_path, "--info", str(db_path)], timeout=30
                     )
                     return result.returncode == 0
-                # Fallback to original subprocess if secure wrapper unavailable
-                result = subprocess.run(
-                    [sigtool_path, "--info", str(db_path)],
-                    capture_output=True,
-                    text=True,
-                    check=False,
-                    timeout=30,
-                )
-                return result.returncode == 0
+                except Exception:
+                    # If signature verification fails, fall back to size check
+                    pass
 
             # Basic size check as fallback
             return db_path.stat().st_size > 1024  # At least 1KB

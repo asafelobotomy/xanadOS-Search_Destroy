@@ -388,12 +388,11 @@ class ClamAVWrapper:
             cmd = [x for x in cmd if x is not None]
 
             # Run scan
-            result = subprocess.run(
+            result = run_secure(
                 cmd,
+                timeout=self.config["advanced_settings"]["scan_timeout"] * 10,
                 capture_output=True,
                 text=True,
-                timeout=self.config["advanced_settings"]["scan_timeout"]
-                * 10,  # Longer timeout for directories
                 check=False,
             )
 
@@ -524,11 +523,11 @@ class ClamAVWrapper:
 
         try:
             # Get engine version
-            result = subprocess.run(
+            result = run_secure(
                 [self.clamscan_path, "--version"],
+                timeout=10,
                 capture_output=True,
                 text=True,
-                timeout=10,
                 check=False,
             )
             if result.returncode == 0:
@@ -546,8 +545,8 @@ class ClamAVWrapper:
                 bundled_db = Path("/app/share/clamav")
                 if bundled_db.exists():
                     db_cmd.extend(["--database", str(bundled_db)])
-            result = subprocess.run(
-                db_cmd, capture_output=True, text=True, timeout=10, check=False
+            result = run_secure(
+                db_cmd, timeout=10, capture_output=True, text=True, check=False
             )
             if result.returncode == 0:
                 lines = result.stdout.strip().split("\n")
@@ -589,11 +588,11 @@ class ClamAVWrapper:
                 return False
 
             # Test scan a known clean file to verify database is working
-            test_result = subprocess.run(
+            test_result = run_secure(
                 [self.clamscan_path, "--database-info"],
+                timeout=15,
                 capture_output=True,
                 text=True,
-                timeout=15,
                 check=False,
             )
             return test_result.returncode == 0
@@ -834,11 +833,11 @@ class ClamAVWrapper:
         """Check if ClamAV daemon is running."""
         try:
             # Try to connect to the daemon socket or ping (ping requires count argument)
-            result = subprocess.run(
+            result = run_secure(
                 [self.clamdscan_path, "--ping", "1"],
+                timeout=5,
                 capture_output=True,
                 text=True,
-                timeout=5,
                 check=False,
             )
             return result.returncode == 0
@@ -868,11 +867,11 @@ class ClamAVWrapper:
         cmd.append(file_path)
 
         # Run daemon scan
-        result = subprocess.run(
+        result = run_secure(
             cmd,
+            timeout=self.config["advanced_settings"]["scan_timeout"],
             capture_output=True,
             text=True,
-            timeout=self.config["advanced_settings"]["scan_timeout"],
             check=False,
         )
 
@@ -999,11 +998,11 @@ class ClamAVWrapper:
         # 4. Signature validation (CVD files have built-in verification)
         try:
             # Check if we can verify signature database
-            result = subprocess.run(
+            result = run_secure(
                 [self.clamscan_path, "--version"],
+                timeout=10,
                 capture_output=True,
                 text=True,
-                timeout=10,
                 check=False,
             )
             if result.returncode == 0 and "ClamAV" in result.stdout:
@@ -1348,11 +1347,11 @@ class ClamAVWrapper:
 
                 else:
                     # Non-privileged commands can capture output normally
-                    result = subprocess.run(
+                    result = run_secure(
                         cmd,
+                        timeout=300,  # 5 minutes timeout
                         capture_output=True,
                         text=True,
-                        timeout=300,  # 5 minutes timeout
                         check=False,
                     )
 

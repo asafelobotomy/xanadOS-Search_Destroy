@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """RKHunter Optimization GUI Components
-xanadOS Search & Destroy - Enhanced RKHunter Management Interface
+
+xanadOS Security Enhanced RKHunter Management Interface
+
 This module provides GUI components for RKHunter optimization including:
 - Configuration optimization interface
 - Status monitoring and reporting
@@ -40,6 +42,15 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
+# Import secure subprocess and privilege escalation
+from app.core.secure_subprocess import run_secure
+try:
+    from app.core.elevated_runner import elevated_run
+except ImportError:
+    logger = logging.getLogger(__name__)
+    logger.warning("elevated_run not available, some operations may fail")
+    elevated_run = None
+
 try:
     # Non-invasive monitor for fast, persistent status without sudo
     from app.core.rkhunter_monitor_non_invasive import (
@@ -63,7 +74,7 @@ logger = logging.getLogger(__name__)
 
 
 class StatusOnlyWorker(QThread):
-    """Lightweight worker for status-only checks without sudo requirements"""
+    """Privileged worker for comprehensive status checks with sudo authentication"""
 
     status_updated = pyqtSignal(object)  # RKHunterStatus
     error_occurred = pyqtSignal(str)
@@ -73,12 +84,12 @@ class StatusOnlyWorker(QThread):
         self.optimizer = RKHunterOptimizer()
 
     def run(self):
-        """Run lightweight RKHunter status check"""
+        """Run comprehensive RKHunter status check with privilege escalation"""
         try:
             status = self.optimizer.get_current_status()
             self.status_updated.emit(status)
         except Exception as e:
-            logger.error(f"Error in status check: {e}")
+            logger.error(f"Error in privileged status check: {e}")
             self.error_occurred.emit(str(e))
 
 
@@ -603,7 +614,31 @@ class RKHunterOptimizationTab(QWidget):
         # Control buttons
         self.refresh_status_btn = QPushButton("🔄 Refresh Status")
         self.refresh_status_btn.setMinimumWidth(120)
+        self.refresh_status_btn.setToolTip("Quick status refresh (non-invasive, cached)")
         header_layout.addWidget(self.refresh_status_btn)
+
+        self.privileged_refresh_btn = QPushButton("🔐 Full Status Refresh")
+        self.privileged_refresh_btn.setMinimumWidth(140)
+        self.privileged_refresh_btn.setToolTip("Complete status refresh with sudo (shows actual values)")
+        self.privileged_refresh_btn.setStyleSheet(
+            """
+            QPushButton {
+                background-color: #3498db;
+                color: white;
+                border: none;
+                padding: 8px 16px;
+                border-radius: 4px;
+                font-weight: bold;
+            }
+            QPushButton:hover {
+                background-color: #2980b9;
+            }
+            QPushButton:disabled {
+                background-color: #bdc3c7;
+            }
+            """
+        )
+        header_layout.addWidget(self.privileged_refresh_btn)
 
         self.optimize_btn = QPushButton("⚡ Optimize Configuration")
         self.optimize_btn.setMinimumWidth(150)
@@ -675,6 +710,7 @@ class RKHunterOptimizationTab(QWidget):
     def setup_connections(self):
         """Set up signal connections"""
         self.refresh_status_btn.clicked.connect(self.refresh_status)
+        self.privileged_refresh_btn.clicked.connect(self.privileged_refresh_status)
         self.optimize_btn.clicked.connect(self.run_optimization)
 
     def refresh_status(self):
@@ -690,6 +726,22 @@ class RKHunterOptimizationTab(QWidget):
         self.worker.status_updated.connect(self.on_status_updated)
         self.worker.error_occurred.connect(self.on_error)
         self.worker.finished.connect(self.on_status_check_finished)
+        self.worker.start()
+
+    def privileged_refresh_status(self):
+        """Refresh RKHunter status using privileged access (requires sudo)."""
+        if self.worker and self.worker.isRunning():
+            return
+
+        self.privileged_refresh_btn.setEnabled(False)
+        self.refresh_status_btn.setEnabled(False)
+        self.progress_label.setText("Getting comprehensive status (requires sudo)...")
+
+        # Use privileged status worker for complete information
+        self.worker = StatusOnlyWorker()
+        self.worker.status_updated.connect(self.on_status_updated)
+        self.worker.error_occurred.connect(self.on_error)
+        self.worker.finished.connect(self.on_privileged_status_check_finished)
         self.worker.start()
 
     def run_optimization(self):
@@ -780,10 +832,19 @@ class RKHunterOptimizationTab(QWidget):
             self.worker.deleteLater()
             self.worker = None
 
+    def on_privileged_status_check_finished(self):
+        """Handle privileged status check completion"""
+        self.refresh_status_btn.setEnabled(True)
+        self.privileged_refresh_btn.setEnabled(True)
+        if self.worker:
+            self.worker.deleteLater()
+            self.worker = None
+
     def on_optimization_finished(self):
         """Handle optimization completion"""
         self.optimize_btn.setEnabled(True)
         self.refresh_status_btn.setEnabled(True)
+        self.privileged_refresh_btn.setEnabled(True)
         self.optimize_btn.setText("⚡ Optimize Configuration")
 
         if self.worker:
@@ -791,7 +852,7 @@ class RKHunterOptimizationTab(QWidget):
             self.worker = None
 
         # Refresh status after optimization
-        QTimer.singleShot(1000, self.refresh_status)
+        QTimer.singleShot(1000, self.privileged_refresh_status)
 
 
 class RKHunterManualActionsDialog(QDialog):
@@ -860,14 +921,33 @@ class RKHunterManualActionsDialog(QDialog):
         """Check RKHunter configuration"""
 
         def check_config():
-            result = subprocess.run(
-                ["rkhunter", "--config-check"],
-                check=False,
-                capture_output=True,
-                text=True,
-                timeout=60,
-            )
-            return result.returncode == 0, result.stdout + result.stderr
+            try:
+                # Use elevated_run for RKHunter configuration check which requires root privileges
+                if elevated_run:
+                    result = elevated_run(
+                        ["rkhunter", "--config-check"],
+                        capture_output=True,
+                        text=True,
+                        timeout=60,
+                        gui=True,  # Enable GUI authentication
+                    )
+                else:
+                    # Fallback to secure subprocess (may fail due to permissions)
+                    result = run_secure(
+                        ["sudo", "rkhunter", "--config-check"],
+                        check=False,
+                        capture_output=True,
+                        text=True,
+                        timeout=60,
+                    )
+
+                if result.returncode == 0:
+                    return True, result.stdout
+                else:
+                    return False, f"Configuration check failed: {result.stderr or result.stdout}"
+
+            except Exception as e:
+                return False, f"Failed to run configuration check: {str(e)}"
 
         self.run_action("Checking configuration...", check_config)
 

@@ -19,8 +19,8 @@ echo ""
 CURRENT_COMMIT=$(git rev-parse HEAD)
 CURRENT_TAG=$(git describe --tags --exact-match HEAD 2>/dev/null || echo "No tag on current commit")
 echo "📝 Current repository status:"
-echo "   Commit: $CURRENT_COMMIT"
-echo "   Tag: $CURRENT_TAG"
+echo "   Commit: ${CURRENT_COMMIT}"
+echo "   Tag: ${CURRENT_TAG}"
 echo ""
 
 # Check if Flathub directory exists
@@ -55,7 +55,7 @@ echo "   cp $(pwd)/packaging/flatpak/io.github.asafelobotomy.SearchAndDestroy.me
 echo "   cp $(pwd)/packaging/flatpak/io.github.asafelobotomy.SearchAndDestroy.desktop ."
 echo ""
 echo "5. 🔧 Update commit hash in manifest:"
-echo "   sed -i \"s/commit: REPLACE_WITH_ACTUAL_COMMIT_HASH/commit: $CURRENT_COMMIT/\" io.github.asafelobotomy.SearchAndDestroy.yml"
+echo "   sed -i \"s/commit: REPLACE_WITH_ACTUAL_COMMIT_HASH/commit: ${CURRENT_COMMIT}/\" io.github.asafelobotomy.SearchAndDestroy.yml"
 echo ""
 echo "6. ✅ Validate submission:"
 echo "   flatpak run --command=flatpak-builder-lint org.flatpak.Builder manifest io.github.asafelobotomy.SearchAndDestroy.yml"

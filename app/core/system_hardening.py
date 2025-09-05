@@ -12,11 +12,12 @@ This module implements comprehensive system hardening detection including:
 import logging
 import os
 import re
-import subprocess
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 from typing import Any
+
+from .secure_subprocess import run_secure
 
 logger = logging.getLogger(__name__)
 
@@ -390,7 +391,7 @@ class SystemHardeningChecker:
             # Check kernel config if available
             elif os.path.exists("/proc/config.gz"):
                 try:
-                    result = subprocess.run(
+                    result = run_secure(
                         ["zcat", "/proc/config.gz"],
                         check=False,
                         capture_output=True,
@@ -448,7 +449,7 @@ class SystemHardeningChecker:
         try:
             # Check if VMAP_STACK is enabled
             if os.path.exists("/proc/config.gz"):
-                result = subprocess.run(
+                result = run_secure(
                     ["zcat", "/proc/config.gz"],
                     check=False,
                     capture_output=True,
@@ -470,7 +471,7 @@ class SystemHardeningChecker:
         try:
             # KASAN is typically not enabled in production kernels
             if os.path.exists("/proc/config.gz"):
-                result = subprocess.run(
+                result = run_secure(
                     ["zcat", "/proc/config.gz"],
                     check=False,
                     capture_output=True,
@@ -523,7 +524,7 @@ class SystemHardeningChecker:
     def _check_apparmor(self) -> dict[str, Any]:
         """Check AppArmor status"""
         try:
-            result = subprocess.run(
+            result = run_secure(
                 ["aa-status"], check=False, capture_output=True, text=True, timeout=5
             )
             if result.returncode == 0:
@@ -579,7 +580,7 @@ class SystemHardeningChecker:
             return str(self.sysctl_cache[param])
 
         try:
-            result = subprocess.run(
+            result = run_secure(
                 ["sysctl", "-n", param],
                 check=False,
                 capture_output=True,

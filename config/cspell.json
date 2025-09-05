@@ -151,7 +151,9 @@
   "docstrings",
   "inotify",
   "dnspython",
-  "UNHIDE"
+  "UNHIDE",
+  "pacman",
+  "cronie"
   ],
   "flagWords": [
     "hte",

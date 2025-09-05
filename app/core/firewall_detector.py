@@ -997,11 +997,11 @@ class FirewallDetector:
                 for cmd_args in flush_commands:
                     cmd = admin_cmd + cmd_args
                     try:
-                        result = subprocess.run(
+                        result = run_secure(
                             cmd,
+                            timeout=30,
                             capture_output=True,
                             text=True,
-                            timeout=30,
                             check=False,
                             env=env,
                         )
@@ -1049,11 +1049,11 @@ class FirewallDetector:
                 for service in services_to_try:
                     cmd = admin_cmd + ["systemctl", "start", service]
                     try:
-                        result = subprocess.run(
+                        result = run_secure(
                             cmd,
+                            timeout=30,
                             capture_output=True,
                             text=True,
-                            timeout=30,
                             check=False,
                             env=env,
                         )
@@ -1078,11 +1078,11 @@ class FirewallDetector:
                 for service in services_to_try:
                     cmd = admin_cmd + ["systemctl", "stop", service]
                     try:
-                        result = subprocess.run(
+                        result = run_secure(
                             cmd,
+                            timeout=30,
                             capture_output=True,
                             text=True,
-                            timeout=30,
                             check=False,
                             env=env,
                         )

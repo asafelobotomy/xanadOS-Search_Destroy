@@ -285,18 +285,27 @@ install_system_dependencies() {
     case "$system" in
         "arch")
             if ! command -v clamav >/dev/null 2>&1; then
-                sudo pacman -S --noconfirm clamav clamav-daemon rkhunter git curl wget
+                sudo pacman -S --noconfirm clamav clamav-daemon rkhunter cronie git curl wget
+                # Enable and start cron service
+                sudo systemctl enable cronie.service
+                sudo systemctl start cronie.service
             fi
             ;;
         "debian"|"ubuntu")
             if ! command -v clamav >/dev/null 2>&1; then
                 sudo apt-get update
-                sudo apt-get install -y clamav clamav-daemon rkhunter git curl wget
+                sudo apt-get install -y clamav clamav-daemon rkhunter cron git curl wget
+                # Enable and start cron service
+                sudo systemctl enable cron.service
+                sudo systemctl start cron.service
             fi
             ;;
         "fedora"|"rhel")
             if ! command -v clamav >/dev/null 2>&1; then
-                sudo dnf install -y clamav clamav-update rkhunter git curl wget
+                sudo dnf install -y clamav clamav-update rkhunter cronie git curl wget
+                # Enable and start cron service
+                sudo systemctl enable crond.service
+                sudo systemctl start crond.service
             fi
             ;;
         "macos")

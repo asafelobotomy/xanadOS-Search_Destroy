@@ -248,34 +248,84 @@ class RKHunterMonitorNonInvasive:
 
             binary_path = result.stdout.strip()
 
-            # Method 2: Try to get version (usually doesn't require sudo for --version)
-            try:
-                result = run_secure(
-                    ["rkhunter", "--version"],
-                    capture_output=True,
-                    text=True,
-                    timeout=10,
-                )
-                if result.returncode == 0:
-                    version_output = result.stdout.strip()
+            # Method 2: Check if file exists and get basic info
+            if os.path.exists(binary_path):
+                try:
+                    stat_info = os.stat(binary_path)
+                    # Check if the file has restrictive permissions (root only)
+                    if stat_info.st_uid == 0 and stat_info.st_mode & 0o077 == 0:
+                        # Binary exists but has root-only permissions
+                        # We can't run --version without sudo, so determine version another way
 
-                    # Parse version from output
-                    version = "Available"
-                    for line in version_output.split("\n"):
-                        if "RKH version" in line or "rkhunter" in line.lower():
-                            version = line.strip()
-                            break
+                        # Try to determine installation method
+                        install_method = "manual"
+                        if "/usr/bin" in binary_path or "/usr/sbin" in binary_path:
+                            install_method = "package"
 
-                    # Determine installation method
-                    install_method = "manual"
-                    if "/usr/bin" in binary_path or "/usr/sbin" in binary_path:
-                        install_method = "package"
+                        # For package installations, try to get version from package manager
+                        if install_method == "package":
+                            try:
+                                # Try pacman (Arch)
+                                result = run_secure(
+                                    ["pacman", "-Qi", "rkhunter"],
+                                    capture_output=True,
+                                    text=True,
+                                    timeout=5,
+                                )
+                                if result.returncode == 0:
+                                    for line in result.stdout.split('\n'):
+                                        if line.startswith('Version'):
+                                            version = f"Rootkit Hunter {line.split(':')[1].strip()}"
+                                            return True, version, install_method
+                            except Exception:
+                                pass
 
-                    return True, version, install_method
+                            # Try other package managers if needed
+                            try:
+                                # Try rpm-based systems
+                                result = run_secure(
+                                    ["rpm", "-q", "rkhunter"],
+                                    capture_output=True,
+                                    text=True,
+                                    timeout=5,
+                                )
+                                if result.returncode == 0:
+                                    version = f"Rootkit Hunter (via RPM: {result.stdout.strip()})"
+                                    return True, version, install_method
+                            except Exception:
+                                pass
 
-            except Exception as e:
-                print(f"⚠️ Could not get RKHunter version: {e}")
-                return True, "Available (version check failed)", "unknown"
+                        # If we can't get version, just report as available
+                        return True, "Rootkit Hunter (version requires sudo)", install_method
+
+                    else:
+                        # Binary is readable, try version command
+                        result = run_secure(
+                            ["rkhunter", "--version"],
+                            capture_output=True,
+                            text=True,
+                            timeout=10,
+                        )
+                        if result.returncode == 0:
+                            version_output = result.stdout.strip()
+
+                            # Parse version from output
+                            version = "Available"
+                            for line in version_output.split("\n"):
+                                if "RKH version" in line or "rkhunter" in line.lower():
+                                    version = line.strip()
+                                    break
+
+                            # Determine installation method
+                            install_method = "manual"
+                            if "/usr/bin" in binary_path or "/usr/sbin" in binary_path:
+                                install_method = "package"
+
+                            return True, version, install_method
+
+                except Exception as e:
+                    print(f"⚠️ Could not check RKHunter binary: {e}")
+                    return True, "Available (file check failed)", "unknown"
 
             return True, "Available", "unknown"
 

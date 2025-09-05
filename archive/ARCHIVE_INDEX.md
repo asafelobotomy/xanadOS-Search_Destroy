@@ -261,3 +261,9 @@ edits should be avoided to maintain data integrity.**
 
 **Status**: Repository modernization and cleanup COMPLETE
 **Next Action**: Regular maintenance using modern development workflow
+- `archive/temp-testing/test_rkhunter_fix.py` — Archived 2025-09-05 (temporary test file from recent development work)
+- `archive/temp-testing/test_rkhunter_fixes.py` — Archived 2025-09-05 (temporary test file from recent development work)
+- `archive/temp-testing/test_optimization_fixes.py` — Archived 2025-09-05 (temporary test file from recent development work)
+- `archive/temp-testing/test_cron_integration.py` — Archived 2025-09-05 (temporary test file from recent development work)
+- `archive/temp-testing/test_optimization_direct.py` — Archived 2025-09-05 (temporary test file from recent development work)
+- `archive/temp-testing/test_config_fix.py` — Archived 2025-09-05 (temporary test file from recent development work)

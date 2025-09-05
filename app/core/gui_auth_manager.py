@@ -484,12 +484,12 @@ def elevated_popen_gui(
 
     # Start the process
     try:
-        return subprocess.Popen(
+        return popen_secure(
             sudo_cmd,
-            stdin=stdin,
+            allow_root=True,  # This is an elevated operation
+            text=text,
             stdout=stdout,
             stderr=stderr,
-            text=text,
             env=proc_env,
             **popen_kwargs,
         )

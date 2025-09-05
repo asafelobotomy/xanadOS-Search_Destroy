@@ -24,6 +24,8 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any
 
+from .secure_subprocess import run_secure
+
 logger = logging.getLogger(__name__)
 
 try:
@@ -142,8 +144,8 @@ class RKHunterOptimizer:
 
             # If not found in common paths, try which command
             if not rkhunter_path:
-                result = subprocess.run(
-                    ["which", "rkhunter"], check=False, capture_output=True, timeout=5
+                result = run_secure(
+                    ["which", "rkhunter"], timeout=5, check=False, capture_output=True
                 )
                 if result.returncode == 0 and result.stdout:
                     rkhunter_path = result.stdout.strip()
@@ -191,8 +193,8 @@ class RKHunterOptimizer:
             )
         else:
             # Run without sudo
-            return subprocess.run(
-                cmd, check=False, capture_output=True, text=True, timeout=timeout
+            return run_secure(
+                cmd, timeout=timeout, check=False, capture_output=True, text=True
             )
 
     def _ensure_rkhunter_available(self) -> bool:
@@ -232,7 +234,7 @@ class RKHunterOptimizer:
 
             if "pacman" in install_cmd:
                 # For Arch Linux
-                result = subprocess.run(
+                result = run_secure(
                     ["sudo", "pacman", "-S", "--noconfirm", "rkhunter"],
                     check=False,
                     capture_output=True,
@@ -386,10 +388,10 @@ class RKHunterOptimizer:
                     ],
                 )
 
-            # Get version (no sudo needed for version check)
+            # Get version (requires sudo due to restrictive binary permissions)
             try:
                 version_result = self._execute_rkhunter_command(
-                    ["--version"], timeout=30, use_sudo=False
+                    ["--version"], timeout=30, use_sudo=True
                 )
                 version = (
                     self._parse_version(version_result.stdout)
@@ -398,7 +400,26 @@ class RKHunterOptimizer:
                 )
             except Exception as e:
                 logger.warning(f"Failed to get RKHunter version: {e}")
-                version = "Unknown"
+                # Fallback to package manager for version info
+                try:
+                    from ..utils.secure_subprocess import run_secure
+                    pkg_result = run_secure(
+                        ["pacman", "-Qi", "rkhunter"],
+                        capture_output=True,
+                        text=True,
+                        timeout=10
+                    )
+                    if pkg_result.returncode == 0:
+                        for line in pkg_result.stdout.split('\n'):
+                            if line.startswith('Version'):
+                                version = line.split(':', 1)[1].strip()
+                                break
+                        else:
+                            version = "Unknown"
+                    else:
+                        version = "Unknown"
+                except Exception:
+                    version = "Unknown"
 
             # Get database version
             db_version = self._get_database_version()
@@ -886,26 +907,52 @@ class RKHunterOptimizer:
         return FileLock(self.lock_file)
 
     def _backup_config(self) -> bool:
-        """Create configuration backup with improved error handling"""
+        """Create configuration backup with proper privilege escalation."""
         try:
             if not os.path.exists(self.config_path):
                 logger.warning(f"Configuration file {self.config_path} does not exist")
                 return False
 
-            # Try to backup to the specified location first
+            # Use auth_session_manager for privileged file operations
             try:
-                shutil.copy2(self.config_path, self.backup_path)
-                logger.info(f"Configuration backed up to {self.backup_path}")
-                return True
-            except PermissionError:
-                # If we can't write to the system location, use temp directory
+                with session_context():
+                    # Try using elevated file operation first
+                    backup_name = f"rkhunter.conf.backup.{int(time.time())}"
+                    temp_backup = self.temp_dir / backup_name
+
+                    # Use sudo to copy the file
+                    result = run_secure(
+                        ["sudo", "cp", self.config_path, str(temp_backup)],
+                        capture_output=True,
+                        text=True,
+                        timeout=30
+                    )
+
+                    if result.returncode == 0:
+                        # Make the backup file readable by the user
+                        run_secure(
+                            ["sudo", "chown", f"{os.getuid()}:{os.getgid()}", str(temp_backup)],
+                            capture_output=True,
+                            timeout=10
+                        )
+                        logger.info(f"Configuration backed up to {temp_backup}")
+                        return True
+                    else:
+                        logger.warning(f"Sudo copy failed: {result.stderr}")
+
+            except Exception as e:
+                logger.debug(f"Privileged backup failed: {e}")
+
+            # Fallback: Try direct copy without privileges
+            try:
                 backup_name = f"rkhunter.conf.backup.{int(time.time())}"
                 temp_backup = self.temp_dir / backup_name
                 shutil.copy2(self.config_path, str(temp_backup))
-                logger.info(
-                    f"Configuration backed up to {temp_backup} (temp location due to permissions)"
-                )
+                logger.info(f"Configuration backed up to {temp_backup}")
                 return True
+            except PermissionError:
+                logger.warning("Cannot create configuration backup due to insufficient permissions")
+                return False
 
         except Exception as e:
             logger.error(f"Configuration backup failed: {e}")
@@ -984,19 +1031,51 @@ class RKHunterOptimizer:
         return match.group(1) if match else "Unknown"
 
     def _get_database_version(self) -> str:
-        """Get database version"""
+        """Get RKHunter database version with privilege escalation."""
         try:
-            result = subprocess.run(
-                ["rkhunter", "--versioncheck"],
-                check=False,
+            # First try to read the local database file for version
+            db_paths = [
+                "/var/lib/rkhunter/db/rkhunter.dat",
+                "/usr/local/var/lib/rkhunter/db/rkhunter.dat"
+            ]
+
+            for db_path in db_paths:
+                try:
+                    # Use sudo to read the database file
+                    result = run_secure(
+                        ["sudo", "head", "-10", db_path],
+                        capture_output=True,
+                        text=True,
+                        timeout=10
+                    )
+                    if result.returncode == 0 and result.stdout:
+                        for line in result.stdout.split('\n'):
+                            if line.startswith('Version:'):
+                                version = line.split(':', 1)[1].strip()
+                                # Convert version format: 2025090500 -> 2025.09.05.00
+                                if len(version) == 10 and version.isdigit():
+                                    formatted = f"{version[:4]}.{version[4:6]}.{version[6:8]}.{version[8:]}"
+                                    return f"Database: {formatted}"
+                                return f"Database: {version}"
+                except Exception:
+                    continue
+
+            # Fallback: Try to get data file timestamps
+            result = run_secure(
+                ["sudo", "stat", "-c", "%Y", "/var/lib/rkhunter/db/programs_bad.dat"],
                 capture_output=True,
                 text=True,
-                timeout=30,
+                timeout=10
             )
-            # Parse version from output
-            match = re.search(r"database version:\s*(\S+)", result.stdout)
-            return match.group(1) if match else "Unknown"
-        except BaseException:
+            if result.returncode == 0 and result.stdout.strip():
+                timestamp = int(result.stdout.strip())
+                import datetime
+                date_str = datetime.datetime.fromtimestamp(timestamp).strftime('%Y-%m-%d')
+                return f"Data files: {date_str}"
+
+            return "Unknown"
+        except Exception as e:
+            logger.warning(f"Failed to get database version: {e}")
             return "Unknown"
 
     def _get_last_update_time(self) -> datetime | None:
@@ -1051,19 +1130,46 @@ class RKHunterOptimizer:
     def _check_mirror_status(self) -> str:
         """Check mirror connectivity status (lightweight check)"""
         try:
-            # For status checks, just verify config file accessibility
-            # Full mirror checks should be done separately during updates
+            # Check if mirrors.dat exists and has content
+            mirrors_file = "/var/lib/rkhunter/db/mirrors.dat"
+            if os.path.exists(mirrors_file):
+                try:
+                    stat_result = os.stat(mirrors_file)
+                    if stat_result.st_size > 0:
+                        mod_time = datetime.fromtimestamp(stat_result.st_mtime)
+                        days_old = (datetime.now() - mod_time).days
+                        if days_old < 30:
+                            return f"Updated {days_old} days ago"
+                        else:
+                            return f"Outdated ({days_old} days old)"
+                    else:
+                        return "Empty mirrors database"
+                except Exception:
+                    return "Mirror data inaccessible"
+
+            # Fallback: Check config file with elevated access if needed
             config_file = "/etc/rkhunter.conf"
             if os.path.exists(config_file):
                 try:
+                    # Try to read config with current permissions first
                     with open(config_file) as f:
                         content = f.read()
                         if "UPDATE_MIRRORS=" in content:
-                            return "Configured"
+                            return "Configured (no mirror data)"
                         else:
                             return "Not configured"
                 except PermissionError:
-                    return "Config inaccessible"
+                    # Try with elevated access
+                    try:
+                        result = self._execute_rkhunter_command(
+                            ["--config-check"], timeout=20, use_sudo=True
+                        )
+                        if result.returncode == 0:
+                            return "Config accessible"
+                        else:
+                            return "Config check failed"
+                    except Exception:
+                        return "Config inaccessible"
             else:
                 return "Config missing"
         except Exception as e:
@@ -1073,7 +1179,7 @@ class RKHunterOptimizer:
     def _check_mirror_connectivity(self) -> str:
         """Check actual mirror connectivity (for optimization tasks)"""
         try:
-            result = subprocess.run(
+            result = run_secure(
                 ["rkhunter", "--update", "--check"],
                 check=False,
                 capture_output=True,
@@ -1120,7 +1226,7 @@ class RKHunterOptimizer:
 
         try:
             # Check if RKHunter is properly installed
-            result = subprocess.run(
+            result = run_secure(
                 ["which", "rkhunter"], check=False, capture_output=True
             )
             if result.returncode != 0:
@@ -1145,7 +1251,7 @@ class RKHunterOptimizer:
     def _check_network_connectivity(self) -> bool:
         """Check network connectivity for updates"""
         try:
-            result = subprocess.run(
+            result = run_secure(
                 ["ping", "-c", "1", "-W", "5", "rkhunter.sourceforge.net"],
                 check=False,
                 capture_output=True,
@@ -1216,7 +1322,7 @@ class RKHunterOptimizer:
     def _get_existing_cron_jobs(self) -> list[str]:
         """Get existing cron jobs"""
         try:
-            result = subprocess.run(
+            result = run_secure(
                 ["crontab", "-l"], check=False, capture_output=True, text=True
             )
             if result.returncode == 0:
@@ -1237,41 +1343,107 @@ class RKHunterOptimizer:
         else:  # monthly
             return "03:30"  # 3:30 AM on first day of month
 
-    def _generate_cron_entry(self, frequency: str, time: str) -> str:
-        """Generate cron entry"""
+    def _generate_cron_entry(self, frequency: str, time: str, system_cron: bool = False) -> str:
+        """Generate cron entry with optional system cron format."""
         hour, minute = time.split(":")
 
+        # Base command
+        base_cmd = "/usr/bin/rkhunter --check --skip-keypress --quiet"
+
+        # Add user specification for system cron.d files
+        if system_cron:
+            user_spec = "root "
+        else:
+            user_spec = ""
+
         if frequency == "daily":
-            return f"{minute} {hour} * * * /usr/bin/rkhunter --check --skip-keypress --quiet"
+            return f"{minute} {hour} * * * {user_spec}{base_cmd}"
         elif frequency == "weekly":
-            return f"{minute} {hour} * * 0 /usr/bin/rkhunter --check --skip-keypress --quiet"
+            return f"{minute} {hour} * * 0 {user_spec}{base_cmd}"
         else:  # monthly
-            return f"{minute} {hour} 1 * * /usr/bin/rkhunter --check --skip-keypress --quiet"
+            return f"{minute} {hour} 1 * * {user_spec}{base_cmd}"
 
     def _update_cron_job(self, cron_entry: str) -> bool:
-        """Update cron job"""
+        """Update cron job with fallback approaches."""
         try:
-            # Get existing crontab
-            result = subprocess.run(
-                ["crontab", "-l"], check=False, capture_output=True, text=True
-            )
-            current_crontab = result.stdout if result.returncode == 0 else ""
+            # Method 1: Try using crontab directly
+            try:
+                # Get existing crontab
+                result = run_secure(
+                    ["crontab", "-l"], check=False, capture_output=True, text=True
+                )
+                current_crontab = result.stdout if result.returncode == 0 else ""
 
-            # Remove existing rkhunter entries
-            lines = current_crontab.split("\n")
-            filtered_lines = [line for line in lines if "rkhunter" not in line]
+                # Remove existing rkhunter entries
+                lines = current_crontab.split("\n")
+                filtered_lines = [line for line in lines if "rkhunter" not in line and line.strip()]
 
-            # Add new entry
-            filtered_lines.append(cron_entry)
+                # Add new entry
+                filtered_lines.append(cron_entry)
 
-            # Update crontab
-            new_crontab = "\n".join(filtered_lines)
-            process = subprocess.Popen(
-                ["crontab", "-"], stdin=subprocess.PIPE, text=True
-            )
-            process.communicate(input=new_crontab)
+                # Update crontab
+                new_crontab = "\n".join(filtered_lines) + "\n"
 
-            return process.returncode == 0
+                # Write to temp file first
+                import tempfile
+                with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.cron') as temp_file:
+                    temp_file.write(new_crontab)
+                    temp_file_path = temp_file.name
+
+                # Install crontab from file
+                result = run_secure(
+                    ["crontab", temp_file_path], capture_output=True, text=True
+                )
+
+                # Clean up temp file
+                os.unlink(temp_file_path)
+
+                if result.returncode == 0:
+                    logger.info("Cron job updated successfully")
+                    return True
+                else:
+                    logger.warning(f"Crontab update failed: {result.stderr}")
+
+            except Exception as cron_error:
+                logger.warning(f"Direct crontab method failed: {cron_error}")
+
+            # Method 2: Try writing to system cron.d directory
+            try:
+                cron_file_path = "/etc/cron.d/rkhunter-xanados"
+                # Generate system cron entry with user specification
+                system_cron_entry = self._generate_cron_entry(
+                    "daily" if "* *" in cron_entry else "weekly" if "* 0" in cron_entry else "monthly",
+                    "02:30",  # Default time
+                    system_cron=True
+                )
+                cron_content = f"# RKHunter optimization cron job managed by xanadOS Search & Destroy\n{system_cron_entry}\n"
+
+                # Use sudo to write the cron file
+                import tempfile
+                with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.cron') as temp_file:
+                    temp_file.write(cron_content)
+                    temp_file_path = temp_file.name
+
+                result = run_secure(
+                    ["sudo", "cp", temp_file_path, cron_file_path],
+                    capture_output=True,
+                    text=True
+                )
+
+                os.unlink(temp_file_path)
+
+                if result.returncode == 0:
+                    logger.info(f"System cron job created at {cron_file_path}")
+                    return True
+                else:
+                    logger.warning(f"System cron creation failed: {result.stderr}")
+
+            except Exception as system_cron_error:
+                logger.warning(f"System cron method failed: {system_cron_error}")
+
+            # Method 3: Just log the cron entry for manual setup
+            logger.info(f"Cron job automation failed. Manual cron entry needed: {cron_entry}")
+            return False
 
         except Exception as e:
             logger.error(f"Failed to update cron job: {e}")
@@ -1349,7 +1521,7 @@ class RKHunterOptimizer:
         required_commands = ["curl", "wget", "file", "stat", "readlink"]
 
         for cmd in required_commands:
-            result = subprocess.run(["which", cmd], check=False, capture_output=True)
+            result = run_secure(["which", cmd], check=False, capture_output=True)
             if result.returncode != 0:
                 missing.append(cmd)
 
