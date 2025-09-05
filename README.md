@@ -92,7 +92,83 @@ npm run version:sync:check
 
 ---
 
+## 📸 Screenshots
+
+Experience the modern PyQt6 interface with comprehensive security management:
+
+### Dashboard Overview
+
+![Dashboard](docs/screenshots/1%20-%20Dashboard.png)
+
+Main dashboard with real-time security status and system overview
+
+### Security Scanning
+
+![Scan Interface](docs/screenshots/2-%20Scan.png)
+
+Comprehensive malware scanning with ClamAV integration
+
+### System Protection
+
+![Protection Status](docs/screenshots/3%20-%20Protection.png)
+
+Real-time protection monitoring and threat detection
+
+### System Hardening
+
+![Hardening Tools](docs/screenshots/4%20-%20Hardening.png)
+
+Advanced security hardening and configuration management
+
+### Security Reports
+
+![Reports View](docs/screenshots/5%20-%20Reports.png)
+
+Detailed security analysis reports and recommendations
+
+### Settings & Configuration
+
+![Settings Panel](docs/screenshots/6%20-%20Settings.png)
+
+Customizable security policies and application preferences
+
+---
+
 ## 🔧 Installation & Setup
+
+---
+
+## � Screenshots
+
+Experience the modern PyQt6 interface with comprehensive security management:
+
+### Dashboard Overview
+![Dashboard](docs/screenshots/1%20-%20Dashboard.png)
+*Main dashboard with real-time security status and system overview*
+
+### Security Scanning
+![Scan Interface](docs/screenshots/2-%20Scan.png)
+*Comprehensive malware scanning with ClamAV integration*
+
+### System Protection
+![Protection Status](docs/screenshots/3%20-%20Protection.png)
+*Real-time protection monitoring and threat detection*
+
+### System Hardening
+![Hardening Tools](docs/screenshots/4%20-%20Hardening.png)
+*Advanced security hardening and configuration management*
+
+### Security Reports
+![Reports View](docs/screenshots/5%20-%20Reports.png)
+*Detailed security analysis reports and recommendations*
+
+### Settings & Configuration
+![Settings Panel](docs/screenshots/6%20-%20Settings.png)
+*Customizable security policies and application preferences*
+
+---
+
+## �🔧 Installation & Setup
 
 ### **System Requirements**
 
