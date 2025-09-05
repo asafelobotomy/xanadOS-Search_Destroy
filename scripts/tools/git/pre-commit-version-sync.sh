@@ -10,7 +10,7 @@ cd "$REPO_ROOT"
 echo "🔄 Pre-commit: Syncing versions with VERSION file..."
 
 # Run version sync
-python scripts/tools/version_manager.py --sync
+python scripts/tools/version/version_manager.py --sync
 
 # Check if any files were modified
 if git diff --quiet; then

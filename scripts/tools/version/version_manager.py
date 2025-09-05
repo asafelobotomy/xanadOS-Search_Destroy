@@ -11,7 +11,7 @@ import sys
 from pathlib import Path
 
 # Get the repository root directory
-REPO_ROOT = Path(__file__).parent.parent.parent
+REPO_ROOT = Path(__file__).parent.parent.parent.parent
 VERSION_FILE = REPO_ROOT / "VERSION"
 
 

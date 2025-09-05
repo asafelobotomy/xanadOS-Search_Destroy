@@ -331,14 +331,14 @@ version: ## Show version information (from VERSION file)
 	@echo -e "  Node Target: $(CYAN)$(NODE_VERSION)$(NC)"
 
 version-get: ## Get current version from VERSION file
-	@python scripts/tools/version_manager.py --get
+	@python scripts/tools/version/version_manager.py --get
 
 version-sync: ## Synchronize all files with VERSION file
 	@echo -e "$(BOLD)$(GREEN)🔄 Synchronizing versions...$(NC)"
-	@python scripts/tools/version_manager.py --sync
+	@python scripts/tools/version/version_manager.py --sync
 
 version-info: ## Show detailed version information
-	@python scripts/tools/version_manager.py --version-info
+	@python scripts/tools/version/version_manager.py --version-info
 
 upgrade-tools: ## Upgrade development tools
 	@echo -e "$(BOLD)$(GREEN)⬆️  Upgrading development tools...$(NC)"
