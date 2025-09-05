@@ -147,6 +147,10 @@ make validate-deps
 make run
 ```
 
+**⚠️ Note**: If you encounter a recurring "First Time Setup" dialog, this issue has been
+fixed in v2.13.1. The application will automatically detect existing installations and mark
+setup as complete.
+
 ### **Development Setup (with AI Enhancement Tools)**
 
 ```bash

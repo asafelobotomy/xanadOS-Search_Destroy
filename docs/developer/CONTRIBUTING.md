@@ -16,33 +16,44 @@ guidelines for contributing to the project.
 
 1. Clone the repository:
 
-````bash
-Git clone <HTTPS://GitHub.com/asafelobotomy/xanadOS-Search_Destroy.Git>
+```bash
+git clone https://github.com/asafelobotomy/xanadOS-Search_Destroy.git
 cd xanadOS-Search_Destroy
+```
 
-```text
-
-2. Create and activate virtual environment:
+1. **Recommended**: Use the modern setup system:
 
 ```bash
-Python -m venv .venv
+# Complete development environment (modern tools included)
+make setup
+
+# OR: Use the setup script directly
+bash scripts/setup/modern-dev-setup.sh
+```
+
+1. **Alternative**: Manual setup:
+
+```bash
+# Create and activate virtual environment
+python3 -m venv .venv
 source .venv/bin/activate  # On Linux/Mac
 
-```text
+# Install dependencies
+pip install -e .[dev]
 
-3. Install dependencies:
+# Install Node.js dependencies (for validation tools)
+npm install
+```
 
-```bash
-pip install -r requirements.txt
-
-```text
-
-4. Run the application:
+1. Run the application:
 
 ```bash
-Python app/main.py
+# Using the Makefile (recommended)
+make run
 
-```text
+# OR: Direct Python execution
+python -m app.main
+```
 
 ## Code Style and Standards
 

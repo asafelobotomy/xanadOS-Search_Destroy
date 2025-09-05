@@ -42,9 +42,11 @@ application with AI-enhanced development tools.
 ### Python Application Setup
 
 ```bash
-# Install Python dependencies
-pip install -r requirements.txt
-pip install -r requirements-dev.txt
+# RECOMMENDED: Modern setup (includes all dependencies)
+make setup
+
+# OR: Manual Python dependency installation
+pip install -e .[dev]
 
 # Install system dependencies (Ubuntu/Debian)
 sudo apt install clamav clamav-daemon
@@ -53,7 +55,7 @@ sudo apt install clamav clamav-daemon
 python -m pytest tests/
 
 # Launch application
-python -m app.main
+make run  # OR: python -m app.main
 ```
 
 ### AI Framework Setup
@@ -69,6 +71,13 @@ npm run quick:validate
 ./scripts/tools/quality/check-quality.sh --fix
 ./scripts/tools/validation/validate-structure.sh
 ```
+
+**Recent Improvements (v2.13.1)**:
+
+- Fixed recurring "First Time Setup" dialog issue
+- Enhanced setup wizard with auto-recovery logic
+- Improved security with `run_secure()` in setup processes
+- Added comprehensive validation and quality tools
 
 ## Notes
 
