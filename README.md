@@ -8,7 +8,7 @@
 **A comprehensive Linux security scanner and system protection suite with advanced malware
 detection, real-time monitoring, and enterprise-grade security hardening.**
 
-_Security Rating: **A- (Excellent)** | Production Ready | Current Version: 2.11.2_
+_Security Rating: **A- (Excellent)** | Production Ready | Current Version: 2.13.0_
 
 ## Start here
 
@@ -43,6 +43,23 @@ This repository includes development automation tools enhanced with AI assistanc
 - Chat modes in `.github/chatmodes/` for specialized development tasks
 - Prompt templates in `.github/prompts/` for code review and analysis
 - Development instructions in `.github/instructions/` for automated guidance
+
+### **🔄 Version Management (Single Source of Truth)**
+
+The project uses automated version management with the `VERSION` file as the single source:
+
+```bash
+# Update version across ALL files (package.json, pyproject.toml, README.md, etc.)
+echo "2.13.0" > VERSION && npm run version:sync
+
+# Check current version
+npm run version:get
+
+# Verify all files are synchronized
+npm run version:sync:check
+```
+
+**📖 Complete Version Management Guide**: `docs/guides/VERSION-MANAGEMENT.md`
 
 ---
 

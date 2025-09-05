@@ -19,7 +19,7 @@ BOLD := \033[1m
 
 # Project configuration
 PROJECT_NAME := xanadOS-Search_Destroy
-VERSION := 2.11.2
+VERSION := $(shell cat VERSION 2>/dev/null || echo "2.12.0")
 PYTHON_VERSION := 3.11
 NODE_VERSION := lts
 
@@ -323,12 +323,22 @@ check-env: ## Check environment status
 		echo -e "  Status: $(RED)❌ Not found$(NC)"; \
 	fi
 
-version: ## Show version information
+version: ## Show version information (from VERSION file)
 	@echo -e "$(BOLD)$(CYAN)📋 Version Information$(NC)"
 	@echo -e "  Project: $(CYAN)$(PROJECT_NAME)$(NC)"
 	@echo -e "  Version: $(CYAN)$(VERSION)$(NC)"
 	@echo -e "  Python Target: $(CYAN)$(PYTHON_VERSION)+$(NC)"
 	@echo -e "  Node Target: $(CYAN)$(NODE_VERSION)$(NC)"
+
+version-get: ## Get current version from VERSION file
+	@python scripts/tools/version_manager.py --get
+
+version-sync: ## Synchronize all files with VERSION file
+	@echo -e "$(BOLD)$(GREEN)🔄 Synchronizing versions...$(NC)"
+	@python scripts/tools/version_manager.py --sync
+
+version-info: ## Show detailed version information
+	@python scripts/tools/version_manager.py --version-info
 
 upgrade-tools: ## Upgrade development tools
 	@echo -e "$(BOLD)$(GREEN)⬆️  Upgrading development tools...$(NC)"
@@ -346,7 +356,7 @@ info: check-env version ## Show comprehensive environment information
 
 ##@ Release
 
-release: validate test ## Prepare release
+release: version-sync validate test ## Prepare release with version sync
 	@echo -e "$(BOLD)$(GREEN)🚀 Preparing release $(VERSION)...$(NC)"
 	@echo -e "$(CYAN)Running final validation...$(NC)"
 	@make validate

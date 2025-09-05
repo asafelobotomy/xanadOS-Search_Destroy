@@ -3904,7 +3904,7 @@ sdist = { url = "https://files.pythonhosted.org/packages/89/8d/7aad74930380c8972
 
 [[package]]
 name = "xanados-search-destroy"
-version = "2.11.2"
+version = "2.12.0"
 source = { editable = "." }
 dependencies = [
     { name = "aiohttp" },

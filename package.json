@@ -1,6 +1,6 @@
 {
   "name": "xanados-search-destroy",
-  "version": "2.11.2",
+  "version": "2.13.0",
   "description": "xanadOS Search & Destroy security scanner with GitHub Copilot enhancement framework for development",
   "main": "scripts/update-readme.js",
   "scripts": {
@@ -13,11 +13,14 @@
     "lint:fix": "npx markdownlint -c .markdownlint.json **/*.md --ignore node_modules --ignore .markdown-backups --ignore archive --fix",
     "spell:check": "npx cspell --config cspell.json \"**/*.md\" --no-progress --ignore-path .cspellignore",
     "spell:check:main": "npx cspell --no-cache --config ./cspell.json README.md CONTRIBUTING.md CHANGELOG.md",
+    "version:get": "python scripts/tools/version_manager.py --get",
+    "version:sync": "python scripts/tools/version_manager.py --sync",
     "version:sync:check": "bash scripts/tools/validation/validate-version-sync.sh",
     "security:check": "bash scripts/tools/security/security-scan.sh --quick",
     "security:privilege-check": "python3 scripts/tools/security/privilege-escalation-audit.py --validate-only",
     "structure:check": "bash scripts/tools/validation/validate-structure.sh",
-    "quick:validate": "bash scripts/tools/validation/enhanced-quick-validate.sh",
+    "prebuild": "npm run version:sync",
+    "quick:validate": "npm run version:sync && bash scripts/tools/validation/enhanced-quick-validate.sh",
     "quick:validate:legacy": "npm run lint && npm run spell:check:main && npm run version:sync:check && npm run validate && npm run validate:python && npm run security:privilege-check",
     "validate:python": "bash scripts/tools/quality/check-python.sh",
     "validate:python:strict": "bash scripts/tools/quality/check-python.sh --strict",
