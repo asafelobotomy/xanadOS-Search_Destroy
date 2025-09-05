@@ -8,7 +8,7 @@
 **A comprehensive Linux security scanner and system protection suite with advanced malware
 detection, real-time monitoring, and enterprise-grade security hardening.**
 
-_Security Rating: **A- (Excellent)** | Production Ready | Current Version: 2.13.0_
+_Security Rating: **A- (Excellent)** | Production Ready | Current Version: 2.13.1_
 
 ## Start here
 

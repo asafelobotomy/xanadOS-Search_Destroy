@@ -7,6 +7,30 @@ and this project adheres to [Semantic Versioning](HTTPS://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.13.1] - 2025-09-05
+
+### Fixed
+
+- **First Time Setup Dialog**: Resolved issue where setup dialog appeared on every launch
+  - Added missing `first_time_setup_completed` configuration flag
+  - Enhanced `needs_setup()` function with auto-recovery logic
+  - Automatically detects existing package installations and marks setup complete
+  - Prevents future occurrences even if config file is corrupted or reset
+
+### Security
+
+- **Setup Wizard Security**: Replaced direct `subprocess.run` calls with secure alternatives
+  - Updated package detection commands to use `run_secure()`
+  - Enhanced post-installation command execution security
+  - Improved Python package installation security in setup wizard
+
+### Documentation
+
+- **Implementation Reports**: Added comprehensive fix documentation
+  - `docs/implementation-reports/first-time-setup-dialog-fix.md`
+  - Detailed root cause analysis and solution documentation
+  - Prevention strategies for future similar issues
+
 ## [2.12.0] - 2025-09-05
 
 ### Added

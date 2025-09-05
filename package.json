@@ -1,6 +1,6 @@
 {
   "name": "xanados-search-destroy",
-  "version": "2.13.0",
+  "version": "2.13.1",
   "description": "xanadOS Search & Destroy security scanner with GitHub Copilot enhancement framework for development",
   "main": "scripts/update-readme.js",
   "scripts": {
