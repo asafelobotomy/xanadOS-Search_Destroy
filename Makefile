@@ -4,7 +4,7 @@
 .PHONY: help setup setup-modern setup-full clean test validate install-deps
 .PHONY: dev dev-gui run run-tests benchmark security-scan docs
 .PHONY: docker-build docker-run docker-dev update-deps check-env
-.PHONY: pre-commit format lint type-check audit release
+.PHONY: pre-commit format lint type-check audit release clean-deprecated
 
 # Default goal
 .DEFAULT_GOAL := help
@@ -271,6 +271,14 @@ clean: ## Clean build artifacts and caches
 	@if [ -d "node_modules" ]; then rm -rf node_modules; fi
 	@if [ -f "package-lock.json" ]; then rm -f package-lock.json; fi
 	@echo -e "$(GREEN)✅ Cleanup completed$(NC)"
+
+clean-deprecated: ## Remove deprecated files that VS Code recreates
+	@echo -e "$(BOLD)$(YELLOW)🗑️  Removing deprecated files...$(NC)"
+	@if [ -f "scripts/utils/prevent-file-restoration.sh" ]; then \
+		./scripts/utils/prevent-file-restoration.sh; \
+	else \
+		echo -e "$(RED)❌ Prevention script not found$(NC)"; \
+	fi
 
 clean-env: ## Remove virtual environment
 	@echo -e "$(BOLD)$(YELLOW)🗑️  Removing virtual environment...$(NC)"

@@ -48,6 +48,33 @@ pids/
 *.pid.lock
 
 # Coverage reports
+
+# Deprecated test files (prevent recreation)
+test_config_fix.py
+test_cron_integration.py
+test_improved_status.py
+test_optimization_direct.py
+test_optimization_fixes.py
+test_rkhunter_fix.py
+test_rkhunter_fixes.py
+test_rkhunter_status.py
+
+# Deprecated summary/config files (prevent recreation)
+CRON_INTEGRATION_SUMMARY.md
+MODERN_SETUP_SUMMARY.md
+RKHUNTER_FIX_SUMMARY.md
+.envrc
+Makefile.modern
+fix_setup_config.py
+
+# Additional empty files restored by VS Code (prevent recreation)
+docs/guides/MODERN_DEVELOPMENT_SETUP.md
+releases/v2.13.1.md
+scripts/tools/test_firewall_optimization_integration.py
+scripts/tools/validate_firewall_detection_fix.py
+scripts/tools/version_manager.py
+scripts/tools/version_manager_new.py
+app/core/elevated_runner_simple.py
 coverage/
 **/coverage/
 *.lcov
