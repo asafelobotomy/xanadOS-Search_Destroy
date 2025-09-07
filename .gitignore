@@ -48,6 +48,13 @@ pids/
 *.pid.lock
 
 # Coverage reports
+coverage/
+**/coverage/
+*.lcov
+.nyc_output/
+**/.nyc_output/
+.coverage
+.coverage.*
 
 # Deprecated test files (prevent recreation)
 test_config_fix.py
@@ -94,12 +101,20 @@ temp/
 .turbo/
 .next/
 .vercel/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.vscode-test/
 
 # Environment variables
 .env
+.env.*
 .env.local
+.env.development
 .env.development.local
+.env.test
 .env.test.local
+.env.production
 .env.production.local
 .envrc
 .direnv/
@@ -122,6 +137,8 @@ ssh_config
 *_secret*
 *secret*
 *.asc
+config/secrets.json
+config/api_keys.json
 
 # Backup files
 *.backup
@@ -134,6 +151,7 @@ ssh_config
 .cache/
 .npm/
 .yarn/
+.pnpm/
 
 # Log files and directories
 logs/
@@ -148,6 +166,12 @@ logs/
 
 # npm pack artifacts
 *.tgz
+*.tar.gz
+
+# macOS specific files
+.DS_Store
+.AppleDouble
+.LSOverride
 
 # Archive exclusions
 # Keep archived content but exclude temporary archive processing
@@ -175,3 +199,20 @@ dist/
 *.egg-info/
 pip-wheel-metadata/
 *.egg
+
+# IDE and editor files
+*.code-workspace
+.vscode/settings.json.local
+*.ipynb_checkpoints/
+
+# Database files (if any are generated)
+*.sqlite3
+*.db
+*.sqlite
+
+# Flatpak build artifacts
+.flatpak-builder/
+_build/
+_repo/
+build-dir/
+*.flatpak
