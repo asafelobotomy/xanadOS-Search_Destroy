@@ -1,14 +1,16 @@
 #!/usr/bin/env python3
 """Final comprehensive test of RKHunter functionality after fixes."""
 
-import sys
 import os
+import sys
+
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', '..', 'app'))
 
-from core.rkhunter_wrapper import RKHunterWrapper
 import logging
 import subprocess
-from pathlib import Path
+
+from core.rkhunter_wrapper import RKHunterWrapper
+
 
 def test_rkhunter_comprehensive():
     """Comprehensive test of RKHunter functionality."""
@@ -53,7 +55,7 @@ def test_rkhunter_comprehensive():
         print("   ✓ Configuration file created")
 
         # Read and validate configuration
-        with open(wrapper.config_path, 'r') as f:
+        with open(wrapper.config_path) as f:
             config_content = f.read()
 
         # Check for shell variables
@@ -81,13 +83,15 @@ def test_rkhunter_comprehensive():
     # Test 4: Configuration validation with RKHunter
     print("\n4. Testing configuration validation...")
     try:
+        # nosec B603 - subprocess call with controlled input
+
         result = subprocess.run([
-            'sudo', '/usr/bin/rkhunter', '--configcheck',
+            '/usr/bin/sudo', '/usr/bin/rkhunter', '--configcheck',
             '--configfile', str(wrapper.config_path)
-        ], capture_output=True, text=True, timeout=30)
+        ], check=False, capture_output=True, text=True, timeout=30)
 
         if 'Unknown' in result.stderr or 'Error' in result.stderr:
-            print(f"   ⚠️  Configuration warnings:")
+            print("   ⚠️  Configuration warnings:")
             for line in result.stderr.split('\n'):
                 if 'Unknown' in line or 'Error' in line:
                     print(f"      {line}")
@@ -110,7 +114,7 @@ def test_rkhunter_comprehensive():
             output_callback=output_callback
         )
 
-        print(f"   ✓ Scan completed")
+        print("   ✓ Scan completed")
         print(f"   ✓ Success: {result.success}")
         print(f"   ✓ Summary: {result.scan_summary}")
         print(f"   ✓ Output lines: {len(scan_output)}")

@@ -277,7 +277,7 @@ class RKHunterOptimizer:
             cmd.extend(["--configfile", str(config_file)])
 
         try:
-            result = subprocess.run(  # noqa: S603
+            result = subprocess.run(
                 cmd,
                 capture_output=True,
                 text=True,

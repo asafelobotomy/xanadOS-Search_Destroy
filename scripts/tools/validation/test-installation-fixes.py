@@ -3,7 +3,6 @@
 Test script to validate UFW and ClamAV installation fixes
 """
 
-import subprocess
 import sys
 import time
 from pathlib import Path
@@ -13,8 +12,8 @@ project_root = Path(__file__).parent.parent.parent.parent
 sys.path.insert(0, str(project_root))
 
 try:
-    from app.core.elevated_runner import elevated_run
     from app.core.clamav_wrapper import ClamAVWrapper
+    from app.core.elevated_runner import elevated_run
 except ImportError as e:
     print(f"❌ Error importing modules: {e}")
     print("Make sure you're running from the project root")

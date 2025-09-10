@@ -3,14 +3,15 @@
 Test RKHunter GUI integration with fixed configuration
 """
 
-import sys
 import os
+import sys
 
 # Add the app directory to Python path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', '..', 'app'))
 
+
 from core.rkhunter_wrapper import RKHunterWrapper
-import tempfile
+
 
 def test_gui_rkhunter():
     """Test RKHunter as the GUI would use it."""
@@ -20,7 +21,7 @@ def test_gui_rkhunter():
     try:
         # Initialize wrapper (same as GUI does)
         wrapper = RKHunterWrapper()
-        print(f"✅ Wrapper initialized")
+        print("✅ Wrapper initialized")
         print(f"   Path: {wrapper.rkhunter_path}")
         print(f"   Config: {wrapper.config_path}")
         print(f"   Available: {wrapper.available}")
@@ -35,7 +36,7 @@ def test_gui_rkhunter():
             return False
 
         # Read and validate configuration
-        with open(wrapper.config_path, 'r') as f:
+        with open(wrapper.config_path) as f:
             config_content = f.read()
 
         print(f"✅ Configuration file exists ({len(config_content)} bytes)")
@@ -53,9 +54,11 @@ def test_gui_rkhunter():
         try:
             # Create a minimal test to validate config syntax
             import subprocess
+            # nosec B603 - subprocess call with controlled input
+
             result = subprocess.run(
                 [wrapper.rkhunter_path, '--config-check', '--configfile', str(wrapper.config_path)],
-                capture_output=True, text=True, timeout=30
+                check=False, capture_output=True, text=True, timeout=30
             )
 
             if result.returncode == 0:

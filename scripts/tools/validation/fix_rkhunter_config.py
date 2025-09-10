@@ -4,10 +4,9 @@ RKHunter Configuration Recovery Tool
 Fixes the PKGMGR_NO_VRFY configuration issue and ensures GUI compatibility
 """
 
-import os
 import sys
-import shutil
 from pathlib import Path
+
 
 def fix_rkhunter_config():
     """Fix RKHunter configuration issues."""
@@ -56,7 +55,7 @@ def fix_rkhunter_config():
             print("✅ New configuration generated successfully")
 
             # Verify the fix
-            with open(wrapper.config_path, 'r') as f:
+            with open(wrapper.config_path) as f:
                 content = f.read()
 
             if 'PKGMGR_NO_VRFY=""' in content:

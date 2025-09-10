@@ -44,6 +44,7 @@ from PyQt6.QtWidgets import (
 
 # Import secure subprocess and privilege escalation
 from app.core.secure_subprocess import run_secure
+
 try:
     from app.core.elevated_runner import elevated_run
 except ImportError:
@@ -947,7 +948,7 @@ class RKHunterManualActionsDialog(QDialog):
                     return False, f"Configuration check failed: {result.stderr or result.stdout}"
 
             except Exception as e:
-                return False, f"Failed to run configuration check: {str(e)}"
+                return False, f"Failed to run configuration check: {e!s}"
 
         self.run_action("Checking configuration...", check_config)
 

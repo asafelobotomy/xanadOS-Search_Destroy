@@ -4,9 +4,8 @@ Final RKHunter Validation - Complete Test Suite
 Tests all aspects of RKHunter configuration and functionality
 """
 
-import sys
-import os
 import subprocess
+import sys
 from pathlib import Path
 
 # Add the app directory to Python path
@@ -24,7 +23,7 @@ def test_configuration_syntax():
         return False
 
     # Read configuration
-    with open(config_path, 'r') as f:
+    with open(config_path) as f:
         content = f.read()
 
     # Check for problematic patterns
@@ -92,12 +91,12 @@ def test_version_check():
         # Test version command (doesn't require sudo)
         result = subprocess.run(
             ['/usr/bin/rkhunter', '--version'],
-            capture_output=True, text=True, timeout=10
+            check=False, capture_output=True, text=True, timeout=10
         )
 
         if result.returncode == 0:
             version_info = result.stdout.strip()
-            print(f"✅ RKHunter version check successful")
+            print("✅ RKHunter version check successful")
             print(f"   Version: {version_info.split()[1] if len(version_info.split()) > 1 else 'Unknown'}")
             return True
         else:

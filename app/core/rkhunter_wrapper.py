@@ -865,7 +865,7 @@ class RKHunterWrapper:
                         "Created RKHunter configuration at %s",
                         self.config_path,
                     )
-                    self.logger.debug(f"Configuration content preview (first 5 lines):")
+                    self.logger.debug("Configuration content preview (first 5 lines):")
                     for i, line in enumerate(config_lines[:5]):
                         self.logger.debug(f"  {i+1}: {line}")
                     self.logger.debug(f"  ... and {len(config_lines)-5} more lines")
@@ -874,7 +874,7 @@ class RKHunterWrapper:
                     disable_tests_lines = [line for line in config_lines if 'DISABLE_TESTS' in line]
                     self.logger.debug(f"DISABLE_TESTS configuration: {disable_tests_lines}")
 
-                except Exception as write_err:
+                except Exception:
                     self.logger.warning(
                         "Failed writing RKHunter config: %s".replace(
                             "%s", "{write_err}"
@@ -883,7 +883,7 @@ class RKHunterWrapper:
             else:
                 self.logger.debug(f"RKHunter configuration already exists at {self.config_path}")
 
-        except Exception as e:
+        except Exception:
             self.logger.error(
                 "Failed to initialize RKHunter config: %s".replace("%s", "{e}").replace(
                     "%d", "{e}"
@@ -1042,7 +1042,7 @@ class RKHunterWrapper:
                 self.logger.debug(f"Configuration file exists at: {self.config_path}")
                 # Read and validate config content
                 try:
-                    with open(self.config_path, 'r') as f:
+                    with open(self.config_path) as f:
                         config_content = f.read()
 
                     # Check for problematic patterns

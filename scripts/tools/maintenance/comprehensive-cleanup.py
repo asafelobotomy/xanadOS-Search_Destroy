@@ -13,10 +13,9 @@ and modern best practices. This script:
 5. Validates final structure
 """
 
-import os
 import shutil
-from pathlib import Path
 from datetime import datetime
+from pathlib import Path
 
 
 class RepositoryMaintenance:
@@ -189,7 +188,7 @@ class RepositoryMaintenance:
         print("\n📋 Phase 5: Checking Node.js dependencies")
 
         node_modules = self.repo_root / "node_modules"
-        package_lock = self.repo_root / "package-lock.json"
+        self.repo_root / "package-lock.json"
 
         if node_modules.exists():
             print(f"  📋 Node modules directory size: {self.get_dir_size(node_modules):.1f}MB")

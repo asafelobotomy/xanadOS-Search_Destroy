@@ -4,7 +4,7 @@ Provides automatic theming for all GUI components without manual application.
 """
 
 import re
-from typing import Any, Dict, Optional
+from typing import Any
 
 from PyQt6.QtCore import QEasingCurve, QObject, QPropertyAnimation, QRect, pyqtSignal
 from PyQt6.QtGui import QColor, QPalette

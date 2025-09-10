@@ -16,7 +16,7 @@
     "version:get": "python scripts/tools/version/version_manager.py --get",
     "version:sync": "python scripts/tools/version/version_manager.py --sync",
     "version:sync:check": "bash scripts/tools/validation/validate-version-sync.sh",
-    "security:check": "bash scripts/tools/security/security-scan.sh --quick",
+    "security:check": "bash scripts/tools/security/security-scan.sh",
     "security:privilege-check": "python3 scripts/tools/security/privilege-escalation-audit.py --validate-only",
     "structure:check": "bash scripts/tools/validation/validate-structure.sh",
     "prebuild": "npm run version:sync",

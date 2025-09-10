@@ -3,8 +3,9 @@
 
 import os
 import subprocess
-import tempfile
 import sys
+import tempfile
+
 
 def test_rkhunter_config_directly():
     """Test RKHunter configuration without Python dependencies."""
@@ -13,7 +14,7 @@ def test_rkhunter_config_directly():
     print("=" * 50)
 
     # Check if rkhunter is available
-    rkhunter_path = subprocess.run(['which', 'rkhunter'], capture_output=True, text=True)
+    rkhunter_path = subprocess.run(['which', 'rkhunter'], check=False, capture_output=True, text=True)
     if rkhunter_path.returncode != 0:
         print("❌ RKHunter not found in PATH")
         return False
@@ -41,9 +42,11 @@ PKGMGR=NONE
 
         # Test configuration check
         print("\nTesting configuration validation...")
+        # nosec B603 - subprocess call with controlled input
+
         result = subprocess.run([
             rkhunter_exe, '--configcheck', '--configfile', config_path
-        ], capture_output=True, text=True, timeout=30)
+        ], check=False, capture_output=True, text=True, timeout=30)
 
         print(f"Return code: {result.returncode}")
         if result.stdout:
@@ -67,10 +70,12 @@ PKGMGR=NONE
 
         # Test a minimal scan
         print("\nTesting minimal scan...")
+        # nosec B603 - subprocess call with controlled input
+
         result = subprocess.run([
             rkhunter_exe, '--check', '--sk', '--configfile', config_path,
             '--enable', 'system_commands', '--nocolors'
-        ], capture_output=True, text=True, timeout=60)
+        ], check=False, capture_output=True, text=True, timeout=60)
 
         print(f"Scan return code: {result.returncode}")
         if 'Unknown disabled test name' in result.stderr:

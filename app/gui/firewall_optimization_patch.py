@@ -11,7 +11,7 @@ while maintaining compatibility with the existing codebase.
 """
 
 import logging
-from typing import Any, Optional
+from typing import Any
 
 from app.core.firewall_status_optimizer import FirewallStatusIntegration
 

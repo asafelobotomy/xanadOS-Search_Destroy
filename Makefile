@@ -61,14 +61,14 @@ setup-modern: setup ## Alias for modern setup
 
 setup-full: ## Full setup with all optional components
 	@echo -e "$(BOLD)$(GREEN)🔧 Setting up complete development environment...$(NC)"
-	@chmod +x $(SCRIPTS_DIR)/setup-dev-environment.sh
-	@$(SCRIPTS_DIR)/setup-dev-environment.sh
 	@make setup-modern
+	@chmod +x $(TOOLS_DIR)/setup/install-optional-python.sh
+	@$(TOOLS_DIR)/setup/install-optional-python.sh --group all
 
 setup-legacy: ## Legacy setup (fallback)
 	@echo -e "$(BOLD)$(YELLOW)⚠️  Running legacy setup...$(NC)"
-	@chmod +x $(SCRIPTS_DIR)/setup-dev-environment.sh
-	@$(SCRIPTS_DIR)/setup-dev-environment.sh
+	@echo -e "$(YELLOW)Legacy setup script is archived. Use 'make setup' instead.$(NC)"
+	@make setup
 
 ##@ Development
 

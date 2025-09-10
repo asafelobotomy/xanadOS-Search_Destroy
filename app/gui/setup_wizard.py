@@ -16,7 +16,6 @@ import sys
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, List, Optional
 
 from PyQt6.QtCore import (
     Qt,
@@ -151,7 +150,9 @@ class InstallationWorker(QThread):  # pylint: disable=too-many-instance-attribut
                 else:
                     # Handle simple commands directly - no shell wrapper needed
                     cmd_parts = install_cmd.split()
-                    self.output_updated.emit(f"Executing command: {' '.join(cmd_parts)}")
+                    self.output_updated.emit(
+                        f"Executing command: {' '.join(cmd_parts)}"
+                    )
 
                     # For better GUI authentication, try elevated_run with retries
                     max_retries = 2
@@ -176,7 +177,9 @@ class InstallationWorker(QThread):  # pylint: disable=too-many-instance-attribut
                                     f"Attempt {attempt + 1} failed with code {install_result.returncode}"
                                 )
                                 if install_result.stderr:
-                                    self.output_updated.emit(f"Error: {install_result.stderr}")
+                                    self.output_updated.emit(
+                                        f"Error: {install_result.stderr}"
+                                    )
                                 if attempt < max_retries - 1:
                                     self.output_updated.emit(
                                         "Retrying with fresh authentication..."
@@ -230,7 +233,10 @@ class InstallationWorker(QThread):  # pylint: disable=too-many-instance-attribut
                         self.output_updated.emit(f"Running post-install: {cmd}")
                         try:
                             # Check if command needs elevated privileges
-                            if any(keyword in cmd for keyword in ["freshclam", "systemctl", "sudo"]):
+                            if any(
+                                keyword in cmd
+                                for keyword in ["freshclam", "systemctl", "sudo"]
+                            ):
                                 # Use elevated_run for commands that need privileges
                                 if " || " in cmd:
                                     # Handle shell commands with fallback
@@ -252,7 +258,11 @@ class InstallationWorker(QThread):  # pylint: disable=too-many-instance-attribut
                             else:
                                 # Regular command execution
                                 post_result = run_secure(
-                                    cmd.split(), capture_output=True, text=True, check=False, timeout=60
+                                    cmd.split(),
+                                    capture_output=True,
+                                    text=True,
+                                    check=False,
+                                    timeout=60,
                                 )
 
                             if post_result.returncode != 0 and post_result.stderr:
@@ -260,7 +270,9 @@ class InstallationWorker(QThread):  # pylint: disable=too-many-instance-attribut
                                     f"Post-install note: {post_result.stderr.strip()}"
                                 )
                             elif post_result.stdout:
-                                self.output_updated.emit(f"Post-install: {post_result.stdout.strip()}")
+                                self.output_updated.emit(
+                                    f"Post-install: {post_result.stdout.strip()}"
+                                )
                         except subprocess.TimeoutExpired:
                             self.output_updated.emit(f"Post-install timeout: {cmd}")
                         except Exception as e:
@@ -307,7 +319,9 @@ class InstallationWorker(QThread):  # pylint: disable=too-many-instance-attribut
 
                             # For ClamAV daemon, also handle freshclam service
                             if self.package_info.service_name == "clamav-daemon":
-                                self.output_updated.emit("Setting up ClamAV auto-update service...")
+                                self.output_updated.emit(
+                                    "Setting up ClamAV auto-update service..."
+                                )
                                 freshclam_enable = elevated_run(
                                     ["systemctl", "enable", "clamav-freshclam"],
                                     timeout=30,
@@ -316,9 +330,13 @@ class InstallationWorker(QThread):  # pylint: disable=too-many-instance-attribut
                                     gui=True,
                                 )
                                 if freshclam_enable.returncode == 0:
-                                    self.output_updated.emit("Enabled ClamAV auto-update service")
+                                    self.output_updated.emit(
+                                        "Enabled ClamAV auto-update service"
+                                    )
                                 else:
-                                    self.output_updated.emit("Note: ClamAV auto-update service setup skipped")
+                                    self.output_updated.emit(
+                                        "Note: ClamAV auto-update service setup skipped"
+                                    )
 
                         else:
                             # Ensure clean formatting of stderr output
@@ -1593,7 +1611,10 @@ def needs_setup() -> bool:
             try:
                 # Check if we have a functioning ClamAV installation
                 result = run_secure(
-                    ["clamscan", "--version"], capture_output=True, timeout=5, check=False
+                    ["clamscan", "--version"],
+                    capture_output=True,
+                    timeout=5,
+                    check=False,
                 )
                 if result.returncode == 0:
                     # ClamAV is working, mark setup as completed automatically

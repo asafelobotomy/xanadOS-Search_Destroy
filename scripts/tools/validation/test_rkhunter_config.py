@@ -1,15 +1,16 @@
 #!/usr/bin/env python3
 """Test RKHunter configuration generation to ensure no shell variable syntax issues."""
 
-import sys
 import os
-import tempfile
 import re
+import sys
+import tempfile
 
 # Add the app directory to the Python path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', '..', 'app'))
 
 from core.rkhunter_wrapper import RKHunterWrapper
+
 
 def test_rkhunter_config():
     """Test that RKHunter configuration generates without shell variable syntax errors."""
@@ -29,7 +30,7 @@ def test_rkhunter_config():
 
         # Read the generated configuration
         if os.path.exists(rkhunter.config_file):
-            with open(rkhunter.config_file, 'r') as f:
+            with open(rkhunter.config_file) as f:
                 config_content = f.read()
 
             print("✓ Configuration generated successfully")

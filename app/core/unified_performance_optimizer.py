@@ -136,13 +136,9 @@ class AdvancedMemoryManager:
     def _tune_garbage_collection(self):
         """Optimize garbage collection for 2025 performance."""
         try:
-            # Python 3.12+ garbage collection optimizations
-            if sys.version_info >= (3, 12):
-                # Tune GC thresholds for better performance
-                gc.set_threshold(2000, 25, 25)  # Optimized thresholds
-            else:
-                # Fallback for older Python versions
-                gc.set_threshold(1000, 15, 15)
+            # Python 3.13+ garbage collection optimizations
+            # Tune GC thresholds for better performance
+            gc.set_threshold(2000, 25, 25)  # Optimized thresholds
 
             # Enable debugging for optimization
             if self.logger.isEnabledFor(logging.DEBUG):
