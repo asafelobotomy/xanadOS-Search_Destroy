@@ -1,7 +1,7 @@
 # xanadOS Search & Destroy - Modern Development Makefile
 # Enhanced with 2025 best practices and modern tooling
 
-.PHONY: help setup install-deps validate test check-env
+.PHONY: help setup install-deps validate test check-env run run-debug dev clean lint format
 
 # Default goal
 .DEFAULT_GOAL := help
@@ -102,4 +102,51 @@ check-env: ## Check environment status
 		echo -e "  Virtual Environment: $(GREEN)✅ Active$(NC)"; \
 	else \
 		echo -e "  Virtual Environment: $(YELLOW)⚠️  Not active$(NC)"; \
+	fi
+
+run: ## Run the application
+	@echo -e "$(BOLD)$(GREEN)🚀 Starting xanadOS Search & Destroy...$(NC)"
+	@if [ -d ".venv" ]; then \
+		source .venv/bin/activate && python -m app.main; \
+	else \
+		echo -e "$(RED)❌ Virtual environment not found. Run 'make setup' first.$(NC)"; \
+		exit 1; \
+	fi
+
+run-debug: ## Run with debug logging enabled
+	@echo -e "$(BOLD)$(GREEN)🔧 Starting with debug logging...$(NC)"
+	@if [ -d ".venv" ]; then \
+		source .venv/bin/activate && DEBUG=1 PYTHONPATH=. python -m app.main; \
+	else \
+		echo -e "$(RED)❌ Virtual environment not found. Run 'make setup' first.$(NC)"; \
+		exit 1; \
+	fi
+
+dev: ## Complete development workflow (setup + validate)
+	@echo -e "$(BOLD)$(GREEN)🔧 Starting development workflow...$(NC)"
+	@$(MAKE) setup
+	@$(MAKE) validate
+
+clean: ## Clean build artifacts and cache
+	@echo -e "$(BOLD)$(GREEN)🧹 Cleaning build artifacts...$(NC)"
+	@find . -type f -name "*.pyc" -delete
+	@find . -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
+	@find . -type d -name "*.egg-info" -exec rm -rf {} + 2>/dev/null || true
+	@rm -rf build/ dist/ .pytest_cache/ .coverage htmlcov/
+	@echo -e "$(GREEN)✅ Cleanup complete$(NC)"
+
+lint: ## Run code quality checks
+	@echo -e "$(BOLD)$(GREEN)🧪 Running code quality checks...$(NC)"
+	@if [ -d ".venv" ]; then \
+		source .venv/bin/activate && python -m ruff check . || true; \
+	else \
+		echo -e "$(YELLOW)⚠️  Virtual environment not found. Install with 'make setup'$(NC)"; \
+	fi
+
+format: ## Format code with ruff
+	@echo -e "$(BOLD)$(GREEN)🧪 Formatting code...$(NC)"
+	@if [ -d ".venv" ]; then \
+		source .venv/bin/activate && python -m ruff format . || true; \
+	else \
+		echo -e "$(YELLOW)⚠️  Virtual environment not found. Install with 'make setup'$(NC)"; \
 	fi
