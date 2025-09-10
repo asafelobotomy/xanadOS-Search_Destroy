@@ -227,13 +227,16 @@ install_dependencies_modern() {
 
     # Node.js setup with fnm
     ((current++))
-    show_progress $current $steps "Setting up Node.js LTS..."
-    if command -v fnm >/dev/null 2>&1; then
-        fnm install --lts
-        fnm use lts-latest
-        fnm default lts-latest
-        eval "$(fnm env)"
-        log SUCCESS "Node.js LTS installed and configured"
+    show_progress $current $steps "Checking Node.js..."
+    if command -v node >/dev/null 2>&1; then
+        log SUCCESS "Node.js $(node --version) already available"
+    elif command -v fnm >/dev/null 2>&1; then
+        # Only install if Node.js is not available
+        fnm install --lts 2>/dev/null || log WARN "Failed to install Node.js with fnm"
+        fnm use lts-latest 2>/dev/null || true
+        fnm default lts-latest 2>/dev/null || true
+        eval "$(fnm env)" 2>/dev/null || true
+        log SUCCESS "Node.js setup attempted with fnm"
     fi
     echo ""
 

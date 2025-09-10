@@ -44,7 +44,10 @@ class ModernizationImplementer:
             # nosec B603 - subprocess call with controlled input
 
             result = subprocess.run(
-                ["/usr/local/bin/uv", "--version"], capture_output=True, text=True, check=True
+                ["/usr/local/bin/uv", "--version"],
+                capture_output=True,
+                text=True,
+                check=True,
             )
             logger.info(f"✅ uv package manager available: {result.stdout.strip()}")
             return True

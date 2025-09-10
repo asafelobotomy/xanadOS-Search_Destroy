@@ -7,7 +7,7 @@ import logging
 import time
 from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Optional
 
 from PyQt6.QtCore import QObject, Qt, QTimer, pyqtSignal
 from PyQt6.QtWidgets import QApplication, QProgressBar
@@ -18,9 +18,9 @@ class UITask:
     """Represents a UI task to be executed."""
 
     task_id: str
-    callback: Callable
+    callback: callable
     args: tuple = ()
-    kwargs: dict | None = None
+    kwargs: dict = None
     priority: int = 1  # Lower number = higher priority
 
     def __post_init__(self):
@@ -477,37 +477,37 @@ class LoadingIndicator(QObject):
 
 
 # Global instances
-responsive_ui: "ResponsiveUI" | None = None
-scan_progress: "ScanProgressManager" | None = None
-loading_indicator: "LoadingIndicator" | None = None
+responsive_ui: Optional["ResponsiveUI"] = None
+scan_progress: Optional["ScanProgressManager"] = None
+loading_indicator: Optional["LoadingIndicator"] = None
 
 
-def initialize_responsive_ui(main_window=None):
+def initialize_responsive_ui(main_window=None) -> None:
     """Initialize global responsive UI components."""
     global responsive_ui, scan_progress, loading_indicator
 
-    responsive_ui = ResponsiveUI(main_window)
-    scan_progress = ScanProgressManager()
-    loading_indicator = LoadingIndicator(main_window)
+    responsive_ui = ResponsiveUI(main_window)  # type: ignore
+    scan_progress = ScanProgressManager()  # type: ignore
+    loading_indicator = LoadingIndicator(main_window)  # type: ignore
 
     # Connect progress manager to responsive UI
     if responsive_ui and scan_progress:
         scan_progress.progress_updated.connect(responsive_ui.update_progress)
         scan_progress.error_occurred.connect(
-            lambda msg: responsive_ui.show_notification.emit("Scan Error", msg)  # type: ignore
+            lambda msg: responsive_ui.show_notification.emit("Scan Error", msg)
         )
 
 
-def get_responsive_ui():
+def get_responsive_ui() -> Optional["ResponsiveUI"]:
     """Get global responsive UI instance."""
     return responsive_ui
 
 
-def get_scan_progress():
+def get_scan_progress() -> Optional["ScanProgressManager"]:
     """Get global scan progress manager."""
     return scan_progress
 
 
-def get_loading_indicator():
+def get_loading_indicator() -> Optional["LoadingIndicator"]:
     """Get global loading indicator."""
     return loading_indicator

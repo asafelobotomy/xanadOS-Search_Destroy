@@ -273,8 +273,8 @@ class RKHunterMonitorNonInvasive:
                                     timeout=5,
                                 )
                                 if result.returncode == 0:
-                                    for line in result.stdout.split('\n'):
-                                        if line.startswith('Version'):
+                                    for line in result.stdout.split("\n"):
+                                        if line.startswith("Version"):
                                             version = f"Rootkit Hunter {line.split(':')[1].strip()}"
                                             return True, version, install_method
                             except Exception:
@@ -296,7 +296,11 @@ class RKHunterMonitorNonInvasive:
                                 pass
 
                         # If we can't get version, just report as available
-                        return True, "Rootkit Hunter (version requires sudo)", install_method
+                        return (
+                            True,
+                            "Rootkit Hunter (version requires sudo)",
+                            install_method,
+                        )
 
                     else:
                         # Binary is readable, try version command

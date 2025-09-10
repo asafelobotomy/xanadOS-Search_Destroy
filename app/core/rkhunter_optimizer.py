@@ -403,16 +403,17 @@ class RKHunterOptimizer:
                 # Fallback to package manager for version info
                 try:
                     from ..utils.secure_subprocess import run_secure
+
                     pkg_result = run_secure(
                         ["pacman", "-Qi", "rkhunter"],
                         capture_output=True,
                         text=True,
-                        timeout=10
+                        timeout=10,
                     )
                     if pkg_result.returncode == 0:
-                        for line in pkg_result.stdout.split('\n'):
-                            if line.startswith('Version'):
-                                version = line.split(':', 1)[1].strip()
+                        for line in pkg_result.stdout.split("\n"):
+                            if line.startswith("Version"):
+                                version = line.split(":", 1)[1].strip()
                                 break
                         else:
                             version = "Unknown"
@@ -925,15 +926,20 @@ class RKHunterOptimizer:
                         ["sudo", "cp", self.config_path, str(temp_backup)],
                         capture_output=True,
                         text=True,
-                        timeout=30
+                        timeout=30,
                     )
 
                     if result.returncode == 0:
                         # Make the backup file readable by the user
                         run_secure(
-                            ["sudo", "chown", f"{os.getuid()}:{os.getgid()}", str(temp_backup)],
+                            [
+                                "sudo",
+                                "chown",
+                                f"{os.getuid()}:{os.getgid()}",
+                                str(temp_backup),
+                            ],
                             capture_output=True,
-                            timeout=10
+                            timeout=10,
                         )
                         logger.info(f"Configuration backed up to {temp_backup}")
                         return True
@@ -951,7 +957,9 @@ class RKHunterOptimizer:
                 logger.info(f"Configuration backed up to {temp_backup}")
                 return True
             except PermissionError:
-                logger.warning("Cannot create configuration backup due to insufficient permissions")
+                logger.warning(
+                    "Cannot create configuration backup due to insufficient permissions"
+                )
                 return False
 
         except Exception as e:
@@ -1036,7 +1044,7 @@ class RKHunterOptimizer:
             # First try to read the local database file for version
             db_paths = [
                 "/var/lib/rkhunter/db/rkhunter.dat",
-                "/usr/local/var/lib/rkhunter/db/rkhunter.dat"
+                "/usr/local/var/lib/rkhunter/db/rkhunter.dat",
             ]
 
             for db_path in db_paths:
@@ -1046,12 +1054,12 @@ class RKHunterOptimizer:
                         ["sudo", "head", "-10", db_path],
                         capture_output=True,
                         text=True,
-                        timeout=10
+                        timeout=10,
                     )
                     if result.returncode == 0 and result.stdout:
-                        for line in result.stdout.split('\n'):
-                            if line.startswith('Version:'):
-                                version = line.split(':', 1)[1].strip()
+                        for line in result.stdout.split("\n"):
+                            if line.startswith("Version:"):
+                                version = line.split(":", 1)[1].strip()
                                 # Convert version format: 2025090500 -> 2025.09.05.00
                                 if len(version) == 10 and version.isdigit():
                                     formatted = f"{version[:4]}.{version[4:6]}.{version[6:8]}.{version[8:]}"
@@ -1065,12 +1073,15 @@ class RKHunterOptimizer:
                 ["sudo", "stat", "-c", "%Y", "/var/lib/rkhunter/db/programs_bad.dat"],
                 capture_output=True,
                 text=True,
-                timeout=10
+                timeout=10,
             )
             if result.returncode == 0 and result.stdout.strip():
                 timestamp = int(result.stdout.strip())
                 import datetime
-                date_str = datetime.datetime.fromtimestamp(timestamp).strftime('%Y-%m-%d')
+
+                date_str = datetime.datetime.fromtimestamp(timestamp).strftime(
+                    "%Y-%m-%d"
+                )
                 return f"Data files: {date_str}"
 
             return "Unknown"
@@ -1226,9 +1237,7 @@ class RKHunterOptimizer:
 
         try:
             # Check if RKHunter is properly installed
-            result = run_secure(
-                ["which", "rkhunter"], check=False, capture_output=True
-            )
+            result = run_secure(["which", "rkhunter"], check=False, capture_output=True)
             if result.returncode != 0:
                 issues.append("RKHunter not found in PATH")
 
@@ -1343,7 +1352,9 @@ class RKHunterOptimizer:
         else:  # monthly
             return "03:30"  # 3:30 AM on first day of month
 
-    def _generate_cron_entry(self, frequency: str, time: str, system_cron: bool = False) -> str:
+    def _generate_cron_entry(
+        self, frequency: str, time: str, system_cron: bool = False
+    ) -> str:
         """Generate cron entry with optional system cron format."""
         hour, minute = time.split(":")
 
@@ -1376,7 +1387,9 @@ class RKHunterOptimizer:
 
                 # Remove existing rkhunter entries
                 lines = current_crontab.split("\n")
-                filtered_lines = [line for line in lines if "rkhunter" not in line and line.strip()]
+                filtered_lines = [
+                    line for line in lines if "rkhunter" not in line and line.strip()
+                ]
 
                 # Add new entry
                 filtered_lines.append(cron_entry)
@@ -1386,7 +1399,10 @@ class RKHunterOptimizer:
 
                 # Write to temp file first
                 import tempfile
-                with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.cron') as temp_file:
+
+                with tempfile.NamedTemporaryFile(
+                    mode="w", delete=False, suffix=".cron"
+                ) as temp_file:
                     temp_file.write(new_crontab)
                     temp_file_path = temp_file.name
 
@@ -1412,22 +1428,29 @@ class RKHunterOptimizer:
                 cron_file_path = "/etc/cron.d/rkhunter-xanados"
                 # Generate system cron entry with user specification
                 system_cron_entry = self._generate_cron_entry(
-                    "daily" if "* *" in cron_entry else "weekly" if "* 0" in cron_entry else "monthly",
+                    (
+                        "daily"
+                        if "* *" in cron_entry
+                        else "weekly" if "* 0" in cron_entry else "monthly"
+                    ),
                     "02:30",  # Default time
-                    system_cron=True
+                    system_cron=True,
                 )
                 cron_content = f"# RKHunter optimization cron job managed by xanadOS Search & Destroy\n{system_cron_entry}\n"
 
                 # Use sudo to write the cron file
                 import tempfile
-                with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.cron') as temp_file:
+
+                with tempfile.NamedTemporaryFile(
+                    mode="w", delete=False, suffix=".cron"
+                ) as temp_file:
                     temp_file.write(cron_content)
                     temp_file_path = temp_file.name
 
                 result = run_secure(
                     ["sudo", "cp", temp_file_path, cron_file_path],
                     capture_output=True,
-                    text=True
+                    text=True,
                 )
 
                 os.unlink(temp_file_path)
@@ -1442,7 +1465,9 @@ class RKHunterOptimizer:
                 logger.warning(f"System cron method failed: {system_cron_error}")
 
             # Method 3: Just log the cron entry for manual setup
-            logger.info(f"Cron job automation failed. Manual cron entry needed: {cron_entry}")
+            logger.info(
+                f"Cron job automation failed. Manual cron entry needed: {cron_entry}"
+            )
             return False
 
         except Exception as e:

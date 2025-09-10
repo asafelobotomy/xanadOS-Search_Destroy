@@ -11,6 +11,7 @@ from pathlib import Path
 # Add the app directory to Python path
 sys.path.insert(0, str(Path(__file__).parent.parent.parent / "app"))
 
+
 def test_configuration_syntax():
     """Test that the configuration syntax is valid."""
     print("🔍 Testing Configuration Syntax")
@@ -30,7 +31,7 @@ def test_configuration_syntax():
     issues = []
 
     # Check for the fixed PKGMGR_NO_VRFY
-    if 'PKGMGR_NO_VRFY=1' in content:
+    if "PKGMGR_NO_VRFY=1" in content:
         issues.append("PKGMGR_NO_VRFY still set to '1' (should be empty string)")
     elif 'PKGMGR_NO_VRFY=""' in content:
         print("✅ PKGMGR_NO_VRFY correctly set to empty string")
@@ -38,11 +39,13 @@ def test_configuration_syntax():
         issues.append("PKGMGR_NO_VRFY not found in configuration")
 
     # Check for shell variable syntax
-    if '$disable_tests' in content.lower():
+    if "$disable_tests" in content.lower():
         issues.append("Shell variable syntax found (should be fixed)")
 
     # Check for DISABLE_TESTS
-    disable_tests_lines = [line for line in content.split('\n') if 'DISABLE_TESTS=' in line]
+    disable_tests_lines = [
+        line for line in content.split("\n") if "DISABLE_TESTS=" in line
+    ]
     if len(disable_tests_lines) == 1:
         print(f"✅ Single DISABLE_TESTS line: {disable_tests_lines[0].strip()}")
     elif len(disable_tests_lines) > 1:
@@ -59,6 +62,7 @@ def test_configuration_syntax():
         print("✅ Configuration syntax is valid")
         return True
 
+
 def test_rkhunter_execution():
     """Test that RKHunter can execute with the configuration."""
     print("\n🚀 Testing RKHunter Execution")
@@ -66,6 +70,7 @@ def test_rkhunter_execution():
 
     try:
         from core.rkhunter_wrapper import RKHunterWrapper
+
         wrapper = RKHunterWrapper()
 
         if not wrapper.available:
@@ -82,6 +87,7 @@ def test_rkhunter_execution():
         print(f"❌ Failed to initialize RKHunter wrapper: {e}")
         return False
 
+
 def test_version_check():
     """Test RKHunter version check."""
     print("\n📋 Testing Version Check")
@@ -90,14 +96,19 @@ def test_version_check():
     try:
         # Test version command (doesn't require sudo)
         result = subprocess.run(
-            ['/usr/bin/rkhunter', '--version'],
-            check=False, capture_output=True, text=True, timeout=10
+            ["/usr/bin/rkhunter", "--version"],
+            check=False,
+            capture_output=True,
+            text=True,
+            timeout=10,
         )
 
         if result.returncode == 0:
             version_info = result.stdout.strip()
             print("✅ RKHunter version check successful")
-            print(f"   Version: {version_info.split()[1] if len(version_info.split()) > 1 else 'Unknown'}")
+            print(
+                f"   Version: {version_info.split()[1] if len(version_info.split()) > 1 else 'Unknown'}"
+            )
             return True
         else:
             print(f"❌ Version check failed: {result.stderr}")
@@ -106,6 +117,7 @@ def test_version_check():
     except Exception as e:
         print(f"❌ Version check error: {e}")
         return False
+
 
 def main():
     """Run all tests."""
@@ -136,12 +148,15 @@ def main():
     if passed == total:
         print("🎉 ALL TESTS PASSED!")
         print("\n✅ RKHunter configuration is fixed and ready for GUI use")
-        print("📝 The 'Invalid PKGMGR_NO_VRFY configuration option' error should be resolved")
+        print(
+            "📝 The 'Invalid PKGMGR_NO_VRFY configuration option' error should be resolved"
+        )
         print("🚀 You can now run RKHunter scans from the GUI successfully")
         return 0
     else:
         print("❌ Some tests failed - configuration may still have issues")
         return 1
+
 
 if __name__ == "__main__":
     sys.exit(main())

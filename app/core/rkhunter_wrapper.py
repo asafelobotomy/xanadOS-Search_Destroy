@@ -345,7 +345,9 @@ class RKHunterWrapper:
                 self.logger.debug(f"Found RKHunter via which: {found_path}")
                 return found_path
         except Exception as e:
-            self.logger.debug(f"Which command failed (expected for root-only executables): {e}")
+            self.logger.debug(
+                f"Which command failed (expected for root-only executables): {e}"
+            )
 
         self.logger.warning("RKHunter not found in any standard location")
         return None
@@ -674,7 +676,9 @@ class RKHunterWrapper:
         Returns:
             subprocess.CompletedProcess with stdout collected line-by-line.
         """
-        self.logger.debug(f"Starting privilege escalation for command: {cmd_args[:2]}...")
+        self.logger.debug(
+            f"Starting privilege escalation for command: {cmd_args[:2]}..."
+        )
 
         # SECURITY: Validate command arguments before any execution
         is_valid, error_message = self.security_validator.validate_command_args(
@@ -702,7 +706,9 @@ class RKHunterWrapper:
             # Launch process with GUI auth for consistent UX
             process = elevated_popen(cmd_args, gui=True)
             self._current_process = process
-            self.logger.debug(f"Process launched with PID: {process.pid if process else 'None'}")
+            self.logger.debug(
+                f"Process launched with PID: {process.pid if process else 'None'}"
+            )
 
             stdout_lines: list[str] = []
             line_count = 0
@@ -722,16 +728,24 @@ class RKHunterWrapper:
                     if output_callback:
                         output_callback(line_clean)
 
-                self.logger.debug(f"Output capture completed. Total lines: {line_count}")
+                self.logger.debug(
+                    f"Output capture completed. Total lines: {line_count}"
+                )
             else:
-                self.logger.warning("Process stdout is None - no output will be captured")
+                self.logger.warning(
+                    "Process stdout is None - no output will be captured"
+                )
 
             self.logger.debug("Waiting for process completion...")
             process.wait(timeout=timeout)
-            self.logger.debug(f"Process completed with return code: {process.returncode}")
+            self.logger.debug(
+                f"Process completed with return code: {process.returncode}"
+            )
 
         except subprocess.TimeoutExpired as timeout_err:
-            self.logger.error(f"Process timed out after {timeout} seconds: {timeout_err}")
+            self.logger.error(
+                f"Process timed out after {timeout} seconds: {timeout_err}"
+            )
             process.kill()
             return subprocess.CompletedProcess(
                 args=cmd_args,
@@ -757,7 +771,9 @@ class RKHunterWrapper:
             stderr="",
         )
 
-        self.logger.debug(f"Returning result: returncode={result.returncode}, stdout_length={len(result.stdout)}")
+        self.logger.debug(
+            f"Returning result: returncode={result.returncode}, stdout_length={len(result.stdout)}"
+        )
 
         if result.returncode in (0, 1) and (
             "Info: End date is" in result.stdout
@@ -841,7 +857,7 @@ class RKHunterWrapper:
                     "",
                     "# Package manager - Enhanced Arch Linux configuration",
                     "PKGMGR=NONE",
-                    "PKGMGR_NO_VRFY=\"\"",
+                    'PKGMGR_NO_VRFY=""',
                     "",
                     "# File Property Whitelisting - Handle system changes",
                     "# These settings prevent false positives for files",
@@ -871,8 +887,12 @@ class RKHunterWrapper:
                     self.logger.debug(f"  ... and {len(config_lines)-5} more lines")
 
                     # Validate DISABLE_TESTS configuration specifically
-                    disable_tests_lines = [line for line in config_lines if 'DISABLE_TESTS' in line]
-                    self.logger.debug(f"DISABLE_TESTS configuration: {disable_tests_lines}")
+                    disable_tests_lines = [
+                        line for line in config_lines if "DISABLE_TESTS" in line
+                    ]
+                    self.logger.debug(
+                        f"DISABLE_TESTS configuration: {disable_tests_lines}"
+                    )
 
                 except Exception:
                     self.logger.warning(
@@ -881,7 +901,9 @@ class RKHunterWrapper:
                         ).replace("%d", "{write_err}")
                     )
             else:
-                self.logger.debug(f"RKHunter configuration already exists at {self.config_path}")
+                self.logger.debug(
+                    f"RKHunter configuration already exists at {self.config_path}"
+                )
 
         except Exception:
             self.logger.error(
@@ -906,7 +928,9 @@ class RKHunterWrapper:
             if exists:
                 self.logger.debug(f"RKHunter executable exists: {self.rkhunter_path}")
             else:
-                self.logger.debug(f"RKHunter executable not found: {self.rkhunter_path}")
+                self.logger.debug(
+                    f"RKHunter executable not found: {self.rkhunter_path}"
+                )
             return exists
         except Exception as e:
             self.logger.debug(f"Error checking RKHunter availability: {e}")
@@ -931,7 +955,9 @@ class RKHunterWrapper:
                 return True
 
         except PermissionError as perm_err:
-            self.logger.debug(f"Permission denied for direct execution (expected for root-only): {perm_err}")
+            self.logger.debug(
+                f"Permission denied for direct execution (expected for root-only): {perm_err}"
+            )
         except (subprocess.SubprocessError, FileNotFoundError) as exec_err:
             self.logger.debug(f"Execution error: {exec_err}")
             return False
@@ -946,10 +972,14 @@ class RKHunterWrapper:
                 timeout=10,
             )
             if result.returncode == 0:
-                self.logger.debug("RKHunter version check succeeded with privilege escalation")
+                self.logger.debug(
+                    "RKHunter version check succeeded with privilege escalation"
+                )
                 return True
             else:
-                self.logger.debug(f"RKHunter version check failed with return code: {result.returncode}")
+                self.logger.debug(
+                    f"RKHunter version check failed with return code: {result.returncode}"
+                )
                 return False
 
         except Exception as escalation_err:
@@ -1018,7 +1048,9 @@ class RKHunterWrapper:
         start_time = datetime.now()
 
         self.logger.info(f"Starting RKHunter scan with ID: {scan_id}")
-        self.logger.debug(f"Scan parameters: test_categories={test_categories}, skip_keypress={skip_keypress}, update_database={update_database}")
+        self.logger.debug(
+            f"Scan parameters: test_categories={test_categories}, skip_keypress={skip_keypress}, update_database={update_database}"
+        )
 
         result = RKHunterScanResult(
             scan_id=scan_id,
@@ -1046,19 +1078,33 @@ class RKHunterWrapper:
                         config_content = f.read()
 
                     # Check for problematic patterns
-                    if '$DISABLE_TESTS' in config_content:
-                        self.logger.error("FOUND PROBLEMATIC SHELL VARIABLE IN CONFIG: $DISABLE_TESTS")
+                    if "$DISABLE_TESTS" in config_content:
+                        self.logger.error(
+                            "FOUND PROBLEMATIC SHELL VARIABLE IN CONFIG: $DISABLE_TESTS"
+                        )
                     else:
-                        self.logger.debug("Configuration appears clean (no shell variables)")
+                        self.logger.debug(
+                            "Configuration appears clean (no shell variables)"
+                        )
 
                     # Show DISABLE_TESTS lines specifically
-                    disable_lines = [line for line in config_content.split('\n') if 'DISABLE_TESTS' in line and not line.strip().startswith('#')]
-                    self.logger.debug(f"Active DISABLE_TESTS configuration: {disable_lines}")
+                    disable_lines = [
+                        line
+                        for line in config_content.split("\n")
+                        if "DISABLE_TESTS" in line and not line.strip().startswith("#")
+                    ]
+                    self.logger.debug(
+                        f"Active DISABLE_TESTS configuration: {disable_lines}"
+                    )
 
                 except Exception as config_read_err:
-                    self.logger.warning(f"Could not validate config file: {config_read_err}")
+                    self.logger.warning(
+                        f"Could not validate config file: {config_read_err}"
+                    )
             else:
-                self.logger.warning(f"Configuration file was not created at: {self.config_path}")
+                self.logger.warning(
+                    f"Configuration file was not created at: {self.config_path}"
+                )
 
             # Build command arguments (without sudo/pkexec prefix)
             cmd_args = [self.rkhunter_path, "--check"]
@@ -1115,9 +1161,15 @@ class RKHunterWrapper:
                 timeout=1800,
             )
 
-            self.logger.debug(f"Scan execution completed with return code: {scan_result.returncode}")
-            self.logger.debug(f"Stdout length: {len(scan_result.stdout) if scan_result.stdout else 0} characters")
-            self.logger.debug(f"Stderr content: {scan_result.stderr[:200] if scan_result.stderr else 'None'}...")
+            self.logger.debug(
+                f"Scan execution completed with return code: {scan_result.returncode}"
+            )
+            self.logger.debug(
+                f"Stdout length: {len(scan_result.stdout) if scan_result.stdout else 0} characters"
+            )
+            self.logger.debug(
+                f"Stderr content: {scan_result.stderr[:200] if scan_result.stderr else 'None'}..."
+            )
 
             result.end_time = datetime.now()
 
@@ -1128,7 +1180,9 @@ class RKHunterWrapper:
             # Parse results
             self.logger.debug("Starting result parsing...")
             self._parse_scan_results(scan_result, result)
-            self.logger.debug(f"Parsing completed. Findings: {len(result.findings) if result.findings else 0}")
+            self.logger.debug(
+                f"Parsing completed. Findings: {len(result.findings) if result.findings else 0}"
+            )
 
             if scan_result.returncode == 0:
                 result.success = True
@@ -1137,25 +1191,33 @@ class RKHunterWrapper:
             elif scan_result.returncode == 1:
                 result.success = True
                 result.scan_summary = f"Warnings found: {result.warnings_found}"
-                self.logger.info(f"Scan result: Warnings found ({result.warnings_found})")
+                self.logger.info(
+                    f"Scan result: Warnings found ({result.warnings_found})"
+                )
             elif scan_result.returncode == 2:
                 result.success = True  # Still successful scan, but infections found
                 result.scan_summary = (
                     f"Potential rootkits detected: {result.infections_found}"
                 )
-                self.logger.warning(f"Scan result: Potential rootkits detected ({result.infections_found})")
+                self.logger.warning(
+                    f"Scan result: Potential rootkits detected ({result.infections_found})"
+                )
             else:
                 result.success = False
                 result.error_message = (
                     f"Scan failed with return code {scan_result.returncode}"
                 )
-                self.logger.error(f"Scan failed with return code: {scan_result.returncode}")
+                self.logger.error(
+                    f"Scan failed with return code: {scan_result.returncode}"
+                )
 
                 # Log additional error details for debugging
                 if scan_result.stderr:
                     self.logger.error(f"Error output: {scan_result.stderr}")
                 if scan_result.stdout:
-                    self.logger.debug(f"Stdout (last 500 chars): ...{scan_result.stdout[-500:]}")
+                    self.logger.debug(
+                        f"Stdout (last 500 chars): ...{scan_result.stdout[-500:]}"
+                    )
 
             self.logger.info(
                 "RKHunter scan completed: %s".replace(
@@ -1176,6 +1238,7 @@ class RKHunterWrapper:
             self.logger.error(f"RKHunter scan failed with exception: {e}")
             self.logger.debug(f"Exception details: {type(e).__name__}: {e}")
             import traceback
+
             self.logger.debug(f"Traceback: {traceback.format_exc()}")
 
         return result

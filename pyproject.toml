@@ -93,7 +93,7 @@ dev = [
     "pytest-timeout>=2.3.1",
     # Security scanning - latest versions
     "bandit[toml]>=1.8.0",      # Latest security scanner (was 1.7.5)
-    "safety>=4.0.1",            # Latest vulnerability scanner (was 2.3.0)
+    "safety>=3.6.1",            # Latest vulnerability scanner (was 2.3.0)
     "pip-audit>=2.7.3",         # Latest dependency scanner (was 2.6.0)
     # Pre-commit and automation
     "pre-commit>=4.0.1",        # Latest pre-commit (was 3.3.0)
@@ -869,7 +869,7 @@ all = [
 [tool.hatch.envs.security]
 dependencies = [
     "bandit>=1.7.5",
-    "safety>=2.3.0",
+    "safety>=3.6.1",
 ]
 
 [tool.hatch.envs.security.scripts]

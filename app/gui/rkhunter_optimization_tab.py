@@ -615,12 +615,16 @@ class RKHunterOptimizationTab(QWidget):
         # Control buttons
         self.refresh_status_btn = QPushButton("🔄 Refresh Status")
         self.refresh_status_btn.setMinimumWidth(120)
-        self.refresh_status_btn.setToolTip("Quick status refresh (non-invasive, cached)")
+        self.refresh_status_btn.setToolTip(
+            "Quick status refresh (non-invasive, cached)"
+        )
         header_layout.addWidget(self.refresh_status_btn)
 
         self.privileged_refresh_btn = QPushButton("🔐 Full Status Refresh")
         self.privileged_refresh_btn.setMinimumWidth(140)
-        self.privileged_refresh_btn.setToolTip("Complete status refresh with sudo (shows actual values)")
+        self.privileged_refresh_btn.setToolTip(
+            "Complete status refresh with sudo (shows actual values)"
+        )
         self.privileged_refresh_btn.setStyleSheet(
             """
             QPushButton {
@@ -945,7 +949,10 @@ class RKHunterManualActionsDialog(QDialog):
                 if result.returncode == 0:
                     return True, result.stdout
                 else:
-                    return False, f"Configuration check failed: {result.stderr or result.stdout}"
+                    return (
+                        False,
+                        f"Configuration check failed: {result.stderr or result.stdout}",
+                    )
 
             except Exception as e:
                 return False, f"Failed to run configuration check: {e!s}"

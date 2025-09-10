@@ -12,10 +12,10 @@ _Security Rating: **A- (Excellent)** | Production Ready | Current Version: 2.13.
 
 ## Start here
 
-- 🛡️ **Main Application**: Run `python -m app.main` to launch the security scanner
+- � **One-Command Setup**: Run `make setup` for complete installation
+- �🛡️ **Main Application**: Run `make run` to launch the security scanner
 - 📖 **Security Guide**: `docs/project/SECURITY_PERFORMANCE_REPORT.md`
-- 🚀 **Quick Setup**: `./scripts/tools/git/setup-repository.sh`
-- ✅ **Validate Install**: `npm run quick:validate` (requires Node.js)
+- ✅ **Validate Install**: `make validate` (included in setup process)
 - 📋 **Feature Guide**: `docs/implementation/CONSOLIDATED_IMPLEMENTATION_GUIDE.md`
 
 ## 🔧 **Development Tools** (AI-Enhanced)
@@ -186,38 +186,36 @@ Experience the modern PyQt6 interface with comprehensive security management:
 git clone https://github.com/asafelobotomy/xanadOS-Search_Destroy.git
 cd xanadOS-Search_Destroy
 
-# 🚀 RECOMMENDED: Complete setup with automatic dependency management
+# 🚀 ONE COMMAND SETUP - Complete installation with everything you need
 make setup
 
-# Alternative: Manual Python dependency installation
-pip install -e .
-
-# Install system dependencies (Ubuntu/Debian)
-sudo apt update && sudo apt install clamav clamav-daemon cron
-
-# Install system dependencies (Arch Linux)
-sudo pacman -S clamav rkhunter cronie
-
-# Install system dependencies (Fedora/RHEL)
-sudo dnf install clamav rkhunter cronie
-
-# Update ClamAV signatures
-sudo freshclam
+# That's it! The single setup command above handles:
+# ✅ Modern development environment (uv, pnpm, fnm)
+# ✅ All Python and JavaScript dependencies
+# ✅ System dependency installation
+# ✅ ClamAV signature updates
+# ✅ Comprehensive validation
+# ✅ Test suite verification
 
 # Launch the application
 make run  # OR: python -m app.main
 ```
 
+**🎯 Why One Command?** The `make setup` command is now a comprehensive, all-in-one process that:
+
+- Automatically detects your system (Ubuntu/Debian, Fedora/RHEL, Arch Linux)
+- Installs modern package managers (uv for Python, pnpm for JavaScript)
+- Sets up all dependencies including ClamAV, rkhunter, and cron
+- Runs validation to ensure everything works
+- Provides a complete development environment ready for use
+
 ### **🔍 Verify Installation**
 
-After setup, verify all dependencies are working correctly:
+After the single setup command completes, everything should be working:
 
 ```bash
-# Validate all critical dependencies
-make validate-deps
-
-# Quick dependency check and auto-fix
-./scripts/setup/ensure-deps.sh
+# The setup command already runs validation, but you can re-run it:
+make validate
 
 # Test application startup
 make run
@@ -227,32 +225,20 @@ make run
 fixed in v2.13.1. The application will automatically detect existing installations and mark
 setup as complete.
 
-### **Development Setup (with AI Enhancement Tools)**
+### **Development Setup (Advanced)**
+
+For contributors and developers who need additional tools:
 
 ```bash
-# Complete development environment with all tools
+# The main setup command already provides a complete development environment
 make setup
 
-# Install Node.js dependencies for validation tools
-npm install
-
-# Set up development environment with AI tools
+# Optional: Set up additional development tools and AI assistance
 ./scripts/tools/git/setup-repository.sh
 
-# Run validation and tests
+# Run comprehensive validation and tests (already included in setup)
 npm run quick:validate
 ```
-
-### **🛠️ Setup Options**
-
-- **`make setup`** - Complete development environment (recommended)
-- **`make install`** - Runtime dependencies only
-- **`make install-dev`** - Development dependencies
-- **`make install-advanced`** - Advanced features (ML, analytics, cloud)
-- **`make install-all`** - Complete feature set
-
-All critical dependencies (numpy, schedule, aiohttp, inotify, dnspython) are now included by
-default! 🎉
 
 ---
 
