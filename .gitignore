@@ -5,7 +5,7 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 
-# Package locks (keep package-lock.json for consistency)
+# Package locks (keep pnpm-lock.yaml for consistency)
 # yarn.lock
 
 # Build outputs
