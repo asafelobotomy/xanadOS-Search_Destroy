@@ -150,9 +150,7 @@ class PrivilegeEscalationAuditor:
         report += "2. Use run_secure()/popen_secure() for non-privileged operations\n"
         report += "3. Avoid shell=True unless absolutely necessary\n"
         report += "4. Validate all user inputs before passing to subprocess\n"
-        report += (
-            "5. Use GUI authentication manager for consistent privilege handling\n\n"
-        )
+        report += "5. Use GUI authentication manager for consistent privilege handling\n\n"
 
         return report
 

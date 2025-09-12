@@ -32,9 +32,7 @@ class MainWindowFirewallPatch:
         """Apply the firewall status optimization to the main window."""
         try:
             # Initialize the firewall status integration
-            self.firewall_integration = FirewallStatusIntegration(
-                main_window=self.main_window
-            )
+            self.firewall_integration = FirewallStatusIntegration(main_window=self.main_window)
 
             # Patch the firewall status update method
             self._patch_firewall_update_method()
@@ -56,9 +54,7 @@ class MainWindowFirewallPatch:
         """Patch the firewall status update method for optimization."""
         # Store original method
         if hasattr(self.main_window, "update_firewall_status"):
-            self._original_update_firewall_status = (
-                self.main_window.update_firewall_status
-            )
+            self._original_update_firewall_status = self.main_window.update_firewall_status
 
         # Replace with optimized version
         update_method = self._optimized_firewall_update
@@ -134,14 +130,10 @@ class MainWindowFirewallPatch:
 
             # Restore original methods
             if self._original_update_firewall_status:
-                self.main_window.update_firewall_status = (
-                    self._original_update_firewall_status
-                )
+                self.main_window.update_firewall_status = self._original_update_firewall_status
 
             if self._original_unified_timer_update:
-                self.main_window.unified_timer_update = (
-                    self._original_unified_timer_update
-                )
+                self.main_window.unified_timer_update = self._original_unified_timer_update
 
             self.logger.info("Firewall status optimization removed")
 

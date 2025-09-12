@@ -43,9 +43,7 @@ def test_configuration_syntax():
         issues.append("Shell variable syntax found (should be fixed)")
 
     # Check for DISABLE_TESTS
-    disable_tests_lines = [
-        line for line in content.split("\n") if "DISABLE_TESTS=" in line
-    ]
+    disable_tests_lines = [line for line in content.split("\n") if "DISABLE_TESTS=" in line]
     if len(disable_tests_lines) == 1:
         print(f"✅ Single DISABLE_TESTS line: {disable_tests_lines[0].strip()}")
     elif len(disable_tests_lines) > 1:
@@ -148,9 +146,7 @@ def main():
     if passed == total:
         print("🎉 ALL TESTS PASSED!")
         print("\n✅ RKHunter configuration is fixed and ready for GUI use")
-        print(
-            "📝 The 'Invalid PKGMGR_NO_VRFY configuration option' error should be resolved"
-        )
+        print("📝 The 'Invalid PKGMGR_NO_VRFY configuration option' error should be resolved")
         print("🚀 You can now run RKHunter scans from the GUI successfully")
         return 0
     else:

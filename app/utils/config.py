@@ -42,9 +42,7 @@ def _ensure_secure_dir(path: Path):
             if current_mode != 0o700:
                 path.chmod(0o700)
     except OSError as e:
-        logging.getLogger(APP_NAME).warning(
-            "Could not set secure permissions on %s: %s", path, e
-        )
+        logging.getLogger(APP_NAME).warning("Could not set secure permissions on %s: %s", path, e)
 
 
 _ensure_secure_dir(CONFIG_DIR)
@@ -98,9 +96,7 @@ def setup_logging():
 
         # File handler with rotation
         log_file = LOG_DIR / "application.log"
-        file_handler = RotatingFileHandler(
-            log_file, maxBytes=10 * 1024 * 1024, backupCount=5
-        )
+        file_handler = RotatingFileHandler(log_file, maxBytes=10 * 1024 * 1024, backupCount=5)
         file_handler.setFormatter(formatter)
         file_handler.setLevel(logging.INFO)
 
@@ -113,9 +109,7 @@ def setup_logging():
         try:
             with open(CONFIG_FILE, encoding="utf-8") as cf:
                 cfg_json = json.load(cf)
-            structured = cfg_json.get("advanced_settings", {}).get(
-                "structured_logging", False
-            )
+            structured = cfg_json.get("advanced_settings", {}).get("structured_logging", False)
         except Exception:
             structured = False
         if structured:
@@ -173,9 +167,7 @@ def _atomic_write_json(config_path: Path, config_data):
     tmp_path = None
     try:
         _ensure_secure_dir(config_path.parent)
-        tmp_fd, tmp_path = tempfile.mkstemp(
-            prefix=".config.", dir=str(config_path.parent)
-        )
+        tmp_fd, tmp_path = tempfile.mkstemp(prefix=".config.", dir=str(config_path.parent))
         with os.fdopen(tmp_fd, "w", encoding="utf-8") as tmp_file:
             json.dump(config_data, tmp_file, indent=4, sort_keys=True)
             tmp_file.flush()
@@ -234,9 +226,7 @@ def update_config_setting(config_dict, section, key, value, file_path=None):
         return True
 
     except Exception as e:
-        logging.getLogger(APP_NAME).error(
-            "Failed to update setting %s.%s: %s", section, key, e
-        )
+        logging.getLogger(APP_NAME).error("Failed to update setting %s.%s: %s", section, key, e)
         return False
 
 

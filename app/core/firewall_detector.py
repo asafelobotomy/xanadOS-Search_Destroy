@@ -25,9 +25,7 @@ class FirewallActivityTracker:
     """Tracks firewall state changes through activity monitoring."""
 
     def __init__(self) -> None:
-        self.activity_file = (
-            Path.home() / ".local/share/search-and-destroy/firewall_activity.json"
-        )
+        self.activity_file = Path.home() / ".local/share/search-and-destroy/firewall_activity.json"
         self.activity_file.parent.mkdir(parents=True, exist_ok=True)
         self._last_known_state = None
 
@@ -158,9 +156,7 @@ class FirewallDetector:
                     capture_output=True,
                     text=True,
                 )
-                return (
-                    result.returncode == 0 and fw_info["service_name"] in result.stdout
-                )
+                return result.returncode == 0 and fw_info["service_name"] in result.stdout
             except (subprocess.TimeoutExpired, OSError, FileNotFoundError):
                 pass
 
@@ -436,9 +432,7 @@ class FirewallDetector:
                 )
 
                 # Check for non-ACCEPT policies or actual rules
-                has_policies = (
-                    "policy DROP" in result.stdout or "policy REJECT" in result.stdout
-                )
+                has_policies = "policy DROP" in result.stdout or "policy REJECT" in result.stdout
                 is_active = rule_count > 0 or has_policies
                 return {
                     "is_active": is_active,
@@ -570,9 +564,7 @@ class FirewallDetector:
             else:
                 # Record failed attempt
                 action = "enable" if enable else "disable"
-                self.activity_tracker.record_activity(
-                    f"failed_to_{action}", fw_type, False
-                )
+                self.activity_tracker.record_activity(f"failed_to_{action}", fw_type, False)
 
             return result
 
@@ -624,9 +616,7 @@ class FirewallDetector:
                         print(f"🔍 DEBUG: Successfully loaded module: {module}")
                     else:
                         failed_modules.append(module)
-                        print(
-                            f"🔍 DEBUG: Failed to load module {module}: {result.stderr}"
-                        )
+                        print(f"🔍 DEBUG: Failed to load module {module}: {result.stderr}")
 
                 except subprocess.TimeoutExpired:
                     failed_modules.append(module)
@@ -634,17 +624,13 @@ class FirewallDetector:
 
             # If some modules failed, try cross-kernel loading
             if failed_modules:
-                cross_kernel_result = self._try_cross_kernel_modules(
-                    failed_modules, admin_cmd, env
-                )
+                cross_kernel_result = self._try_cross_kernel_modules(failed_modules, admin_cmd, env)
                 loaded_modules.extend(cross_kernel_result.get("loaded", []))
                 cross_kernel_attempts = cross_kernel_result.get("attempts", [])
 
                 # Remove successfully loaded modules from failed list
                 failed_modules = [
-                    m
-                    for m in failed_modules
-                    if m not in cross_kernel_result.get("loaded", [])
+                    m for m in failed_modules if m not in cross_kernel_result.get("loaded", [])
                 ]
 
             if loaded_modules:
@@ -809,9 +795,7 @@ class FirewallDetector:
                     else:
                         missing_modules.append(module)
             except Exception:
-                missing_modules = (
-                    required_modules  # Assume all missing if we can't read
-                )
+                missing_modules = required_modules  # Assume all missing if we can't read
 
             # Check available module directories
             module_dirs = []
@@ -860,9 +844,7 @@ class FirewallDetector:
             diagnosis += f"Missing modules: {', '.join(missing)}\n"
 
         if dirs:
-            diagnosis += (
-                f"Available module directories: {', '.join(dirs[-3:])}\n"  # Show last 3
-            )
+            diagnosis += f"Available module directories: {', '.join(dirs[-3:])}\n"  # Show last 3
 
             # Check if current kernel matches available modules
             current_in_dirs = any(kernel_version in d for d in dirs)
@@ -876,13 +858,13 @@ class FirewallDetector:
                 ]  # e.g., "6.15.8" from "6.15.8-zen1-2-zen"
 
                 for d in dirs:
-                    if (
-                        base_version[:4] in d
-                    ):  # Match major.minor version (e.g., "6.15")
+                    if base_version[:4] in d:  # Match major.minor version (e.g., "6.15")
                         compatible_kernels.append(d)
 
                 if compatible_kernels:
-                    diagnosis += f"📦 Compatible kernels available: {', '.join(compatible_kernels)}\n"
+                    diagnosis += (
+                        f"📦 Compatible kernels available: {', '.join(compatible_kernels)}\n"
+                    )
                     diagnosis += "💡 Solutions:\n"
                     diagnosis += "   • Reboot to use a newer kernel\n"
                     diagnosis += "   • The main firewall toggle will attempt alternative methods\n"
@@ -893,9 +875,7 @@ class FirewallDetector:
                     diagnosis += "   • The main firewall toggle provides alternative protection\n"
                     diagnosis += "   • Manually install iptables modules\n"
             else:
-                diagnosis += (
-                    "✅ Kernel modules should be available but may need loading.\n"
-                )
+                diagnosis += "✅ Kernel modules should be available but may need loading.\n"
                 diagnosis += "💡 Try: sudo modprobe iptable_filter iptable_nat\n"
         else:
             diagnosis += "❌ No kernel module directories found in /lib/modules\n"
@@ -1008,9 +988,7 @@ class FirewallDetector:
 
                         if result.returncode == 0:
                             successful_flushes += 1
-                            print(
-                                f"🔍 DEBUG: Applied iptables flush: {' '.join(cmd_args)}"
-                            )
+                            print(f"🔍 DEBUG: Applied iptables flush: {' '.join(cmd_args)}")
                         else:
                             print(
                                 f"🔍 DEBUG: Failed iptables flush: {' '.join(cmd_args)} - {result.stderr}"
@@ -1065,9 +1043,7 @@ class FirewallDetector:
                                 "method": f"systemd_{service}",
                             }
                         else:
-                            print(
-                                f"🔍 DEBUG: Failed to start {service}: {result.stderr}"
-                            )
+                            print(f"🔍 DEBUG: Failed to start {service}: {result.stderr}")
 
                     except subprocess.TimeoutExpired:
                         print(f"🔍 DEBUG: Timeout starting service: {service}")
@@ -1094,9 +1070,7 @@ class FirewallDetector:
                                 "method": f"systemd_{service}",
                             }
                         else:
-                            print(
-                                f"🔍 DEBUG: Failed to stop {service}: {result.stderr}"
-                            )
+                            print(f"🔍 DEBUG: Failed to stop {service}: {result.stderr}")
 
                     except subprocess.TimeoutExpired:
                         print(f"🔍 DEBUG: Timeout stopping service: {service}")
@@ -1171,9 +1145,7 @@ class FirewallDetector:
                     module_load_result = self._attempt_module_load()
                     if module_load_result["success"]:
                         # Retry UFW command after loading modules
-                        print(
-                            "🔍 DEBUG: Retrying UFW command after loading kernel modules..."
-                        )
+                        print("🔍 DEBUG: Retrying UFW command after loading kernel modules...")
                         retry_result = elevated_run(
                             cmd_args,
                             timeout=300,
@@ -1200,8 +1172,7 @@ class FirewallDetector:
                 return {
                     "success": False,
                     "message": f"Failed to {'enable' if enable else 'disable'} UFW",
-                    "error": error_output
-                    or f"Command exited with code {result.returncode}",
+                    "error": error_output or f"Command exited with code {result.returncode}",
                 }
 
         except subprocess.TimeoutExpired:
@@ -1223,9 +1194,7 @@ class FirewallDetector:
             # Use elevated_run for consistent privilege escalation
             cmd_args = ["systemctl", "start" if enable else "stop", "firewalld"]
 
-            result = elevated_run(
-                cmd_args, timeout=60, capture_output=True, text=True, gui=True
-            )
+            result = elevated_run(cmd_args, timeout=60, capture_output=True, text=True, gui=True)
 
             if result.returncode == 0:
                 action = "started" if enable else "stopped"
@@ -1244,8 +1213,7 @@ class FirewallDetector:
                 return {
                     "success": False,
                     "message": f"Failed to {'start' if enable else 'stop'} firewalld",
-                    "error": error_output
-                    or f"Command exited with code {result.returncode}",
+                    "error": error_output or f"Command exited with code {result.returncode}",
                 }
 
         except subprocess.TimeoutExpired:
@@ -1295,9 +1263,7 @@ class FirewallDetector:
 
             # Execute commands using elevated_run with GUI authentication
             for cmd in commands:
-                result = elevated_run(
-                    cmd, timeout=60, capture_output=True, text=True, gui=True
-                )
+                result = elevated_run(cmd, timeout=60, capture_output=True, text=True, gui=True)
 
                 if result.returncode != 0:
                     error_output = result.stderr.strip() or result.stdout.strip()
@@ -1316,8 +1282,7 @@ class FirewallDetector:
                     return {
                         "success": False,
                         "message": f"Failed to {'enable' if enable else 'disable'} iptables",
-                        "error": error_output
-                        or f"iptables command failed: {' '.join(cmd)}",
+                        "error": error_output or f"iptables command failed: {' '.join(cmd)}",
                     }
 
             action = "enabled" if enable else "disabled"
@@ -1359,9 +1324,7 @@ class FirewallDetector:
                 # Note: For stdin input, we need to use a different approach with elevated_run
                 # We'll create a temporary file or use a different method
 
-                with tempfile.NamedTemporaryFile(
-                    mode="w", suffix=".nft", delete=False
-                ) as f:
+                with tempfile.NamedTemporaryFile(mode="w", suffix=".nft", delete=False) as f:
                     f.write(nft_rules)
                     temp_file = f.name
 
@@ -1413,8 +1376,7 @@ class FirewallDetector:
                 return {
                     "success": False,
                     "message": f"Failed to {'enable' if enable else 'disable'} nftables",
-                    "error": error_output
-                    or f"Command exited with code {result.returncode}",
+                    "error": error_output or f"Command exited with code {result.returncode}",
                 }
 
         except subprocess.TimeoutExpired:

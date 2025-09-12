@@ -222,9 +222,7 @@ def fake_elevated_run_success(monkeypatch):
 
     def _factory(stdout="", returncode=0):
         def _impl(argv, **kwargs):
-            return SimpleNamespace(
-                args=argv, stdout=stdout, stderr="", returncode=returncode
-            )
+            return SimpleNamespace(args=argv, stdout=stdout, stderr="", returncode=returncode)
 
         return _impl
 
@@ -305,7 +303,5 @@ def cleanup_threads():
 
     # Log any remaining threads for debugging
     if threading.active_count() > 1:
-        active_threads = [
-            t.name for t in threading.enumerate() if t != threading.current_thread()
-        ]
+        active_threads = [t.name for t in threading.enumerate() if t != threading.current_thread()]
         print(f"Warning: {len(active_threads)} threads still active: {active_threads}")

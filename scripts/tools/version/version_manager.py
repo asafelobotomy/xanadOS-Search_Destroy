@@ -145,28 +145,16 @@ def generate_version_header():
 
 def main():
     """Main entry point"""
-    parser = argparse.ArgumentParser(
-        description="Version Manager - Single Source of Truth"
-    )
+    parser = argparse.ArgumentParser(description="Version Manager - Single Source of Truth")
     parser.add_argument("--get", action="store_true", help="Get current version")
-    parser.add_argument(
-        "--sync", action="store_true", help="Sync all files with VERSION file"
-    )
-    parser.add_argument(
-        "--update-package", action="store_true", help="Update package.json only"
-    )
+    parser.add_argument("--sync", action="store_true", help="Sync all files with VERSION file")
+    parser.add_argument("--update-package", action="store_true", help="Update package.json only")
     parser.add_argument(
         "--update-pyproject", action="store_true", help="Update pyproject.toml only"
     )
-    parser.add_argument(
-        "--update-configs", action="store_true", help="Update config files only"
-    )
-    parser.add_argument(
-        "--update-readme", action="store_true", help="Update README.md only"
-    )
-    parser.add_argument(
-        "--version-info", action="store_true", help="Show version information"
-    )
+    parser.add_argument("--update-configs", action="store_true", help="Update config files only")
+    parser.add_argument("--update-readme", action="store_true", help="Update README.md only")
+    parser.add_argument("--version-info", action="store_true", help="Show version information")
 
     args = parser.parse_args()
 

@@ -41,20 +41,14 @@ def find_version_patterns():
         if os.path.exists(directory):
             for root, dirs, files in os.walk(directory):
                 for file in files:
-                    if file.endswith(
-                        (".py", ".md", ".json", ".xml", ".txt", ".yaml", ".yml")
-                    ):
+                    if file.endswith((".py", ".md", ".json", ".xml", ".txt", ".yaml", ".yml")):
                         file_path = os.path.join(root, file)
                         try:
-                            with open(
-                                file_path, encoding="utf-8", errors="ignore"
-                            ) as f:
+                            with open(file_path, encoding="utf-8", errors="ignore") as f:
                                 content = f.read()
                                 for i, line in enumerate(content.split("\n"), 1):
                                     for pattern in patterns:
-                                        matches = re.finditer(
-                                            pattern, line, re.IGNORECASE
-                                        )
+                                        matches = re.finditer(pattern, line, re.IGNORECASE)
                                         for match in matches:
                                             version_patterns.append(
                                                 {
@@ -87,9 +81,7 @@ def find_version_patterns():
                                         "file": file,
                                         "line": i,
                                         "version": (
-                                            match.group(1)
-                                            if match.groups()
-                                            else match.group(0)
+                                            match.group(1) if match.groups() else match.group(0)
                                         ),
                                         "context": line.strip(),
                                         "pattern": pattern,

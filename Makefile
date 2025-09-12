@@ -27,18 +27,19 @@ help: ## Show this help message
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "  $(CYAN)%-20s$(NC) %s\n", $$1, $$2}'
 	@echo -e "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(NC)"
 
-setup: ## Complete unified setup process
-	@echo -e "$(BOLD)$(GREEN)🚀 Complete xanadOS Setup$(NC)"
+setup: ## Complete unified setup process (ONE COMMAND DOES EVERYTHING)
+	@echo -e "$(BOLD)$(GREEN)🚀 Running Complete Setup - One Command Does Everything!$(NC)"
 	@echo -e "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(NC)"
-	@echo ""
-	@echo -e "$(BOLD)$(GREEN)📦 Phase 1: Dependencies Installation$(NC)"
-	@$(MAKE) install-deps
-	@echo ""
-	@echo -e "$(BOLD)$(GREEN)✅ Phase 2: Comprehensive Validation$(NC)"
-	@$(MAKE) validate
-	@echo ""
-	@echo -e "$(BOLD)$(GREEN)🎉 SETUP COMPLETE! All systems ready for development$(NC)"
+	@bash scripts/setup.sh
 	@echo -e "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(NC)"
+
+setup-force: ## Force complete reinstallation of everything
+	@echo -e "$(BOLD)$(YELLOW)🔄 Force Reinstalling Everything...$(NC)"
+	@bash scripts/setup.sh --force
+
+setup-minimal: ## Minimal setup (essential dependencies only)
+	@echo -e "$(BOLD)$(BLUE)⚡ Running Minimal Setup...$(NC)"
+	@bash scripts/setup.sh --minimal
 
 install-deps: check-env ## Install all dependencies with modern package managers
 	@echo -e "$(BOLD)$(GREEN)📦 Installing dependencies...$(NC)"

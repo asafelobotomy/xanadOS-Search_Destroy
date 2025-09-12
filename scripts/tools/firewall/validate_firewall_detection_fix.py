@@ -38,12 +38,9 @@ def test_ufw_detection() -> None:
             check=False,
         )
         systemctl_active = (
-            systemctl_result.returncode == 0
-            and systemctl_result.stdout.strip() == "active"
+            systemctl_result.returncode == 0 and systemctl_result.stdout.strip() == "active"
         )
-        print(
-            f"🔧 Systemctl says UFW service: {'Active' if systemctl_active else 'Inactive'}"
-        )
+        print(f"🔧 Systemctl says UFW service: {'Active' if systemctl_active else 'Inactive'}")
     except Exception as e:
         print(f"❌ Systemctl check failed: {e}")
 
@@ -58,9 +55,7 @@ def test_ufw_detection() -> None:
             check=False,  # No password input
         )
         if ufw_result.returncode == 0:
-            ufw_actual = (
-                "active" if "Status: active" in ufw_result.stdout else "inactive"
-            )
+            ufw_actual = "active" if "Status: active" in ufw_result.stdout else "inactive"
             print(f"🎯 UFW command says: {ufw_actual}")
 
             # Check if our detector matches the actual UFW status
@@ -71,9 +66,7 @@ def test_ufw_detection() -> None:
                 print("✅ PASS: Detector matches actual UFW status")
             else:
                 print("❌ FAIL: Detector does not match actual UFW status")
-                print(
-                    f"   Detector: {'Active' if detector_says_active else 'Inactive'}"
-                )
+                print(f"   Detector: {'Active' if detector_says_active else 'Inactive'}")
                 print(f"   UFW:      {'Active' if ufw_says_active else 'Inactive'}")
 
     except subprocess.TimeoutExpired:
@@ -98,9 +91,9 @@ def test_ufw_detection() -> None:
             print(f"📁 Config file says: {config_status}")
 
             # Check if detector matches config
-            detector_matches_config = (
-                config_status == "enabled" and real_status["is_active"]
-            ) or (config_status == "disabled" and not real_status["is_active"])
+            detector_matches_config = (config_status == "enabled" and real_status["is_active"]) or (
+                config_status == "disabled" and not real_status["is_active"]
+            )
 
             if detector_matches_config:
                 print("✅ PASS: Detector matches UFW config file")

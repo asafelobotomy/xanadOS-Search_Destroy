@@ -162,9 +162,7 @@ def test_rkhunter_step_by_step():
                 "Unknown option name" in result.stderr
                 or "Unknown disabled test name" in result.stderr
             ):
-                print(
-                    "❌ Configuration validation failed - found unknown options/tests"
-                )
+                print("❌ Configuration validation failed - found unknown options/tests")
                 return False
             else:
                 print("✓ Configuration appears valid")
@@ -190,9 +188,7 @@ def test_rkhunter_step_by_step():
 
             # nosec B603 - subprocess call with controlled input
 
-            result = subprocess.run(
-                cmd, check=False, capture_output=True, text=True, timeout=120
-            )
+            result = subprocess.run(cmd, check=False, capture_output=True, text=True, timeout=120)
             print(f"  - Return code: {result.returncode}")
 
             if result.stdout:
@@ -207,9 +203,7 @@ def test_rkhunter_step_by_step():
             elif result.returncode in (0, 1, 2):  # Normal RKHunter return codes
                 print("✓ Minimal scan completed successfully")
             else:
-                print(
-                    f"❌ Scan failed with unexpected return code: {result.returncode}"
-                )
+                print(f"❌ Scan failed with unexpected return code: {result.returncode}")
                 return False
 
         except subprocess.TimeoutExpired:

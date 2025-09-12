@@ -134,9 +134,7 @@ class LazyDashboardLoader(QObject):
     def _load_immediate_cards(self) -> None:
         """Load cards with priority 1 (highest priority) immediately."""
         immediate_cards = [
-            card_id
-            for card_id in self.loading_queue
-            if self.cards[card_id].priority == 1
+            card_id for card_id in self.loading_queue if self.cards[card_id].priority == 1
         ]
 
         for card_id in immediate_cards:
@@ -268,9 +266,7 @@ class LazyDashboardLoader(QObject):
             "loaded_cards": len(loaded_cards),
             "total_load_time": total_load_time,
             "average_load_time": avg_load_time,
-            "loading_progress": (
-                (len(loaded_cards) / len(self.cards)) * 100 if self.cards else 0
-            ),
+            "loading_progress": ((len(loaded_cards) / len(self.cards)) * 100 if self.cards else 0),
         }
 
 

@@ -106,9 +106,7 @@ class ToolsQualityFixer:
 
                 # Add tempfile import if not present
                 if "import tempfile" not in content:
-                    content = content.replace(
-                        "import sys\n", "import sys\nimport tempfile\n"
-                    )
+                    content = content.replace("import sys\n", "import sys\nimport tempfile\n")
 
                 with open(debug_file, "w", encoding="utf-8") as f:
                     f.write(content)
@@ -250,9 +248,7 @@ class ToolsQualityFixer:
         print(f"  • Initial issues: {initial_count}")
         print(f"  • Issues fixed: {self.fixed_count}")
         print(f"  • Remaining issues: {final_count}")
-        print(
-            f"  • Success rate: {((initial_count - final_count) / initial_count * 100):.1f}%"
-        )
+        print(f"  • Success rate: {((initial_count - final_count) / initial_count * 100):.1f}%")
 
         if final_count == 0:
             print("🎉 ALL QUALITY ISSUES RESOLVED!")

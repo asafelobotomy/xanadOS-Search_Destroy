@@ -115,9 +115,7 @@ class ThemeShowcaseWindow(QMainWindow):
 
         success_demo = QPushButton("Success State")
         success_demo.setStyleSheet(
-            "background-color: "
-            + get_theme_manager().get_color("success")
-            + "; color: white;"
+            "background-color: " + get_theme_manager().get_color("success") + "; color: white;"
         )
         success_demo.setMinimumHeight(40)
         demo_btn_layout.addWidget(success_demo)

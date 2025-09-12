@@ -106,9 +106,7 @@ class NonInvasiveStatusWorker(QThread):
 
     def run(self):
         try:
-            ni_status = get_rkhunter_status_non_invasive(
-                force_refresh=self.force_refresh
-            )
+            ni_status = get_rkhunter_status_non_invasive(force_refresh=self.force_refresh)
             adapted = adapt_non_invasive_status(ni_status)
             self.status_updated.emit(adapted)
         except Exception as e:
@@ -127,9 +125,7 @@ def adapt_non_invasive_status(ni: "RKHunterStatusNonInvasive"):
     # Map fields conservatively
     version = ni.version if ni.available else "Not Available"
     database_version = (
-        "Present"
-        if ni.database_exists
-        else ("Not Found" if ni.available else "Not Available")
+        "Present" if ni.database_exists else ("Not Found" if ni.available else "Not Available")
     )
     last_update = None  # Not derivable non-invasively
     last_scan = ni.last_scan_attempt
@@ -556,9 +552,7 @@ class RKHunterOptimizationResultsWidget(QWidget):
             recommendations_html += "</ul>"
             self.recommendations_text.setHtml(recommendations_html)
         else:
-            self.recommendations_text.setPlainText(
-                "No additional recommendations at this time."
-            )
+            self.recommendations_text.setPlainText("No additional recommendations at this time.")
 
         # Populate warnings
         for warning in report.warnings:
@@ -573,12 +567,8 @@ class RKHunterOptimizationResultsWidget(QWidget):
 
         # Set tab badges based on content
         self.results_tabs.setTabText(0, f"Changes ({len(report.config_changes)})")
-        self.results_tabs.setTabText(
-            1, f"Improvements ({len(report.performance_improvements)})"
-        )
-        self.results_tabs.setTabText(
-            2, f"Recommendations ({len(report.recommendations)})"
-        )
+        self.results_tabs.setTabText(1, f"Improvements ({len(report.performance_improvements)})")
+        self.results_tabs.setTabText(2, f"Recommendations ({len(report.recommendations)})")
         self.results_tabs.setTabText(3, f"Warnings ({len(report.warnings)})")
 
 
@@ -615,9 +605,7 @@ class RKHunterOptimizationTab(QWidget):
         # Control buttons
         self.refresh_status_btn = QPushButton("🔄 Refresh Status")
         self.refresh_status_btn.setMinimumWidth(120)
-        self.refresh_status_btn.setToolTip(
-            "Quick status refresh (non-invasive, cached)"
-        )
+        self.refresh_status_btn.setToolTip("Quick status refresh (non-invasive, cached)")
         header_layout.addWidget(self.refresh_status_btn)
 
         self.privileged_refresh_btn = QPushButton("🔐 Full Status Refresh")
@@ -799,7 +787,9 @@ class RKHunterOptimizationTab(QWidget):
         improvements_count = len(report.performance_improvements)
         warnings_count = len(report.warnings)
 
-        summary = f"Optimization completed: {changes_count} changes, {improvements_count} improvements"
+        summary = (
+            f"Optimization completed: {changes_count} changes, {improvements_count} improvements"
+        )
         if warnings_count > 0:
             summary += f", {warnings_count} warnings"
 
@@ -912,15 +902,11 @@ class RKHunterManualActionsDialog(QDialog):
 
     def update_mirrors(self):
         """Update RKHunter mirrors"""
-        self.run_action(
-            "Updating mirrors...", lambda: self.optimizer.update_mirrors_enhanced()
-        )
+        self.run_action("Updating mirrors...", lambda: self.optimizer.update_mirrors_enhanced())
 
     def update_baseline(self):
         """Update RKHunter baseline"""
-        self.run_action(
-            "Updating baseline...", lambda: self.optimizer.update_baseline_smart()
-        )
+        self.run_action("Updating baseline...", lambda: self.optimizer.update_baseline_smart())
 
     def check_configuration(self):
         """Check RKHunter configuration"""

@@ -57,9 +57,7 @@ class AuthenticationSessionManager:
             if session_type == "global":
                 if not self._global_session_active or not self._global_session_start:
                     return False
-                session_age = (
-                    datetime.now() - self._global_session_start
-                ).total_seconds()
+                session_age = (datetime.now() - self._global_session_start).total_seconds()
                 return session_age < self._session_timeout
             else:
                 session_start = self._active_sessions.get(session_type)
@@ -68,9 +66,7 @@ class AuthenticationSessionManager:
                 session_age = (datetime.now() - session_start).total_seconds()
                 return session_age < self._session_timeout
 
-    def start_session(
-        self, session_type: str = "global", operation: str = "general"
-    ) -> None:
+    def start_session(self, session_type: str = "global", operation: str = "general") -> None:
         """Start an authentication session"""
         with self._session_lock:
             current_time = datetime.now()
@@ -78,23 +74,17 @@ class AuthenticationSessionManager:
             if session_type == "global":
                 self._global_session_active = True
                 self._global_session_start = current_time
-                logger.debug(
-                    f"🔐 Global authentication session started for: {operation}"
-                )
+                logger.debug(f"🔐 Global authentication session started for: {operation}")
             else:
                 self._active_sessions[session_type] = current_time
-                logger.debug(
-                    f"🔐 Authentication session '{session_type}' started for: {operation}"
-                )
+                logger.debug(f"🔐 Authentication session '{session_type}' started for: {operation}")
 
     def end_session(self, session_type: str = "global") -> None:
         """End an authentication session"""
         with self._session_lock:
             if session_type == "global":
                 if self._global_session_active and self._global_session_start:
-                    duration = (
-                        datetime.now() - self._global_session_start
-                    ).total_seconds()
+                    duration = (datetime.now() - self._global_session_start).total_seconds()
                     logger.debug(
                         f"🔒 Global authentication session ended (lasted {duration:.1f} seconds)"
                     )
@@ -133,9 +123,7 @@ class AuthenticationSessionManager:
 
             for session_type in expired_sessions:
                 self.end_session(session_type)
-                logger.debug(
-                    f"Authentication session '{session_type}' expired and cleaned up"
-                )
+                logger.debug(f"Authentication session '{session_type}' expired and cleaned up")
 
     def try_passwordless_sudo(
         self, cmd: list[str], timeout: int = 30
@@ -164,9 +152,7 @@ class AuthenticationSessionManager:
             )
 
             if result.returncode == 0:
-                logger.debug(
-                    f"✅ Passwordless sudo successful for: {' '.join(cmd[:3])}..."
-                )
+                logger.debug(f"✅ Passwordless sudo successful for: {' '.join(cmd[:3])}...")
                 return result
             else:
                 logger.debug(
@@ -204,9 +190,7 @@ class AuthenticationSessionManager:
 
         # Try passwordless sudo first if we have a valid session
         if self.is_session_valid(session_type):
-            passwordless_result = self.try_passwordless_sudo(
-                cmd, timeout=min(timeout, 30)
-            )
+            passwordless_result = self.try_passwordless_sudo(cmd, timeout=min(timeout, 30))
             if passwordless_result is not None:
                 return passwordless_result
 
@@ -267,9 +251,7 @@ class AuthenticationSessionManager:
             # Use temporary file approach for writes
             import tempfile
 
-            with tempfile.NamedTemporaryFile(
-                mode="w", delete=False, suffix=".tmp"
-            ) as tmp_file:
+            with tempfile.NamedTemporaryFile(mode="w", delete=False, suffix=".tmp") as tmp_file:
                 tmp_file.write(content)
                 tmp_path = tmp_file.name
 
@@ -283,9 +265,7 @@ class AuthenticationSessionManager:
                 if result.returncode == 0:
                     return True
                 else:
-                    raise RuntimeError(
-                        f"Failed to write file {file_path}: {result.stderr}"
-                    )
+                    raise RuntimeError(f"Failed to write file {file_path}: {result.stderr}")
             finally:
                 # Clean up temp file
                 try:
@@ -296,9 +276,7 @@ class AuthenticationSessionManager:
             raise ValueError(f"Unknown operation: {operation}")
 
     @contextmanager
-    def session_context(
-        self, session_type: str = "global", operation: str = "batch_operation"
-    ):
+    def session_context(self, session_type: str = "global", operation: str = "batch_operation"):
         """Context manager for batch operations that should share authentication
 
         Usage:
@@ -321,9 +299,7 @@ class AuthenticationSessionManager:
             status = {
                 "global_session_active": self._global_session_active,
                 "global_session_start": (
-                    self._global_session_start.isoformat()
-                    if self._global_session_start
-                    else None
+                    self._global_session_start.isoformat() if self._global_session_start else None
                 ),
                 "active_sessions": {
                     session_type: start_time.isoformat()
@@ -367,9 +343,7 @@ def execute_elevated_file_operation(
     operation: str, file_path: str, content: str = None, session_type: str = "global"
 ) -> Any:
     """Execute elevated file operation with session management"""
-    return auth_manager.execute_elevated_file_operation(
-        operation, file_path, content, session_type
-    )
+    return auth_manager.execute_elevated_file_operation(operation, file_path, content, session_type)
 
 
 def session_context(session_type: str = "global", operation: str = "batch_operation"):

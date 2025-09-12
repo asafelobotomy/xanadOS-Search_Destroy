@@ -67,9 +67,7 @@ class PrivacyManager:
         p = Path(path)
 
         # Hash the directory structure but keep file extension
-        dir_hash = hashlib.sha256(
-            (str(p.parent) + self.get_salt()).encode()
-        ).hexdigest()[:8]
+        dir_hash = hashlib.sha256((str(p.parent) + self.get_salt()).encode()).hexdigest()[:8]
 
         extension = p.suffix.lower() if p.suffix else ""
 
@@ -138,9 +136,7 @@ class TelemetryCollector:
             "gui_interactions": 0,
         }
 
-        self.logger.info(
-            f"Telemetry initialized - enabled: {enabled}, privacy: {privacy_level}"
-        )
+        self.logger.info(f"Telemetry initialized - enabled: {enabled}, privacy: {privacy_level}")
 
     def record_event(
         self,
@@ -328,9 +324,7 @@ class TelemetryManager:
 
         # Initialize telemetry based on configuration
         enabled = self.config.get("telemetry", {}).get("enabled", True)
-        privacy_level = self.config.get("telemetry", {}).get(
-            "privacy_level", "anonymous"
-        )
+        privacy_level = self.config.get("telemetry", {}).get("privacy_level", "anonymous")
 
         self.collector = TelemetryCollector(enabled, privacy_level)
         self.logger = logging.getLogger(__name__)
@@ -358,9 +352,7 @@ class TelemetryManager:
                 "duration_seconds": round(duration, 2),
                 "threats_found": threats_found,
                 "errors": errors,
-                "files_per_second": (
-                    round(file_count / duration, 2) if duration > 0 else 0
-                ),
+                "files_per_second": (round(file_count / duration, 2) if duration > 0 else 0),
             },
         )
 
@@ -373,9 +365,7 @@ class TelemetryManager:
 
     def record_gui_interaction(self, component: str, action: str) -> None:
         """Record a GUI interaction event."""
-        self.collector.record_event(
-            "gui_interaction", {"component": component, "action": action}
-        )
+        self.collector.record_event("gui_interaction", {"component": component, "action": action})
 
     def record_performance_metrics(self, metrics: dict[str, Any]) -> None:
         """Record performance metrics."""
@@ -446,9 +436,7 @@ def shutdown_telemetry() -> None:
 
 
 # Convenience functions
-def record_scan(
-    scan_type: str, file_count: int, duration: float, **kwargs: Any
-) -> None:
+def record_scan(scan_type: str, file_count: int, duration: float, **kwargs: Any) -> None:
     """Record a scan event."""
     manager = get_telemetry_manager()
     manager.record_scan_event(scan_type, file_count, duration, **kwargs)

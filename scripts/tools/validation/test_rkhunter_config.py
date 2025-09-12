@@ -17,9 +17,7 @@ def test_rkhunter_config():
     print("=== Testing RKHunter Configuration Generation ===")
 
     # Create a temporary file for testing
-    with tempfile.NamedTemporaryFile(
-        mode="w", suffix=".conf", delete=False
-    ) as tmp_file:
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".conf", delete=False) as tmp_file:
         config_path = tmp_file.name
 
     try:
@@ -52,9 +50,7 @@ def test_rkhunter_config():
             if len(disable_tests_lines) == 1:
                 print(f"✓ Single DISABLE_TESTS line: {disable_tests_lines[0].strip()}")
             else:
-                print(
-                    f"❌ Multiple or missing DISABLE_TESTS lines: {len(disable_tests_lines)}"
-                )
+                print(f"❌ Multiple or missing DISABLE_TESTS lines: {len(disable_tests_lines)}")
                 for line in disable_tests_lines:
                     print(f"   {line.strip()}")
                 return False

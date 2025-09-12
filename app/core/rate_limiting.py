@@ -63,9 +63,7 @@ class RateLimiter:
 
             # Add tokens based on elapsed time
             elapsed = now - self.last_update
-            self.tokens = min(
-                self.rate_limit.calls, self.tokens + (elapsed * self.refill_rate)
-            )
+            self.tokens = min(self.rate_limit.calls, self.tokens + (elapsed * self.refill_rate))
             self.last_update = now
 
             # Check if we have enough tokens
@@ -88,9 +86,7 @@ class RateLimiter:
 class AdaptiveRateLimiter:
     """Adaptive rate limiter that adjusts limits based on system load."""
 
-    def __init__(
-        self, base_limit: RateLimit, load_monitor: Callable[[], float] | None = None
-    ):
+    def __init__(self, base_limit: RateLimit, load_monitor: Callable[[], float] | None = None):
         self.base_limit = base_limit
         self.load_monitor = load_monitor or self._default_load_monitor
         self.limiter = RateLimiter(base_limit)
@@ -159,30 +155,22 @@ class GlobalRateLimitManager:
     def _setup_default_limits(self) -> None:
         """Setup default rate limits for common operations."""
         default_limits = {
-            "file_scan": RateLimit(
-                calls=100, period=60.0, burst=20
-            ),  # 100 scans per minute
+            "file_scan": RateLimit(calls=100, period=60.0, burst=20),  # 100 scans per minute
             "directory_scan": RateLimit(
                 calls=10, period=60.0, burst=5
             ),  # 10 directory scans per minute
             "virus_db_update": RateLimit(calls=1, period=3600.0),  # 1 update per hour
-            "network_request": RateLimit(
-                calls=50, period=60.0, burst=10
-            ),  # 50 requests per minute
+            "network_request": RateLimit(calls=50, period=60.0, burst=10),  # 50 requests per minute
             "quarantine_action": RateLimit(
                 calls=20, period=60.0
             ),  # 20 quarantine actions per minute
-            "system_command": RateLimit(
-                calls=5, period=60.0
-            ),  # 5 system commands per minute
+            "system_command": RateLimit(calls=5, period=60.0),  # 5 system commands per minute
         }
 
         for operation, limit in default_limits.items():
             self.set_rate_limit(operation, limit)
 
-    def set_rate_limit(
-        self, operation: str, rate_limit: RateLimit, adaptive: bool = False
-    ) -> None:
+    def set_rate_limit(self, operation: str, rate_limit: RateLimit, adaptive: bool = False) -> None:
         """Set rate limit for an operation type."""
         with self.lock:
             if adaptive:
@@ -198,9 +186,7 @@ class GlobalRateLimitManager:
             elif operation in self.limiters:
                 return self.limiters[operation].acquire(tokens)
             else:
-                self.logger.warning(
-                    f"No rate limit configured for operation: {operation}"
-                )
+                self.logger.warning(f"No rate limit configured for operation: {operation}")
                 return True  # Allow if no limit configured
 
     def wait_time(self, operation: str) -> float:
@@ -221,9 +207,7 @@ class GlobalRateLimitManager:
 rate_limit_manager = GlobalRateLimitManager()
 
 
-def rate_limit(
-    operation: str, tokens: int = 1, wait_on_limit: bool = False
-) -> Callable:
+def rate_limit(operation: str, tokens: int = 1, wait_on_limit: bool = False) -> Callable:
     """Decorator for rate limiting function calls.
 
     Args:
@@ -242,13 +226,9 @@ def rate_limit(
                         time.sleep(wait_time)
                         # Try again after waiting
                         if not rate_limit_manager.acquire(operation, tokens):
-                            raise RuntimeError(
-                                f"Rate limit exceeded for operation: {operation}"
-                            )
+                            raise RuntimeError(f"Rate limit exceeded for operation: {operation}")
                 else:
-                    raise RuntimeError(
-                        f"Rate limit exceeded for operation: {operation}"
-                    )
+                    raise RuntimeError(f"Rate limit exceeded for operation: {operation}")
 
             return func(*args, **kwargs)
 
@@ -283,9 +263,7 @@ class RequestTracker:
                 key = f"{old_request['client_id']}:{old_request['operation']}"
                 self.request_counts[key] = max(0, self.request_counts[key] - 1)
 
-    def detect_abuse(
-        self, client_id: str, operation: str, threshold: int = 100
-    ) -> bool:
+    def detect_abuse(self, client_id: str, operation: str, threshold: int = 100) -> bool:
         """Detect if client is making too many requests."""
         key = f"{client_id}:{operation}"
         return self.request_counts[key] > threshold
@@ -311,9 +289,7 @@ class RequestTracker:
         for request in requests:
             operation_counts[request["operation"]] += 1
 
-        return dict(
-            sorted(operation_counts.items(), key=lambda x: x[1], reverse=True)[:10]
-        )
+        return dict(sorted(operation_counts.items(), key=lambda x: x[1], reverse=True)[:10])
 
 
 # Global request tracker

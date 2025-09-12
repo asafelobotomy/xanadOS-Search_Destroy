@@ -132,9 +132,7 @@ class AllWarningsDialog(QDialog):
         layout.addWidget(header_label)
 
         # Summary info
-        summary_label = QLabel(
-            f"Found {len(self.warnings)} warnings that require attention"
-        )
+        summary_label = QLabel(f"Found {len(self.warnings)} warnings that require attention")
         summary_label.setObjectName("summaryLabel")  # For themed styling
         layout.addWidget(summary_label)
 
@@ -515,9 +513,7 @@ class AllWarningsDialog(QDialog):
                 elif "process" in check_name:
                     recommendations.insert(-2, "Check process origin and behavior")
                 elif "network" in check_name:
-                    recommendations.insert(
-                        -2, "Monitor network connections and traffic"
-                    )
+                    recommendations.insert(-2, "Monitor network connections and traffic")
         except Exception as e:  # pylint: disable=broad-exception-caught
             # Continue without type-specific recommendations if there's an error
             print(f"Warning: Error adding type-specific recommendations: {e}")
@@ -560,9 +556,7 @@ class AllWarningsDialog(QDialog):
                         hasattr(explanation_obj, "technical_details")
                         and explanation_obj.technical_details
                     ):
-                        lines.append(
-                            f"Technical Details: {explanation_obj.technical_details}"
-                        )
+                        lines.append(f"Technical Details: {explanation_obj.technical_details}")
                         lines.append("")
                     if (
                         hasattr(explanation_obj, "remediation_steps")
@@ -736,9 +730,7 @@ class AllWarningsDialog(QDialog):
             report_lines: list[str] = []
             report_lines.append("SECURITY WARNINGS REPORT")
             report_lines.append("=" * 50)
-            report_lines.append(
-                f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
-            )
+            report_lines.append(f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
             report_lines.append(f"Total Warnings: {len(self.warnings)}")
             report_lines.append("")
 
@@ -780,6 +772,4 @@ class AllWarningsDialog(QDialog):
                     "critical", "Export Error", f"Failed to export report:\n{e!s}"
                 )
             else:
-                QMessageBox.critical(
-                    self, "Export Error", f"Failed to export report:\n{e!s}"
-                )
+                QMessageBox.critical(self, "Export Error", f"Failed to export report:\n{e!s}")

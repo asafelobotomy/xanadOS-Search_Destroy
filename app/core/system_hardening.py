@@ -105,9 +105,7 @@ class SystemHardeningChecker:
             if rec not in recommendations:
                 recommendations.append(rec)
 
-        critical_issues = [
-            f.name for f in features if not f.enabled and f.severity == "critical"
-        ]
+        critical_issues = [f.name for f in features if not f.enabled and f.severity == "critical"]
 
         report = HardeningReport(
             security_features=features,
@@ -216,9 +214,7 @@ class SystemHardeningChecker:
             recommendation = "Kernel lockdown at maximum security level"
         elif lockdown_status == "integrity":
             severity = "medium"
-            recommendation = (
-                "Consider upgrading to 'confidentiality' mode for maximum security"
-            )
+            recommendation = "Consider upgrading to 'confidentiality' mode for maximum security"
         else:
             severity = "high"
             recommendation = "Enable kernel lockdown mode for enhanced security"
@@ -304,9 +300,7 @@ class SystemHardeningChecker:
             current_value = self._get_sysctl_value(param)
             enabled = current_value == config["expected"]
 
-            status = (
-                f"{param} = {current_value}" if current_value else f"{param} not found"
-            )
+            status = f"{param} = {current_value}" if current_value else f"{param} not found"
             recommendation = (
                 f"Set {param} = {config['expected']}"
                 if not enabled
@@ -659,9 +653,7 @@ class SystemHardeningChecker:
             recommendations.append(
                 "🔐 Consider implementing a comprehensive security hardening plan"
             )
-            recommendations.append(
-                "📚 Review CIS benchmarks for your Linux distribution"
-            )
+            recommendations.append("📚 Review CIS benchmarks for your Linux distribution")
 
         if report.overall_score < report.max_score * 0.75:
             recommendations.append("🛡️ Enable additional kernel security features")

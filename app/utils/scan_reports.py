@@ -119,9 +119,7 @@ class ScanReportManager:
 
         except OSError:
             self.logerror(
-                "Failed to save scan result: %s".replace("%s", "{e}").replace(
-                    "%d", "{e}"
-                )
+                "Failed to save scan result: %s".replace("%s", "{e}").replace("%d", "{e}")
             )
             return ""
 
@@ -176,9 +174,7 @@ class ScanReportManager:
         # Track threat types
         for threat in result.threats:
             threat_type = threat.threat_type
-            summary["threat_types"][threat_type] = (
-                summary["threat_types"].get(threat_type, 0) + 1
-            )
+            summary["threat_types"][threat_type] = summary["threat_types"].get(threat_type, 0) + 1
 
         # Add scan summary
         summary["scans"].append(
@@ -198,9 +194,7 @@ class ScanReportManager:
                 json.dump(summary, f, indent=2, default=str)
         except OSError:
             self.logerror(
-                "Failed to update daily summary: %s".replace("%s", "{e}").replace(
-                    "%d", "{e}"
-                )
+                "Failed to update daily summary: %s".replace("%s", "{e}").replace("%d", "{e}")
             )
 
     def load_scan_result(self, scan_id: str) -> ScanResult | None:
@@ -220,9 +214,7 @@ class ScanReportManager:
                 # Handle ThreatLevel conversion
                 if isinstance(threat_data.get("threat_level"), str):
                     try:
-                        threat_data["threat_level"] = ThreatLevel(
-                            threat_data["threat_level"]
-                        )
+                        threat_data["threat_level"] = ThreatLevel(threat_data["threat_level"])
                     except ValueError:
                         threat_data["threat_level"] = ThreatLevel.ERROR
 
@@ -306,9 +298,7 @@ class ScanReportManager:
                     data = json.load(f)
 
                 # Check if within date range
-                scan_date = datetime.fromisoformat(
-                    data["timestamp"].replace("Z", "+00:00")
-                )
+                scan_date = datetime.fromisoformat(data["timestamp"].replace("Z", "+00:00"))
                 if start_date <= scan_date <= end_date:
                     for threat in data["threats"]:
                         stats["total_threats"] += 1
@@ -327,9 +317,7 @@ class ScanReportManager:
 
                         # Count by day
                         day_key = scan_date.strftime("%Y-%m-%d")
-                        stats["daily_counts"][day_key] = (
-                            stats["daily_counts"].get(day_key, 0) + 1
-                        )
+                        stats["daily_counts"][day_key] = stats["daily_counts"].get(day_key, 0) + 1
 
                         # Track infected paths
                         path_parent = str(Path(threat["file_path"]).parent)
@@ -356,10 +344,7 @@ class ScanReportManager:
         for report_dir in [self.daily_reports, self.threat_logs, self.summary_reports]:
             for report_file in report_dir.glob("*.json"):
                 try:
-                    if (
-                        datetime.fromtimestamp(report_file.stat().st_mtime)
-                        < cutoff_date
-                    ):
+                    if datetime.fromtimestamp(report_file.stat().st_mtime) < cutoff_date:
                         report_file.unlink()
                         deleted_count += 1
                 except OSError as e:
@@ -405,9 +390,7 @@ class ScanReportManager:
                     # Date filtering if specified
                     if start_date or end_date:
                         scan_date = datetime.fromisoformat(scan_data["start_time"])
-                        if start_date and scan_date < datetime.fromisoformat(
-                            start_date
-                        ):
+                        if start_date and scan_date < datetime.fromisoformat(start_date):
                             continue
                         if end_date and scan_date > datetime.fromisoformat(end_date):
                             continue
@@ -433,9 +416,9 @@ class ScanReportManager:
                 self._export_html(export_data, output_path)
             else:
                 self.logerror(
-                    "Unsupported export format: %s".replace(
-                        "%s", "{format_type}"
-                    ).replace("%d", "{format_type}")
+                    "Unsupported export format: %s".replace("%s", "{format_type}").replace(
+                        "%d", "{format_type}"
+                    )
                 )
                 return False
 
@@ -447,9 +430,7 @@ class ScanReportManager:
             return True
 
         except OSError:
-            self.logerror(
-                "Failed to export reports: %s".replace("%s", "{e}").replace("%d", "{e}")
-            )
+            self.logerror("Failed to export reports: %s".replace("%s", "{e}").replace("%d", "{e}"))
             return False
 
     def _export_json(self, export_data: dict, output_path: str) -> None:
@@ -501,9 +482,7 @@ class ScanReportManager:
         """Export data to HTML format."""
         total_scans = len(export_data["scans"])
         total_threats = len(export_data["threats"])
-        files_scanned = sum(
-            scan.get("scanned_files", 0) for scan in export_data["scans"]
-        )
+        files_scanned = sum(scan.get("scanned_files", 0) for scan in export_data["scans"])
 
         # Build CSS in small chunks to keep source lines short for pylint C0301
         style_lines = [

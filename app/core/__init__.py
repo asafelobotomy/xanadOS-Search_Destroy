@@ -32,9 +32,7 @@ except ImportError as e:
     UNIFIED_PERFORMANCE_AVAILABLE = False
     import logging
 
-    logging.getLogger(__name__).warning(
-        f"Unified Performance Optimizer unavailable: {e}"
-    )
+    logging.getLogger(__name__).warning(f"Unified Performance Optimizer unavailable: {e}")
 
 # Core components
 try:

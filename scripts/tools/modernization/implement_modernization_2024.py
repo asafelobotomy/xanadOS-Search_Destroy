@@ -19,9 +19,7 @@ from pathlib import Path
 from typing import Any
 
 # Configure logging
-logging.basicConfig(
-    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
-)
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
 
 
@@ -52,9 +50,7 @@ class ModernizationImplementer:
             logger.info(f"✅ uv package manager available: {result.stdout.strip()}")
             return True
         except (subprocess.CalledProcessError, FileNotFoundError):
-            logger.error(
-                "❌ uv package manager not found. Install with: pip install uv"
-            )
+            logger.error("❌ uv package manager not found. Install with: pip install uv")
             return False
 
     def update_dependencies(self) -> bool:
@@ -263,9 +259,7 @@ def main():
         logger.info("\n🎯 Next Steps:")
         logger.info("  1. Review any test failures or type checking warnings")
         logger.info("  2. Run full validation: npm run quick:validate")
-        logger.info(
-            "  3. Commit changes: git add . && git commit -m 'Modernize to Python 3.13'"
-        )
+        logger.info("  3. Commit changes: git add . && git commit -m 'Modernize to Python 3.13'")
         sys.exit(0)
     else:
         logger.error("\n❌ Modernization failed. Please review errors above.")

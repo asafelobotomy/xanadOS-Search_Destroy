@@ -41,21 +41,13 @@ def elevated_run(
 
             logger.info("Using persistent GUI sudo authentication")
             # Filter out the gui parameter since elevated_run_gui doesn't accept it
-            return elevated_run_gui(
-                argv, timeout=timeout, capture_output=capture_output, text=text
-            )
+            return elevated_run_gui(argv, timeout=timeout, capture_output=capture_output, text=text)
         except ImportError:
-            logger.error(
-                "GUI authentication manager not available - GUI environment required"
-            )
-            return subprocess.CompletedProcess(
-                argv, 1, "", "GUI authentication not available"
-            )
+            logger.error("GUI authentication manager not available - GUI environment required")
+            return subprocess.CompletedProcess(argv, 1, "", "GUI authentication not available")
         except Exception as e:
             logger.error(f"GUI authentication failed: {e}")
-            return subprocess.CompletedProcess(
-                argv, 1, "", f"GUI authentication failed: {e}"
-            )
+            return subprocess.CompletedProcess(argv, 1, "", f"GUI authentication failed: {e}")
     else:
         logger.error("No DISPLAY environment - GUI authentication required")
         return subprocess.CompletedProcess(

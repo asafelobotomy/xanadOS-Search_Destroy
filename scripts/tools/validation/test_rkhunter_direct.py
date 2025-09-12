@@ -72,9 +72,7 @@ PKGMGR=NONE
         elif result.returncode == 0:
             print("✓ Configuration validation passed")
         else:
-            print(
-                f"⚠️  Configuration check returned {result.returncode} but no unknown test error"
-            )
+            print(f"⚠️  Configuration check returned {result.returncode} but no unknown test error")
 
         # Test a minimal scan
         print("\nTesting minimal scan...")

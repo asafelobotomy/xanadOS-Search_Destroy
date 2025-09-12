@@ -9,7 +9,8 @@ import logging
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 # Set up logging
-logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(message)s')
+logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
+
 
 def test_rkhunter_availability():
     """Test RKHunter binary availability and permissions"""
@@ -29,6 +30,7 @@ def test_rkhunter_availability():
 
     print("✗ RKHunter binary not found")
     return None
+
 
 def test_rkhunter_optimizer():
     """Test RKHunter optimizer status retrieval."""
@@ -60,8 +62,10 @@ def test_rkhunter_optimizer():
     except Exception as e:
         print(f"✗ Error testing optimizer: {e}")
         import traceback
+
         traceback.print_exc()
         return False
+
 
 def test_non_invasive_monitor():
     """Test non-invasive RKHunter monitoring."""
@@ -94,8 +98,10 @@ def test_non_invasive_monitor():
     except Exception as e:
         print(f"✗ Error testing monitor: {e}")
         import traceback
+
         traceback.print_exc()
         return False
+
 
 def test_secure_subprocess():
     """Test secure subprocess functionality"""
@@ -106,7 +112,7 @@ def test_secure_subprocess():
 
         # Test a simple command that should work
         result = run_secure(["which", "rkhunter"], check=False, capture_output=True)
-        print(f"✓ Secure subprocess test completed")
+        print("✓ Secure subprocess test completed")
         print(f"  Return code: {result.returncode}")
         print(f"  Output: {result.stdout.decode().strip() if result.stdout else 'None'}")
 
@@ -115,8 +121,10 @@ def test_secure_subprocess():
     except Exception as e:
         print(f"✗ Error testing secure subprocess: {e}")
         import traceback
+
         traceback.print_exc()
         return False
+
 
 def main():
     """Main test function"""
@@ -135,6 +143,7 @@ def main():
     test_rkhunter_optimizer()
 
     print("\n🏁 Investigation Complete")
+
 
 if __name__ == "__main__":
     main()

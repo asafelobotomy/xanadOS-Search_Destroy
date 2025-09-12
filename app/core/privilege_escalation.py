@@ -129,9 +129,7 @@ class PrivilegeEscalationManager:
 
         return True
 
-    def _safe_log_error(
-        self, operation: str, error: Exception, include_type: bool = True
-    ) -> None:
+    def _safe_log_error(self, operation: str, error: Exception, include_type: bool = True) -> None:
         """Log errors safely without exposing sensitive information.
 
         Args:
@@ -217,16 +215,12 @@ class PrivilegeEscalationManager:
             )
 
         # Validate command arguments
-        if not request.command or not all(
-            isinstance(arg, str) for arg in request.command
-        ):
+        if not request.command or not all(isinstance(arg, str) for arg in request.command):
             raise SecureElevationError("Invalid command arguments")
 
         # Additional security validation for command arguments
         if not self._validate_command_security(request.command):
-            raise SecureElevationError(
-                "Command contains potentially dangerous patterns"
-            )
+            raise SecureElevationError("Command contains potentially dangerous patterns")
 
         script_path = None
         try:
@@ -259,26 +253,18 @@ class PrivilegeEscalationManager:
             raise SecureElevationError(error_msg)
 
         except Exception as e:
-            self._safe_log_error(
-                f"elevation for operation {request.operation.value}", e
-            )
-            raise SecureElevationError(
-                f"Elevation failed for operation: {request.operation.value}"
-            )
+            self._safe_log_error(f"elevation for operation {request.operation.value}", e)
+            raise SecureElevationError(f"Elevation failed for operation: {request.operation.value}")
 
         finally:
-            if (
-                "script_path" in locals()
-                and script_path
-                and os.path.exists(script_path)
-            ):
+            if "script_path" in locals() and script_path and os.path.exists(script_path):
                 try:
                     os.unlink(script_path)
                 except OSError:
                     self.logwarning(
-                        "Failed to clean up wrapper script: %s".replace(
-                            "%s", "{e}"
-                        ).replace("%d", "{e}")
+                        "Failed to clean up wrapper script: %s".replace("%s", "{e}").replace(
+                            "%d", "{e}"
+                        )
                     )
 
     def scan_system_directories(
@@ -301,9 +287,7 @@ class PrivilegeEscalationManager:
                 validated_paths.append(str(path_obj))
             else:
                 self.logwarning(
-                    "Skipping non-existent path: %s".replace("%s", "{path}").replace(
-                        "%d", "{path}"
-                    )
+                    "Skipping non-existent path: %s".replace("%s", "{path}").replace("%d", "{path}")
                 )
 
         if not validated_paths:
@@ -381,9 +365,9 @@ class PrivilegeEscalationManager:
         """
         if not self._policy_file.exists():
             self.logerror(
-                "Policy file not found: %s".replace(
-                    "%s", "{self._policy_file}"
-                ).replace("%d", "{self._policy_file}")
+                "Policy file not found: %s".replace("%s", "{self._policy_file}").replace(
+                    "%d", "{self._policy_file}"
+                )
             )
             return False
 
@@ -426,9 +410,7 @@ class PrivilegeEscalationManager:
                 if result1.returncode != 0:
                     raise subprocess.CalledProcessError(result1.returncode, ["cp"])
 
-                result2 = elevated_run(
-                    ["chmod", "644", str(policy_dest)], timeout=10, gui=True
-                )
+                result2 = elevated_run(["chmod", "644", str(policy_dest)], timeout=10, gui=True)
                 if result2.returncode != 0:
                     raise subprocess.CalledProcessError(result2.returncode, ["chmod"])
 
@@ -437,16 +419,14 @@ class PrivilegeEscalationManager:
 
         except subprocess.CalledProcessError:
             self.logerror(
-                "Failed to install policy file: %s".replace("%s", "{e}").replace(
-                    "%d", "{e}"
-                )
+                "Failed to install policy file: %s".replace("%s", "{e}").replace("%d", "{e}")
             )
             return False
         except Exception:
             self.logerror(
-                "Unexpected error installing policy file: %s".replace(
-                    "%s", "{e}"
-                ).replace("%d", "{e}")
+                "Unexpected error installing policy file: %s".replace("%s", "{e}").replace(
+                    "%d", "{e}"
+                )
             )
             return False
 

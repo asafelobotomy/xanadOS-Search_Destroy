@@ -113,9 +113,7 @@ class RepositoryMaintenance:
                 for keyword in ["fix", "config", "cron", "integration", "optimization"]
             ):
                 # These are temporary testing files from recent work
-                self.archive_file(
-                    test_file, "temporary test file from recent development work"
-                )
+                self.archive_file(test_file, "temporary test file from recent development work")
             else:
                 # Move to tests directory
                 target = self.tests_dir / test_file.name
@@ -200,9 +198,7 @@ class RepositoryMaintenance:
         self.repo_root / "package-lock.json"
 
         if node_modules.exists():
-            print(
-                f"  📋 Node modules directory size: {self.get_dir_size(node_modules):.1f}MB"
-            )
+            print(f"  📋 Node modules directory size: {self.get_dir_size(node_modules):.1f}MB")
             print("  💡 Consider running 'npm ci' to refresh dependencies")
         else:
             print("  ✅ No node_modules directory found")
@@ -267,7 +263,7 @@ class RepositoryMaintenance:
         """Generate maintenance report."""
         print("\n📊 Generating maintenance report...")
 
-        report_content = f"""# Repository Maintenance Report - {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+        report_content = f"""# Repository Maintenance Report - {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
 
 ## Summary
 Performed comprehensive repository maintenance and cleanup.
@@ -290,9 +286,7 @@ Repository structure validated for compliance with file organization policy.
 """
 
         report_file = (
-            self.docs_dir
-            / "implementation-reports"
-            / f"maintenance-report-{self.timestamp}.md"
+            self.docs_dir / "implementation-reports" / f"maintenance-report-{self.timestamp}.md"
         )
         report_file.parent.mkdir(parents=True, exist_ok=True)
 

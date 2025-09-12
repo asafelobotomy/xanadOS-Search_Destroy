@@ -115,9 +115,7 @@ class FirewallStatusOptimizer(QObject):
 
             file_path_lower = event.file_path.lower()
 
-            is_relevant = any(
-                pattern in file_path_lower for pattern in relevant_patterns
-            )
+            is_relevant = any(pattern in file_path_lower for pattern in relevant_patterns)
 
             if is_relevant:
                 event_type = event.event_type.value

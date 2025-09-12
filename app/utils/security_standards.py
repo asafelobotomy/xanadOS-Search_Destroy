@@ -368,11 +368,7 @@ class SecurityStandards:
         elif ext in cls.SAFE_EXTENSIONS:
             # Even "safe" files can be dangerous if oversized
             default_limit = cls.FILE_SIZE_LIMITS.get("default", 100 * 1024 * 1024)
-            risk = (
-                FileRiskLevel.SAFE
-                if file_size <= default_limit
-                else FileRiskLevel.MODERATE_RISK
-            )
+            risk = FileRiskLevel.SAFE if file_size <= default_limit else FileRiskLevel.MODERATE_RISK
 
         return risk
 
@@ -464,9 +460,7 @@ class SecurityStandards:
             category = ThreatCategory.SPYWARE
         elif any(pattern in threat_lower for pattern in ["adware", "popup", "banner"]):
             category = ThreatCategory.ADWARE
-        elif any(
-            pattern in threat_lower for pattern in ["pup", "unwanted", "suspicious"]
-        ):
+        elif any(pattern in threat_lower for pattern in ["pup", "unwanted", "suspicious"]):
             category = ThreatCategory.POTENTIALLY_UNWANTED
 
         return category
@@ -508,13 +502,9 @@ def validate_file_safety(filename: str, file_size: int = 0) -> ValidationResult:
             SecurityLevel.HIGH,
         )
     elif risk_level == FileRiskLevel.MODERATE_RISK:
-        return ValidationResult(
-            True, f"File {filename} has moderate risk", SecurityLevel.MEDIUM
-        )
+        return ValidationResult(True, f"File {filename} has moderate risk", SecurityLevel.MEDIUM)
     else:
-        return ValidationResult(
-            True, f"File {filename} appears safe", SecurityLevel.LOW
-        )
+        return ValidationResult(True, f"File {filename} appears safe", SecurityLevel.LOW)
 
 
 def validate_command_safety(binary: str, args: List[str]) -> ValidationResult:

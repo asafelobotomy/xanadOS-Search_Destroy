@@ -41,13 +41,9 @@ except ImportError:  # pragma: no cover - fallback mocks
                     "create_bucket": staticmethod(lambda **_x: None),
                     "put_object": staticmethod(lambda **_x: None),
                     "get_object": staticmethod(
-                        lambda **_x: {
-                            "Body": type("", (), {"read": staticmethod(lambda: b"")})()
-                        }
+                        lambda **_x: {"Body": type("", (), {"read": staticmethod(lambda: b"")})()}
                     ),
-                    "list_objects_v2": staticmethod(
-                        lambda **_x: {"KeyCount": 0, "Contents": []}
-                    ),
+                    "list_objects_v2": staticmethod(lambda **_x: {"KeyCount": 0, "Contents": []}),
                 },
             )()
 
@@ -275,9 +271,7 @@ class CloudIntegrationSystem:
         except Exception as e:
             self.logger.error("Error during cleanup: %s", e)
 
-    async def upload_threat_data(
-        self, threat_data: dict[str, Any], anonymize: bool = True
-    ) -> bool:
+    async def upload_threat_data(self, threat_data: dict[str, Any], anonymize: bool = True) -> bool:
         """Upload threat detection data to cloud for community sharing.
 
         Args:
@@ -354,9 +348,7 @@ class CloudIntegrationSystem:
             # Cache results
             await self._cache_threat_intelligence(filtered_intel)
 
-            self.logger.info(
-                "Downloaded %d threat intelligence entries", len(filtered_intel)
-            )
+            self.logger.info("Downloaded %d threat intelligence entries", len(filtered_intel))
             return filtered_intel
 
         except Exception as e:
@@ -408,9 +400,7 @@ class CloudIntegrationSystem:
             self.logger.error("Error backing up scan data: %s", e)
             return False
 
-    async def restore_scan_data(
-        self, backup_date: datetime | None = None
-    ) -> list[dict[str, Any]]:
+    async def restore_scan_data(self, backup_date: datetime | None = None) -> list[dict[str, Any]]:
         """Restore scan data from cloud backup.
 
         Args:
@@ -439,22 +429,16 @@ class CloudIntegrationSystem:
                         all_results.extend(scan_results)
 
                 except Exception as e:
-                    self.logger.warning(
-                        "Error processing backup file %s: %s", backup_file, e
-                    )
+                    self.logger.warning("Error processing backup file %s: %s", backup_file, e)
 
-            self.logger.info(
-                "Restored %d scan results from cloud backup", len(all_results)
-            )
+            self.logger.info("Restored %d scan results from cloud backup", len(all_results))
             return all_results
 
         except Exception as e:
             self.logger.error("Error restoring scan data: %s", e)
             return []
 
-    async def query_threat_reputation(
-        self, file_hash: str
-    ) -> ThreatIntelligence | None:
+    async def query_threat_reputation(self, file_hash: str) -> ThreatIntelligence | None:
         """Query threat reputation from multiple sources.
 
         Args:
@@ -499,9 +483,7 @@ class CloudIntegrationSystem:
                 # Update local signature database
                 await self._update_signature_database(signatures)
 
-                self.logger.info(
-                    "Synchronized %d community signatures", len(signatures)
-                )
+                self.logger.info("Synchronized %d community signatures", len(signatures))
 
                 self.sync_status.last_sync = datetime.now()
                 self.sync_status.files_synced += len(signatures)
@@ -556,9 +538,7 @@ class CloudIntegrationSystem:
             # Process and upload
             processed_data = await self._process_upload_data(false_positive_data)
 
-            upload_path = (
-                f"false_positives/{datetime.now().strftime('%Y/%m')}/{file_hash}.json"
-            )
+            upload_path = f"false_positives/{datetime.now().strftime('%Y/%m')}/{file_hash}.json"
             success = await self._upload_to_cloud(upload_path, processed_data)
 
             if success:
@@ -601,9 +581,7 @@ class CloudIntegrationSystem:
                     "sync_interval": self.cloud_config.sync_interval,
                     "encryption_enabled": self.cloud_config.encryption_enabled,
                     "compression_enabled": self.cloud_config.compression_enabled,
-                    "threat_sources": [
-                        source.value for source in self.threat_intel_config.sources
-                    ],
+                    "threat_sources": [source.value for source in self.threat_intel_config.sources],
                 },
             }
 
@@ -710,22 +688,16 @@ class CloudIntegrationSystem:
                 except ClientError as e:
                     if e.response["Error"]["Code"] == "404":
                         # Create bucket if it doesn't exist
-                        self.cloud_client.create_bucket(
-                            Bucket=self.cloud_config.bucket_name
-                        )
+                        self.cloud_client.create_bucket(Bucket=self.cloud_config.bucket_name)
 
             elif self.cloud_config.provider == CloudProvider.CUSTOM_API:
                 # Custom API endpoint - no specific client needed
                 pass
 
             else:
-                raise ValueError(
-                    f"Unsupported cloud provider: {self.cloud_config.provider}"
-                )
+                raise ValueError(f"Unsupported cloud provider: {self.cloud_config.provider}")
 
-            self.logger.info(
-                "Cloud client initialized for %s", self.cloud_config.provider.value
-            )
+            self.logger.info("Cloud client initialized for %s", self.cloud_config.provider.value)
 
         except Exception as e:
             self.logger.error("Error initializing cloud client: %s", e)
@@ -737,9 +709,7 @@ class CloudIntegrationSystem:
             for source in self.threat_intel_config.sources:
                 # Initialize rate limiters
                 if source.value not in self.rate_limiters:
-                    rate_limit = self.threat_intel_config.rate_limits.get(
-                        source.value, 100
-                    )
+                    rate_limit = self.threat_intel_config.rate_limits.get(source.value, 100)
                     self.rate_limiters[source.value] = {
                         "limit": rate_limit,
                         "window": 3600,  # 1 hour
@@ -887,9 +857,7 @@ class CloudIntegrationSystem:
                         async with self.session.put(
                             f"{self.cloud_config.endpoint_url}/{path}",
                             data=data,
-                            headers={
-                                "Authorization": f"Bearer {self.cloud_config.api_key}"
-                            },
+                            headers={"Authorization": f"Bearer {self.cloud_config.api_key}"},
                         ) as response:
                             return response.status == 200
 
@@ -919,17 +887,13 @@ class CloudIntegrationSystem:
                         assert self.session is not None
                         async with self.session.get(
                             f"{self.cloud_config.endpoint_url}/{path}",
-                            headers={
-                                "Authorization": f"Bearer {self.cloud_config.api_key}"
-                            },
+                            headers={"Authorization": f"Bearer {self.cloud_config.api_key}"},
                         ) as response:
                             if response.status == 200:
                                 return await response.read()
 
                 except Exception as e:
-                    self.logger.warning(
-                        "Download attempt %d failed: %s", attempt + 1, e
-                    )
+                    self.logger.warning("Download attempt %d failed: %s", attempt + 1, e)
                     if attempt < self.cloud_config.retry_attempts - 1:
                         await asyncio.sleep(2**attempt)
 
@@ -963,9 +927,7 @@ class CloudIntegrationSystem:
             self.logger.error("Error querying threat source %s: %s", source.value, e)
             return []
 
-    async def _query_virustotal(
-        self, hash_value: str | None = None
-    ) -> list[ThreatIntelligence]:
+    async def _query_virustotal(self, hash_value: str | None = None) -> list[ThreatIntelligence]:
         """Query VirusTotal API."""
         try:
             api_key = self.threat_intel_config.api_keys.get("virustotal")
@@ -993,16 +955,12 @@ class CloudIntegrationSystem:
             self.logger.error("Error querying VirusTotal: %s", e)
             return []
 
-    async def _query_malwarebytes(
-        self, hash_value: str | None = None
-    ) -> list[ThreatIntelligence]:
+    async def _query_malwarebytes(self, hash_value: str | None = None) -> list[ThreatIntelligence]:
         """Query Malwarebytes threat intelligence."""
         # Placeholder implementation
         return []
 
-    async def _query_community_db(
-        self, hash_value: str | None = None
-    ) -> list[ThreatIntelligence]:
+    async def _query_community_db(self, hash_value: str | None = None) -> list[ThreatIntelligence]:
         """Query community threat database."""
         try:
             # Query from cloud-stored community database
@@ -1022,9 +980,7 @@ class CloudIntegrationSystem:
             self.logger.error("Error querying community database: %s", e)
             return []
 
-    def _parse_virustotal_response(
-        self, data: dict[str, Any]
-    ) -> list[ThreatIntelligence]:
+    def _parse_virustotal_response(self, data: dict[str, Any]) -> list[ThreatIntelligence]:
         """Parse VirusTotal API response."""
         try:
             if data.get("response_code") != 1:
@@ -1036,27 +992,19 @@ class CloudIntegrationSystem:
                 confidence=min(data.get("positives", 0) / data.get("total", 1), 1.0),
                 source="virustotal",
                 first_seen=datetime.now(),  # VT doesn't provide this in v2 API
-                last_seen=datetime.fromisoformat(
-                    data.get("scan_date", datetime.now().isoformat())
-                ),
+                last_seen=datetime.fromisoformat(data.get("scan_date", datetime.now().isoformat())),
                 threat_names=list(data.get("scans", {}).values()),
                 severity="high" if data.get("positives", 0) > 10 else "medium",
                 additional_data=data,
             )
 
-            return (
-                [intel]
-                if intel.confidence >= self.threat_intel_config.min_confidence
-                else []
-            )
+            return [intel] if intel.confidence >= self.threat_intel_config.min_confidence else []
 
         except Exception as e:
             self.logger.error("Error parsing VirusTotal response: %s", e)
             return []
 
-    def _parse_community_response(
-        self, data: dict[str, Any]
-    ) -> list[ThreatIntelligence]:
+    def _parse_community_response(self, data: dict[str, Any]) -> list[ThreatIntelligence]:
         """Parse community database response."""
         try:
             intelligence_list = []
@@ -1132,9 +1080,7 @@ class CloudIntegrationSystem:
             self.logger.error("Error filtering intelligence: %s", e)
             return intelligence_list
 
-    async def _cache_threat_intelligence(
-        self, intelligence_list: list[ThreatIntelligence]
-    ) -> None:
+    async def _cache_threat_intelligence(self, intelligence_list: list[ThreatIntelligence]) -> None:
         """Cache threat intelligence in local database."""
         try:
             with sqlite3.connect(self.db_path) as conn:
@@ -1175,9 +1121,7 @@ class CloudIntegrationSystem:
         except Exception as e:
             self.logger.error("Error caching threat intelligence: %s", e)
 
-    async def _get_cached_intelligence(
-        self, hash_value: str
-    ) -> ThreatIntelligence | None:
+    async def _get_cached_intelligence(self, hash_value: str) -> ThreatIntelligence | None:
         """Get cached threat intelligence."""
         try:
             with sqlite3.connect(self.db_path) as conn:
@@ -1268,9 +1212,7 @@ class CloudIntegrationSystem:
         except Exception as e:
             self.logger.error("Error recording upload: %s", e)
 
-    async def _list_backup_files(
-        self, backup_date: datetime | None = None
-    ) -> list[str]:
+    async def _list_backup_files(self, backup_date: datetime | None = None) -> list[str]:
         """List available backup files."""
         # Placeholder implementation
         return []
@@ -1278,9 +1220,7 @@ class CloudIntegrationSystem:
     async def _download_community_signatures(self) -> list[dict[str, Any]]:
         """Download community threat signatures."""
         try:
-            signatures_data = await self._download_from_cloud(
-                "community_signatures/latest.json"
-            )
+            signatures_data = await self._download_from_cloud("community_signatures/latest.json")
             if signatures_data:
                 processed_data = await self._process_download_data(signatures_data)
                 return processed_data.get("signatures", [])
@@ -1291,9 +1231,7 @@ class CloudIntegrationSystem:
             self.logger.error("Error downloading community signatures: %s", e)
             return []
 
-    async def _update_signature_database(
-        self, signatures: list[dict[str, Any]]
-    ) -> None:
+    async def _update_signature_database(self, signatures: list[dict[str, Any]]) -> None:
         """Update local signature database."""
         # This would update the local antivirus signature database
         # Placeholder implementation
@@ -1315,9 +1253,7 @@ class CloudIntegrationSystem:
                 )
                 valid_intel = cursor.fetchone()[0]
 
-                cursor = conn.execute(
-                    "SELECT COUNT(*) FROM upload_log WHERE success = 1"
-                )
+                cursor = conn.execute("SELECT COUNT(*) FROM upload_log WHERE success = 1")
                 successful_uploads = cursor.fetchone()[0]
 
             return {
@@ -1336,14 +1272,10 @@ class CloudIntegrationSystem:
         try:
             if self.cloud_config.provider == CloudProvider.AWS_S3:
                 # Get S3 bucket statistics
-                response = self.cloud_client.list_objects_v2(
-                    Bucket=self.cloud_config.bucket_name
-                )
+                response = self.cloud_client.list_objects_v2(Bucket=self.cloud_config.bucket_name)
 
                 total_objects = response.get("KeyCount", 0)
-                total_size = sum(
-                    obj.get("Size", 0) for obj in response.get("Contents", [])
-                )
+                total_size = sum(obj.get("Size", 0) for obj in response.get("Contents", []))
 
                 return {
                     "total_files": total_objects,

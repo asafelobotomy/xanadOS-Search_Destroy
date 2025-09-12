@@ -76,9 +76,7 @@ class UpdateInfo:  # pylint: disable=too-many-instance-attributes
     size_bytes: int
     download_url: str
     checksum: str
-    checksum_type: str = (
-        "sha256"  # Use SHA256 by default for security (SHA512 also recommended)
-    )
+    checksum_type: str = "sha256"  # Use SHA256 by default for security (SHA512 also recommended)
     priority: UpdatePriority = UpdatePriority.NORMAL
     release_date: datetime = field(default_factory=datetime.now)
     required_restart: bool = False
@@ -134,9 +132,7 @@ class AutoUpdateSystem:  # pylint: disable=too-many-instance-attributes
         self.logger = logging.getLogger(__name__)
         self.clamav = clamav_wrapper
         self.config = config or UpdateConfig()
-        self.current_version = (
-            current_version  # Store current version for compatibility
-        )
+        self.current_version = current_version  # Store current version for compatibility
 
         # State management
         self.status = UpdateStatus.IDLE
@@ -162,16 +158,12 @@ class AutoUpdateSystem:  # pylint: disable=too-many-instance-attributes
 
         # Database paths
         self.db_dir = (
-            Path("/var/lib/clamav")
-            if Path("/var/lib/clamav").exists()
-            else Path("./clamav_db")
+            Path("/var/lib/clamav") if Path("/var/lib/clamav").exists() else Path("./clamav_db")
         )
         self.db_dir.mkdir(parents=True, exist_ok=True)
 
         # Config file for persistent state
-        self.config_file = (
-            Path.home() / ".config" / "search-and-destroy" / "update_state.json"
-        )
+        self.config_file = Path.home() / ".config" / "search-and-destroy" / "update_state.json"
         self.config_file.parent.mkdir(parents=True, exist_ok=True)
 
         # Load persisted state
@@ -217,16 +209,12 @@ class AutoUpdateSystem:  # pylint: disable=too-many-instance-attributes
 
                 # Load last check time
                 if "last_check_time" in state:
-                    self.last_check_time = datetime.fromisoformat(
-                        state["last_check_time"]
-                    )
+                    self.last_check_time = datetime.fromisoformat(state["last_check_time"])
 
         except (OSError, json.JSONDecodeError, ValueError):
             # Corrupt/missing state should not crash the updater; log and continue
             self.logdebug(
-                "Could not load persistent state: %s".replace("%s", "{e}").replace(
-                    "%d", "{e}"
-                )
+                "Could not load persistent state: %s".replace("%s", "{e}").replace("%d", "{e}")
             )
 
     def _save_persistent_state(self) -> None:
@@ -244,9 +232,7 @@ class AutoUpdateSystem:  # pylint: disable=too-many-instance-attributes
         except (OSError, TypeError):
             # Saving state can fail due to I/O or serialization; log and continue
             self.logdebug(
-                "Could not save persistent state: %s".replace("%s", "{e}").replace(
-                    "%d", "{e}"
-                )
+                "Could not save persistent state: %s".replace("%s", "{e}").replace("%d", "{e}")
             )
 
     async def start_update_system(self) -> bool:
@@ -271,18 +257,14 @@ class AutoUpdateSystem:  # pylint: disable=too-many-instance-attributes
             self.update_loop_task = asyncio.create_task(self._update_monitoring_loop())
 
             # Perform initial update check
-            self.check_updates_task = asyncio.create_task(
-                self.check_for_updates_async()
-            )
+            self.check_updates_task = asyncio.create_task(self.check_for_updates_async())
 
             self.logger.info("Auto-update system started")
             return True
 
         except Exception:  # pylint: disable=broad-exception-caught
             self.logerror(
-                "Failed to start update system: %s".replace("%s", "{e}").replace(
-                    "%d", "{e}"
-                )
+                "Failed to start update system: %s".replace("%s", "{e}").replace("%d", "{e}")
             )
             self.is_running = False
             return False
@@ -313,9 +295,7 @@ class AutoUpdateSystem:  # pylint: disable=too-many-instance-attributes
     def _setup_scheduled_updates(self) -> None:
         """Setup scheduled update checks and installations."""
         # Schedule virus definition updates every 4 hours
-        self.scheduler.every(self.config.check_interval_hours).hours.do(
-            self._schedule_update_check
-        )
+        self.scheduler.every(self.config.check_interval_hours).hours.do(self._schedule_update_check)
 
         # Schedule daily update installation during maintenance window
         self.scheduler.every().day.at(self.config.update_window_start).do(
@@ -333,9 +313,7 @@ class AutoUpdateSystem:  # pylint: disable=too-many-instance-attributes
                 time.sleep(60)  # Check every minute
             except Exception:  # pylint: disable=broad-exception-caught
                 self.logerror(
-                    "Error in update scheduler: %s".replace("%s", "{e}").replace(
-                        "%d", "{e}"
-                    )
+                    "Error in update scheduler: %s".replace("%s", "{e}").replace("%d", "{e}")
                 )
                 time.sleep(60)
 
@@ -407,9 +385,7 @@ class AutoUpdateSystem:  # pylint: disable=too-many-instance-attributes
                 self.status = UpdateStatus.IDLE
 
             # Use lazy logging formatting
-            self.logger.info(
-                "Update check completed. Found %d updates", len(available_updates)
-            )
+            self.logger.info("Update check completed. Found %d updates", len(available_updates))
             return available_updates
 
         except Exception as e:  # pylint: disable=broad-exception-caught
@@ -458,9 +434,7 @@ class AutoUpdateSystem:  # pylint: disable=too-many-instance-attributes
 
         except Exception:  # pylint: disable=broad-exception-caught
             self.logerror(
-                "Error checking virus definitions: %s".replace("%s", "{e}").replace(
-                    "%d", "{e}"
-                )
+                "Error checking virus definitions: %s".replace("%s", "{e}").replace("%d", "{e}")
             )
             return None
 
@@ -490,9 +464,7 @@ class AutoUpdateSystem:  # pylint: disable=too-many-instance-attributes
                         update_type=UpdateType.SOFTWARE,
                         version=latest_version,
                         description=f"S&D version {latest_version}",
-                        size_bytes=response.get(
-                            "size", 50 * 1024 * 1024
-                        ),  # Estimate 50MB
+                        size_bytes=response.get("size", 50 * 1024 * 1024),  # Estimate 50MB
                         download_url=response.get("tarball_url", ""),
                         checksum="",
                         priority=UpdatePriority.NORMAL,
@@ -504,9 +476,7 @@ class AutoUpdateSystem:  # pylint: disable=too-many-instance-attributes
 
         except Exception:  # pylint: disable=broad-exception-caught
             self.logerror(
-                "Error checking software updates: %s".replace("%s", "{e}").replace(
-                    "%d", "{e}"
-                )
+                "Error checking software updates: %s".replace("%s", "{e}").replace("%d", "{e}")
             )
             return None
 
@@ -520,12 +490,8 @@ class AutoUpdateSystem:  # pylint: disable=too-many-instance-attributes
                 pass
 
             # Simplified implementation
-            last_intel_update = self.last_update_times.get(
-                UpdateType.THREAT_INTELLIGENCE
-            )
-            if not last_intel_update or datetime.now() - last_intel_update > timedelta(
-                days=1
-            ):
+            last_intel_update = self.last_update_times.get(UpdateType.THREAT_INTELLIGENCE)
+            if not last_intel_update or datetime.now() - last_intel_update > timedelta(days=1):
                 return UpdateInfo(
                     update_type=UpdateType.THREAT_INTELLIGENCE,
                     version=datetime.now().strftime("%Y%m%d"),
@@ -540,9 +506,7 @@ class AutoUpdateSystem:  # pylint: disable=too-many-instance-attributes
 
         except Exception:  # pylint: disable=broad-exception-caught
             self.logerror(
-                "Error checking threat intelligence: %s".replace("%s", "{e}").replace(
-                    "%d", "{e}"
-                )
+                "Error checking threat intelligence: %s".replace("%s", "{e}").replace("%d", "{e}")
             )
             return None
 
@@ -560,9 +524,7 @@ class AutoUpdateSystem:  # pylint: disable=too-many-instance-attributes
             self.logger.info("Installing %d pending updates", len(self.pending_updates))
 
             # Sort by priority
-            sorted_updates = sorted(
-                self.pending_updates, key=lambda u: u.priority.value
-            )
+            sorted_updates = sorted(self.pending_updates, key=lambda u: u.priority.value)
 
             for update_info in sorted_updates:
                 result = await self.install_update(update_info)
@@ -586,9 +548,7 @@ class AutoUpdateSystem:  # pylint: disable=too-many-instance-attributes
             return results
 
         except Exception as e:  # pylint: disable=broad-exception-caught
-            self.logerror(
-                "Error installing updates: %s".replace("%s", "{e}").replace("%d", "{e}")
-            )
+            self.logerror("Error installing updates: %s".replace("%s", "{e}").replace("%d", "{e}"))
             with self.status_lock:
                 self.status = UpdateStatus.FAILED
             if self.update_error_callback:
@@ -667,9 +627,9 @@ class AutoUpdateSystem:  # pylint: disable=too-many-instance-attributes
                     final_path = self.db_dir / db_filename
                     shutil.move(str(temp_path), str(final_path))
                     self.loginfo(
-                        "Updated database file: %s".replace(
-                            "%s", "{db_filename}"
-                        ).replace("%d", "{db_filename}")
+                        "Updated database file: %s".replace("%s", "{db_filename}").replace(
+                            "%d", "{db_filename}"
+                        )
                     )
                 else:
                     self.logerror(
@@ -710,9 +670,7 @@ class AutoUpdateSystem:  # pylint: disable=too-many-instance-attributes
             update_file = temp_dir / "update.tar.gz"
 
             download_start = time.time()
-            bytes_downloaded = await self._download_file(
-                update_info.download_url, update_file
-            )
+            bytes_downloaded = await self._download_file(update_info.download_url, update_file)
             download_time = time.time() - download_start
 
             # Verify checksum if provided
@@ -747,18 +705,14 @@ class AutoUpdateSystem:  # pylint: disable=too-many-instance-attributes
                 update_type=UpdateType.SOFTWARE, success=False, error_message=str(e)
             )
 
-    async def _install_threat_intelligence(
-        self, update_info: UpdateInfo
-    ) -> UpdateResult:
+    async def _install_threat_intelligence(self, update_info: UpdateInfo) -> UpdateResult:
         """Install threat intelligence updates."""
         try:
             # Download threat intelligence data
             intel_file = Path(tempfile.gettempdir()) / "threat_intel.json"
 
             download_start = time.time()
-            bytes_downloaded = await self._download_file(
-                update_info.download_url, intel_file
-            )
+            bytes_downloaded = await self._download_file(update_info.download_url, intel_file)
             download_time = time.time() - download_start
 
             # Process threat intelligence data
@@ -796,9 +750,7 @@ class AutoUpdateSystem:  # pylint: disable=too-many-instance-attributes
         """Download file with progress tracking."""
         try:
             if aiohttp is None:
-                raise RuntimeError(
-                    "aiohttp is required for downloads but is not installed"
-                )
+                raise RuntimeError("aiohttp is required for downloads but is not installed")
             async with aiohttp.ClientSession(
                 timeout=aiohttp.ClientTimeout(total=self.config.download_timeout)
             ) as session:
@@ -821,9 +773,7 @@ class AutoUpdateSystem:  # pylint: disable=too-many-instance-attributes
 
         except Exception:  # pylint: disable=broad-exception-caught
             self.logerror(
-                "Download failed for %s: %s".replace("%s", "{url, e}").replace(
-                    "%d", "{url, e}"
-                )
+                "Download failed for %s: %s".replace("%s", "{url, e}").replace("%d", "{url, e}")
             )
             raise
 
@@ -886,9 +836,7 @@ class AutoUpdateSystem:  # pylint: disable=too-many-instance-attributes
             return False
         except Exception:  # pylint: disable=broad-exception-caught
             self.logerror(
-                "Error during checksum verification: %s".replace("%s", "{e}").replace(
-                    "%d", "{e}"
-                )
+                "Error during checksum verification: %s".replace("%s", "{e}").replace("%d", "{e}")
             )
             return False
 
@@ -899,9 +847,7 @@ class AutoUpdateSystem:  # pylint: disable=too-many-instance-attributes
             sigtool_path = shutil.which("sigtool")
             if sigtool_path:
                 try:
-                    result = run_secure(
-                        [sigtool_path, "--info", str(db_path)], timeout=30
-                    )
+                    result = run_secure([sigtool_path, "--info", str(db_path)], timeout=30)
                     return result.returncode == 0
                 except Exception:
                     # If signature verification fails, fall back to size check
@@ -917,15 +863,11 @@ class AutoUpdateSystem:  # pylint: disable=too-many-instance-attributes
         """Reload ClamAV database after updates."""
         try:
             if hasattr(self.clamav, "reload_database"):
-                await asyncio.get_event_loop().run_in_executor(
-                    None, self.clamav.reload_database
-                )
+                await asyncio.get_event_loop().run_in_executor(None, self.clamav.reload_database)
             self.logger.info("ClamAV database reloaded")
         except Exception:  # pylint: disable=broad-exception-caught
             self.logerror(
-                "Failed to reload ClamAV database: %s".replace("%s", "{e}").replace(
-                    "%d", "{e}"
-                )
+                "Failed to reload ClamAV database: %s".replace("%s", "{e}").replace("%d", "{e}")
             )
 
     async def _get_latest_db_versions(self) -> dict[str, dict[str, Any]]:
@@ -944,9 +886,7 @@ class AutoUpdateSystem:  # pylint: disable=too-many-instance-attributes
                     }
             except Exception:  # pylint: disable=broad-exception-caught
                 self.logerror(
-                    "Error checking %s: %s".replace("%s", "{url, e}").replace(
-                        "%d", "{url, e}"
-                    )
+                    "Error checking %s: %s".replace("%s", "{url, e}").replace("%d", "{url, e}")
                 )
 
         return versions
@@ -985,16 +925,16 @@ class AutoUpdateSystem:  # pylint: disable=too-many-instance-attributes
             else:
                 # Other HTTP errors
                 self.logerror(
-                    "HTTP request failed %s %s: %s".replace(
-                        "%s", "{method, url, e}"
-                    ).replace("%d", "{method, url, e}")
+                    "HTTP request failed %s %s: %s".replace("%s", "{method, url, e}").replace(
+                        "%d", "{method, url, e}"
+                    )
                 )
             return None
         except requests.exceptions.RequestException:
             self.logerror(
-                "HTTP request failed %s %s: %s".replace(
-                    "%s", "{method, url, e}"
-                ).replace("%d", "{method, url, e}")
+                "HTTP request failed %s %s: %s".replace("%s", "{method, url, e}").replace(
+                    "%d", "{method, url, e}"
+                )
             )
             return None
 
@@ -1038,9 +978,7 @@ class AutoUpdateSystem:  # pylint: disable=too-many-instance-attributes
 
         except (OSError, json.JSONDecodeError, ValueError):
             self.logerror(
-                "Error processing threat intelligence: %s".replace("%s", "{e}").replace(
-                    "%d", "{e}"
-                )
+                "Error processing threat intelligence: %s".replace("%s", "{e}").replace("%d", "{e}")
             )
             return {}
 
@@ -1059,9 +997,7 @@ class AutoUpdateSystem:  # pylint: disable=too-many-instance-attributes
 
         except (OSError, TypeError):
             self.logerror(
-                "Error storing threat intelligence: %s".replace("%s", "{e}").replace(
-                    "%d", "{e}"
-                )
+                "Error storing threat intelligence: %s".replace("%s", "{e}").replace("%d", "{e}")
             )
 
     async def _update_monitoring_loop(self) -> None:
@@ -1092,9 +1028,7 @@ class AutoUpdateSystem:  # pylint: disable=too-many-instance-attributes
                 break
             except Exception:  # pylint: disable=broad-exception-caught
                 self.logerror(
-                    "Error in update monitoring loop: %s".replace("%s", "{e}").replace(
-                        "%d", "{e}"
-                    )
+                    "Error in update monitoring loop: %s".replace("%s", "{e}").replace("%d", "{e}")
                 )
                 await asyncio.sleep(10.0)
 
@@ -1118,9 +1052,7 @@ class AutoUpdateSystem:  # pylint: disable=too-many-instance-attributes
         return {
             "status": self.status.value,
             "is_running": self.is_running,
-            "last_check_time": (
-                self.last_check_time.isoformat() if self.last_check_time else None
-            ),
+            "last_check_time": (self.last_check_time.isoformat() if self.last_check_time else None),
             "available_updates_count": len(self.available_updates),
             "pending_updates_count": len(self.pending_updates),
             "active_downloads": len(self.active_downloads),
@@ -1158,21 +1090,15 @@ class AutoUpdateSystem:  # pylint: disable=too-many-instance-attributes
         return self.last_check_time
 
     # Callback setters
-    def set_update_available_callback(
-        self, callback: Callable[[UpdateInfo], None]
-    ) -> None:
+    def set_update_available_callback(self, callback: Callable[[UpdateInfo], None]) -> None:
         """Set callback for when updates are available."""
         self.update_available_callback = callback
 
-    def set_update_completed_callback(
-        self, callback: Callable[[UpdateResult], None]
-    ) -> None:
+    def set_update_completed_callback(self, callback: Callable[[UpdateResult], None]) -> None:
         """Set callback for when updates complete."""
         self.update_completed_callback = callback
 
-    def set_update_progress_callback(
-        self, callback: Callable[[UpdateType, int], None]
-    ) -> None:
+    def set_update_progress_callback(self, callback: Callable[[UpdateType, int], None]) -> None:
         """Set callback for update progress."""
         self.update_progress_callback = callback
 
@@ -1207,9 +1133,7 @@ class AutoUpdateSystem:  # pylint: disable=too-many-instance-attributes
                 asyncio.set_event_loop(loop)
 
             # Run the async check_for_updates method
-            updates = loop.run_until_complete(
-                self.check_for_updates_async(force_check=force_check)
-            )
+            updates = loop.run_until_complete(self.check_for_updates_async(force_check=force_check))
 
             # Convert to GUI-compatible format
             if UpdateType.SOFTWARE in updates:
@@ -1223,8 +1147,7 @@ class AutoUpdateSystem:  # pylint: disable=too-many-instance-attributes
                     "release_name": f"Version {software_update.version}",
                     "release_notes": (
                         "\n".join(software_update.changelog)
-                        if hasattr(software_update, "changelog")
-                        and software_update.changelog
+                        if hasattr(software_update, "changelog") and software_update.changelog
                         else software_update.description
                     ),
                     "download_url": software_update.download_url,
@@ -1240,9 +1163,7 @@ class AutoUpdateSystem:  # pylint: disable=too-many-instance-attributes
 
         except Exception as e:
             self.logerror(
-                "Error in synchronous update check: %s".replace("%s", "{e}").replace(
-                    "%d", "{e}"
-                )
+                "Error in synchronous update check: %s".replace("%s", "{e}").replace("%d", "{e}")
             )
             raise e
 
@@ -1259,6 +1180,4 @@ try:
 except ImportError:
     # Fallback without aiohttp
     aiohttp = None
-    logging.getLogger(__name__).warning(
-        "aiohttp not available, some features may not work"
-    )
+    logging.getLogger(__name__).warning("aiohttp not available, some features may not work")

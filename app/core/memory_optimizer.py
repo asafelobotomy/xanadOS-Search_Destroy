@@ -81,9 +81,7 @@ class StreamProcessor:
         self.chunk_size = chunk_size
         self.logger = logging.getLogger(__name__)
 
-    def process_file_stream(
-        self, file_path: str, processor_func: Callable[[bytes], None]
-    ):
+    def process_file_stream(self, file_path: str, processor_func: Callable[[bytes], None]):
         """Process file in chunks without loading entire file.
 
         Args:
@@ -136,9 +134,7 @@ class MemoryOptimizer:
                 used_percent = 50.0
             try:
                 process_memory = psutil.Process().memory_info()
-                if hasattr(process_memory, "rss") and isinstance(
-                    process_memory.rss, int
-                ):
+                if hasattr(process_memory, "rss") and isinstance(process_memory.rss, int):
                     process_mb = process_memory.rss / 1024 / 1024
                 else:
                     process_mb = 100.0
@@ -149,14 +145,10 @@ class MemoryOptimizer:
                 cached = getattr(system_memory, "cached", 0)
                 if isinstance(cached, int):
                     cache_mb = cached / 1024 / 1024
-            return MemoryStats(
-                total_mb, available_mb, used_mb, used_percent, process_mb, cache_mb
-            )
+            return MemoryStats(total_mb, available_mb, used_mb, used_percent, process_mb, cache_mb)
         except Exception:  # pragma: no cover
             self.logerror(
-                "Failed to get memory stats: %s".replace("%s", "{e}").replace(
-                    "%d", "{e}"
-                )
+                "Failed to get memory stats: %s".replace("%s", "{e}").replace("%d", "{e}")
             )
             return MemoryStats(0, 0, 0, 0, 0, 0)
 
@@ -247,14 +239,10 @@ class MemoryOptimizer:
         if self.monitor_thread:
             self.monitor_thread.join(timeout=5)
 
-    def set_memory_warning_callback(
-        self, callback: Callable[[MemoryStats], None]
-    ) -> None:
+    def set_memory_warning_callback(self, callback: Callable[[MemoryStats], None]) -> None:
         self.memory_warning_callback = callback
 
-    def set_memory_critical_callback(
-        self, callback: Callable[[MemoryStats], None]
-    ) -> None:
+    def set_memory_critical_callback(self, callback: Callable[[MemoryStats], None]) -> None:
         self.memory_critical_callback = callback
 
 
@@ -321,14 +309,10 @@ class CacheManager:
                 # Update memory estimate
 
                 item_size_mb = sys.getsizeof(value) / 1024 / 1024
-                self.estimated_memory_mb = max(
-                    0, self.estimated_memory_mb - item_size_mb
-                )
+                self.estimated_memory_mb = max(0, self.estimated_memory_mb - item_size_mb)
 
         self.logdebug(
-            "Evicted %d cache entries".replace("%s", "{evict_count}").replace(
-                "%d", "{evict_count}"
-            )
+            "Evicted %d cache entries".replace("%s", "{evict_count}").replace("%d", "{evict_count}")
         )
 
     def clear(self):

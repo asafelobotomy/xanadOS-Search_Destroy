@@ -21,9 +21,7 @@ from typing import Any
 import psutil
 
 # Setup logging
-logging.basicConfig(
-    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
-)
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
 
 # Add app directory to path
@@ -230,9 +228,9 @@ class TestSuiteRunner:
 
             if stats.get("tests_run", 0) > 0:
                 print(
-                    f"Tests: {stats['tests_run']} run, {
-                        stats.get('tests_passed', 0)
-                    } passed, {stats.get('tests_failed', 0)} failed"
+                    f"Tests: {stats['tests_run']} run, {stats.get('tests_passed', 0)} passed, {
+                        stats.get('tests_failed', 0)
+                    } failed"
                 )
 
             if not success and result.stderr:
@@ -279,9 +277,7 @@ class TestSuiteRunner:
             # Look for pytest summary line
             lines = output.split("\n")
             for line in lines:
-                if "passed" in line and (
-                    "failed" in line or "error" in line or "skipped" in line
-                ):
+                if "passed" in line and ("failed" in line or "error" in line or "skipped" in line):
                     # Parse line like: "5 passed, 2 failed, 1 skipped in 10.23s"
                     parts = line.split()
                     for i, part in enumerate(parts):
@@ -318,9 +314,7 @@ class TestSuiteRunner:
         total_suites = len(self.results)
         successful_suites = sum(1 for r in self.results.values() if r["success"])
         critical_failures = sum(
-            1
-            for r in self.results.values()
-            if not r["success"] and r.get("critical", False)
+            1 for r in self.results.values() if not r["success"] and r.get("critical", False)
         )
 
         total_tests = sum(r.get("tests_run", 0) for r in self.results.values())
@@ -348,9 +342,7 @@ class TestSuiteRunner:
                 "tests_passed": total_passed,
                 "tests_failed": total_failed,
                 "tests_skipped": total_skipped,
-                "success_rate": (
-                    (total_passed / total_tests * 100) if total_tests > 0 else 0
-                ),
+                "success_rate": ((total_passed / total_tests * 100) if total_tests > 0 else 0),
             },
             "detailed_results": self.results,
             "recommendations": self._generate_recommendations(),
@@ -368,24 +360,16 @@ class TestSuiteRunner:
         ]
 
         if critical_failures:
-            recommendations.append(
-                f"❌ Critical test failures in: {', '.join(critical_failures)}"
-            )
-            recommendations.append(
-                "🔧 Fix critical issues before deploying to production"
-            )
+            recommendations.append(f"❌ Critical test failures in: {', '.join(critical_failures)}")
+            recommendations.append("🔧 Fix critical issues before deploying to production")
 
         # Check for performance issues
         slow_suites = [
-            name
-            for name, result in self.results.items()
-            if result.get("duration", 0) > 120
+            name for name, result in self.results.items() if result.get("duration", 0) > 120
         ]
 
         if slow_suites:
-            recommendations.append(
-                f"⚠️ Slow test suites detected: {', '.join(slow_suites)}"
-            )
+            recommendations.append(f"⚠️ Slow test suites detected: {', '.join(slow_suites)}")
             recommendations.append("🚀 Consider optimizing test performance")
 
         # Check for skipped tests
@@ -452,9 +436,7 @@ class TestSuiteRunner:
         if summary["total_tests"] > 0:
             print("📊 Test Statistics:")
             print(f"  Total Tests: {summary['total_tests']}")
-            print(
-                f"  Passed: {summary['tests_passed']} ({summary['success_rate']:.1f}%)"
-            )
+            print(f"  Passed: {summary['tests_passed']} ({summary['success_rate']:.1f}%)")
             print(f"  Failed: {summary['tests_failed']}")
             print(f"  Skipped: {summary['tests_skipped']}")
             print()

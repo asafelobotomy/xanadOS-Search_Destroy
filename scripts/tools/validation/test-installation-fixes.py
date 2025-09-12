@@ -29,9 +29,7 @@ def test_ufw_installation():
 
     try:
         print(f"   Running: {' '.join(cmd)}")
-        result = elevated_run(
-            cmd, timeout=300, capture_output=True, text=True, gui=True
-        )
+        result = elevated_run(cmd, timeout=300, capture_output=True, text=True, gui=True)
 
         if result.returncode == 0:
             print("✅ UFW installation successful")

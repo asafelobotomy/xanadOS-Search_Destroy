@@ -81,9 +81,7 @@ class FirewallStatusDemo(QMainWindow):
 
         # Status display
         self.status_label = QLabel("Firewall Status: Checking...")
-        self.status_label.setStyleSheet(
-            "font-size: 16px; font-weight: bold; padding: 10px;"
-        )
+        self.status_label.setStyleSheet("font-size: 16px; font-weight: bold; padding: 10px;")
         layout.addWidget(self.status_label)
 
         # Performance stats
