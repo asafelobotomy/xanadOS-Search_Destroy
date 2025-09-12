@@ -347,6 +347,75 @@ class InstallationWorker(QThread):  # pylint: disable=too-many-instance-attribut
         self.should_stop = True
 
 
+class ClamAVDaemonWorker(QThread):
+    """Worker thread for ClamAV daemon configuration."""
+
+    progress_updated = pyqtSignal(str, int)
+    configuration_finished = pyqtSignal(str, bool)
+    output_updated = pyqtSignal(str)
+
+    def __init__(self):
+        super().__init__()
+        self.should_stop = False
+
+    def run(self):
+        """Configure ClamAV daemon."""
+        try:
+            self.progress_updated.emit("Initializing ClamAV daemon configuration...", 10)
+            self.output_updated.emit("🔧 Importing ClamAV wrapper...")
+
+            # Import ClamAV wrapper
+            from app.core.clamav_wrapper import ClamAVWrapper
+
+            self.progress_updated.emit("Creating ClamAV wrapper instance...", 20)
+            wrapper = ClamAVWrapper()
+
+            # Check if daemon is already running
+            self.progress_updated.emit("Checking daemon status...", 30)
+            if wrapper._is_clamd_running():
+                self.output_updated.emit("✅ ClamAV daemon is already running!")
+                self.progress_updated.emit("ClamAV daemon ready!", 100)
+                self.configuration_finished.emit("clamav", True)
+                return
+
+            # Update virus definitions first (required for daemon to start)
+            self.progress_updated.emit("Downloading virus definitions...", 40)
+            self.output_updated.emit("📡 Downloading latest virus definitions (required for daemon)...")
+
+            definitions_updated = wrapper.update_virus_definitions()
+            if definitions_updated:
+                self.output_updated.emit("✅ Virus definitions updated successfully!")
+            else:
+                self.output_updated.emit("⚠️ Virus definitions update failed, but continuing...")
+
+            # Start the daemon
+            self.progress_updated.emit("Starting ClamAV daemon...", 70)
+            self.output_updated.emit("🚀 Starting ClamAV daemon for faster scanning...")
+
+            success = wrapper.start_daemon()
+
+            if success:
+                self.progress_updated.emit("Verifying daemon startup...", 90)
+                self.output_updated.emit("✅ ClamAV daemon started successfully!")
+                self.progress_updated.emit("ClamAV daemon ready!", 100)
+            else:
+                self.output_updated.emit("⚠️ Failed to start ClamAV daemon. Scanning will use slower direct mode.")
+                if not definitions_updated:
+                    self.output_updated.emit("ℹ️ Daemon startup failed - virus definitions may be missing.")
+                self.progress_updated.emit("Configuration completed with warnings", 100)
+
+            self.configuration_finished.emit("clamav", success)
+
+        except Exception as e:
+            self.output_updated.emit(f"❌ Error configuring ClamAV daemon: {e}")
+            self.progress_updated.emit("Configuration failed", 100)
+            self.configuration_finished.emit("clamav", False)
+
+    def stop(self):
+        """Stop the configuration process"""
+        self.should_stop = True
+
+
 class PackageCard(QFrame):
     """Widget representing a single package with install option"""
 
@@ -355,6 +424,7 @@ class PackageCard(QFrame):
         self.package_info = package_info
         self.is_installed = is_installed
         self.install_requested = False
+        self.daemon_config_requested = False  # For ClamAV daemon configuration
 
         self.setFrameStyle(QFrame.Shape.Box)
         self.setObjectName("package_card")  # For CSS styling
@@ -376,11 +446,27 @@ class PackageCard(QFrame):
         name_label.setFont(name_font)
         header_layout.addWidget(name_label)
 
-        # Status indicator
+        # Status indicator and ClamAV daemon check
+        self.daemon_needs_config = False
+        if self.is_installed and self.package_info.name == "clamav":
+            # Check if ClamAV daemon is running
+            try:
+                status = check_existing_installations()
+                clamav_status = status.get("clamav", {})
+
+                if clamav_status.get("installed", False) and not clamav_status.get("service_running", False):
+                    self.daemon_needs_config = True
+            except Exception:
+                pass
+
         status_label = QLabel()
         if self.is_installed:
-            status_label.setText("✅ Installed")
-            status_label.setStyleSheet("color: #27ae60; font-weight: bold;")
+            if self.daemon_needs_config:
+                status_label.setText("⚠️ Daemon Not Running")
+                status_label.setStyleSheet("color: #f39c12; font-weight: bold;")
+            else:
+                status_label.setText("✅ Installed")
+                status_label.setStyleSheet("color: #27ae60; font-weight: bold;")
         else:
             status_label.setText("❌ Not Available")
             status_label.setStyleSheet("color: #e74c3c; font-weight: bold;")
@@ -412,11 +498,33 @@ class PackageCard(QFrame):
             self.install_checkbox.stateChanged.connect(self.on_install_toggled)
             layout.addWidget(self.install_checkbox)
 
+        # ClamAV daemon configuration checkbox (if installed but daemon not running)
+        elif self.daemon_needs_config:
+            self.daemon_config_checkbox = QCheckBox("Start ClamAV Daemon for Better Performance")
+            self.daemon_config_checkbox.setChecked(True)  # Default to checked for better UX
+            self.daemon_config_checkbox.setStyleSheet("color: #f39c12; font-weight: bold;")
+            self.daemon_config_checkbox.stateChanged.connect(self.on_daemon_config_toggled)
+            layout.addWidget(self.daemon_config_checkbox)
+
+            # Add explanation label for daemon benefits
+            daemon_info_label = QLabel(
+                "🚀 Starting the ClamAV daemon provides 3-10x faster scanning performance "
+                "by keeping virus definitions in memory."
+            )
+            daemon_info_label.setObjectName("daemon_info_label")
+            daemon_info_label.setWordWrap(True)
+            daemon_info_label.setStyleSheet("color: #666; font-size: 11px; margin: 5px 0px;")
+            layout.addWidget(daemon_info_label)
+
         self.setLayout(layout)
 
     def on_install_toggled(self, state):
         """Handle install checkbox toggle"""
         self.install_requested = state == Qt.CheckState.Checked.value
+
+    def on_daemon_config_toggled(self, state):
+        """Handle daemon configuration checkbox toggle"""
+        self.daemon_config_requested = state == Qt.CheckState.Checked.value
 
     def should_install(self) -> bool:
         """Check if this package should be installed"""
@@ -424,6 +532,14 @@ class PackageCard(QFrame):
             not self.is_installed
             and hasattr(self, "install_checkbox")
             and self.install_checkbox.isChecked()
+        )
+
+    def should_configure_daemon(self) -> bool:
+        """Check if ClamAV daemon should be configured"""
+        return (
+            self.daemon_needs_config
+            and hasattr(self, "daemon_config_checkbox")
+            and self.daemon_config_checkbox.isChecked()
         )
 
 
@@ -1261,33 +1377,56 @@ class SetupWizard(ThemedDialog):  # pylint: disable=too-many-instance-attributes
             name for name, card in self.package_cards.items() if card.should_install()
         ]
 
-        if not packages_to_install:
+        # Get list of daemons to configure
+        daemons_to_configure = [
+            name for name, card in self.package_cards.items() if card.should_configure_daemon()
+        ]
+
+        if not packages_to_install and not daemons_to_configure:
             QMessageBox.information(
                 self,
-                "No Packages Selected",
-                "Please select at least one package to install.",
+                "No Actions Selected",
+                "Please select at least one package to install or service to configure.",
             )
             return
 
-        # Confirm installation
-        package_names = [self.packages[name].display_name for name in packages_to_install]
+        # Build confirmation message
+        confirmation_text = ""
+        if packages_to_install:
+            package_names = [self.packages[name].display_name for name in packages_to_install]
+            confirmation_text += "Install the following packages?\n\n"
+            confirmation_text += "\n".join(f"• {name}" for name in package_names)
+
+        if daemons_to_configure:
+            if packages_to_install:
+                confirmation_text += "\n\n"
+            confirmation_text += "Configure the following services?\n\n"
+            for name in daemons_to_configure:
+                if name == "clamav":
+                    confirmation_text += "• Start ClamAV Daemon for faster scanning\n"
+
+        if packages_to_install:
+            confirmation_text += "\n\nThis will require administrator privileges."
+
+        # Confirm installation/configuration
         reply = QMessageBox.question(
             self,
-            "Confirm Installation",
-            "Install the following packages?\n\n"
-            + "\n".join(f"• {name}" for name in package_names)
-            + "\n\nThis will require administrator privileges.",
+            "Confirm Actions",
+            confirmation_text,
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
             QMessageBox.StandardButton.Yes,
         )
 
         if reply == QMessageBox.StandardButton.Yes:
-            self.show_installation_dialog(packages_to_install)
+            self.show_installation_dialog(packages_to_install, daemons_to_configure)
 
-    def show_installation_dialog(self, packages_to_install: list[str]):
+    def show_installation_dialog(self, packages_to_install: list[str], daemons_to_configure: list[str] = None):
         """Show installation progress dialog."""
+        if daemons_to_configure is None:
+            daemons_to_configure = []
+
         self.installation_dialog = InstallationDialog(
-            packages_to_install, self.packages, self.distro, self
+            packages_to_install, self.packages, self.distro, self, daemons_to_configure
         )
         self.installation_dialog.installation_complete.connect(self.on_installation_complete)
         self.installation_dialog.exec()
@@ -1380,14 +1519,17 @@ class InstallationDialog(QDialog):  # pylint: disable=too-many-instance-attribut
         package_info: dict[str, PackageInfo],
         distro: str,
         parent=None,
+        daemons_to_configure: list[str] = None,
     ):
         """Initialize dialog with package queue and theming from parent."""
         super().__init__(parent)
         self.packages_to_install = packages_to_install
         self.package_info = package_info
         self.distro = distro
+        self.daemons_to_configure = daemons_to_configure or []
         self.results = {}
         self.current_package_index = 0
+        self.current_daemon_index = 0
 
         self.setWindowTitle("Installing Packages")
         self.setModal(True)
@@ -1490,9 +1632,14 @@ class InstallationDialog(QDialog):  # pylint: disable=too-many-instance-attribut
         self.setLayout(layout)
 
     def start_next_installation(self):
-        """Start installing the next package."""
+        """Start installing the next package or configuring daemons."""
         if self.current_package_index >= len(self.packages_to_install):
-            # All installations complete
+            # Package installations complete, now handle daemon configurations
+            if self.current_daemon_index < len(self.daemons_to_configure):
+                self.start_next_daemon_configuration()
+                return
+
+            # All installations and configurations complete
             self.installation_complete.emit(self.results)
             self.accept()
             return
@@ -1509,6 +1656,28 @@ class InstallationDialog(QDialog):  # pylint: disable=too-many-instance-attribut
         self.worker.installation_finished.connect(self.on_package_finished)
         self.worker.output_updated.connect(self.update_output)
         self.worker.start()
+
+    def start_next_daemon_configuration(self):
+        """Start configuring the next daemon."""
+        if self.current_daemon_index >= len(self.daemons_to_configure):
+            # All daemon configurations complete
+            self.installation_complete.emit(self.results)
+            self.accept()
+            return
+
+        daemon_name = self.daemons_to_configure[self.current_daemon_index]
+
+        if daemon_name == "clamav":
+            self.current_package_label.setText("Starting ClamAV Daemon...")
+            self.progress_bar.setValue(20)
+            self.update_output("🔧 Configuring ClamAV daemon for better performance...")
+
+            # Start daemon configuration in a worker thread
+            self.daemon_worker = ClamAVDaemonWorker()
+            self.daemon_worker.progress_updated.connect(self.update_progress)
+            self.daemon_worker.configuration_finished.connect(self.on_daemon_finished)
+            self.daemon_worker.output_updated.connect(self.update_output)
+            self.daemon_worker.start()
 
     def update_progress(self, message: str, progress: int):
         """Update progress bar and message."""
@@ -1534,6 +1703,22 @@ class InstallationDialog(QDialog):  # pylint: disable=too-many-instance-attribut
         self.current_package_index += 1
 
         # Wait a moment then start next installation
+        QTimer.singleShot(1000, self.start_next_installation)
+
+    def on_daemon_finished(self, daemon_name: str, success: bool):
+        """Handle daemon configuration completion."""
+        self.results[f"{daemon_name}_daemon"] = success
+
+        if success:
+            if daemon_name == "clamav":
+                self.update_output("✅ ClamAV daemon started successfully! Scanning will be 3-10x faster.")
+        else:
+            if daemon_name == "clamav":
+                self.update_output("⚠️ ClamAV daemon startup failed. Will use regular scanning.")
+
+        self.current_daemon_index += 1
+
+        # Wait a moment then continue with next daemon or finish
         QTimer.singleShot(1000, self.start_next_installation)
 
     def cancel_installation(self):
@@ -1647,8 +1832,12 @@ def show_setup_wizard_express(parent=None):
             if package_info.is_critical or package_name in recommended_packages:
                 if package_name in wizard.package_cards:
                     card = wizard.package_cards[package_name]
+                    # Select for installation if not installed
                     if hasattr(card, "install_checkbox"):
                         card.install_checkbox.setChecked(True)
+                    # Select for daemon configuration if installed but daemon not running
+                    elif hasattr(card, "daemon_config_checkbox"):
+                        card.daemon_config_checkbox.setChecked(True)
 
         # Auto-start installation after a brief delay to show selections
         QTimer.singleShot(500, wizard.start_installation)

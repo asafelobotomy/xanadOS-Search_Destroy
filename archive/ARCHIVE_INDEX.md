@@ -1,29 +1,90 @@
-# Archive index
+# Archive Index
 
-This index tracks deprecated, legacy, and superseded content per the archive policy.
+Comprehensive inventory of all archived content in the repository following archive policy requirements.
 
-- Category: deprecated — historical docs/releases referencing org.xanados.* kept for context
-- Category: legacy-versions — older release notes kept under docs/releases
+## 📋 Archive Contents
 
-For policy and structure, see `archive/README.md`.
+### Recently Added (2025-09-12)
 
-## Archive Index 2
+#### Deprecated Content
+- **Docker and Container Tools** (`deprecated/2025-09-12/`)
+  - **Archived Date**: 2025-09-12
+  - **Files**: `Dockerfile`, `docker-compose.yml`, `containers/docker-manager.sh`
+  - **Reason**: Docker/Podman no longer used in development workflow
+  - **Replacement**: Native tooling with uv (Python) and pnpm (Node.js)
+  - **Retention**: 1 year
+  - **Original Location**: Root directory and `scripts/tools/containers/`
+  - **Related Changes**: Removed container scanning from security-scan.sh, updated cspell.json
 
-## Overview
+- **VS Code Tool Configurations** (`deprecated/2025-09-12/`)
+  - **Archived Date**: 2025-09-12
+  - **Files**: `.prettierrc.json`, `.prettierignore`
+  - **Reason**: Prettier VS Code extension removed from development environment
+  - **Replacement**: Code formatting handled by Ruff (Python) and markdownlint (Markdown)
+  - **Retention**: 1 year
+  - **Original Location**: Root directory
+  - **Related Changes**: Removed prettier from package.json, updated .vscode/extensions.json
 
-This document provides a comprehensive index of all archived content in the repository,
-organized by category and chronology for easy discovery and reference.
+- **Repository Cleanup - Root Policy Violations** (`deprecated/2025-09-12/`)
+  - **Archived Date**: 2025-09-12
+  - **Files**: `coverage.xml`, `markdown-fixes.log`, `setup.log`, `.coverage`
+  - **Reason**: Files violated root directory organization policy
+  - **Replacement**: Proper locations (logs/, htmlcov/, tests/)
+  - **Retention**: 1 year
+  - **Original Location**: Root directory
+
+- **Repository Cleanup - Redundant Configurations** (`deprecated/2025-09-12/`)
+  - **Archived Date**: 2025-09-12
+  - **Files**: `update_config.json`, `performance_config_template.json`, `rkhunter_enhanced.conf`
+  - **Reason**: Superseded by enhanced/optimized versions
+  - **Replacement**: `update_config_enhanced.json`, `performance_config_2025.json`, `rkhunter-optimized.conf`
+  - **Retention**: 1 year
+  - **Original Location**: `config/` directory
+
+- **Repository Cleanup - Deprecated Test Configs** (`deprecated/2025-09-12/`)
+  - **Archived Date**: 2025-09-12
+  - **Files**: `pytest.ini`, `pytest_modern.ini`
+  - **Reason**: Test configuration consolidated into pyproject.toml
+  - **Replacement**: `pyproject.toml` [tool.pytest.ini_options]
+  - **Retention**: 1 year
+  - **Original Location**: `config/` directory
+
+- **Makefile.new** (`deprecated/2025-09-12/`)
+  - **Archived Date**: 2025-09-12
+  - **Reason**: Duplicate of main Makefile, incomplete features
+  - **Replacement**: Use main `Makefile` in root directory
+  - **Retention**: 1 year
+  - **Original Location**: `/Makefile.new`
+
+### Existing Archive Categories
+
+#### Deprecated Content (`deprecated/`)
+- Historical documentation and configuration files
+- References to org.xanados.* kept for context
+
+#### Legacy Versions (`legacy-versions/`)
+- **Legacy Makefile** (`legacy-makefile-20250905/`)
+- Older release notes and version-specific content
+
+#### Superseded Content (`superseded/`)
+- **2025-09-02**: Contains superseded Makefile.old and configurations
+- Various replaced scripts and configuration files
+
+#### Backups (`backups/`)
+- Development environment backups
+- Configuration backups from setup processes
+- Repository operation backup files
 
 ## 📊 Archive Statistics
 
-- **Total Archived Items**: 24
-- **Deprecated Items**: 3
+- **Total Archived Items**: 31
+- **Deprecated Items**: 10
 - **Legacy Versions**: 0
 - **Superseded Items**: 12
 - **Performance/Monitoring Data**: 6
 - **Temporary Testing Files**: 2
 - **Development Files**: 1
-- **Last Updated**: 2025-08-28
+- **Last Updated**: 2025-09-12
 
 ## 🗂️ Archive Categories
 
@@ -208,9 +269,9 @@ edits should be avoided to maintain data integrity.**
 
 ## Pre-Modernization Archive (2025-09-05)
 
-**Location**: `archive/pre-modernization-20250905/`  
-**Reason**: Files replaced by modern development environment setup  
-**Status**: Archived after successful modernization validation  
+**Location**: `archive/pre-modernization-20250905/`
+**Reason**: Files replaced by modern development environment setup
+**Status**: Archived after successful modernization validation
 
 ### Archived Components
 - Legacy setup scripts superseded by modern-dev-setup.sh
@@ -227,9 +288,9 @@ edits should be avoided to maintain data integrity.**
 
 ## Makefile Consolidation (2025-09-05)
 
-**Location**: `archive/legacy-makefile-20250905/`  
-**Reason**: Consolidated legacy and modern Makefiles for solo development  
-**Status**: Legacy Makefile replaced with enhanced modern version  
+**Location**: `archive/legacy-makefile-20250905/`
+**Reason**: Consolidated legacy and modern Makefiles for solo development
+**Status**: Legacy Makefile replaced with enhanced modern version
 
 ### Changes
 - Replaced legacy Python-focused Makefile with modern multi-language version
@@ -253,7 +314,7 @@ edits should be avoided to maintain data integrity.**
 - `org.xanados.searchanddestroy.policy` — Archived 2025-09-05 (deprecated PolicyKit superseded by io.github.asafelobotomy.* policies)
 - `org.xanados.searchanddestroy.rkhunter.policy` — Archived 2025-09-05 (deprecated PolicyKit superseded by io.github.asafelobotomy.* policies)
 
-### Test Files  
+### Test Files
 - `test_gui_fix.py` — Archived 2025-09-05 (root directory organization compliance)
 
 ### Legacy Tests

@@ -9,8 +9,8 @@
     "validate:chatmodes": "bash scripts/validation/validate-chatmodes.sh",
     "validate": "node .github/validation/templates/template-validation-system.js && npm run validate:chatmodes",
     "test": "npm run validate",
-    "lint": "npx markdownlint -c .markdownlint.json **/*.md --ignore node_modules --ignore .markdown-backups --ignore archive",
-    "lint:fix": "npx markdownlint -c .markdownlint.json **/*.md --ignore node_modules --ignore .markdown-backups --ignore archive --fix",
+    "lint": "npx markdownlint -c .markdownlint.json **/*.md --ignore node_modules --ignore .markdown-backups --ignore archive --ignore logs",
+    "lint:fix": "npx markdownlint -c .markdownlint.json **/*.md --ignore node_modules --ignore .markdown-backups --ignore archive --ignore logs --fix",
     "spell:check": "npx cspell --config config/cspell.json \"**/*.md\" --no-progress --ignore-path .cspellignore",
     "spell:check:main": "npx cspell --no-cache --config ./config/cspell.json README.md CONTRIBUTING.md CHANGELOG.md",
     "version:get": "python scripts/tools/version/version_manager.py --get",
@@ -47,8 +47,7 @@
     "url": "https://github.com/YOUR_ORG/YOUR_REPO.git"
   },
   "devDependencies": {
-    "markdownlint-cli": "^0.45.0",
-    "prettier": "^3.3.3"
+    "markdownlint-cli": "^0.45.0"
   },
   "engines": {
     "node": ">=18.0.0"

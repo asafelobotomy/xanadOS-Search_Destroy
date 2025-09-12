@@ -33,6 +33,8 @@ env/
 *.swo
 # Application specific
 *.log
+logs/
+archive/
 temp/
 tmp/
 .DS_Store

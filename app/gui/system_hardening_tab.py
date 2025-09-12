@@ -941,8 +941,6 @@ Choose your lockdown level:
 
 Would you like to automatically configure GRUB to enable kernel lockdown?"""
 
-            from ..utils.theme import create_themed_message_box
-
             choice_box = create_themed_message_box(
                 self,
                 "question",
@@ -1062,8 +1060,6 @@ Lockdown mode '{lockdown_mode}' has been added to your GRUB configuration.
 ⚠️ REBOOT REQUIRED: You must reboot for the changes to take effect.
 
 The system will boot with enhanced kernel security protection."""
-
-                from ..utils.theme import create_themed_message_box
 
                 success_box = create_themed_message_box(
                     self, "information", "Configuration Complete", success_msg
@@ -1211,8 +1207,6 @@ AppArmor installation varies by distribution. Please install manually:
 
 After installation, enable AppArmor and reboot, then run this assessment again."""
 
-                from ..utils.theme import create_themed_message_box
-
                 msg_box = create_themed_message_box(
                     self, "information", "Manual Installation Required", guidance_msg
                 )
@@ -1259,9 +1253,7 @@ You may need to:
 
 AppArmor service has been enabled and will start after reboot if kernel support is available."""
 
-                from ..utils.theme import create_themed_message_box
-
-                warn_box = create_themed_message_box(
+                warn_box = self.theme_manager.create_themed_message_box(
                     self, "warning", "Kernel Support Check", kernel_msg
                 )
                 warn_box.exec()
@@ -1275,8 +1267,6 @@ AppArmor has been successfully installed and configured:
 • Ready to enforce application security policies
 
 Some applications may require reboot to fully activate AppArmor protection."""
-
-            from ..utils.theme import create_themed_message_box
 
             success_box = create_themed_message_box(
                 self, "information", "AppArmor Configured", success_msg

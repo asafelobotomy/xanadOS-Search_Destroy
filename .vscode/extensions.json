@@ -9,7 +9,6 @@
     "yzhang.markdown-all-in-one",
     "davidanson.vscode-markdownlint",
     "redhat.vscode-yaml",
-    "esbenp.prettier-vscode",
     "eamodio.gitlens",
     "EditorConfig.EditorConfig",
     "timonwong.shellcheck",
@@ -18,9 +17,17 @@
     "bierner.markdown-mermaid"
   ],
   "unwantedRecommendations": [
+    "esbenp.prettier-vscode",
     "rangav.vscode-thunder-client",
     "ms-vscode.makefile-tools",
     "ms-vscode.extension-test-runner",
-    "ms-vscode.test-adapter-converter"
+    "ms-vscode.test-adapter-converter",
+    "bradlc.vscode-tailwindcss",
+    "christian-kohler.npm-intellisense",
+    "dbaeumer.vscode-eslint",
+    "mechatroner.rainbow-csv",
+    "arcuo.gh-cli-actions",
+    "nickcernis.github-cli-ui",
+    "ms-python.flake8"
   ]
 }

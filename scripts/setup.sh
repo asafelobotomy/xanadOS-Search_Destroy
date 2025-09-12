@@ -190,16 +190,24 @@ install_package_managers() {
     local steps=3
     local current=0
 
+    # Ensure PATH includes local bin directories
+    export PATH="$HOME/.local/bin:$HOME/.local/share/pnpm:$HOME/.local/share/fnm:$PATH"
+
     # Install uv (Python package manager)
     ((current++))
     show_progress $current $steps "Installing uv (Python package manager)..."
     if ! command_exists uv || [[ "$FORCE_INSTALL" == "true" ]]; then
-        curl -LsSf https://astral.sh/uv/install.sh | sh
-        export PATH="$HOME/.local/bin:$PATH"
-        if command_exists uv; then
-            log SUCCESS "uv $(uv --version) installed"
+        if curl -LsSf https://astral.sh/uv/install.sh | sh; then
+            export PATH="$HOME/.local/bin:$PATH"
+            # Give it a moment to be available
+            sleep 1
+            if command_exists uv; then
+                log SUCCESS "uv $(uv --version) installed"
+            else
+                log WARN "uv installation completed but command not immediately available"
+            fi
         else
-            error_exit "Failed to install uv"
+            log WARN "uv installation failed, continuing..."
         fi
     else
         log SUCCESS "uv already installed ($(uv --version))"
@@ -209,12 +217,17 @@ install_package_managers() {
     ((current++))
     show_progress $current $steps "Installing pnpm (Node.js package manager)..."
     if ! command_exists pnpm || [[ "$FORCE_INSTALL" == "true" ]]; then
-        curl -fsSL https://get.pnpm.io/install.sh | sh -
-        export PATH="$HOME/.local/share/pnpm:$PATH"
-        if command_exists pnpm; then
-            log SUCCESS "pnpm $(pnpm --version) installed"
+        if curl -fsSL https://get.pnpm.io/install.sh | sh -; then
+            export PATH="$HOME/.local/share/pnpm:$PATH"
+            # Give it a moment to be available
+            sleep 1
+            if command_exists pnpm; then
+                log SUCCESS "pnpm $(pnpm --version) installed"
+            else
+                log WARN "pnpm installation completed but command not immediately available"
+            fi
         else
-            log WARN "pnpm installation may have failed, will try npm"
+            log WARN "pnpm installation failed, will try npm instead"
         fi
     else
         log SUCCESS "pnpm already installed ($(pnpm --version))"
@@ -226,7 +239,8 @@ install_package_managers() {
     if ! command_exists fnm || [[ "$FORCE_INSTALL" == "true" ]]; then
         # Install unzip if needed (required for fnm)
         if ! command_exists unzip; then
-            local system=$(detect_system)
+            local system
+            system=$(detect_system)
             case "$system" in
                 "arch") sudo pacman -S --noconfirm unzip ;;
                 "debian") sudo apt-get update && sudo apt-get install -y unzip ;;
@@ -235,12 +249,17 @@ install_package_managers() {
             esac
         fi
 
-        curl -fsSL https://fnm.vercel.app/install | bash
-        export PATH="$HOME/.local/share/fnm:$PATH"
-        if command_exists fnm; then
-            log SUCCESS "fnm $(fnm --version) installed"
+        if curl -fsSL https://fnm.vercel.app/install | bash; then
+            export PATH="$HOME/.local/share/fnm:$PATH"
+            # Give it a moment to be available
+            sleep 1
+            if command_exists fnm; then
+                log SUCCESS "fnm $(fnm --version) installed"
+            else
+                log WARN "fnm installation completed but command not immediately available"
+            fi
         else
-            log WARN "fnm installation may have failed"
+            log WARN "fnm installation failed"
         fi
     else
         log SUCCESS "fnm already installed ($(fnm --version))"
@@ -253,18 +272,57 @@ install_package_managers() {
 configure_shell() {
     log INFO "Configuring shell environment..."
 
-    local shell_config="$HOME/.bashrc"
-    if [[ "$SHELL" == *"zsh"* ]]; then
-        shell_config="$HOME/.zshrc"
-    fi
+    # Detect shell type
+    local current_shell=$(basename "$SHELL")
+    local shell_config=""
 
-    # Create backup
+    case "$current_shell" in
+        "bash")
+            shell_config="$HOME/.bashrc"
+            ;;
+        "zsh")
+            shell_config="$HOME/.zshrc"
+            ;;
+        "fish")
+            shell_config="$HOME/.config/fish/config.fish"
+            ;;
+        *)
+            log WARN "Unknown shell: $current_shell. Trying bash configuration."
+            shell_config="$HOME/.bashrc"
+            ;;
+    esac
+
+    log INFO "Detected shell: $current_shell, config file: $shell_config"
+
+    # Create backup if file exists
     if [[ -f "$shell_config" ]]; then
         cp "$shell_config" "${shell_config}.backup.$(date +%Y%m%d%H%M%S)"
+        log INFO "Created backup of existing shell config"
     fi
 
-    # Add PATH configurations if not present
-    local config_block="
+    # Configure based on shell type
+    if [[ "$current_shell" == "fish" ]]; then
+        # Fish shell configuration
+        local fish_config="
+# xanadOS Development Environment - Added by setup script
+set -gx PATH \$HOME/.local/bin \$PATH
+set -gx PATH \$HOME/.local/share/pnpm \$PATH
+set -gx PATH \$HOME/.local/share/fnm \$PATH
+
+# Initialize fnm for automatic Node.js version switching (if available)
+if command -v fnm >/dev/null 2>&1
+    fnm env | source
+end
+"
+        if ! grep -q "xanadOS Development Environment" "$shell_config" 2>/dev/null; then
+            echo "$fish_config" >> "$shell_config"
+            log SUCCESS "Fish shell configuration updated"
+        else
+            log SUCCESS "Fish shell already configured"
+        fi
+    else
+        # Bash/Zsh configuration
+        local config_block="
 # xanadOS Development Environment - Added by setup script
 export PATH=\"\$HOME/.local/bin:\$PATH\"
 export PATH=\"\$HOME/.local/share/pnpm:\$PATH\"
@@ -280,16 +338,21 @@ if [[ \"\$PWD\" == *\"xanadOS-Search_Destroy\"* ]] && [[ -f \"\$PWD/.venv/bin/ac
     source \"\$PWD/.venv/bin/activate\"
 fi
 "
-
-    if ! grep -q "xanadOS Development Environment" "$shell_config" 2>/dev/null; then
-        echo "$config_block" >> "$shell_config"
-        log SUCCESS "Shell configuration updated"
-    else
-        log SUCCESS "Shell already configured"
+        if ! grep -q "xanadOS Development Environment" "$shell_config" 2>/dev/null; then
+            echo "$config_block" >> "$shell_config"
+            log SUCCESS "Shell configuration updated"
+        else
+            log SUCCESS "Shell already configured"
+        fi
     fi
 
-    # Apply to current session
+    # Apply to current session (works for bash-compatible shells)
     export PATH="$HOME/.local/bin:$HOME/.local/share/pnpm:$HOME/.local/share/fnm:$PATH"
+
+    # Source fnm if available
+    if command -v fnm >/dev/null 2>&1; then
+        eval "$(fnm env)" 2>/dev/null || true
+    fi
 }
 
 # Setup Python environment

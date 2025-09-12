@@ -30,6 +30,32 @@ help: ## Show this help message
 setup: ## Complete unified setup process (ONE COMMAND DOES EVERYTHING)
 	@echo -e "$(BOLD)$(GREEN)🚀 Running Complete Setup - One Command Does Everything!$(NC)"
 	@echo -e "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(NC)"
+	@$(MAKE) setup-quick
+
+setup-quick: ## Quick setup using Makefile targets
+	@echo -e "$(BOLD)$(CYAN)🚀 Quick Setup Process$(NC)"
+	@$(MAKE) check-env
+	@$(MAKE) setup-python-env
+	@$(MAKE) install-deps
+	@echo -e "$(BOLD)$(GREEN)✅ Quick setup completed!$(NC)"
+
+setup-python-env: ## Setup Python virtual environment
+	@echo -e "$(BOLD)$(BLUE)🐍 Setting up Python environment...$(NC)"
+	@if [ ! -d ".venv" ]; then \
+		if command -v $(UV) >/dev/null 2>&1; then \
+			echo -e "$(CYAN)Creating virtual environment with uv...$(NC)"; \
+			$(UV) venv .venv --python python3; \
+		else \
+			echo -e "$(CYAN)Creating virtual environment with python...$(NC)"; \
+			python3 -m venv .venv; \
+		fi; \
+	else \
+		echo -e "$(GREEN)✅ Virtual environment already exists$(NC)"; \
+	fi
+
+setup-full: ## Full setup using the bash script
+	@echo -e "$(BOLD)$(GREEN)🚀 Running Full Setup Script...$(NC)"
+	@echo -e "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(NC)"
 	@bash scripts/setup.sh
 	@echo -e "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(NC)"
 
@@ -99,6 +125,63 @@ check-env: ## Check environment status
 	else \
 		echo -e "  Python: $(RED)❌ Not installed$(NC)"; \
 	fi
+	@echo -e "$(BOLD)Virtual Environment:$(NC)"
+	@if [ -d ".venv" ]; then \
+		if [ -n "$$VIRTUAL_ENV" ]; then \
+			echo -e "  Status: $(GREEN)✅ Active$(NC)"; \
+		else \
+			echo -e "  Status: $(YELLOW)⚠️  Not active$(NC)"; \
+			echo -e "  $(CYAN)💡 Run: source .venv/bin/activate.fish$(NC)"; \
+		fi; \
+	else \
+		echo -e "  Status: $(RED)❌ Not found$(NC)"; \
+		echo -e "  $(CYAN)💡 Run: make setup-python-env$(NC)"; \
+	fi
+
+setup-tools: ## Install required package managers manually
+	@echo -e "$(BOLD)$(BLUE)🛠️  Installing development tools...$(NC)"
+	@if ! command -v $(UV) >/dev/null 2>&1; then \
+		echo -e "$(CYAN)Installing uv...$(NC)"; \
+		curl -LsSf https://astral.sh/uv/install.sh | sh; \
+	else \
+		echo -e "$(GREEN)✅ uv already installed$(NC)"; \
+	fi
+	@if ! command -v $(PNPM) >/dev/null 2>&1; then \
+		echo -e "$(CYAN)Installing pnpm...$(NC)"; \
+		curl -fsSL https://get.pnpm.io/install.sh | sh -; \
+	else \
+		echo -e "$(GREEN)✅ pnpm already installed$(NC)"; \
+	fi
+	@if ! command -v $(FNM) >/dev/null 2>&1; then \
+		echo -e "$(CYAN)Installing fnm...$(NC)"; \
+		curl -fsSL https://fnm.vercel.app/install | bash; \
+	else \
+		echo -e "$(GREEN)✅ fnm already installed$(NC)"; \
+	fi
+	@echo -e "$(BOLD)$(GREEN)✅ Tool installation completed!$(NC)"
+	@echo -e "$(CYAN)💡 You may need to restart your terminal or run:$(NC)"
+	@echo -e "$(CYAN)   source ~/.config/fish/config.fish$(NC)"
+
+clean: ## Clean up build artifacts and temporary files
+	@echo -e "$(BOLD)$(YELLOW)🧹 Cleaning up build artifacts...$(NC)"
+	@rm -rf build/ dist/ *.egg-info/
+	@rm -rf .coverage htmlcov/ .pytest_cache/ .tox/
+	@rm -rf node_modules/.cache/
+	@find . -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
+	@find . -type f -name "*.pyc" -delete 2>/dev/null || true
+	@find . -type f -name "*.pyo" -delete 2>/dev/null || true
+	@find . -type f -name ".DS_Store" -delete 2>/dev/null || true
+	@echo -e "$(GREEN)✅ Cleanup completed!$(NC)"
+
+dev: ## Start development environment
+	@echo -e "$(BOLD)$(BLUE)🚀 Starting development environment...$(NC)"
+	@if [ ! -d ".venv" ]; then \
+		echo -e "$(RED)❌ Virtual environment not found. Run 'make setup' first.$(NC)"; \
+		exit 1; \
+	fi
+	@echo -e "$(CYAN)💡 Virtual environment ready!$(NC)"
+	@echo -e "$(CYAN)💡 Run: source .venv/bin/activate.fish$(NC)"
+	@echo -e "$(CYAN)💡 Then: python -m app.main$(NC)"
 	@if [ -d ".venv" ]; then \
 		echo -e "  Virtual Environment: $(GREEN)✅ Active$(NC)"; \
 	else \
@@ -122,19 +205,6 @@ run-debug: ## Run with debug logging enabled
 		echo -e "$(RED)❌ Virtual environment not found. Run 'make setup' first.$(NC)"; \
 		exit 1; \
 	fi
-
-dev: ## Complete development workflow (setup + validate)
-	@echo -e "$(BOLD)$(GREEN)🔧 Starting development workflow...$(NC)"
-	@$(MAKE) setup
-	@$(MAKE) validate
-
-clean: ## Clean build artifacts and cache
-	@echo -e "$(BOLD)$(GREEN)🧹 Cleaning build artifacts...$(NC)"
-	@find . -type f -name "*.pyc" -delete
-	@find . -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
-	@find . -type d -name "*.egg-info" -exec rm -rf {} + 2>/dev/null || true
-	@rm -rf build/ dist/ .pytest_cache/ .coverage htmlcov/
-	@echo -e "$(GREEN)✅ Cleanup complete$(NC)"
 
 lint: ## Run code quality checks
 	@echo -e "$(BOLD)$(GREEN)🧪 Running code quality checks...$(NC)"

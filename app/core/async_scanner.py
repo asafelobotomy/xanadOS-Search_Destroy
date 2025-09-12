@@ -16,7 +16,7 @@ from queue import Queue
 
 import psutil
 
-from ..utils.config import load_config
+from app.utils.config import load_config
 from .clamav_wrapper import ScanFileResult, ScanResult
 from .file_scanner import FileScanner
 from .input_validation import FileSizeMonitor, PathValidator

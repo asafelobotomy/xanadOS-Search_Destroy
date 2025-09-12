@@ -515,6 +515,10 @@ addopts = [
     # Performance and debugging
     "--durations=10",  # Show 10 slowest tests
     "--maxfail=5",  # Stop after 5 failures
+
+    # Directory exclusions
+    "--ignore=archive",
+    "--ignore=logs",
 ]
 
 # Test discovery
@@ -522,6 +526,7 @@ testpaths = ["tests"]
 python_files = ["test_*.py", "*_test.py"]
 python_classes = ["Test*", "*Tests"]
 python_functions = ["test_*"]
+norecursedirs = ["archive", "logs", ".git", ".venv", "venv", "node_modules", ".pytest_cache", "htmlcov"]
 
 # Test markers for categorization
 markers = [

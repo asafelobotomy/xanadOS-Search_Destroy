@@ -386,7 +386,7 @@ class RKHunterOptimizer:
                 logger.warning(f"Failed to get RKHunter version: {e}")
                 # Fallback to package manager for version info
                 try:
-                    from ..utils.secure_subprocess import run_secure
+                    from app.utils.secure_subprocess import run_secure
 
                     pkg_result = run_secure(
                         ["pacman", "-Qi", "rkhunter"],

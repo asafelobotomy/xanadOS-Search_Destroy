@@ -174,7 +174,9 @@ logs/
 .LSOverride
 
 # Archive exclusions
-# Keep archived content but exclude temporary archive processing
+# Keep archived content but exclude temporary archive processing and
+# exclude entire archive directory from validation/testing/review workflows
+archive/
 archive/.tmp/
 archive/*.processing
 archive/*.staging
