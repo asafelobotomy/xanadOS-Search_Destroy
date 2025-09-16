@@ -619,6 +619,42 @@ class RKHunterOptimizer:
             logger.error(f"Schedule optimization failed: {e}")
             return False, f"Schedule optimization error: {e!s}"
 
+    def optimize_mirrors(self) -> tuple[bool, str]:
+        """Public API method to optimize mirror configuration."""
+        try:
+            logger.info("Starting mirror optimization")
+
+            # Create a default config for optimization
+            config = RKHunterConfig()
+            config.update_mirrors = True
+            config.mirrors_mode = 0  # Round robin
+
+            # Use the internal optimization method
+            success = self._optimize_mirrors(config)
+
+            if success:
+                return True, "Mirror configuration optimized successfully"
+            else:
+                return False, "Mirror optimization completed but no changes were needed"
+
+        except Exception as e:
+            logger.error(f"Mirror optimization failed: {e}")
+            return False, f"Mirror optimization error: {e!s}"
+
+    def update_baseline(self) -> tuple[bool, str]:
+        """Public API method to update RKHunter baseline."""
+        try:
+            logger.info("Starting baseline update")
+
+            # Use the smart baseline update method
+            success, message = self.update_baseline_smart()
+
+            return success, message
+
+        except Exception as e:
+            logger.error(f"Baseline update failed: {e}")
+            return False, f"Baseline update error: {e!s}"
+
     def _detect_scheduler_system(self) -> str:
         """Detect which scheduling system is available"""
         try:
@@ -1299,9 +1335,6 @@ WantedBy=timers.target
                 else:
                     # Need sudo to write to system config
                     try:
-                        import tempfile
-                        import os
-
                         # Create a temporary file with the new content
                         with tempfile.NamedTemporaryFile(mode='w', encoding='utf-8', delete=False) as temp_file:
                             temp_file.writelines(new_lines)
