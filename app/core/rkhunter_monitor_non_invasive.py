@@ -76,6 +76,7 @@ class RKHunterMonitorNonInvasive:
 
         # Common RKHunter paths to check
         self.config_paths = [
+            str(Path.home() / ".config" / "search-and-destroy" / "rkhunter.conf"),  # User-specific config first
             "/etc/rkhunter.conf",
             "/usr/local/etc/rkhunter.conf",
             "/etc/rkhunter/rkhunter.conf",
@@ -95,6 +96,26 @@ class RKHunterMonitorNonInvasive:
 
         # Load persistent cache
         self._load_persistent_cache()
+
+    def _has_arch_permission_issue(self, binary_path: str) -> bool:
+        """Check if RKHunter has the Arch Linux permission issue (600 permissions)."""
+        try:
+            if not os.path.exists(binary_path):
+                return False
+
+            stat_info = os.stat(binary_path)
+            # Check for 600 permissions (read/write for owner, no execute bit)
+            if (stat_info.st_uid == 0 and  # Owned by root
+                (stat_info.st_mode & 0o777) == 0o600):  # 600 permissions exactly
+                return True
+
+            # Also check if it simply lacks execute permissions
+            if not (stat_info.st_mode & 0o111):  # No execute bits at all
+                return True
+
+            return False
+        except Exception:
+            return False
 
     def _load_persistent_cache(self) -> None:
         """Load cached status from disk"""
@@ -203,6 +224,14 @@ class RKHunterMonitorNonInvasive:
         elif not config_readable:
             issues.append("Configuration file exists but not readable")
 
+        # Check for Arch Linux permission issue
+        rkhunter_paths = ["/usr/bin/rkhunter", "/usr/local/bin/rkhunter"]
+        for path in rkhunter_paths:
+            if os.path.exists(path) and self._has_arch_permission_issue(path):
+                issues.append("RKHunter has incorrect permissions (Arch Linux packaging issue)")
+                issues.append("Execute permissions need to be fixed before scanning")
+                break
+
         # Check database
         db_exists, db_readable = self._check_database()
         if not db_exists:
@@ -232,70 +261,85 @@ class RKHunterMonitorNonInvasive:
 
     def _check_rkhunter_availability(self) -> tuple[bool, str, str]:
         """Check if RKHunter is available without elevated privileges"""
+        binary_path = None
+
         try:
             # Method 1: Check if binary exists in PATH
             result = run_secure(["which", "rkhunter"], capture_output=True, text=True, timeout=5)
-            if result.returncode != 0:
-                return False, "Not installed", "not_installed"
+            if result.returncode == 0:
+                binary_path = result.stdout.strip()
+        except Exception:
+            pass
 
-            binary_path = result.stdout.strip()
+        # Method 2: If 'which' failed, check common binary locations directly
+        if not binary_path:
+            common_paths = ["/usr/bin/rkhunter", "/usr/sbin/rkhunter", "/usr/local/bin/rkhunter"]
+            for path in common_paths:
+                if os.path.exists(path):
+                    binary_path = path
+                    break
 
-            # Method 2: Check if file exists and get basic info
-            if os.path.exists(binary_path):
-                try:
-                    stat_info = os.stat(binary_path)
-                    # Check if the file has restrictive permissions (root only)
-                    if stat_info.st_uid == 0 and stat_info.st_mode & 0o077 == 0:
-                        # Binary exists but has root-only permissions
-                        # We can't run --version without sudo, so determine version another way
+        # If no binary found at all, return not installed
+        if not binary_path:
+            return False, "Not installed", "not_installed"
 
-                        # Try to determine installation method
-                        install_method = "manual"
-                        if "/usr/bin" in binary_path or "/usr/sbin" in binary_path:
-                            install_method = "package"
+        # Method 3: Check if file exists and get basic info
+        if os.path.exists(binary_path):
+            try:
+                stat_info = os.stat(binary_path)
+                # Check if the file has restrictive permissions (root only)
+                if stat_info.st_uid == 0 and stat_info.st_mode & 0o077 == 0:
+                    # Binary exists but has root-only permissions
+                    # We can't run --version without sudo, so determine version another way
 
-                        # For package installations, try to get version from package manager
-                        if install_method == "package":
-                            try:
-                                # Try pacman (Arch)
-                                result = run_secure(
-                                    ["pacman", "-Qi", "rkhunter"],
-                                    capture_output=True,
-                                    text=True,
-                                    timeout=5,
-                                )
-                                if result.returncode == 0:
-                                    for line in result.stdout.split("\n"):
-                                        if line.startswith("Version"):
-                                            version = f"Rootkit Hunter {line.split(':')[1].strip()}"
-                                            return True, version, install_method
-                            except Exception:
-                                pass
+                    # Try to determine installation method
+                    install_method = "manual"
+                    if "/usr/bin" in binary_path or "/usr/sbin" in binary_path:
+                        install_method = "package"
 
-                            # Try other package managers if needed
-                            try:
-                                # Try rpm-based systems
-                                result = run_secure(
-                                    ["rpm", "-q", "rkhunter"],
-                                    capture_output=True,
-                                    text=True,
-                                    timeout=5,
-                                )
-                                if result.returncode == 0:
-                                    version = f"Rootkit Hunter (via RPM: {result.stdout.strip()})"
-                                    return True, version, install_method
-                            except Exception:
-                                pass
+                    # For package installations, try to get version from package manager
+                    if install_method == "package":
+                        try:
+                            # Try pacman (Arch)
+                            result = run_secure(
+                                ["pacman", "-Qi", "rkhunter"],
+                                capture_output=True,
+                                text=True,
+                                timeout=5,
+                            )
+                            if result.returncode == 0:
+                                for line in result.stdout.split("\n"):
+                                    if line.startswith("Version"):
+                                        version = f"Rootkit Hunter {line.split(':')[1].strip()}"
+                                        return True, version, install_method
+                        except Exception:
+                            pass
 
-                        # If we can't get version, just report as available
-                        return (
-                            True,
-                            "Rootkit Hunter (version requires sudo)",
-                            install_method,
-                        )
+                        # Try other package managers if needed
+                        try:
+                            # Try rpm-based systems
+                            result = run_secure(
+                                ["rpm", "-q", "rkhunter"],
+                                capture_output=True,
+                                text=True,
+                                timeout=5,
+                            )
+                            if result.returncode == 0:
+                                version = f"Rootkit Hunter (via RPM: {result.stdout.strip()})"
+                                return True, version, install_method
+                        except Exception:
+                            pass
 
-                    else:
-                        # Binary is readable, try version command
+                    # If we can't get version, just report as available
+                    return (
+                        True,
+                        "Rootkit Hunter (version requires sudo)",
+                        install_method,
+                    )
+
+                else:
+                    # Binary is readable, try version command
+                    try:
                         result = run_secure(
                             ["rkhunter", "--version"],
                             capture_output=True,
@@ -318,16 +362,14 @@ class RKHunterMonitorNonInvasive:
                                 install_method = "package"
 
                             return True, version, install_method
+                    except Exception:
+                        pass
 
-                except Exception as e:
-                    print(f"⚠️ Could not check RKHunter binary: {e}")
-                    return True, "Available (file check failed)", "unknown"
+            except Exception as e:
+                print(f"⚠️ Could not check RKHunter binary: {e}")
+                return True, "Available (file check failed)", "unknown"
 
-            return True, "Available", "unknown"
-
-        except Exception as e:
-            print(f"⚠️ Error checking RKHunter availability: {e}")
-            return False, f"Error: {e!s}", "error"
+        return True, "Available", "unknown"
 
     def _check_configuration(self) -> tuple[bool, bool]:
         """Check RKHunter configuration files"""

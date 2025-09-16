@@ -13,7 +13,7 @@ from core.rkhunter_wrapper import RKHunterWrapper
 
 
 def test_rkhunter_comprehensive():
-    """Comprehensive test of RKHunter functionality."""
+    """Comprehensive test of RKHunter functionality."""  # noqa: PLR0911 - test function with multiple exit points
     print("=" * 60)
     print("🔍 RKHunter Comprehensive Functionality Test")
     print("=" * 60)

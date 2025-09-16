@@ -54,7 +54,12 @@ class RKHunterOptimizationWorker(QThread):
     def __init__(self, config):
         super().__init__()
         self.config = config
-        self.optimizer = RKHunterOptimizer() if RKHunterOptimizer else None
+        if RKHunterOptimizer:
+            # Use system config (single source of truth) instead of user config
+            # The RKHunterOptimizer will handle permission checks and sudo escalation
+            self.optimizer = RKHunterOptimizer()  # Uses /etc/rkhunter.conf by default
+        else:
+            self.optimizer = None
 
     def run(self):
         """Run RKHunter optimization in background"""
@@ -137,7 +142,9 @@ class RKHunterStatusWidget(QWidget):
         """Refresh RKHunter status"""
         if RKHunterOptimizer:
             try:
-                optimizer = RKHunterOptimizer()
+                from pathlib import Path
+                user_config_path = str(Path.home() / ".config" / "search-and-destroy" / "rkhunter.conf")
+                optimizer = RKHunterOptimizer(config_path=user_config_path)
                 status = optimizer.get_current_status()
                 self.update_status(status)
             except Exception as e:

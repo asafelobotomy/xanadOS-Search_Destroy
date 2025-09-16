@@ -4,6 +4,19 @@ Comprehensive inventory of all archived content in the repository following arch
 
 ## 📋 Archive Contents
 
+### Recently Added (2025-09-15)
+
+#### Deprecated Authentication Systems
+- **Complex Authentication Systems** (`deprecated-auth-systems/2025-09-15/`)
+  - **Archived Date**: 2025-09-15
+  - **Files**: `privilege_escalation.py`, `auth_session_manager.py`
+  - **Reason**: Overly complex for GUI application needs, not used in production code
+  - **Replacement**: `app/core/gui_auth_manager.py` with `elevated_run_gui()`
+  - **Retention**: 2 years (core system components)
+  - **Original Location**: `app/core/`
+  - **Lines Removed**: 808 lines of complex authentication code
+  - **Related Changes**: Updated `app/core/__init__.py`, cleaned `rkhunter_optimizer.py`
+
 ### Recently Added (2025-09-12)
 
 #### Deprecated Content

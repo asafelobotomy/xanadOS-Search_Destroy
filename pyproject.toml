@@ -958,3 +958,12 @@ dev = [
     "flake8>=7.3.0",
     "prettier>=0.0.7",
 ]
+
+# Quality exceptions for scripts/tools/ utility scripts
+[tool.ruff.per-file-ignores]
+"scripts/tools/**/*.py" = [
+    "S603",    # subprocess call - acceptable for system tools
+    "S607",    # partial executable path - tools often use PATH lookup
+    "PLR0911", # too many returns - test utilities need multiple exits
+    "S108",    # hardcoded temp file - acceptable for debugging tools
+]

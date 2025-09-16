@@ -15,7 +15,7 @@ def test_rkhunter_config_directly():
 
     # Check if rkhunter is available
     rkhunter_path = subprocess.run(
-        ["which", "rkhunter"], check=False, capture_output=True, text=True
+        ["/usr/bin/which", "rkhunter"], check=False, capture_output=True, text=True
     )
     if rkhunter_path.returncode != 0:
         print("❌ RKHunter not found in PATH")

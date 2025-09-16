@@ -248,7 +248,13 @@ class ToolsQualityFixer:
         print(f"  • Initial issues: {initial_count}")
         print(f"  • Issues fixed: {self.fixed_count}")
         print(f"  • Remaining issues: {final_count}")
-        print(f"  • Success rate: {((initial_count - final_count) / initial_count * 100):.1f}%")
+
+        # Avoid division by zero
+        if initial_count > 0:
+            success_rate = ((initial_count - final_count) / initial_count * 100)
+            print(f"  • Success rate: {success_rate:.1f}%")
+        else:
+            print("  • Success rate: N/A (no initial issues)")
 
         if final_count == 0:
             print("🎉 ALL QUALITY ISSUES RESOLVED!")
@@ -267,7 +273,9 @@ class ToolsQualityFixer:
 
 def main():
     """Main execution function."""
-    project_root = "/home/vm/Documents/xanadOS-Search_Destroy"
+    # Dynamically determine project root from script location
+    script_path = Path(__file__).resolve()
+    project_root = str(script_path.parent.parent.parent.parent)
 
     if not Path(project_root).exists():
         print(f"❌ Project root not found: {project_root}")

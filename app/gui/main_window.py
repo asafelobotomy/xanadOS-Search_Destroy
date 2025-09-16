@@ -6863,9 +6863,10 @@ Common False Positives:
             elif optimization_type == "update_baseline":
                 config.update_baseline = True
             elif optimization_type == "optimize_config":
-                config.optimize_performance = True
-                config.update_mirrors = True
-                config.update_baseline = True
+                # Show interactive dialog for configuration fixes first
+                self._show_interactive_config_fixes()
+                return  # Exit early - dialog will handle the optimization if user confirms
+
 
             # Start optimization worker
             if hasattr(self, "rkhunter_optimization_worker") and self.rkhunter_optimization_worker:
@@ -6909,6 +6910,17 @@ Common False Positives:
                     f"Optimization completed at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
                 )
 
+                # Include applied fixes if they exist
+                if hasattr(self, '_applied_fixes') and self._applied_fixes:
+                    results.append("\n🔧 System Configuration Fixes Applied:")
+                    for fix in self._applied_fixes:
+                        results.append(f"  • {fix}")
+                    results.append("")  # Add blank line for spacing
+                else:
+                    # If no interactive fixes were applied, show that system config is clean
+                    results.append("\n✅ No system configuration issues detected")
+                    results.append("")  # Add blank line for spacing
+
                 if hasattr(report, "mirrors_updated") and report.mirrors_updated:
                     results.append("✅ Mirrors updated successfully")
                 if hasattr(report, "baseline_updated") and report.baseline_updated:
@@ -6916,7 +6928,7 @@ Common False Positives:
                 if hasattr(report, "config_optimized") and report.config_optimized:
                     results.append("✅ Configuration optimized")
                 if hasattr(report, "warnings") and report.warnings:
-                    results.append("⚠️ Warnings:")
+                    results.append("⚠️ Additional System Warnings:")
                     for warning in report.warnings:
                         results.append(f"  • {warning}")
                 if hasattr(report, "errors") and report.errors:
@@ -6924,7 +6936,20 @@ Common False Positives:
                     for error in report.errors:
                         results.append(f"  • {error}")
 
+                # If no optimization actions were performed, show that information
+                if not any([
+                    hasattr(report, "mirrors_updated") and report.mirrors_updated,
+                    hasattr(report, "baseline_updated") and report.baseline_updated,
+                    hasattr(report, "config_optimized") and report.config_optimized,
+                    hasattr(self, '_applied_fixes') and self._applied_fixes
+                ]):
+                    results.append("ℹ️ No optimization actions were needed")
+
                 self.rkhunter_results_text.setText("\n".join(results))
+
+                # Clear the applied fixes after displaying them
+                if hasattr(self, '_applied_fixes'):
+                    delattr(self, '_applied_fixes')
 
             # Refresh status
             if hasattr(self, "rkhunter_status_widget"):
@@ -6970,6 +6995,214 @@ Common False Positives:
 
         except Exception as e:
             logging.error(f"Error handling optimization error: {e}")
+
+    def _show_interactive_config_fixes(self):
+        """Show interactive dialog for configuration fixes"""
+        try:
+            logging.info("🚀 INTERACTIVE CONFIG FIXES TRIGGERED")
+
+            # Import required modules
+            from app.core.rkhunter_optimizer import RKHunterOptimizer
+            from app.gui.config_fix_dialog import ConfigFixDialog
+            from pathlib import Path
+
+            # Use system config (single source of truth)
+            # The RKHunterOptimizer will handle permission checks and sudo escalation
+
+            # Create optimizer instance with system config (default)
+            optimizer = RKHunterOptimizer()
+
+            # Detect fixable issues in system config
+            logging.info("🔍 Detecting fixable issues in system configuration...")
+            fixable_issues = optimizer.detect_fixable_issues()
+
+            if not fixable_issues:
+                # No issues found - show success message and proceed with standard optimization
+                self.show_themed_message_box(
+                    "information",
+                    "Configuration Check",
+                    "✅ No configuration issues detected in system RKHunter config.\n\n"
+                    "Proceeding with standard optimization..."
+                )
+                # Set applied fixes to indicate no issues were found
+                self._applied_fixes = ["✅ No system configuration issues detected"]
+                self._run_standard_config_optimization()
+                return
+
+            # Show interactive dialog
+            logging.info(f"💬 Showing dialog for {len(fixable_issues)} fixable issues")
+            dialog = ConfigFixDialog(fixable_issues, parent=self)
+            result = dialog.exec()
+
+            if result == ConfigFixDialog.DialogCode.Accepted:
+                # User confirmed fixes - apply them
+                selected_fixes = dialog.get_selected_fixes()
+                if selected_fixes:
+                    logging.info(f"✅ Applying {len(selected_fixes)} selected fixes")
+                    applied_fixes = optimizer.apply_selected_fixes(selected_fixes)
+
+                    # Check if fixes were applied successfully
+                    # applied_fixes is a list of strings describing what was done
+                    has_errors = any("❌" in fix for fix in applied_fixes)
+                    has_success = any("🔧" in fix or "📅" in fix or "🔍" in fix or "💾" in fix for fix in applied_fixes)
+
+                    if applied_fixes and not has_errors and has_success:
+                        # Show success message with details of what was applied
+                        fix_details = "\n".join([f"  • {fix}" for fix in applied_fixes])
+                        self.show_themed_message_box(
+                            "information",
+                            "Fixes Applied",
+                            f"✅ Successfully applied {len(selected_fixes)} configuration fixes:\n\n"
+                            f"{fix_details}\n\n"
+                            "Proceeding with optimization..."
+                        )
+                        # Store applied fixes for display in optimization results
+                        self._applied_fixes = applied_fixes
+                        self._run_standard_config_optimization()
+                    elif applied_fixes and not has_errors and not has_success:
+                        # Fixes were selected but none were actually applicable
+                        self.show_themed_message_box(
+                            "information",
+                            "No Changes Needed",
+                            f"The selected fixes were checked, but no changes were needed:\n\n"
+                            f"{chr(10).join([f'  • {fix}' for fix in applied_fixes])}\n\n"
+                            "Proceeding with optimization..."
+                        )
+                        # Store applied fixes for display in optimization results
+                        self._applied_fixes = applied_fixes if applied_fixes else ["ℹ️ Selected fixes were not applicable to current configuration"]
+                        self._run_standard_config_optimization()
+                    else:
+                        # Show error message with details of what failed
+                        error_details = "\n".join([f"  • {fix}" for fix in applied_fixes if "❌" in fix])
+                        if not error_details:
+                            error_details = "Unknown error occurred during fix application"
+                        self._hide_rkhunter_progress()
+                        self.show_themed_message_box(
+                            "warning",
+                            "Fix Application Failed",
+                            f"❌ Some fixes could not be applied:\n\n"
+                            f"{error_details}\n\n"
+                            "Please check the logs for details.\n\n"
+                            "Optimization cancelled for safety."
+                        )
+                        return
+                else:
+                    # No fixes selected - ask if user wants to proceed anyway
+                    reply = self.show_themed_message_box(
+                        "question",
+                        "No Fixes Selected",
+                        "No fixes were selected to apply.\n\n"
+                        "Would you like to proceed with standard optimization anyway?",
+                        QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+                    )
+                    if reply == QMessageBox.StandardButton.Yes:
+                        # Set empty applied fixes list for display
+                        self._applied_fixes = ["ℹ️ No configuration fixes were selected"]
+                        self._run_standard_config_optimization()
+                    else:
+                        # User chose not to proceed
+                        self._hide_rkhunter_progress()
+                        self.show_themed_message_box(
+                            "information",
+                            "Optimization Cancelled",
+                            "✅ Configuration optimization has been cancelled.\n\n"
+                            "No changes were made to your system."
+                        )
+                        return
+            else:
+                # User cancelled the dialog - show confirmation and stop the process
+                logging.info("❌ User cancelled configuration fixes dialog")
+                self._hide_rkhunter_progress()
+                self.show_themed_message_box(
+                    "information",
+                    "Optimization Cancelled",
+                    "✅ Configuration optimization has been cancelled.\n\n"
+                    "No changes were made to your system."
+                )
+                return  # Stop the optimization process completely
+
+        except ImportError as e:
+            logging.error(f"Failed to import required modules: {e}")
+            # Don't proceed with optimization if modules are missing
+            self._hide_rkhunter_progress()
+            self.show_themed_message_box(
+                "warning",
+                "Feature Unavailable",
+                "Interactive configuration fixes are not available.\n\n"
+                "This may be due to missing dependencies.\n\n"
+                "Optimization cancelled for safety."
+            )
+            return
+        except Exception as e:
+            logging.error(f"Error in interactive config fixes: {e}")
+            # Don't proceed with optimization if there was an error
+            self._hide_rkhunter_progress()
+            self.show_themed_message_box(
+                "warning",
+                "Error",
+                f"An error occurred while checking configuration:\n{e}\n\n"
+                "Optimization cancelled for safety."
+            )
+            return
+
+    def _run_standard_config_optimization(self):
+        """Run the standard configuration optimization without interactive fixes"""
+        try:
+            # Show progress
+            if hasattr(self, "rkhunter_progress_bar"):
+                self.rkhunter_progress_bar.setVisible(True)
+                self.rkhunter_progress_bar.setRange(0, 0)  # Indeterminate
+            if hasattr(self, "rkhunter_progress_label"):
+                self.rkhunter_progress_label.setVisible(True)
+                self.rkhunter_progress_label.setText("Running optimize_config...")
+
+            # Create config for standard optimization
+            config = RKHunterConfig()
+            config.optimize_performance = True
+            config.update_mirrors = True
+            config.update_baseline = True
+
+            # Set performance mode if available
+            if hasattr(self, "rkhunter_perf_mode_combo"):
+                mode = self.rkhunter_perf_mode_combo.currentText().lower()
+                config.performance_mode = mode
+
+            # Start optimization worker
+            if hasattr(self, "rkhunter_optimization_worker") and self.rkhunter_optimization_worker:
+                if self.rkhunter_optimization_worker.isRunning():
+                    return  # Already running
+
+            self.rkhunter_optimization_worker = RKHunterOptimizationWorker(config)
+            self.rkhunter_optimization_worker.optimization_complete.connect(
+                self.on_rkhunter_optimization_complete
+            )
+            self.rkhunter_optimization_worker.status_updated.connect(
+                self.on_rkhunter_status_updated
+            )
+            self.rkhunter_optimization_worker.progress_updated.connect(
+                self.on_rkhunter_progress_updated
+            )
+            self.rkhunter_optimization_worker.error_occurred.connect(
+                self.on_rkhunter_optimization_error
+            )
+            self.rkhunter_optimization_worker.start()
+
+        except Exception as e:
+            logging.error(f"Failed to start standard config optimization: {e}")
+            self.show_themed_message_box(
+                "critical", "Error", f"Failed to start optimization: {e!s}"
+            )
+
+    def _hide_rkhunter_progress(self):
+        """Hide RKHunter progress bar and label"""
+        try:
+            if hasattr(self, "rkhunter_progress_bar"):
+                self.rkhunter_progress_bar.setVisible(False)
+            if hasattr(self, "rkhunter_progress_label"):
+                self.rkhunter_progress_label.setVisible(False)
+                self.rkhunter_progress_label.setText("")  # Clear text as well
+        except Exception as e:
+            logging.error(f"Error hiding RKHunter progress: {e}")
 
     def update_dynamic_component_styling(self):
         """Update styling for components that use dynamic colors based on theme."""

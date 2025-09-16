@@ -477,3 +477,12 @@ def get_factory_defaults():
             "temp_dir": str(CACHE_DIR / "temp"),
         },
     }
+
+
+def get_config(file_path=None):
+    """Compatibility function - alias for load_config.
+
+    This function maintains backward compatibility with components
+    that expect get_config() instead of load_config().
+    """
+    return load_config(file_path)

@@ -325,7 +325,14 @@ class RKHunterWrapper:
                     self.logger.debug(f"RKHunter executable confirmed: {path}")
                     return path
                 else:
-                    self.logger.warning(f"RKHunter found but not executable: {path}")
+                    # Handle Arch Linux anomaly: 600 permissions (readable by root but not executable)
+                    # This is a legitimate installation that requires sudo to run
+                    if stat_info.st_uid == 0 and (stat_info.st_mode & 0o600) == 0o600:
+                        self.logger.info(f"RKHunter found with restrictive permissions (Arch Linux): {path}")
+                        self.logger.info("This installation requires sudo to execute")
+                        return path
+                    else:
+                        self.logger.warning(f"RKHunter found but not executable: {path}")
 
         # Try which command (this may fail if rkhunter requires root)
         try:
@@ -576,12 +583,70 @@ class RKHunterWrapper:
             )
             return False
 
+    def _fix_arch_permissions_if_needed(self) -> bool:
+        """Fix RKHunter permissions on Arch Linux if it has 600 (no execute bit).
+
+        Arch Linux packages RKHunter with 600 permissions which makes it unexecutable
+        even by root. This is a packaging issue that we need to work around.
+
+        Returns:
+            True if permissions were fixed or didn't need fixing, False if failed
+        """
+        if not self.rkhunter_path or not os.path.exists(self.rkhunter_path):
+            return False
+
+        try:
+            stat_info = os.stat(self.rkhunter_path)
+            current_mode = stat_info.st_mode
+
+            # Check if file lacks execute permissions (common on Arch Linux)
+            if not (current_mode & 0o111):  # No execute bits for owner, group, or other
+                self.logger.info("Detected RKHunter without execute permissions (Arch Linux issue)")
+                self.logger.info("Temporarily fixing execute permissions for RKHunter")
+
+                # Add execute permission for owner (root)
+                new_mode = current_mode | 0o100  # Add owner execute bit
+
+                # Use sudo to fix permissions
+                fix_cmd = ["chmod", "700", self.rkhunter_path]
+
+                try:
+                    from .gui_auth_manager import elevated_run_gui
+                    result = elevated_run_gui(fix_cmd, timeout=30, capture_output=True, text=True)
+
+                    if result.returncode == 0:
+                        self.logger.info("✅ RKHunter execute permissions fixed")
+                        return True
+                    else:
+                        self.logger.error(f"Failed to fix RKHunter permissions: {result.stderr}")
+                        return False
+
+                except Exception as e:
+                    self.logger.error(f"Error fixing RKHunter permissions: {e}")
+                    return False
+            else:
+                # File already has execute permissions
+                return True
+
+        except Exception as e:
+            self.logger.error(f"Error checking RKHunter permissions: {e}")
+            return False
+
     def _run_with_privilege_escalation(
         self,
         cmd_args: list[str],
         capture_output: bool = True,
         timeout: int = 300,
     ) -> subprocess.CompletedProcess:
+        # Fix Arch Linux permission issue before running
+        if not self._fix_arch_permissions_if_needed():
+            return subprocess.CompletedProcess(
+                args=cmd_args,
+                returncode=1,
+                stdout="",
+                stderr="Failed to fix RKHunter permissions - cannot execute",
+            )
+
         # Use injected/aliased elevated_run so tests can monkeypatch without
         # hitting real privilege escalation paths.
         _elev_run = _elevated_run

@@ -39,6 +39,12 @@ ALLOWED_BINARIES = {
     "stop",
     "restart",
     "sigtool",
+    # System administration commands for configuration management
+    "crontab",  # Cron job management
+    "mkdir",   # Directory creation
+    "cp",      # File copying
+    "chmod",   # Permission changes
+    "chown",   # Ownership changes
     # Safe status/info commands
     "echo",
     "which",

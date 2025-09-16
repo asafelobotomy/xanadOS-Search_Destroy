@@ -26,7 +26,7 @@ def setup_debug_logging():
 
 
 def test_rkhunter_step_by_step():
-    """Test RKHunter functionality step by step with detailed debugging."""
+    """Test RKHunter functionality step by step with detailed debugging."""  # noqa: PLR0911 - test function with multiple exit points
     print("=" * 60)
     print("RKHunter Debug Test - Step by Step Analysis")
     print("=" * 60)

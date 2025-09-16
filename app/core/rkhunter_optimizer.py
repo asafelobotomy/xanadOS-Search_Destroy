@@ -28,28 +28,8 @@ from .secure_subprocess import run_secure
 
 logger = logging.getLogger(__name__)
 
-try:
-    from .auth_session_manager import auth_manager, session_context
-    from .elevated_runner import elevated_run
-except ImportError:
-    logger.warning("elevated_run or auth_session_manager not available, using fallback")
-
-    def elevated_run(*args, **kwargs):
-        raise RuntimeError("elevated_run not available")
-
-    class MockAuthManager:
-        def session_context(self, *args, **kwargs):
-            # Use the standard library nullcontext for a no-op context manager
-            return _nullcontext()
-
-        def execute_elevated_command(self, *args, **kwargs):
-            raise RuntimeError("auth_session_manager not available")
-
-        def execute_elevated_file_operation(self, *args, **kwargs):
-            raise RuntimeError("auth_session_manager not available")
-
-    auth_manager = MockAuthManager()
-    session_context = auth_manager.session_context
+# Use GUI authentication exclusively - no fallbacks needed
+from .gui_auth_manager import elevated_run_gui, get_gui_auth_manager
 
 # logger already defined above
 
@@ -184,12 +164,12 @@ class RKHunterOptimizer:
         cmd = [self.rkhunter_path] + args
 
         if use_sudo:
-            # Use the unified authentication session manager
-            return auth_manager.execute_elevated_command(
+            # Use GUI authentication manager
+            return elevated_run_gui(
                 cmd,
                 timeout=timeout,
-                session_type="rkhunter",
-                operation=f"rkhunter_{args[0] if args else 'command'}",
+                capture_output=True,
+                text=True
             )
         else:
             # Run without sudo
@@ -263,6 +243,83 @@ class RKHunterOptimizer:
         except Exception as e:
             return False, f"Installation error: {e!s}"
 
+    def can_read_config(self) -> bool:
+        """Check if we can read the configuration file without sudo"""
+        try:
+            return (
+                Path(self.config_path).exists() and
+                os.access(self.config_path, os.R_OK)
+            )
+        except Exception:
+            return False
+
+    def can_write_config(self) -> bool:
+        """Check if we can write to the configuration file without sudo"""
+        try:
+            return (
+                Path(self.config_path).exists() and
+                os.access(self.config_path, os.W_OK)
+            )
+        except Exception:
+            return False
+
+    def detect_arch_permission_anomaly(self) -> bool:
+        """Detect if we have the Arch Linux permission anomaly (600 instead of 644)"""
+        try:
+            if not Path(self.config_path).exists():
+                return False
+
+            stat_info = os.stat(self.config_path)
+            current_perms = oct(stat_info.st_mode)[-3:]
+
+            # Arch Linux anomaly: 600 permissions instead of standard 644
+            return current_perms == "600"
+        except Exception:
+            return False
+
+    def fix_arch_permissions(self) -> tuple[bool, str]:
+        """
+        Fix Arch Linux permission anomaly by changing 600 to 644
+        This makes the config readable by users (standard behavior)
+        """
+        try:
+            if not self.detect_arch_permission_anomaly():
+                return True, "Permissions are already correct"
+
+            logger.info("Fixing Arch Linux permission anomaly (600 → 644)")
+
+            # Use sudo to fix the permission anomaly
+            result = run_secure([
+                "sudo", "chmod", "644", self.config_path
+            ], check=False, capture_output=True, text=True)
+
+            if result.returncode == 0:
+                logger.info("✅ Fixed RKHunter config permissions")
+                return True, "Successfully fixed configuration file permissions"
+            else:
+                error_msg = f"Failed to fix permissions: {result.stderr}"
+                logger.error(error_msg)
+                return False, error_msg
+
+        except Exception as e:
+            error_msg = f"Error fixing permissions: {e}"
+            logger.error(error_msg)
+            return False, error_msg
+
+    def ensure_config_readable(self) -> tuple[bool, str]:
+        """
+        Ensure the configuration file is readable, fixing Arch Linux anomaly if needed
+        Returns (success, message)
+        """
+        if self.can_read_config():
+            return True, "Configuration file is readable"
+
+        if self.detect_arch_permission_anomaly():
+            logger.info("Detected Arch Linux permission anomaly, attempting fix...")
+            return self.fix_arch_permissions()
+        else:
+            return False, f"Configuration file {self.config_path} is not accessible"
+
     def optimize_configuration(self, target_config: RKHunterConfig) -> OptimizationReport:
         """Perform comprehensive RKHunter optimization"""
         logger.info("Starting RKHunter configuration optimization")
@@ -281,79 +338,84 @@ class RKHunterOptimizer:
             )
             return error_report
 
-        # Acquire lock to prevent concurrent modifications and use session context
+        # Acquire lock to prevent concurrent modifications
         with self._acquire_lock():
-            # Use unified authentication session for the entire optimization process
-            with session_context("rkhunter_optimization", "RKHunter Configuration Optimization"):
-                changes = []
-                improvements = []
-                recommendations = []
-                warnings = []
+            # Use unified authentication for the entire optimization process
+            changes = []
+            improvements = []
+            recommendations = []
+            warnings = []
 
-                # Backup current configuration
-                if self._backup_config():
-                    changes.append("Created configuration backup")
-                else:
-                    warnings.append("Failed to create configuration backup")
+            # Backup current configuration
+            if self._backup_config():
+                changes.append("Created configuration backup")
+            else:
+                warnings.append("Failed to create configuration backup")
 
-                # Update mirror configuration
-                mirror_updated = self._optimize_mirrors(target_config)
-                if mirror_updated:
-                    changes.append("Optimized mirror configuration")
-                    improvements.append("Enhanced mirror reliability with UPDATE_MIRRORS=1")
+            # Update mirror configuration
+            mirror_updated = self._optimize_mirrors(target_config)
+            if mirror_updated:
+                changes.append("Optimized mirror configuration")
+                improvements.append("Enhanced mirror reliability with UPDATE_MIRRORS=1")
 
-                # Optimize update settings
-                update_optimized = self._optimize_updates(target_config)
-                if update_optimized:
-                    changes.append("Optimized update settings")
-                    improvements.append("Enabled automatic database updates")
+            # Optimize update settings
+            update_optimized = self._optimize_updates(target_config)
+            if update_optimized:
+                changes.append("Optimized update settings")
+                improvements.append("Enabled automatic database updates")
 
-                # Configure logging
-                logging_optimized = self._optimize_logging(target_config)
-                if logging_optimized:
-                    changes.append("Enhanced logging configuration")
-                    improvements.append("Improved diagnostic capabilities")
+            # Configure logging
+            logging_optimized = self._optimize_logging(target_config)
+            if logging_optimized:
+                changes.append("Enhanced logging configuration")
+                improvements.append("Improved diagnostic capabilities")
 
-                # Optimize performance settings
-                perf_optimized = self._optimize_performance(target_config)
-                if perf_optimized:
-                    changes.append("Applied performance optimizations")
-                    improvements.append(
-                        f"Configured for {target_config.performance_mode} performance mode"
-                    )
-
-                # Update baseline if needed
-                baseline_updated = self._update_baseline_if_needed()
-                if baseline_updated:
-                    changes.append("Updated property database baseline")
-                    improvements.append("Refreshed system baseline for accurate detection")
-
-                # Optimize scheduling
-                schedule_optimized = self._optimize_scheduling(target_config)
-                if schedule_optimized:
-                    changes.append("Optimized scan scheduling")
-                    improvements.append("Configured intelligent scan timing")
-
-                # Generate recommendations
-                recommendations = self._generate_recommendations()
-
-                # Validate configuration
-                validation_issues = self._validate_configuration()
-                warnings.extend(validation_issues)
-
-                report = OptimizationReport(
-                    config_changes=changes,
-                    performance_improvements=improvements,
-                    recommendations=recommendations,
-                    warnings=warnings,
-                    baseline_updated=baseline_updated,
-                    mirrors_updated=mirror_updated,
-                    schedule_optimized=schedule_optimized,
-                    timestamp=datetime.now().isoformat(),
+            # Optimize performance settings
+            perf_optimized = self._optimize_performance(target_config)
+            if perf_optimized:
+                changes.append("Applied performance optimizations")
+                improvements.append(
+                    f"Configured for {target_config.performance_mode} performance mode"
                 )
 
-                logger.info(f"RKHunter optimization completed with {len(changes)} changes")
-                return report
+            # Update baseline if needed
+            baseline_updated = self._update_baseline_if_needed()
+            if baseline_updated:
+                changes.append("Updated property database baseline")
+                improvements.append("Refreshed system baseline for accurate detection")
+
+            # Optimize scheduling
+            schedule_optimized = self._optimize_scheduling(target_config)
+            if schedule_optimized:
+                changes.append("Optimized scan scheduling")
+                improvements.append("Configured intelligent scan timing")
+
+            # Auto-fix common configuration issues
+            config_fixes = self._auto_fix_config_issues()
+            if config_fixes:
+                changes.extend(config_fixes)
+                improvements.append("Applied automatic configuration fixes")
+
+            # Generate recommendations
+            recommendations = self._generate_recommendations()
+
+            # Validate configuration
+            validation_issues = self._validate_configuration()
+            warnings.extend(validation_issues)
+
+            report = OptimizationReport(
+                config_changes=changes,
+                performance_improvements=improvements,
+                recommendations=recommendations,
+                warnings=warnings,
+                baseline_updated=baseline_updated,
+                mirrors_updated=mirror_updated,
+                schedule_optimized=schedule_optimized,
+                timestamp=datetime.now().isoformat(),
+            )
+
+            logger.info(f"RKHunter optimization completed with {len(changes)} changes")
+            return report
 
     def get_current_status(self) -> RKHunterStatus:
         """Get comprehensive RKHunter status"""
@@ -538,6 +600,242 @@ class RKHunterOptimizer:
             return False, f"Baseline update error: {e!s}"
 
     def optimize_cron_schedule(self, frequency: str = "daily") -> tuple[bool, str]:
+        """Optimize scheduling with support for both cron and systemd timers"""
+        try:
+            logger.info(f"Optimizing schedule for {frequency} frequency")
+
+            # Detect available scheduling system
+            scheduler_type = self._detect_scheduler_system()
+            logger.info(f"Detected scheduler system: {scheduler_type}")
+
+            if scheduler_type == "systemd":
+                return self._optimize_systemd_timer(frequency)
+            elif scheduler_type == "cron":
+                return self._optimize_cron_schedule_traditional(frequency)
+            else:
+                return False, "No supported scheduling system found (neither cron nor systemd)"
+
+        except Exception as e:
+            logger.error(f"Schedule optimization failed: {e}")
+            return False, f"Schedule optimization error: {e!s}"
+
+    def _detect_scheduler_system(self) -> str:
+        """Detect which scheduling system is available"""
+        try:
+            # Check for systemd (most common on modern systems)
+            result = subprocess.run(
+                ["systemctl", "--version"],
+                capture_output=True,
+                text=True,
+                timeout=10
+            )
+            if result.returncode == 0:
+                logger.debug("Systemd detected")
+                return "systemd"
+        except Exception as e:
+            logger.debug(f"Systemd check failed: {e}")
+
+        try:
+            # Check for cron systems
+            result = elevated_run_gui(["which", "crontab"], timeout=10, capture_output=True, text=True)
+            if result.returncode == 0:
+                logger.debug("Cron system detected")
+                return "cron"
+        except Exception as e:
+            logger.debug(f"Cron check failed: {e}")
+
+        logger.warning("No supported scheduling system detected")
+        return "none"
+
+    def _optimize_systemd_timer(self, frequency: str = "daily") -> tuple[bool, str]:
+        """Create systemd timer for RKHunter scheduling"""
+        try:
+            # Calculate optimal time
+            optimal_time = self._calculate_optimal_scan_time(frequency, [])
+
+            # Create systemd service and timer files
+            service_content, timer_content = self._generate_systemd_files(frequency, optimal_time)
+
+            # Write service file
+            service_success = self._write_systemd_file(
+                "rkhunter-xanados.service",
+                service_content
+            )
+
+            if not service_success:
+                return False, "Failed to create systemd service file"
+
+            # Write timer file
+            timer_success = self._write_systemd_file(
+                "rkhunter-xanados.timer",
+                timer_content
+            )
+
+            if not timer_success:
+                return False, "Failed to create systemd timer file"
+
+            # Enable and start the timer
+            enable_success = self._enable_systemd_timer()
+
+            if enable_success:
+                return True, f"Systemd timer created and enabled for {optimal_time} {frequency}"
+            else:
+                return False, "Timer files created but failed to enable"
+
+        except Exception as e:
+            logger.error(f"Systemd timer optimization failed: {e}")
+            return False, f"Systemd timer error: {e!s}"
+
+    def _generate_systemd_files(self, frequency: str, time: str) -> tuple[str, str]:
+        """Generate systemd service and timer file contents"""
+
+        # Service file content
+        service_content = """[Unit]
+Description=RKHunter Security Scan
+After=network.target
+
+[Service]
+Type=oneshot
+User=root
+ExecStart=/usr/bin/rkhunter --check --skip-keypress --quiet --report-warnings-only
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
+"""
+
+        # Timer file content - convert time format
+        hour, minute = time.split(":")
+
+        if frequency == "daily":
+            timer_schedule = f"*-*-* {hour}:{minute}:00"
+        elif frequency == "weekly":
+            timer_schedule = f"Sun *-*-* {hour}:{minute}:00"
+        else:  # monthly
+            timer_schedule = f"*-*-01 {hour}:{minute}:00"
+
+        timer_content = f"""[Unit]
+Description=RKHunter Security Scan Timer
+Requires=rkhunter-xanados.service
+
+[Timer]
+OnCalendar={timer_schedule}
+Persistent=true
+RandomizedDelaySec=300
+
+[Install]
+WantedBy=timers.target
+"""
+
+        return service_content, timer_content
+
+    def _write_systemd_file(self, filename: str, content: str) -> bool:
+        """Write systemd unit file using elevated privileges"""
+        try:
+            import tempfile
+
+            # Create temporary file
+            with tempfile.NamedTemporaryFile(mode="w", delete=False, suffix=".service") as temp_file:
+                temp_file.write(content)
+                temp_file_path = temp_file.name
+
+            # Copy to systemd directory
+            target_path = f"/etc/systemd/system/{filename}"
+            result = elevated_run_gui(
+                ["cp", temp_file_path, target_path],
+                timeout=30,
+                capture_output=True,
+                text=True
+            )
+
+            # Clean up temp file
+            os.unlink(temp_file_path)
+
+            if result.returncode == 0:
+                logger.info(f"Created systemd file: {target_path}")
+
+                # Reload systemd daemon
+                reload_result = elevated_run_gui(
+                    ["systemctl", "daemon-reload"],
+                    timeout=30,
+                    capture_output=True,
+                    text=True
+                )
+
+                if reload_result.returncode == 0:
+                    logger.info("Systemd daemon reloaded successfully")
+                    return True
+                else:
+                    logger.warning(f"Failed to reload systemd daemon: {reload_result.stderr}")
+                    return False
+            else:
+                logger.error(f"Failed to write systemd file: {result.stderr}")
+                return False
+
+        except Exception as e:
+            logger.error(f"Error writing systemd file {filename}: {e}")
+            return False
+
+    def _enable_systemd_timer(self) -> bool:
+        """Enable and start the systemd timer"""
+        try:
+            # Enable the timer
+            result = elevated_run_gui(
+                ["systemctl", "enable", "rkhunter-xanados.timer"],
+                timeout=30,
+                capture_output=True,
+                text=True
+            )
+
+            if result.returncode != 0:
+                logger.error(f"Failed to enable timer: {result.stderr}")
+                return False
+
+            # Start the timer
+            result = elevated_run_gui(
+                ["systemctl", "start", "rkhunter-xanados.timer"],
+                timeout=30,
+                capture_output=True,
+                text=True
+            )
+
+            if result.returncode == 0:
+                logger.info("Systemd timer enabled and started successfully")
+                return True
+            else:
+                logger.error(f"Failed to start timer: {result.stderr}")
+                return False
+
+        except Exception as e:
+            logger.error(f"Error enabling systemd timer: {e}")
+            return False
+
+    def _optimize_cron_schedule_traditional(self, frequency: str = "daily") -> tuple[bool, str]:
+        """Traditional cron optimization (renamed from original method)"""
+        try:
+            logger.info(f"Optimizing traditional cron schedule for {frequency} frequency")
+
+            # Check existing cron jobs
+            existing_jobs = self._get_existing_cron_jobs()
+
+            # Calculate optimal time to avoid conflicts
+            optimal_time = self._calculate_optimal_scan_time(frequency, existing_jobs)
+
+            # Create optimized cron entry
+            cron_entry = self._generate_cron_entry(frequency, optimal_time)
+
+            # Update cron configuration
+            success = self._update_cron_job(cron_entry)
+
+            if success:
+                return True, f"Cron schedule optimized for {optimal_time}"
+            else:
+                return False, "Failed to update cron schedule"
+
+        except Exception as e:
+            logger.error(f"Traditional cron optimization failed: {e}")
+            return False, f"Cron optimization error: {e!s}"
         """Optimize cron scheduling with conflict detection"""
         try:
             logger.info(f"Optimizing cron schedule for {frequency} frequency")
@@ -753,11 +1051,303 @@ class RKHunterOptimizer:
             if not self._has_optimal_schedule():
                 recommendations.append("⏰ Optimize scan scheduling to avoid system conflicts")
 
+            # Add configuration-specific recommendations
+            config_recommendations = self._get_configuration_recommendations()
+            recommendations.extend(config_recommendations)
+
         except Exception as e:
             logger.error(f"Error generating recommendations: {e}")
             recommendations.append("❓ Run manual assessment for detailed recommendations")
 
         return recommendations
+
+    def _get_configuration_recommendations(self) -> list[str]:
+        """Get specific recommendations for configuration issues"""
+        recommendations = []
+
+        try:
+            # Check for common configuration issues and provide fixes
+            if os.path.exists(self.config_path):
+                with open(self.config_path, 'r') as f:
+                    config_content = f.read()
+
+                # Check for obsolete options
+                if 'WEB_CMD_TIMEOUT' in config_content:
+                    recommendations.append("🔧 Remove obsolete 'WEB_CMD_TIMEOUT' option from configuration")
+
+                if 'EGREP_CMD' in config_content:
+                    recommendations.append("📅 Update 'EGREP_CMD' to use 'grep -E' instead of deprecated egrep")
+
+                # Check for common regex issues
+                if '\\+' in config_content or '\\-' in config_content:
+                    recommendations.append("🔍 Review regex patterns - fix escaped characters that may cause warnings")
+
+                # Check for permission-related configurations
+                if 'ALLOW_SYSLOG_FILES' not in config_content:
+                    recommendations.append("📝 Consider adding 'ALLOW_SYSLOG_FILES=1' for better log analysis")
+
+                # Check for modern security settings
+                if 'DISABLE_TESTS' in config_content:
+                    recommendations.append("🛡️ Review disabled tests - re-enable security checks when possible")
+
+        except Exception as e:
+            logger.debug(f"Error checking configuration recommendations: {e}")
+
+        return recommendations
+
+    def detect_fixable_issues(self) -> dict[str, dict]:
+        """Detect configuration issues that can be automatically fixed.
+
+        Returns:
+            Dict mapping issue IDs to issue descriptions and fix actions
+        """
+        fixable_issues = {}
+
+        try:
+            # First, ensure we can read the system config
+            can_read, read_message = self.ensure_config_readable()
+
+            if not can_read:
+                # Config is not readable - return permission issue
+                return {
+                    "permission_issue": {
+                        "description": "🔒 System configuration requires elevated access",
+                        "detail": read_message,
+                        "fix_action": "The application will request administrator access when needed",
+                        "impact": "Enables system-wide RKHunter optimization",
+                        "requires_sudo": True
+                    }
+                }
+
+            if not os.path.exists(self.config_path):
+                return {
+                    "config_missing": {
+                        "description": "📁 RKHunter configuration file not found",
+                        "detail": f"Expected at: {self.config_path}",
+                        "fix_action": "Install RKHunter or create configuration file",
+                        "impact": "Required for RKHunter functionality",
+                        "requires_sudo": True
+                    }
+                }
+
+            # Read current configuration
+            with open(self.config_path, 'r') as f:
+                lines = f.readlines()
+
+            line_num = 0
+            for line in lines:
+                line_num += 1
+
+                # Check for obsolete WEB_CMD_TIMEOUT option
+                if line.strip().startswith('WEB_CMD_TIMEOUT'):
+                    fixable_issues[f"obsolete_web_cmd_timeout_{line_num}"] = {
+                        "description": "🔧 Obsolete 'WEB_CMD_TIMEOUT' setting found",
+                        "detail": f"Line {line_num}: {line.strip()}",
+                        "fix_action": "Remove this obsolete configuration option",
+                        "impact": "Eliminates configuration warnings",
+                        "line_number": line_num,
+                        "requires_sudo": not self.can_write_config()
+                    }
+
+                # Check for egrep commands (should use grep -E)
+                if 'egrep' in line and not line.strip().startswith('#'):
+                    fixable_issues[f"egrep_deprecated_{line_num}"] = {
+                        "description": "📅 Deprecated 'egrep' command found",
+                        "detail": f"Line {line_num}: {line.strip()}",
+                        "fix_action": "Replace 'egrep' with 'grep -E'",
+                        "impact": "Uses modern grep syntax",
+                        "line_number": line_num,
+                        "requires_sudo": not self.can_write_config()
+                    }
+
+                # Check for regex escaping issues
+                if '\\+' in line and not line.strip().startswith('#'):
+                    fixable_issues[f"regex_plus_escape_{line_num}"] = {
+                        "description": "🔍 Invalid regex escaping for '+' character",
+                        "detail": f"Line {line_num}: {line.strip()}",
+                        "fix_action": "Remove unnecessary backslash before '+'",
+                        "impact": "Fixes regex pattern matching",
+                        "line_number": line_num,
+                        "requires_sudo": not self.can_write_config()
+                    }
+
+                if '\\-' in line and not line.strip().startswith('#'):
+                    fixable_issues[f"regex_minus_escape_{line_num}"] = {
+                        "description": "🔍 Invalid regex escaping for '-' character",
+                        "detail": f"Line {line_num}: {line.strip()}",
+                        "fix_action": "Remove unnecessary backslash before '-'",
+                        "impact": "Fixes regex pattern matching",
+                        "line_number": line_num,
+                        "requires_sudo": not self.can_write_config()
+                    }
+
+        except (PermissionError, OSError) as e:
+            return {
+                "permission_error": {
+                    "description": "🔒 Permission denied accessing system configuration",
+                    "detail": f"Cannot read {self.config_path}: {e}",
+                    "fix_action": "The application will request administrator access when needed",
+                    "impact": "Required for system-wide RKHunter optimization",
+                    "requires_sudo": True
+                }
+            }
+        except Exception as e:
+            logger.error("Error detecting fixable issues: %s", e)
+            return {
+                "detection_error": {
+                    "description": "❌ Error analyzing configuration",
+                    "detail": f"Unexpected error: {e}",
+                    "fix_action": "Check system configuration and permissions",
+                    "impact": "Cannot determine configuration issues",
+                    "requires_sudo": False
+                }
+            }
+
+        return fixable_issues
+
+    def apply_selected_fixes(self, selected_fix_ids: list[str]) -> list[str]:
+        """Apply only the selected configuration fixes.
+
+        Args:
+            selected_fix_ids: List of fix IDs to apply
+
+        Returns:
+            List of fixes that were successfully applied
+        """
+        fixes_applied = []
+
+        try:
+            if not os.path.exists(self.config_path):
+                fixes_applied.append(f"❌ Configuration file {self.config_path} not found")
+                return fixes_applied
+
+            # Get current fixable issues
+            fixable_issues = self.detect_fixable_issues()
+
+            # Check if selected fixes are still applicable
+            applicable_fixes = []
+            for fix_id in selected_fix_ids:
+                if fix_id in fixable_issues:
+                    applicable_fixes.append(fix_id)
+                else:
+                    fixes_applied.append(f"ℹ️ Fix '{fix_id}' is no longer applicable (issue may have been resolved)")
+
+            if not applicable_fixes:
+                if fixes_applied:
+                    # Some fixes were not applicable
+                    return fixes_applied
+                else:
+                    # No fixes were applicable at all
+                    fixes_applied.append("ℹ️ None of the selected fixes are currently applicable")
+                    return fixes_applied
+
+            # Read current configuration
+            with open(self.config_path, 'r') as f:
+                lines = f.readlines()
+
+            modified = False
+            new_lines = []
+
+            line_num = 0
+            for line in lines:
+                line_num += 1
+                original_line = line
+
+                # Check if any selected fixes apply to this line
+                line_modified = False
+
+                for fix_id in applicable_fixes:
+                    issue = fixable_issues[fix_id]
+                    if issue.get("line_number") != line_num:
+                        continue
+
+                    # Apply the specific fix
+                    if "obsolete_web_cmd_timeout" in fix_id and line.strip().startswith('WEB_CMD_TIMEOUT'):
+                        line = f"# Removed obsolete option: {line}"
+                        fixes_applied.append("🔧 Removed obsolete 'WEB_CMD_TIMEOUT' setting")
+                        line_modified = True
+                        modified = True
+
+                    elif "egrep_deprecated" in fix_id and 'egrep' in line and not line.strip().startswith('#'):
+                        line = line.replace('egrep', 'grep -E')
+                        fixes_applied.append("📅 Updated egrep command to 'grep -E'")
+                        line_modified = True
+                        modified = True
+
+                    elif "regex_plus_escape" in fix_id and '\\+' in line and not line.strip().startswith('#'):
+                        line = line.replace('\\+', '+')
+                        fixes_applied.append("🔍 Fixed regex escaping for '+' character")
+                        line_modified = True
+                        modified = True
+
+                    elif "regex_minus_escape" in fix_id and '\\-' in line and not line.strip().startswith('#'):
+                        line = line.replace('\\-', '-')
+                        fixes_applied.append("🔍 Fixed regex escaping for '-' character")
+                        line_modified = True
+                        modified = True
+
+                new_lines.append(line)
+
+            # Write back the fixed configuration if modifications were made
+            if modified:
+                # Check if we need sudo for writing
+                if self.can_write_config():
+                    # We can write directly
+                    with open(self.config_path, 'w', encoding='utf-8') as f:
+                        f.writelines(new_lines)
+                    fixes_applied.append("💾 Configuration file updated with selected fixes")
+                else:
+                    # Need sudo to write to system config
+                    try:
+                        import tempfile
+                        import os
+
+                        # Create a temporary file with the new content
+                        with tempfile.NamedTemporaryFile(mode='w', encoding='utf-8', delete=False) as temp_file:
+                            temp_file.writelines(new_lines)
+                            temp_file_path = temp_file.name
+
+                        try:
+                            # Use sudo to copy the temp file to the system config
+                            result = run_secure([
+                                "sudo", "cp", temp_file_path, self.config_path
+                            ], capture_output=True, text=True)
+
+                            if result.returncode == 0:
+                                fixes_applied.append("💾 Configuration file updated with selected fixes (using sudo)")
+                            else:
+                                fixes_applied.append(f"❌ Failed to write configuration: {result.stderr}")
+                                return fixes_applied
+                        finally:
+                            # Clean up the temporary file
+                            os.unlink(temp_file_path)
+
+                    except Exception as write_error:
+                        fixes_applied.append(f"❌ Sudo write operation failed: {write_error}")
+                        return fixes_applied
+
+                logger.info("Applied %d selected configuration fixes", len(applicable_fixes))
+            else:
+                if applicable_fixes:
+                    fixes_applied.append("ℹ️ Selected fixes were checked but no changes were needed")
+
+        except (PermissionError, OSError) as e:
+            logger.error("Permission error applying selected fixes: %s", e)
+            fixes_applied.append(f"❌ Permission denied: {e}")
+        except Exception as e:
+            logger.error("Error applying selected fixes: %s", e)
+            fixes_applied.append(f"❌ Fix application failed: {e}")
+
+        return fixes_applied
+
+    def _auto_fix_config_issues(self) -> list[str]:
+        """Automatically fix common configuration issues"""
+        # Get all fixable issues
+        fixable_issues = self.detect_fixable_issues()
+
+        # Apply all fixes automatically
+        all_fix_ids = list(fixable_issues.keys())
+        return self.apply_selected_fixes(all_fix_ids)
 
     def _validate_configuration(self) -> list[str]:
         """Validate current configuration for issues"""
@@ -788,10 +1378,17 @@ class RKHunterOptimizer:
                 if result.returncode != 0:
                     # Check if it's a real syntax error or just permission issue
                     stderr_lower = result.stderr.lower() if result.stderr else ""
+                    stdout_lower = result.stdout.lower() if result.stdout else ""
+
                     if "permission" in stderr_lower or "access" in stderr_lower:
                         warnings.append("🔒 Configuration check requires elevated permissions")
                     else:
-                        warnings.append("⚠️ Configuration syntax issues detected")
+                        # Parse specific configuration issues
+                        config_issues = self._parse_config_check_output(result.stdout, result.stderr)
+                        if config_issues:
+                            warnings.extend(config_issues)
+                        else:
+                            warnings.append("⚠️ Configuration syntax issues detected (run 'sudo rkhunter --config-check' for details)")
 
             except subprocess.TimeoutExpired:
                 warnings.append("⏱️ Configuration check timed out")
@@ -830,6 +1427,57 @@ class RKHunterOptimizer:
 
         return warnings
 
+    def _parse_config_check_output(self, stdout: str, stderr: str) -> list[str]:
+        """Parse RKHunter config-check output to provide specific, actionable warnings"""
+        issues = []
+
+        # Combine stdout and stderr for parsing
+        output = (stdout or "") + "\n" + (stderr or "")
+
+        # Parse unknown configuration options
+        import re
+        unknown_options = re.findall(r'Unknown configuration file option:\s*([^\n]+)', output, re.IGNORECASE)
+        for option in unknown_options:
+            option_name = option.split('=')[0].strip()
+            issues.append(f"🔧 Unknown config option '{option_name}' - remove or update this setting")
+
+        # Parse grep warnings (regex issues)
+        grep_warnings = re.findall(r'grep: warning:\s*([^\n]+)', output, re.IGNORECASE)
+        if grep_warnings:
+            unique_warnings = set(grep_warnings)
+            if len(unique_warnings) > 3:  # If many warnings, summarize
+                issues.append("🔍 Configuration contains invalid regex patterns - review and fix pattern syntax")
+            else:
+                for warning in list(unique_warnings)[:3]:  # Show first 3 unique warnings
+                    if "stray \\" in warning:
+                        issues.append("🔍 Invalid backslash escapes in configuration - check regex patterns")
+                    else:
+                        issues.append(f"🔍 Regex issue: {warning}")
+
+        # Parse egrep obsolescence warnings
+        egrep_count = output.lower().count("egrep is obsolescent")
+        if egrep_count > 0:
+            issues.append("📅 Configuration uses obsolete 'egrep' patterns - update to 'grep -E' syntax")
+
+        # Parse permission issues
+        if re.search(r'permission\s+denied|access\s+denied', output, re.IGNORECASE):
+            issues.append("🔒 Permission denied during config check - run with elevated privileges")
+
+        # Parse missing files or directories
+        missing_files = re.findall(r'(?:cannot access|no such file or directory):\s*([^\n]+)', output, re.IGNORECASE)
+        for file_path in missing_files[:3]:  # Limit to first 3
+            issues.append(f"📁 Missing file or directory: {file_path.strip()}")
+
+        # Parse dependency issues
+        if re.search(r'command not found|not installed', output, re.IGNORECASE):
+            issues.append("📦 Missing required dependencies - install missing packages")
+
+        # If we found specific issues, add a general recommendation
+        if issues:
+            issues.append("💡 Fix suggestion: Review and update your RKHunter configuration file")
+
+        return issues
+
     # Helper methods
     def _acquire_lock(self):
         """Acquire file lock for safe concurrent access"""
@@ -862,37 +1510,36 @@ class RKHunterOptimizer:
                 logger.warning(f"Configuration file {self.config_path} does not exist")
                 return False
 
-            # Use auth_session_manager for privileged file operations
+            # Use elevated file operation for backup
             try:
-                with session_context():
-                    # Try using elevated file operation first
-                    backup_name = f"rkhunter.conf.backup.{int(time.time())}"
-                    temp_backup = self.temp_dir / backup_name
+                # Try using elevated file operation first
+                backup_name = f"rkhunter.conf.backup.{int(time.time())}"
+                temp_backup = self.temp_dir / backup_name
 
-                    # Use sudo to copy the file
-                    result = run_secure(
-                        ["sudo", "cp", self.config_path, str(temp_backup)],
+                # Use sudo to copy the file
+                result = run_secure(
+                    ["sudo", "cp", self.config_path, str(temp_backup)],
+                    capture_output=True,
+                    text=True,
+                    timeout=30,
+                )
+
+                if result.returncode == 0:
+                    # Make the backup file readable by the user
+                    run_secure(
+                        [
+                            "sudo",
+                            "chown",
+                            f"{os.getuid()}:{os.getgid()}",
+                            str(temp_backup),
+                        ],
                         capture_output=True,
-                        text=True,
-                        timeout=30,
+                        timeout=10,
                     )
-
-                    if result.returncode == 0:
-                        # Make the backup file readable by the user
-                        run_secure(
-                            [
-                                "sudo",
-                                "chown",
-                                f"{os.getuid()}:{os.getgid()}",
-                                str(temp_backup),
-                            ],
-                            capture_output=True,
-                            timeout=10,
-                        )
-                        logger.info(f"Configuration backed up to {temp_backup}")
-                        return True
-                    else:
-                        logger.warning(f"Sudo copy failed: {result.stderr}")
+                    logger.info(f"Configuration backed up to {temp_backup}")
+                    return True
+                else:
+                    logger.warning(f"Sudo copy failed: {result.stderr}")
 
             except Exception as e:
                 logger.debug(f"Privileged backup failed: {e}")
@@ -913,16 +1560,24 @@ class RKHunterOptimizer:
         return False
 
     def _read_config_file(self) -> str:
-        """Read configuration file content with unified authentication session management"""
+        """Read configuration file content with GUI authentication"""
         try:
             with open(self.config_path) as f:
                 return f.read()
         except PermissionError:
             logger.info("Permission denied for direct read, using elevated permissions...")
             try:
-                return auth_manager.execute_elevated_file_operation(
-                    "read", self.config_path, session_type="rkhunter_config"
+                result = elevated_run_gui(
+                    ["cat", self.config_path],
+                    timeout=30,
+                    capture_output=True,
+                    text=True
                 )
+                if result.returncode == 0:
+                    return result.stdout
+                else:
+                    logger.error(f"Failed to read config with elevated permissions: {result.stderr}")
+                    return ""
             except Exception as elevated_error:
                 logger.error(
                     f"Failed to read config file even with elevated permissions: {elevated_error}"
@@ -933,7 +1588,7 @@ class RKHunterOptimizer:
             return ""
 
     def _write_config_file(self, content: str):
-        """Write configuration file content with unified authentication session management"""
+        """Write configuration file content with GUI authentication"""
         try:
             # First try to write directly
             with open(self.config_path, "w") as f:
@@ -941,15 +1596,27 @@ class RKHunterOptimizer:
             logger.info("Configuration file updated")
         except PermissionError:
             logger.info("Permission denied for direct write, using elevated permissions...")
-            # If permission denied, use unified authentication manager
             try:
-                result = auth_manager.execute_elevated_file_operation(
-                    "write", self.config_path, content, session_type="rkhunter_config"
+                # Write to temp file first, then copy with elevated permissions
+                import tempfile
+                with tempfile.NamedTemporaryFile(mode="w", delete=False, suffix=".conf") as temp_file:
+                    temp_file.write(content)
+                    temp_file_path = temp_file.name
+
+                result = elevated_run_gui(
+                    ["cp", temp_file_path, self.config_path],
+                    timeout=30,
+                    capture_output=True,
+                    text=True
                 )
-                if result:
+
+                # Clean up temp file
+                os.unlink(temp_file_path)
+
+                if result.returncode == 0:
                     logger.info("Configuration file updated with elevated permissions")
                 else:
-                    raise RuntimeError("Failed to write config file with elevated permissions")
+                    raise RuntimeError(f"Failed to write config file: {result.stderr}")
             except Exception as elevated_error:
                 logger.error(
                     f"Failed to write config file even with elevated permissions: {elevated_error}"
@@ -1259,13 +1926,15 @@ class RKHunterOptimizer:
 
     # Additional helper methods for cron optimization, system checks, etc.
     def _get_existing_cron_jobs(self) -> list[str]:
-        """Get existing cron jobs"""
+        """Get existing cron jobs - kept for compatibility but not used with systemd"""
+        # This method is kept for backwards compatibility but systemd timers
+        # are preferred on modern systems
         try:
-            result = run_secure(["crontab", "-l"], check=False, capture_output=True, text=True)
+            result = elevated_run_gui(["crontab", "-l"], timeout=30, capture_output=True, text=True)
             if result.returncode == 0:
                 return result.stdout.strip().split("\n")
-        except BaseException:
-            pass
+        except Exception as e:
+            logger.debug(f"Could not get existing cron jobs (normal on systemd systems): {e}")
         return []
 
     def _calculate_optimal_scan_time(self, frequency: str, existing_jobs: list[str]) -> str:
@@ -1299,98 +1968,13 @@ class RKHunterOptimizer:
             return f"{minute} {hour} 1 * * {user_spec}{base_cmd}"
 
     def _update_cron_job(self, cron_entry: str) -> bool:
-        """Update cron job with fallback approaches."""
-        try:
-            # Method 1: Try using crontab directly
-            try:
-                # Get existing crontab
-                result = run_secure(["crontab", "-l"], check=False, capture_output=True, text=True)
-                current_crontab = result.stdout if result.returncode == 0 else ""
-
-                # Remove existing rkhunter entries
-                lines = current_crontab.split("\n")
-                filtered_lines = [line for line in lines if "rkhunter" not in line and line.strip()]
-
-                # Add new entry
-                filtered_lines.append(cron_entry)
-
-                # Update crontab
-                new_crontab = "\n".join(filtered_lines) + "\n"
-
-                # Write to temp file first
-                import tempfile
-
-                with tempfile.NamedTemporaryFile(
-                    mode="w", delete=False, suffix=".cron"
-                ) as temp_file:
-                    temp_file.write(new_crontab)
-                    temp_file_path = temp_file.name
-
-                # Install crontab from file
-                result = run_secure(["crontab", temp_file_path], capture_output=True, text=True)
-
-                # Clean up temp file
-                os.unlink(temp_file_path)
-
-                if result.returncode == 0:
-                    logger.info("Cron job updated successfully")
-                    return True
-                else:
-                    logger.warning(f"Crontab update failed: {result.stderr}")
-
-            except Exception as cron_error:
-                logger.warning(f"Direct crontab method failed: {cron_error}")
-
-            # Method 2: Try writing to system cron.d directory
-            try:
-                cron_file_path = "/etc/cron.d/rkhunter-xanados"
-                # Generate system cron entry with user specification
-                system_cron_entry = self._generate_cron_entry(
-                    (
-                        "daily"
-                        if "* *" in cron_entry
-                        else "weekly"
-                        if "* 0" in cron_entry
-                        else "monthly"
-                    ),
-                    "02:30",  # Default time
-                    system_cron=True,
-                )
-                cron_content = f"# RKHunter optimization cron job managed by xanadOS Search & Destroy\n{system_cron_entry}\n"
-
-                # Use sudo to write the cron file
-                import tempfile
-
-                with tempfile.NamedTemporaryFile(
-                    mode="w", delete=False, suffix=".cron"
-                ) as temp_file:
-                    temp_file.write(cron_content)
-                    temp_file_path = temp_file.name
-
-                result = run_secure(
-                    ["sudo", "cp", temp_file_path, cron_file_path],
-                    capture_output=True,
-                    text=True,
-                )
-
-                os.unlink(temp_file_path)
-
-                if result.returncode == 0:
-                    logger.info(f"System cron job created at {cron_file_path}")
-                    return True
-                else:
-                    logger.warning(f"System cron creation failed: {result.stderr}")
-
-            except Exception as system_cron_error:
-                logger.warning(f"System cron method failed: {system_cron_error}")
-
-            # Method 3: Just log the cron entry for manual setup
-            logger.info(f"Cron job automation failed. Manual cron entry needed: {cron_entry}")
-            return False
-
-        except Exception as e:
-            logger.error(f"Failed to update cron job: {e}")
-            return False
+        """Legacy cron job update - kept for backwards compatibility only.
+        Modern systems use systemd timers instead via _optimize_systemd_timer().
+        """
+        logger.warning("Traditional cron scheduling attempted on systemd system")
+        logger.info(f"Legacy cron entry would be: {cron_entry}")
+        logger.info("Use systemd timer optimization instead for better reliability")
+        return False
 
     def _system_has_sufficient_memory(self) -> bool:
         """Check if system has sufficient memory"""
