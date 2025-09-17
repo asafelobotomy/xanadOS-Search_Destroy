@@ -179,7 +179,9 @@ class WebProtectionSystem:
         # Callbacks
         self.threat_detected_callback: Callable[[WebThreat], None] | None = None
         self.request_blocked_callback: Callable[[str, str], None] | None = None
-        self.suspicious_activity_callback: Callable[[str, dict[str, Any]], None] | None = None
+        self.suspicious_activity_callback: (
+            Callable[[str, dict[str, Any]], None] | None
+        ) = None
 
         # Threading
         self.lock = threading.RLock()
@@ -265,9 +267,9 @@ class WebProtectionSystem:
 
         except Exception:
             self.logerror(
-                "Failed to initialize web protection database: %s".replace("%s", "{e}").replace(
-                    "%d", "{e}"
-                )
+                "Failed to initialize web protection database: %s".replace(
+                    "%s", "{e}"
+                ).replace("%d", "{e}")
             )
 
     def _load_default_threat_lists(self) -> None:
@@ -315,7 +317,9 @@ class WebProtectionSystem:
 
         except Exception:
             self.logerror(
-                "Error loading threat lists: %s".replace("%s", "{e}").replace("%d", "{e}")
+                "Error loading threat lists: %s".replace("%s", "{e}").replace(
+                    "%d", "{e}"
+                )
             )
 
     def _load_cached_threat_lists(self) -> None:
@@ -341,7 +345,9 @@ class WebProtectionSystem:
 
         except Exception:
             self.logerror(
-                "Error loading cached threat lists: %s".replace("%s", "{e}").replace("%d", "{e}")
+                "Error loading cached threat lists: %s".replace("%s", "{e}").replace(
+                    "%d", "{e}"
+                )
             )
 
     async def start_protection(self) -> bool:
@@ -380,7 +386,9 @@ class WebProtectionSystem:
 
         except Exception:
             self.logerror(
-                "Failed to start web protection: %s".replace("%s", "{e}").replace("%d", "{e}")
+                "Failed to start web protection: %s".replace("%s", "{e}").replace(
+                    "%d", "{e}"
+                )
             )
             self.running = False
             return False
@@ -469,7 +477,9 @@ class WebProtectionSystem:
                 heuristic_result = await self._heuristic_url_analysis(normalized_url)
                 if heuristic_result:
                     threat_indicators.extend(heuristic_result.get("indicators", []))
-                    risk_score = max(risk_score, heuristic_result.get("risk_score", 0.0))
+                    risk_score = max(
+                        risk_score, heuristic_result.get("risk_score", 0.0)
+                    )
 
             # Final reputation determination
             if reputation == URLReputation.UNKNOWN:
@@ -516,7 +526,9 @@ class WebProtectionSystem:
 
         except Exception:
             self.logerror(
-                "Error analyzing URL %s: %s".replace("%s", "{url, e}").replace("%d", "{url, e}")
+                "Error analyzing URL %s: %s".replace("%s", "{url, e}").replace(
+                    "%d", "{url, e}"
+                )
             )
             # Return safe default
             return URLAnalysis(
@@ -616,9 +628,9 @@ class WebProtectionSystem:
                         self.threat_detected_callback(threat)
                     except Exception:
                         self.logerror(
-                            "Error in threat detected callback: %s".replace("%s", "{e}").replace(
-                                "%d", "{e}"
-                            )
+                            "Error in threat detected callback: %s".replace(
+                                "%s", "{e}"
+                            ).replace("%d", "{e}")
                         )
 
                 if should_block and self.request_blocked_callback:
@@ -626,9 +638,9 @@ class WebProtectionSystem:
                         self.request_blocked_callback(url, block_reason)
                     except Exception:
                         self.logerror(
-                            "Error in request blocked callback: %s".replace("%s", "{e}").replace(
-                                "%d", "{e}"
-                            )
+                            "Error in request blocked callback: %s".replace(
+                                "%s", "{e}"
+                            ).replace("%d", "{e}")
                         )
 
             return not should_block, threat
@@ -700,7 +712,9 @@ class WebProtectionSystem:
                 return {
                     "reputation": URLReputation(reputation_str),
                     "risk_score": risk_score,
-                    "indicators": (json.loads(threat_categories) if threat_categories else []),
+                    "indicators": (
+                        json.loads(threat_categories) if threat_categories else []
+                    ),
                     "source": source,
                 }
 
@@ -708,7 +722,9 @@ class WebProtectionSystem:
 
         except Exception:
             self.logerror(
-                "Error checking domain reputation: %s".replace("%s", "{e}").replace("%d", "{e}")
+                "Error checking domain reputation: %s".replace("%s", "{e}").replace(
+                    "%d", "{e}"
+                )
             )
             return None
 
@@ -728,13 +744,15 @@ class WebProtectionSystem:
                     ip_addresses.append(str(answer))
             except dns.resolver.NXDOMAIN:
                 self.logdebug(
-                    "Domain not found: %s".replace("%s", "{domain}").replace("%d", "{domain}")
+                    "Domain not found: %s".replace("%s", "{domain}").replace(
+                        "%d", "{domain}"
+                    )
                 )
             except Exception:
                 self.logdebug(
-                    "DNS resolution error for %s: %s".replace("%s", "{domain, e}").replace(
-                        "%d", "{domain, e}"
-                    )
+                    "DNS resolution error for %s: %s".replace(
+                        "%s", "{domain, e}"
+                    ).replace("%d", "{domain, e}")
                 )
 
             return ip_addresses
@@ -768,8 +786,12 @@ class WebProtectionSystem:
                 # This is for security analysis purposes, not for trusting the connection
                 try:
                     context = ssl.create_default_context()
-                    context.check_hostname = False
-                    context.verify_mode = ssl.CERT_NONE
+                    context.check_hostname = (
+                        False  # DevSkim: ignore DS130821 - Security analysis only
+                    )
+                    context.verify_mode = (
+                        ssl.CERT_NONE
+                    )  # DevSkim: ignore DS130821 - Security analysis only
 
                     with socket.create_connection((domain, 443), timeout=10) as sock:
                         with context.wrap_socket(sock, server_hostname=domain) as ssock:
@@ -806,7 +828,9 @@ class WebProtectionSystem:
                         "not_before": cert.get("notBefore"),
                         "not_after": cert.get("notAfter"),
                         "subject_alt_names": [
-                            x[1] for x in cert.get("subjectAltName", []) if isinstance(x, tuple)
+                            x[1]
+                            for x in cert.get("subjectAltName", [])
+                            if isinstance(x, tuple)
                         ],
                         "is_self_signed": False,
                         "is_suspicious": False,
@@ -833,7 +857,9 @@ class WebProtectionSystem:
                     "example",
                 ]
 
-                if any(suspicious in issuer_cn.lower() for suspicious in suspicious_issuers):
+                if any(
+                    suspicious in issuer_cn.lower() for suspicious in suspicious_issuers
+                ):
                     ssl_info["is_suspicious"] = True
                     ssl_info["suspicious_reason"] = "suspicious_issuer"
 
@@ -841,8 +867,12 @@ class WebProtectionSystem:
                 try:
                     from datetime import datetime
 
-                    not_after = datetime.strptime(ssl_info["not_after"], "%b %d %H:%M:%S %Y %Z")
-                    not_before = datetime.strptime(ssl_info["not_before"], "%b %d %H:%M:%S %Y %Z")
+                    not_after = datetime.strptime(
+                        ssl_info["not_after"], "%b %d %H:%M:%S %Y %Z"
+                    )
+                    not_before = datetime.strptime(
+                        ssl_info["not_before"], "%b %d %H:%M:%S %Y %Z"
+                    )
 
                     # Very short validity period (less than 30 days)
                     validity_days = (not_after - not_before).days
@@ -920,7 +950,9 @@ class WebProtectionSystem:
 
         except Exception:
             self.logerror(
-                "Error analyzing URL patterns: %s".replace("%s", "{e}").replace("%d", "{e}")
+                "Error analyzing URL patterns: %s".replace("%s", "{e}").replace(
+                    "%d", "{e}"
+                )
             )
             return []
 
@@ -947,7 +979,11 @@ class WebProtectionSystem:
             return None
 
         except Exception:
-            self.logerror("Error checking blacklists: %s".replace("%s", "{e}").replace("%d", "{e}"))
+            self.logerror(
+                "Error checking blacklists: %s".replace("%s", "{e}").replace(
+                    "%d", "{e}"
+                )
+            )
             return None
 
     async def _heuristic_url_analysis(self, url: str) -> dict[str, Any] | None:
@@ -980,7 +1016,9 @@ class WebProtectionSystem:
                         "Strict-Transport-Security",
                     ]
 
-                    missing_headers = sum(1 for header in security_headers if header not in headers)
+                    missing_headers = sum(
+                        1 for header in security_headers if header not in headers
+                    )
                     if missing_headers >= 3:
                         indicators.append("missing_security_headers")
                         risk_score += 0.2
@@ -992,7 +1030,9 @@ class WebProtectionSystem:
                         content = await response.read()  # Read all content
 
                         if content:
-                            content_str = content.decode("utf-8", errors="ignore").lower()
+                            content_str = content.decode(
+                                "utf-8", errors="ignore"
+                            ).lower()
 
                             # Check for suspicious content patterns
                             suspicious_patterns = [
@@ -1014,7 +1054,10 @@ class WebProtectionSystem:
                                     break
 
                             # Check for hidden elements (potential cloaking)
-                            if "display:none" in content_str or "visibility:hidden" in content_str:
+                            if (
+                                "display:none" in content_str
+                                or "visibility:hidden" in content_str
+                            ):
                                 indicators.append("hidden_content")
                                 risk_score += 0.2
 
@@ -1040,7 +1083,9 @@ class WebProtectionSystem:
 
         except Exception:
             self.logerror(
-                "Error in heuristic URL analysis: %s".replace("%s", "{e}").replace("%d", "{e}")
+                "Error in heuristic URL analysis: %s".replace("%s", "{e}").replace(
+                    "%d", "{e}"
+                )
             )
             return None
 
@@ -1097,9 +1142,9 @@ class WebProtectionSystem:
             # Limit cache size
             if len(self.url_cache) > 10000:
                 # Remove oldest entries
-                oldest_urls = sorted(self.cache_expiry.keys(), key=lambda u: self.cache_expiry[u])[
-                    :1000
-                ]
+                oldest_urls = sorted(
+                    self.cache_expiry.keys(), key=lambda u: self.cache_expiry[u]
+                )[:1000]
 
                 for url_to_remove in oldest_urls:
                     self.url_cache.pop(url_to_remove, None)
@@ -1135,7 +1180,9 @@ class WebProtectionSystem:
 
         except Exception:
             self.logerror(
-                "Error storing analysis result: %s".replace("%s", "{e}").replace("%d", "{e}")
+                "Error storing analysis result: %s".replace("%s", "{e}").replace(
+                    "%d", "{e}"
+                )
             )
 
     def _store_threat_detection(self, threat: WebThreat) -> None:
@@ -1168,7 +1215,9 @@ class WebProtectionSystem:
 
         except Exception:
             self.logerror(
-                "Error storing threat detection: %s".replace("%s", "{e}").replace("%d", "{e}")
+                "Error storing threat detection: %s".replace("%s", "{e}").replace(
+                    "%d", "{e}"
+                )
             )
 
     def _threat_intel_update_loop(self) -> None:
@@ -1186,9 +1235,9 @@ class WebProtectionSystem:
 
             except Exception:
                 self.logerror(
-                    "Error in threat intel update loop: %s".replace("%s", "{e}").replace(
-                        "%d", "{e}"
-                    )
+                    "Error in threat intel update loop: %s".replace(
+                        "%s", "{e}"
+                    ).replace("%d", "{e}")
                 )
                 time.sleep(300)  # Sleep 5 minutes on error
 
@@ -1205,16 +1254,16 @@ class WebProtectionSystem:
                 try:
                     # Would fetch and parse threat feed
                     self.logdebug(
-                        "Would update from feed: %s".replace("%s", "{feed_url}").replace(
-                            "%d", "{feed_url}"
-                        )
+                        "Would update from feed: %s".replace(
+                            "%s", "{feed_url}"
+                        ).replace("%d", "{feed_url}")
                     )
                     updated_domains += 1
                 except Exception:
                     self.logerror(
-                        "Error updating from feed %s: %s".replace("%s", "{feed_url, e}").replace(
-                            "%d", "{feed_url, e}"
-                        )
+                        "Error updating from feed %s: %s".replace(
+                            "%s", "{feed_url, e}"
+                        ).replace("%d", "{feed_url, e}")
                     )
 
             self.logger.info(
@@ -1224,7 +1273,9 @@ class WebProtectionSystem:
 
         except Exception:
             self.logerror(
-                "Error updating threat intelligence: %s".replace("%s", "{e}").replace("%d", "{e}")
+                "Error updating threat intelligence: %s".replace("%s", "{e}").replace(
+                    "%d", "{e}"
+                )
             )
 
     def add_blocked_domain(
@@ -1264,7 +1315,9 @@ class WebProtectionSystem:
 
         except Exception:
             self.logerror(
-                "Error adding blocked domain: %s".replace("%s", "{e}").replace("%d", "{e}")
+                "Error adding blocked domain: %s".replace("%s", "{e}").replace(
+                    "%d", "{e}"
+                )
             )
 
     def remove_blocked_domain(self, domain: str) -> None:
@@ -1292,12 +1345,16 @@ class WebProtectionSystem:
             conn.close()
 
             self.loginfo(
-                "Removed blocked domain: %s".replace("%s", "{domain}").replace("%d", "{domain}")
+                "Removed blocked domain: %s".replace("%s", "{domain}").replace(
+                    "%d", "{domain}"
+                )
             )
 
         except Exception:
             self.logerror(
-                "Error removing blocked domain: %s".replace("%s", "{e}").replace("%d", "{e}")
+                "Error removing blocked domain: %s".replace("%s", "{e}").replace(
+                    "%d", "{e}"
+                )
             )
 
     def get_protection_statistics(self) -> dict[str, Any]:
@@ -1324,15 +1381,17 @@ class WebProtectionSystem:
 
         except Exception:
             self.logerror(
-                "Error getting protection statistics: %s".replace("%s", "{e}").replace("%d", "{e}")
+                "Error getting protection statistics: %s".replace("%s", "{e}").replace(
+                    "%d", "{e}"
+                )
             )
             return {}
 
     def get_recent_threats(self, limit: int = 50) -> list[dict[str, Any]]:
         """Get recent threat detections."""
-        recent_threats = sorted(self.threat_history, key=lambda t: t.detection_time, reverse=True)[
-            :limit
-        ]
+        recent_threats = sorted(
+            self.threat_history, key=lambda t: t.detection_time, reverse=True
+        )[:limit]
 
         return [
             {
@@ -1349,11 +1408,15 @@ class WebProtectionSystem:
         ]
 
     # Callback setters
-    def set_threat_detected_callback(self, callback: Callable[[WebThreat], None]) -> None:
+    def set_threat_detected_callback(
+        self, callback: Callable[[WebThreat], None]
+    ) -> None:
         """Set callback for threat detection."""
         self.threat_detected_callback = callback
 
-    def set_request_blocked_callback(self, callback: Callable[[str, str], None]) -> None:
+    def set_request_blocked_callback(
+        self, callback: Callable[[str, str], None]
+    ) -> None:
         """Set callback for blocked requests."""
         self.request_blocked_callback = callback
 

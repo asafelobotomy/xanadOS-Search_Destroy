@@ -17,6 +17,7 @@ from typing import Any
 
 class ErrorSeverity(Enum):
     """Error severity levels for categorizing exceptions."""
+
     LOW = "low"
     MEDIUM = "medium"
     HIGH = "high"
@@ -25,6 +26,7 @@ class ErrorSeverity(Enum):
 
 class ErrorCategory(Enum):
     """Error categories for organizing exception types."""
+
     SYSTEM = "system"
     SECURITY = "security"
     NETWORK = "network"
@@ -56,7 +58,7 @@ class BaseXanadOSError(Exception):
         severity: ErrorSeverity = ErrorSeverity.MEDIUM,
         category: ErrorCategory = ErrorCategory.SYSTEM,
         context: dict[str, Any] | None = None,
-        cause: Exception | None = None
+        cause: Exception | None = None,
     ):
         super().__init__(message)
 
@@ -83,7 +85,7 @@ class BaseXanadOSError(Exception):
             "severity": self.severity.value,
             "category": self.category.value,
             "context": self.context,
-            "timestamp": self.timestamp.isoformat()
+            "timestamp": self.timestamp.isoformat(),
         }
 
         if self.cause:
@@ -109,25 +111,28 @@ class BaseXanadOSError(Exception):
             "category": self.category.value,
             "context": self.context,
             "cause": str(self.cause) if self.cause else None,
-            "timestamp": self.timestamp.isoformat()
+            "timestamp": self.timestamp.isoformat(),
         }
 
 
 # System Errors
 class SystemError(BaseXanadOSError):
     """General system-level errors."""
+
     def __init__(self, message: str, **kwargs: Any) -> None:
         super().__init__(message, category=ErrorCategory.SYSTEM, **kwargs)
 
 
 class ConfigurationError(BaseXanadOSError):
     """Configuration and setup related errors."""
+
     def __init__(self, message: str, **kwargs: Any) -> None:
         super().__init__(message, category=ErrorCategory.CONFIGURATION, **kwargs)
 
 
 class PerformanceError(BaseXanadOSError):
     """Performance and resource-related errors."""
+
     def __init__(self, message: str, **kwargs: Any) -> None:
         super().__init__(message, category=ErrorCategory.PERFORMANCE, **kwargs)
 
@@ -135,20 +140,23 @@ class PerformanceError(BaseXanadOSError):
 # Security Errors
 class SecurityError(BaseXanadOSError):
     """Security-related errors."""
+
     def __init__(self, message: str, **kwargs: Any) -> None:
-        kwargs.setdefault('severity', ErrorSeverity.HIGH)
+        kwargs.setdefault("severity", ErrorSeverity.HIGH)
         super().__init__(message, category=ErrorCategory.SECURITY, **kwargs)
 
 
 class AuthenticationError(BaseXanadOSError):
     """Authentication and authorization errors."""
+
     def __init__(self, message: str, **kwargs: Any) -> None:
-        kwargs.setdefault('severity', ErrorSeverity.HIGH)
+        kwargs.setdefault("severity", ErrorSeverity.HIGH)
         super().__init__(message, category=ErrorCategory.AUTHENTICATION, **kwargs)
 
 
 class ValidationError(BaseXanadOSError):
     """Input validation and sanitization errors."""
+
     def __init__(self, message: str, **kwargs: Any) -> None:
         super().__init__(message, category=ErrorCategory.VALIDATION, **kwargs)
 
@@ -156,74 +164,85 @@ class ValidationError(BaseXanadOSError):
 # Network Errors
 class NetworkError(BaseXanadOSError):
     """Network connectivity and communication errors."""
+
     def __init__(self, message: str, **kwargs: Any) -> None:
         super().__init__(message, category=ErrorCategory.NETWORK, **kwargs)
 
 
 class NetworkTimeoutError(NetworkError):
     """Network operation timeout errors."""
+
     def __init__(self, message: str, timeout_seconds: float, **kwargs: Any) -> None:
         super().__init__(message, **kwargs)
-        self.context['timeout_seconds'] = timeout_seconds
+        self.context["timeout_seconds"] = timeout_seconds
 
 
 # File I/O Errors
 class FileIOError(BaseXanadOSError):
     """File input/output operation errors."""
-    def __init__(self, message: str, file_path: str | None = None, **kwargs: Any) -> None:
+
+    def __init__(
+        self, message: str, file_path: str | None = None, **kwargs: Any
+    ) -> None:
         super().__init__(message, category=ErrorCategory.FILE_IO, **kwargs)
         if file_path:
-            self.context['file_path'] = file_path
+            self.context["file_path"] = file_path
 
 
 class FilePermissionError(FileIOError):
     """File permission related errors."""
+
     def __init__(self, message: str, file_path: str, **kwargs: Any) -> None:
-        kwargs.setdefault('severity', ErrorSeverity.HIGH)
+        kwargs.setdefault("severity", ErrorSeverity.HIGH)
         super().__init__(message, file_path=file_path, **kwargs)
 
 
 # Database Errors
 class DatabaseError(BaseXanadOSError):
     """Database operation errors."""
+
     def __init__(self, message: str, **kwargs: Any) -> None:
         super().__init__(message, category=ErrorCategory.DATABASE, **kwargs)
 
 
 class DatabaseConnectionError(DatabaseError):
     """Database connection errors."""
+
     def __init__(self, message: str, **kwargs: Any) -> None:
-        kwargs.setdefault('severity', ErrorSeverity.HIGH)
+        kwargs.setdefault("severity", ErrorSeverity.HIGH)
         super().__init__(message, **kwargs)
 
 
 # Machine Learning Errors
 class MLModelError(BaseXanadOSError):
     """Machine learning model related errors."""
-    def __init__(self, message: str, model_name: str | None = None, **kwargs: Any) -> None:
+
+    def __init__(
+        self, message: str, model_name: str | None = None, **kwargs: Any
+    ) -> None:
         super().__init__(message, category=ErrorCategory.ML_MODEL, **kwargs)
         if model_name:
-            self.context['model_name'] = model_name
+            self.context["model_name"] = model_name
 
 
 class MLTrainingError(MLModelError):
     """Machine learning model training errors."""
+
     def __init__(self, message: str, model_name: str, **kwargs: Any) -> None:
-        kwargs.setdefault('severity', ErrorSeverity.HIGH)
+        kwargs.setdefault("severity", ErrorSeverity.HIGH)
         super().__init__(message, model_name=model_name, **kwargs)
 
 
 class MLPredictionError(MLModelError):
     """Machine learning prediction errors."""
+
     def __init__(self, message: str, model_name: str, **kwargs: Any) -> None:
         super().__init__(message, model_name=model_name, **kwargs)
 
 
 # Exception Handling Decorators and Utilities
 def handle_exceptions(
-    reraise: bool = True,
-    fallback_return: Any = None,
-    log_traceback: bool = True
+    reraise: bool = True, fallback_return: Any = None, log_traceback: bool = True
 ):
     """
     Decorator for standardized exception handling.
@@ -233,6 +252,7 @@ def handle_exceptions(
         fallback_return: Value to return if exception occurs and reraise=False
         log_traceback: Whether to log the full traceback
     """
+
     def decorator(func):
         def wrapper(*args, **kwargs):
             try:
@@ -251,7 +271,7 @@ def handle_exceptions(
                     "args": str(args),
                     "kwargs": str(kwargs),
                     "exception_type": type(e).__name__,
-                    "exception_message": str(e)
+                    "exception_message": str(e),
                 }
 
                 if log_traceback:
@@ -264,17 +284,19 @@ def handle_exceptions(
                     raise SystemError(
                         f"Unhandled {type(e).__name__} in {func.__name__}: {e!s}",
                         cause=e,
-                        context=error_data
+                        context=error_data,
                     )
                 return fallback_return
+
         return wrapper
+
     return decorator
 
 
 def safe_operation(
     operation_name: str,
     error_category: ErrorCategory = ErrorCategory.SYSTEM,
-    error_severity: ErrorSeverity = ErrorSeverity.MEDIUM
+    error_severity: ErrorSeverity = ErrorSeverity.MEDIUM,
 ):
     """
     Context manager for safe operations with standardized error handling.
@@ -284,6 +306,7 @@ def safe_operation(
             # risky operation
             pass
     """
+
     class SafeOperationContext:
         def __enter__(self):
             return self
@@ -295,7 +318,7 @@ def safe_operation(
                     f"Error in {operation_name}: {exc_val!s}",
                     cause=exc_val,
                     category=error_category,
-                    severity=error_severity
+                    severity=error_severity,
                 )
             return False  # Don't suppress exceptions
 
@@ -303,9 +326,7 @@ def safe_operation(
 
 
 def log_and_reraise(
-    message: str,
-    exception_class: type = SystemError,
-    **exception_kwargs
+    message: str, exception_class: type = SystemError, **exception_kwargs
 ):
     """
     Decorator to log and reraise exceptions with additional context.
@@ -316,6 +337,7 @@ def log_and_reraise(
             # operation that might fail
             pass
     """
+
     def decorator(func):
         def wrapper(*args, **kwargs):
             try:
@@ -327,11 +349,13 @@ def log_and_reraise(
                     context={
                         "function": f"{func.__module__}.{func.__name__}",
                         "args": str(args)[:200],  # Limit size
-                        "kwargs": str(kwargs)[:200]
+                        "kwargs": str(kwargs)[:200],
                     },
-                    **exception_kwargs
+                    **exception_kwargs,
                 )
+
         return wrapper
+
     return decorator
 
 
@@ -357,7 +381,9 @@ class ErrorRecoveryStrategy:
                     logging.warning(
                         f"Operation failed (attempt {attempt + 1}/{self.max_retries + 1}): {e!s}"
                     )
-                    time.sleep(self.delay_seconds * (attempt + 1))  # Exponential backoff
+                    time.sleep(
+                        self.delay_seconds * (attempt + 1)
+                    )  # Exponential backoff
                 else:
                     break
 
@@ -365,7 +391,7 @@ class ErrorRecoveryStrategy:
         raise SystemError(
             f"Operation failed after {self.max_retries + 1} attempts",
             cause=last_exception,
-            severity=ErrorSeverity.HIGH
+            severity=ErrorSeverity.HIGH,
         )
 
 
@@ -386,7 +412,9 @@ def setup_global_exception_handling():
         error_data = {
             "exception_type": exc_type.__name__,
             "exception_message": str(exc_value),
-            "traceback": "".join(traceback.format_exception(exc_type, exc_value, exc_traceback))
+            "traceback": "".join(
+                traceback.format_exception(exc_type, exc_value, exc_traceback)
+            ),
         }
 
         logger.critical("Unhandled global exception", extra=error_data)
@@ -395,10 +423,12 @@ def setup_global_exception_handling():
         wrapped_exception = SystemError(
             f"Unhandled global {exc_type.__name__}: {exc_value!s}",
             severity=ErrorSeverity.CRITICAL,
-            context=error_data
+            context=error_data,
         )
 
-        print(f"CRITICAL ERROR [{wrapped_exception.error_id}]: {wrapped_exception.message}")
+        print(
+            f"CRITICAL ERROR [{wrapped_exception.error_id}]: {wrapped_exception.message}"
+        )
         sys.exit(1)
 
     sys.excepthook = global_exception_handler
@@ -426,15 +456,24 @@ class ExceptionMonitor:
             "exception_counts": self.exception_counts,
             "severity_counts": {k.value: v for k, v in self.severity_counts.items()},
             "category_counts": {k.value: v for k, v in self.category_counts.items()},
-            "total_exceptions": sum(self.exception_counts.values())
+            "total_exceptions": sum(self.exception_counts.values()),
         }
 
 
 # Global exception monitor instance
 exception_monitor = ExceptionMonitor()
 
-# Auto-register exception monitoring
-BaseXanadOSError.__init__ = lambda self, *args, **kwargs: (
-    BaseXanadOSError.__init__(self, *args, **kwargs),
+# Store original __init__ method
+_original_init = BaseXanadOSError.__init__
+
+
+def _monitored_init(self, message: str = "", **kwargs):
+    """Initialize exception with monitoring."""
+    # Call original __init__
+    _original_init(self, message, **kwargs)
+    # Record the exception
     exception_monitor.record_exception(self)
-)[1]
+
+
+# Replace __init__ with monitored version
+BaseXanadOSError.__init__ = _monitored_init

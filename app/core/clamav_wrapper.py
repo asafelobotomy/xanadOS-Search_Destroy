@@ -148,9 +148,13 @@ class ClamAVWrapper:
 
         self.logger.info("Attempting to start ClamAV daemon for better performance...")
         if self.start_daemon():
-            self.logger.info("ClamAV daemon started successfully - scans will be faster")
+            self.logger.info(
+                "ClamAV daemon started successfully - scans will be faster"
+            )
         else:
-            self.logger.info("Could not start daemon - will use regular clamscan (slower)")
+            self.logger.info(
+                "Could not start daemon - will use regular clamscan (slower)"
+            )
 
     def _find_executable(self, name: str) -> str | None:
         """Find ClamAV executable in system PATH."""
@@ -203,7 +207,9 @@ class ClamAVWrapper:
 
         return "Unknown", "Unknown"
 
-    def scan_file(self, file_path: str, use_daemon: bool = True, **kwargs) -> ScanFileResult:
+    def scan_file(
+        self, file_path: str, use_daemon: bool = True, **kwargs
+    ) -> ScanFileResult:
         """Scan a single file with ClamAV.
 
         Args:
@@ -260,15 +266,21 @@ class ClamAVWrapper:
             if not self._is_clamd_running():
                 # Only try to start daemon if configured to do so
                 if self.config.get("performance", {}).get("enable_clamav_daemon", True):
-                    self.logger.debug("Daemon not running, attempting to start for scan operation")
+                    self.logger.debug(
+                        "Daemon not running, attempting to start for scan operation"
+                    )
                     self._try_start_daemon_if_needed()
 
             # Use daemon if it's now running
             if self._is_clamd_running():
                 try:
-                    return self._scan_file_with_daemon(file_path, file_size, start_time, **kwargs)
+                    return self._scan_file_with_daemon(
+                        file_path, file_size, start_time, **kwargs
+                    )
                 except (subprocess.SubprocessError, OSError, ValueError) as e:
-                    self.logger.warning("Daemon scan failed, falling back to clamscan: %s", e)
+                    self.logger.warning(
+                        "Daemon scan failed, falling back to clamscan: %s", e
+                    )
 
         # Fallback to regular clamscan
         try:
@@ -455,12 +467,16 @@ class ClamAVWrapper:
             options.append("--scan-elf")
 
             # File size limits
-            max_filesize = kwargs.get("max_filesize", scan_settings.get("max_filesize", "100M"))
+            max_filesize = kwargs.get(
+                "max_filesize", scan_settings.get("max_filesize", "100M")
+            )
             if max_filesize:
                 options.extend(["--max-filesize", str(max_filesize)])
 
             # Recursion limits
-            max_recursion = kwargs.get("max_recursion", scan_settings.get("max_recursion", 16))
+            max_recursion = kwargs.get(
+                "max_recursion", scan_settings.get("max_recursion", 16)
+            )
             if max_recursion:
                 options.extend(["--max-recursion", str(max_recursion)])
 
@@ -529,7 +545,9 @@ class ClamAVWrapper:
                 bundled_db = Path("/app/share/clamav")
                 if bundled_db.exists():
                     db_cmd.extend(["--database", str(bundled_db)])
-            result = run_secure(db_cmd, timeout=10, capture_output=True, text=True, check=False)
+            result = run_secure(
+                db_cmd, timeout=10, capture_output=True, text=True, check=False
+            )
             if result.returncode == 0:
                 lines = result.stdout.strip().split("\n")
                 for line in lines:
@@ -615,14 +633,23 @@ class ClamAVWrapper:
                 with open(config_path, encoding="utf-8") as f:
                     config_content = f.read()
 
-                if "TCPSocket" in config_content and "TCPAddr 127.0.0.1" not in config_content:
-                    recommendations.append("Restrict TCP socket access to localhost for security")
+                if (
+                    "TCPSocket" in config_content
+                    and "TCPAddr 127.0.0.1" not in config_content
+                ):
+                    recommendations.append(
+                        "Restrict TCP socket access to localhost for security"
+                    )
 
                 if "MaxScanSize" not in config_content:
-                    recommendations.append("Configure MaxScanSize to prevent memory exhaustion")
+                    recommendations.append(
+                        "Configure MaxScanSize to prevent memory exhaustion"
+                    )
 
             except (OSError, PermissionError):
-                recommendations.append("Review ClamAV daemon configuration for security settings")
+                recommendations.append(
+                    "Review ClamAV daemon configuration for security settings"
+                )
 
         return recommendations
 
@@ -900,9 +927,13 @@ class ClamAVWrapper:
                     if self._is_clamd_running():
                         return True
                     else:
-                        self.logger.warning("systemctl start succeeded but daemon not responding")
+                        self.logger.warning(
+                            "systemctl start succeeded but daemon not responding"
+                        )
                 else:
-                    self.logger.warning(f"systemctl start failed: {start_result.stderr}")
+                    self.logger.warning(
+                        f"systemctl start failed: {start_result.stderr}"
+                    )
 
             except Exception as e:
                 self.logger.warning(f"systemctl approach failed: {e}")
@@ -959,7 +990,8 @@ class ClamAVWrapper:
                 with open(config_path, encoding="utf-8") as f:
                     config = f.read()
                     if any(
-                        param in config for param in ["MaxScanSize", "MaxFileSize", "MaxRecursion"]
+                        param in config
+                        for param in ["MaxScanSize", "MaxFileSize", "MaxRecursion"]
                     ):
                         hardening_results["memory_limits"] = True
                     if "TCPAddr 127.0.0.1" in config or "LocalSocket" in config:
@@ -1042,7 +1074,9 @@ class ClamAVWrapper:
 
         # Use daemon if available for better parallel performance
         if self._is_clamd_running():
-            self.logger.info("Using daemon-based parallel scanning with %d workers", max_workers)
+            self.logger.info(
+                "Using daemon-based parallel scanning with %d workers", max_workers
+            )
             # Implement parallel daemon scanning
             from concurrent.futures import ThreadPoolExecutor, as_completed
 
@@ -1051,7 +1085,11 @@ class ClamAVWrapper:
                 try:
                     result = self._scan_file_with_daemon(
                         file_path,
-                        (Path(file_path).stat().st_size if Path(file_path).exists() else 0),
+                        (
+                            Path(file_path).stat().st_size
+                            if Path(file_path).exists()
+                            else 0
+                        ),
                         start_time,
                     )
                     return {
@@ -1079,7 +1117,9 @@ class ClamAVWrapper:
                 for future in as_completed(future_to_file):
                     results.append(future.result())
         else:
-            self.logger.warning("Daemon not available, falling back to sequential scanning")
+            self.logger.warning(
+                "Daemon not available, falling back to sequential scanning"
+            )
             for file_path in file_list:
                 result = self.scan_file(file_path)
                 results.append(
@@ -1249,11 +1289,15 @@ class ClamAVWrapper:
 
         for i, cmd in enumerate(update_commands):
             try:
-                self.logger.debug("Attempt %d: Running command: %s", i + 1, " ".join(cmd))
+                self.logger.debug(
+                    "Attempt %d: Running command: %s", i + 1, " ".join(cmd)
+                )
 
                 # Skip privileged commands if we're already running as root
                 if os.getuid() == 0 and i >= 2:  # Skip elevated attempts if root
-                    self.logger.debug("Already running as root, skipping elevated command")
+                    self.logger.debug(
+                        "Already running as root, skipping elevated command"
+                    )
                     continue
 
                 # Use elevated_run for the last attempt (consistent with RKHunter)
@@ -1345,7 +1389,9 @@ class ClamAVWrapper:
 
                     # If this was not the last attempt, log the failure
                     if i < len(update_commands) - 1:
-                        self.logger.warning("Update attempt %d failed, trying next method", i + 1)
+                        self.logger.warning(
+                            "Update attempt %d failed, trying next method", i + 1
+                        )
 
             except subprocess.TimeoutExpired:
                 self.logger.error(
@@ -1365,7 +1411,9 @@ class ClamAVWrapper:
         self.logger.error("Please ensure either:")
         self.logger.error("1. You have write permissions to /var/lib/clamav/, or")
         self.logger.error("2. GUI authentication is working properly, or")
-        self.logger.error("3. Set up a custom database directory with proper permissions")
+        self.logger.error(
+            "3. Set up a custom database directory with proper permissions"
+        )
         return False
 
     def _update_custom_source(self, source_url: str) -> bool:
@@ -1374,8 +1422,8 @@ class ClamAVWrapper:
             response = requests.get(source_url, timeout=60)
             response.raise_for_status()
 
-            # Save to custom database directory
-            filename = hashlib.md5(source_url.encode(), usedforsecurity=False).hexdigest() + ".cvd"
+            # Save to custom database directory using modern SHA-256 hash
+            filename = hashlib.sha256(source_url.encode()).hexdigest()[:16] + ".cvd"
             filepath = self.custom_db_path / filename
 
             with open(filepath, "wb") as f:
@@ -1434,7 +1482,9 @@ class ClamAVWrapper:
                         print(f"Warning: Could not access custom db {db_file}: {e}")
                         continue
         except (OSError, PermissionError) as e:
-            print(f"Warning: Could not access custom database directory {self.custom_db_path}: {e}")
+            print(
+                f"Warning: Could not access custom database directory {self.custom_db_path}: {e}"
+            )
 
         return definitions
 

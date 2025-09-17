@@ -41,7 +41,7 @@ class SecureCrypto:
             raise ValueError("Encryption key not set. Call set_encryption_key() first.")
 
         if isinstance(data, str):
-            data = data.encode('utf-8')
+            data = data.encode("utf-8")
 
         return self._fernet.encrypt(data)
 
@@ -52,43 +52,54 @@ class SecureCrypto:
 
         return self._fernet.decrypt(encrypted_data)
 
-    def secure_hash(self, data: Union[str, bytes], algorithm: str = 'sha256') -> str:
+    def secure_hash(self, data: Union[str, bytes], algorithm: str = "sha256") -> str:
         """Generate secure hash using specified algorithm."""
         if isinstance(data, str):
-            data = data.encode('utf-8')
+            data = data.encode("utf-8")
 
-        # Use cryptography's hashing instead of hashlib for consistency
-        if algorithm.lower() == 'sha256':
+        # Use cryptography's hashing with modern algorithms only
+        if algorithm.lower() == "sha256":
             digest = hashes.Hash(hashes.SHA256())
-        elif algorithm.lower() == 'sha512':
+        elif algorithm.lower() == "sha512":
             digest = hashes.Hash(hashes.SHA512())
-        elif algorithm.lower() == 'md5':
-            # MD5 is deprecated but included for legacy compatibility
-            # Prefer SHA256 for new implementations
-            digest = hashes.Hash(hashes.MD5())
+        elif algorithm.lower() == "sha384":
+            digest = hashes.Hash(hashes.SHA384())
+        elif algorithm.lower() == "blake2b":
+            digest = hashes.Hash(hashes.BLAKE2b(64))
+        elif algorithm.lower() == "blake2s":
+            digest = hashes.Hash(hashes.BLAKE2s(32))
         else:
-            raise ValueError(f"Unsupported hash algorithm: {algorithm}")
+            raise ValueError(
+                f"Unsupported hash algorithm: {algorithm}. Use sha256, sha384, sha512, blake2b, or blake2s"
+            )
 
         digest.update(data)
         return digest.finalize().hex()
 
-    def secure_hmac(self, key: bytes, data: Union[str, bytes], algorithm: str = 'sha256') -> str:
+    def secure_hmac(
+        self, key: bytes, data: Union[str, bytes], algorithm: str = "sha256"
+    ) -> str:
         """Generate HMAC using secure implementation."""
         if isinstance(data, str):
-            data = data.encode('utf-8')
+            data = data.encode("utf-8")
 
-        if algorithm.lower() == 'sha256':
+        if algorithm.lower() == "sha256":
             return hmac.new(key, data, hashlib.sha256).hexdigest()
-        elif algorithm.lower() == 'sha512':
+        elif algorithm.lower() == "sha512":
             return hmac.new(key, data, hashlib.sha512).hexdigest()
         else:
             raise ValueError(f"Unsupported HMAC algorithm: {algorithm}")
 
-    def derive_key_pbkdf2(self, password: Union[str, bytes], salt: bytes,
-                         iterations: int = 100000, key_length: int = 32) -> bytes:
+    def derive_key_pbkdf2(
+        self,
+        password: Union[str, bytes],
+        salt: bytes,
+        iterations: int = 100000,
+        key_length: int = 32,
+    ) -> bytes:
         """Derive key from password using PBKDF2."""
         if isinstance(password, str):
-            password = password.encode('utf-8')
+            password = password.encode("utf-8")
 
         kdf = PBKDF2HMAC(
             algorithm=hashes.SHA256(),
@@ -98,11 +109,18 @@ class SecureCrypto:
         )
         return kdf.derive(password)
 
-    def derive_key_scrypt(self, password: Union[str, bytes], salt: bytes,
-                         n: int = 2**14, r: int = 8, p: int = 1, key_length: int = 32) -> bytes:
+    def derive_key_scrypt(
+        self,
+        password: Union[str, bytes],
+        salt: bytes,
+        n: int = 2**14,
+        r: int = 8,
+        p: int = 1,
+        key_length: int = 32,
+    ) -> bytes:
         """Derive key from password using Scrypt (more secure than PBKDF2)."""
         if isinstance(password, str):
-            password = password.encode('utf-8')
+            password = password.encode("utf-8")
 
         kdf = Scrypt(
             length=key_length,
@@ -124,9 +142,9 @@ class SecureCrypto:
     def constant_time_compare(self, a: Union[str, bytes], b: Union[str, bytes]) -> bool:
         """Constant-time comparison to prevent timing attacks."""
         if isinstance(a, str):
-            a = a.encode('utf-8')
+            a = a.encode("utf-8")
         if isinstance(b, str):
-            b = b.encode('utf-8')
+            b = b.encode("utf-8")
 
         return hmac.compare_digest(a, b)
 
@@ -141,14 +159,14 @@ class SecureCrypto:
         private_pem = private_key.private_bytes(
             encoding=serialization.Encoding.PEM,
             format=serialization.PrivateFormat.PKCS8,
-            encryption_algorithm=serialization.NoEncryption()
+            encryption_algorithm=serialization.NoEncryption(),
         )
 
         # Serialize public key
         public_key = private_key.public_key()
         public_pem = public_key.public_bytes(
             encoding=serialization.Encoding.PEM,
-            format=serialization.PublicFormat.SubjectPublicKeyInfo
+            format=serialization.PublicFormat.SubjectPublicKeyInfo,
         )
 
         return private_pem, public_pem
@@ -166,8 +184,8 @@ class SecureCrypto:
             padding.OAEP(
                 mgf=padding.MGF1(algorithm=hashes.SHA256()),
                 algorithm=hashes.SHA256(),
-                label=None
-            )
+                label=None,
+            ),
         )
         return encrypted
 
@@ -187,13 +205,14 @@ class SecureCrypto:
             padding.OAEP(
                 mgf=padding.MGF1(algorithm=hashes.SHA256()),
                 algorithm=hashes.SHA256(),
-                label=None
-            )
+                label=None,
+            ),
         )
         return decrypted
 
-    def aes_encrypt(self, key: bytes, plaintext: bytes,
-                   associated_data: bytes | None = None) -> tuple[bytes, bytes, bytes]:
+    def aes_encrypt(
+        self, key: bytes, plaintext: bytes, associated_data: bytes | None = None
+    ) -> tuple[bytes, bytes, bytes]:
         """
         AES-GCM encryption (authenticated encryption).
         Returns: (ciphertext, nonce, tag)
@@ -214,8 +233,14 @@ class SecureCrypto:
 
         return ciphertext, nonce, encryptor.tag
 
-    def aes_decrypt(self, key: bytes, ciphertext: bytes, nonce: bytes, tag: bytes,
-                   associated_data: bytes | None = None) -> bytes:
+    def aes_decrypt(
+        self,
+        key: bytes,
+        ciphertext: bytes,
+        nonce: bytes,
+        tag: bytes,
+        associated_data: bytes | None = None,
+    ) -> bytes:
         """
         AES-GCM decryption (authenticated decryption).
         """
@@ -237,20 +262,20 @@ class SecureCrypto:
 secure_crypto = SecureCrypto()
 
 
-def secure_file_hash(file_path: str, algorithm: str = 'sha256') -> str:
+def secure_file_hash(file_path: str, algorithm: str = "sha256") -> str:
     """
     Compute secure hash of a file using the cryptography library.
     Replacement for manual hashlib implementations.
     """
-    if algorithm.lower() == 'sha256':
+    if algorithm.lower() == "sha256":
         digest = hashes.Hash(hashes.SHA256())
-    elif algorithm.lower() == 'sha512':
+    elif algorithm.lower() == "sha512":
         digest = hashes.Hash(hashes.SHA512())
     else:
         raise ValueError(f"Unsupported hash algorithm: {algorithm}")
 
     try:
-        with open(file_path, 'rb') as f:
+        with open(file_path, "rb") as f:
             while chunk := f.read(8192):
                 digest.update(chunk)
         return digest.finalize().hex()
@@ -263,16 +288,7 @@ def legacy_hashlib_sha256(data: Union[str, bytes]) -> str:
     Drop-in replacement for hashlib.sha256().hexdigest()
     Maintains compatibility while using cryptography library.
     """
-    return secure_crypto.secure_hash(data, 'sha256')
-
-
-def legacy_hashlib_md5(data: Union[str, bytes]) -> str:
-    """
-    Drop-in replacement for hashlib.md5().hexdigest()
-    Maintains compatibility while using cryptography library.
-    Note: MD5 is deprecated and should be replaced with SHA256 when possible.
-    """
-    return secure_crypto.secure_hash(data, 'md5')
+    return secure_crypto.secure_hash(data, "sha256")
 
 
 # Convenience functions for common operations
