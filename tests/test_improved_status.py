@@ -4,8 +4,8 @@
 import sys
 import os
 
-# Add the app directory to path
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "app"))
+# Add the app directory to path (go up one level from tests/)
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "app"))
 
 
 def test_database_detection():

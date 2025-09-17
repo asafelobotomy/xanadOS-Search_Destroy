@@ -30,6 +30,13 @@ import websockets
 from cryptography.fernet import Fernet
 
 from app.utils.secure_crypto import secure_crypto
+from app.core.exceptions import (
+    NetworkError,
+    AuthenticationError,
+    ValidationError,
+    FileIOError,
+    SystemError
+)
 
 
 @dataclass
@@ -95,21 +102,21 @@ class SecurityAPIClient:
     def __init__(self, config: APIConfig):
         self.config = config
         self.logger = logging.getLogger(__name__)
-        self._session = None
-        self._token_expires = None
-        self._cache = {}
+        self._session: Optional[httpx.AsyncClient] = None
+        self._token_expires: Optional[datetime] = None
+        self._cache: Dict[str, Dict[str, Any]] = {}
 
-    async def __aenter__(self):
+    async def __aenter__(self) -> "SecurityAPIClient":
         """Async context manager entry."""
         await self._ensure_session()
         return self
 
-    async def __aexit__(self, exc_type, exc_val, exc_tb):
+    async def __aexit__(self, exc_type: Optional[type], exc_val: Optional[Exception], exc_tb: Optional[Any]) -> None:
         """Async context manager exit."""
         if self._session:
             await self._session.aclose()
 
-    async def _ensure_session(self):
+    async def _ensure_session(self) -> None:
         """Ensure HTTP session is available."""
         if not self._session:
             self._session = httpx.AsyncClient(
@@ -117,7 +124,7 @@ class SecurityAPIClient:
                 timeout=self.config.timeout
             )
 
-    async def _ensure_token(self):
+    async def _ensure_token(self) -> None:
         """Ensure valid access token is available."""
         if not self.config.access_token or self._token_expired():
             if self.config.api_key:
@@ -131,8 +138,12 @@ class SecurityAPIClient:
             return True
         return datetime.utcnow() >= self._token_expires
 
-    async def _refresh_token(self):
+    async def _refresh_token(self) -> None:
         """Refresh access token using API key."""
+        await self._ensure_session()  # Ensure session exists
+        if self._session is None:
+            raise ValueError("Failed to initialize HTTP session")
+
         try:
             response = await self._session.post(
                 "/auth/token",
@@ -149,15 +160,24 @@ class SecurityAPIClient:
 
             self.logger.info("Access token refreshed successfully")
 
-        except Exception as e:
-            self.logger.error(f"Error refreshing token: {e}")
-            raise
+        except (httpx.RequestError, httpx.HTTPStatusError) as e:
+            self.logger.error(f"HTTP error refreshing token: {e}")
+            raise NetworkError(f"Failed to refresh token due to network error: {e}", cause=e)
+        except KeyError as e:
+            self.logger.error(f"Missing required field in token response: {e}")
+            raise AuthenticationError(f"Invalid token response format: missing {e}", cause=e)
+        except (ValueError, TypeError) as e:
+            self.logger.error(f"Invalid token data format: {e}")
+            raise AuthenticationError(f"Invalid token data received: {e}", cause=e)
 
     async def _make_request(self, method: str, endpoint: str,
-                          **kwargs) -> httpx.Response:
+                          **kwargs: Any) -> httpx.Response:
         """Make authenticated API request with retry logic."""
         await self._ensure_session()
         await self._ensure_token()
+
+        if self._session is None:
+            raise ValueError("Failed to initialize HTTP session")
 
         headers = kwargs.pop("headers", {})
         headers["Authorization"] = f"Bearer {self.config.access_token}"
@@ -179,14 +199,23 @@ class SecurityAPIClient:
 
             except (httpx.RequestError, httpx.HTTPStatusError) as e:
                 if attempt == self.config.retries:
-                    raise
+                    raise NetworkError(
+                        f"Request failed after {self.config.retries + 1} attempts: {e}",
+                        cause=e,
+                        context={
+                            "method": method,
+                            "endpoint": endpoint,
+                            "attempts": attempt + 1
+                        }
+                    )
 
                 self.logger.warning(f"Request failed (attempt {attempt + 1}): {e}")
                 await asyncio.sleep(self.config.retry_delay * (2 ** attempt))
 
-        raise Exception("Max retries exceeded")
+        # This should never be reached due to the raise in the except block above
+        raise NetworkError("Max retries exceeded - this should not happen")
 
-    def _get_cache_key(self, endpoint: str, params: Dict[str, Any] = None) -> str:
+    def _get_cache_key(self, endpoint: str, params: Optional[Dict[str, Any]] = None) -> str:
         """Generate cache key for request."""
         key_data = f"{endpoint}:{json.dumps(params or {}, sort_keys=True)}"
         return f"cache:{hash(key_data)}"
@@ -248,8 +277,8 @@ class SecurityAPIClient:
         return await self.detect_threat(file_content=content, scan_type=scan_type)
 
     # System scanning methods
-    async def start_system_scan(self, paths: List[str] = None,
-                              exclude_patterns: List[str] = None,
+    async def start_system_scan(self, paths: Optional[List[str]] = None,
+                              exclude_patterns: Optional[List[str]] = None,
                               scan_type: str = "full",
                               max_file_size: int = 100*1024*1024) -> SystemScanResult:
         """Start system-wide security scan."""
@@ -316,7 +345,7 @@ class SecurityAPIClient:
     # Security events methods
     async def create_security_event(self, event_type: str, severity: str,
                                   source: str, description: str,
-                                  metadata: Dict[str, Any] = None) -> str:
+                                  metadata: Optional[Dict[str, Any]] = None) -> str:
         """Create new security event."""
         request_data = {
             "event_type": event_type,
@@ -450,7 +479,7 @@ class SecurityAPIClient:
         return data.get("updated", False)
 
     # Real-time methods
-    async def subscribe_to_events(self, event_types: List[str] = None) -> AsyncGenerator[Dict[str, Any], None]:
+    async def subscribe_to_events(self, event_types: Optional[List[str]] = None) -> AsyncGenerator[Dict[str, Any], None]:
         """Subscribe to real-time security events via WebSocket."""
         ws_url = self.config.base_url.replace("http", "ws") + "/ws/events"
 
@@ -503,9 +532,16 @@ class SecurityAPIClient:
     async def health_check(self) -> bool:
         """Check API health status."""
         try:
+            await self._ensure_session()
+            if self._session is None:
+                return False
             response = await self._session.get("/health")
             return response.status_code == 200
-        except Exception:
+        except (httpx.RequestError, httpx.HTTPStatusError, ConnectionError) as e:
+            self.logger.warning(f"Health check failed due to network error: {e}")
+            return False
+        except Exception as e:
+            self.logger.error(f"Unexpected error during health check: {e}")
             return False
 
     async def get_api_stats(self) -> Dict[str, Any]:
@@ -558,9 +594,9 @@ class SecurityAPIClientSync:
 
     def __init__(self, config: APIConfig):
         self.client = SecurityAPIClient(config)
-        self._loop = None
+        self._loop: Optional[asyncio.AbstractEventLoop] = None
 
-    def _run_async(self, coro):
+    def _run_async(self, coro: Any) -> Any:
         """Run async coroutine in sync context."""
         if self._loop is None:
             self._loop = asyncio.new_event_loop()
@@ -568,11 +604,11 @@ class SecurityAPIClientSync:
 
         return self._loop.run_until_complete(coro)
 
-    def __enter__(self):
+    def __enter__(self) -> "SecurityAPIClientSync":
         self._run_async(self.client.__aenter__())
         return self
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
+    def __exit__(self, exc_type: Optional[type], exc_val: Optional[Exception], exc_tb: Optional[Any]) -> None:
         self._run_async(self.client.__aexit__(exc_type, exc_val, exc_tb))
 
     # Synchronous wrapper methods

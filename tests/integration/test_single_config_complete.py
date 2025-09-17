@@ -3,7 +3,9 @@
 Comprehensive test of the single-config RKHunter optimization implementation
 """
 import sys
-sys.path.append('.')
+from pathlib import Path
+# Add project root to path (go up two levels from tests/integration/)
+sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 from app.core.rkhunter_optimizer import RKHunterOptimizer
 

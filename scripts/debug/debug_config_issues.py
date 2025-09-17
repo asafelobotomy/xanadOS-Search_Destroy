@@ -7,12 +7,12 @@ import sys
 import os
 from pathlib import Path
 
-# Add app to path
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'app'))
+# Add project root to path (go up two levels from scripts/debug/)
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 
 def check_config_issues():
     try:
-        from core.rkhunter_optimizer import RKHunterOptimizer
+        from app.core.rkhunter_optimizer import RKHunterOptimizer
 
         config_path = str(Path.home() / '.config' / 'search-and-destroy' / 'rkhunter.conf')
         print(f"🔍 Checking config: {config_path}")

@@ -41,9 +41,19 @@ dependencies = [
     "numpy>=2.2.0",              # Latest with Python 3.13 support (was 1.24.0)
     "schedule>=1.2.2",           # Latest stable (was 1.2.0)
     "aiohttp>=3.11.0",           # Latest stable (was 3.9.0)
-    "inotify>=0.2.10",           # Linux file system monitoring
+    "watchdog>=6.0.0",           # Modern file system monitoring (replaces inotify for Python 3.13+)
     "dnspython>=2.8.0",          # Latest stable (was 2.6.0)
     "python-dotenv>=1.0.1",      # Latest stable (was 1.0.0)
+    # API Framework dependencies - required for app/api/ modules
+    "fastapi>=0.104.0",          # Modern async web framework
+    "uvicorn[standard]>=0.24.0", # ASGI server with performance extras
+    "httpx>=0.25.0",             # Modern async HTTP client
+    "websockets>=12.0",          # WebSocket support for real-time features
+    "pyjwt[crypto]>=2.8.0",      # JWT tokens with cryptographic signing
+    "redis>=5.0.0",              # In-memory data store for caching/sessions
+    "sqlalchemy>=2.0.0",         # Modern SQL toolkit and ORM
+    "strawberry-graphql>=0.206.0", # GraphQL implementation
+    "slowapi>=0.1.9",            # Rate limiting for FastAPI
 ]
 
 [project.optional-dependencies]

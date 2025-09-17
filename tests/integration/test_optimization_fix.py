@@ -4,7 +4,8 @@ Test script to verify the optimization results fix
 """
 import sys
 from pathlib import Path
-sys.path.append('.')
+# Add project root to path (go up two levels from tests/integration/)
+sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 from app.core.rkhunter_optimizer import RKHunterOptimizer
 
