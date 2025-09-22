@@ -101,7 +101,6 @@ $TOOL_DESCRIPTION
 This tool performs comprehensive security scanning including:
 - SAST (Static Application Security Testing)
 - Dependency vulnerability scanning
-- Container/Docker security scanning
 - Infrastructure as Code (IaC) security scanning
 - Secrets detection
 - License compliance checking
@@ -114,7 +113,6 @@ Options:
     -s, --severity LEVEL    Minimum severity threshold (low|medium|high|critical) [default: medium]
     --sast-only            Run only static analysis security testing
     --deps-only            Run only dependency scanning
-    --containers-only      Run only container security scanning
     --iac-only             Run only infrastructure as code scanning
     --secrets-only         Run only secrets detection
     --license-only         Run only license compliance checking
@@ -125,7 +123,6 @@ Examples:
     $0 --sast-only                  # Run only static analysis
     $0 --deps-only --output json    # Run dependency scan with JSON output
     $0 --severity high              # Show only high and critical issues
-    $0 --containers-only            # Scan Docker containers only
 
 Security Tools Used:
     ✓ Semgrep - SAST scanning for multiple languages
@@ -153,10 +150,6 @@ check_dependencies() {
 
     if [[ -f "requirements.txt" ]] || [[ -f "pyproject.toml" ]] || [[ -f "Pipfile" ]]; then
         required_tools+=("python" "pip")
-    fi
-
-    if [[ -f "Dockerfile" ]] || [[ -d ".docker" ]]; then
-        required_tools+=("docker")
     fi
 
     # Check for missing tools
@@ -328,53 +321,6 @@ run_dependency_scan() {
 }
 
 # Run container security scanning
-run_container_scan() {
-    log_info "Running container security scanning..."
-
-    if [[ "$DRY_RUN" == "true" ]]; then
-        log_info "[DRY RUN] Would run container security scanning"
-        return 0
-    fi
-
-    # Find Docker files and images
-    if [[ -f "Dockerfile" ]]; then
-        log_info "Scanning Dockerfile..."
-
-        if command -v trivy &> /dev/null; then
-            case $OUTPUT_FORMAT in
-                "json")
-                    trivy config --severity "$TRIVY_SEVERITIES" --format json --output "security-dockerfile.json" Dockerfile || true
-                    ;;
-                "sarif")
-                    trivy config --severity "$TRIVY_SEVERITIES" --format sarif --output "security-dockerfile.sarif" Dockerfile || true
-                    ;;
-                *)
-                    trivy config --severity "$TRIVY_SEVERITIES" Dockerfile || true
-                    ;;
-            esac
-        fi
-
-        # Scan built images if Docker is available
-        if command -v docker &> /dev/null; then
-            local images
-            images=$(docker images --format "{{.Repository}}:{{.Tag}}" | grep -v "<none>" | head -5)
-            for image in $images; do
-                log_info "Scanning Docker image: $image"
-                if command -v trivy &> /dev/null; then
-                    case $OUTPUT_FORMAT in
-                        "sarif")
-                            trivy image --severity "$TRIVY_SEVERITIES" --format sarif -o "security-image-$(echo "$image" | tr '/:' '__').sarif" "$image" || true
-                            ;;
-                        *)
-                            trivy image --severity "$TRIVY_SEVERITIES" "$image" || true
-                            ;;
-                    esac
-                fi
-            done
-        fi
-    fi
-}
-
 # Run Infrastructure as Code scanning
 run_iac_scan() {
     log_info "Running Infrastructure as Code security scanning..."
@@ -386,7 +332,7 @@ run_iac_scan() {
 
     # Look for IaC files
     local iac_files
-    iac_files=$(find . -name "*.tf" -o -name "*.yaml" -o -name "*.yml" -o -name "Dockerfile" -o -name "docker-compose.yml" | grep -v node_modules | head -20)
+    iac_files=$(find . -name "*.tf" -o -name "*.yaml" -o -name "*.yml" | grep -v node_modules | head -20)
 
     if [[ -n "$iac_files" ]]; then
         log_info "Found IaC files, running checkov scan..."
@@ -533,9 +479,6 @@ $(if [[ -f "security-sast-report.json" ]]; then echo "See security-sast-report.j
 $(if [[ -f "security-python-deps.json" ]]; then echo "Python dependencies: See security-python-deps.json"; fi)
 $(if [[ -f "security-npm-audit.json" ]]; then echo "Node.js dependencies: See security-npm-audit.json"; fi)
 
-### Container Scan Results
-$(if [[ -f "security-dockerfile.json" ]]; then echo "Dockerfile scan: See security-dockerfile.json"; fi)
-
 ### IaC Scan Results
 $(if [[ -f "security-iac-report.json" ]]; then echo "IaC scan: See security-iac-report.json"; fi)
 
@@ -603,9 +546,6 @@ main() {
         "deps"|"all")
             run_dependency_scan
             ;;& # Continue to next case
-        "containers"|"all")
-            run_container_scan
-            ;;& # Continue to next case
         "iac"|"all")
             run_iac_scan
             ;;& # Continue to next case
@@ -664,10 +604,6 @@ while [[ $# -gt 0 ]]; do
             ;;
         --deps-only)
             scan_type="deps"
-            shift
-            ;;
-        --containers-only)
-            scan_type="containers"
             shift
             ;;
         --iac-only)

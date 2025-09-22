@@ -290,9 +290,7 @@ class RealTimeMonitor:
                 try:
                     quarantine_dir = QUARANTINE_DIR
                 except Exception:
-                    quarantine_dir = (
-                        Path.home() / ".local/share/search-and-destroy/quarantine"
-                    )
+                    quarantine_dir = Path.home() / ".local/share/search-and-destroy/quarantine"
                 quarantine_dir.mkdir(parents=True, exist_ok=True)
                 # Hard permission on directory
                 if os.name == "posix":
@@ -341,18 +339,14 @@ class RealTimeMonitor:
                         ) as m_out:
                             json.dump(meta, m_out, indent=2, sort_keys=True)
                     except Exception as m_err:
-                        self.logger.error(
-                            "Failed writing quarantine metadata: %s", m_err
-                        )
+                        self.logger.error("Failed writing quarantine metadata: %s", m_err)
                     with self.lock:
                         self.files_quarantined += 1
                     if self.file_quarantined_callback:
                         try:
                             self.file_quarantined_callback(str(dest))
                         except Exception as cb_err:
-                            self.logger.error(
-                                "Error in quarantine callback: %s", cb_err
-                            )
+                            self.logger.error("Error in quarantine callback: %s", cb_err)
                 except OSError as move_err:
                     self.logger.error("Failed moving file to quarantine: %s", move_err)
 

@@ -32,9 +32,7 @@ except ImportError as e:
     UNIFIED_PERFORMANCE_AVAILABLE = False
     import logging
 
-    logging.getLogger(__name__).warning(
-        f"Unified Performance Optimizer unavailable: {e}"
-    )
+    logging.getLogger(__name__).warning(f"Unified Performance Optimizer unavailable: {e}")
 
 # Core components
 try:
@@ -57,7 +55,8 @@ try:
     # Optional security modules; leave imports for availability or side effects
     from .input_validation import InputValidator
     from .network_security import NetworkPolicy
-    from .privilege_escalation import PrivilegeManager
+    # Note: privilege_escalation deprecated and archived (2025-09-15)
+    # Use gui_auth_manager.elevated_run_gui instead
 except ImportError:
     # Security modules may not be available in all environments
     pass

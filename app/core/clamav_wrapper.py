@@ -903,7 +903,7 @@ class ClamAVWrapper:
                 from .elevated_runner import elevated_run
 
                 # Enable the daemon service
-                enable_result = elevated_run(
+                elevated_run(
                     ["systemctl", "enable", "clamav-daemon"],
                     timeout=30,
                     capture_output=True,
@@ -927,9 +927,13 @@ class ClamAVWrapper:
                     if self._is_clamd_running():
                         return True
                     else:
-                        self.logger.warning("systemctl start succeeded but daemon not responding")
+                        self.logger.warning(
+                            "systemctl start succeeded but daemon not responding"
+                        )
                 else:
-                    self.logger.warning(f"systemctl start failed: {start_result.stderr}")
+                    self.logger.warning(
+                        f"systemctl start failed: {start_result.stderr}"
+                    )
 
             except Exception as e:
                 self.logger.warning(f"systemctl approach failed: {e}")
@@ -1418,11 +1422,8 @@ class ClamAVWrapper:
             response = requests.get(source_url, timeout=60)
             response.raise_for_status()
 
-            # Save to custom database directory
-            filename = (
-                hashlib.md5(source_url.encode(), usedforsecurity=False).hexdigest()
-                + ".cvd"
-            )
+            # Save to custom database directory using modern SHA-256 hash
+            filename = hashlib.sha256(source_url.encode()).hexdigest()[:16] + ".cvd"
             filepath = self.custom_db_path / filename
 
             with open(filepath, "wb") as f:

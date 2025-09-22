@@ -1,19 +1,30 @@
 # Setup Scripts
 
-## Modern Development Environment (2025)
+## Modern Development Environment Setup - 2025 Edition
 
-The xanadOS Search & Destroy project now uses modern development environment setup
-with cutting-edge tools and automation.
+The xanadOS Search & Destroy project now uses a **single, unified setup process**
+that handles everything automatically.
 
 ### Quick Start
 
 ```bash
-# Single command setup (recommended)
-bash scripts/setup/modern-dev-setup.sh
-
-# Or use the modern Makefile
+# ONE COMMAND - Complete setup with everything you need
 make setup
+
+# Alternative direct script execution
+bash scripts/setup/modern-dev-setup.sh
 ```
+
+**🎯 What the unified setup includes:**
+
+- ✅ Modern package managers (uv, pnpm, fnm)
+- ✅ All Python dependencies installation
+- ✅ All JavaScript dependencies installation
+- ✅ System dependencies (ClamAV, rkhunter, cron)
+- ✅ ClamAV signature updates
+- ✅ Comprehensive validation
+- ✅ Test suite verification
+- ✅ Development environment setup
 
 ### Modern Tools Included
 
@@ -42,4 +53,3 @@ make setup
 
 Legacy setup scripts have been archived to `archive/pre-modernization-*/`
 for historical reference.
-

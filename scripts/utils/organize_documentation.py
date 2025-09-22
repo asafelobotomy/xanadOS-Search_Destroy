@@ -127,9 +127,7 @@ def archive_deprecated_docs():
 
     # Move REPOSITORY_ORGANIZATION.md to correct location
     if os.path.exists("REPOSITORY_ORGANIZATION.md"):
-        shutil.move(
-            "REPOSITORY_ORGANIZATION.md", "docs/project/REPOSITORY_ORGANIZATION.md"
-        )
+        shutil.move("REPOSITORY_ORGANIZATION.md", "docs/project/REPOSITORY_ORGANIZATION.md")
         print("   📄 Moved: REPOSITORY_ORGANIZATION.md → docs/project/")
 
 

@@ -42,9 +42,7 @@ def _ensure_secure_dir(path: Path):
             if current_mode != 0o700:
                 path.chmod(0o700)
     except OSError as e:
-        logging.getLogger(APP_NAME).warning(
-            "Could not set secure permissions on %s: %s", path, e
-        )
+        logging.getLogger(APP_NAME).warning("Could not set secure permissions on %s: %s", path, e)
 
 
 _ensure_secure_dir(CONFIG_DIR)
@@ -98,9 +96,7 @@ def setup_logging():
 
         # File handler with rotation
         log_file = LOG_DIR / "application.log"
-        file_handler = RotatingFileHandler(
-            log_file, maxBytes=10 * 1024 * 1024, backupCount=5
-        )
+        file_handler = RotatingFileHandler(log_file, maxBytes=10 * 1024 * 1024, backupCount=5)
         file_handler.setFormatter(formatter)
         file_handler.setLevel(logging.INFO)
 
@@ -113,9 +109,7 @@ def setup_logging():
         try:
             with open(CONFIG_FILE, encoding="utf-8") as cf:
                 cfg_json = json.load(cf)
-            structured = cfg_json.get("advanced_settings", {}).get(
-                "structured_logging", False
-            )
+            structured = cfg_json.get("advanced_settings", {}).get("structured_logging", False)
         except Exception:
             structured = False
         if structured:
@@ -173,9 +167,7 @@ def _atomic_write_json(config_path: Path, config_data):
     tmp_path = None
     try:
         _ensure_secure_dir(config_path.parent)
-        tmp_fd, tmp_path = tempfile.mkstemp(
-            prefix=".config.", dir=str(config_path.parent)
-        )
+        tmp_fd, tmp_path = tempfile.mkstemp(prefix=".config.", dir=str(config_path.parent))
         with os.fdopen(tmp_fd, "w", encoding="utf-8") as tmp_file:
             json.dump(config_data, tmp_file, indent=4, sort_keys=True)
             tmp_file.flush()
@@ -234,9 +226,7 @@ def update_config_setting(config_dict, section, key, value, file_path=None):
         return True
 
     except Exception as e:
-        logging.getLogger(APP_NAME).error(
-            "Failed to update setting %s.%s: %s", section, key, e
-        )
+        logging.getLogger(APP_NAME).error("Failed to update setting %s.%s: %s", section, key, e)
         return False
 
 
@@ -487,3 +477,249 @@ def get_factory_defaults():
             "temp_dir": str(CACHE_DIR / "temp"),
         },
     }
+
+
+def get_config(file_path=None):
+    """Compatibility function - alias for load_config.
+
+    This function maintains backward compatibility with components
+    that expect get_config() instead of load_config().
+    """
+    return load_config(file_path)
+
+
+def get_api_security_config():
+    """Get API security configuration with secure defaults.
+
+    Returns:
+        dict: API security configuration with auto-generated secrets if needed
+    """
+    import secrets
+    import string
+
+    config = load_config()
+
+    # Ensure api_security section exists
+    if "api_security" not in config:
+        config["api_security"] = {}
+
+    api_config = config["api_security"]
+
+    # Database configuration
+    if "database" not in api_config:
+        api_config["database"] = {}
+
+    db_config = api_config["database"]
+
+    # Set secure database path if not configured
+    if not db_config.get("path"):
+        secure_db_path = DATA_DIR / "security_api.db"
+        db_config.update({
+            "type": "sqlite",
+            "path": str(secure_db_path),
+            "pool_size": 10,
+            "max_overflow": 20,
+            "pool_timeout": 30,
+            "pool_recycle": 3600,
+            "echo": False,
+            "backup_enabled": True,
+            "backup_retention_days": 30
+        })
+
+    # Redis configuration with environment variable support
+    if "redis" not in api_config:
+        api_config["redis"] = {}
+
+    redis_config = api_config["redis"]
+    redis_config.setdefault("host", os.environ.get("REDIS_HOST", "localhost"))
+    redis_config.setdefault("port", int(os.environ.get("REDIS_PORT", "6379")))
+    redis_config.setdefault("db", int(os.environ.get("REDIS_DB", "0")))
+    redis_config.setdefault("password", os.environ.get("REDIS_PASSWORD", ""))
+    redis_config.setdefault("ssl", os.environ.get("REDIS_SSL", "false").lower() == "true")
+    redis_config.setdefault("connection_pool_size", 10)
+    redis_config.setdefault("socket_timeout", 30)
+    redis_config.setdefault("retry_on_timeout", True)
+
+    # JWT configuration with auto-generated secret
+    if "jwt" not in api_config:
+        api_config["jwt"] = {}
+
+    jwt_config = api_config["jwt"]
+
+    # Generate secure secret key if not set (check env first)
+    if not jwt_config.get("secret_key"):
+        # Check environment variable first
+        env_secret = os.environ.get("JWT_SECRET_KEY")
+        if env_secret and len(env_secret) >= 32:
+            jwt_config["secret_key"] = env_secret
+        else:
+            # Generate 64-character secure random key
+            alphabet = string.ascii_letters + string.digits + "!@#$%^&*()-_=+"
+            secret_key = ''.join(secrets.choice(alphabet) for _ in range(64))
+            jwt_config["secret_key"] = secret_key
+
+            # Log warning about generated key
+            logging.getLogger(APP_NAME).warning(
+                "Generated random JWT secret key. For production, set JWT_SECRET_KEY environment variable."
+            )
+
+    # Set JWT defaults with environment variable overrides
+    jwt_config.setdefault("algorithm", os.environ.get("JWT_ALGORITHM", "HS256"))
+    jwt_config.setdefault("access_token_expire_minutes", int(os.environ.get("JWT_ACCESS_EXPIRE_MINUTES", "15")))
+    jwt_config.setdefault("refresh_token_expire_days", int(os.environ.get("JWT_REFRESH_EXPIRE_DAYS", "7")))
+    jwt_config.setdefault("issuer", os.environ.get("JWT_ISSUER", "xanadOS-Security-API"))
+    jwt_config.setdefault("audience", os.environ.get("JWT_AUDIENCE", "xanadOS-clients"))
+    jwt_config.setdefault("auto_rotate_keys", True)
+    jwt_config.setdefault("key_rotation_days", 30)
+
+    # Rate limiting configuration with environment variable support
+    if "rate_limiting" not in api_config:
+        api_config["rate_limiting"] = {}
+
+    rate_config = api_config["rate_limiting"]
+    rate_config.setdefault("enabled", os.environ.get("RATE_LIMIT_ENABLED", "true").lower() == "true")
+    rate_config.setdefault("requests_per_minute", int(os.environ.get("RATE_LIMIT_PER_MINUTE", "60")))
+    rate_config.setdefault("requests_per_hour", int(os.environ.get("RATE_LIMIT_PER_HOUR", "1000")))
+    rate_config.setdefault("requests_per_day", int(os.environ.get("RATE_LIMIT_PER_DAY", "10000")))
+    rate_config.setdefault("burst_limit", int(os.environ.get("RATE_LIMIT_BURST", "10")))
+
+    # IP lists from environment (comma-separated)
+    env_whitelist = os.environ.get("RATE_LIMIT_WHITELIST_IPS", "")
+    env_blacklist = os.environ.get("RATE_LIMIT_BLACKLIST_IPS", "")
+
+    rate_config.setdefault("whitelist_ips", env_whitelist.split(",") if env_whitelist else [])
+    rate_config.setdefault("blacklist_ips", env_blacklist.split(",") if env_blacklist else [])
+
+    # Advanced rate limiting features
+    rate_config.setdefault("enable_adaptive_limits", os.environ.get("RATE_LIMIT_ADAPTIVE", "false").lower() == "true")
+    rate_config.setdefault("dos_protection_threshold", int(os.environ.get("RATE_LIMIT_DOS_THRESHOLD", "1000")))
+    rate_config.setdefault("geo_blocking_enabled", os.environ.get("RATE_LIMIT_GEO_BLOCKING", "false").lower() == "true")
+
+    # API keys configuration
+    if "api_keys" not in api_config:
+        api_config["api_keys"] = {
+            "max_keys_per_user": 10,
+            "default_rate_limit": 1000,
+            "key_length": 32,
+            "auto_expire_days": 365,
+            "require_permissions": True
+        }
+
+    # Security configuration with environment overrides
+    if "security" not in api_config:
+        api_config["security"] = {}
+
+    security_config = api_config["security"]
+    security_config.setdefault("require_https", os.environ.get("API_REQUIRE_HTTPS", "true").lower() == "true")
+    security_config.setdefault("allowed_origins", os.environ.get("API_ALLOWED_ORIGINS", "localhost,127.0.0.1").split(","))
+    security_config.setdefault("max_request_size_mb", int(os.environ.get("API_MAX_REQUEST_SIZE_MB", "10")))
+    security_config.setdefault("enable_cors", os.environ.get("API_ENABLE_CORS", "false").lower() == "true")
+    security_config.setdefault("csrf_protection", True)
+    security_config.setdefault("input_validation", True)
+    security_config.setdefault("sql_injection_protection", True)
+    security_config.setdefault("xss_protection", True)
+
+    # Save updated configuration
+    save_config(config)
+
+    return api_config
+
+
+def get_secure_database_url():
+    """Get secure database URL with proper configuration.
+
+    Returns:
+        str: SQLAlchemy database URL with security options
+    """
+    api_config = get_api_security_config()
+    db_config = api_config["database"]
+
+    if db_config["type"] == "sqlite":
+        db_path = db_config["path"]
+        # Ensure directory exists with secure permissions
+        db_file = Path(db_path)
+        _ensure_secure_dir(db_file.parent)
+
+        # SQLite URL with security options
+        return f"sqlite:///{db_path}?check_same_thread=false"
+
+    # Add support for other database types here
+    # elif db_config["type"] == "postgresql":
+    #     return f"postgresql://{user}:{password}@{host}:{port}/{database}"
+
+    else:
+        raise ValueError(f"Unsupported database type: {db_config['type']}")
+
+
+def get_redis_config():
+    """Get Redis configuration.
+
+    Returns:
+        dict: Redis connection configuration
+    """
+    api_config = get_api_security_config()
+    return api_config["redis"]
+
+
+def backup_database():
+    """Create a backup of the database if backup is enabled.
+
+    Returns:
+        bool: True if backup was created or not needed, False on error
+    """
+    try:
+        api_config = get_api_security_config()
+        db_config = api_config["database"]
+
+        if not db_config.get("backup_enabled", True):
+            return True
+
+        if db_config["type"] == "sqlite":
+            import shutil
+            from datetime import datetime
+
+            db_path = Path(db_config["path"])
+            if not db_path.exists():
+                return True  # No database to backup
+
+            # Create backup directory
+            backup_dir = db_path.parent / "backups"
+            _ensure_secure_dir(backup_dir)
+
+            # Create timestamped backup
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            backup_path = backup_dir / f"security_api_backup_{timestamp}.db"
+
+            shutil.copy2(db_path, backup_path)
+
+            # Clean old backups
+            retention_days = db_config.get("backup_retention_days", 30)
+            cleanup_old_backups(backup_dir, retention_days)
+
+            logging.getLogger(APP_NAME).info(f"Database backup created: {backup_path}")
+            return True
+
+    except Exception as e:
+        logging.getLogger(APP_NAME).error(f"Database backup failed: {e}")
+        return False
+
+
+def cleanup_old_backups(backup_dir: Path, retention_days: int):
+    """Clean up old database backups.
+
+    Args:
+        backup_dir: Directory containing backups
+        retention_days: Number of days to retain backups
+    """
+    try:
+        from datetime import datetime, timedelta
+
+        cutoff_time = datetime.now() - timedelta(days=retention_days)
+
+        for backup_file in backup_dir.glob("security_api_backup_*.db"):
+            if backup_file.stat().st_mtime < cutoff_time.timestamp():
+                backup_file.unlink()
+                logging.getLogger(APP_NAME).info(f"Deleted old backup: {backup_file}")
+
+    except Exception as e:
+        logging.getLogger(APP_NAME).error(f"Backup cleanup failed: {e}")

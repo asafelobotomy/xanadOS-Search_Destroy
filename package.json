@@ -1,6 +1,6 @@
 {
   "name": "xanados-search-destroy",
-  "version": "2.13.1",
+  "version": "3.0.0",
   "description": "xanadOS Search & Destroy security scanner with GitHub Copilot enhancement framework for development",
   "main": "scripts/update-readme.js",
   "scripts": {
@@ -9,14 +9,14 @@
     "validate:chatmodes": "bash scripts/validation/validate-chatmodes.sh",
     "validate": "node .github/validation/templates/template-validation-system.js && npm run validate:chatmodes",
     "test": "npm run validate",
-    "lint": "npx markdownlint -c .markdownlint.json **/*.md --ignore node_modules --ignore .markdown-backups --ignore archive",
-    "lint:fix": "npx markdownlint -c .markdownlint.json **/*.md --ignore node_modules --ignore .markdown-backups --ignore archive --fix",
+    "lint": "npx markdownlint -c .markdownlint.json **/*.md --ignore node_modules --ignore .markdown-backups --ignore archive --ignore logs",
+    "lint:fix": "npx markdownlint -c .markdownlint.json **/*.md --ignore node_modules --ignore .markdown-backups --ignore archive --ignore logs --fix",
     "spell:check": "npx cspell --config config/cspell.json \"**/*.md\" --no-progress --ignore-path .cspellignore",
     "spell:check:main": "npx cspell --no-cache --config ./config/cspell.json README.md CONTRIBUTING.md CHANGELOG.md",
     "version:get": "python scripts/tools/version/version_manager.py --get",
     "version:sync": "python scripts/tools/version/version_manager.py --sync",
     "version:sync:check": "bash scripts/tools/validation/validate-version-sync.sh",
-    "security:check": "bash scripts/tools/security/security-scan.sh --quick",
+    "security:check": "bash scripts/tools/security/security-scan.sh",
     "security:privilege-check": "python3 scripts/tools/security/privilege-escalation-audit.py --validate-only",
     "structure:check": "bash scripts/tools/validation/validate-structure.sh",
     "prebuild": "npm run version:sync",
@@ -47,14 +47,13 @@
     "url": "https://github.com/YOUR_ORG/YOUR_REPO.git"
   },
   "devDependencies": {
-    "markdownlint-cli": "^0.45.0",
-    "prettier": "^3.3.3"
+    "markdownlint-cli": "^0.45.0"
   },
   "engines": {
     "node": ">=18.0.0"
   },
   "dependencies": {
-    "cspell": "^9.2.0",
+    "cspell": "^9.2.1",
     "shellcheck": "^4.1.0"
   }
 }

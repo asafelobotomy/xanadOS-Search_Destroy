@@ -1,22 +1,23 @@
 #!/usr/bin/env python3
 """Test RKHunter configuration generation to ensure no shell variable syntax issues."""
 
-import sys
 import os
-import tempfile
 import re
+import sys
+import tempfile
 
 # Add the app directory to the Python path
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', '..', 'app'))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "..", "app"))
 
 from core.rkhunter_wrapper import RKHunterWrapper
+
 
 def test_rkhunter_config():
     """Test that RKHunter configuration generates without shell variable syntax errors."""
     print("=== Testing RKHunter Configuration Generation ===")
 
     # Create a temporary file for testing
-    with tempfile.NamedTemporaryFile(mode='w', suffix='.conf', delete=False) as tmp_file:
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".conf", delete=False) as tmp_file:
         config_path = tmp_file.name
 
     try:
@@ -29,13 +30,13 @@ def test_rkhunter_config():
 
         # Read the generated configuration
         if os.path.exists(rkhunter.config_file):
-            with open(rkhunter.config_file, 'r') as f:
+            with open(rkhunter.config_file) as f:
                 config_content = f.read()
 
             print("✓ Configuration generated successfully")
 
             # Check for problematic shell variable syntax
-            shell_vars = re.findall(r'\$\w+', config_content)
+            shell_vars = re.findall(r"\$\w+", config_content)
             if shell_vars:
                 print(f"❌ Found shell variables in configuration: {shell_vars}")
                 return False
@@ -43,7 +44,9 @@ def test_rkhunter_config():
                 print("✓ No shell variable syntax found")
 
             # Check DISABLE_TESTS line specifically
-            disable_tests_lines = [line for line in config_content.split('\n') if 'DISABLE_TESTS' in line]
+            disable_tests_lines = [
+                line for line in config_content.split("\n") if "DISABLE_TESTS" in line
+            ]
             if len(disable_tests_lines) == 1:
                 print(f"✓ Single DISABLE_TESTS line: {disable_tests_lines[0].strip()}")
             else:
@@ -67,6 +70,7 @@ def test_rkhunter_config():
         # Clean up temporary file
         if os.path.exists(config_path):
             os.unlink(config_path)
+
 
 if __name__ == "__main__":
     success = test_rkhunter_config()

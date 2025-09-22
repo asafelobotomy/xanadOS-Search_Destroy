@@ -3,8 +3,9 @@
 
 import os
 import subprocess
-import tempfile
 import sys
+import tempfile
+
 
 def test_rkhunter_config_directly():
     """Test RKHunter configuration without Python dependencies."""
@@ -13,7 +14,9 @@ def test_rkhunter_config_directly():
     print("=" * 50)
 
     # Check if rkhunter is available
-    rkhunter_path = subprocess.run(['which', 'rkhunter'], capture_output=True, text=True)
+    rkhunter_path = subprocess.run(
+        ["/usr/bin/which", "rkhunter"], check=False, capture_output=True, text=True
+    )
     if rkhunter_path.returncode != 0:
         print("❌ RKHunter not found in PATH")
         return False
@@ -22,15 +25,15 @@ def test_rkhunter_config_directly():
     print(f"✓ RKHunter found: {rkhunter_exe}")
 
     # Create a test configuration with the same DISABLE_TESTS line
-    config_content = '''# Test RKHunter configuration
+    config_content = """# Test RKHunter configuration
 LOGFILE=/tmp/rkhunter-test.log
 DISABLE_TESTS="suspscan hidden_procs deleted_files packet_cap_apps apps"
 SCANROOTKITMODE=THOROUGH
 PKGMGR=NONE
-'''
+"""
 
     # Write config to temp file
-    with tempfile.NamedTemporaryFile(mode='w', suffix='.conf', delete=False) as f:
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".conf", delete=False) as f:
         f.write(config_content)
         config_path = f.name
 
@@ -41,9 +44,15 @@ PKGMGR=NONE
 
         # Test configuration check
         print("\nTesting configuration validation...")
-        result = subprocess.run([
-            rkhunter_exe, '--configcheck', '--configfile', config_path
-        ], capture_output=True, text=True, timeout=30)
+        # nosec B603 - subprocess call with controlled input
+
+        result = subprocess.run(
+            [rkhunter_exe, "--configcheck", "--configfile", config_path],
+            check=False,
+            capture_output=True,
+            text=True,
+            timeout=30,
+        )
 
         print(f"Return code: {result.returncode}")
         if result.stdout:
@@ -52,11 +61,11 @@ PKGMGR=NONE
             print(f"Stderr:\n{result.stderr}")
 
         # Check for the specific error
-        if 'Unknown disabled test name' in result.stderr:
+        if "Unknown disabled test name" in result.stderr:
             print("❌ Found 'Unknown disabled test name' error!")
 
             # Try to identify which test is problematic
-            if 'disable_tests' in result.stderr.lower():
+            if "disable_tests" in result.stderr.lower():
                 print("❌ The error is related to $disable_tests variable syntax")
 
             return False
@@ -67,13 +76,27 @@ PKGMGR=NONE
 
         # Test a minimal scan
         print("\nTesting minimal scan...")
-        result = subprocess.run([
-            rkhunter_exe, '--check', '--sk', '--configfile', config_path,
-            '--enable', 'system_commands', '--nocolors'
-        ], capture_output=True, text=True, timeout=60)
+        # nosec B603 - subprocess call with controlled input
+
+        result = subprocess.run(
+            [
+                rkhunter_exe,
+                "--check",
+                "--sk",
+                "--configfile",
+                config_path,
+                "--enable",
+                "system_commands",
+                "--nocolors",
+            ],
+            check=False,
+            capture_output=True,
+            text=True,
+            timeout=60,
+        )
 
         print(f"Scan return code: {result.returncode}")
-        if 'Unknown disabled test name' in result.stderr:
+        if "Unknown disabled test name" in result.stderr:
             print("❌ Found 'Unknown disabled test name' error during scan!")
             print("Error details:")
             print(result.stderr)
@@ -93,6 +116,7 @@ PKGMGR=NONE
         # Clean up
         if os.path.exists(config_path):
             os.unlink(config_path)
+
 
 if __name__ == "__main__":
     success = test_rkhunter_config_directly()

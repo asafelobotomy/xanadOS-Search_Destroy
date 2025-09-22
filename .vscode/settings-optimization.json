@@ -1,0 +1,61 @@
+{
+  // Virtual Tool Optimization for GitHub Copilot
+  // Add these settings to your existing .vscode/settings.json
+
+  // Disable unused language services
+  "typescript.suggest.enabled": false,
+  "typescript.validate.enable": false,
+  "javascript.suggest.enabled": false,
+  "javascript.validate.enable": false,
+  "css.validate": false,
+  "less.validate": false,
+  "scss.validate": false,
+  "html.validate.styles": false,
+  "html.validate.scripts": false,
+
+  // Optimize Python analysis (reduce virtual tools)
+  "python.analysis.autoSearchPaths": false,
+  "python.analysis.stubPath": "",
+  "python.analysis.diagnosticSeverityOverrides": {
+    "reportUnusedImport": "none",
+    "reportUnusedClass": "none",
+    "reportUnusedFunction": "none"
+  },
+
+  // Disable unnecessary linters (use Ruff only)
+  "python.linting.enabled": false,
+  "python.linting.pylintEnabled": false,
+  "python.linting.flake8Enabled": false,
+  "python.linting.mypyEnabled": false,
+
+  // Reduce Git operations
+  "git.autoRepositoryDetection": false,
+  "git.autoStash": false,
+  "git.autofetch": false,
+  "git.decorations.enabled": false,
+
+  // Minimize testing tools
+  "python.testing.autoTestDiscoverOnSaveEnabled": false,
+  "python.testing.pytestEnabled": false,
+  "python.testing.unittestEnabled": false,
+  "test.testItemSelectionEnabled": false,
+
+  // Optimize file operations
+  "files.watcherExclude": {
+    "**/.git/**": true,
+    "**/node_modules/**": true,
+    "**/__pycache__/**": true,
+    "**/archive/**": true,
+    "**/.venv/**": true,
+    "**/examples/**": true,
+    "**/packaging/**": true
+  },
+
+  // Reduce extension activation
+  "extensions.autoCheckUpdates": false,
+  "extensions.autoUpdate": false,
+
+  // Minimize workspace scanning
+  "search.maxResults": 1000,
+  "search.quickOpen.includeSymbols": false
+}

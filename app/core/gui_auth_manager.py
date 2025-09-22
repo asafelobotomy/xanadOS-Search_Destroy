@@ -199,9 +199,7 @@ kdialog --password "Enter your password for administrative access:"
                 logger.info("✅ GUI sudo session established successfully")
                 return True
             else:
-                logger.error(
-                    f"Failed to establish sudo session: {result.stderr.decode()}"
-                )
+                logger.error(f"Failed to establish sudo session: {result.stderr.decode()}")
                 return False
 
         except subprocess.TimeoutExpired:
@@ -262,9 +260,7 @@ kdialog --password "Enter your password for administrative access:"
                 if result.returncode == 0:
                     return result
                 else:
-                    logger.warning(
-                        f"Command failed with existing session: {result.returncode}"
-                    )
+                    logger.warning(f"Command failed with existing session: {result.returncode}")
             except Exception as e:
                 logger.warning(f"Error using existing session: {e}")
 
@@ -275,9 +271,7 @@ kdialog --password "Enter your password for administrative access:"
 
         # Run the command with the established session
         try:
-            logger.info(
-                f"Running command with GUI sudo session: {' '.join(argv[:3])}..."
-            )
+            logger.info(f"Running command with GUI sudo session: {' '.join(argv[:3])}...")
             result = run_secure(
                 [sudo_path] + list(argv),
                 check=False,
@@ -398,12 +392,8 @@ kdialog --password "Enter your password for administrative access:"
     def get_session_info(self) -> dict[str, any]:
         """Get information about the current authentication session."""
         current_time = time.time()
-        elapsed = (
-            current_time - self._session_start_time if self._session_start_time else 0
-        )
-        remaining = (
-            max(0, self._session_timeout - elapsed) if self._sudo_session_active else 0
-        )
+        elapsed = current_time - self._session_start_time if self._session_start_time else 0
+        remaining = max(0, self._session_timeout - elapsed) if self._sudo_session_active else 0
 
         return {
             "active": self._sudo_session_active,

@@ -7,7 +7,7 @@ import logging
 import time
 from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Optional
 
 from PyQt6.QtCore import QObject, Qt, QTimer, pyqtSignal
 from PyQt6.QtWidgets import QApplication, QProgressBar
@@ -18,9 +18,9 @@ class UITask:
     """Represents a UI task to be executed."""
 
     task_id: str
-    callback: Callable
+    callback: callable
     args: tuple = ()
-    kwargs: dict | None = None
+    kwargs: dict = None
     priority: int = 1  # Lower number = higher priority
 
     def __post_init__(self):
@@ -76,9 +76,7 @@ class ResponsiveUI(QObject):
         self.show_notification.connect(self._handle_notification)
         self.task_completed.connect(self._handle_task_completion)
 
-    def schedule_task(
-        self, task_id: str, callback: Callable, *args, priority: int = 1, **kwargs
-    ):
+    def schedule_task(self, task_id: str, callback: Callable, *args, priority: int = 1, **kwargs):
         """Schedule a background task.
 
         Args:
@@ -102,9 +100,9 @@ class ResponsiveUI(QObject):
             self.pending_tasks.append(task)
 
         self.logdebug(
-            "Scheduled task '%s' with priority %d".replace(
-                "%s", "{task_id, priority}"
-            ).replace("%d", "{task_id, priority}")
+            "Scheduled task '%s' with priority %d".replace("%s", "{task_id, priority}").replace(
+                "%d", "{task_id, priority}"
+            )
         )
 
     def _process_background_tasks(self):
@@ -120,9 +118,7 @@ class ResponsiveUI(QObject):
             result = task.callback(*task.args, **task.kwargs)
             execution_time = time.time() - start_time
 
-            self.logger.debug(
-                "Completed task '%s' in %.3fs", task.task_id, execution_time
-            )
+            self.logger.debug("Completed task '%s' in %.3fs", task.task_id, execution_time)
 
             # Emit completion signal
             self.task_completed.emit(task.task_id, result)
@@ -151,9 +147,7 @@ class ResponsiveUI(QObject):
             elif animation["type"] == "pulse":
                 self._update_pulse_animation(widget_id, animation, current_time)
 
-    def _update_progress_animation(
-        self, widget_id: str, animation: dict, current_time: float
-    ):
+    def _update_progress_animation(self, widget_id: str, animation: dict, current_time: float):
         """Update smooth progress bar animation."""
         widget = animation.get("widget")
         if not widget:
@@ -174,9 +168,7 @@ class ResponsiveUI(QObject):
 
             widget.setValue(new_value)
 
-    def _update_pulse_animation(
-        self, widget_id: str, animation: dict, current_time: float
-    ):
+    def _update_pulse_animation(self, widget_id: str, animation: dict, current_time: float):
         """Update pulsing animation."""
         widget = animation.get("widget")
         if not widget:
@@ -261,9 +253,9 @@ class ResponsiveUI(QObject):
     def _handle_task_completion(self, task_id: str, result: Any):
         """Handle task completion."""
         self.logdebug(
-            "Task '%s' completed with result: %s".replace(
-                "%s", "{task_id, result}"
-            ).replace("%d", "{task_id, result}")
+            "Task '%s' completed with result: %s".replace("%s", "{task_id, result}").replace(
+                "%d", "{task_id, result}"
+            )
         )
 
 
@@ -304,9 +296,9 @@ class ScanProgressManager(QObject):
         self.start_time = time.time()
 
         self.loginfo(
-            "Started scan progress tracking for %d files".replace(
-                "%s", "{total_files}"
-            ).replace("%d", "{total_files}")
+            "Started scan progress tracking for %d files".replace("%s", "{total_files}").replace(
+                "%d", "{total_files}"
+            )
         )
         self._emit_progress_update()
 
@@ -385,9 +377,7 @@ class ScanProgressManager(QObject):
 
         self.scan_completed.emit(final_stats)
         self.loginfo(
-            "Scan completed: %s".replace("%s", "{final_stats}").replace(
-                "%d", "{final_stats}"
-            )
+            "Scan completed: %s".replace("%s", "{final_stats}").replace("%d", "{final_stats}")
         )
 
     def report_error(self, error_message: str):
@@ -399,9 +389,7 @@ class ScanProgressManager(QObject):
         self.errors += 1
         self.error_occurred.emit(error_message)
         self.logerror(
-            "Scan error: %s".replace("%s", "{error_message}").replace(
-                "%d", "{error_message}"
-            )
+            "Scan error: %s".replace("%s", "{error_message}").replace("%d", "{error_message}")
         )
 
 
@@ -439,9 +427,9 @@ class LoadingIndicator(QObject):
             self.main_window.status_label.setText(message)
 
         self.logdebug(
-            "Started loading for operation '%s'".replace(
-                "%s", "{operation_id}"
-            ).replace("%d", "{operation_id}")
+            "Started loading for operation '%s'".replace("%s", "{operation_id}").replace(
+                "%d", "{operation_id}"
+            )
         )
 
     def stop_loading(self, operation_id: str):
@@ -457,9 +445,9 @@ class LoadingIndicator(QObject):
             self.busy_cursor_active = False
 
         self.logdebug(
-            "Stopped loading for operation '%s'".replace(
-                "%s", "{operation_id}"
-            ).replace("%d", "{operation_id}")
+            "Stopped loading for operation '%s'".replace("%s", "{operation_id}").replace(
+                "%d", "{operation_id}"
+            )
         )
 
     def is_loading(self, operation_id: str | None = None) -> bool:
@@ -477,37 +465,37 @@ class LoadingIndicator(QObject):
 
 
 # Global instances
-responsive_ui: ResponsiveUI | None = None
-scan_progress: ScanProgressManager | None = None
-loading_indicator: LoadingIndicator | None = None
+responsive_ui: Optional["ResponsiveUI"] = None
+scan_progress: Optional["ScanProgressManager"] = None
+loading_indicator: Optional["LoadingIndicator"] = None
 
 
-def initialize_responsive_ui(main_window=None):
+def initialize_responsive_ui(main_window=None) -> None:
     """Initialize global responsive UI components."""
     global responsive_ui, scan_progress, loading_indicator
 
-    responsive_ui = ResponsiveUI(main_window)
-    scan_progress = ScanProgressManager()
-    loading_indicator = LoadingIndicator(main_window)
+    responsive_ui = ResponsiveUI(main_window)  # type: ignore
+    scan_progress = ScanProgressManager()  # type: ignore
+    loading_indicator = LoadingIndicator(main_window)  # type: ignore
 
     # Connect progress manager to responsive UI
     if responsive_ui and scan_progress:
         scan_progress.progress_updated.connect(responsive_ui.update_progress)
         scan_progress.error_occurred.connect(
-            lambda msg: responsive_ui.show_notification.emit("Scan Error", msg)  # type: ignore
+            lambda msg: responsive_ui.show_notification.emit("Scan Error", msg)
         )
 
 
-def get_responsive_ui():
+def get_responsive_ui() -> Optional["ResponsiveUI"]:
     """Get global responsive UI instance."""
     return responsive_ui
 
 
-def get_scan_progress():
+def get_scan_progress() -> Optional["ScanProgressManager"]:
     """Get global scan progress manager."""
     return scan_progress
 
 
-def get_loading_indicator():
+def get_loading_indicator() -> Optional["LoadingIndicator"]:
     """Get global loading indicator."""
     return loading_indicator

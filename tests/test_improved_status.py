@@ -4,8 +4,9 @@
 import sys
 import os
 
-# Add the app directory to path
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'app'))
+# Add the app directory to path (go up one level from tests/)
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "app"))
+
 
 def test_database_detection():
     """Test the improved database version detection."""
@@ -63,8 +64,10 @@ def test_database_detection():
     except Exception as e:
         print(f"❌ Error testing optimizer: {e}")
         import traceback
+
         traceback.print_exc()
         return None
+
 
 def direct_database_test():
     """Direct test of database file reading."""
@@ -78,17 +81,18 @@ def direct_database_test():
             ["sudo", "head", "-5", "/var/lib/rkhunter/db/rkhunter.dat"],
             capture_output=True,
             text=True,
-            timeout=10
+            timeout=10,
         )
         if result.returncode == 0:
             print("✓ Direct database file access successful:")
-            for line in result.stdout.split('\n')[:5]:
+            for line in result.stdout.split("\n")[:5]:
                 if line.strip():
                     print(f"  {line}")
         else:
             print(f"❌ Database file access failed: {result.stderr}")
     except Exception as e:
         print(f"❌ Direct test failed: {e}")
+
 
 def main():
     """Main test function."""
@@ -103,10 +107,13 @@ def main():
     print("\n🏁 Testing Complete")
 
     if status:
-        success_count = sum(1 for value in [
-            status.version, status.database_version, status.mirror_status
-        ] if value != "Unknown")
+        success_count = sum(
+            1
+            for value in [status.version, status.database_version, status.mirror_status]
+            if value != "Unknown"
+        )
         print(f"📊 Status Detection Success: {success_count}/3 values resolved")
+
 
 if __name__ == "__main__":
     main()

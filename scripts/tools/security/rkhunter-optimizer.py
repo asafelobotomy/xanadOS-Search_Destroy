@@ -18,9 +18,7 @@ from datetime import datetime
 from pathlib import Path
 
 # Configure logging
-logging.basicConfig(
-    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
-)
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
 
 
@@ -161,9 +159,7 @@ class RKHunterOptimizer:
 
         for pattern_name, matches in analysis["pattern_matches"].items():
             if len(matches) > 0:
-                pattern = next(
-                    p for p in self.false_positive_patterns if p.name == pattern_name
-                )
+                pattern = next(p for p in self.false_positive_patterns if p.name == pattern_name)
 
                 rec = {
                     "pattern": pattern_name,
@@ -171,9 +167,7 @@ class RKHunterOptimizer:
                     "severity": pattern.severity,
                     "frequency": len(matches),
                     "config_recommendation": pattern.recommended_config,
-                    "sample_warnings": [
-                        m["warning"] for m in matches[:3]
-                    ],  # First 3 examples
+                    "sample_warnings": [m["warning"] for m in matches[:3]],  # First 3 examples
                 }
 
                 # Specific recommendations based on pattern
@@ -182,9 +176,7 @@ class RKHunterOptimizer:
                     rec["note"] = "High frequency suggests disabling app version checks"
                 elif pattern_name == "deleted_files":
                     rec["priority"] = "critical"
-                    rec["note"] = (
-                        "Consider system reboot to clear deleted file references"
-                    )
+                    rec["note"] = "Consider system reboot to clear deleted file references"
                 else:
                     rec["priority"] = "medium"
 
@@ -201,9 +193,7 @@ class RKHunterOptimizer:
 
         return recommendations
 
-    def generate_optimized_config(
-        self, analysis: dict, output_path: Path | None = None
-    ) -> str:
+    def generate_optimized_config(self, analysis: dict, output_path: Path | None = None) -> str:
         """Generate optimized RKHunter configuration based on analysis."""
         config_lines = [
             "# RKHunter Optimized Configuration",
@@ -277,7 +267,7 @@ class RKHunterOptimizer:
             cmd.extend(["--configfile", str(config_file)])
 
         try:
-            result = subprocess.run(  # noqa: S603
+            result = subprocess.run(
                 cmd,
                 capture_output=True,
                 text=True,
@@ -312,9 +302,7 @@ class RKHunterOptimizer:
             for pattern_name, matches in analysis["pattern_matches"].items():
                 if matches:
                     pattern = next(
-                        p
-                        for p in self.false_positive_patterns
-                        if p.name == pattern_name
+                        p for p in self.false_positive_patterns if p.name == pattern_name
                     )
                     report_lines.extend(
                         [
@@ -342,40 +330,30 @@ class RKHunterOptimizer:
 
         # Unmatched warnings
         if analysis.get("unmatched_warnings"):
-            report_lines.extend(
-                ["Unmatched Warnings (require manual review):", "-" * 45]
-            )
+            report_lines.extend(["Unmatched Warnings (require manual review):", "-" * 45])
 
             for warning in analysis["unmatched_warnings"][:10]:  # Show first 10
                 report_lines.append(f"• {warning}")
 
             if len(analysis["unmatched_warnings"]) > 10:
-                report_lines.append(
-                    f"... and {len(analysis['unmatched_warnings']) - 10} more"
-                )
+                report_lines.append(f"... and {len(analysis['unmatched_warnings']) - 10} more")
 
         return "\n".join(report_lines)
 
 
 def main():
     """Main function for command-line usage."""
-    parser = argparse.ArgumentParser(
-        description="RKHunter False Positive Analyzer and Optimizer"
-    )
+    parser = argparse.ArgumentParser(description="RKHunter False Positive Analyzer and Optimizer")
     parser.add_argument("--log-file", type=Path, help="Path to RKHunter log file")
     parser.add_argument("--config-file", type=Path, help="Path to RKHunter config file")
-    parser.add_argument(
-        "--output-config", type=Path, help="Output path for optimized config"
-    )
+    parser.add_argument("--output-config", type=Path, help="Output path for optimized config")
     parser.add_argument(
         "--report-format",
         choices=["text", "json"],
         default="text",
         help="Report output format",
     )
-    parser.add_argument(
-        "--test-scan", action="store_true", help="Run test scan after optimization"
-    )
+    parser.add_argument("--test-scan", action="store_true", help="Run test scan after optimization")
     parser.add_argument("--verbose", "-v", action="store_true", help="Verbose output")
 
     args = parser.parse_args()

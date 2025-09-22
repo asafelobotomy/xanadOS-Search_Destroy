@@ -1,23 +1,25 @@
 #!/usr/bin/env python3
 """Final comprehensive test of RKHunter functionality after fixes."""
 
-import sys
 import os
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', '..', 'app'))
+import sys
 
-from core.rkhunter_wrapper import RKHunterWrapper
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "..", "app"))
+
 import logging
 import subprocess
-from pathlib import Path
+
+from core.rkhunter_wrapper import RKHunterWrapper
+
 
 def test_rkhunter_comprehensive():
-    """Comprehensive test of RKHunter functionality."""
+    """Comprehensive test of RKHunter functionality."""  # noqa: PLR0911 - test function with multiple exit points
     print("=" * 60)
     print("🔍 RKHunter Comprehensive Functionality Test")
     print("=" * 60)
 
     # Setup logging
-    logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(message)s')
+    logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 
     # Test 1: Wrapper initialization
     print("\n1. Testing wrapper initialization...")
@@ -53,12 +55,15 @@ def test_rkhunter_comprehensive():
         print("   ✓ Configuration file created")
 
         # Read and validate configuration
-        with open(wrapper.config_path, 'r') as f:
+        with open(wrapper.config_path) as f:
             config_content = f.read()
 
         # Check for shell variables
-        shell_vars = [line.strip() for line in config_content.split('\n')
-                     if '$' in line and not line.strip().startswith('#')]
+        shell_vars = [
+            line.strip()
+            for line in config_content.split("\n")
+            if "$" in line and not line.strip().startswith("#")
+        ]
         if shell_vars:
             print(f"   ❌ Found shell variables: {shell_vars}")
             return False
@@ -66,8 +71,11 @@ def test_rkhunter_comprehensive():
             print("   ✓ No shell variables found")
 
         # Check DISABLE_TESTS configuration
-        disable_lines = [line.strip() for line in config_content.split('\n')
-                        if 'DISABLE_TESTS' in line and not line.strip().startswith('#')]
+        disable_lines = [
+            line.strip()
+            for line in config_content.split("\n")
+            if "DISABLE_TESTS" in line and not line.strip().startswith("#")
+        ]
         print(f"   ✓ DISABLE_TESTS lines: {len(disable_lines)}")
         if len(disable_lines) == 1:
             print(f"   ✓ Single DISABLE_TESTS line: {disable_lines[0]}")
@@ -81,15 +89,26 @@ def test_rkhunter_comprehensive():
     # Test 4: Configuration validation with RKHunter
     print("\n4. Testing configuration validation...")
     try:
-        result = subprocess.run([
-            'sudo', '/usr/bin/rkhunter', '--configcheck',
-            '--configfile', str(wrapper.config_path)
-        ], capture_output=True, text=True, timeout=30)
+        # nosec B603 - subprocess call with controlled input
 
-        if 'Unknown' in result.stderr or 'Error' in result.stderr:
-            print(f"   ⚠️  Configuration warnings:")
-            for line in result.stderr.split('\n'):
-                if 'Unknown' in line or 'Error' in line:
+        result = subprocess.run(
+            [
+                "/usr/bin/sudo",
+                "/usr/bin/rkhunter",
+                "--configcheck",
+                "--configfile",
+                str(wrapper.config_path),
+            ],
+            check=False,
+            capture_output=True,
+            text=True,
+            timeout=30,
+        )
+
+        if "Unknown" in result.stderr or "Error" in result.stderr:
+            print("   ⚠️  Configuration warnings:")
+            for line in result.stderr.split("\n"):
+                if "Unknown" in line or "Error" in line:
                     print(f"      {line}")
         else:
             print("   ✓ Configuration validation passed")
@@ -100,6 +119,7 @@ def test_rkhunter_comprehensive():
     print("\n5. Testing minimal scan...")
     try:
         scan_output = []
+
         def output_callback(line):
             scan_output.append(line)
 
@@ -107,10 +127,10 @@ def test_rkhunter_comprehensive():
             test_categories=None,
             skip_keypress=True,
             update_database=False,
-            output_callback=output_callback
+            output_callback=output_callback,
         )
 
-        print(f"   ✓ Scan completed")
+        print("   ✓ Scan completed")
         print(f"   ✓ Success: {result.success}")
         print(f"   ✓ Summary: {result.scan_summary}")
         print(f"   ✓ Output lines: {len(scan_output)}")
@@ -121,7 +141,7 @@ def test_rkhunter_comprehensive():
         # Check for the original error
         error_found = False
         for line in scan_output:
-            if 'Unknown disabled test name' in line and '$disable_tests' in line:
+            if "Unknown disabled test name" in line and "$disable_tests" in line:
                 print(f"   ❌ Original error still present: {line}")
                 error_found = True
                 break
@@ -134,6 +154,7 @@ def test_rkhunter_comprehensive():
     except Exception as e:
         print(f"   ❌ Scan test failed: {e}")
         return False
+
 
 def main():
     """Main test function."""
@@ -155,8 +176,10 @@ def main():
     except Exception as e:
         print(f"\n❌ FATAL ERROR: {e}")
         import traceback
+
         traceback.print_exc()
         return 1
+
 
 if __name__ == "__main__":
     sys.exit(main())

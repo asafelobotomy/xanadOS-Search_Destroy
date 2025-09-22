@@ -18,7 +18,6 @@ from pathlib import Path
 from app import __version__
 from app.core.file_scanner import FileScanner
 from app.core.firewall_detector import get_firewall_status, toggle_firewall
-from app.core.gui_auth_manager import GUIAuthManager
 from app.core.rkhunter_wrapper import RKHunterScanResult, RKHunterWrapper
 from app.core.scan_results_formatter import ModernScanResultsFormatter
 
@@ -117,7 +116,7 @@ from PyQt6.QtWidgets import (
 )
 
 from app.core import UNIFIED_PERFORMANCE_AVAILABLE
-from app.core.elevated_runner import cleanup_auth_session
+from app.core.security_integration import get_security_coordinator
 from app.core.memory_cache import get_system_cache
 from app.gui import APP_VERSION, settings_pages
 from app.gui.all_warnings_dialog import AllWarningsDialog
@@ -4408,9 +4407,7 @@ System        {perf_status}"""
         print(f"DEBUG: Current thread exists: {self.current_scan_thread is not None}")
         print(
             f"DEBUG: Thread running: {
-                self.current_scan_thread.isRunning()
-                if self.current_scan_thread
-                else 'N/A'
+                self.current_scan_thread.isRunning() if self.current_scan_thread else 'N/A'
             }"
         )
         print(f"DEBUG: Manual stop flag: {self._scan_manually_stopped}")
@@ -4593,6 +4590,62 @@ System        {perf_status}"""
         self.update_scan_button_state(True)  # Set to "Stop Scan" mode
         self.progress_bar.setValue(0)
         self._clear_results_with_header()
+
+        # Check permissions for the scan path before proceeding
+        try:
+            from app.core.security_integration import check_file_permissions
+            from app.core.permission_controller import PermissionLevel
+
+            # For custom scans, check if the path requires special permissions
+            if effective_scan_type == "CUSTOM" and self.scan_path:
+                # Check if we have permissions to scan the path
+                has_permissions = check_file_permissions(
+                    "system", self.scan_path, PermissionLevel.READ
+                )
+
+                if not has_permissions:
+                    # Try to get elevated permissions
+                    from app.core.security_integration import elevate_privileges
+
+                    elevation_result = elevate_privileges(
+                        "system",
+                        f"Scan requires access to {self.scan_path}",
+                        use_gui=True,
+                    )
+                    should_proceed = elevation_result.success
+                else:
+                    should_proceed = True
+
+                if not should_proceed:
+                    # User cancelled due to permission requirements
+                    self._scan_state = "idle"
+                    self.update_scan_button_state(False)  # Reset to "Start Scan" mode
+                    self.status_bar.showMessage(
+                        "⚠️ Scan cancelled - permission requirements not met"
+                    )
+                    return
+
+                # Store permission mode for use during scanning - simplified for new security system
+                permission_mode = "elevated" if not has_permissions else "normal"
+                privileged_paths = [self.scan_path] if not has_permissions else []
+
+                scan_options["permission_mode"] = permission_mode
+                scan_options["privileged_paths"] = privileged_paths
+
+                if permission_mode == "elevated" and privileged_paths:
+                    self._append_with_autoscroll(
+                        f"⚠️ <b>Note:</b> Elevated permissions were required for scan path: {self.scan_path}"
+                    )
+                    self._append_with_autoscroll("")
+
+        except ImportError as e:
+            print(f"Warning: Permission manager not available: {e}")
+            # Continue without permission checking
+            pass
+        except Exception as e:
+            print(f"Warning: Permission check failed: {e}")
+            # Continue without permission checking
+            pass
 
         # Reset autoscroll tracking for new scan
         self._user_has_scrolled = False
@@ -5277,8 +5330,11 @@ System        {perf_status}"""
         # Check if RKHunter is available (without authentication)
         if not self.rkhunter.available or self.rkhunter.rkhunter_path is None:
             # Check authentication method available
-            gui_auth = GUIAuthManager()
-            gui_auth_available = gui_auth.is_gui_available()
+            from app.core.security_integration import get_security_coordinator
+
+            gui_auth_available = (
+                True  # Our new security system always supports GUI auth
+            )
 
             if gui_auth_available:
                 auth_method_text = (
@@ -5326,8 +5382,9 @@ System        {perf_status}"""
         test_categories = self.get_selected_rkhunter_categories()
 
         # Check if GUI authentication is available
-        gui_auth = GUIAuthManager()
-        gui_auth_available = gui_auth.is_gui_available()
+        from app.core.security_integration import get_security_coordinator
+
+        gui_auth_available = True  # Our new security system always supports GUI auth
 
         # Build scan categories description for user
         category_names = {
@@ -5382,9 +5439,15 @@ System        {perf_status}"""
         try:
             auth_session_valid = self.rkhunter._ensure_auth_session()
             if not auth_session_valid:
-                # Try the new GUI authentication manager
-                gui_auth = GUIAuthManager()
-                auth_success = gui_auth.ensure_authenticated()
+                # Try the new security integration system
+                from app.core.security_integration import elevate_privileges
+
+                elevation_result = elevate_privileges(
+                    "system",
+                    "RKHunter rootkit scan requires elevated privileges",
+                    use_gui=True,
+                )
+                auth_success = elevation_result.success
 
                 if not auth_success:
                     # Check what authentication methods are available as fallback
@@ -5393,7 +5456,7 @@ System        {perf_status}"""
                     sudo_available = bool(_which("sudo"))
                     display_available = bool(os.environ.get("DISPLAY"))
 
-                    if gui_auth.is_gui_available() and display_available:
+                    if display_available:
                         error_msg = (
                             "Authentication failed or was cancelled.\n\n"
                             "A secure password dialog should have appeared. "
@@ -5415,7 +5478,7 @@ System        {perf_status}"""
                         )
 
                     # For GUI/sudo available cases, ask if user wants to continue anyway
-                    if gui_auth.is_gui_available() or sudo_available:
+                    if display_available or sudo_available:
                         reply = self.show_themed_message_box(
                             "question",
                             "Pre-authentication Failed",
@@ -6016,9 +6079,7 @@ System        {perf_status}"""
                 self.results_text.append(
                     f"  ❌ <span style='color: {
                         get_theme_manager().get_color('error')
-                    };'><b>ERROR:</b></span> {
-                        formatted_line.replace('ERROR:', '').strip()
-                    }"
+                    };'><b>ERROR:</b></span> {formatted_line.replace('ERROR:', '').strip()}"
                 )
             elif "INFECTED" in formatted_line.upper() or (
                 "ROOTKIT" in formatted_line.upper()
@@ -6894,11 +6955,8 @@ System        {perf_status}"""
                 "security.safe_warnings", []
             )
 
-            # Create a hash of the warning for identification
-
-            warning_hash = hashlib.md5(
-                warning_text.encode(), usedforsecurity=False
-            ).hexdigest()[:16]
+            # Create a modern hash of the warning for identification using SHA-256
+            warning_hash = hashlib.sha256(warning_text.encode()).hexdigest()[:16]
 
             # Add to safe list if not already present
             if warning_hash not in safe_warnings:
@@ -7149,9 +7207,9 @@ Common False Positives:
             elif optimization_type == "update_baseline":
                 config.update_baseline = True
             elif optimization_type == "optimize_config":
-                config.optimize_performance = True
-                config.update_mirrors = True
-                config.update_baseline = True
+                # Show interactive dialog for configuration fixes first
+                self._show_interactive_config_fixes()
+                return  # Exit early - dialog will handle the optimization if user confirms
 
             # Start optimization worker
             if (
@@ -7198,6 +7256,17 @@ Common False Positives:
                     f"Optimization completed at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
                 )
 
+                # Include applied fixes if they exist
+                if hasattr(self, "_applied_fixes") and self._applied_fixes:
+                    results.append("\n🔧 System Configuration Fixes Applied:")
+                    for fix in self._applied_fixes:
+                        results.append(f"  • {fix}")
+                    results.append("")  # Add blank line for spacing
+                else:
+                    # If no interactive fixes were applied, show that system config is clean
+                    results.append("\n✅ No system configuration issues detected")
+                    results.append("")  # Add blank line for spacing
+
                 if hasattr(report, "mirrors_updated") and report.mirrors_updated:
                     results.append("✅ Mirrors updated successfully")
                 if hasattr(report, "baseline_updated") and report.baseline_updated:
@@ -7205,7 +7274,7 @@ Common False Positives:
                 if hasattr(report, "config_optimized") and report.config_optimized:
                     results.append("✅ Configuration optimized")
                 if hasattr(report, "warnings") and report.warnings:
-                    results.append("⚠️ Warnings:")
+                    results.append("⚠️ Additional System Warnings:")
                     for warning in report.warnings:
                         results.append(f"  • {warning}")
                 if hasattr(report, "errors") and report.errors:
@@ -7213,7 +7282,22 @@ Common False Positives:
                     for error in report.errors:
                         results.append(f"  • {error}")
 
+                # If no optimization actions were performed, show that information
+                if not any(
+                    [
+                        hasattr(report, "mirrors_updated") and report.mirrors_updated,
+                        hasattr(report, "baseline_updated") and report.baseline_updated,
+                        hasattr(report, "config_optimized") and report.config_optimized,
+                        hasattr(self, "_applied_fixes") and self._applied_fixes,
+                    ]
+                ):
+                    results.append("ℹ️ No optimization actions were needed")
+
                 self.rkhunter_results_text.setText("\n".join(results))
+
+                # Clear the applied fixes after displaying them
+                if hasattr(self, "_applied_fixes"):
+                    delattr(self, "_applied_fixes")
 
             # Refresh status
             if hasattr(self, "rkhunter_status_widget"):
@@ -7260,6 +7344,230 @@ Common False Positives:
         except Exception as e:
             logging.error(f"Error handling optimization error: {e}")
 
+    def _show_interactive_config_fixes(self):
+        """Show interactive dialog for configuration fixes"""
+        try:
+            logging.info("🚀 INTERACTIVE CONFIG FIXES TRIGGERED")
+
+            # Import required modules
+            from app.core.rkhunter_optimizer import RKHunterOptimizer
+            from app.gui.config_fix_dialog import ConfigFixDialog
+            from pathlib import Path
+
+            # Use system config (single source of truth)
+            # The RKHunterOptimizer will handle permission checks and sudo escalation
+
+            # Create optimizer instance with system config (default)
+            optimizer = RKHunterOptimizer()
+
+            # Detect fixable issues in system config
+            logging.info("🔍 Detecting fixable issues in system configuration...")
+            fixable_issues = optimizer.detect_fixable_issues()
+
+            if not fixable_issues:
+                # No issues found - show success message and proceed with standard optimization
+                self.show_themed_message_box(
+                    "information",
+                    "Configuration Check",
+                    "✅ No configuration issues detected in system RKHunter config.\n\n"
+                    "Proceeding with standard optimization...",
+                )
+                # Set applied fixes to indicate no issues were found
+                self._applied_fixes = ["✅ No system configuration issues detected"]
+                self._run_standard_config_optimization()
+                return
+
+            # Show interactive dialog
+            logging.info(f"💬 Showing dialog for {len(fixable_issues)} fixable issues")
+            dialog = ConfigFixDialog(fixable_issues, parent=self)
+            result = dialog.exec()
+
+            if result == ConfigFixDialog.DialogCode.Accepted:
+                # User confirmed fixes - apply them
+                selected_fixes = dialog.get_selected_fixes()
+                if selected_fixes:
+                    logging.info(f"✅ Applying {len(selected_fixes)} selected fixes")
+                    applied_fixes = optimizer.apply_selected_fixes(selected_fixes)
+
+                    # Check if fixes were applied successfully
+                    # applied_fixes is a list of strings describing what was done
+                    has_errors = any("❌" in fix for fix in applied_fixes)
+                    has_success = any(
+                        "🔧" in fix or "📅" in fix or "🔍" in fix or "💾" in fix
+                        for fix in applied_fixes
+                    )
+
+                    if applied_fixes and not has_errors and has_success:
+                        # Show success message with details of what was applied
+                        fix_details = "\n".join([f"  • {fix}" for fix in applied_fixes])
+                        self.show_themed_message_box(
+                            "information",
+                            "Fixes Applied",
+                            f"✅ Successfully applied {len(selected_fixes)} configuration fixes:\n\n"
+                            f"{fix_details}\n\n"
+                            "Proceeding with optimization...",
+                        )
+                        # Store applied fixes for display in optimization results
+                        self._applied_fixes = applied_fixes
+                        self._run_standard_config_optimization()
+                    elif applied_fixes and not has_errors and not has_success:
+                        # Fixes were selected but none were actually applicable
+                        self.show_themed_message_box(
+                            "information",
+                            "No Changes Needed",
+                            f"The selected fixes were checked, but no changes were needed:\n\n"
+                            f"{chr(10).join([f'  • {fix}' for fix in applied_fixes])}\n\n"
+                            "Proceeding with optimization...",
+                        )
+                        # Store applied fixes for display in optimization results
+                        self._applied_fixes = (
+                            applied_fixes
+                            if applied_fixes
+                            else [
+                                "ℹ️ Selected fixes were not applicable to current configuration"
+                            ]
+                        )
+                        self._run_standard_config_optimization()
+                    else:
+                        # Show error message with details of what failed
+                        error_details = "\n".join(
+                            [f"  • {fix}" for fix in applied_fixes if "❌" in fix]
+                        )
+                        if not error_details:
+                            error_details = (
+                                "Unknown error occurred during fix application"
+                            )
+                        self._hide_rkhunter_progress()
+                        self.show_themed_message_box(
+                            "warning",
+                            "Fix Application Failed",
+                            f"❌ Some fixes could not be applied:\n\n"
+                            f"{error_details}\n\n"
+                            "Please check the logs for details.\n\n"
+                            "Optimization cancelled for safety.",
+                        )
+                        return
+                else:
+                    # No fixes selected - ask if user wants to proceed anyway
+                    reply = self.show_themed_message_box(
+                        "question",
+                        "No Fixes Selected",
+                        "No fixes were selected to apply.\n\n"
+                        "Would you like to proceed with standard optimization anyway?",
+                        QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                    )
+                    if reply == QMessageBox.StandardButton.Yes:
+                        # Set empty applied fixes list for display
+                        self._applied_fixes = ["ℹ️ No configuration fixes were selected"]
+                        self._run_standard_config_optimization()
+                    else:
+                        # User chose not to proceed
+                        self._hide_rkhunter_progress()
+                        self.show_themed_message_box(
+                            "information",
+                            "Optimization Cancelled",
+                            "✅ Configuration optimization has been cancelled.\n\n"
+                            "No changes were made to your system.",
+                        )
+                        return
+            else:
+                # User cancelled the dialog - show confirmation and stop the process
+                logging.info("❌ User cancelled configuration fixes dialog")
+                self._hide_rkhunter_progress()
+                self.show_themed_message_box(
+                    "information",
+                    "Optimization Cancelled",
+                    "✅ Configuration optimization has been cancelled.\n\n"
+                    "No changes were made to your system.",
+                )
+                return  # Stop the optimization process completely
+
+        except ImportError as e:
+            logging.error(f"Failed to import required modules: {e}")
+            # Don't proceed with optimization if modules are missing
+            self._hide_rkhunter_progress()
+            self.show_themed_message_box(
+                "warning",
+                "Feature Unavailable",
+                "Interactive configuration fixes are not available.\n\n"
+                "This may be due to missing dependencies.\n\n"
+                "Optimization cancelled for safety.",
+            )
+            return
+        except Exception as e:
+            logging.error(f"Error in interactive config fixes: {e}")
+            # Don't proceed with optimization if there was an error
+            self._hide_rkhunter_progress()
+            self.show_themed_message_box(
+                "warning",
+                "Error",
+                f"An error occurred while checking configuration:\n{e}\n\n"
+                "Optimization cancelled for safety.",
+            )
+            return
+
+    def _run_standard_config_optimization(self):
+        """Run the standard configuration optimization without interactive fixes"""
+        try:
+            # Show progress
+            if hasattr(self, "rkhunter_progress_bar"):
+                self.rkhunter_progress_bar.setVisible(True)
+                self.rkhunter_progress_bar.setRange(0, 0)  # Indeterminate
+            if hasattr(self, "rkhunter_progress_label"):
+                self.rkhunter_progress_label.setVisible(True)
+                self.rkhunter_progress_label.setText("Running optimize_config...")
+
+            # Create config for standard optimization
+            config = RKHunterConfig()
+            config.optimize_performance = True
+            config.update_mirrors = True
+            config.update_baseline = True
+
+            # Set performance mode if available
+            if hasattr(self, "rkhunter_perf_mode_combo"):
+                mode = self.rkhunter_perf_mode_combo.currentText().lower()
+                config.performance_mode = mode
+
+            # Start optimization worker
+            if (
+                hasattr(self, "rkhunter_optimization_worker")
+                and self.rkhunter_optimization_worker
+            ):
+                if self.rkhunter_optimization_worker.isRunning():
+                    return  # Already running
+
+            self.rkhunter_optimization_worker = RKHunterOptimizationWorker(config)
+            self.rkhunter_optimization_worker.optimization_complete.connect(
+                self.on_rkhunter_optimization_complete
+            )
+            self.rkhunter_optimization_worker.status_updated.connect(
+                self.on_rkhunter_status_updated
+            )
+            self.rkhunter_optimization_worker.progress_updated.connect(
+                self.on_rkhunter_progress_updated
+            )
+            self.rkhunter_optimization_worker.error_occurred.connect(
+                self.on_rkhunter_optimization_error
+            )
+            self.rkhunter_optimization_worker.start()
+
+        except Exception as e:
+            logging.error(f"Failed to start standard config optimization: {e}")
+            self.show_themed_message_box(
+                "critical", "Error", f"Failed to start optimization: {e!s}"
+            )
+
+    def _hide_rkhunter_progress(self):
+        """Hide RKHunter progress bar and label"""
+        try:
+            if hasattr(self, "rkhunter_progress_bar"):
+                self.rkhunter_progress_bar.setVisible(False)
+            if hasattr(self, "rkhunter_progress_label"):
+                self.rkhunter_progress_label.setVisible(False)
+                self.rkhunter_progress_label.setText("")  # Clear text as well
+        except Exception as e:
+            logging.error(f"Error hiding RKHunter progress: {e}")
+
     def update_dynamic_component_styling(self):
         """Update styling for components that use dynamic colors based on theme."""
         # Update firewall name label if it exists
@@ -7296,9 +7604,7 @@ Common False Positives:
         )
         print(
             f"DEBUG: Scan thread running: {
-                self.current_scan_thread.isRunning()
-                if self.current_scan_thread
-                else 'N/A'
+                self.current_scan_thread.isRunning() if self.current_scan_thread else 'N/A'
             }"
         )
         print(
@@ -7310,8 +7616,7 @@ Common False Positives:
         print(
             f"DEBUG: RKHunter thread running: {
                 self.current_rkhunter_thread.isRunning()
-                if hasattr(self, 'current_rkhunter_thread')
-                and self.current_rkhunter_thread
+                if hasattr(self, 'current_rkhunter_thread') and self.current_rkhunter_thread
                 else 'N/A'
             }"
         )
@@ -7528,9 +7833,7 @@ Common False Positives:
         )
         print(
             f"DEBUG: Scan thread running: {
-                self.current_scan_thread.isRunning()
-                if self.current_scan_thread
-                else 'N/A'
+                self.current_scan_thread.isRunning() if self.current_scan_thread else 'N/A'
             }"
         )
         print(
@@ -7542,8 +7845,7 @@ Common False Positives:
         print(
             f"DEBUG: RKHunter thread running: {
                 self.current_rkhunter_thread.isRunning()
-                if hasattr(self, 'current_rkhunter_thread')
-                and self.current_rkhunter_thread
+                if hasattr(self, 'current_rkhunter_thread') and self.current_rkhunter_thread
                 else 'N/A'
             }"
         )
@@ -7572,9 +7874,9 @@ Common False Positives:
             f"🛑 Stopping scan... ({remaining_time}s remaining)"
         )
         print(
-            f"DEBUG: 📊 Stop progress: {stop_progress}% (attempt {
-                self._stop_completion_attempts
-            }/{max_attempts})"
+            f"DEBUG: 📊 Stop progress: {stop_progress}% (attempt {self._stop_completion_attempts}/{
+                max_attempts
+            })"
         )
 
         # Check current thread states with safe error handling
@@ -7684,9 +7986,7 @@ Common False Positives:
             print(
                 f"DEBUG: ⏳ Still waiting for {
                     ', '.join(threads_still_running)
-                } to finish... (attempt {self._stop_completion_attempts}/{
-                    max_attempts
-                })"
+                } to finish... (attempt {self._stop_completion_attempts}/{max_attempts})"
             )
 
     def _force_cleanup_threads(self):
@@ -8070,9 +8370,7 @@ Common False Positives:
                 threats.append(threat)
                 print(
                     f"DEBUG: Added threat: {
-                        threat.threat_name
-                        if hasattr(threat, 'threat_name')
-                        else 'unknown'
+                        threat.threat_name if hasattr(threat, 'threat_name') else 'unknown'
                     }"
                 )
 
@@ -9479,7 +9777,7 @@ Common False Positives:
 
         # Clean up authentication session
         try:
-            cleanup_auth_session()
+            # Note: Our new security system handles session cleanup automatically
             print("🔐 Authentication session cleaned up")
         except Exception as e:
             print(f"Warning: Failed to cleanup authentication session: {e}")

@@ -191,9 +191,7 @@ class StandardsManager:
 
         except Exception:
             self.logerror(
-                "Failed to save configuration: %s".replace("%s", "{e}").replace(
-                    "%d", "{e}"
-                )
+                "Failed to save configuration: %s".replace("%s", "{e}").replace("%d", "{e}")
             )
             return False
 
@@ -223,9 +221,7 @@ class StandardsManager:
 
         except Exception:
             self.logerror(
-                "Failed to load configuration: %s".replace("%s", "{e}").replace(
-                    "%d", "{e}"
-                )
+                "Failed to load configuration: %s".replace("%s", "{e}").replace("%d", "{e}")
             )
             return self.get_unified_config()
 
@@ -361,15 +357,11 @@ class StandardsManager:
 
         # Check for old security settings
         if "allowed_commands" in old_config:
-            migration_steps.append(
-                "Migrate allowed_commands to new ALLOWED_BINARIES format"
-            )
+            migration_steps.append("Migrate allowed_commands to new ALLOWED_BINARIES format")
 
         # Check for old performance settings
         if "max_workers" in old_config:
-            migration_steps.append(
-                "Migrate max_workers to performance-based thread management"
-            )
+            migration_steps.append("Migrate max_workers to performance-based thread management")
 
         return migration_steps
 

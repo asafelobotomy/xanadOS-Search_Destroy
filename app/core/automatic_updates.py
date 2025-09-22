@@ -24,7 +24,11 @@ from enum import Enum
 from pathlib import Path
 from typing import Any
 
-import requests
+try:
+    import aiohttp
+except ImportError:  # pragma: no cover - fallback for minimal env
+    aiohttp = None  # type: ignore
+
 import schedule
 
 try:
@@ -123,6 +127,32 @@ class UpdateConfig:  # pylint: disable=too-many-instance-attributes
 class AutoUpdateSystem:  # pylint: disable=too-many-instance-attributes
     """Comprehensive automatic update system for virus definitions,
     threat intelligence, and software components.
+
+    This system provides secure, automated updates for:
+    - ClamAV virus definition databases
+    - Threat intelligence feeds
+    - Software components with integrity verification
+    - Security patches and configuration updates
+
+    Features:
+    - Cryptographic signature verification for all updates
+    - Rollback capability for failed updates
+    - Bandwidth throttling and scheduling
+    - Comprehensive logging and monitoring
+    - Privacy-preserving update analytics
+
+    Attributes:
+        status: Current system status (IDLE, CHECKING, DOWNLOADING, etc.)
+        is_running: Whether the update system is actively running
+        config: Update configuration and preferences
+        last_check_time: Timestamp of last update check
+        available_updates: Dictionary of pending updates by type
+
+    Example:
+        >>> updater = AutoUpdateSystem()
+        >>> await updater.start_update_system()
+        >>> await updater.check_for_updates()
+        >>> await updater.stop_update_system()
     """
 
     def __init__(
@@ -839,25 +869,11 @@ class AutoUpdateSystem:  # pylint: disable=too-many-instance-attributes
                 hasher = hashlib.sha256()
             elif checksum_type == "sha512":
                 hasher = hashlib.sha512()
-            elif checksum_type == "sha1":
-                # SHA1 is deprecated but may be needed for compatibility
-                self.logger.warning(
-                    "SHA1 checksum verification is deprecated and should be avoided. "
-                    "Please use SHA256 or SHA512 for better security."
-                )
-                hasher = hashlib.sha1(usedforsecurity=False)
-            elif checksum_type == "md5":
-                # MD5 is cryptographically broken but kept for legacy compatibility
-                self.logger.warning(
-                    "MD5 checksum verification is cryptographically insecure and deprecated. "
-                    "Please upgrade to SHA256 or SHA512 for proper security. "
-                    "This support will be removed in a future version."
-                )
-                hasher = hashlib.md5(usedforsecurity=False)
+            elif checksum_type == "sha384":
+                hasher = hashlib.sha384()
             else:
                 self.logger.error(
-                    "Unsupported checksum type: %s. Supported types: sha256, sha512, "
-                    "sha1 (deprecated), md5 (deprecated)",
+                    "Unsupported checksum type: %s. Supported types: sha256, sha384, sha512",
                     checksum_type,
                 )
                 return False
@@ -871,7 +887,7 @@ class AutoUpdateSystem:  # pylint: disable=too-many-instance-attributes
             expected_hash = expected_checksum.lower()
 
             if computed_hash == expected_hash:
-                if checksum_type in ["sha256", "sha512"]:
+                if checksum_type in ["sha256", "sha384", "sha512"]:
                     self.logger.debug(
                         "Checksum verification successful using secure %s",
                         checksum_type.upper(),
@@ -879,16 +895,16 @@ class AutoUpdateSystem:  # pylint: disable=too-many-instance-attributes
                 return True
 
             self.logger.error(
-                "Checksum verification failed: expected %s, got %s",
+                "Checksum mismatch for %s. Expected: %s, Got: %s",
+                file_path.name,
                 expected_hash,
                 computed_hash,
             )
             return False
+
         except Exception:  # pylint: disable=broad-exception-caught
-            self.logerror(
-                "Error during checksum verification: %s".replace("%s", "{e}").replace(
-                    "%d", "{e}"
-                )
+            self.logger.error(
+                "Error during checksum verification for %s", file_path.name
             )
             return False
 
@@ -954,43 +970,55 @@ class AutoUpdateSystem:  # pylint: disable=too-many-instance-attributes
     async def _async_http_request(self, method: str, url: str) -> dict[str, Any] | None:
         """Make async HTTP request."""
         try:
-            # Simplified implementation - would use aiohttp in production
-            loop = asyncio.get_event_loop()
+            if aiohttp is None:
+                raise RuntimeError("aiohttp not available for async requests")
 
-            def sync_request() -> dict[str, Any]:
-                response = requests.request(method, url, timeout=30)
-                response.raise_for_status()
+            async with aiohttp.ClientSession(
+                timeout=aiohttp.ClientTimeout(total=30)
+            ) as session:
+                async with session.request(method, url) as response:
+                    if response.status == 403:
+                        # Rate limiting is expected for ClamAV database
+                        self.logdebug(
+                            "Rate limited by %s (403 Forbidden) - this is normal".replace(
+                                "%s", "{url}"
+                            ).replace(
+                                "%d", "{url}"
+                            )
+                        )
+                        return None
+                    elif response.status in (429, 503):
+                        # Temporary server issues
+                        self.logger.warning(
+                            "Server temporarily unavailable for %s: %s",
+                            url,
+                            response.status,
+                        )
+                        return None
 
-                if method == "HEAD":
-                    return dict(response.headers)
-                return response.json()
+                    response.raise_for_status()
 
-            return await loop.run_in_executor(None, sync_request)
+                    if method == "HEAD":
+                        return {
+                            "status_code": response.status,
+                            "headers": dict(response.headers),
+                        }
+                    else:
+                        try:
+                            content = await response.json()
+                            return {"content": content}
+                        except Exception:
+                            content = await response.text()
+                            return {"content": content}
 
-        except requests.exceptions.HTTPError as e:
-            if e.response.status_code == 403:
-                # Rate limiting is expected for ClamAV database
-                self.logdebug(
-                    "Rate limited by %s (403 Forbidden) - this is normal".replace(
-                        "%s", "{url}"
-                    ).replace("%d", "{url}")
-                )
-            elif e.response.status_code in (429, 503):
-                # Temporary server issues
-                self.logger.warning(
-                    "Server temporarily unavailable for %s: %s",
-                    url,
-                    e.response.status_code,
-                )
-            else:
-                # Other HTTP errors
-                self.logerror(
-                    "HTTP request failed %s %s: %s".replace(
-                        "%s", "{method, url, e}"
-                    ).replace("%d", "{method, url, e}")
-                )
+        except aiohttp.ClientError:
+            self.logerror(
+                "HTTP request failed %s %s: %s".replace(
+                    "%s", "{method, url, e}"
+                ).replace("%d", "{method, url, e}")
+            )
             return None
-        except requests.exceptions.RequestException:
+        except Exception:
             self.logerror(
                 "HTTP request failed %s %s: %s".replace(
                     "%s", "{method, url, e}"

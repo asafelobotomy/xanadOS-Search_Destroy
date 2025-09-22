@@ -72,10 +72,7 @@ class ModernSplashScreen(QSplashScreen):
             # Get the project root directory
             current_dir = Path(__file__).parent.parent.parent
             logo_path = (
-                current_dir
-                / "packaging"
-                / "icons"
-                / "io.github.asafelobotomy.SearchAndDestroy.png"
+                current_dir / "packaging" / "icons" / "io.github.asafelobotomy.SearchAndDestroy.png"
             )
 
             if logo_path.exists():
@@ -160,18 +157,12 @@ class ModernSplashScreen(QSplashScreen):
                 / "packaging"
                 / "icons"
                 / "io.github.asafelobotomy.SearchAndDestroy-128.png",
-                current_dir
-                / "packaging"
-                / "icons"
-                / "org.xanados.SearchAndDestroy-128.png",
+                current_dir / "packaging" / "icons" / "org.xanados.SearchAndDestroy-128.png",
                 current_dir
                 / "packaging"
                 / "icons"
                 / "io.github.asafelobotomy.SearchAndDestroy.png",
-                current_dir
-                / "packaging"
-                / "icons"
-                / "org.xanados.SearchAndDestroy.png",
+                current_dir / "packaging" / "icons" / "org.xanados.SearchAndDestroy.png",
             ]
 
             large_logo_pixmap = None

@@ -37,11 +37,11 @@ def update_package_json():
         with open(package_json_path) as f:
             data = json.load(f)
 
-        data['version'] = version
+        data["version"] = version
 
-        with open(package_json_path, 'w') as f:
+        with open(package_json_path, "w") as f:
             json.dump(data, f, indent=2)
-            f.write('\n')  # Add trailing newline
+            f.write("\n")  # Add trailing newline
 
         print(f"✅ Updated package.json version to {version}")
         return True
@@ -64,7 +64,7 @@ def update_pyproject_toml():
         replacement = f'version = "{version}"'
         new_content = re.sub(pattern, replacement, content, flags=re.MULTILINE)
 
-        with open(pyproject_path, 'w') as f:
+        with open(pyproject_path, "w") as f:
             f.write(new_content)
 
         print(f"✅ Updated pyproject.toml version to {version}")
@@ -89,13 +89,13 @@ def update_config_files():
                 content = f.read()
 
             # Check if file contains version
-            if 'version = ' in content:
+            if "version = " in content:
                 pattern = r'^version\s*=\s*"[^"]*"'
                 replacement = f'version = "{version}"'
                 new_content = re.sub(pattern, replacement, content, flags=re.MULTILINE)
 
                 if new_content != content:
-                    with open(toml_file, 'w') as f:
+                    with open(toml_file, "w") as f:
                         f.write(new_content)
                     updated_files.append(str(toml_file.relative_to(REPO_ROOT)))
                     print(f"✅ Updated {toml_file.name} version to {version}")
@@ -115,12 +115,12 @@ def update_readme():
             content = f.read()
 
         # Replace version in the status line
-        pattern = r'(Current Version: )[0-9]+\.[0-9]+\.[0-9]+(_)'
-        replacement = f'\\g<1>{version}\\g<2>'
+        pattern = r"(Current Version: )[0-9]+\.[0-9]+\.[0-9]+(_)"
+        replacement = f"\\g<1>{version}\\g<2>"
         new_content = re.sub(pattern, replacement, content)
 
         if new_content != content:
-            with open(readme_path, 'w') as f:
+            with open(readme_path, "w") as f:
                 f.write(new_content)
             print(f"✅ Updated README.md version to {version}")
             return True
@@ -135,38 +135,26 @@ def generate_version_header():
     """Generate version information for inclusion in other files"""
     version = get_version()
     return {
-        'version': version,
-        'version_short': version,
-        'version_major': version.split('.')[0],
-        'version_minor': '.'.join(version.split('.')[:2]),
-        'version_tuple': tuple(map(int, version.split('.')))
+        "version": version,
+        "version_short": version,
+        "version_major": version.split(".")[0],
+        "version_minor": ".".join(version.split(".")[:2]),
+        "version_tuple": tuple(map(int, version.split("."))),
     }
 
 
 def main():
     """Main entry point"""
-    parser = argparse.ArgumentParser(
-        description="Version Manager - Single Source of Truth"
-    )
+    parser = argparse.ArgumentParser(description="Version Manager - Single Source of Truth")
     parser.add_argument("--get", action="store_true", help="Get current version")
-    parser.add_argument(
-        "--sync", action="store_true", help="Sync all files with VERSION file"
-    )
-    parser.add_argument(
-        "--update-package", action="store_true", help="Update package.json only"
-    )
+    parser.add_argument("--sync", action="store_true", help="Sync all files with VERSION file")
+    parser.add_argument("--update-package", action="store_true", help="Update package.json only")
     parser.add_argument(
         "--update-pyproject", action="store_true", help="Update pyproject.toml only"
     )
-    parser.add_argument(
-        "--update-configs", action="store_true", help="Update config files only"
-    )
-    parser.add_argument(
-        "--update-readme", action="store_true", help="Update README.md only"
-    )
-    parser.add_argument(
-        "--version-info", action="store_true", help="Show version information"
-    )
+    parser.add_argument("--update-configs", action="store_true", help="Update config files only")
+    parser.add_argument("--update-readme", action="store_true", help="Update README.md only")
+    parser.add_argument("--version-info", action="store_true", help="Show version information")
 
     args = parser.parse_args()
 

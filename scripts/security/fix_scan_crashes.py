@@ -326,9 +326,7 @@ def fix_timer_threading_issues():
         # Add the reset_scan_ui method if it doesn't exist
         if "def reset_scan_ui(self):" not in content:
             # Find a good place to insert it (after stop_scan method)
-            stop_scan_end = content.find(
-                'self.results_text.append("❌ Scan stopped by user")'
-            )
+            stop_scan_end = content.find('self.results_text.append("❌ Scan stopped by user")')
             if stop_scan_end != -1:
                 # Find the end of the stop_scan method
                 insert_pos = content.find("\n\n    def ", stop_scan_end)
@@ -349,9 +347,7 @@ def fix_timer_threading_issues():
         except Exception as e:
             print(f"Error resetting scan UI: {e}")
 '''
-                    content = (
-                        content[:insert_pos] + reset_ui_method + content[insert_pos:]
-                    )
+                    content = content[:insert_pos] + reset_ui_method + content[insert_pos:]
 
     # Write the fixed content
     with open(main_window_path, "w", encoding="utf-8") as f:

@@ -13,10 +13,9 @@ and modern best practices. This script:
 5. Validates final structure
 """
 
-import os
 import shutil
-from pathlib import Path
 from datetime import datetime
+from pathlib import Path
 
 
 class RepositoryMaintenance:
@@ -91,7 +90,7 @@ class RepositoryMaintenance:
         entry = f"- `{archived_file.relative_to(self.repo_root)}` — Archived {datetime.now().strftime('%Y-%m-%d')} ({reason})\n"
 
         try:
-            with open(index_file, 'a') as f:
+            with open(index_file, "a") as f:
                 f.write(entry)
         except Exception as e:
             print(f"  ⚠️  Could not update archive index: {e}")
@@ -109,7 +108,10 @@ class RepositoryMaintenance:
 
         for test_file in test_files:
             # Determine if this is a temporary test or permanent test
-            if any(keyword in test_file.name for keyword in ["fix", "config", "cron", "integration", "optimization"]):
+            if any(
+                keyword in test_file.name
+                for keyword in ["fix", "config", "cron", "integration", "optimization"]
+            ):
                 # These are temporary testing files from recent work
                 self.archive_file(test_file, "temporary test file from recent development work")
             else:
@@ -169,13 +171,17 @@ class RepositoryMaintenance:
         # Archive entire logs directory if it has content
         log_files = list(logs_dir.iterdir())
         if log_files:
-            archive_logs_dir = self.archive_dir / "performance-monitoring" / f"logs_{self.timestamp}"
+            archive_logs_dir = (
+                self.archive_dir / "performance-monitoring" / f"logs_{self.timestamp}"
+            )
             archive_logs_dir.mkdir(parents=True, exist_ok=True)
 
             for log_file in log_files:
                 if log_file.is_file():
                     shutil.move(str(log_file), str(archive_logs_dir / log_file.name))
-                    self.log_change("ARCHIVED", str(log_file), str(archive_logs_dir / log_file.name))
+                    self.log_change(
+                        "ARCHIVED", str(log_file), str(archive_logs_dir / log_file.name)
+                    )
 
             # Remove empty logs directory
             try:
@@ -189,7 +195,7 @@ class RepositoryMaintenance:
         print("\n📋 Phase 5: Checking Node.js dependencies")
 
         node_modules = self.repo_root / "node_modules"
-        package_lock = self.repo_root / "package-lock.json"
+        self.repo_root / "package-lock.json"
 
         if node_modules.exists():
             print(f"  📋 Node modules directory size: {self.get_dir_size(node_modules):.1f}MB")
@@ -218,11 +224,29 @@ class RepositoryMaintenance:
 
         # Check for policy violations
         allowed_files = {
-            "README.md", "CONTRIBUTING.md", "CHANGELOG.md", "LICENSE", "VERSION",
-            "package.json", "package-lock.json", "pyproject.toml", "uv.lock", "uv.toml",
-            "Makefile", "Dockerfile", "docker-compose.yml", ".gitignore", ".gitattributes",
-            ".editorconfig", ".prettierrc.json", ".prettierignore", ".markdownlint.json",
-            ".markdownlintignore", ".nvmrc", ".pre-commit-config.yaml", ".cspellignore"
+            "README.md",
+            "CONTRIBUTING.md",
+            "CHANGELOG.md",
+            "LICENSE",
+            "VERSION",
+            "package.json",
+            "package-lock.json",
+            "pyproject.toml",
+            "uv.lock",
+            "uv.toml",
+            "Makefile",
+            "Dockerfile",
+            "docker-compose.yml",
+            ".gitignore",
+            ".gitattributes",
+            ".editorconfig",
+            ".prettierrc.json",
+            ".prettierignore",
+            ".markdownlint.json",
+            ".markdownlintignore",
+            ".nvmrc",
+            ".pre-commit-config.yaml",
+            ".cspellignore",
         }
 
         violations = []
@@ -239,7 +263,7 @@ class RepositoryMaintenance:
         """Generate maintenance report."""
         print("\n📊 Generating maintenance report...")
 
-        report_content = f"""# Repository Maintenance Report - {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+        report_content = f"""# Repository Maintenance Report - {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
 
 ## Summary
 Performed comprehensive repository maintenance and cleanup.
@@ -261,10 +285,12 @@ Performed comprehensive repository maintenance and cleanup.
 Repository structure validated for compliance with file organization policy.
 """
 
-        report_file = self.docs_dir / "implementation-reports" / f"maintenance-report-{self.timestamp}.md"
+        report_file = (
+            self.docs_dir / "implementation-reports" / f"maintenance-report-{self.timestamp}.md"
+        )
         report_file.parent.mkdir(parents=True, exist_ok=True)
 
-        with open(report_file, 'w') as f:
+        with open(report_file, "w") as f:
             f.write(report_content)
 
         print(f"  ✅ Maintenance report saved: {report_file}")

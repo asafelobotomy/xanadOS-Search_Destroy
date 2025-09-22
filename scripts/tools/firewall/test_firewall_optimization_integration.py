@@ -30,12 +30,10 @@ def test_optimization_imports() -> bool:
         from app.gui.firewall_optimization_patch import apply_firewall_optimization
 
         # Verify the imports are valid classes/functions
-        assert (
-            FirewallStatusOptimizer is not None
-        ), "FirewallStatusOptimizer class not found"
-        assert (
-            apply_firewall_optimization is not None
-        ), "apply_firewall_optimization function not found"
+        assert FirewallStatusOptimizer is not None, "FirewallStatusOptimizer class not found"
+        assert apply_firewall_optimization is not None, (
+            "apply_firewall_optimization function not found"
+        )
 
         logger.info("✅ All optimization components imported successfully")
         logger.info(f"   - FirewallStatusOptimizer: {FirewallStatusOptimizer}")
@@ -54,9 +52,7 @@ def test_firewall_detector() -> bool:
         detector = FirewallDetector()
         status = detector.get_firewall_status()
 
-        logger.info(
-            f"✅ Firewall detector working: {status.get('firewall_name', 'Unknown')}"
-        )
+        logger.info(f"✅ Firewall detector working: {status.get('firewall_name', 'Unknown')}")
         logger.info(f"   Status: {status.get('status_text', 'Unknown')}")
         logger.info(f"   Active: {status.get('is_active', False)}")
         logger.info(f"   Method: {status.get('method', 'Unknown')}")
@@ -148,9 +144,7 @@ def test_mock_main_window_integration() -> bool:
 
             # Test getting stats
             stats = patch.get_optimization_stats()
-            logger.info(
-                f"   Optimization active: {stats.get('optimization_active', False)}"
-            )
+            logger.info(f"   Optimization active: {stats.get('optimization_active', False)}")
 
             # Test force refresh
             patch.force_refresh()

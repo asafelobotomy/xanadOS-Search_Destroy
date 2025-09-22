@@ -113,9 +113,7 @@ def generate_status_report():
         else:
             print(f"⚠️  {doc_file:<30} - {description}")
 
-    print(
-        f"\nDocumentation Score: {docs_score}/{len(docs)} ({docs_score / len(docs) * 100:.1f}%)"
-    )
+    print(f"\nDocumentation Score: {docs_score}/{len(docs)} ({docs_score / len(docs) * 100:.1f}%)")
 
     # Code Quality
     print("\n🔍 CODE QUALITY METRICS")
@@ -123,9 +121,7 @@ def generate_status_report():
 
     # Count Python files
     py_files = list(Path(".").rglob("*.py"))
-    py_files = [
-        f for f in py_files if not any(part.startswith(".") for part in f.parts)
-    ]
+    py_files = [f for f in py_files if not any(part.startswith(".") for part in f.parts)]
 
     print(f"📄 Python files: {len(py_files)}")
 
@@ -141,9 +137,7 @@ def generate_status_report():
     print(f"📏 Estimated lines of code: {total_lines:,}")
 
     # Check for test coverage
-    test_files = (
-        list(Path("tests").rglob("test_*.py")) if Path("tests").exists() else []
-    )
+    test_files = list(Path("tests").rglob("test_*.py")) if Path("tests").exists() else []
     dev_test_files = list(Path("dev").rglob("test_*.py"))
 
     print(f"🧪 Test files: {len(test_files + dev_test_files)}")
@@ -169,9 +163,7 @@ def generate_status_report():
     print("\n🎯 OVERALL ASSESSMENT")
     print("-" * 40)
 
-    overall_score = (
-        (structure_score + docs_score) / (len(required_dirs) + len(docs)) * 100
-    )
+    overall_score = (structure_score + docs_score) / (len(required_dirs) + len(docs)) * 100
 
     if overall_score >= 90:
         grade = "🥇 Excellent"

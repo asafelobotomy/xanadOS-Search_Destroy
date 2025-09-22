@@ -341,6 +341,84 @@ class FileScanner:
         """Set callback for individual scan results."""
         self.result_callback = callback
 
+    def _format_privileged_paths_display(self, privileged_paths: list[str]) -> str:
+        """Format privileged paths for user-friendly display.
+
+        Args:
+            privileged_paths: List of privileged directory paths
+
+        Returns:
+            User-friendly string representation of privileged paths
+        """
+        if not privileged_paths:
+            return "None"
+
+        # Map technical paths to user-friendly descriptions
+        path_descriptions = {
+            "/var/cache": "System Cache",
+            "/var/log": "System Logs",
+            "/var/lib": "System Libraries",
+            "/var/run": "System Runtime",
+            "/var/spool": "System Spool",
+            "/var/tmp": "System Temp (restricted)",
+            "/var/db": "System Database",
+            "/boot": "Boot System",
+            "/dev": "Device Files",
+            "/run": "Runtime Files",
+            "/etc": "System Configuration",
+            "/tmp": "Temporary Files (restricted)",
+            "/sys": "System Kernel Interface",
+            "/proc": "Process Information",
+            "/usr/lib/rkhunter": "RKHunter System Files",
+            "/usr/lib64/rkhunter": "RKHunter System Files (64-bit)",
+            "/usr/local/etc": "Local System Configuration",
+            "/lib/rkhunter": "RKHunter Library Files",
+            "/lib64/rkhunter": "RKHunter Library Files (64-bit)",
+            "/opt": "Optional System Software",
+            "/root": "Administrator Home Directory",
+        }
+
+        # Group and count similar paths
+        grouped_paths = {}
+        for path in privileged_paths:
+            # Find the most specific description
+            description = None
+            for tech_path, friendly_name in path_descriptions.items():
+                if path.startswith(tech_path):
+                    description = friendly_name
+                    break
+
+            if not description:
+                # Fallback for unrecognized paths
+                if path.startswith("/var/"):
+                    description = "System Directory"
+                elif path.startswith("/tmp/"):
+                    description = "Temporary Directory (restricted)"
+                elif path.startswith("/run/"):
+                    description = "Runtime Directory"
+                else:
+                    description = "System Directory"
+
+            if description not in grouped_paths:
+                grouped_paths[description] = 0
+            grouped_paths[description] += 1
+
+        # Format the display
+        if len(grouped_paths) <= 5:
+            # Show individual descriptions with counts
+            items = []
+            for desc, count in grouped_paths.items():
+                if count == 1:
+                    items.append(desc)
+                else:
+                    items.append(f"{desc} ({count} locations)")
+            return ", ".join(items)
+        else:
+            # Too many different types, show summary
+            total_count = len(privileged_paths)
+            main_types = list(grouped_paths.keys())[:3]
+            return f"{', '.join(main_types)} and {len(grouped_paths) - 3} other types ({total_count} total directories)"
+
     def update_virus_definitions(self) -> bool:
         """Update virus definitions using the ClamAV wrapper.
 
@@ -353,20 +431,52 @@ class FileScanner:
         return self.clamav_wrapper.update_virus_definitions()
 
     def scan_file(
-        self, file_path: str, scan_id: str | None = None, **kwargs
+        self,
+        file_path: str,
+        scan_id: str | None = None,
+        scan_context: str = "file_scan",
+        **kwargs,
     ) -> ScanFileResult:
-        """Scan a single file with security validation and rate limiting."""
-        # Apply rate limiting for file scans
-        if not self.rate_limiter.acquire("file_scan"):
-            wait_time = self.rate_limiter.wait_time("file_scan")
-            self.logger.warning(
-                "Rate limit exceeded for file scan. Wait time: %.2f seconds", wait_time
-            )
-            return ScanFileResult(
-                file_path=file_path,
-                result=ScanResult.ERROR,
-                error_message=f"Rate limit exceeded. Please wait {wait_time:.1f} seconds.",
-            )
+        """Scan a single file with security validation and intelligent rate limiting.
+
+        Args:
+            file_path: Path to the file to scan
+            scan_id: Unique identifier for the scan session
+            scan_context: Type of scan for rate limiting (e.g., 'quick_scan', 'full_scan', 'background_scan')
+            **kwargs: Additional arguments passed to ClamAV
+        """
+        # Apply intelligent rate limiting with context awareness
+        success, message = self.rate_limiter.smart_acquire("file_scan", context="auto")
+
+        if not success:
+            # For user operations, try to be more permissive
+            if "user" in message.lower() or "interactive" in message.lower():
+                # Give users a second chance with a brief pause
+                import time
+
+                time.sleep(0.1)  # Brief 100ms pause
+                success, retry_message = self.rate_limiter.smart_acquire(
+                    "file_scan", context="user"
+                )
+
+                if success:
+                    self.logger.debug(
+                        "Rate limiting: Allowed user operation after brief pause"
+                    )
+                else:
+                    self.logger.info("User-friendly rate limiting: %s", retry_message)
+                    return ScanFileResult(
+                        file_path=file_path,
+                        result=ScanResult.ERROR,
+                        error_message=retry_message,
+                    )
+            else:
+                self.logger.info("Rate limiting applied: %s", message)
+                return ScanFileResult(
+                    file_path=file_path,
+                    result=ScanResult.ERROR,
+                    error_message=message,
+                )
 
         if not scan_id:
             scan_id = self.scan_report_manager.generate_scan_id()
@@ -483,6 +593,7 @@ class FileScanner:
         max_workers: int = 4,
         timeout: int | None = None,
         save_report: bool = True,
+        scan_context: str = "file_scan",
         **kwargs,
     ):
         """Scan multiple files with progress tracking and enhanced reporting."""
@@ -495,7 +606,12 @@ class FileScanner:
         # Memory optimization: Use batched processing for large file sets
         if len(file_paths) > self.batch_size:
             return self._scan_files_batched(
-                file_paths, scan_type, max_workers, save_report=save_report, **kwargs
+                file_paths,
+                scan_type,
+                max_workers,
+                save_report=save_report,
+                scan_context=scan_context,
+                **kwargs,
             )
 
         """Scan multiple files with threading support."""
@@ -544,7 +660,7 @@ class FileScanner:
                 # Submit all scan tasks
                 future_to_path = {
                     executor.submit(
-                        self.scan_file, file_path, scan_id, **kwargs
+                        self.scan_file, file_path, scan_id, scan_context, **kwargs
                     ): file_path
                     for file_path in file_paths
                 }
@@ -745,6 +861,7 @@ class FileScanner:
         scan_type=None,
         include_hidden: bool = False,
         save_report: bool = True,
+        scan_context: str = "file_scan",
         **kwargs,
     ):
         """Scan all files in a directory with security validation."""
@@ -792,10 +909,28 @@ class FileScanner:
         # Always instantiate a MemoryMonitor (previous conditional check was ineffective)
         memory_monitor = MemoryMonitor()
 
+        # Extract permission handling parameters
+        permission_mode = kwargs.get("permission_mode", "normal")
+        privileged_paths = kwargs.get("privileged_paths", [])
+
+        # Debug permission information with user-friendly formatting
+        if privileged_paths:
+            permission_mode_display = {
+                "normal": "Standard scanning (no special permissions)",
+                "skip_privileged": "Skip protected directories",
+            }.get(permission_mode, permission_mode)
+
+            print(f"🔐 Permission Mode: {permission_mode_display}")
+            print(f"📊 Protected directories found: {len(privileged_paths)}")
+            formatted_paths = self._format_privileged_paths_display(privileged_paths)
+            print(f"⚙️ Directory Types: {formatted_paths}")
+
         # Use different scanning approach based on depth limit
         if max_depth is not None:
-            # Depth-limited scanning
-            for file_path in self._scan_directory_with_depth(directory_obj, max_depth):
+            # Depth-limited scanning with permission handling
+            for file_path in self._scan_directory_with_depth(
+                directory_obj, max_depth, permission_mode, privileged_paths
+            ):
                 if hasattr(self, "_scan_cancelled") and self._scan_cancelled:
                     self.logger.info("📁 File collection cancelled by manual flag")
                     break
@@ -975,7 +1110,13 @@ class FileScanner:
             "Found %d files in directory: %s", len(file_paths), directory_path
         )
 
-        return self.scan_files(file_paths, scan_type, save_report=save_report, **kwargs)
+        return self.scan_files(
+            file_paths,
+            scan_type,
+            save_report=save_report,
+            scan_context=scan_context,
+            **kwargs,
+        )
 
     def _handle_infected_file(self, result: ScanFileResult, scan_id: str) -> None:
         """Handle an infected file according to configuration."""
@@ -1133,6 +1274,7 @@ class FileScanner:
         scan_type,
         max_workers: int = 4,
         save_report: bool = True,
+        scan_context: str = "file_scan",
         **kwargs,
     ):
         """Scan files in batches to optimize memory usage."""
@@ -1193,7 +1335,7 @@ class FileScanner:
                 with ThreadPoolExecutor(max_workers=batch_workers) as executor:
                     future_to_path = {
                         executor.submit(
-                            self.scan_file, file_path, scan_id, **kwargs
+                            self.scan_file, file_path, scan_id, scan_context, **kwargs
                         ): file_path
                         for file_path in batch_files
                     }
@@ -1308,21 +1450,102 @@ class FileScanner:
 
         return combined_result
 
-    def _scan_directory_with_depth(self, directory_obj, max_depth):
-        """Scan directory with depth limitation."""
+    def _scan_directory_with_depth(
+        self, directory_obj, max_depth, permission_mode="normal", privileged_paths=None
+    ):
+        """Scan directory with depth limitation and permission handling."""
+        if privileged_paths is None:
+            privileged_paths = []
+
+        def _should_skip_path(path_str, mode, priv_paths):
+            """Check if a path should be skipped based on permission mode."""
+            if mode == "skip_privileged":
+                # Skip known privileged paths and their subdirectories
+                for priv_path in priv_paths:
+                    if path_str.startswith(priv_path):
+                        return True
+
+                # Skip problematic /proc filesystem patterns
+                if "/proc/" in path_str:
+                    # Skip /proc/PID/ directories (process-specific directories)
+                    import re
+
+                    if re.search(r"/proc/\d+/", path_str):
+                        return True
+                    # Skip specific problematic symlinks and files in /proc
+                    problematic_patterns = [
+                        "/cwd",
+                        "/root",
+                        "/exe",
+                        "/fd/",
+                        "/task/",
+                        "/net/",
+                        "/kcore",
+                        "/kmem",
+                        "/mem",
+                        "/environ",
+                    ]
+                    if any(pattern in path_str for pattern in problematic_patterns):
+                        return True
+            return False
 
         def _recursive_scan(current_dir, current_depth):
             if current_depth > max_depth:
                 return
 
+            current_dir_str = str(current_dir)
+
+            # Pre-filter: Skip privileged paths before attempting to access them
+            if _should_skip_path(current_dir_str, permission_mode, privileged_paths):
+                if hasattr(self, "logger"):
+                    self.logger.info(
+                        f"⚠️ Skipping privileged path (user choice): {current_dir_str}"
+                    )
+                return
+
             try:
                 for item in current_dir.iterdir():
+                    item_str = str(item)
+
+                    # Check if this item should be skipped before yielding
+                    if _should_skip_path(item_str, permission_mode, privileged_paths):
+                        if hasattr(self, "logger"):
+                            self.logger.debug(f"⚠️ Skipping privileged item: {item_str}")
+                        continue
+
                     yield item
+
                     if item.is_dir() and current_depth < max_depth:
-                        yield from _recursive_scan(item, current_depth + 1)
-            except (OSError, PermissionError):
-                # Skip directories we can't access
-                pass
+                        # Only recurse if the directory isn't privileged
+                        if not _should_skip_path(
+                            item_str, permission_mode, privileged_paths
+                        ):
+                            yield from _recursive_scan(item, current_depth + 1)
+
+            except (OSError, PermissionError) as e:
+                # Handle permission errors based on permission mode
+                current_dir_str = str(current_dir)
+
+                if permission_mode == "skip_privileged":
+                    # Check if this is a known privileged path that should be skipped
+                    is_privileged = any(
+                        current_dir_str.startswith(priv_path)
+                        for priv_path in privileged_paths
+                    )
+                    if is_privileged:
+                        # Log the skip for known privileged paths
+                        if hasattr(self, "logger"):
+                            self.logger.info(
+                                f"⚠️ Skipping privileged directory (permission error): {current_dir_str}"
+                            )
+                    elif hasattr(self, "logger"):
+                        # This is an unexpected permission error - log it
+                        self.logger.warning(
+                            f"⚠️ Permission denied: {current_dir_str} - {e}"
+                        )
+                elif hasattr(self, "logger"):
+                    # Normal mode - log permission denials but continue
+                    self.logger.debug(f"⚠️ Permission denied: {current_dir_str} - {e}")
 
         return _recursive_scan(directory_obj, 0)
 

@@ -3,13 +3,12 @@
 Collects usage analytics while preserving privacy
 """
 
+import asyncio
 import hashlib
 import json
 import logging
 import platform
-import queue
 import tempfile
-import threading
 import time
 import uuid
 from dataclasses import asdict, dataclass
@@ -45,13 +44,20 @@ class PrivacyManager:
                 salt_file = Path(CACHE_DIR) / "telemetry_salt"
 
                 if salt_file.exists():
-                    with open(salt_file) as f:
-                        self._salt = f.read().strip()
+                    try:
+                        with salt_file.open("r", encoding="utf-8") as f:
+                            self._salt = f.read().strip()
+                    except (PermissionError, OSError) as e:
+                        self.logger.warning("Failed to read salt file: %s", e)
+                        self._salt = str(uuid.uuid4())
                 else:
                     self._salt = str(uuid.uuid4())
-                    salt_file.parent.mkdir(exist_ok=True)
-                    with open(salt_file, "w") as f:
-                        f.write(self._salt)
+                    try:
+                        salt_file.parent.mkdir(parents=True, exist_ok=True)
+                        with salt_file.open("w", encoding="utf-8") as f:
+                            f.write(self._salt)
+                    except (PermissionError, OSError) as e:
+                        self.logger.warning("Failed to save salt file: %s", e)
 
             except Exception as e:
                 self.logger.warning(f"Could not load/save salt: {e}")
@@ -110,9 +116,9 @@ class TelemetryCollector:
         self.session_id = str(uuid.uuid4())
         self.session_start = time.time()
 
-        # Event storage
-        self.events_queue: queue.Queue[TelemetryEvent] = queue.Queue(maxsize=1000)
-        self.events_lock = threading.RLock()
+        # Event storage - using async queue and lock
+        self.events_queue: asyncio.Queue[TelemetryEvent] = asyncio.Queue(maxsize=1000)
+        self.events_lock = asyncio.Lock()
 
         # Periodic flush
         self.flush_interval = 300  # 5 minutes
@@ -142,23 +148,37 @@ class TelemetryCollector:
             f"Telemetry initialized - enabled: {enabled}, privacy: {privacy_level}"
         )
 
-    def record_event(
+    async def record_event(
         self,
         event_type: str,
         data: dict[str, Any] | None = None,
         privacy_level: str | None = None,
     ) -> None:
-        """Record a telemetry event."""
+        """Record a telemetry event with privacy filtering and queuing.
+
+        Args:
+            event_type: The type of event being recorded (e.g., 'scan_completed', 'threat_detected')
+            data: Optional dictionary containing event-specific data to be anonymized
+            privacy_level: Override the default privacy level for this specific event
+                          Options: 'anonymous', 'aggregated', 'detailed'
+
+        Returns:
+            None
+
+        Raises:
+            None: Errors are logged but not raised to prevent telemetry from breaking functionality
+
+        Note:
+            Events are queued asynchronously and flushed periodically to storage.
+            All data is filtered according to the specified privacy level.
+        """
         if not self.enabled:
             return
 
         try:
-            event_data = data or {}
+            # Apply privacy filtering
             effective_privacy = privacy_level or self.privacy_level
-
-            # Apply privacy filtering based on level
-            if effective_privacy == "anonymous":
-                event_data = self.privacy_manager.anonymize_user_data(event_data)
+            event_data = self.privacy_manager.filter_data(data or {}, effective_privacy)
 
             event = TelemetryEvent(
                 event_type=event_type,
@@ -169,24 +189,24 @@ class TelemetryCollector:
             )
 
             # Update counters
-            self._update_counters(event_type, event_data)
+            await self._update_counters(event_type, event_data)
 
             # Queue event
             try:
-                self.events_queue.put_nowait(event)
-            except queue.Full:
+                await self.events_queue.put(event)
+            except asyncio.QueueFull:
                 self.logger.warning("Telemetry queue full, dropping event")
 
             # Periodic flush
             if time.time() - self.last_flush > self.flush_interval:
-                self._flush_events()
+                await self._flush_events()
 
         except Exception as e:
-            self.logger.error(f"Failed to record telemetry event: {e}")
+            self.logger.error("Error recording telemetry event: %s", e)
 
-    def _update_counters(self, event_type: str, data: dict[str, Any]) -> None:
+    async def _update_counters(self, event_type: str, data: dict[str, Any]) -> None:
         """Update aggregated counters."""
-        with self.events_lock:
+        async with self.events_lock:
             if event_type == "scan_completed":
                 self.counters["scans_performed"] += 1
                 if data.get("threats_found", 0) > 0:
@@ -202,7 +222,7 @@ class TelemetryCollector:
             session_duration = int(time.time() - self.session_start)
             self.counters["session_duration"] = session_duration
 
-    def _flush_events(self) -> None:
+    async def _flush_events(self) -> None:
         """Flush events to storage."""
         if not self.enabled:
             return
@@ -215,7 +235,7 @@ class TelemetryCollector:
                 try:
                     event = self.events_queue.get_nowait()
                     events_to_flush.append(event)
-                except queue.Empty:
+                except asyncio.QueueEmpty:
                     break
 
             if not events_to_flush:
@@ -226,25 +246,32 @@ class TelemetryCollector:
             filename = f"telemetry_{timestamp}_{self.session_id[:8]}.json"
             filepath = self.storage_path / filename
 
-            with open(filepath, "w") as f:
-                json.dump(
-                    {
-                        "metadata": {
-                            "version": "1.0",
-                            "session_id": self.session_id,
-                            "timestamp": timestamp,
-                            "privacy_level": self.privacy_level,
-                            "event_count": len(events_to_flush),
-                        },
-                        "counters": self.counters.copy(),
-                        "events": [asdict(event) for event in events_to_flush],
-                    },
-                    f,
-                    indent=2,
-                )
+            try:
+                # Ensure directory exists and is writable
+                filepath.parent.mkdir(parents=True, exist_ok=True)
 
-            self.last_flush = time.time()
-            self.logger.debug(f"Flushed {len(events_to_flush)} telemetry events")
+                with filepath.open("w", encoding="utf-8") as f:
+                    json.dump(
+                        {
+                            "metadata": {
+                                "version": "1.0",
+                                "session_id": self.session_id,
+                                "timestamp": timestamp,
+                                "privacy_level": self.privacy_level,
+                                "event_count": len(events_to_flush),
+                            },
+                            "counters": self.counters.copy(),
+                            "events": [asdict(event) for event in events_to_flush],
+                        },
+                        f,
+                        indent=2,
+                    )
+
+                self.last_flush = time.time()
+                self.logger.debug(f"Flushed {len(events_to_flush)} telemetry events")
+
+            except (PermissionError, OSError) as e:
+                self.logger.error("Failed to write telemetry data: %s", e)
 
         except Exception as e:
             self.logger.error(f"Failed to flush telemetry events: {e}")
@@ -281,7 +308,7 @@ class TelemetryCollector:
                 "system_info": self._get_anonymous_system_info(),
             }
 
-            with open(output_path, "w") as f:
+            with Path(output_path).open("w", encoding="utf-8") as f:
                 json.dump(summary, f, indent=2)
 
             self.logger.info(f"Telemetry summary exported to: {output_path}")
@@ -303,9 +330,10 @@ class TelemetryCollector:
 
             # Try to get app version
             try:
-                with open(Path(__file__).parent.parent.parent / "VERSION") as f:
+                version_file = Path(__file__).parent.parent.parent / "VERSION"
+                with version_file.open("r", encoding="utf-8") as f:
                     info["app_version"] = f.read().strip()
-            except FileNotFoundError:
+            except (FileNotFoundError, PermissionError, OSError):
                 pass
 
         except ImportError:
@@ -335,13 +363,19 @@ class TelemetryManager:
         self.collector = TelemetryCollector(enabled, privacy_level)
         self.logger = logging.getLogger(__name__)
 
-        # Record initialization
-        self.collector.record_event(
+        # We'll record initialization after startup in an async context
+
+    async def start(self) -> None:
+        """Start telemetry and record initialization event."""
+        await self.collector.record_event(
             "app_initialized",
-            {"timestamp": datetime.now().isoformat(), "privacy_level": privacy_level},
+            {
+                "timestamp": datetime.now().isoformat(),
+                "privacy_level": self.collector.privacy_level,
+            },
         )
 
-    def record_scan_event(
+    async def record_scan_event(
         self,
         scan_type: str,
         file_count: int,
@@ -350,7 +384,7 @@ class TelemetryManager:
         errors: int = 0,
     ) -> None:
         """Record a scan completion event."""
-        self.collector.record_event(
+        await self.collector.record_event(
             "scan_completed",
             {
                 "scan_type": scan_type,
@@ -364,26 +398,28 @@ class TelemetryManager:
             },
         )
 
-    def record_threat_event(self, threat_type: str, action_taken: str) -> None:
+    async def record_threat_event(self, threat_type: str, action_taken: str) -> None:
         """Record a threat detection event."""
-        self.collector.record_event(
+        await self.collector.record_event(
             "threat_detected",
             {"threat_type": threat_type, "action_taken": action_taken},
         )
 
-    def record_gui_interaction(self, component: str, action: str) -> None:
+    async def record_gui_interaction(self, component: str, action: str) -> None:
         """Record a GUI interaction event."""
-        self.collector.record_event(
+        await self.collector.record_event(
             "gui_interaction", {"component": component, "action": action}
         )
 
-    def record_performance_metrics(self, metrics: dict[str, Any]) -> None:
+    async def record_performance_metrics(self, metrics: dict[str, Any]) -> None:
         """Record performance metrics."""
-        self.collector.record_event("performance_metrics", metrics)
+        await self.collector.record_event("performance_metrics", metrics)
 
-    def record_error(self, error_type: str, component: str, details: str = "") -> None:
+    async def record_error(
+        self, error_type: str, component: str, details: str = ""
+    ) -> None:
         """Record an error event."""
-        self.collector.record_event(
+        await self.collector.record_event(
             "error_occurred",
             {
                 "error_type": error_type,
@@ -401,19 +437,19 @@ class TelemetryManager:
             "anonymous_only": self.collector.privacy_level == "anonymous",
         }
 
-    def update_privacy_settings(self, enabled: bool, privacy_level: str) -> None:
+    async def update_privacy_settings(self, enabled: bool, privacy_level: str) -> None:
         """Update privacy settings."""
         self.collector.enabled = enabled
         self.collector.privacy_level = privacy_level
 
-        self.collector.record_event(
+        await self.collector.record_event(
             "privacy_settings_changed",
             {"enabled": enabled, "privacy_level": privacy_level},
         )
 
-    def shutdown(self) -> None:
+    async def shutdown(self) -> None:
         """Shutdown telemetry."""
-        self.collector.record_event(
+        await self.collector.record_event(
             "app_shutdown",
             {"session_duration": self.collector.counters["session_duration"]},
         )

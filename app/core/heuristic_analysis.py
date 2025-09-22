@@ -20,6 +20,18 @@ from enum import Enum
 from pathlib import Path
 from typing import Any
 
+# Import standardized exceptions
+from .exceptions import (
+    BaseXanadOSError,
+    DatabaseError,
+    ErrorCategory,
+    ErrorSeverity,
+    FileIOError,
+    PerformanceError,
+    SecurityError,
+    ValidationError,
+)
+
 
 class HeuristicType(Enum):
     """Types of heuristic analysis."""
@@ -192,12 +204,35 @@ class HeuristicAnalysisEngine:
             conn.commit()
             conn.close()
 
-        except Exception:
-            self.logerror(
-                "Failed to initialize database: %s".replace("%s", "{e}").replace(
-                    "%d", "{e}"
-                )
+        except sqlite3.Error as e:
+            self.logger.error(
+                "Database error during initialization: %s", e, exc_info=True
             )
+            raise DatabaseError(
+                "Failed to initialize heuristic analysis database",
+                context={"db_path": self.db_path, "error": str(e)},
+                cause=e,
+            ) from e
+        except OSError as e:
+            self.logger.error(
+                "File I/O error during database initialization: %s", e, exc_info=True
+            )
+            raise FileIOError(
+                "Cannot access database file",
+                file_path=self.db_path,
+                context={"error": str(e)},
+                cause=e,
+            ) from e
+        except Exception as e:
+            self.logger.critical(
+                "Unexpected error during database initialization: %s", e, exc_info=True
+            )
+            raise DatabaseError(
+                "Unexpected database initialization failure",
+                severity=ErrorSeverity.CRITICAL,
+                context={"db_path": self.db_path, "error": str(e)},
+                cause=e,
+            ) from e
 
     def _load_default_patterns(self):
         """Load default behavioral patterns."""
@@ -390,12 +425,12 @@ class HeuristicAnalysisEngine:
                         if result.risk_level.value >= RiskLevel.MEDIUM.value:
                             self._cache_result(file_hash, result)
 
-            except TimeoutError:
-                self.logwarning(
-                    "Heuristic analysis timeout for %s".replace(
-                        "%s", "{file_path}"
-                    ).replace("%d", "{file_path}")
+            except TimeoutError as e:
+                self.logger.warning(
+                    "Heuristic analysis timeout for %s: %s", file_path, e
                 )
+                # Return partial results if any were completed before timeout
+                return results
 
             # Store results in database
             for result in results:
@@ -403,13 +438,51 @@ class HeuristicAnalysisEngine:
 
             return results
 
-        except Exception:
-            self.logerror(
-                "Error in heuristic analysis of %s: %s".replace(
-                    "%s", "{file_path, e}"
-                ).replace("%d", "{file_path, e}")
+        except FileNotFoundError as e:
+            self.logger.error(
+                "File not found for heuristic analysis: %s", file_path, exc_info=True
             )
-            return []
+            raise FileIOError(
+                f"Cannot analyze non-existent file: {file_path}",
+                file_path=file_path,
+                cause=e,
+            ) from e
+        except PermissionError as e:
+            self.logger.error(
+                "Permission denied accessing file: %s", file_path, exc_info=True
+            )
+            raise SecurityError(
+                f"Insufficient permissions to analyze file: {file_path}",
+                context={"file_path": file_path, "error": str(e)},
+                cause=e,
+            ) from e
+        except OSError as e:
+            self.logger.error(
+                "I/O error during file analysis: %s", file_path, exc_info=True
+            )
+            raise FileIOError(
+                f"I/O error analyzing file: {file_path}",
+                file_path=file_path,
+                context={"error": str(e)},
+                cause=e,
+            ) from e
+        except Exception as e:
+            self.logger.critical(
+                "Unexpected error in heuristic analysis of %s: %s",
+                file_path,
+                e,
+                exc_info=True,
+            )
+            raise SecurityError(
+                f"Heuristic analysis failed for file: {file_path}",
+                severity=ErrorSeverity.CRITICAL,
+                context={
+                    "file_path": file_path,
+                    "error": str(e),
+                    "file_hash": file_hash if "file_hash" in locals() else None,
+                },
+                cause=e,
+            ) from e
 
     async def _entropy_analysis(self, file_path: str) -> HeuristicResult | None:
         """Analyze file entropy to detect packed/encrypted content."""
@@ -481,11 +554,32 @@ class HeuristicAnalysisEngine:
 
                 return None
 
-        except Exception:
-            self.logerror(
-                "Error in entropy analysis: %s".replace("%s", "{e}").replace(
-                    "%d", "{e}"
-                )
+        except OSError as e:
+            self.logger.error(
+                "I/O error during entropy analysis of %s: %s",
+                file_path,
+                e,
+                exc_info=True,
+            )
+            return None
+        except MemoryError as e:
+            self.logger.error(
+                "Memory exhaustion during entropy analysis of %s: %s",
+                file_path,
+                e,
+                exc_info=True,
+            )
+            raise PerformanceError(
+                f"Insufficient memory for entropy analysis: {file_path}",
+                context={"file_path": file_path, "error": str(e)},
+                cause=e,
+            ) from e
+        except Exception as e:
+            self.logger.error(
+                "Unexpected error in entropy analysis of %s: %s",
+                file_path,
+                e,
+                exc_info=True,
             )
             return None
 
@@ -551,11 +645,20 @@ class HeuristicAnalysisEngine:
 
                 return None
 
-        except Exception:
-            self.logerror(
-                "Error in pattern analysis: %s".replace("%s", "{e}").replace(
-                    "%d", "{e}"
-                )
+        except OSError as e:
+            self.logger.error(
+                "I/O error during pattern analysis of %s: %s",
+                file_path,
+                e,
+                exc_info=True,
+            )
+            return None
+        except Exception as e:
+            self.logger.error(
+                "Unexpected error in pattern analysis of %s: %s",
+                file_path,
+                e,
+                exc_info=True,
             )
             return None
 
@@ -632,11 +735,20 @@ class HeuristicAnalysisEngine:
 
                 return None
 
-        except Exception:
-            self.logerror(
-                "Error in structural analysis: %s".replace("%s", "{e}").replace(
-                    "%d", "{e}"
-                )
+        except OSError as e:
+            self.logger.error(
+                "I/O error during structural analysis of %s: %s",
+                file_path,
+                e,
+                exc_info=True,
+            )
+            return None
+        except Exception as e:
+            self.logger.error(
+                "Unexpected error in structural analysis of %s: %s",
+                file_path,
+                e,
+                exc_info=True,
             )
             return None
 
@@ -724,11 +836,20 @@ class HeuristicAnalysisEngine:
 
             return None
 
-        except Exception:
-            self.logerror(
-                "Error in metadata analysis: %s".replace("%s", "{e}").replace(
-                    "%d", "{e}"
-                )
+        except OSError as e:
+            self.logger.error(
+                "I/O error during metadata analysis of %s: %s",
+                file_path,
+                e,
+                exc_info=True,
+            )
+            return None
+        except Exception as e:
+            self.logger.error(
+                "Unexpected error in metadata analysis of %s: %s",
+                file_path,
+                e,
+                exc_info=True,
             )
             return None
 
@@ -837,9 +958,20 @@ class HeuristicAnalysisEngine:
 
                 return None
 
-        except Exception:
-            self.logerror(
-                "Error in string analysis: %s".replace("%s", "{e}").replace("%d", "{e}")
+        except OSError as e:
+            self.logger.error(
+                "I/O error during string analysis of %s: %s",
+                file_path,
+                e,
+                exc_info=True,
+            )
+            return None
+        except Exception as e:
+            self.logger.error(
+                "Unexpected error in string analysis of %s: %s",
+                file_path,
+                e,
+                exc_info=True,
             )
             return None
 
@@ -886,11 +1018,14 @@ class HeuristicAnalysisEngine:
 
             return results
 
-        except Exception:
-            self.logerror(
-                "Error in behavioral pattern analysis: %s".replace("%s", "{e}").replace(
-                    "%d", "{e}"
-                )
+        except ValueError as e:
+            self.logger.error(
+                "Invalid data in behavioral pattern analysis: %s", e, exc_info=True
+            )
+            return []
+        except Exception as e:
+            self.logger.error(
+                "Unexpected error in behavioral pattern analysis: %s", e, exc_info=True
             )
             return []
 
@@ -931,7 +1066,13 @@ class HeuristicAnalysisEngine:
                     == signature.pattern
                 )
             return False
-        except Exception:
+        except (IndexError, TypeError) as e:
+            self.logger.debug("Pattern matching error: %s", e)
+            return False
+        except Exception as e:
+            self.logger.error(
+                "Unexpected error in signature matching: %s", e, exc_info=True
+            )
             return False
 
     def _detect_suspicious_patterns(self, data: bytes) -> list[str]:
@@ -988,10 +1129,9 @@ class HeuristicAnalysisEngine:
                     elif num_sections == 0:
                         anomalies.append("no_sections")
 
-        except Exception:
-            anomalies.append("pe_parsing_error")
-
-        return anomalies
+        except Exception as e:
+            self.logger.error("Unexpected analysis failed: %s", e, exc_info=True)
+            return []
 
     def _check_elf_anomalies(self, header: bytes) -> list[str]:
         """Check for ELF file anomalies."""
@@ -1009,10 +1149,9 @@ class HeuristicAnalysisEngine:
                 if endian not in [1, 2]:  # Invalid endianness
                     anomalies.append("invalid_endianness")
 
-        except Exception:
-            anomalies.append("elf_parsing_error")
-
-        return anomalies
+        except Exception as e:
+            self.logger.error("Unexpected analysis failed: %s", e, exc_info=True)
+            return []
 
     def _check_script_threats(self, header: bytes) -> list[str]:
         """Check for threats in script files."""
@@ -1039,10 +1178,9 @@ class HeuristicAnalysisEngine:
                 if pattern in script_content:
                     threats.append(f"suspicious_function_{pattern}")
 
-        except Exception:
-            pass
-
-        return threats
+        except Exception as e:
+            self.logger.error("Unexpected analysis failed: %s", e, exc_info=True)
+            return []
 
     def _extension_matches_content(self, extension: str, header: bytes) -> bool:
         """Check if file extension matches content type."""
@@ -1220,7 +1358,16 @@ class HeuristicAnalysisEngine:
                 for chunk in iter(lambda: f.read(4096), b""):
                     hash_sha256.update(chunk)
             return hash_sha256.hexdigest()
-        except Exception:
+        except OSError as e:
+            self.logger.error("Cannot access file for hashing %s: %s", file_path, e)
+            return ""
+        except Exception as e:
+            self.logger.error(
+                "Unexpected error calculating file hash %s: %s",
+                file_path,
+                e,
+                exc_info=True,
+            )
             return ""
 
     def _get_cached_result(self, file_hash: str) -> HeuristicResult | None:
@@ -1288,8 +1435,8 @@ class HeuristicAnalysisEngine:
             conn.commit()
             conn.close()
 
-        except Exception:
-            self.logerror(
+        except Exception as e:
+            self.logger.error(
                 "Error storing analysis result: %s".replace("%s", "{e}").replace(
                     "%d", "{e}"
                 )
@@ -1337,8 +1484,8 @@ class HeuristicAnalysisEngine:
                 "suspicious_strings_count": len(self.suspicious_strings),
             }
 
-        except Exception:
-            self.logerror(
+        except Exception as e:
+            self.logger.error(
                 "Error getting statistics: %s".replace("%s", "{e}").replace("%d", "{e}")
             )
             return {}
@@ -1372,8 +1519,8 @@ class HeuristicAnalysisEngine:
             conn.commit()
             conn.close()
 
-        except Exception:
-            self.logerror(
+        except Exception as e:
+            self.logger.error(
                 "Error storing behavioral pattern: %s".replace("%s", "{e}").replace(
                     "%d", "{e}"
                 )
@@ -1407,8 +1554,8 @@ class HeuristicAnalysisEngine:
             conn.commit()
             conn.close()
 
-        except Exception:
-            self.logerror(
+        except Exception as e:
+            self.logger.error(
                 "Error storing file signature: %s".replace("%s", "{e}").replace(
                     "%d", "{e}"
                 )

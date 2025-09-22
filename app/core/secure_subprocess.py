@@ -20,6 +20,7 @@ SAFE_PATH = "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
 # Simple allowlist of binaries we expect to call; expand as needed.
 ALLOWED_BINARIES = {
     "clamscan",
+    "clamdscan",
     "freshclam",
     "rkhunter",
     "systemctl",
@@ -38,6 +39,12 @@ ALLOWED_BINARIES = {
     "stop",
     "restart",
     "sigtool",
+    # System administration commands for configuration management
+    "crontab",  # Cron job management
+    "mkdir",   # Directory creation
+    "cp",      # File copying
+    "chmod",   # Permission changes
+    "chown",   # Ownership changes
     # Safe status/info commands
     "echo",
     "which",

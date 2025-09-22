@@ -1,0 +1,18 @@
+
+# Commit Message Template
+#
+# Please follow conventional commit format:
+# <type>[optional scope]: <description>
+#
+# [optional body]
+#
+# [optional footer(s)]
+#
+# Examples:
+# feat: add new security scanner module
+# fix(security): resolve false positive in malware detection
+# docs: update installation instructions
+# refactor: simplify configuration management
+#
+# Types: feat, fix, docs, style, refactor, perf, test, chore
+# Scope: security, gui, core, config, tests, etc.

@@ -158,27 +158,92 @@ class GlobalRateLimitManager:
 
     def _setup_default_limits(self) -> None:
         """Setup default rate limits for common operations."""
+        # Load custom rate limits from configuration if available
+        try:
+            from app.utils.config import load_config
+
+            config = load_config()
+            custom_limits = config.get("rate_limiting", {})
+        except Exception:
+            custom_limits = {}
+
+        # User-friendly rate limits with context-aware thresholds
         default_limits = {
+            # USER-INITIATED OPERATIONS (High limits to allow user freedom)
+            "user_file_scan": RateLimit(
+                calls=5000, period=60.0, burst=1000
+            ),  # Very high limits for user-initiated file scans
+            "user_directory_scan": RateLimit(
+                calls=100, period=60.0, burst=50
+            ),  # Allow users to scan many directories without restriction
+            "quick_scan": RateLimit(
+                calls=1000, period=60.0, burst=200
+            ),  # User-initiated quick scans - very high limits
+            "full_scan": RateLimit(
+                calls=500, period=60.0, burst=100
+            ),  # User-initiated full scans - high limits
+            "interactive_scan": RateLimit(
+                calls=10000, period=60.0, burst=2000
+            ),  # Essentially unlimited for interactive use
+            # BACKGROUND/AUTOMATED OPERATIONS (Moderate limits for system protection)
+            "background_scan": RateLimit(
+                calls=50, period=60.0, burst=10
+            ),  # Background monitoring - controlled
+            "scheduled_scan": RateLimit(
+                calls=10, period=60.0, burst=3
+            ),  # Scheduled automatic scans
+            "real_time_scan": RateLimit(
+                calls=2000, period=60.0, burst=500
+            ),  # Real-time protection - high but controlled
+            # LEGACY/FALLBACK OPERATIONS (Moderate limits)
             "file_scan": RateLimit(
-                calls=100, period=60.0, burst=20
-            ),  # 100 scans per minute
+                calls=1000, period=60.0, burst=200
+            ),  # General file scanning - increased from 100
             "directory_scan": RateLimit(
-                calls=10, period=60.0, burst=5
-            ),  # 10 directory scans per minute
+                calls=50, period=60.0, burst=20
+            ),  # General directory scanning - increased from 10
+            # SYSTEM OPERATIONS (Lower limits for protection)
             "virus_db_update": RateLimit(calls=1, period=3600.0),  # 1 update per hour
             "network_request": RateLimit(
-                calls=50, period=60.0, burst=10
-            ),  # 50 requests per minute
+                calls=100, period=60.0, burst=20
+            ),  # Network requests - increased from 50
             "quarantine_action": RateLimit(
-                calls=20, period=60.0
-            ),  # 20 quarantine actions per minute
+                calls=50, period=60.0, burst=10
+            ),  # Quarantine actions - increased from 20
             "system_command": RateLimit(
-                calls=5, period=60.0
-            ),  # 5 system commands per minute
+                calls=10, period=60.0, burst=3
+            ),  # System commands - increased from 5
+            # API OPERATIONS (Strict limits for security)
+            "api_scan_request": RateLimit(
+                calls=20, period=60.0, burst=5
+            ),  # API-initiated scans need limits
+            "api_file_upload": RateLimit(
+                calls=10, period=60.0, burst=3
+            ),  # File uploads via API
         }
 
-        for operation, limit in default_limits.items():
-            self.set_rate_limit(operation, limit)
+        # Apply configuration overrides
+        for operation, default_limit in default_limits.items():
+            if operation in custom_limits:
+                custom_config = custom_limits[operation]
+                try:
+                    # Create custom rate limit from configuration
+                    custom_limit = RateLimit(
+                        calls=custom_config.get("calls", default_limit.calls),
+                        period=custom_config.get("period", default_limit.period),
+                        burst=custom_config.get("burst", default_limit.burst),
+                    )
+                    self.set_rate_limit(operation, custom_limit)
+                    self.logger.info(
+                        f"Applied custom rate limit for {operation}: {custom_limit}"
+                    )
+                except Exception as e:
+                    self.logger.warning(
+                        f"Invalid rate limit configuration for {operation}: {e}, using default"
+                    )
+                    self.set_rate_limit(operation, default_limit)
+            else:
+                self.set_rate_limit(operation, default_limit)
 
     def set_rate_limit(
         self, operation: str, rate_limit: RateLimit, adaptive: bool = False
@@ -203,6 +268,153 @@ class GlobalRateLimitManager:
                 )
                 return True  # Allow if no limit configured
 
+    def smart_acquire(
+        self, operation: str, context: str = "auto", tokens: int = 1
+    ) -> tuple[bool, str]:
+        """Intelligent rate limiting with context awareness and user-friendly responses.
+
+        Args:
+            operation: Base operation type (e.g., 'scan', 'file_scan', 'directory_scan')
+            context: Context of the operation ('user', 'background', 'api', 'auto')
+            tokens: Number of tokens to acquire
+
+        Returns:
+            Tuple of (success, message) where message explains result
+        """
+        # Auto-detect context if not specified
+        if context == "auto":
+            context = self._detect_context()
+
+        # Map operation and context to specific rate limit category
+        rate_limit_key = self._get_smart_rate_limit_key(operation, context)
+
+        # Try to acquire with the mapped key
+        success = self.acquire(rate_limit_key, tokens)
+
+        if success:
+            return True, f"Operation '{operation}' approved (context: {context})"
+
+        # If rate limited, provide helpful message
+        wait_time = self.wait_time(rate_limit_key)
+
+        if context == "user":
+            # For user operations, be more permissive and suggest alternatives
+            message = (
+                f"System is busy with {operation}. "
+                f"You can continue in {wait_time:.1f} seconds, or try a quick scan instead."
+            )
+        elif context == "background":
+            message = f"Background {operation} deferred for {wait_time:.1f} seconds to prioritize user operations."
+        else:
+            message = f"Rate limit reached for {operation}. Please wait {wait_time:.1f} seconds."
+
+        return False, message
+
+    def _detect_context(self) -> str:
+        """Automatically detect the context of the current operation."""
+        import threading
+
+        thread_name = threading.current_thread().name.lower()
+
+        # Detect GUI/user operations
+        if any(
+            keyword in thread_name
+            for keyword in ["gui", "main", "qt", "user", "interactive"]
+        ):
+            return "user"
+        # Detect background operations
+        elif any(
+            keyword in thread_name
+            for keyword in ["background", "scheduler", "monitor", "auto"]
+        ):
+            return "background"
+        # Detect API operations
+        elif any(keyword in thread_name for keyword in ["api", "http", "rest", "web"]):
+            return "api"
+        else:
+            # Default to user context for unknown threads (be permissive)
+            return "user"
+
+    def _get_smart_rate_limit_key(self, operation: str, context: str) -> str:
+        """Map operation and context to appropriate rate limit key."""
+
+        # Context-aware mapping
+        if context == "user":
+            # User operations get high-limit categories
+            operation_map = {
+                "file_scan": "user_file_scan",
+                "directory_scan": "user_directory_scan",
+                "scan": "interactive_scan",
+                "quick_scan": "quick_scan",
+                "full_scan": "full_scan",
+            }
+        elif context == "background":
+            # Background operations get controlled limits
+            operation_map = {
+                "file_scan": "background_scan",
+                "directory_scan": "scheduled_scan",
+                "scan": "background_scan",
+                "quick_scan": "scheduled_scan",
+                "full_scan": "scheduled_scan",
+            }
+        elif context == "api":
+            # API operations get security-focused limits
+            operation_map = {
+                "file_scan": "api_scan_request",
+                "directory_scan": "api_scan_request",
+                "scan": "api_scan_request",
+                "upload": "api_file_upload",
+            }
+        else:
+            operation_map = {}
+
+        # Return mapped operation or fall back to original
+        return operation_map.get(operation, operation)
+
+    def bypass_for_user_operation(
+        self, operation: str, user_confirmed: bool = False
+    ) -> bool:
+        """Allow users to bypass rate limiting for important operations.
+
+        Args:
+            operation: The operation that needs to bypass rate limiting
+            user_confirmed: Whether the user has confirmed they want to proceed despite system load
+
+        Returns:
+            True if bypass is allowed, False otherwise
+        """
+        # Users can always bypass rate limiting if they really want to
+        if user_confirmed:
+            self.logger.info(f"User confirmed bypass of rate limiting for {operation}")
+            return True
+
+        # Automatic bypass for user operations under normal system conditions
+        try:
+            import psutil
+
+            cpu_percent = psutil.cpu_percent(interval=0.1)
+            memory_percent = psutil.virtual_memory().percent
+
+            # Allow bypass if system isn't under severe stress
+            if cpu_percent < 80 and memory_percent < 80:
+                self.logger.debug(
+                    f"Automatic bypass allowed for {operation} (CPU: {cpu_percent}%, RAM: {memory_percent}%)"
+                )
+                return True
+            else:
+                self.logger.warning(
+                    f"System under stress, rate limiting maintained for {operation} (CPU: {cpu_percent}%, RAM: {memory_percent}%)"
+                )
+                return False
+
+        except ImportError:
+            # If psutil isn't available, be conservative but still allow bypass
+            self.logger.debug(f"psutil not available, allowing bypass for {operation}")
+            return True
+        except Exception as e:
+            self.logger.error(f"Error checking system load for bypass: {e}")
+            return True  # Default to allowing bypass if we can't check
+
     def wait_time(self, operation: str) -> float:
         """Get wait time for next token availability."""
         with self.lock:
@@ -215,6 +427,86 @@ class GlobalRateLimitManager:
     def is_rate_limited(self, operation: str) -> bool:
         """Check if operation is currently rate limited."""
         return not self.acquire(operation, tokens=0)  # Check without consuming tokens
+
+    def reload_configuration(self) -> None:
+        """Reload rate limits from configuration file."""
+        self.logger.info("Reloading rate limiting configuration...")
+        with self.lock:
+            self.limiters.clear()
+            self.adaptive_limiters.clear()
+            self._setup_default_limits()
+
+    def get_current_limits(self) -> dict[str, dict]:
+        """Get current rate limit configuration."""
+        with self.lock:
+            limits = {}
+            for operation, limiter in self.limiters.items():
+                limits[operation] = {
+                    "calls": limiter.rate_limit.calls,
+                    "period": limiter.rate_limit.period,
+                    "burst": limiter.rate_limit.burst,
+                    "type": "standard",
+                }
+            for operation, limiter in self.adaptive_limiters.items():
+                limits[operation] = {
+                    "calls": limiter.base_limit.calls,
+                    "period": limiter.base_limit.period,
+                    "burst": limiter.base_limit.burst,
+                    "type": "adaptive",
+                }
+            return limits
+
+    def update_rate_limit(
+        self, operation: str, calls: int, period: float, burst: int | None = None
+    ) -> None:
+        """Update rate limit for a specific operation."""
+        new_limit = RateLimit(calls=calls, period=period, burst=burst)
+        self.set_rate_limit(operation, new_limit)
+        self.logger.info(f"Updated rate limit for {operation}: {new_limit}")
+
+    def disable_rate_limiting(self, operation: str) -> None:
+        """Disable rate limiting for a specific operation."""
+        with self.lock:
+            if operation in self.limiters:
+                del self.limiters[operation]
+            if operation in self.adaptive_limiters:
+                del self.adaptive_limiters[operation]
+            self.logger.info(f"Disabled rate limiting for {operation}")
+
+    def get_operation_status(self, operation: str) -> dict:
+        """Get detailed status for a specific operation."""
+        with self.lock:
+            if operation in self.limiters:
+                limiter = self.limiters[operation]
+                return {
+                    "operation": operation,
+                    "enabled": True,
+                    "type": "standard",
+                    "current_tokens": limiter.tokens,
+                    "max_tokens": limiter.rate_limit.calls,
+                    "refill_rate": limiter.refill_rate,
+                    "is_limited": limiter.tokens < 1,
+                    "wait_time": limiter.wait_time(),
+                }
+            elif operation in self.adaptive_limiters:
+                limiter = self.adaptive_limiters[operation].limiter
+                return {
+                    "operation": operation,
+                    "enabled": True,
+                    "type": "adaptive",
+                    "current_tokens": limiter.tokens,
+                    "max_tokens": limiter.rate_limit.calls,
+                    "refill_rate": limiter.refill_rate,
+                    "is_limited": limiter.tokens < 1,
+                    "wait_time": limiter.wait_time(),
+                }
+            else:
+                return {
+                    "operation": operation,
+                    "enabled": False,
+                    "type": "none",
+                    "message": "No rate limiting configured",
+                }
 
 
 # Global rate limit manager instance

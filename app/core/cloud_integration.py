@@ -17,7 +17,11 @@ import time
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from enum import Enum
+from pathlib import Path
 from typing import Any
+
+# Import standardized exception framework
+from app.core.exceptions import SecurityError, ErrorSeverity
 
 # Third-party imports with graceful fallbacks (E402 compliance: keep at top)
 try:
@@ -673,18 +677,45 @@ class CloudIntegrationSystem:
     def _generate_encryption_key(self) -> bytes:
         """Generate encryption key for sensitive data."""
         try:
-            # In production, this should be derived from a secure password/key
-            # TODO: Replace with proper key derivation from environment or config
-            default_key = "dev_key_change_me"  # Short default for development
-            password = os.environ.get("SD_ENCRYPTION_KEY", default_key).encode()
-            # In production, use random salt stored securely
-            salt = b"stable_salt_for_consistent_key"
+            # Secure key derivation from environment with proper validation
+            encryption_key = os.environ.get("SD_ENCRYPTION_KEY")
+            if not encryption_key:
+                raise SecurityError(
+                    "SD_ENCRYPTION_KEY environment variable not set",
+                    severity=ErrorSeverity.CRITICAL,
+                    context={"required_env_var": "SD_ENCRYPTION_KEY"},
+                )
+
+            if len(encryption_key) < 32:
+                raise SecurityError(
+                    "Encryption key too short - minimum 32 characters required",
+                    severity=ErrorSeverity.CRITICAL,
+                    context={"key_length": len(encryption_key), "minimum_required": 32},
+                )
+
+            password = encryption_key.encode("utf-8")
+
+            # Generate a random salt for this instance (stored in config)
+            salt_file = Path.home() / ".config" / "xanadOS" / "encryption.salt"
+            salt_file.parent.mkdir(parents=True, exist_ok=True)
+
+            if salt_file.exists():
+                with open(salt_file, "rb") as f:
+                    salt = f.read()
+            else:
+                import secrets
+
+                salt = secrets.token_bytes(32)
+                with open(salt_file, "wb") as f:
+                    f.write(salt)
+                # Secure the salt file
+                salt_file.chmod(0o600)
 
             kdf = PBKDF2HMAC(
                 algorithm=hashes.SHA256(),
                 length=32,
                 salt=salt,
-                iterations=100000,
+                iterations=120000,  # Increased for better security
             )
 
             return base64.urlsafe_b64encode(kdf.derive(password))
@@ -977,9 +1008,12 @@ class CloudIntegrationSystem:
                 url = "https://www.virustotal.com/vtapi/v2/file/report"
                 params = {"apikey": api_key, "resource": hash_value}
             else:
-                # Get recent intelligence
-                url = "https://www.virustotal.com/vtapi/v2/domain/report"
-                params = {"apikey": api_key, "domain": "example.com"}  # Placeholder
+                # Domain intelligence requires a specific domain parameter
+                # This should not be called without a valid domain target
+                self.logger.warning(
+                    "Domain intelligence request without valid domain target"
+                )
+                return []
 
             assert self.session is not None
             async with self.session.get(url, params=params) as response:
@@ -997,8 +1031,14 @@ class CloudIntegrationSystem:
         self, hash_value: str | None = None
     ) -> list[ThreatIntelligence]:
         """Query Malwarebytes threat intelligence."""
-        # Placeholder implementation
-        return []
+        try:
+            # Note: Malwarebytes API requires commercial license
+            # Implementation would require valid API credentials
+            self.logger.info("Malwarebytes integration requires commercial API access")
+            return []
+        except Exception as e:
+            self.logger.error("Error querying Malwarebytes: %s", e)
+            return []
 
     async def _query_community_db(
         self, hash_value: str | None = None
@@ -1272,8 +1312,27 @@ class CloudIntegrationSystem:
         self, backup_date: datetime | None = None
     ) -> list[str]:
         """List available backup files."""
-        # Placeholder implementation
-        return []
+        try:
+            if not self.backup_config.get("s3_bucket"):
+                self.logger.warning("S3 backup not configured")
+                return []
+
+            s3_client = boto3.client("s3")
+            bucket = self.backup_config["s3_bucket"]
+
+            # Determine prefix based on backup date
+            if backup_date:
+                prefix = f"backups/{backup_date.strftime('%Y-%m-%d')}/"
+            else:
+                prefix = "backups/"
+
+            response = s3_client.list_objects_v2(Bucket=bucket, Prefix=prefix)
+
+            return [obj["Key"] for obj in response.get("Contents", [])]
+
+        except Exception as e:
+            self.logger.error("Error listing backup files: %s", e)
+            return []
 
     async def _download_community_signatures(self) -> list[dict[str, Any]]:
         """Download community threat signatures."""
@@ -1295,9 +1354,46 @@ class CloudIntegrationSystem:
         self, signatures: list[dict[str, Any]]
     ) -> None:
         """Update local signature database."""
-        # This would update the local antivirus signature database
-        # Placeholder implementation
-        pass
+        try:
+            if not signatures:
+                self.logger.info("No signatures to update")
+                return
+
+            with sqlite3.connect(self.db_path) as conn:
+                cursor = conn.cursor()
+
+                # Create signatures table if it doesn't exist
+                cursor.execute(
+                    """
+                    CREATE TABLE IF NOT EXISTS signatures (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        signature_id TEXT UNIQUE NOT NULL,
+                        signature_data TEXT NOT NULL,
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                    )
+                """
+                )
+
+                # Update or insert signatures
+                for sig in signatures:
+                    cursor.execute(
+                        """
+                        INSERT OR REPLACE INTO signatures
+                        (signature_id, signature_data, updated_at)
+                        VALUES (?, ?, CURRENT_TIMESTAMP)
+                    """,
+                        (sig.get("id"), json.dumps(sig)),
+                    )
+
+                conn.commit()
+                self.logger.info("Updated %d signatures in database", len(signatures))
+
+        except Exception as e:
+            self.logger.error("Error updating signature database: %s", e)
+            raise SecurityError(
+                "Failed to update signature database", ErrorSeverity.HIGH
+            ) from e
 
     async def _get_threat_intel_stats(self) -> dict[str, Any]:
         """Get threat intelligence statistics."""

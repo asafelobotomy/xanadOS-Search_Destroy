@@ -3,7 +3,6 @@
 Test script to validate UFW and ClamAV installation fixes
 """
 
-import subprocess
 import sys
 import time
 from pathlib import Path
@@ -13,12 +12,13 @@ project_root = Path(__file__).parent.parent.parent.parent
 sys.path.insert(0, str(project_root))
 
 try:
-    from app.core.elevated_runner import elevated_run
     from app.core.clamav_wrapper import ClamAVWrapper
+    from app.core.elevated_runner import elevated_run
 except ImportError as e:
     print(f"❌ Error importing modules: {e}")
     print("Make sure you're running from the project root")
     sys.exit(1)
+
 
 def test_ufw_installation():
     """Test UFW installation using the new simplified command."""
@@ -29,13 +29,7 @@ def test_ufw_installation():
 
     try:
         print(f"   Running: {' '.join(cmd)}")
-        result = elevated_run(
-            cmd,
-            timeout=300,
-            capture_output=True,
-            text=True,
-            gui=True
-        )
+        result = elevated_run(cmd, timeout=300, capture_output=True, text=True, gui=True)
 
         if result.returncode == 0:
             print("✅ UFW installation successful")
@@ -47,7 +41,7 @@ def test_ufw_installation():
                 timeout=60,
                 capture_output=True,
                 text=True,
-                gui=True
+                gui=True,
             )
 
             if enable_result.returncode == 0:
@@ -63,6 +57,7 @@ def test_ufw_installation():
     except Exception as e:
         print(f"❌ Error during UFW installation: {e}")
         return False
+
 
 def test_clamav_daemon_startup():
     """Test ClamAV daemon startup using the improved logic."""
@@ -100,6 +95,7 @@ def test_clamav_daemon_startup():
         print(f"❌ Error during ClamAV daemon testing: {e}")
         return False
 
+
 def main():
     """Run all tests."""
     print("🔧 UFW and ClamAV Installation/Startup Test")
@@ -129,6 +125,7 @@ def main():
     else:
         print("⚠️  Some tests failed. Please check the output above.")
         return 1
+
 
 if __name__ == "__main__":
     sys.exit(main())

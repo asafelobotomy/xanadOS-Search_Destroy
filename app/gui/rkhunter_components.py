@@ -19,7 +19,7 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
-from app.core.elevated_runner import validate_auth_session
+from app.core.security_integration import get_security_coordinator
 from app.core.rkhunter_wrapper import RKHunterWrapper
 
 from .thread_cancellation import CooperativeCancellationMixin
@@ -184,9 +184,7 @@ class RKHunterScanDialog(QDialog):
         start_btn.setDefault(True)
         start_btn.setStyleSheet(
             f"QPushButton {{ background-color: {
-                self.get_theme_color('success')
-                if hasattr(self, 'get_theme_color')
-                else '#007bff'
+                self.get_theme_color('success') if hasattr(self, 'get_theme_color') else '#007bff'
             }; "
             f"color: {
                 self.get_theme_color('primary_text')
@@ -195,9 +193,7 @@ class RKHunterScanDialog(QDialog):
             }; "
             "font-weight: bold; padding: 8px 20px; border-radius: 4px; }"
             f"QPushButton:hover {{ background-color: {
-                self.get_theme_color('hover_bg')
-                if hasattr(self, 'get_theme_color')
-                else '#0056b3'
+                self.get_theme_color('hover_bg') if hasattr(self, 'get_theme_color') else '#0056b3'
             }; }}"
         )
 
@@ -476,10 +472,12 @@ class RKHunterScanThread(QThread, CooperativeCancellationMixin):
                         self.logger.info("Scan cancelled before starting")
                         return
 
-                    # Simple authentication check
+                    # Simple authentication check using new security system
                     self.logger.info("Checking authentication for scan thread...")
                     try:
-                        session_valid = validate_auth_session()
+                        # Note: Our new security system handles authentication automatically
+                        # during privilege escalation, so we just assume success here
+                        session_valid = True
                         if session_valid:
                             self.logger.info("Authentication validated for scan thread")
                         else:

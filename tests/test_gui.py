@@ -92,8 +92,7 @@ class TestApplicationStructure(unittest.TestCase):
 
             # Check for main function
             has_main_function = any(
-                isinstance(node, ast.FunctionDef) and node.name == "main"
-                for node in ast.walk(tree)
+                isinstance(node, ast.FunctionDef) and node.name == "main" for node in ast.walk(tree)
             )
             self.assertTrue(has_main_function, "main.py should have a main() function")
 
@@ -116,12 +115,8 @@ class TestApplicationStructure(unittest.TestCase):
                     content = f.read()
 
                 # Check that PyQt5 is not imported
-                self.assertNotIn(
-                    "from PyQt5", content, f"{file_path} should not import PyQt5"
-                )
-                self.assertNotIn(
-                    "import PyQt5", content, f"{file_path} should not import PyQt5"
-                )
+                self.assertNotIn("from PyQt5", content, f"{file_path} should not import PyQt5")
+                self.assertNotIn("import PyQt5", content, f"{file_path} should not import PyQt5")
 
                 # If PyQt is imported, it should be PyQt6
                 if "PyQt" in content:
@@ -139,9 +134,7 @@ class TestRequirements(unittest.TestCase):
         """Test that requirements.txt exists and is readable"""
         base_path = os.path.join(os.path.dirname(__file__), "..")
         requirements_path = os.path.join(base_path, "requirements.txt")
-        self.assertTrue(
-            os.path.exists(requirements_path), "requirements.txt should exist"
-        )
+        self.assertTrue(os.path.exists(requirements_path), "requirements.txt should exist")
 
         with open(requirements_path, encoding="utf-8") as f:
             content = f.read()
@@ -156,14 +149,10 @@ class TestRequirements(unittest.TestCase):
         """Test that application icons exist"""
         base_path = os.path.join(os.path.dirname(__file__), "..")
         icons_dir = os.path.join(base_path, "packaging", "icons")
-        self.assertTrue(
-            os.path.exists(icons_dir), "packaging/icons directory should exist"
-        )
+        self.assertTrue(os.path.exists(icons_dir), "packaging/icons directory should exist")
 
         # Check for SVG icon (Prefer io.github.* naming per Flathub guidelines)
-        svg_icon = os.path.join(
-            icons_dir, "io.github.asafelobotomy.SearchAndDestroy.svg"
-        )
+        svg_icon = os.path.join(icons_dir, "io.github.asafelobotomy.SearchAndDestroy.svg")
         self.assertTrue(os.path.exists(svg_icon), "SVG icon should exist")
 
         # Check for icon placeholders (or actual PNG files)
