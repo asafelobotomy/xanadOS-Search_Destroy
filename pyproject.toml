@@ -1,6 +1,6 @@
 [project]
 name = "xanadOS-Search_Destroy"
-version = "2.13.1"
+version = "3.0.0"
 description = "xanadOS Security Scanner and System Protection Suite"
 readme = "README.md"
 license = {file = "LICENSE"}

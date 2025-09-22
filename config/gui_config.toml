@@ -3,7 +3,7 @@
 
 [application]
 name = "xanadOS Search & Destroy"
-version = "2.13.1"
+version = "3.0.0"
 organization = "xanadOS Development Team"
 
 [gui.performance]
