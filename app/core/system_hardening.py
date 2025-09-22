@@ -17,6 +17,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
+from .exceptions import SecurityError, ErrorSeverity
 from .secure_subprocess import run_secure
 
 logger = logging.getLogger(__name__)
@@ -105,7 +106,9 @@ class SystemHardeningChecker:
             if rec not in recommendations:
                 recommendations.append(rec)
 
-        critical_issues = [f.name for f in features if not f.enabled and f.severity == "critical"]
+        critical_issues = [
+            f.name for f in features if not f.enabled and f.severity == "critical"
+        ]
 
         report = HardeningReport(
             security_features=features,
@@ -214,7 +217,9 @@ class SystemHardeningChecker:
             recommendation = "Kernel lockdown at maximum security level"
         elif lockdown_status == "integrity":
             severity = "medium"
-            recommendation = "Consider upgrading to 'confidentiality' mode for maximum security"
+            recommendation = (
+                "Consider upgrading to 'confidentiality' mode for maximum security"
+            )
         else:
             severity = "high"
             recommendation = "Enable kernel lockdown mode for enhanced security"
@@ -300,7 +305,9 @@ class SystemHardeningChecker:
             current_value = self._get_sysctl_value(param)
             enabled = current_value == config["expected"]
 
-            status = f"{param} = {current_value}" if current_value else f"{param} not found"
+            status = (
+                f"{param} = {current_value}" if current_value else f"{param} not found"
+            )
             recommendation = (
                 f"Set {param} = {config['expected']}"
                 if not enabled
@@ -371,8 +378,25 @@ class SystemHardeningChecker:
         """Check KASLR status"""
         try:
             # Check if KASLR is enabled via kernel command line
-            with open("/proc/cmdline") as f:
-                cmdline = f.read().strip()
+            cmdline_path = Path("/proc/cmdline")
+            if not cmdline_path.exists():
+                raise SecurityError(
+                    "Cannot access /proc/cmdline - insufficient privileges",
+                    ErrorSeverity.HIGH,
+                )
+
+            try:
+                with cmdline_path.open("r", encoding="utf-8") as f:
+                    cmdline = f.read().strip()
+            except PermissionError as e:
+                raise SecurityError(
+                    "Permission denied accessing kernel command line",
+                    ErrorSeverity.HIGH,
+                ) from e
+            except OSError as e:
+                raise SecurityError(
+                    f"Failed to read kernel command line: {e}", ErrorSeverity.MEDIUM
+                ) from e
 
             # Check for KASLR in various ways
             kaslr_enabled = True
@@ -412,8 +436,20 @@ class SystemHardeningChecker:
         """Check SMEP/SMAP status"""
         try:
             # Check CPU flags for SMEP/SMAP support
-            with open("/proc/cpuinfo") as f:
-                cpuinfo = f.read()
+            cpuinfo_path = Path("/proc/cpuinfo")
+            if not cpuinfo_path.exists():
+                return {"enabled": False, "status": "CPU info not accessible"}
+
+            try:
+                with cpuinfo_path.open("r", encoding="utf-8") as f:
+                    cpuinfo = f.read()
+            except PermissionError:
+                return {
+                    "enabled": False,
+                    "status": "Permission denied accessing CPU info",
+                }
+            except OSError as e:
+                return {"enabled": False, "status": f"Failed to read CPU info: {e}"}
 
             flags = []
             for line in cpuinfo.split("\n"):
@@ -496,9 +532,17 @@ class SystemHardeningChecker:
             ]
 
             for lockdown_file in lockdown_files:
-                if os.path.exists(lockdown_file):
-                    with open(lockdown_file) as f:
-                        content = f.read().strip()
+                lockdown_path = Path(lockdown_file)
+                if lockdown_path.exists():
+                    try:
+                        with lockdown_path.open("r", encoding="utf-8") as f:
+                            content = f.read().strip()
+                    except PermissionError:
+                        logger.warning("Permission denied accessing %s", lockdown_file)
+                        continue
+                    except OSError as e:
+                        logger.warning("Failed to read %s: %s", lockdown_file, e)
+                        continue
 
                     # Parse lockdown status
                     if "[none]" in content:
@@ -620,8 +664,20 @@ class SystemHardeningChecker:
         """Check NX bit / DEP status"""
         try:
             # Check CPU flags for NX support
-            with open("/proc/cpuinfo") as f:
-                cpuinfo = f.read()
+            cpuinfo_path = Path("/proc/cpuinfo")
+            if not cpuinfo_path.exists():
+                return {"enabled": False, "status": "CPU info not accessible"}
+
+            try:
+                with cpuinfo_path.open("r", encoding="utf-8") as f:
+                    cpuinfo = f.read()
+            except PermissionError:
+                return {
+                    "enabled": False,
+                    "status": "Permission denied accessing CPU info",
+                }
+            except OSError as e:
+                return {"enabled": False, "status": f"Failed to read CPU info: {e}"}
 
             # Look for NX-related flags
             nx_flags = ["nx", "xd"]  # nx for AMD, xd for Intel
@@ -653,7 +709,9 @@ class SystemHardeningChecker:
             recommendations.append(
                 "🔐 Consider implementing a comprehensive security hardening plan"
             )
-            recommendations.append("📚 Review CIS benchmarks for your Linux distribution")
+            recommendations.append(
+                "📚 Review CIS benchmarks for your Linux distribution"
+            )
 
         if report.overall_score < report.max_score * 0.75:
             recommendations.append("🛡️ Enable additional kernel security features")

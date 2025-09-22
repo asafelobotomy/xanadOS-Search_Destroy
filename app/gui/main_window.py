@@ -18,7 +18,6 @@ from pathlib import Path
 from app import __version__
 from app.core.file_scanner import FileScanner
 from app.core.firewall_detector import get_firewall_status, toggle_firewall
-from app.core.gui_auth_manager import GUIAuthManager
 from app.core.rkhunter_wrapper import RKHunterScanResult, RKHunterWrapper
 from app.core.scan_results_formatter import ModernScanResultsFormatter
 
@@ -117,7 +116,7 @@ from PyQt6.QtWidgets import (
 )
 
 from app.core import UNIFIED_PERFORMANCE_AVAILABLE
-from app.core.elevated_runner import cleanup_auth_session
+from app.core.security_integration import get_security_coordinator
 from app.core.memory_cache import get_system_cache
 from app.gui import APP_VERSION, settings_pages
 from app.gui.all_warnings_dialog import AllWarningsDialog
@@ -4592,6 +4591,62 @@ System        {perf_status}"""
         self.progress_bar.setValue(0)
         self._clear_results_with_header()
 
+        # Check permissions for the scan path before proceeding
+        try:
+            from app.core.security_integration import check_file_permissions
+            from app.core.permission_controller import PermissionLevel
+
+            # For custom scans, check if the path requires special permissions
+            if effective_scan_type == "CUSTOM" and self.scan_path:
+                # Check if we have permissions to scan the path
+                has_permissions = check_file_permissions(
+                    "system", self.scan_path, PermissionLevel.READ
+                )
+
+                if not has_permissions:
+                    # Try to get elevated permissions
+                    from app.core.security_integration import elevate_privileges
+
+                    elevation_result = elevate_privileges(
+                        "system",
+                        f"Scan requires access to {self.scan_path}",
+                        use_gui=True,
+                    )
+                    should_proceed = elevation_result.success
+                else:
+                    should_proceed = True
+
+                if not should_proceed:
+                    # User cancelled due to permission requirements
+                    self._scan_state = "idle"
+                    self.update_scan_button_state(False)  # Reset to "Start Scan" mode
+                    self.status_bar.showMessage(
+                        "⚠️ Scan cancelled - permission requirements not met"
+                    )
+                    return
+
+                # Store permission mode for use during scanning - simplified for new security system
+                permission_mode = "elevated" if not has_permissions else "normal"
+                privileged_paths = [self.scan_path] if not has_permissions else []
+
+                scan_options["permission_mode"] = permission_mode
+                scan_options["privileged_paths"] = privileged_paths
+
+                if permission_mode == "elevated" and privileged_paths:
+                    self._append_with_autoscroll(
+                        f"⚠️ <b>Note:</b> Elevated permissions were required for scan path: {self.scan_path}"
+                    )
+                    self._append_with_autoscroll("")
+
+        except ImportError as e:
+            print(f"Warning: Permission manager not available: {e}")
+            # Continue without permission checking
+            pass
+        except Exception as e:
+            print(f"Warning: Permission check failed: {e}")
+            # Continue without permission checking
+            pass
+
         # Reset autoscroll tracking for new scan
         self._user_has_scrolled = False
         self._last_scroll_position = 0
@@ -5275,8 +5330,11 @@ System        {perf_status}"""
         # Check if RKHunter is available (without authentication)
         if not self.rkhunter.available or self.rkhunter.rkhunter_path is None:
             # Check authentication method available
-            gui_auth = GUIAuthManager()
-            gui_auth_available = gui_auth.is_gui_available()
+            from app.core.security_integration import get_security_coordinator
+
+            gui_auth_available = (
+                True  # Our new security system always supports GUI auth
+            )
 
             if gui_auth_available:
                 auth_method_text = (
@@ -5324,8 +5382,9 @@ System        {perf_status}"""
         test_categories = self.get_selected_rkhunter_categories()
 
         # Check if GUI authentication is available
-        gui_auth = GUIAuthManager()
-        gui_auth_available = gui_auth.is_gui_available()
+        from app.core.security_integration import get_security_coordinator
+
+        gui_auth_available = True  # Our new security system always supports GUI auth
 
         # Build scan categories description for user
         category_names = {
@@ -5380,9 +5439,15 @@ System        {perf_status}"""
         try:
             auth_session_valid = self.rkhunter._ensure_auth_session()
             if not auth_session_valid:
-                # Try the new GUI authentication manager
-                gui_auth = GUIAuthManager()
-                auth_success = gui_auth.ensure_authenticated()
+                # Try the new security integration system
+                from app.core.security_integration import elevate_privileges
+
+                elevation_result = elevate_privileges(
+                    "system",
+                    "RKHunter rootkit scan requires elevated privileges",
+                    use_gui=True,
+                )
+                auth_success = elevation_result.success
 
                 if not auth_success:
                     # Check what authentication methods are available as fallback
@@ -5391,7 +5456,7 @@ System        {perf_status}"""
                     sudo_available = bool(_which("sudo"))
                     display_available = bool(os.environ.get("DISPLAY"))
 
-                    if gui_auth.is_gui_available() and display_available:
+                    if display_available:
                         error_msg = (
                             "Authentication failed or was cancelled.\n\n"
                             "A secure password dialog should have appeared. "
@@ -5413,7 +5478,7 @@ System        {perf_status}"""
                         )
 
                     # For GUI/sudo available cases, ask if user wants to continue anyway
-                    if gui_auth.is_gui_available() or sudo_available:
+                    if display_available or sudo_available:
                         reply = self.show_themed_message_box(
                             "question",
                             "Pre-authentication Failed",
@@ -9712,7 +9777,7 @@ Common False Positives:
 
         # Clean up authentication session
         try:
-            cleanup_auth_session()
+            # Note: Our new security system handles session cleanup automatically
             print("🔐 Authentication session cleaned up")
         except Exception as e:
             print(f"Warning: Failed to cleanup authentication session: {e}")

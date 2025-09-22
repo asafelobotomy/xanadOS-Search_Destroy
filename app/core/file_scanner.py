@@ -151,7 +151,9 @@ class QuarantineManager:
             with open(metadata_file, "w", encoding="utf-8") as f:
                 json.dump(asdict(metadata), f, indent=2, default=str)
 
-            self.logger.info("File quarantined: %s -> %s", file_path, str(quarantine_path))
+            self.logger.info(
+                "File quarantined: %s -> %s", file_path, str(quarantine_path)
+            )
             return True
 
         except (OSError, shutil.Error) as e:
@@ -179,16 +181,22 @@ class QuarantineManager:
                     data = json.load(f)
 
                 # Convert datetime string back to datetime object
-                data["quarantine_date"] = datetime.fromisoformat(data["quarantine_date"])
+                data["quarantine_date"] = datetime.fromisoformat(
+                    data["quarantine_date"]
+                )
                 quarantined_files.append(QuarantinedFile(**data))
 
             except (OSError, json.JSONDecodeError, TypeError, ValueError) as e:
-                self.logger.warning("Failed to load quarantine metadata %s: %s", metadata_file, e)
+                self.logger.warning(
+                    "Failed to load quarantine metadata %s: %s", metadata_file, e
+                )
                 continue
 
         return sorted(quarantined_files, key=lambda x: x.quarantine_date, reverse=True)
 
-    def restore_file(self, quarantine_path: str, original_path: str | None = None) -> bool:
+    def restore_file(
+        self, quarantine_path: str, original_path: str | None = None
+    ) -> bool:
         """Restore a file from quarantine."""
         try:
             quarantine_file = Path(quarantine_path)
@@ -197,7 +205,9 @@ class QuarantineManager:
                 return False
 
             # Find metadata
-            metadata_file = self.quarantine_metadata_dir / f"{quarantine_file.name}.json"
+            metadata_file = (
+                self.quarantine_metadata_dir / f"{quarantine_file.name}.json"
+            )
             if not metadata_file.exists():
                 self.logger.error("Quarantine metadata not found: %s", metadata_file)
                 return False
@@ -208,7 +218,11 @@ class QuarantineManager:
                 metadata = json.load(f)
 
             # Determine restore path
-            restore_path = Path(original_path) if original_path else Path(metadata["original_path"])
+            restore_path = (
+                Path(original_path)
+                if original_path
+                else Path(metadata["original_path"])
+            )
 
             # Ensure destination directory exists
             restore_path.parent.mkdir(parents=True, exist_ok=True)
@@ -219,7 +233,9 @@ class QuarantineManager:
             # Remove metadata
             metadata_file.unlink()
 
-            self.logger.info("File restored: %s -> %s", quarantine_path, str(restore_path))
+            self.logger.info(
+                "File restored: %s -> %s", quarantine_path, str(restore_path)
+            )
             return True
 
         except (OSError, shutil.Error, json.JSONDecodeError) as e:
@@ -234,7 +250,9 @@ class QuarantineManager:
                 quarantine_file.unlink()
 
             # Remove metadata
-            metadata_file = self.quarantine_metadata_dir / f"{quarantine_file.name}.json"
+            metadata_file = (
+                self.quarantine_metadata_dir / f"{quarantine_file.name}.json"
+            )
             if metadata_file.exists():
                 metadata_file.unlink()
 
@@ -242,7 +260,9 @@ class QuarantineManager:
             return True
 
         except OSError as e:
-            self.logger.error("Failed to delete quarantined file %s: %s", quarantine_path, e)
+            self.logger.error(
+                "Failed to delete quarantined file %s: %s", quarantine_path, e
+            )
             return False
 
     def cleanup_old_quarantine(self, days_to_keep: int = 30) -> None:
@@ -280,7 +300,9 @@ class FileScanner:
         # Memory optimization: Add file batching and monitoring
         self.memory_monitor = MemoryMonitor()
         self.batch_size = self.config.get("performance", {}).get("scan_batch_size", 50)
-        self.max_memory_usage = self.config.get("performance", {}).get("max_memory_mb", 256)
+        self.max_memory_usage = self.config.get("performance", {}).get(
+            "max_memory_mb", 256
+        )
 
         # Threading and progress tracking
         self._scan_progress = 0.0
@@ -319,6 +341,84 @@ class FileScanner:
         """Set callback for individual scan results."""
         self.result_callback = callback
 
+    def _format_privileged_paths_display(self, privileged_paths: list[str]) -> str:
+        """Format privileged paths for user-friendly display.
+
+        Args:
+            privileged_paths: List of privileged directory paths
+
+        Returns:
+            User-friendly string representation of privileged paths
+        """
+        if not privileged_paths:
+            return "None"
+
+        # Map technical paths to user-friendly descriptions
+        path_descriptions = {
+            "/var/cache": "System Cache",
+            "/var/log": "System Logs",
+            "/var/lib": "System Libraries",
+            "/var/run": "System Runtime",
+            "/var/spool": "System Spool",
+            "/var/tmp": "System Temp (restricted)",
+            "/var/db": "System Database",
+            "/boot": "Boot System",
+            "/dev": "Device Files",
+            "/run": "Runtime Files",
+            "/etc": "System Configuration",
+            "/tmp": "Temporary Files (restricted)",
+            "/sys": "System Kernel Interface",
+            "/proc": "Process Information",
+            "/usr/lib/rkhunter": "RKHunter System Files",
+            "/usr/lib64/rkhunter": "RKHunter System Files (64-bit)",
+            "/usr/local/etc": "Local System Configuration",
+            "/lib/rkhunter": "RKHunter Library Files",
+            "/lib64/rkhunter": "RKHunter Library Files (64-bit)",
+            "/opt": "Optional System Software",
+            "/root": "Administrator Home Directory",
+        }
+
+        # Group and count similar paths
+        grouped_paths = {}
+        for path in privileged_paths:
+            # Find the most specific description
+            description = None
+            for tech_path, friendly_name in path_descriptions.items():
+                if path.startswith(tech_path):
+                    description = friendly_name
+                    break
+
+            if not description:
+                # Fallback for unrecognized paths
+                if path.startswith("/var/"):
+                    description = "System Directory"
+                elif path.startswith("/tmp/"):
+                    description = "Temporary Directory (restricted)"
+                elif path.startswith("/run/"):
+                    description = "Runtime Directory"
+                else:
+                    description = "System Directory"
+
+            if description not in grouped_paths:
+                grouped_paths[description] = 0
+            grouped_paths[description] += 1
+
+        # Format the display
+        if len(grouped_paths) <= 5:
+            # Show individual descriptions with counts
+            items = []
+            for desc, count in grouped_paths.items():
+                if count == 1:
+                    items.append(desc)
+                else:
+                    items.append(f"{desc} ({count} locations)")
+            return ", ".join(items)
+        else:
+            # Too many different types, show summary
+            total_count = len(privileged_paths)
+            main_types = list(grouped_paths.keys())[:3]
+            return f"{', '.join(main_types)} and {len(grouped_paths) - 3} other types ({total_count} total directories)"
+
     def update_virus_definitions(self) -> bool:
         """Update virus definitions using the ClamAV wrapper.
 
@@ -330,19 +430,53 @@ class FileScanner:
         # Call the update method in the ClamAV wrapper
         return self.clamav_wrapper.update_virus_definitions()
 
-    def scan_file(self, file_path: str, scan_id: str | None = None, **kwargs) -> ScanFileResult:
-        """Scan a single file with security validation and rate limiting."""
-        # Apply rate limiting for file scans
-        if not self.rate_limiter.acquire("file_scan"):
-            wait_time = self.rate_limiter.wait_time("file_scan")
-            self.logger.warning(
-                "Rate limit exceeded for file scan. Wait time: %.2f seconds", wait_time
-            )
-            return ScanFileResult(
-                file_path=file_path,
-                result=ScanResult.ERROR,
-                error_message=f"Rate limit exceeded. Please wait {wait_time:.1f} seconds.",
-            )
+    def scan_file(
+        self,
+        file_path: str,
+        scan_id: str | None = None,
+        scan_context: str = "file_scan",
+        **kwargs,
+    ) -> ScanFileResult:
+        """Scan a single file with security validation and intelligent rate limiting.
+
+        Args:
+            file_path: Path to the file to scan
+            scan_id: Unique identifier for the scan session
+            scan_context: Type of scan for rate limiting (e.g., 'quick_scan', 'full_scan', 'background_scan')
+            **kwargs: Additional arguments passed to ClamAV
+        """
+        # Apply intelligent rate limiting with context awareness
+        success, message = self.rate_limiter.smart_acquire("file_scan", context="auto")
+
+        if not success:
+            # For user operations, try to be more permissive
+            if "user" in message.lower() or "interactive" in message.lower():
+                # Give users a second chance with a brief pause
+                import time
+
+                time.sleep(0.1)  # Brief 100ms pause
+                success, retry_message = self.rate_limiter.smart_acquire(
+                    "file_scan", context="user"
+                )
+
+                if success:
+                    self.logger.debug(
+                        "Rate limiting: Allowed user operation after brief pause"
+                    )
+                else:
+                    self.logger.info("User-friendly rate limiting: %s", retry_message)
+                    return ScanFileResult(
+                        file_path=file_path,
+                        result=ScanResult.ERROR,
+                        error_message=retry_message,
+                    )
+            else:
+                self.logger.info("Rate limiting applied: %s", message)
+                return ScanFileResult(
+                    file_path=file_path,
+                    result=ScanResult.ERROR,
+                    error_message=message,
+                )
 
         if not scan_id:
             scan_id = self.scan_report_manager.generate_scan_id()
@@ -353,7 +487,9 @@ class FileScanner:
         try:
             is_valid, error_msg = self.path_validator.validate_file_for_scan(file_path)
             if not is_valid:
-                self.logger.warning("Security validation failed for %s: %s", file_path, error_msg)
+                self.logger.warning(
+                    "Security validation failed for %s: %s", file_path, error_msg
+                )
                 return ScanFileResult(
                     file_path=file_path,
                     result=ScanResult.ERROR,
@@ -394,7 +530,9 @@ class FileScanner:
             result = ScanFileResult(
                 file_path=file_path,
                 result=ScanResult.CLEAN,
-                file_size=(Path(file_path).stat().st_size if Path(file_path).exists() else 0),
+                file_size=(
+                    Path(file_path).stat().st_size if Path(file_path).exists() else 0
+                ),
                 scan_time=0.001,  # Minimal time for skipped file
             )
             if self.result_callback:
@@ -432,7 +570,9 @@ class FileScanner:
         validation_result = validate_scan_request(directory_path)
 
         if not validation_result["valid"]:
-            self.logger.warning("Directory validation failed: %s", validation_result["errors"])
+            self.logger.warning(
+                "Directory validation failed: %s", validation_result["errors"]
+            )
         else:
             self.logger.info(
                 "Directory validation passed. Estimated %d files, %d bytes",
@@ -453,6 +593,7 @@ class FileScanner:
         max_workers: int = 4,
         timeout: int | None = None,
         save_report: bool = True,
+        scan_context: str = "file_scan",
         **kwargs,
     ):
         """Scan multiple files with progress tracking and enhanced reporting."""
@@ -465,7 +606,12 @@ class FileScanner:
         # Memory optimization: Use batched processing for large file sets
         if len(file_paths) > self.batch_size:
             return self._scan_files_batched(
-                file_paths, scan_type, max_workers, save_report=save_report, **kwargs
+                file_paths,
+                scan_type,
+                max_workers,
+                save_report=save_report,
+                scan_context=scan_context,
+                **kwargs,
             )
 
         """Scan multiple files with threading support."""
@@ -513,7 +659,9 @@ class FileScanner:
             try:
                 # Submit all scan tasks
                 future_to_path = {
-                    executor.submit(self.scan_file, file_path, scan_id, **kwargs): file_path
+                    executor.submit(
+                        self.scan_file, file_path, scan_id, scan_context, **kwargs
+                    ): file_path
                     for file_path in file_paths
                 }
 
@@ -521,7 +669,9 @@ class FileScanner:
                 for future in as_completed(future_to_path, timeout=scan_timeout):
                     # Check for cancellation (supports both manual flag and Qt6 interruption)
                     if self._scan_cancelled:
-                        self.logger.info("Scan cancelled by user - shutting down executor")
+                        self.logger.info(
+                            "Scan cancelled by user - shutting down executor"
+                        )
                         # Cancel all pending futures immediately
                         for pending_future in future_to_path:
                             if not pending_future.done():
@@ -580,7 +730,9 @@ class FileScanner:
                             scan_result.threats.append(threat_info)
 
                         elif file_result.result == ScanResult.ERROR:
-                            scan_result.errors.append(f"{file_path}: {file_result.error_message}")
+                            scan_result.errors.append(
+                                f"{file_path}: {file_result.error_message}"
+                            )
 
                     except Exception as e:
                         scan_result.errors.append(f"{file_path}: {e!s}")
@@ -595,12 +747,14 @@ class FileScanner:
                         # Show current file being scanned and overall progress
                         current_file = Path(file_path).name
                         # Truncate filename if too long to keep "Remaining:" visible
-                        max_filename_length = (
-                            25  # Very conservative length to ensure "Remaining:" stays visible
-                        )
+                        max_filename_length = 25  # Very conservative length to ensure "Remaining:" stays visible
                         if len(current_file) > max_filename_length:
-                            current_file = current_file[: max_filename_length - 3] + "..."
-                        status_msg = f"Scanning: {current_file} | Remaining: {files_remaining}"
+                            current_file = (
+                                current_file[: max_filename_length - 3] + "..."
+                            )
+                        status_msg = (
+                            f"Scanning: {current_file} | Remaining: {files_remaining}"
+                        )
                         self.progress_callback(progress, status_msg)
 
                     # Emit detailed progress information for results display
@@ -616,7 +770,9 @@ class FileScanner:
                             "files_remaining": files_remaining,
                             "total_files": len(file_paths),
                             "progress_percent": progress,
-                            "scan_result": (file_result.result.value if file_result else "clean"),
+                            "scan_result": (
+                                file_result.result.value if file_result else "clean"
+                            ),
                         }
                         self.detailed_progress_callback(detail_info)
 
@@ -666,7 +822,9 @@ class FileScanner:
                 )
                 try:
                     saved_path = self.scan_report_manager.save_scan_result(scan_result)
-                    print(f"DEBUG: ✅ FileScanner report saved successfully to: {saved_path}")
+                    print(
+                        f"DEBUG: ✅ FileScanner report saved successfully to: {saved_path}"
+                    )
                 except Exception as e:
                     print(f"DEBUG: ❌ FileScanner report save failed: {e}")
                     import traceback
@@ -703,6 +861,7 @@ class FileScanner:
         scan_type=None,
         include_hidden: bool = False,
         save_report: bool = True,
+        scan_context: str = "file_scan",
         **kwargs,
     ):
         """Scan all files in a directory with security validation."""
@@ -750,10 +909,28 @@ class FileScanner:
         # Always instantiate a MemoryMonitor (previous conditional check was ineffective)
         memory_monitor = MemoryMonitor()
 
+        # Extract permission handling parameters
+        permission_mode = kwargs.get("permission_mode", "normal")
+        privileged_paths = kwargs.get("privileged_paths", [])
+
+        # Debug permission information with user-friendly formatting
+        if privileged_paths:
+            permission_mode_display = {
+                "normal": "Standard scanning (no special permissions)",
+                "skip_privileged": "Skip protected directories",
+            }.get(permission_mode, permission_mode)
+
+            print(f"🔐 Permission Mode: {permission_mode_display}")
+            print(f"📊 Protected directories found: {len(privileged_paths)}")
+            formatted_paths = self._format_privileged_paths_display(privileged_paths)
+            print(f"⚙️ Directory Types: {formatted_paths}")
+
         # Use different scanning approach based on depth limit
         if max_depth is not None:
-            # Depth-limited scanning
-            for file_path in self._scan_directory_with_depth(directory_obj, max_depth):
+            # Depth-limited scanning with permission handling
+            for file_path in self._scan_directory_with_depth(
+                directory_obj, max_depth, permission_mode, privileged_paths
+            ):
                 if hasattr(self, "_scan_cancelled") and self._scan_cancelled:
                     self.logger.info("📁 File collection cancelled by manual flag")
                     break
@@ -770,7 +947,9 @@ class FileScanner:
 
                 if file_path.is_file():
                     # Skip hidden files unless requested
-                    if not include_hidden and any(part.startswith(".") for part in file_path.parts):
+                    if not include_hidden and any(
+                        part.startswith(".") for part in file_path.parts
+                    ):
                         continue
 
                     # Apply file filter options if specified
@@ -797,8 +976,12 @@ class FileScanner:
                             continue
 
                     # Memory and performance checks (same as below)
-                    if memory_monitor and memory_monitor.check_memory_pressure(memory_limit_mb):
-                        self.logger.warning("Memory pressure detected, limiting file collection")
+                    if memory_monitor and memory_monitor.check_memory_pressure(
+                        memory_limit_mb
+                    ):
+                        self.logger.warning(
+                            "Memory pressure detected, limiting file collection"
+                        )
                         memory_monitor.force_garbage_collection()
                         max_files_limit = min(max_files_limit, len(file_paths) + 100)
 
@@ -853,7 +1036,9 @@ class FileScanner:
 
                 if file_path.is_file():
                     # Skip hidden files unless requested
-                    if not include_hidden and any(part.startswith(".") for part in file_path.parts):
+                    if not include_hidden and any(
+                        part.startswith(".") for part in file_path.parts
+                    ):
                         continue
 
                     # Apply file filter options if specified
@@ -880,8 +1065,12 @@ class FileScanner:
                             continue
 
                     # Check memory pressure
-                    if memory_monitor and memory_monitor.check_memory_pressure(memory_limit_mb):
-                        self.logger.warning("Memory pressure detected, limiting file collection")
+                    if memory_monitor and memory_monitor.check_memory_pressure(
+                        memory_limit_mb
+                    ):
+                        self.logger.warning(
+                            "Memory pressure detected, limiting file collection"
+                        )
                         memory_monitor.force_garbage_collection()
                         max_files_limit = min(max_files_limit, len(file_paths) + 100)
 
@@ -917,9 +1106,17 @@ class FileScanner:
                             )
                             memory_monitor.force_garbage_collection()
 
-        self.logger.info("Found %d files in directory: %s", len(file_paths), directory_path)
+        self.logger.info(
+            "Found %d files in directory: %s", len(file_paths), directory_path
+        )
 
-        return self.scan_files(file_paths, scan_type, save_report=save_report, **kwargs)
+        return self.scan_files(
+            file_paths,
+            scan_type,
+            save_report=save_report,
+            scan_context=scan_context,
+            **kwargs,
+        )
 
     def _handle_infected_file(self, result: ScanFileResult, scan_id: str) -> None:
         """Handle an infected file according to configuration."""
@@ -967,7 +1164,11 @@ class FileScanner:
 
     def start_scheduler(self) -> None:
         """Start the scheduled scan scheduler."""
-        if self._scheduler_running and self._scheduler_thread and self._scheduler_thread.is_alive():
+        if (
+            self._scheduler_running
+            and self._scheduler_thread
+            and self._scheduler_thread.is_alive()
+        ):
             self.logger.info("Scheduler is already running")
             return
 
@@ -980,7 +1181,9 @@ class FileScanner:
         self._scheduler_running = True
         # Clear the stop event before starting
         self._scheduler_stop_event.clear()
-        self._scheduler_thread = threading.Thread(target=self._run_scheduler, daemon=True)
+        self._scheduler_thread = threading.Thread(
+            target=self._run_scheduler, daemon=True
+        )
         self._scheduler_thread.start()
         self.logger.info("Scan scheduler started")
 
@@ -1071,6 +1274,7 @@ class FileScanner:
         scan_type,
         max_workers: int = 4,
         save_report: bool = True,
+        scan_context: str = "file_scan",
         **kwargs,
     ):
         """Scan files in batches to optimize memory usage."""
@@ -1120,7 +1324,9 @@ class FileScanner:
 
                 # Check memory pressure before each batch
                 if self.memory_monitor.check_memory_pressure(self.max_memory_usage):
-                    self.logger.warning("Memory pressure detected, forcing garbage collection")
+                    self.logger.warning(
+                        "Memory pressure detected, forcing garbage collection"
+                    )
                     self.memory_monitor.force_garbage_collection()
 
                 # Process batch with reduced worker count if needed
@@ -1128,7 +1334,9 @@ class FileScanner:
 
                 with ThreadPoolExecutor(max_workers=batch_workers) as executor:
                     future_to_path = {
-                        executor.submit(self.scan_file, file_path, scan_id, **kwargs): file_path
+                        executor.submit(
+                            self.scan_file, file_path, scan_id, scan_context, **kwargs
+                        ): file_path
                         for file_path in batch_files
                     }
 
@@ -1153,7 +1361,9 @@ class FileScanner:
                                     file_size = file_stat.st_size
                                     file_hash = hashlib.sha256(
                                         Path(file_path).read_bytes()
-                                    ).hexdigest()[:16]  # Short hash
+                                    ).hexdigest()[
+                                        :16
+                                    ]  # Short hash
                                 except OSError:
                                     pass
 
@@ -1170,12 +1380,18 @@ class FileScanner:
                                 combined_result.threats.append(threat_info)
 
                         except Exception as e:
-                            self.logger.error("Error scanning %s: %s", file_path, str(e))
-                            combined_result.errors.append(f"Error scanning {file_path}: {e!s}")
+                            self.logger.error(
+                                "Error scanning %s: %s", file_path, str(e)
+                            )
+                            combined_result.errors.append(
+                                f"Error scanning {file_path}: {e!s}"
+                            )
 
                         # Update progress
                         self._files_completed += 1
-                        progress = (self._files_completed / self._total_files_to_scan) * 100
+                        progress = (
+                            self._files_completed / self._total_files_to_scan
+                        ) * 100
                         if self.progress_callback:
                             self.progress_callback(
                                 progress,
@@ -1213,8 +1429,12 @@ class FileScanner:
                         f"DEBUG: FileScanner saving batched scan report: {combined_result.scan_id}"
                     )
                     print(f"DEBUG: Batched scan type: {combined_result.scan_type}")
-                    print(f"DEBUG: Total files scanned: {combined_result.scanned_files}")
-                    print(f"DEBUG: Total threats found: {combined_result.threats_found}")
+                    print(
+                        f"DEBUG: Total files scanned: {combined_result.scanned_files}"
+                    )
+                    print(
+                        f"DEBUG: Total threats found: {combined_result.threats_found}"
+                    )
                     self.scan_report_manager.save_scan_result(combined_result)
                     print("DEBUG: ✅ FileScanner batched report saved successfully")
                 except Exception as e:
@@ -1222,27 +1442,110 @@ class FileScanner:
                     self.logger.error("Failed to save scan report: %s", str(e))
             else:
                 print("\n💾 === FILESCANNER BATCHED SKIP REPORT SAVE ===")
-                print(f"DEBUG: Skipping batched report save for scan: {combined_result.scan_id}")
+                print(
+                    f"DEBUG: Skipping batched report save for scan: {combined_result.scan_id}"
+                )
                 print(f"DEBUG: Total files scanned: {combined_result.scanned_files}")
                 print("DEBUG: This is part of a multi-directory scan")
 
         return combined_result
 
-    def _scan_directory_with_depth(self, directory_obj, max_depth):
-        """Scan directory with depth limitation."""
+    def _scan_directory_with_depth(
+        self, directory_obj, max_depth, permission_mode="normal", privileged_paths=None
+    ):
+        """Scan directory with depth limitation and permission handling."""
+        if privileged_paths is None:
+            privileged_paths = []
+
+        def _should_skip_path(path_str, mode, priv_paths):
+            """Check if a path should be skipped based on permission mode."""
+            if mode == "skip_privileged":
+                # Skip known privileged paths and their subdirectories
+                for priv_path in priv_paths:
+                    if path_str.startswith(priv_path):
+                        return True
+
+                # Skip problematic /proc filesystem patterns
+                if "/proc/" in path_str:
+                    # Skip /proc/PID/ directories (process-specific directories)
+                    import re
+
+                    if re.search(r"/proc/\d+/", path_str):
+                        return True
+                    # Skip specific problematic symlinks and files in /proc
+                    problematic_patterns = [
+                        "/cwd",
+                        "/root",
+                        "/exe",
+                        "/fd/",
+                        "/task/",
+                        "/net/",
+                        "/kcore",
+                        "/kmem",
+                        "/mem",
+                        "/environ",
+                    ]
+                    if any(pattern in path_str for pattern in problematic_patterns):
+                        return True
+            return False
 
         def _recursive_scan(current_dir, current_depth):
             if current_depth > max_depth:
                 return
 
+            current_dir_str = str(current_dir)
+
+            # Pre-filter: Skip privileged paths before attempting to access them
+            if _should_skip_path(current_dir_str, permission_mode, privileged_paths):
+                if hasattr(self, "logger"):
+                    self.logger.info(
+                        f"⚠️ Skipping privileged path (user choice): {current_dir_str}"
+                    )
+                return
+
             try:
                 for item in current_dir.iterdir():
+                    item_str = str(item)
+
+                    # Check if this item should be skipped before yielding
+                    if _should_skip_path(item_str, permission_mode, privileged_paths):
+                        if hasattr(self, "logger"):
+                            self.logger.debug(f"⚠️ Skipping privileged item: {item_str}")
+                        continue
+
                     yield item
+
                     if item.is_dir() and current_depth < max_depth:
-                        yield from _recursive_scan(item, current_depth + 1)
-            except (OSError, PermissionError):
-                # Skip directories we can't access
-                pass
+                        # Only recurse if the directory isn't privileged
+                        if not _should_skip_path(
+                            item_str, permission_mode, privileged_paths
+                        ):
+                            yield from _recursive_scan(item, current_depth + 1)
+
+            except (OSError, PermissionError) as e:
+                # Handle permission errors based on permission mode
+                current_dir_str = str(current_dir)
+
+                if permission_mode == "skip_privileged":
+                    # Check if this is a known privileged path that should be skipped
+                    is_privileged = any(
+                        current_dir_str.startswith(priv_path)
+                        for priv_path in privileged_paths
+                    )
+                    if is_privileged:
+                        # Log the skip for known privileged paths
+                        if hasattr(self, "logger"):
+                            self.logger.info(
+                                f"⚠️ Skipping privileged directory (permission error): {current_dir_str}"
+                            )
+                    elif hasattr(self, "logger"):
+                        # This is an unexpected permission error - log it
+                        self.logger.warning(
+                            f"⚠️ Permission denied: {current_dir_str} - {e}"
+                        )
+                elif hasattr(self, "logger"):
+                    # Normal mode - log permission denials but continue
+                    self.logger.debug(f"⚠️ Permission denied: {current_dir_str} - {e}")
 
         return _recursive_scan(directory_obj, 0)
 
@@ -1338,6 +1641,8 @@ class FileScanner:
         """Check if a file matches any exclusion pattern."""
         file_str = str(file_path)
         for pattern in exclusions:
-            if fnmatch.fnmatch(file_str, pattern) or fnmatch.fnmatch(file_path.name, pattern):
+            if fnmatch.fnmatch(file_str, pattern) or fnmatch.fnmatch(
+                file_path.name, pattern
+            ):
                 return True
         return False

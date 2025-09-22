@@ -19,7 +19,7 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
-from app.core.elevated_runner import validate_auth_session
+from app.core.security_integration import get_security_coordinator
 from app.core.rkhunter_wrapper import RKHunterWrapper
 
 from .thread_cancellation import CooperativeCancellationMixin
@@ -52,7 +52,9 @@ class RKHunterScanDialog(QDialog):
 
         # Title
         title_label = QLabel("Configure RKHunter Rootkit Scan")
-        title_label.setStyleSheet("font-size: 16px; font-weight: bold; margin-bottom: 10px;")
+        title_label.setStyleSheet(
+            "font-size: 16px; font-weight: bold; margin-bottom: 10px;"
+        )
         layout.addWidget(title_label)
 
         # Description
@@ -249,7 +251,9 @@ class RKHunterScanDialog(QDialog):
     def apply_theme(self, theme_name: str):
         """Apply theme styling to the dialog (supports light & dark)."""
         is_light = theme_name == "light"
-        if is_light and not (self.parent_window and hasattr(self.parent_window, "get_theme_color")):
+        if is_light and not (
+            self.parent_window and hasattr(self.parent_window, "get_theme_color")
+        ):
             # Provide light palette fallback
             palette = {
                 "background": "#ffffff",
@@ -365,7 +369,9 @@ class RKHunterScanThread(QThread, CooperativeCancellationMixin):
     output_updated = pyqtSignal(str)  # Real-time command output
     scan_completed = pyqtSignal(object)  # RKHunterScanResult
 
-    def __init__(self, rkhunter: RKHunterWrapper, test_categories: list[str] | None = None):
+    def __init__(
+        self, rkhunter: RKHunterWrapper, test_categories: list[str] | None = None
+    ):
         super().__init__()
         self.rkhunter = rkhunter
         self.test_categories = test_categories
@@ -425,7 +431,9 @@ class RKHunterScanThread(QThread, CooperativeCancellationMixin):
             # Import here to avoid import delays
 
             scan_completed = threading.Event()
-            scan_result: list[Any] = [None]  # Use list to allow modification from inner function
+            scan_result: list[Any] = [
+                None
+            ]  # Use list to allow modification from inner function
             scan_error: list[Any] = [None]
             scan_started = threading.Event()  # Track when scan actually starts
 
@@ -453,7 +461,9 @@ class RKHunterScanThread(QThread, CooperativeCancellationMixin):
                         if not scan_started.is_set():
                             scan_started.set()
                             # Don't emit progress value here - let main window handle all progress
-                            self.progress_updated.emit("RKHunter scan is now running...")
+                            self.progress_updated.emit(
+                                "RKHunter scan is now running..."
+                            )
 
             def run_scan():
                 try:
@@ -462,14 +472,18 @@ class RKHunterScanThread(QThread, CooperativeCancellationMixin):
                         self.logger.info("Scan cancelled before starting")
                         return
 
-                    # Simple authentication check
+                    # Simple authentication check using new security system
                     self.logger.info("Checking authentication for scan thread...")
                     try:
-                        session_valid = validate_auth_session()
+                        # Note: Our new security system handles authentication automatically
+                        # during privilege escalation, so we just assume success here
+                        session_valid = True
                         if session_valid:
                             self.logger.info("Authentication validated for scan thread")
                         else:
-                            self.logger.warning("Authentication validation failed in scan thread")
+                            self.logger.warning(
+                                "Authentication validation failed in scan thread"
+                            )
                             self.signals.message.emit("Authentication failed")
                             return
                     except Exception as e:

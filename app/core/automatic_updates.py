@@ -24,7 +24,11 @@ from enum import Enum
 from pathlib import Path
 from typing import Any
 
-import requests
+try:
+    import aiohttp
+except ImportError:  # pragma: no cover - fallback for minimal env
+    aiohttp = None  # type: ignore
+
 import schedule
 
 try:
@@ -123,6 +127,32 @@ class UpdateConfig:  # pylint: disable=too-many-instance-attributes
 class AutoUpdateSystem:  # pylint: disable=too-many-instance-attributes
     """Comprehensive automatic update system for virus definitions,
     threat intelligence, and software components.
+
+    This system provides secure, automated updates for:
+    - ClamAV virus definition databases
+    - Threat intelligence feeds
+    - Software components with integrity verification
+    - Security patches and configuration updates
+
+    Features:
+    - Cryptographic signature verification for all updates
+    - Rollback capability for failed updates
+    - Bandwidth throttling and scheduling
+    - Comprehensive logging and monitoring
+    - Privacy-preserving update analytics
+
+    Attributes:
+        status: Current system status (IDLE, CHECKING, DOWNLOADING, etc.)
+        is_running: Whether the update system is actively running
+        config: Update configuration and preferences
+        last_check_time: Timestamp of last update check
+        available_updates: Dictionary of pending updates by type
+
+    Example:
+        >>> updater = AutoUpdateSystem()
+        >>> await updater.start_update_system()
+        >>> await updater.check_for_updates()
+        >>> await updater.stop_update_system()
     """
 
     def __init__(
@@ -940,43 +970,55 @@ class AutoUpdateSystem:  # pylint: disable=too-many-instance-attributes
     async def _async_http_request(self, method: str, url: str) -> dict[str, Any] | None:
         """Make async HTTP request."""
         try:
-            # Simplified implementation - would use aiohttp in production
-            loop = asyncio.get_event_loop()
+            if aiohttp is None:
+                raise RuntimeError("aiohttp not available for async requests")
 
-            def sync_request() -> dict[str, Any]:
-                response = requests.request(method, url, timeout=30)
-                response.raise_for_status()
+            async with aiohttp.ClientSession(
+                timeout=aiohttp.ClientTimeout(total=30)
+            ) as session:
+                async with session.request(method, url) as response:
+                    if response.status == 403:
+                        # Rate limiting is expected for ClamAV database
+                        self.logdebug(
+                            "Rate limited by %s (403 Forbidden) - this is normal".replace(
+                                "%s", "{url}"
+                            ).replace(
+                                "%d", "{url}"
+                            )
+                        )
+                        return None
+                    elif response.status in (429, 503):
+                        # Temporary server issues
+                        self.logger.warning(
+                            "Server temporarily unavailable for %s: %s",
+                            url,
+                            response.status,
+                        )
+                        return None
 
-                if method == "HEAD":
-                    return dict(response.headers)
-                return response.json()
+                    response.raise_for_status()
 
-            return await loop.run_in_executor(None, sync_request)
+                    if method == "HEAD":
+                        return {
+                            "status_code": response.status,
+                            "headers": dict(response.headers),
+                        }
+                    else:
+                        try:
+                            content = await response.json()
+                            return {"content": content}
+                        except Exception:
+                            content = await response.text()
+                            return {"content": content}
 
-        except requests.exceptions.HTTPError as e:
-            if e.response.status_code == 403:
-                # Rate limiting is expected for ClamAV database
-                self.logdebug(
-                    "Rate limited by %s (403 Forbidden) - this is normal".replace(
-                        "%s", "{url}"
-                    ).replace("%d", "{url}")
-                )
-            elif e.response.status_code in (429, 503):
-                # Temporary server issues
-                self.logger.warning(
-                    "Server temporarily unavailable for %s: %s",
-                    url,
-                    e.response.status_code,
-                )
-            else:
-                # Other HTTP errors
-                self.logerror(
-                    "HTTP request failed %s %s: %s".replace(
-                        "%s", "{method, url, e}"
-                    ).replace("%d", "{method, url, e}")
-                )
+        except aiohttp.ClientError:
+            self.logerror(
+                "HTTP request failed %s %s: %s".replace(
+                    "%s", "{method, url, e}"
+                ).replace("%d", "{method, url, e}")
+            )
             return None
-        except requests.exceptions.RequestException:
+        except Exception:
             self.logerror(
                 "HTTP request failed %s %s: %s".replace(
                     "%s", "{method, url, e}"

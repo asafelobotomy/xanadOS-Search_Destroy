@@ -1,5 +1,5 @@
 # Ignore backups and archives
 .markdown-backups/**
 archive/**
-modernization_plan/**
+archive/modernization_plan/**
 node_modules/**

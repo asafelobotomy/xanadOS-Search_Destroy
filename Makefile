@@ -165,7 +165,7 @@ setup-tools: ## Install required package managers manually
 clean: ## Clean up build artifacts and temporary files
 	@echo -e "$(BOLD)$(YELLOW)🧹 Cleaning up build artifacts...$(NC)"
 	@rm -rf build/ dist/ *.egg-info/
-	@rm -rf .coverage htmlcov/ .pytest_cache/ .tox/
+	@rm -rf .coverage archive/testing-coverage/ .pytest_cache/ .tox/
 	@rm -rf node_modules/.cache/
 	@find . -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
 	@find . -type f -name "*.pyc" -delete 2>/dev/null || true

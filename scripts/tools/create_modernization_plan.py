@@ -15,6 +15,7 @@ from typing import Any
 @dataclass
 class ModernizationTask:
     """Represents a modernization task."""
+
     id: str
     title: str
     description: str
@@ -33,6 +34,7 @@ class ModernizationTask:
 @dataclass
 class ModernizationPlan:
     """Complete modernization plan."""
+
     project_name: str
     current_analysis: dict[str, Any]
     tasks: list[ModernizationTask]
@@ -66,7 +68,7 @@ class ComponentModernizer:
                     "Improved code readability",
                     "Better IDE support",
                     "Python 3.9+ compliance",
-                    "Reduced import overhead"
+                    "Reduced import overhead",
                 ],
                 implementation_steps=[
                     "Replace typing.Dict with dict",
@@ -74,15 +76,14 @@ class ComponentModernizer:
                     "Replace typing.Set with set",
                     "Replace typing.Tuple with tuple",
                     "Update all type annotations",
-                    "Test all components"
+                    "Test all components",
                 ],
                 validation_criteria=[
                     "All typing imports modernized",
                     "No deprecated typing warnings",
-                    "All tests pass"
-                ]
+                    "All tests pass",
+                ],
             ),
-
             ModernizationTask(
                 id="std_002",
                 title="Standardize Exception Handling",
@@ -97,7 +98,7 @@ class ComponentModernizer:
                     "Consistent error handling",
                     "Better debugging capabilities",
                     "Improved error recovery",
-                    "Standardized error messages"
+                    "Standardized error messages",
                 ],
                 implementation_steps=[
                     "Define standard exception classes",
@@ -105,15 +106,14 @@ class ComponentModernizer:
                     "Replace bare except blocks",
                     "Add proper error logging",
                     "Implement error recovery strategies",
-                    "Update documentation"
+                    "Update documentation",
                 ],
                 validation_criteria=[
                     "No bare except blocks",
                     "All exceptions properly logged",
-                    "Error handling tests pass"
-                ]
+                    "Error handling tests pass",
+                ],
             ),
-
             ModernizationTask(
                 id="std_003",
                 title="Standardize Logging Framework",
@@ -128,7 +128,7 @@ class ComponentModernizer:
                     "Structured, searchable logs",
                     "Consistent log format",
                     "Better debugging",
-                    "Performance monitoring"
+                    "Performance monitoring",
                 ],
                 implementation_steps=[
                     "Install structlog library",
@@ -136,15 +136,14 @@ class ComponentModernizer:
                     "Update all logging calls",
                     "Add contextual information",
                     "Implement log rotation",
-                    "Test logging output"
+                    "Test logging output",
                 ],
                 validation_criteria=[
                     "All components use structured logging",
                     "Log format is consistent",
-                    "Performance impact minimal"
-                ]
+                    "Performance impact minimal",
+                ],
             ),
-
             ModernizationTask(
                 id="std_004",
                 title="Modernize File Operations",
@@ -159,7 +158,7 @@ class ComponentModernizer:
                     "Proper resource management",
                     "Exception safety",
                     "Consistent patterns",
-                    "Better error handling"
+                    "Better error handling",
                 ],
                 implementation_steps=[
                     "Identify all file operations",
@@ -167,14 +166,14 @@ class ComponentModernizer:
                     "Add proper error handling",
                     "Update async file operations",
                     "Test resource cleanup",
-                    "Update documentation"
+                    "Update documentation",
                 ],
                 validation_criteria=[
                     "All file operations use context managers",
                     "No resource leaks",
-                    "Error handling proper"
-                ]
-            )
+                    "Error handling proper",
+                ],
+            ),
         ]
 
         # Library implementation tasks
@@ -187,13 +186,17 @@ class ComponentModernizer:
                 priority=10,
                 complexity="high",
                 estimated_hours=24,
-                components_affected=["threat_detector", "memory_forensics", "security_scanner"],
+                components_affected=[
+                    "threat_detector",
+                    "memory_forensics",
+                    "security_scanner",
+                ],
                 dependencies=[],
                 benefits=[
                     "Peer-reviewed security implementations",
                     "Performance optimizations",
                     "Industry standard compliance",
-                    "Regular security updates"
+                    "Regular security updates",
                 ],
                 implementation_steps=[
                     "Install cryptography library",
@@ -202,15 +205,14 @@ class ComponentModernizer:
                     "Replace hash functions",
                     "Update encryption/decryption",
                     "Implement proper key management",
-                    "Security testing and validation"
+                    "Security testing and validation",
                 ],
                 validation_criteria=[
                     "All manual crypto replaced",
                     "Security audit passes",
-                    "Performance maintained or improved"
-                ]
+                    "Performance maintained or improved",
+                ],
             ),
-
             ModernizationTask(
                 id="lib_002",
                 title="Implement Async File Operations",
@@ -225,7 +227,7 @@ class ComponentModernizer:
                     "True async file operations",
                     "Better concurrency",
                     "Prevents event loop blocking",
-                    "Improved scalability"
+                    "Improved scalability",
                 ],
                 implementation_steps=[
                     "Install aiofiles library",
@@ -233,15 +235,14 @@ class ComponentModernizer:
                     "Replace open() with aiofiles.open()",
                     "Update file reading/writing patterns",
                     "Test concurrent operations",
-                    "Performance benchmarking"
+                    "Performance benchmarking",
                 ],
                 validation_criteria=[
                     "No blocking I/O in async functions",
                     "Concurrency tests pass",
-                    "Performance improved"
-                ]
+                    "Performance improved",
+                ],
             ),
-
             ModernizationTask(
                 id="lib_003",
                 title="Implement Machine Learning Library",
@@ -250,13 +251,17 @@ class ComponentModernizer:
                 priority=9,
                 complexity="high",
                 estimated_hours=32,
-                components_affected=["ml_threat_detector", "behavioral_analysis", "anomaly_detection"],
+                components_affected=[
+                    "ml_threat_detector",
+                    "behavioral_analysis",
+                    "anomaly_detection",
+                ],
                 dependencies=[],
                 benefits=[
                     "Proven ML algorithms",
                     "Consistent API",
                     "Built-in validation",
-                    "Extensive documentation"
+                    "Extensive documentation",
                 ],
                 implementation_steps=[
                     "Install scikit-learn",
@@ -265,15 +270,14 @@ class ComponentModernizer:
                     "Retrain models with scikit-learn",
                     "Compare performance metrics",
                     "Update prediction interfaces",
-                    "A/B testing"
+                    "A/B testing",
                 ],
                 validation_criteria=[
                     "ML accuracy maintained or improved",
                     "Performance benchmarks met",
-                    "API integration successful"
-                ]
+                    "API integration successful",
+                ],
             ),
-
             ModernizationTask(
                 id="lib_004",
                 title="Implement Prometheus Monitoring",
@@ -282,13 +286,17 @@ class ComponentModernizer:
                 priority=8,
                 complexity="medium",
                 estimated_hours=20,
-                components_affected=["monitoring", "performance_tracker", "system_metrics"],
+                components_affected=[
+                    "monitoring",
+                    "performance_tracker",
+                    "system_metrics",
+                ],
                 dependencies=["std_003"],
                 benefits=[
                     "Industry-standard metrics",
                     "Grafana integration",
                     "Prometheus alerting",
-                    "Enterprise-grade monitoring"
+                    "Enterprise-grade monitoring",
                 ],
                 implementation_steps=[
                     "Install prometheus_client",
@@ -297,14 +305,14 @@ class ComponentModernizer:
                     "Add custom metrics",
                     "Configure alerting rules",
                     "Create Grafana dashboards",
-                    "Load testing"
+                    "Load testing",
                 ],
                 validation_criteria=[
                     "All key metrics tracked",
                     "Dashboards functional",
-                    "Alerting working"
-                ]
-            )
+                    "Alerting working",
+                ],
+            ),
         ]
 
     def generate_comprehensive_plan(self) -> ModernizationPlan:
@@ -330,7 +338,7 @@ class ComponentModernizer:
                 "total_classes": 421,
                 "average_complexity": 107.6,
                 "standardization_opportunities": 13,
-                "library_recommendations": 8
+                "library_recommendations": 8,
             },
             tasks=prioritized_tasks,
             timeline_weeks=timeline_weeks,
@@ -341,11 +349,13 @@ class ComponentModernizer:
                 "performance": "25% improvement in key metrics",
                 "security": "Zero critical security vulnerabilities",
                 "maintainability": "50% reduction in technical debt",
-                "test_coverage": "85% code coverage maintained"
-            }
+                "test_coverage": "85% code coverage maintained",
+            },
         )
 
-    def _resolve_dependencies(self, tasks: list[ModernizationTask]) -> list[ModernizationTask]:
+    def _resolve_dependencies(
+        self, tasks: list[ModernizationTask]
+    ) -> list[ModernizationTask]:
         """Resolve task dependencies and return prioritized order."""
 
         # Create dependency graph
@@ -380,8 +390,7 @@ class ComponentModernizer:
 
         # Simplified critical path: high priority + high complexity
         critical_tasks = [
-            task.id for task in tasks
-            if task.priority >= 9 or task.complexity == "high"
+            task.id for task in tasks if task.priority >= 9 or task.complexity == "high"
         ]
 
         return critical_tasks[:5]  # Top 5 critical tasks
@@ -401,101 +410,117 @@ class ComponentModernizer:
             "",
             "# Create backup",
             "echo '📋 Creating backup...'",
-            "backup_dir=\"backup_$(date +%Y%m%d_%H%M%S)\"",
-            "cp -r app \"$backup_dir\"",
-            "echo \"✅ Backup created: $backup_dir\"",
+            'backup_dir="backup_$(date +%Y%m%d_%H%M%S)"',
+            'cp -r app "$backup_dir"',
+            'echo "✅ Backup created: $backup_dir"',
             "",
             "# Function to run task",
             "run_task() {",
-            "    local task_id=\"$1\"",
-            "    local task_title=\"$2\"",
-            "    echo \"\"",
-            "    echo \"🔧 Running Task: $task_title\"",
-            "    echo \"Task ID: $task_id\"",
-            "    echo \"----------------------------------------\"",
+            '    local task_id="$1"',
+            '    local task_title="$2"',
+            '    echo ""',
+            '    echo "🔧 Running Task: $task_title"',
+            '    echo "Task ID: $task_id"',
+            '    echo "----------------------------------------"',
             "}",
             "",
         ]
 
         # Add implementation for each task
         for task in plan.tasks:
-            script_lines.extend([
-                f"# Task: {task.title}",
-                f"run_task '{task.id}' '{task.title}'",
-                ""
-            ])
+            script_lines.extend(
+                [f"# Task: {task.title}", f"run_task '{task.id}' '{task.title}'", ""]
+            )
 
             if task.category == "standardization":
                 if "Type Annotations" in task.title:
-                    script_lines.extend([
-                        "echo '  - Modernizing type annotations...'",
-                        "python scripts/tools/implement_standardization.py",
-                        ""
-                    ])
+                    script_lines.extend(
+                        [
+                            "echo '  - Modernizing type annotations...'",
+                            "python scripts/tools/implement_standardization.py",
+                            "",
+                        ]
+                    )
                 elif "Exception Handling" in task.title:
-                    script_lines.extend([
-                        "echo '  - Standardizing exception handling...'",
-                        "# Implementation would go here",
-                        ""
-                    ])
+                    script_lines.extend(
+                        [
+                            "echo '  - Standardizing exception handling...'",
+                            "# Implementation would go here",
+                            "",
+                        ]
+                    )
                 elif "Logging" in task.title:
-                    script_lines.extend([
-                        "echo '  - Installing structlog...'",
-                        "pip install structlog",
-                        "echo '  - Implementing structured logging...'",
-                        "# Implementation would go here",
-                        ""
-                    ])
+                    script_lines.extend(
+                        [
+                            "echo '  - Installing structlog...'",
+                            "pip install structlog",
+                            "echo '  - Implementing structured logging...'",
+                            "# Implementation would go here",
+                            "",
+                        ]
+                    )
                 elif "File Operations" in task.title:
-                    script_lines.extend([
-                        "echo '  - Standardizing file operations...'",
-                        "# Implementation would go here",
-                        ""
-                    ])
+                    script_lines.extend(
+                        [
+                            "echo '  - Standardizing file operations...'",
+                            "# Implementation would go here",
+                            "",
+                        ]
+                    )
 
             elif task.category in ["security", "performance"]:
                 if "Cryptography" in task.title:
-                    script_lines.extend([
-                        "echo '  - Installing cryptography library...'",
-                        "pip install cryptography",
-                        "echo '  - Replacing manual crypto implementations...'",
-                        "# Implementation would go here",
-                        ""
-                    ])
+                    script_lines.extend(
+                        [
+                            "echo '  - Installing cryptography library...'",
+                            "pip install cryptography",
+                            "echo '  - Replacing manual crypto implementations...'",
+                            "# Implementation would go here",
+                            "",
+                        ]
+                    )
                 elif "Async File" in task.title:
-                    script_lines.extend([
-                        "echo '  - Installing aiofiles...'",
-                        "pip install aiofiles",
-                        "echo '  - Replacing blocking file I/O...'",
-                        "# Implementation would go here",
-                        ""
-                    ])
+                    script_lines.extend(
+                        [
+                            "echo '  - Installing aiofiles...'",
+                            "pip install aiofiles",
+                            "echo '  - Replacing blocking file I/O...'",
+                            "# Implementation would go here",
+                            "",
+                        ]
+                    )
                 elif "Machine Learning" in task.title:
-                    script_lines.extend([
-                        "echo '  - Installing scikit-learn...'",
-                        "pip install scikit-learn",
-                        "echo '  - Upgrading ML implementations...'",
-                        "# Implementation would go here",
-                        ""
-                    ])
+                    script_lines.extend(
+                        [
+                            "echo '  - Installing scikit-learn...'",
+                            "pip install scikit-learn",
+                            "echo '  - Upgrading ML implementations...'",
+                            "# Implementation would go here",
+                            "",
+                        ]
+                    )
                 elif "Prometheus" in task.title:
-                    script_lines.extend([
-                        "echo '  - Installing prometheus_client...'",
-                        "pip install prometheus_client",
-                        "echo '  - Implementing metrics collection...'",
-                        "# Implementation would go here",
-                        ""
-                    ])
+                    script_lines.extend(
+                        [
+                            "echo '  - Installing prometheus_client...'",
+                            "pip install prometheus_client",
+                            "echo '  - Implementing metrics collection...'",
+                            "# Implementation would go here",
+                            "",
+                        ]
+                    )
 
             script_lines.append("")
 
-        script_lines.extend([
-            "echo '✅ Modernization complete!'",
-            "echo 'Please run tests to validate changes:'",
-            "echo '  python -m pytest tests/'",
-            "echo '  python scripts/tools/validate_modernization.py'",
-            ""
-        ])
+        script_lines.extend(
+            [
+                "echo '✅ Modernization complete!'",
+                "echo 'Please run tests to validate changes:'",
+                "echo '  python -m pytest tests/'",
+                "echo '  python scripts/tools/validate_modernization.py'",
+                "",
+            ]
+        )
 
         return "\n".join(script_lines)
 
@@ -510,44 +535,52 @@ class ComponentModernizer:
             f"**Total Hours:** {plan.total_estimated_hours}",
             "",
             "## Success Metrics",
-            ""
+            "",
         ]
 
         for metric, target in plan.success_metrics.items():
             content.append(f"- **{metric.title()}:** {target}")
 
-        content.extend([
-            "",
-            "## Task Progress",
-            "",
-            "| Task ID | Title | Priority | Status | Hours | Progress |",
-            "|---------|-------|----------|--------|-------|----------|"
-        ])
+        content.extend(
+            [
+                "",
+                "## Task Progress",
+                "",
+                "| Task ID | Title | Priority | Status | Hours | Progress |",
+                "|---------|-------|----------|--------|-------|----------|",
+            ]
+        )
 
         for task in plan.tasks:
-            status_icon = "⏳" if task.status == "pending" else "🔄" if task.status == "in_progress" else "✅"
-            content.append(f"| {task.id} | {task.title} | {task.priority}/10 | {status_icon} {task.status} | {task.estimated_hours}h | 0% |")
+            status_icon = (
+                "⏳"
+                if task.status == "pending"
+                else "🔄" if task.status == "in_progress" else "✅"
+            )
+            content.append(
+                f"| {task.id} | {task.title} | {task.priority}/10 | {status_icon} {task.status} | {task.estimated_hours}h | 0% |"
+            )
 
-        content.extend([
-            "",
-            "## Critical Path",
-            ""
-        ])
+        content.extend(["", "## Critical Path", ""])
 
         for task_id in plan.critical_path:
             task = next(t for t in plan.tasks if t.id == task_id)
-            content.append(f"1. **{task.title}** ({task.estimated_hours}h) - {task.description}")
+            content.append(
+                f"1. **{task.title}** ({task.estimated_hours}h) - {task.description}"
+            )
 
-        content.extend([
-            "",
-            "## Notes",
-            "",
-            "- Update progress percentages as tasks are completed",
-            "- Mark status as: pending → in_progress → completed",
-            "- Record any issues or deviations from plan",
-            "- Update timeline estimates based on actual progress",
-            ""
-        ])
+        content.extend(
+            [
+                "",
+                "## Notes",
+                "",
+                "- Update progress percentages as tasks are completed",
+                "- Mark status as: pending → in_progress → completed",
+                "- Record any issues or deviations from plan",
+                "- Update timeline estimates based on actual progress",
+                "",
+            ]
+        )
 
         return "\n".join(content)
 
@@ -562,7 +595,7 @@ def create_modernization_plan(project_root: str = "."):
     # Setup logging
     logging.basicConfig(
         level=logging.INFO,
-        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
     )
 
     modernizer = ComponentModernizer(project_root)
@@ -571,7 +604,7 @@ def create_modernization_plan(project_root: str = "."):
     plan = modernizer.generate_comprehensive_plan()
 
     # Create output directory
-    output_dir = Path(project_root) / "modernization_plan"
+    output_dir = Path(project_root) / "archive" / "modernization_plan"
     output_dir.mkdir(exist_ok=True)
 
     # Generate implementation script
@@ -593,11 +626,13 @@ def create_modernization_plan(project_root: str = "."):
         f.write(json_plan)
 
     # Display summary
-    print("\n" + "="*80)
+    print("\n" + "=" * 80)
     print("🎯 XANADOS COMPONENT MODERNIZATION PLAN")
-    print("="*80)
+    print("=" * 80)
     print(f"📁 Project: {plan.project_name}")
-    print(f"⏱️  Timeline: {plan.timeline_weeks} weeks ({plan.total_estimated_hours} hours)")
+    print(
+        f"⏱️  Timeline: {plan.timeline_weeks} weeks ({plan.total_estimated_hours} hours)"
+    )
     print(f"📝 Tasks: {len(plan.tasks)} total")
     print(f"🎯 Critical Path: {len(plan.critical_path)} critical tasks")
 
@@ -612,21 +647,25 @@ def create_modernization_plan(project_root: str = "."):
     print(f"\n🚀 High Priority Tasks:")
     high_priority = [t for t in plan.tasks if t.priority >= 9]
     for task in high_priority[:5]:
-        print(f"   • {task.title} (Priority: {task.priority}/10, {task.estimated_hours}h)")
+        print(
+            f"   • {task.title} (Priority: {task.priority}/10, {task.estimated_hours}h)"
+        )
 
     print(f"\n💡 Critical Path:")
     for task_id in plan.critical_path:
         task = next(t for t in plan.tasks if t.id == task_id)
         print(f"   1. {task.title} ({task.estimated_hours}h)")
 
-    print(f"\n📁 Output files created in modernization_plan/:")
+    print(f"\n📁 Output files created in archive/modernization_plan/:")
     print(f"   • implement_modernization.sh - Implementation script")
     print(f"   • PROGRESS.md - Progress tracking")
     print(f"   • modernization_plan.json - Machine-readable plan")
 
     print(f"\n🏁 Next Steps:")
     print(f"   1. Review the generated implementation script")
-    print(f"   2. Make script executable: chmod +x modernization_plan/implement_modernization.sh")
+    print(
+        f"   2. Make script executable: chmod +x archive/modernization_plan/implement_modernization.sh"
+    )
     print(f"   3. Run critical tasks first: {', '.join(plan.critical_path[:3])}")
     print(f"   4. Track progress in PROGRESS.md")
     print(f"   5. Validate with comprehensive testing")
@@ -636,5 +675,6 @@ def create_modernization_plan(project_root: str = "."):
 
 if __name__ == "__main__":
     import sys
+
     project_root = sys.argv[1] if len(sys.argv) > 1 else "."
     create_modernization_plan(project_root)

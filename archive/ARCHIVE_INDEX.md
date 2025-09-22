@@ -4,6 +4,29 @@ Comprehensive inventory of all archived content in the repository following arch
 
 ## 📋 Archive Contents
 
+### Recently Added (2025-09-21)
+
+#### Security Consolidation Archive - Phase 2D
+- **Legacy Security Components** (`security-consolidation-legacy/phase2d-20250921-101655/`)
+  - **Archived Date**: 2025-09-21
+  - **Files**: 6 legacy security modules (184,846 total bytes)
+    - `gui_auth_manager.py` (17,255 bytes)
+    - `elevated_runner.py` (5,060 bytes)
+    - `permission_manager.py` (12,778 bytes)
+    - `security_standards.py` (15,392 bytes)
+    - `security_api.py` (116,633 bytes)
+    - `security_dashboard.py` (32,728 bytes)
+  - **Reason**: Consolidated into unified security framework for better maintainability
+  - **Replacement**: 5 comprehensive security modules (3,307 lines)
+    - `app/core/unified_security_framework.py` (735 lines)
+    - `app/core/authorization_engine.py` (496 lines)
+    - `app/core/api_security_gateway.py` (763 lines)
+    - `app/core/permission_controller.py` (764 lines)
+    - `app/core/security_integration.py` (549 lines)
+  - **Benefits**: 36% code reduction + enterprise features (LDAP/SAML/OAuth2/MFA)
+  - **Retention**: 2 years (core system components)
+  - **Original Locations**: `app/core/`, `app/utils/`, `app/api/`, `app/gui/`
+
 ### Recently Added (2025-09-15)
 
 #### Deprecated Authentication Systems

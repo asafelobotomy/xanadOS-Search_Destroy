@@ -132,7 +132,7 @@ run_unit_tests() {
         pytest_args+=(
             "--cov=app"
             "--cov-report=term-missing"
-            "--cov-report=html:htmlcov"
+            "--cov-report=html:archive/testing-coverage"
         )
     fi
 
@@ -378,15 +378,15 @@ done
 echo ""
 
 # Generate coverage report link if coverage was enabled
-if [[ "$COVERAGE" == "true" ]] && [[ -d "htmlcov" ]]; then
-    log_info "Coverage report generated: file://$(pwd)/htmlcov/index.html"
+if [[ "$COVERAGE" == "true" ]] && [[ -d "archive/testing-coverage" ]]; then
+    log_info "Coverage report generated: file://$(pwd)/archive/testing-coverage/index.html"
 fi
 
 # Generate test artifacts summary
 echo "📁 Test Artifacts Generated:"
 [[ -f "bandit-report.json" ]] && echo "  • bandit-report.json"
 [[ -f "semgrep-report.json" ]] && echo "  • semgrep-report.json"
-[[ -d "htmlcov" ]] && echo "  • htmlcov/ (coverage report)"
+[[ -d "archive/testing-coverage" ]] && echo "  • archive/testing-coverage/ (coverage report)"
 
 # Exit with appropriate code
 if [[ $FAILED_TESTS -eq 0 ]]; then

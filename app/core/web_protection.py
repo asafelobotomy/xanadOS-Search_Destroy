@@ -3,13 +3,13 @@
 Provides real-time web threat protection, URL filtering, and browser integration.
 """
 
+import asyncio
 import json
 import logging
 import re
 import socket
 import sqlite3
 import ssl
-import threading
 import time
 from collections.abc import Callable
 from dataclasses import dataclass, field
@@ -183,10 +183,10 @@ class WebProtectionSystem:
             Callable[[str, dict[str, Any]], None] | None
         ) = None
 
-        # Threading
-        self.lock = threading.RLock()
+        # Async coordination
+        self.lock = asyncio.Lock()
         self.running = False
-        self.update_thread: threading.Thread | None = None
+        self.update_task: asyncio.Task[None] | None = None
 
         # HTTP session for analysis
         self.session: aiohttp.ClientSession | None = None
@@ -373,13 +373,10 @@ class WebProtectionSystem:
                 headers={"User-Agent": "S&D-WebProtection/1.0"},
             )
 
-            # Start background update thread
-            self.update_thread = threading.Thread(
-                target=self._threat_intel_update_loop,
-                daemon=True,
-                name="WebProtectionUpdater",
+            # Start background update task
+            self.update_task = asyncio.create_task(
+                self._threat_intel_update_loop(), name="WebProtectionUpdater"
             )
-            self.update_thread.start()
 
             self.logger.info("Web protection system started")
             return True
@@ -402,9 +399,16 @@ class WebProtectionSystem:
             await self.session.close()
             self.session = None
 
-        # Wait for update thread
-        if self.update_thread and self.update_thread.is_alive():
-            self.update_thread.join(timeout=5.0)
+        # Wait for update task
+        if self.update_task and not self.update_task.done():
+            try:
+                await asyncio.wait_for(self.update_task, timeout=5.0)
+            except TimeoutError:
+                self.update_task.cancel()
+                try:
+                    await self.update_task
+                except asyncio.CancelledError:
+                    pass
 
         self.logger.info("Web protection system stopped")
 
@@ -428,7 +432,7 @@ class WebProtectionSystem:
 
             # Check cache first
             if not force_refresh:
-                cached_analysis = self._get_cached_analysis(normalized_url)
+                cached_analysis = await self._get_cached_analysis(normalized_url)
                 if cached_analysis:
                     self.stats["cache_hits"] += 1
                     return cached_analysis
@@ -517,7 +521,7 @@ class WebProtectionSystem:
             )
 
             # Cache the result
-            self._cache_analysis(analysis)
+            await self._cache_analysis(analysis)
 
             # Store in database
             self._store_analysis_result(analysis)
@@ -1117,9 +1121,9 @@ class WebProtectionSystem:
         except Exception:
             return url
 
-    def _get_cached_analysis(self, url: str) -> URLAnalysis | None:
+    async def _get_cached_analysis(self, url: str) -> URLAnalysis | None:
         """Get cached URL analysis."""
-        with self.lock:
+        async with self.lock:
             if url in self.url_cache:
                 # Check if cache entry is still valid
                 if url in self.cache_expiry and datetime.now() < self.cache_expiry[url]:
@@ -1131,9 +1135,9 @@ class WebProtectionSystem:
 
         return None
 
-    def _cache_analysis(self, analysis: URLAnalysis) -> None:
+    async def _cache_analysis(self, analysis: URLAnalysis) -> None:
         """Cache URL analysis result."""
-        with self.lock:
+        async with self.lock:
             self.url_cache[analysis.url] = analysis
             self.cache_expiry[analysis.url] = datetime.now() + timedelta(
                 hours=self.config.cache_ttl_hours
@@ -1220,17 +1224,17 @@ class WebProtectionSystem:
                 )
             )
 
-    def _threat_intel_update_loop(self) -> None:
-        """Background thread for updating threat intelligence."""
+    async def _threat_intel_update_loop(self) -> None:
+        """Background task for updating threat intelligence."""
         while self.running:
             try:
                 # Update threat lists every hour
-                self._update_threat_intelligence()
+                await self._update_threat_intelligence()
 
                 # Sleep for 1 hour, checking every second if we should stop
                 sleep_count = 0
                 while sleep_count < 3600 and self.running:
-                    time.sleep(1)
+                    await asyncio.sleep(1)
                     sleep_count += 1
 
             except Exception:
@@ -1239,9 +1243,9 @@ class WebProtectionSystem:
                         "%s", "{e}"
                     ).replace("%d", "{e}")
                 )
-                time.sleep(300)  # Sleep 5 minutes on error
+                await asyncio.sleep(300)  # Sleep 5 minutes on error
 
-    def _update_threat_intelligence(self) -> None:
+    async def _update_threat_intelligence(self) -> None:
         """Update threat intelligence from feeds."""
         try:
             self.logger.info("Updating threat intelligence...")
@@ -1259,6 +1263,8 @@ class WebProtectionSystem:
                         ).replace("%d", "{feed_url}")
                     )
                     updated_domains += 1
+                    # Add small delay to prevent overwhelming external services
+                    await asyncio.sleep(0.1)
                 except Exception:
                     self.logerror(
                         "Error updating from feed %s: %s".replace(
