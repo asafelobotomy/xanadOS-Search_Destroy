@@ -1,7 +1,7 @@
 app-id: io.github.asafelobotomy.SearchAndDestroy
-runtime: org.kde.Platform
-runtime-version: "6.8"
-sdk: org.kde.Sdk
+runtime: org.freedesktop.Platform
+runtime-version: "23.08"
+sdk: org.freedesktop.Sdk
 base: com.riverbankcomputing.PyQt.BaseApp
 base-version: "6.8"
 command: search-and-destroy
@@ -45,6 +45,9 @@ modules:
     buildsystem: cmake-ninja
     build-options:
       append-path: '/usr/lib/sdk/rust-stable/bin'
+      env:
+        CARGO_HOME: '/run/build/clamav/cargo'
+        RUSTUP_HOME: '/run/build/clamav/rustup'
     config-opts:
       - -DCMAKE_BUILD_TYPE=RelWithDebInfo
       - -DENABLE_STATIC_LIB=OFF
@@ -80,7 +83,7 @@ modules:
   - name: python-dependencies
     buildsystem: simple
     build-commands:
-      - echo "Skipping additional Python packages - using BaseApp provided packages"
+      - echo "Using PyQt BaseApp - no additional Python packages needed"
     sources: []
 
   - name: search-and-destroy
@@ -102,5 +105,4 @@ modules:
     sources:
       - type: git
         url: https://github.com/asafelobotomy/xanadOS-Search_Destroy.git
-        tag: v2.13.1
-        commit: a56545060cd11b9478bd0cec637747ce01065b1a
+        commit: b385e3aad80b9acd544aea0cfe8955cd132a91bd

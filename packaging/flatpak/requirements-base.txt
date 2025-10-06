@@ -1,0 +1,67 @@
+# xanadOS Search & Destroy v3.0.0 - Python Requirements (excluding PyQt6/Qt)
+# For use with com.riverbankcomputing.PyQt.BaseApp
+
+# Core dependencies
+requests>=2.32.0
+psutil>=6.1.0
+cryptography>=44.0.0
+pyyaml>=6.0.2
+click>=8.1.7
+rich>=13.9.4
+colorama>=0.4.6
+tabulate>=0.9.0
+
+# Essential runtime dependencies
+numpy>=2.2.0
+schedule>=1.2.2
+aiohttp>=3.11.0
+watchdog>=6.0.0
+dnspython>=2.8.0
+python-dotenv>=1.0.1
+
+# API Framework dependencies
+fastapi>=0.104.0
+uvicorn[standard]>=0.24.0
+httpx>=0.25.0
+pydantic>=2.10.0
+pydantic-settings>=2.7.0
+sqlalchemy>=2.0.36
+alembic>=1.14.0
+
+# Security Framework dependencies
+python-jose[cryptography]>=3.3.0
+passlib[bcrypt]>=1.7.4
+python-multipart>=0.0.17
+python-ldap>=3.4.4
+authlib>=1.4.0
+
+# ML dependencies (CPU-only versions for better compatibility)
+scikit-learn>=1.6.0
+numpy-ml>=0.1.2
+
+# Monitoring and Performance dependencies
+prometheus-client>=0.21.0
+redis>=5.2.0
+celery>=5.4.0
+
+# Database and Storage dependencies
+sqlite-utils>=3.38.0
+pymongo>=4.10.1
+
+# Reporting and Analytics dependencies
+matplotlib>=3.10.0
+pandas>=2.2.3
+openpyxl>=3.1.5
+
+# Configuration and Validation dependencies
+toml>=0.10.2
+jsonschema>=4.23.0
+cerberus>=1.3.5
+marshmallow>=3.23.1
+
+# Utility and Helper dependencies
+tqdm>=4.67.1
+humanize>=4.11.0
+python-slugify>=8.0.4
+pillow>=11.0.0
+qrcode[pil]>=8.0.0

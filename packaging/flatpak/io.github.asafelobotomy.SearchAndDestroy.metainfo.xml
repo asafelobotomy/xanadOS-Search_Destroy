@@ -1,10 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <component type="desktop-application">
   <id>io.github.asafelobotomy.SearchAndDestroy</id>
-  <name>Search and Destroy</name>
-  <summary>A modern graphical interface for ClamAV antivirus scanning</summary>
+  <name>xanadOS Search &amp; Destroy</name>
+  <summary>Advanced malware detection and system security scanning tool</summary>
 
-  <project_license>GPL-3.0-or-later</project_license>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>MIT</project_license>
 
   <description>
     <p>
