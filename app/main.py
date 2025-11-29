@@ -46,11 +46,6 @@ def main():
     app.setOrganizationDomain("xanados.org")
 
     # Import GUI modules only AFTER QApplication is constructed
-    from app.core.telemetry import (  # pylint: disable=import-outside-toplevel
-        initialize_telemetry,
-        record_error,
-        shutdown_telemetry,
-    )
     from app.gui.main_window import MainWindow
     from app.gui.setup_wizard import show_setup_wizard
     from app.gui.splash_screen import ModernSplashScreen, StartupProgressTracker
@@ -69,10 +64,8 @@ def main():
     progress_tracker.complete_phase("ui_init")
     app.processEvents()
 
-    # Initialize telemetry early
-
-    config = load_config()
-    initialize_telemetry(config)
+    # Load configuration early for downstream consumers
+    load_config()
 
     # Phase 2: Cache Initialization
     progress_tracker.complete_phase("cache_init")
@@ -98,18 +91,11 @@ def main():
 
     # Clean up when application exits
     app.aboutToQuit.connect(instance_manager.cleanup)
-    app.aboutToQuit.connect(shutdown_telemetry)
 
     # Phase 4: Dashboard Loading (handled by MainWindow)
     # Phase 5: Finalization (handled by MainWindow)
 
-    try:
-        exit_code = app.exec()
-    except Exception as e:
-        record_error("app_crash", "main", str(e))
-        raise
-    finally:
-        shutdown_telemetry()
+    exit_code = app.exec()
 
     sys.exit(exit_code)
 
