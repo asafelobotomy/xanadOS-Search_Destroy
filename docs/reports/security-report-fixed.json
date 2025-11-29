@@ -496,19 +496,6 @@
       "nosec": 0,
       "skipped_tests": 0
     },
-    "app/core/telemetry.py": {
-      "CONFIDENCE.HIGH": 0,
-      "CONFIDENCE.LOW": 0,
-      "CONFIDENCE.MEDIUM": 1,
-      "CONFIDENCE.UNDEFINED": 0,
-      "SEVERITY.HIGH": 0,
-      "SEVERITY.LOW": 0,
-      "SEVERITY.MEDIUM": 1,
-      "SEVERITY.UNDEFINED": 0,
-      "loc": 353,
-      "nosec": 0,
-      "skipped_tests": 0
-    },
     "app/core/ui_responsiveness.py": {
       "CONFIDENCE.HIGH": 0,
       "CONFIDENCE.LOW": 0,
@@ -3934,26 +3921,6 @@
       "more_info": "https://bandit.readthedocs.io/en/1.8.6/plugins/b603_subprocess_without_shell_equals_true.html",
       "test_id": "B603",
       "test_name": "subprocess_without_shell_equals_true"
-    },
-    {
-      "code": "122         except ImportError:\n123             self.storage_path = Path(\"/tmp/xanados_telemetry\")\n124             self.storage_path.mkdir(exist_ok=True)\n",
-      "col_offset": 37,
-      "end_col_offset": 61,
-      "filename": "app/core/telemetry.py",
-      "issue_confidence": "MEDIUM",
-      "issue_cwe": {
-        "id": 377,
-        "link": "https://cwe.mitre.org/data/definitions/377.html"
-      },
-      "issue_severity": "MEDIUM",
-      "issue_text": "Probable insecure usage of temp file/directory.",
-      "line_number": 123,
-      "line_range": [
-        123
-      ],
-      "more_info": "https://bandit.readthedocs.io/en/1.8.6/plugins/b108_hardcoded_tmp_directory.html",
-      "test_id": "B108",
-      "test_name": "hardcoded_tmp_directory"
     },
     {
       "code": "279                         wrapper.cache_clear()\n280             except:\n281                 pass\n282             \n",

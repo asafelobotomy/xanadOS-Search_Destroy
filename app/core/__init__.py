@@ -41,7 +41,6 @@ except ImportError:
     # Async scanner may have import issues, skip for now
     pass
 from .rate_limiting import AdaptiveRateLimiter
-from .telemetry import TelemetryManager
 from .ui_responsiveness import initialize_responsive_ui
 
 # Performance optimization components
@@ -91,7 +90,6 @@ __all__ = [
     "MemoryOptimizer",
     "RKHunterWrapper",
     "SystemServiceManager",
-    "TelemetryManager",
     "UnifiedPerformanceOptimizer",
     "UnifiedSecurityEngine",
     "WebProtectionSystem",

@@ -32,7 +32,6 @@ in MEDIUM severity issues** while maintaining application functionality and stab
 - **Files Improved**:
 - `app/core/clamav_wrapper.py` - Used secure temp directories
 - `app/core/unified_performance_optimizer.py` - NamedTemporaryFile implementation
-- `app/core/telemetry.py` - Secure temp paths with proper permissions
 - `app/core/rkhunter_wrapper.py` - Safe temp file handling
 
 #### **3. False Positive Mitigation**
