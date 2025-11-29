@@ -110,11 +110,7 @@ class RKHunterScanDialog(QDialog):
             # Add description label
             desc_label = QLabel(f"  {category_info['description']}")
             desc_label.setStyleSheet(
-                f"color: {
-                    self.get_theme_color('secondary_text')
-                    if hasattr(self, 'get_theme_color')
-                    else '#666'
-                }; font-size: 11px; margin-left: 20px; margin-bottom: 10px;"
+                f"color: {self.get_theme_color('secondary_text') if hasattr(self, 'get_theme_color') else '#666'}; font-size: 11px; margin-left: 20px; margin-bottom: 10px;"
             )
             desc_label.setWordWrap(True)
 
@@ -183,18 +179,8 @@ class RKHunterScanDialog(QDialog):
         start_btn.clicked.connect(self.accept)
         start_btn.setDefault(True)
         start_btn.setStyleSheet(
-            f"QPushButton {{ background-color: {
-                self.get_theme_color('success') if hasattr(self, 'get_theme_color') else '#007bff'
-            }; "
-            f"color: {
-                self.get_theme_color('primary_text')
-                if hasattr(self, 'get_theme_color')
-                else 'white'
-            }; "
-            "font-weight: bold; padding: 8px 20px; border-radius: 4px; }"
-            f"QPushButton:hover {{ background-color: {
-                self.get_theme_color('hover_bg') if hasattr(self, 'get_theme_color') else '#0056b3'
-            }; }}"
+            f"QPushButton {{ background-color: {self.get_theme_color('success') if hasattr(self, 'get_theme_color') else '#007bff'}; color: {self.get_theme_color('primary_text') if hasattr(self, 'get_theme_color') else 'white'}; font-weight: bold; padding: 8px 20px; border-radius: 4px; }}"
+            f"QPushButton:hover {{ background-color: {self.get_theme_color('hover_bg') if hasattr(self, 'get_theme_color') else '#0056b3'}; }}"
         )
 
         buttons_layout.addWidget(cancel_btn)

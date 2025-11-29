@@ -190,8 +190,9 @@ class UnifiedComponentValidator:
             elif hasattr(security_engine, "shutdown"):
                 await security_engine.shutdown()
 
-            details = f"Security Engine validation completed. Init: {init_time:.3f}s, Start: {
-                start_time_duration:.3f}s"
+            details = (
+                f"Security Engine validation completed. Init: {init_time:.3f}s, Start: {start_time_duration:.3f}s"
+            )
 
         except Exception as e:
             errors.append(f"Security Engine validation failed: {e!s}")
@@ -273,8 +274,10 @@ class UnifiedComponentValidator:
             elif hasattr(perf_optimizer, "shutdown"):
                 await perf_optimizer.shutdown()
 
-            details = f"Performance Optimizer validation completed. Init: {init_time:.3f}s, Start: {
-                start_time_duration:.3f}s"
+            details = (
+                f"Performance Optimizer validation completed. Init: {init_time:.3f}s, "
+                f"Start: {start_time_duration:.3f}s"
+            )
 
         except Exception as e:
             errors.append(f"Performance Optimizer validation failed: {e!s}")
@@ -515,8 +518,7 @@ class UnifiedComponentValidator:
                 for metric, value in result.performance_metrics.items():
                     if "time" in metric and isinstance(value, (int, float)) and value > 5.0:
                         recommendations.append(
-                            f"Consider optimizing {metric} for {result.component} (current: {
-                                value:.3f}s)"
+                            f"Consider optimizing {metric} for {result.component} (current: {value:.3f}s)"
                         )
 
         # General recommendations

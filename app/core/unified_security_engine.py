@@ -949,8 +949,7 @@ async def demonstrate_unified_engine():
                 print(f"   Events processed: {status['performance_metrics']['events_processed']}")
                 print(f"   Threats detected: {status['performance_metrics']['threats_detected']}")
                 print(
-                    f"   Avg processing time: {
-                        status['performance_metrics']['avg_processing_time']:.2f}ms"
+                    f"   Avg processing time: {status['performance_metrics']['avg_processing_time']:.2f}ms"
                 )
                 print(f"   System impact: {status['performance_metrics']['system_impact']:.1f}%")
 
