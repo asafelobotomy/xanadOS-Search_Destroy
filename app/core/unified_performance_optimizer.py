@@ -1136,10 +1136,10 @@ async def demonstrate_performance_optimizer():
         initial_metrics = optimizer.get_performance_metrics()
         print("📊 Initial Metrics:")
         print(
-            f"   Memory: {initial_metrics.memory_usage_mb:.1f}MB ({
-                initial_metrics.memory_percentage:.1f}%)"
+            f"   Memory: {initial_metrics.memory_usage_mb:.1f}MB ({initial_metrics.memory_percentage:.1f}%)"
         )
         print(f"   CPU: {initial_metrics.cpu_usage:.1f}%")
+        print(f"   Database connections: {initial_metrics.database_connections}")
         print(f"   Database connections: {initial_metrics.database_connections}")
 
         # Start background optimization
@@ -1170,28 +1170,16 @@ async def demonstrate_performance_optimizer():
         final_metrics = optimizer.get_performance_metrics()
         print("📊 Final Metrics:")
         print(
-            f"   Memory: {final_metrics.memory_usage_mb:.1f}MB ({
-                final_metrics.memory_percentage:.1f}%)"
+            f"   Memory: {final_metrics.memory_usage_mb:.1f}MB ({final_metrics.memory_percentage:.1f}%)"
         )
         print(f"   CPU: {final_metrics.cpu_usage:.1f}%")
         print(f"   Cache hit rate: {final_metrics.cache_hit_rate:.1f}%")
-
         # Generate report
         report = optimizer.get_optimization_report()
-        print("\n📄 Optimization Report:")
         print(f"   Recent optimizations: {len(report['recent_optimizations'])}")
-        print(
-            f"   Memory freed (total): {
-                optimizer.memory_manager.optimization_stats['memory_freed_mb']:.1f}MB"
-        )
+        print(f"   Memory freed (total): {optimizer.memory_manager.optimization_stats['memory_freed_mb']:.1f}MB")
         print(f"   GC runs: {optimizer.memory_manager.optimization_stats['gc_runs']}")
-        print(
-            f"   Database cache hits: {
-                optimizer.database_optimizer.optimization_stats['cache_hits']
-            }"
-        )
-
-        # Show recommendations
+        print(f"   Database cache hits: {optimizer.database_optimizer.optimization_stats['cache_hits']}")
         print("\n💡 Recommendations:")
         for rec in report["recommendations"]:
             print(f"   - {rec}")

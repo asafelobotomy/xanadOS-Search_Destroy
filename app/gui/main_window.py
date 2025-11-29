@@ -1433,11 +1433,7 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
                 if child.objectName() == "cardValue":
                     child.setText("Active" if self.monitoring_enabled else "Inactive")
                     child.setStyleSheet(
-                        f"color: {
-                            get_theme_manager().get_color('success')
-                            if self.monitoring_enabled
-                            else get_theme_manager().get_color('error')
-                        }; font-size: 20px; font-weight: bold;"
+                        f"color: {get_theme_manager().get_color('success') if self.monitoring_enabled else get_theme_manager().get_color('error')}; font-size: 20px; font-weight: bold;"
                     )
                 elif child.objectName() == "cardDescription":
                     child.setText(
@@ -1459,21 +1455,14 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
                     if child.objectName() == "cardValue":
                         child.setText("Active" if is_active else "Inactive")
                         child.setStyleSheet(
-                            f"color: {
-                                get_theme_manager().get_color('success')
-                                if is_active
-                                else get_theme_manager().get_color('error')
-                            }; font-size: 20px; font-weight: bold;"
+                            f"color: {get_theme_manager().get_color('success') if is_active else get_theme_manager().get_color('error')}; font-size: 20px; font-weight: bold;"
                         )
                     elif child.objectName() == "cardDescription":
                         child.setText(
-                            "Firewall is protecting your system"
+                            "Firewall is enabled and protecting your system"
                             if is_active
-                            else "Click to enable firewall"
+                            else "Firewall is currently disabled"
                         )
-
-    def update_firewall_status_deferred(self):
-        """Update firewall status asynchronously to avoid sudo prompt at startup."""
         try:
             # Get firewall status (this may request sudo, but only after UI is loaded)
             firewall_status = get_firewall_status()
@@ -1487,11 +1476,7 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
                     if child.objectName() == "cardValue":
                         child.setText("Active" if is_active else "Inactive")
                         child.setStyleSheet(
-                            f"color: {
-                                get_theme_manager().get_color('success')
-                                if is_active
-                                else get_theme_manager().get_color('error')
-                            }; font-size: 20px; font-weight: bold;"
+                            f"color: {get_theme_manager().get_color('success') if is_active else get_theme_manager().get_color('error')}; font-size: 20px; font-weight: bold;"
                         )
                     elif child.objectName() == "cardDescription":
                         child.setText(
@@ -1512,9 +1497,7 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
                     if child.objectName() == "cardValue":
                         child.setText("Error")
                         child.setStyleSheet(
-                            f"color: {
-                                get_theme_manager().get_color('error')
-                            }; font-size: 20px; font-weight: bold;"
+                            f"color: {get_theme_manager().get_color('error')}; font-size: 20px; font-weight: bold;"
                         )
                     elif child.objectName() == "cardDescription":
                         child.setText("Unable to check firewall status")
@@ -1898,9 +1881,7 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
                     diagnosis = result.get("diagnosis", "")
                     if diagnosis:
                         # Kernel module issue detected - show detailed dialog
-                        detailed_msg = f"Failed to {action} firewall:\n{
-                            result.get('message', error_msg)!s
-                        }\n\n"
+                        detailed_msg = f"Failed to {action} firewall:\n{result.get('message', error_msg)!s}\n\n"
                         detailed_msg += "Diagnostic Information:\n"
                         detailed_msg += diagnosis
                         detailed_msg += "\n\nSuggestions:\n"
@@ -2780,14 +2761,13 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
             if hasattr(self, "protection_status_label"):
                 self.protection_status_label.setText("🔴 Inactive")
                 self.protection_status_label.setStyleSheet(
-                    f"color: {
-                        self.get_theme_color('error')
-                    }; font-weight: bold; font-size: 12px; padding: 5px;"
+                    f"color: {self.get_theme_color('error')}; font-weight: bold; font-size: 12px; padding: 5px;"
                 )
+            return True
 
-        except (ImportError, AttributeError, RuntimeError) as e:
-            self.add_activity_message(f"❌ Failed to initialize monitoring: {e}")
-
+        except Exception as e:
+            logging.exception("Failed to initialize real-time monitoring: %s", e)
+            return False
     def toggle_real_time_protection(self):
         """Toggle real-time protection on/off."""
         # Check current state by looking at the button text
@@ -2812,13 +2792,10 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
             if self.real_time_monitor and self.real_time_monitor.start():
                 self.protection_status_label.setText("🛡️ Active")
                 self.protection_status_label.setStyleSheet(
-                    f"color: {
-                        self.get_theme_color('success')
-                    }; font-weight: bold; font-size: 12px; padding: 5px;"
+                    f"color: {self.get_theme_color('success')}; font-weight: bold; font-size: 12px; padding: 5px;"
                 )
                 self.protection_toggle_btn.setText("Stop")
                 self.add_activity_message("✅ Real-time protection started")
-                self.status_bar.showMessage("Real-time protection active")
 
                 # Save user preference
                 self.monitoring_enabled = True
@@ -2846,14 +2823,10 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
             else:
                 self.protection_status_label.setText("❌ Failed")
                 self.protection_status_label.setStyleSheet(
-                    f"color: {
-                        self.get_theme_color('error')
-                    }; font-weight: bold; font-size: 12px; padding: 5px;"
+                    f"color: {self.get_theme_color('error')}; font-weight: bold; font-size: 12px; padding: 5px;"
                 )
-                # Keep button as "Start" since protection failed to start
                 self.protection_toggle_btn.setText("Start")
                 self.add_activity_message("❌ Failed to start real-time protection")
-
                 # Make sure dashboard shows failure state
                 self.monitoring_enabled = False
                 self.update_protection_status_card()
@@ -2873,21 +2846,15 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
                 self.real_time_monitor.stop()
                 self.protection_status_label.setText("🔴 Inactive")
                 self.protection_status_label.setStyleSheet(
-                    f"color: {
-                        self.get_theme_color('error')
-                    }; font-weight: bold; font-size: 12px; padding: 5px;"
+                    f"color: {self.get_theme_color('error')}; font-weight: bold; font-size: 12px; padding: 5px;"
                 )
-                self.protection_toggle_btn.setText("Start")
                 self.add_activity_message("🛑 Real-time protection stopped")
                 self.status_bar.showMessage("🛑 Real-time protection stopped")
-
                 # Save user preference
                 self.monitoring_enabled = False
                 if "security_settings" not in self.config:
                     self.config["security_settings"] = {}
                 self.config["security_settings"]["real_time_protection"] = False
-                save_config(self.config)
-
                 # Update dashboard card to reflect the change
                 self.update_protection_status_card()
 
@@ -2911,12 +2878,8 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
             # and allow retry
             self.protection_status_label.setText("❌ Error")
             self.protection_status_label.setStyleSheet(
-                f"color: {
-                    self.get_theme_color('error')
-                }; font-weight: bold; font-size: 12px; padding: 5px;"
+                f"color: {self.get_theme_color('error')}; font-weight: bold; font-size: 12px; padding: 5px;"
             )
-
-    def on_threat_detected(self, file_path: str, threat_name: str):
         """Handle threat detection callback."""
         message = f"🚨 THREAT DETECTED: {threat_name} in {file_path}"
         self.add_activity_message(message)
@@ -4199,15 +4162,11 @@ System        {perf_status}"""
                             f"Release: {update_info.get('release_name', 'Unknown')}",
                         )
                 else:
-                    # No updates available
                     QMessageBox.information(
                         self,
                         "No Updates Available",
-                        f"You are running the latest version (v{
-                            self.auto_updater.current_version
-                        }).",
+                        f"You are running the latest version (v{self.auto_updater.current_version}).",
                     )
-
             except Exception as e:
                 QMessageBox.warning(
                     self,
@@ -4406,9 +4365,7 @@ System        {perf_status}"""
         print(f"DEBUG: Current scan state: {self._scan_state}")
         print(f"DEBUG: Current thread exists: {self.current_scan_thread is not None}")
         print(
-            f"DEBUG: Thread running: {
-                self.current_scan_thread.isRunning() if self.current_scan_thread else 'N/A'
-            }"
+            f"DEBUG: Thread running: {self.current_scan_thread.isRunning() if self.current_scan_thread else 'N/A'}"
         )
         print(f"DEBUG: Manual stop flag: {self._scan_manually_stopped}")
         print(f"DEBUG: Pending request: {self._pending_scan_request}")
@@ -5709,9 +5666,7 @@ System        {perf_status}"""
                         self._append_with_autoscroll(f"    ✅ {current_file}")
                     elif scan_result == "infected":
                         self.results_text.append(
-                            f"    🚨 <span style='color: {
-                                get_theme_manager().get_color('error')
-                            };'><b>INFECTED:</b></span> {current_file}"
+                            f"    🚨 <span style='color: {get_theme_manager().get_color('error')};'><b>INFECTED:</b></span> {current_file}"
                         )
 
         except Exception as e:
@@ -5914,9 +5869,7 @@ System        {perf_status}"""
                         or "completed successfully" in message
                     ):
                         self._append_with_autoscroll(
-                            f"✅ <span style='color: {
-                                get_theme_manager().get_color('success')
-                            };'><b>Database updated successfully</b></span>"
+                            f"✅ <span style='color: {get_theme_manager().get_color('success')};'><b>Database updated successfully</b></span>"
                         )
                         return
                     # Skip other timestamped messages to reduce clutter
@@ -5993,12 +5946,8 @@ System        {perf_status}"""
                     self.results_text.append("  📱 <b>Application Checks:</b>")
                 elif "All checks skipped" in formatted_line:
                     self.results_text.append(
-                        f"    ⏭️  <span style='color: {
-                            get_theme_manager().get_color('muted_text')
-                        };'><i>All checks skipped</i></span>"
+                        f"    ⏭️  <span style='color: {get_theme_manager().get_color('muted_text')};'><i>All checks skipped</i></span>"
                     )
-                elif "The system checks took:" in formatted_line:
-                    duration = formatted_line.split(":")[-1].strip()
                     self.results_text.append("")  # Add spacing
                     self.results_text.append(f"  ⏱️  <b>Scan Duration:</b> {duration}")
                 return
@@ -6029,33 +5978,23 @@ System        {perf_status}"""
                     # Format based on result type
                     if "[ None found ]" in result_part or "[ OK ]" in result_part:
                         self.results_text.append(
-                            f"  ✅ {check_desc} <span style='color: {
-                                get_theme_manager().get_color('success')
-                            };'><b>CLEAN</b></span>"
+                            f"  ✅ {check_desc} <span style='color: {get_theme_manager().get_color('success')};'><b>CLEAN</b></span>"
                         )
                     elif "[ Found ]" in result_part:
                         self.results_text.append(
-                            f"  🔍 {check_desc} <span style='color: {
-                                get_theme_manager().get_color('warning')
-                            };'><b>FOUND</b></span>"
+                            f"  🔍 {check_desc} <span style='color: {get_theme_manager().get_color('warning')};'><b>FOUND</b></span>"
                         )
                     elif "[ Warning ]" in result_part or "[ WARN ]" in result_part:
                         self.results_text.append(
-                            f"  ⚠️  {check_desc} <span style='color: {
-                                get_theme_manager().get_color('warning')
-                            };'><b>WARNING</b></span>"
+                            f"  ⚠️  {check_desc} <span style='color: {get_theme_manager().get_color('warning')};'><b>WARNING</b></span>"
                         )
                     elif "[ Not found ]" in result_part:
                         self.results_text.append(
-                            f"  ✅ {check_desc} <span style='color: {
-                                get_theme_manager().get_color('success')
-                            };'><b>NOT FOUND</b></span>"
+                            f"  ✅ {check_desc} <span style='color: {get_theme_manager().get_color('success')};'><b>NOT FOUND</b></span>"
                         )
                     elif "[ Skipped ]" in result_part:
                         self.results_text.append(
-                            f"  ⏭️  {check_desc} <span style='color: {
-                                get_theme_manager().get_color('muted_text')
-                            };'><i>SKIPPED</i></span>"
+                            f"  ⏭️  {check_desc} <span style='color: {get_theme_manager().get_color('muted_text')};'><i>SKIPPED</i></span>"
                         )
                     else:
                         # Generic result formatting
@@ -6077,9 +6016,7 @@ System        {perf_status}"""
                 return
             elif "ERROR" in formatted_line.upper():
                 self.results_text.append(
-                    f"  ❌ <span style='color: {
-                        get_theme_manager().get_color('error')
-                    };'><b>ERROR:</b></span> {formatted_line.replace('ERROR:', '').strip()}"
+                    f"  ❌ <span style='color: {get_theme_manager().get_color('error')};'><b>ERROR:</b></span> {formatted_line.replace('ERROR:', '').strip()}"
                 )
             elif "INFECTED" in formatted_line.upper() or (
                 "ROOTKIT" in formatted_line.upper()
@@ -6092,9 +6029,7 @@ System        {perf_status}"""
             ):
                 # Only show threat detected for actual detections, not status messages
                 self.results_text.append(
-                    f"  🚨 <span style='color: {
-                        get_theme_manager().get_color('error')
-                    };'><b>THREAT DETECTED:</b></span> {formatted_line}"
+                    f"  🚨 <span style='color: {get_theme_manager().get_color('error')};'><b>THREAT DETECTED:</b></span> {formatted_line}"
                 )
             elif "INFO:" in formatted_line.upper():
                 info_msg = formatted_line.replace("INFO:", "").strip()
@@ -7336,13 +7271,12 @@ Common False Positives:
 
             # Display error in results
             if hasattr(self, "rkhunter_results_text"):
-                error_text = f"❌ Optimization failed at {
-                    datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-                }\nError: {error_message}"
+                error_text = f"❌ Optimization failed at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\nError: {error_message}"
                 self.rkhunter_results_text.setText(error_text)
-
-        except Exception as e:
             logging.error(f"Error handling optimization error: {e}")
+
+        except Exception as handler_error:
+            logging.exception("Failed to handle RKHunter optimization error: %s", handler_error)
 
     def _show_interactive_config_fixes(self):
         """Show interactive dialog for configuration fixes"""
@@ -7594,31 +7528,22 @@ Common False Positives:
 
         except Exception as e:
             print(f"Warning: Could not configure platform dropdown behavior: {e}")
-
     def stop_scan(self):
         print("\n🛑 === STOP_SCAN CALLED ===")
         print("DEBUG: stop_scan() called")
-        print(f"DEBUG: Current scan state: {self._scan_state}")
         print(
             f"DEBUG: Current scan thread exists: {self.current_scan_thread is not None}"
         )
         print(
-            f"DEBUG: Scan thread running: {
-                self.current_scan_thread.isRunning() if self.current_scan_thread else 'N/A'
-            }"
+            f"DEBUG: Scan thread running: {self.current_scan_thread.isRunning() if self.current_scan_thread else 'N/A'}"
         )
         print(
-            f"DEBUG: Current RKHunter thread exists: {
-                hasattr(self, 'current_rkhunter_thread')
-                and self.current_rkhunter_thread is not None
-            }"
+            "DEBUG: Current RKHunter thread exists: "
+            f"{hasattr(self, 'current_rkhunter_thread') and self.current_rkhunter_thread is not None}"
         )
         print(
-            f"DEBUG: RKHunter thread running: {
-                self.current_rkhunter_thread.isRunning()
-                if hasattr(self, 'current_rkhunter_thread') and self.current_rkhunter_thread
-                else 'N/A'
-            }"
+            "DEBUG: RKHunter thread running: "
+            f"{self.current_rkhunter_thread.isRunning() if hasattr(self, 'current_rkhunter_thread') and self.current_rkhunter_thread else 'N/A'}"
         )
         print(f"DEBUG: Manual stop flag: {self._scan_manually_stopped}")
 
@@ -7827,27 +7752,19 @@ Common False Positives:
     def _check_stop_completion(self):
         """Check if the stopped scan has completed and handle cleanup"""
         print("\n🔍 === CHECKING STOP COMPLETION ===")
-        print("DEBUG: _check_stop_completion() called")
         print(
             f"DEBUG: Current scan thread exists: {self.current_scan_thread is not None}"
         )
         print(
-            f"DEBUG: Scan thread running: {
-                self.current_scan_thread.isRunning() if self.current_scan_thread else 'N/A'
-            }"
+            f"DEBUG: Scan thread running: {self.current_scan_thread.isRunning() if self.current_scan_thread else 'N/A'}"
         )
         print(
-            f"DEBUG: Current RKHunter thread exists: {
-                hasattr(self, 'current_rkhunter_thread')
-                and self.current_rkhunter_thread is not None
-            }"
+            "DEBUG: Current RKHunter thread exists: "
+            f"{hasattr(self, 'current_rkhunter_thread') and self.current_rkhunter_thread is not None}"
         )
         print(
-            f"DEBUG: RKHunter thread running: {
-                self.current_rkhunter_thread.isRunning()
-                if hasattr(self, 'current_rkhunter_thread') and self.current_rkhunter_thread
-                else 'N/A'
-            }"
+            "DEBUG: RKHunter thread running: "
+            f"{self.current_rkhunter_thread.isRunning() if hasattr(self, 'current_rkhunter_thread') and self.current_rkhunter_thread else 'N/A'}"
         )
         print(f"DEBUG: Current state: {self._scan_state}")
 
@@ -7874,9 +7791,7 @@ Common False Positives:
             f"🛑 Stopping scan... ({remaining_time}s remaining)"
         )
         print(
-            f"DEBUG: 📊 Stop progress: {stop_progress}% (attempt {self._stop_completion_attempts}/{
-                max_attempts
-            })"
+            f"DEBUG: 📊 Stop progress: {stop_progress}% (attempt {self._stop_completion_attempts}/{max_attempts})"
         )
 
         # Check current thread states with safe error handling
@@ -7984,9 +7899,7 @@ Common False Positives:
                 threads_still_running.append("RKHunter")
 
             print(
-                f"DEBUG: ⏳ Still waiting for {
-                    ', '.join(threads_still_running)
-                } to finish... (attempt {self._stop_completion_attempts}/{max_attempts})"
+                f"DEBUG: ⏳ Still waiting for {', '.join(threads_still_running)} to finish... (attempt {self._stop_completion_attempts}/{max_attempts})"
             )
 
     def _force_cleanup_threads(self):
@@ -8093,9 +8006,7 @@ Common False Positives:
                 print("DEBUG: ❌ No pending scan request found")
         else:
             print(
-                f"DEBUG: ⏳ Scan still running, continuing to monitor... (attempt {
-                    self._stop_completion_attempts
-                }/{getattr(self, '_stop_max_attempts', 30)})"
+                f"DEBUG: ⏳ Scan still running, continuing to monitor... (attempt {self._stop_completion_attempts}/{getattr(self, '_stop_max_attempts', 30)})"
             )
 
     def update_dashboard_cards(self):
@@ -8369,9 +8280,7 @@ Common False Positives:
                     print("DEBUG: Using existing ThreatInfo object")
                 threats.append(threat)
                 print(
-                    f"DEBUG: Added threat: {
-                        threat.threat_name if hasattr(threat, 'threat_name') else 'unknown'
-                    }"
+                    f"DEBUG: Added threat: {threat.threat_name if hasattr(threat, 'threat_name') else 'unknown'}"
                 )
 
             print(f"DEBUG: Converted {len(threats)} threats to ThreatInfo objects")
@@ -8697,9 +8606,7 @@ Common False Positives:
         for key, value in scan_options.items():
             if key not in ["depth", "file_filter", "memory_limit", "exclusions"]:
                 friendly_options.append(
-                    f"&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;⚙️ <b>{
-                        key.replace('_', ' ').title()
-                    }:</b> {value}"
+                    f"&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;⚙️ <b>{key.replace('_', ' ').title()}</b>: {value}"
                 )
 
         return (
@@ -9500,9 +9407,7 @@ Common False Positives:
                         )
                     elif system_status.virus_definitions_age <= 7:
                         self.last_update_label.setText(
-                            f"Status: {
-                                system_status.virus_definitions_age
-                            } days old (update recommended)"
+                            f"Status: {system_status.virus_definitions_age} days old (update recommended)"
                         )
                     else:
                         self.last_update_label.setText(
@@ -10237,9 +10142,7 @@ Common False Positives:
             output += f"<p><b>Date:</b> {scan_result.start_time}</p>"
             output += f"<p><b>Scan Type:</b> {scan_result.scan_type.value}</p>"
             output += f"<p><b>Duration:</b> {scan_result.duration:.2f} seconds</p>"
-            output += f"<p><b>Files Scanned:</b> {scan_result.scanned_files}/{
-                scan_result.total_files
-            }</p>"
+            output += f"<p><b>Files Scanned:</b> {scan_result.scanned_files}/{scan_result.total_files}</p>"
             output += f"<p><b>Threats Found:</b> {scan_result.threats_found}</p>"
 
             # Add paths that were scanned
@@ -11364,9 +11267,7 @@ Common False Positives:
                                 continue
                             except (OSError, PermissionError) as e:
                                 detailed_issues.append(
-                                    f"Weak permissions on {name} ({
-                                        oct(mode)
-                                    }); expected 0o700 - Failed to fix: {e}"
+                                    f"Weak permissions on {name} ({oct(mode)}); expected 0o700 - Failed to fix: {e}"
                                 )
                                 continue
                         detailed_issues.append(

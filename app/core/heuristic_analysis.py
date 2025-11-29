@@ -950,12 +950,9 @@ class HeuristicAnalysisEngine:
                         threat_indicators=threat_indicators,
                         risk_level=risk_level,
                         confidence_score=confidence,
-                        description=f"Suspicious strings detected ({
-                            len(suspicious_strings_found)
-                        } found)",
+                        description=f"Suspicious strings detected ({len(suspicious_strings_found)} found)",
                         details=details,
                     )
-
                 return None
 
         except OSError as e:

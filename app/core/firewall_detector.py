@@ -636,9 +636,10 @@ class FirewallDetector:
             if loaded_modules:
                 message = f"Loaded kernel modules: {', '.join(loaded_modules)}"
                 if cross_kernel_attempts:
-                    message += f" (including cross-kernel compatibility for: {
-                        ', '.join(cross_kernel_attempts)
-                    })"
+                    message += (
+                        " (including cross-kernel compatibility for: "
+                        f"{', '.join(cross_kernel_attempts)})"
+                    )
                 return {
                     "success": True,
                     "message": message,

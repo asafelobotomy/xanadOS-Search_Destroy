@@ -444,9 +444,7 @@ class SecurityFeatureTable(QTableWidget):
         if feature.enabled:
             return f"✅ {base_explanation}"
         else:
-            return f"⚠️ This protection is not active. {
-                base_explanation.replace('Your system', 'Your system would')
-            }"
+            return f"⚠️ This protection is not active. {base_explanation.replace('Your system', 'Your system would')}"
 
     def _get_actionable_recommendation(self, feature: SecurityFeature) -> str:
         """Provide clear, actionable recommendations"""
