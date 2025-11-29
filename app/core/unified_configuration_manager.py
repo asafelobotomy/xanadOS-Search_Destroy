@@ -572,7 +572,6 @@ class UnifiedConfigurationManager:
             "realtime_protection": self._get_realtime_defaults(),
             "scheduled_settings": self._get_scheduled_defaults(),
             "paths": self._get_paths_config(),
-            "telemetry": self._get_telemetry_defaults(),
             "rate_limits": self._get_rate_limits_defaults(),
             "setup": self._get_setup_defaults(),
         }
@@ -792,15 +791,6 @@ class UnifiedConfigurationManager:
             "scan_reports_dir": str(self.data_dir / "scan_reports"),
             "log_dir": str(self.data_dir / "logs"),
             "temp_dir": str(self.cache_dir / "temp"),
-        }
-
-    def _get_telemetry_defaults(self) -> dict[str, Any]:
-        """Get telemetry defaults"""
-        return {
-            "enabled": True,
-            "privacy_level": "anonymous",
-            "data_retention_days": 30,
-            "export_enabled": False,
         }
 
     def _get_rate_limits_defaults(self) -> dict[str, Any]:
