@@ -345,9 +345,7 @@ class ResourceMonitor:
                     "type": "cpu_high",
                     "value": metrics.cpu_percent,
                     "threshold": config.max_cpu_percent,
-                    "message": f"CPU usage {metrics.cpu_percent:.1f}% exceeds threshold {
-                        config.max_cpu_percent
-                    }%",
+                    "message": f"CPU usage {metrics.cpu_percent:.1f}% exceeds threshold {config.max_cpu_percent}%",
                 }
             )
 
@@ -358,16 +356,13 @@ class ResourceMonitor:
                     "type": "memory_high",
                     "value": metrics.memory_percent,
                     "threshold": config.max_memory_percent,
-                    "message": f"Memory usage {metrics.memory_percent:.1f}% exceeds threshold {
-                        config.max_memory_percent
-                    }%",
+                    "message": f"Memory usage {metrics.memory_percent:.1f}% exceeds threshold {config.max_memory_percent}%",
                 }
             )
 
         # Keep only recent alerts
         if len(self.alerts) > 100:
             self.alerts = self.alerts[-50:]
-
     def get_recent_alerts(self, limit: int = 10) -> List[Dict[str, Any]]:
         """Get recent alerts"""
         return self.alerts[-limit:]
