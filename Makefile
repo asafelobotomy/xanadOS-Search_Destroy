@@ -1,7 +1,8 @@
 # xanadOS Search & Destroy - Modern Development Makefile
 # Enhanced with 2025 best practices and modern tooling
 
-.PHONY: help setup install-deps validate test check-env run run-debug dev clean lint format
+.PHONY: help setup install-deps validate test check-env run run-debug dev clean lint format \
+        build-flatpak install-flatpak run-flatpak prepare
 
 # Default goal
 .DEFAULT_GOAL := help
@@ -217,7 +218,31 @@ lint: ## Run code quality checks
 format: ## Format code with ruff
 	@echo -e "$(BOLD)$(GREEN)🧪 Formatting code...$(NC)"
 	@if [ -d ".venv" ]; then \
-		source .venv/bin/activate && python -m ruff format . || true; \
+	source .venv/bin/activate && python -m ruff format . || true; \
 	else \
-		echo -e "$(YELLOW)⚠️  Virtual environment not found. Install with 'make setup'$(NC)"; \
+	echo -e "$(YELLOW)⚠️  Virtual environment not found. Install with 'make setup'$(NC)"; \
 	fi
+
+FLATPAK_ID := io.github.asafelobotomy.SearchAndDestroy
+FLATPAK_MANIFEST := packaging/flatpak/$(FLATPAK_ID).yml
+FLATPAK_BUILD_DIR := build/flatpak/app
+
+prepare: ## Prepare local environment for Flatpak builds
+	@echo -e "$(BOLD)$(CYAN)🛠️  Preparing Flatpak build environment...$(NC)"
+	@bash scripts/prepare-build.sh
+
+build-flatpak: ## Build Flatpak package
+	@echo -e "$(BOLD)$(GREEN)📦 Building Flatpak package...$(NC)"
+	@bash scripts/prepare-build.sh
+	@flatpak-builder --force-clean $(FLATPAK_BUILD_DIR) $(FLATPAK_MANIFEST)
+	@echo -e "$(GREEN)✅ Flatpak build complete$(NC)"
+
+install-flatpak: ## Build and install Flatpak locally (user scope)
+	@echo -e "$(BOLD)$(GREEN)📦 Installing Flatpak locally...$(NC)"
+	@bash scripts/prepare-build.sh
+	@flatpak-builder --user --install --force-clean $(FLATPAK_BUILD_DIR) $(FLATPAK_MANIFEST)
+	@echo -e "$(GREEN)✅ Flatpak installed in user scope$(NC)"
+
+run-flatpak: ## Run the installed Flatpak application
+	@echo -e "$(BOLD)$(GREEN)🚀 Running Flatpak application...$(NC)"
+	@flatpak run $(FLATPAK_ID)
