@@ -82,7 +82,6 @@ except Exception as e:
 - `rate_limiting.py`: Replace thread-based rate limiter with async implementation
 - `web_protection.py`: Migrate background threads to async tasks
 - `system_service.py`: Convert daemon threads to async background tasks
-- `telemetry.py`: Replace queue-based threading with async queues
 - `resource_coordinator.py`: Migrate to async resource management
 
 #### 2.2 Async File Operations
@@ -171,10 +170,6 @@ async def process_file_async(file_path):
 **6. rate_limiting.py** (PERFORMANCE)
 - **Issues:** Threading-based implementation
 - **Actions:** Convert to async-based rate limiting
-
-**7. telemetry.py** (MONITORING)
-- **Issues:** Thread-based event processing
-- **Actions:** Convert to async event processing
 
 #### LOW PRIORITY COMPONENTS
 

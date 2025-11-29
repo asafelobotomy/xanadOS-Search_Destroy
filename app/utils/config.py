@@ -358,12 +358,6 @@ def create_initial_config():
             "log_dir": str(LOG_DIR),
             "temp_dir": str(CACHE_DIR / "temp"),
         },
-        "telemetry": {
-            "enabled": True,
-            "privacy_level": "anonymous",  # anonymous, aggregated, detailed
-            "data_retention_days": 30,
-            "export_enabled": False,
-        },
         "rate_limits": {
             "file_scan": {"calls": 100, "period": 60.0, "burst": 20, "adaptive": True},
             "directory_scan": {
