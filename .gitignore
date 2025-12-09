@@ -218,3 +218,15 @@ _build/
 _repo/
 build-dir/
 *.flatpak
+
+# Test files (prevent accidental commits)
+test.md
+test_*.md
+**/test-*.tmp
+test-output.txt
+
+# Build and log files
+build-log.txt
+*.build.log
+flatpak-build.log
+build-*.log

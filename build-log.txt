@@ -1,3 +1,0 @@
-FB: Running: git config --get user.email
-FB: Running: git config --get user.name
-Can't load 'io.github.asafelobotomy.SearchAndDestroy-optimized.yml': Failed to open file “/home/arch/Documents/xanadOS-Search_Destroy/io.github.asafelobotomy.SearchAndDestroy-optimized.yml”: No such file or directory
