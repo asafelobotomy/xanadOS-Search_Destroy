@@ -4,6 +4,22 @@ Comprehensive inventory of all archived content in the repository following arch
 
 ## 📋 Archive Contents
 
+### Recently Added (2025-12-09)
+
+#### Consolidation Backup Archive
+- **Consolidation Analysis Documents** (`consolidation-backup-20250920/`)
+  - **Archived Date**: 2025-12-09
+  - **Original Date**: 2025-09-20
+  - **Contents**: 4 analysis documents from Phase 2 consolidation work
+    - `api-compatibility-mapping.md` (5,823 bytes)
+    - `configuration-consolidation-20250920/analysis.md` (4,879 bytes)
+    - `rkhunter-consolidation-20250920/analysis.md` (4,044 bytes)
+    - `scanner-consolidation-20250920/analysis.md` (3,023 bytes)
+  - **Total Size**: 24K
+  - **Reason**: Consolidation work completed, backups no longer needed in root
+  - **Retention**: 1 year (analysis documents)
+  - **Original Location**: `consolidation-backup/`
+
 ### Recently Added (2025-09-21)
 
 #### Security Consolidation Archive - Phase 2D
