@@ -6,6 +6,52 @@ Comprehensive inventory of all archived content in the repository following arch
 
 ### Recently Added (2025-12-09)
 
+#### Compressed Archive Files
+- **Backups Archive** (`backups-archive-20251209.tar.gz`)
+  - **Archived Date**: 2025-12-09
+  - **Original Size**: 5.0M (uncompressed)
+  - **Compressed Size**: 1.1M (78% reduction)
+  - **Contents**: 555 files from import fixes and markdown formatting backups
+    - `import-fix-20250825-100004/` - Import path restructuring backups
+    - `markdown-formatting-20250825-101113/` - Documentation formatting backups
+  - **Reason**: Space optimization and long-term storage
+  - **Retention**: 2 years (backup files)
+  - **Original Location**: `archive/backups/`
+
+- **Development Archive** (`development-archive-20251209.tar.gz`)
+  - **Archived Date**: 2025-12-09
+  - **Original Size**: 1.6M (uncompressed)
+  - **Compressed Size**: 192K (88% reduction)
+  - **Contents**: Development artifacts and deprecated components
+    - `coverage.xml` (910K) - Historical test coverage report
+    - `deprecated-components/` - Legacy component backups
+    - `deprecated-theme-files/` - Old theme configurations
+    - `dev/` - Development utilities and scripts
+    - `documentation-drafts/` - Draft documentation files
+    - `experimental/` - Experimental feature prototypes
+    - `integration-tests/` - Legacy integration test files
+    - `test-files/` - Historical test data
+  - **Reason**: Consolidate development artifacts for long-term reference
+  - **Retention**: 1 year (development files)
+  - **Original Location**: `archive/development/`
+
+- **Superseded Archive** (`superseded-archive-20251209.tar.gz`)
+  - **Archived Date**: 2025-12-09
+  - **Original Size**: 420K (uncompressed)
+  - **Compressed Size**: 90K (79% reduction)
+  - **Contents**: Superseded documentation and reports
+    - `2025-08-24/` - Analysis from August 24, 2025
+    - `2025-09-02/` - Analysis from September 2, 2025
+    - `analysis/` - Historical analysis documents
+    - `config/` - Old configuration files
+    - `development-reports/` - Outdated development reports
+    - `implementation-reports/` - Historical implementation reports
+  - **Reason**: Space optimization for superseded documentation
+  - **Retention**: 1 year (analysis documents)
+  - **Original Location**: `archive/superseded/`
+
+**Compression Summary**: Total space savings of ~5.6M (80% reduction: 7.02M → 1.38M)
+
 #### Consolidation Backup Archive
 - **Consolidation Analysis Documents** (`consolidation-backup-20250920/`)
   - **Archived Date**: 2025-12-09
