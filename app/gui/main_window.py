@@ -325,7 +325,14 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
         """Refresh RKHunter status in background."""
         try:
             if hasattr(self, "rkhunter") and self.rkhunter:
-                return self.rkhunter.get_quick_status()
+                # Use the monitor's non-invasive status check
+                status = self.rkhunter.monitor.get_status_non_invasive()
+                # Convert to dict format for compatibility
+                return {
+                    "status": "available" if status.rkhunter_installed else "not_available",
+                    "last_scan": status.last_scan_date,
+                    "warnings": status.warning_count,
+                }
             return {"status": "not_available"}
         except Exception as e:
             print(f"Background RKHunter refresh failed: {e}")
@@ -428,7 +435,7 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
 
     def _load_system_overview_data(self):
         """Load system overview data (cached)."""
-        return self.system_cache.get_system_status(
+        return self.system_cache.get_or_set(
             "overview", self._refresh_system_status
         )
 
@@ -1429,7 +1436,7 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
         """Update the firewall status card with current state."""
         if hasattr(self, "firewall_card"):
             # Only update if we already have status (avoid sudo prompt during initialization)
-            if hasattr(self, "_firewall_status_cache"):
+            if hasattr(self, "_firewall_status_cache") and self._firewall_status_cache:
                 firewall_status = self._firewall_status_cache
                 is_active = firewall_status.get("is_active", False)
 
@@ -2110,13 +2117,9 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
         rkhunter_available = False
         if self.rkhunter is not None:
             try:
-                if hasattr(self.rkhunter, "is_available"):
-                    rkhunter_available = self.rkhunter.is_available()
-                else:
-                    # Fallback to attribute if method missing
-                    rkhunter_available = bool(
-                        getattr(self.rkhunter, "available", False)
-                    )
+                # Check if RKHunter binary is available
+                rkhunter_binary = self.rkhunter.monitor._find_rkhunter_binary()
+                rkhunter_available = bool(rkhunter_binary)
             except Exception:
                 rkhunter_available = False
         if rkhunter_available:
@@ -5075,9 +5078,11 @@ System        {perf_status}"""
         self.rkhunter_scan_btn.setEnabled(False)
         self.rkhunter_scan_btn.setText("Checking...")
 
-        # First check if RKHunter is actually installed but has permission
-        # issues
-        if self.rkhunter.rkhunter_path and Path(self.rkhunter.rkhunter_path).exists():
+        # First check if RKHunter is actually installed but has permission issues
+        # Use the monitor's method to find the binary
+        rkhunter_binary = self.rkhunter.monitor._find_rkhunter_binary()
+
+        if rkhunter_binary and Path(rkhunter_binary).exists():
             # RKHunter is installed but may need configuration
             reply = self.show_themed_message_box(
                 "question",
@@ -5142,13 +5147,42 @@ System        {perf_status}"""
         self.rkhunter_scan_btn.setText("Installing...")
 
         try:
-            success, message = self.rkhunter.install_rkhunter()
+            # Detect distribution and install RKHunter
+            import platform
+            import subprocess
 
-            if success:
+            distro = platform.freedesktop_os_release().get('ID', '').lower()
+
+            # Determine the installation command based on distro
+            if distro in ['ubuntu', 'debian', 'linuxmint', 'pop']:
+                install_args = ['sh', '-c', 'apt update && apt install -y rkhunter']
+            elif distro in ['fedora', 'rhel', 'centos', 'rocky', 'almalinux']:
+                install_args = ['dnf', 'install', '-y', 'rkhunter']
+            elif distro in ['arch', 'manjaro', 'endeavouros']:
+                install_args = ['pacman', '-S', '--noconfirm', 'rkhunter']
+            elif distro in ['opensuse', 'suse']:
+                install_args = ['zypper', 'install', '-y', 'rkhunter']
+            else:
+                # Generic fallback
+                install_args = ['sh', '-c', 'apt update && apt install -y rkhunter']
+
+            # Run installation with GUI authentication
+            from app.core.gui_auth_manager import GUIAuthManager
+            auth_manager = GUIAuthManager()
+
+            result = auth_manager.run_with_gui_auth(
+                install_args,
+                timeout=300,
+                capture_output=True,
+                text=True
+            )
+
+            if result and result.returncode == 0:
                 self.show_themed_message_box(
                     "information",
                     "Success",
-                    f"RKHunter installed successfully!\n{message}",
+                    "RKHunter installed successfully!\n\n"
+                    "You can now run rootkit scans from the Scan tab.",
                 )
 
                 # Update button to scan mode
@@ -5159,10 +5193,11 @@ System        {perf_status}"""
                 self.rkhunter_scan_btn.setEnabled(True)
 
             else:
+                error_msg = result.stderr if result else "Unknown error"
                 self.show_themed_message_box(
                     "critical",
                     "Installation Failed",
-                    f"Failed to install RKHunter:\n{message}",
+                    f"Failed to install RKHunter:\n{error_msg}",
                 )
                 self.rkhunter_scan_btn.setText("📦 Install RKHunter")
                 self.rkhunter_scan_btn.setEnabled(True)
@@ -5204,7 +5239,29 @@ System        {perf_status}"""
             # Process events to show the dialog
             QApplication.processEvents()
 
-            success, message = self.rkhunter.install_rkhunter()
+            # Install RKHunter using the same method as install_rkhunter
+            import platform
+
+            distro = platform.freedesktop_os_release().get('ID', '').lower()
+
+            # Determine the installation command based on distro
+            if distro in ['ubuntu', 'debian', 'linuxmint', 'pop']:
+                install_args = ['sh', '-c', 'apt update && apt install -y rkhunter']
+            elif distro in ['fedora', 'rhel', 'centos', 'rocky', 'almalinux']:
+                install_args = ['dnf', 'install', '-y', 'rkhunter']
+            elif distro in ['arch', 'manjaro', 'endeavouros']:
+                install_args = ['pacman', '-S', '--noconfirm', 'rkhunter']
+            elif distro in ['opensuse', 'suse']:
+                install_args = ['zypper', 'install', '-y', 'rkhunter']
+            else:
+                install_args = ['sh', '-c', 'apt update && apt install -y rkhunter']
+
+            from app.core.gui_auth_manager import GUIAuthManager
+            auth_manager = GUIAuthManager()
+            result = auth_manager.run_with_gui_auth(install_args, timeout=300)
+
+            success = result.returncode == 0
+            message = "Installation completed successfully" if success else result.stderr
 
             progress.close()
 
@@ -5264,7 +5321,8 @@ System        {perf_status}"""
             return
 
         # Check if RKHunter is available (without authentication)
-        if not self.rkhunter.available or self.rkhunter.rkhunter_path is None:
+        rkhunter_binary = self.rkhunter.monitor._find_rkhunter_binary()
+        if not rkhunter_binary:
             # Check authentication method available
             from app.core.security_integration import get_security_coordinator
 
@@ -5370,10 +5428,20 @@ System        {perf_status}"""
         if reply != QMessageBox.StandardButton.Yes:
             return
 
-        # Pre-authenticate to establish session for the scan
+        # Pre-authenticate using GUI auth manager
         print("🔐 Authenticating for RKHunter scan...")
         try:
-            auth_session_valid = self.rkhunter._ensure_auth_session()
+            # Use GUI auth manager to establish session
+            from app.core.gui_auth_manager import GUIAuthManager
+            auth_manager = GUIAuthManager()
+
+            # Test auth with a simple command
+            test_result = auth_manager.run_with_gui_auth(
+                ['true'],  # Simple no-op command
+                timeout=30
+            )
+            auth_session_valid = (test_result.returncode == 0)
+
             if not auth_session_valid:
                 # Try the new security integration system
                 from app.core.security_integration import elevate_privileges
@@ -6297,10 +6365,13 @@ System        {perf_status}"""
             self.update_scan_button_state(False)
 
         # Reset progress bar
-        self.progress_bar.setValue(100 if result.success else 0)
+        from app.core.unified_rkhunter_integration import RKHunterResult
+        success = result.overall_result in (RKHunterResult.CLEAN, RKHunterResult.WARNING)
+        self.progress_bar.setValue(100 if success else 0)
 
-        if not result.success:
-            self.results_text.append(f"❌ RKHunter scan failed: {result.error_message}")
+        if result.overall_result == RKHunterResult.ERROR:
+            error_msg = result.metadata.get("error_message", "Unknown error")
+            self.results_text.append(f"❌ RKHunter scan failed: {error_msg}")
             self.status_label.setText("RKHunter scan failed")
             return
 
@@ -8161,24 +8232,38 @@ Common False Positives:
             print("DEBUG: 🔄 Resetting Quick Scan button")
             self.reset_quick_scan_button()
 
-        if "error" in result:
-            error_msg = result["error"]
-            self.results_text.setText(f"Scan error: {error_msg}")
-            self.status_bar.showMessage(f"Scan failed: {error_msg}")
-            # Reset button state on error
-            self.update_scan_button_state(False)
-            self.scan_toggle_btn.setEnabled(True)
-            return
+        # Handle error cases - check both dict and dataclass formats
+        if isinstance(result, dict):
+            if "error" in result:
+                error_msg = result["error"]
+                self.results_text.setText(f"Scan error: {error_msg}")
+                self.status_bar.showMessage(f"Scan failed: {error_msg}")
+                # Reset button state on error
+                self.update_scan_button_state(False)
+                self.scan_toggle_btn.setEnabled(True)
+                return
 
-        # Handle cancelled scans
-        if result.get("status") == "cancelled":
-            cancel_msg = result.get("message", "Scan was cancelled")
-            self.results_text.setText(cancel_msg)
-            self.status_bar.showMessage(cancel_msg)
-            # Reset button state on cancellation
-            self.update_scan_button_state(False)
-            self.scan_toggle_btn.setEnabled(True)
-            return
+            # Handle cancelled scans
+            if result.get("status") == "cancelled":
+                cancel_msg = result.get("message", "Scan was cancelled")
+                self.results_text.setText(cancel_msg)
+                self.status_bar.showMessage(cancel_msg)
+                # Reset button state on cancellation
+                self.update_scan_button_state(False)
+                self.scan_toggle_btn.setEnabled(True)
+                return
+        else:
+            # For ScanResult dataclass, check success attribute
+            if hasattr(result, 'success') and not result.success:
+                error_msgs = getattr(result, 'errors', [])
+                if error_msgs:
+                    error_msg = "; ".join(error_msgs[:3])  # Show first 3 errors
+                    self.results_text.setText(f"Scan error: {error_msg}")
+                    self.status_bar.showMessage(f"Scan failed: {error_msg}")
+                    # Reset button state on error
+                    self.update_scan_button_state(False)
+                    self.scan_toggle_btn.setEnabled(True)
+                    return
 
         # Save the scan result to a report file
         try:
@@ -11164,7 +11249,7 @@ Common False Positives:
         """Perform basic integrity & permission checks; log warnings only."""
         try:
             # Use cached system status first, then refresh in background
-            cached_status = self.system_cache.get_system_status("startup_check")
+            cached_status = self.system_cache.get("startup_check")
 
             if cached_status:
                 # Use cached data immediately, no blocking
@@ -11200,7 +11285,7 @@ Common False Positives:
                 "status": "good" if not quick_issues else "issues_found",
             }
 
-            self.system_cache.set_system_status(
+            self.system_cache.set(
                 "startup_check", check_result, ttl=300
             )  # 5 min cache
 
@@ -11271,7 +11356,7 @@ Common False Positives:
                 "detailed": True,
             }
 
-            self.system_cache.set_system_status(
+            self.system_cache.set(
                 "startup_check", detailed_result, ttl=1800
             )  # 30 min cache
 

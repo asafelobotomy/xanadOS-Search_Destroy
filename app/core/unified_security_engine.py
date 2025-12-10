@@ -33,8 +33,16 @@ from typing import Any
 import numpy as np
 import psutil
 
-EBPF_AVAILABLE = _find_spec("bpftool") is not None
-INOTIFY_AVAILABLE = _find_spec("inotify.adapters") is not None
+# Check for optional dependencies safely
+try:
+    EBPF_AVAILABLE = _find_spec("bpftool") is not None
+except (ModuleNotFoundError, AttributeError):
+    EBPF_AVAILABLE = False
+
+try:
+    INOTIFY_AVAILABLE = _find_spec("inotify.adapters") is not None
+except (ModuleNotFoundError, AttributeError):
+    INOTIFY_AVAILABLE = False
 
 # fanotify constants for advanced monitoring (statically defined for internal use)
 FAN_ACCESS = 0x00000001

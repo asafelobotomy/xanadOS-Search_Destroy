@@ -16,6 +16,7 @@ import logging
 import shutil
 import sys
 import tempfile
+import threading
 import time
 import traceback
 from dataclasses import dataclass
@@ -601,6 +602,27 @@ class UnifiedComponentValidator:
 
         report.append("=" * 80)
         return "\n".join(report)
+
+
+# ============================================================================
+# Singleton Instance Management
+# ============================================================================
+
+_component_validator_instance: UnifiedComponentValidator | None = None
+_validator_lock = threading.Lock()
+
+
+def get_component_validator() -> UnifiedComponentValidator:
+    """Get the global component validator instance.
+
+    Returns:
+        UnifiedComponentValidator: The singleton validator instance
+    """
+    global _component_validator_instance
+    with _validator_lock:
+        if _component_validator_instance is None:
+            _component_validator_instance = UnifiedComponentValidator()
+        return _component_validator_instance
 
 
 async def main() -> int:

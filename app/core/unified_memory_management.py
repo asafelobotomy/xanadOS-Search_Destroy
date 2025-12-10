@@ -694,3 +694,47 @@ class SystemStatusCache(IntelligentCache):
 # Initialize module
 logger = logging.getLogger(__name__)
 logger.info("Unified Memory Management module initialized")
+
+
+# ============================================================================
+# Decorator for Memory Efficient Functions
+# ============================================================================
+
+
+def memory_efficient(func: Callable) -> Callable:
+    """Decorator to ensure memory-efficient execution of functions.
+
+    This decorator:
+    - Monitors memory usage before and after function execution
+    - Triggers garbage collection if memory pressure is detected
+    - Logs memory statistics for performance monitoring
+    """
+    def wrapper(*args, **kwargs):
+        # Get memory before
+        manager = get_memory_manager()
+        before_metrics = manager.get_memory_metrics()
+
+        try:
+            # Execute function
+            result = func(*args, **kwargs)
+
+            # Check memory after
+            after_metrics = manager.get_memory_metrics()
+
+            # If memory increased significantly, trigger GC
+            memory_increase = after_metrics.used_memory_mb - before_metrics.used_memory_mb
+            if memory_increase > 100:  # More than 100MB increase
+                logger.debug(
+                    f"Function {func.__name__} increased memory by {memory_increase:.1f}MB, "
+                    "triggering garbage collection"
+                )
+                gc.collect()
+
+            return result
+
+        except Exception as e:
+            # Clean up on error
+            gc.collect()
+            raise e
+
+    return wrapper

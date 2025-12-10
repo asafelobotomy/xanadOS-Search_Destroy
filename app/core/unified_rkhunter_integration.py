@@ -26,6 +26,7 @@ import os
 import subprocess
 import threading
 import time
+from collections.abc import Callable
 from dataclasses import asdict, dataclass, field
 from datetime import datetime
 from enum import Enum
@@ -422,6 +423,7 @@ class UnifiedRKHunterMonitor:
         # Binary paths
         self.binary_paths = [
             "/usr/bin/rkhunter",
+            "/usr/sbin/rkhunter",
             "/usr/local/bin/rkhunter",
             "/opt/rkhunter/bin/rkhunter",
         ]
@@ -619,7 +621,8 @@ class UnifiedRKHunterMonitor:
     def _find_rkhunter_binary(self) -> str:
         """Find RKHunter binary path."""
         for path in self.binary_paths:
-            if os.path.exists(path) and os.access(path, os.X_OK):
+            # Check if file exists (we'll run it with sudo, so don't check X_OK for current user)
+            if os.path.exists(path):
                 return path
 
         # Try which command
@@ -868,6 +871,41 @@ class UnifiedRKHunterIntegration:
         self._current_scan: subprocess.Popen | None = None
         self._scan_lock = threading.Lock()
 
+    def terminate_current_scan(self) -> bool:
+        """Terminate the currently running scan process.
+
+        Returns:
+            bool: True if termination was successful or no scan was running, False otherwise.
+        """
+        with self._scan_lock:
+            if self._current_scan is None:
+                self.logger.debug("No active scan to terminate")
+                return True
+
+            try:
+                if self._current_scan.poll() is None:  # Process still running
+                    self.logger.info("Terminating RKHunter scan process")
+                    self._current_scan.terminate()
+
+                    # Wait briefly for graceful termination
+                    try:
+                        self._current_scan.wait(timeout=5)
+                    except subprocess.TimeoutExpired:
+                        # Force kill if graceful termination failed
+                        self.logger.warning("Forcefully killing RKHunter scan process")
+                        self._current_scan.kill()
+                        self._current_scan.wait()
+
+                    self._current_scan = None
+                    return True
+                else:
+                    # Process already finished
+                    self._current_scan = None
+                    return True
+            except Exception as e:
+                self.logger.error(f"Error terminating scan: {e}")
+                return False
+
     async def scan_system(self, scan_type: str = "quick") -> RKHunterScanResult:
         """Perform system scan with RKHunter."""
         scan_id = f"rkhunter_{int(time.time())}"
@@ -925,6 +963,142 @@ class UnifiedRKHunterIntegration:
                             description=f"Scan execution failed: {e}",
                         )
                     ],
+                )
+
+    def scan_system_with_output_callback(
+        self,
+        test_categories: list[str] | None = None,
+        update_database: bool = False,
+        output_callback: Callable[[str], None] | None = None,
+    ) -> RKHunterScanResult:
+        """Synchronous scan with output callback for GUI integration."""
+        scan_id = f"rkhunter_{int(time.time())}"
+        start_time = datetime.now()
+
+        with self._scan_lock:
+            try:
+                # Build scan arguments
+                binary_path = self.monitor._find_rkhunter_binary()
+                if not binary_path:
+                    raise RuntimeError("RKHunter binary not found")
+
+                # Use --sk (skip keypress) like the old implementation
+                args = [binary_path, "--check", "--sk", "--nocolors", "--no-mail-on-warning"]
+
+                # Add config file if it exists
+                config_path = Path.home() / ".config" / "search-and-destroy" / "rkhunter.conf"
+                if config_path.exists():
+                    args.extend(["--configfile", str(config_path)])
+                elif os.path.exists("/etc/rkhunter.conf"):
+                    args.extend(["--configfile", "/etc/rkhunter.conf"])
+
+                # Use secure temp dir
+                args.extend(["--tmpdir", "/var/lib/rkhunter/tmp"])
+
+                # Note: test_categories is for UI organization only
+                # RKHunter doesn't have an --enable option for specific test groups
+
+                if update_database:
+                    # Run propupd first with elevated_popen
+                    from app.core.elevated_runner import elevated_popen
+                    update_args = [binary_path, "--propupd"]
+                    try:
+                        self.logger.info("Running RKHunter property update...")
+                        update_proc = elevated_popen(update_args, gui=True)
+                        update_proc.wait(timeout=120)
+                        self.logger.info("Property update completed")
+                    except Exception as e:
+                        self.logger.warning(f"Database update failed: {e}")
+
+                # Execute scan with real-time streaming output using elevated_popen
+                from app.core.elevated_runner import elevated_popen
+
+                self.logger.info(f"Executing RKHunter scan with args: {args}")
+                process = elevated_popen(args, gui=True)
+                self._current_scan = process
+
+                stdout_lines = []
+                stderr_lines = []
+
+                # Capture stdout with real-time callback
+                if process.stdout:
+                    for line in iter(process.stdout.readline, ""):
+                        if not line:
+                            break
+                        line_clean = line.rstrip()
+                        stdout_lines.append(line_clean)
+
+                        if output_callback:
+                            output_callback(line_clean)
+
+                # Wait for completion
+                process.wait(timeout=600)
+
+                # Capture any stderr
+                if process.stderr:
+                    stderr_output = process.stderr.read()
+                    stderr_lines = stderr_output.split("\n") if stderr_output else []
+
+                stdout = "\n".join(stdout_lines)
+                stderr = "\n".join(stderr_lines)
+                returncode = process.returncode
+
+                self._current_scan = None
+
+                # Parse results
+                findings = self._parse_scan_output(stdout, stderr)
+
+                # Analyze findings
+                for finding in findings:
+                    if finding.result == RKHunterResult.WARNING:
+                        finding.explanation = self.analyzer.analyze_warning(
+                            finding.test_name, finding.description, finding.details
+                        )
+
+                # Create scan result
+                scan_result = RKHunterScanResult(
+                    scan_id=scan_id,
+                    start_time=start_time,
+                    end_time=datetime.now(),
+                    overall_result=self._determine_overall_result(findings),
+                    findings=findings,
+                    warnings_count=len(
+                        [f for f in findings if f.result == RKHunterResult.WARNING]
+                    ),
+                    errors_count=len(
+                        [f for f in findings if f.result == RKHunterResult.ERROR]
+                    ),
+                    total_tests=len(findings),
+                    metadata={"return_code": returncode},
+                )
+
+                return scan_result
+
+            except subprocess.TimeoutExpired:
+                self._current_scan = None
+                self.logger.error("RKHunter scan timed out")
+                return RKHunterScanResult(
+                    scan_id=scan_id,
+                    start_time=start_time,
+                    end_time=datetime.now(),
+                    overall_result=RKHunterResult.ERROR,
+                    findings=[],
+                    warnings_count=0,
+                    errors_count=1,
+                    metadata={"error_message": "Scan timed out after 10 minutes"},
+                )
+            except Exception as e:
+                self._current_scan = None
+                self.logger.error(f"RKHunter scan failed: {e}")
+                return RKHunterScanResult(
+                    scan_id=scan_id,
+                    start_time=start_time,
+                    end_time=datetime.now(),
+                    overall_result=RKHunterResult.ERROR,
+                    findings=[],
+                    warnings_count=0,
+                    errors_count=1,
+                    metadata={"error_message": f"Scan execution failed: {e}"},
                 )
 
     def _build_scan_args(self, scan_type: str) -> list[str]:

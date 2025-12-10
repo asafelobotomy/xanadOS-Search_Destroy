@@ -390,20 +390,14 @@ class RKHunterScanThread(QThread, CooperativeCancellationMixin):
             self.progress_updated.emit("Preparing RKHunter scan...")
 
             # Check if GUI sudo authentication is available
-            sudo_available = self.rkhunter._find_executable("sudo")
+            import shutil
+            sudo_available = shutil.which("sudo")
 
-            if not self.rkhunter.is_functional():
-                if sudo_available:
-                    self.progress_updated.emit(
-                        "🔐 Waiting for GUI authentication... Please enter your password."
-                    )
-                else:
-                    self.progress_updated.emit(
-                        "⚠️ Waiting for authentication... Please enter your password in the terminal."
-                    )
-                # Don't update progress bar during authentication wait
-
-                time.sleep(1)
+            # Check if RKHunter binary exists
+            rkhunter_binary = self.rkhunter.monitor._find_rkhunter_binary()
+            if not rkhunter_binary:
+                self.progress_updated.emit("❌ RKHunter not found. Please install RKHunter first.")
+                raise RuntimeError("RKHunter binary not found")
 
             # Don't emit progress updates until we know authentication succeeded
             # and the scan is actually running
@@ -569,14 +563,20 @@ class RKHunterScanThread(QThread, CooperativeCancellationMixin):
             # Create error result
             from datetime import datetime
 
-            from app.core.unified_rkhunter_integration import RKHunterScanResult
+            from app.core.unified_rkhunter_integration import (
+                RKHunterScanResult,
+                RKHunterResult,
+            )
 
             error_result = RKHunterScanResult(
                 scan_id=f"error_{int(datetime.now().timestamp())}",
                 start_time=datetime.now(),
                 end_time=datetime.now(),
-                success=False,
-                error_message=f"Scan thread error: {e!s}",
+                overall_result=RKHunterResult.ERROR,
+                findings=[],
+                warnings_count=0,
+                errors_count=1,
+                metadata={"error_message": f"Scan thread error: {e!s}"},
             )
 
             self.scan_completed.emit(error_result)
