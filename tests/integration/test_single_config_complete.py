@@ -7,7 +7,7 @@ from pathlib import Path
 # Add project root to path (go up two levels from tests/integration/)
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
-from app.core.rkhunter_optimizer import RKHunterOptimizer
+from app.core.unified_rkhunter_integration import RKHunterOptimizer
 
 def test_single_config_implementation():
     """Test all aspects of the single-config implementation"""

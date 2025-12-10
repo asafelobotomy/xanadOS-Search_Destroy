@@ -37,9 +37,10 @@ from app.gpu.acceleration import GPUAccelerator
 
 # Import Phase 1 components for integration
 from app.core.ml_threat_detector import MLThreatDetector
-from app.core.advanced_async_scanner import AdvancedAsyncScanner
+# Note: AdvancedAsyncScanner consolidated into unified_scanner_engine
+from app.core.unified_scanner_engine import UnifiedScannerEngine as AdvancedAsyncScanner
 from app.core.edr_engine import EDREngine
-from app.core.memory_manager import get_memory_manager
+from app.core.unified_memory_management import get_memory_manager
 from app.core.memory_forensics import MemoryForensicsEngine
 
 

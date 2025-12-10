@@ -298,8 +298,8 @@ class ErrorHandler:
         """Attempt to recover from component errors."""
         # Try to restart the component
         try:
-            from app.core.component_manager import get_component_manager
-            manager = get_component_manager()
+            from app.core.unified_component_validator import get_component_validator
+            validator = get_component_validator()
             # This would need component restart capability
             self.logger.info(f"Attempting to recover component: {exception.component}")
             return True

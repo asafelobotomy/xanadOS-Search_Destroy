@@ -34,7 +34,7 @@ import joblib
 
 from app.core.ml_threat_detector import MLThreatDetector
 from app.core.edr_engine import EDREngine, SecurityEvent
-from app.core.memory_manager import get_memory_manager
+from app.core.unified_memory_management import get_memory_manager
 from app.core.unified_security_engine import UnifiedSecurityEngine
 from app.utils.config import get_config
 

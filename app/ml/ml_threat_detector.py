@@ -20,8 +20,53 @@ from sklearn.ensemble import IsolationForest
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.preprocessing import StandardScaler
 
-from app.core.async_threat_detector import ThreatDetection, ThreatLevel, ThreatType
 from app.utils.secure_crypto import secure_file_hash
+
+# Define threat detection classes inline (previously from async_threat_detector)
+from enum import Enum
+from dataclasses import dataclass, field
+from typing import Dict, List, Any
+from datetime import datetime
+
+class ThreatLevel(Enum):
+    """Threat severity levels."""
+    LOW = "low"
+    MEDIUM = "medium"
+    HIGH = "high"
+    CRITICAL = "critical"
+
+class ThreatType(Enum):
+    """Types of threats."""
+    MALWARE = "malware"
+    SUSPICIOUS = "suspicious"
+    ROOTKIT = "rootkit"
+    EXPLOIT = "exploit"
+    RANSOMWARE = "ransomware"
+    TROJAN = "trojan"
+    BEHAVIORAL = "behavioral"
+
+@dataclass
+class ThreatDetection:
+    """Represents a detected threat."""
+    file_path: str
+    threat_level: ThreatLevel
+    threat_type: ThreatType
+    confidence: float
+    detection_method: str = ""
+    description: str = ""
+    indicators: List[str] = field(default_factory=list)
+    metadata: Dict[str, Any] = field(default_factory=dict)
+    timestamp: datetime = field(default_factory=datetime.now)
+
+@dataclass
+class ScanResult:
+    """Result from a security scan."""
+    scan_id: str
+    file_path: str
+    is_threat: bool
+    threat_detection: ThreatDetection = None
+    scan_time: float = 0.0
+    metadata: Dict[str, Any] = field(default_factory=dict)
 
 
 # ML Model Constants
@@ -931,8 +976,9 @@ async def enhance_threat_detector_with_ml(
                 ml_threat = await ml_detector.ml_to_threat_detection_async(file_path, ml_predictions)
 
                 if ml_threat:
-                    from app.core.async_threat_detector import ScanResult
+                    # ScanResult is now defined at the top of this file
                     return ScanResult(
+                        scan_id=f"ml_scan_{int(datetime.now().timestamp())}",
                         file_path=file_path,
                         is_threat=True,
                         threat_detection=ml_threat

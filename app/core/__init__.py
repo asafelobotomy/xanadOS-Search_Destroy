@@ -11,7 +11,7 @@ Includes scanning engine, security, quarantine management, and performance optim
 # Core scanning and security components
 from .clamav_wrapper import ClamAVWrapper
 from .file_scanner import FileScanner
-from .rkhunter_wrapper import RKHunterWrapper
+from .unified_rkhunter_integration import UnifiedRKHunterIntegration as RKHunterWrapper
 
 # Unified systems (2025 optimizations)
 try:
@@ -35,19 +35,8 @@ except ImportError as e:
     logging.getLogger(__name__).warning(f"Unified Performance Optimizer unavailable: {e}")
 
 # Core components
-try:
-    from .async_scanner import AsyncFileScanner
-except ImportError:
-    # Async scanner may have import issues, skip for now
-    pass
 from .rate_limiting import AdaptiveRateLimiter
 from .ui_responsiveness import initialize_responsive_ui
-
-# Performance optimization components
-try:
-    from .memory_optimizer import MemoryOptimizer
-except ImportError:
-    pass
 
 # Security modules
 try:
@@ -68,10 +57,10 @@ try:
     from .heuristic_analysis import HeuristicAnalysisEngine
     from .multi_language_support import MultiLanguageSupport
 
-    # Non-invasive monitor and rkhunter monitor kept if available
+    # Non-invasive monitor kept if available
     from .non_invasive_monitor import system_monitor
-    from .rkhunter_monitor_non_invasive import rkhunter_monitor
     from .system_service import SystemServiceManager
+    # Note: rkhunter_monitor_non_invasive consolidated into unified_rkhunter_integration
     from .web_protection import WebProtectionSystem
 except ImportError as e:
     # Advanced modules may not be available due to missing dependencies
@@ -87,13 +76,11 @@ __all__ = [
     "AutoUpdateSystem",
     "ClamAVWrapper",
     "FileScanner",
-    "MemoryOptimizer",
     "RKHunterWrapper",
     "SystemServiceManager",
     "UnifiedPerformanceOptimizer",
     "UnifiedSecurityEngine",
     "WebProtectionSystem",
     "initialize_responsive_ui",
-    "rkhunter_monitor",
     "system_monitor",
 ]

@@ -37,7 +37,7 @@ def test_rkhunter_optimizer():
     print("\n=== Testing RKHunter Optimizer Status ===")
 
     try:
-        from app.core.rkhunter_optimizer import RKHunterOptimizer
+        from app.core.unified_rkhunter_integration import RKHunterOptimizer
 
         optimizer = RKHunterOptimizer()
         print("✓ RKHunter Optimizer initialized")
@@ -72,7 +72,8 @@ def test_non_invasive_monitor():
     print("\n=== Testing Non-Invasive Monitor ===")
 
     try:
-        from app.core.rkhunter_monitor_non_invasive import RKHunterMonitorNonInvasive
+        from app.core.unified_rkhunter_integration import UnifiedRKHunterMonitor
+        # RKHunterMonitorNonInvasive is now UnifiedRKHunterMonitor
 
         monitor = RKHunterMonitorNonInvasive()
         print("✓ Non-invasive monitor initialized")

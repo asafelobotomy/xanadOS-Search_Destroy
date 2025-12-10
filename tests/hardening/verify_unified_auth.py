@@ -14,8 +14,9 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "app"))
 def test_auth_session_manager_import():
     """Test that we can import the auth session manager"""
     try:
-        from app.core.auth_session_manager import (
-            AuthenticationSessionManager,
+        # Note: auth_session_manager consolidated into enterprise_authentication
+        from app.core.enterprise_authentication import (
+            EnterpriseAuthenticationManager as AuthenticationSessionManager,
         )
 
         print("✅ Successfully imported AuthenticationSessionManager")

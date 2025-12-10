@@ -21,12 +21,16 @@ import pytest
 
 # Import Phase 1 components
 from app.core.ml_threat_detector import MLThreatDetector, ThreatInfo
-from app.core.advanced_async_scanner import AdvancedAsyncScanner, ScanResult
+# Note: AdvancedAsyncScanner consolidated into unified_scanner_engine
+try:
+    from app.core.unified_scanner_engine import UnifiedScannerEngine as AdvancedAsyncScanner
+    from app.core.unified_scanner_engine import ScanResult
+except ImportError:
+    # Fallback if unified_scanner_engine doesn't have these
+    from app.ml.ml_threat_detector import ScanResult
+    AdvancedAsyncScanner = None
 from app.core.edr_engine import EDREngine, SecurityEvent
-from app.core.memory_manager import (
-    AdvancedMemoryManager,
-    LRUCache,
-    MemoryPool,
+from app.core.unified_memory_management import (
     get_memory_manager
 )
 from app.core.memory_forensics import (

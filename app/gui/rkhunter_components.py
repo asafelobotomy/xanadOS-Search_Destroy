@@ -20,9 +20,8 @@ from PyQt6.QtWidgets import (
 )
 
 from app.core.security_integration import get_security_coordinator
-from app.core.rkhunter_wrapper import RKHunterWrapper
-
-from .thread_cancellation import CooperativeCancellationMixin
+from app.core.unified_rkhunter_integration import UnifiedRKHunterIntegration as RKHunterWrapper
+from app.core.unified_threading_manager import CooperativeCancellationMixin
 
 
 class RKHunterScanDialog(QDialog):
@@ -538,7 +537,7 @@ class RKHunterScanThread(QThread, CooperativeCancellationMixin):
                 self.progress_updated.emit("🛑 RKHunter scan cancelled")
                 from datetime import datetime
 
-                from app.core.rkhunter_wrapper import RKHunterScanResult
+                from app.core.unified_rkhunter_integration import RKHunterScanResult
 
                 cancelled_result = RKHunterScanResult(
                     scan_id=f"rkhunter_cancelled_{int(time.time())}",
@@ -570,7 +569,7 @@ class RKHunterScanThread(QThread, CooperativeCancellationMixin):
             # Create error result
             from datetime import datetime
 
-            from app.core.rkhunter_wrapper import RKHunterScanResult
+            from app.core.unified_rkhunter_integration import RKHunterScanResult
 
             error_result = RKHunterScanResult(
                 scan_id=f"error_{int(datetime.now().timestamp())}",

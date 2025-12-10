@@ -15,7 +15,10 @@ from typing import Any
 components_available = {}
 
 try:
-    from app.core.component_manager import get_component_manager, ComponentState
+    # Note: component_manager consolidated into unified_component_validator
+    from app.core.unified_component_validator import get_component_validator, ComponentStatus
+    # Map ComponentState to ComponentStatus for compatibility
+    ComponentState = ComponentStatus
     components_available['component_manager'] = True
 except ImportError as e:
     print(f"Component manager not available: {e}")

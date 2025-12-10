@@ -49,8 +49,8 @@ try:
     from app.core.elevated_runner import (  # pylint: disable=import-outside-toplevel
         elevated_run,
     )
-    from app.core.rkhunter_monitor_non_invasive import (  # pylint: disable=import-outside-toplevel
-        rkhunter_monitor,
+    from app.core.unified_rkhunter_integration import (
+        UnifiedRKHunterMonitor as rkhunter_monitor,
     )
     from app.gui.theme_manager import get_theme_manager
     from app.gui.themed_widgets import ThemedDialog

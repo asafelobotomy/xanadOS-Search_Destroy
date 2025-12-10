@@ -14,7 +14,7 @@ def test_optimization():
         print("=== Testing RKHunter Optimization ===")
 
         # Import required modules
-        from app.core.rkhunter_optimizer import RKHunterOptimizer, RKHunterConfig
+        from app.core.unified_rkhunter_integration import RKHunterOptimizer, RKHunterConfig
         print("✅ Successfully imported RKHunter modules")
 
         # Create a test config

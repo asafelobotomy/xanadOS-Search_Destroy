@@ -10,9 +10,31 @@ from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtGui import QPixmap
 from PyQt6.QtWidgets import QLabel, QMessageBox
 
-from app.core.rkhunter_analyzer import SeverityLevel, WarningExplanation
+from app.core.unified_rkhunter_integration import RKHunterSeverity, RKHunterWarningAnalyzer
 from app.gui.theme_manager import get_theme_manager
 from app.gui.themed_widgets import ThemedDialog
+
+# Map old SeverityLevel to new RKHunterSeverity for compatibility
+SeverityLevel = RKHunterSeverity
+
+# WarningExplanation is now returned by RKHunterWarningAnalyzer.analyze_warning()
+# We'll create a simple dataclass for compatibility
+from dataclasses import dataclass
+from typing import List
+
+@dataclass
+class WarningExplanation:
+    """Compatibility wrapper for warning explanations."""
+    severity: RKHunterSeverity
+    description: str
+    likely_cause: str = ""
+    recommended_action: str = ""
+    technical_details: str = ""
+    false_positive_indicators: List[str] = None
+
+    def __post_init__(self):
+        if self.false_positive_indicators is None:
+            self.false_positive_indicators = []
 
 # Add project root to Python path for imports
 project_root = Path(__file__).parent.parent.parent

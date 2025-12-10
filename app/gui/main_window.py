@@ -18,25 +18,18 @@ from pathlib import Path
 from app import __version__
 from app.core.file_scanner import FileScanner
 from app.core.firewall_detector import get_firewall_status, toggle_firewall
-from app.core.rkhunter_wrapper import RKHunterScanResult, RKHunterWrapper
+from app.core.unified_rkhunter_integration import (
+    RKHunterScanResult,
+    UnifiedRKHunterIntegration as RKHunterWrapper,
+    RKHunterConfig,
+    RKHunterOptimizer,
+    RKHunterStatus,
+    OptimizationReport,
+)
 from app.core.scan_results_formatter import ModernScanResultsFormatter
 
-# Import RKHunter optimizer for settings integration
-try:
-    from app.core.rkhunter_optimizer import (
-        OptimizationReport,
-        RKHunterConfig,
-        RKHunterOptimizer,
-        RKHunterStatus,
-    )
-
-    RKHUNTER_OPTIMIZER_AVAILABLE = True
-except ImportError:
-    RKHUNTER_OPTIMIZER_AVAILABLE = False
-    RKHunterOptimizer = None
-    RKHunterConfig = None
-    RKHunterStatus = None
-    OptimizationReport = None
+# RKHunter integration is now always available from unified module
+RKHUNTER_OPTIMIZER_AVAILABLE = True
 # Import compatible update system
 try:
     from app.core.automatic_updates import AutoUpdateSystem
@@ -49,7 +42,7 @@ except ImportError:
 # Import non-invasive monitoring system for status checks without sudo
 try:
     from app.core.non_invasive_monitor import get_system_status, record_activity
-    from app.core.rkhunter_monitor_non_invasive import get_rkhunter_status_non_invasive
+    from app.core.unified_rkhunter_integration import get_rkhunter_status_non_invasive
 
     NON_INVASIVE_MONITORING_AVAILABLE = True
 except ImportError:
@@ -117,7 +110,7 @@ from PyQt6.QtWidgets import (
 
 from app.core import UNIFIED_PERFORMANCE_AVAILABLE
 from app.core.security_integration import get_security_coordinator
-from app.core.memory_cache import get_system_cache
+from app.core.unified_memory_management import get_system_cache
 from app.gui import APP_VERSION, settings_pages
 from app.gui.all_warnings_dialog import AllWarningsDialog
 from app.gui.lazy_dashboard import LazyDashboardLoader
@@ -309,19 +302,9 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
 
     def _setup_cache_callbacks(self):
         """Setup cache refresh callbacks for system status components."""
-        # Register refresh callbacks for different system components
-        self.system_cache.register_refresh_callback(
-            "system_status", self._refresh_system_status
-        )
-        self.system_cache.register_refresh_callback(
-            "rkhunter_status", self._refresh_rkhunter_status
-        )
-        self.system_cache.register_refresh_callback(
-            "clamav_status", self._refresh_clamav_status
-        )
-        self.system_cache.register_refresh_callback(
-            "firewall_status", self._refresh_firewall_status
-        )
+        # Note: IntelligentCache doesn't support callbacks directly
+        # Refresh methods are called on-demand when status updates are needed
+        pass
 
     def _refresh_system_status(self):
         """Refresh system status in background."""
@@ -1112,7 +1095,7 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
 
         # Re-enable firewall status updates now that they use non-invasive methods
         # Schedule firewall status update after UI is fully loaded
-        QTimer.singleShot(1000, self.update_firewall_status_deferred)
+        QTimer.singleShot(1000, self.update_firewall_status_card)
 
         # Last Scan Card - now clickable
         self.last_scan_card = self.create_clickable_status_card(
@@ -1484,10 +1467,6 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
                             if is_active
                             else "Click to enable firewall"
                         )
-
-            # Also update other firewall status displays if they exist
-            if hasattr(self, "update_firewall_status"):
-                self.update_firewall_status()
 
         except Exception as e:
             print(f"⚠️ Failed to update firewall status: {e}")
@@ -7284,7 +7263,7 @@ Common False Positives:
             logging.info("🚀 INTERACTIVE CONFIG FIXES TRIGGERED")
 
             # Import required modules
-            from app.core.rkhunter_optimizer import RKHunterOptimizer
+            from app.core.unified_rkhunter_integration import RKHunterOptimizer
             from app.gui.config_fix_dialog import ConfigFixDialog
             from pathlib import Path
 
@@ -9248,7 +9227,7 @@ Common False Positives:
             self._clear_firewall_status_cache()
 
             # Update firewall status with fresh data
-            QTimer.singleShot(1000, self.update_firewall_status_deferred)
+            QTimer.singleShot(1000, self.update_firewall_status_card)
 
         except Exception as e:
             print(f"Error updating security status: {e}")

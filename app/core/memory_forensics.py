@@ -29,7 +29,7 @@ from enum import Enum
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Set, Tuple, Union
 
-from app.core.memory_manager import get_memory_manager, memory_efficient
+from app.core.unified_memory_management import get_memory_manager, memory_efficient
 from app.utils.config import get_config
 
 

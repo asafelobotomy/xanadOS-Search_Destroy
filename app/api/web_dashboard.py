@@ -33,7 +33,7 @@ from app.gui.security_dashboard import (
 )
 from app.core.ml_threat_detector import MLThreatDetector
 from app.core.edr_engine import EDREngine
-from app.core.memory_manager import get_memory_manager
+from app.core.unified_memory_management import get_memory_manager
 
 
 class WebDashboardManager:

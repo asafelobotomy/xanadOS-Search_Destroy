@@ -13,7 +13,7 @@ def test_database_detection():
     print("🔍 Testing Improved RKHunter Database Detection\n")
 
     try:
-        from app.core.rkhunter_optimizer import RKHunterOptimizer
+        from app.core.unified_rkhunter_integration import RKHunterOptimizer
 
         print("=== Testing RKHunter Optimizer with Improved Detection ===")
         optimizer = RKHunterOptimizer()

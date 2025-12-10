@@ -26,19 +26,13 @@ from PyQt6.QtWidgets import (
 from app.gui import APP_VERSION
 from app.gui.theme_manager import get_theme_manager
 
-try:
-    from app.core.rkhunter_optimizer import (
-        OptimizationReport,
-        RKHunterConfig,
-        RKHunterOptimizer,
-        RKHunterStatus,
-    )
-except ImportError:
-    # Graceful fallback if module not available
-    RKHunterOptimizer = None
-    RKHunterConfig = None
-    RKHunterStatus = None
-    OptimizationReport = None
+# Import from unified RKHunter integration
+from app.core.unified_rkhunter_integration import (
+    OptimizationReport,
+    RKHunterConfig,
+    RKHunterOptimizer,
+    RKHunterStatus,
+)
 
 logger = logging.getLogger(__name__)
 

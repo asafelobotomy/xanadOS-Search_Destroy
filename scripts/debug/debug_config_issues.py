@@ -12,7 +12,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 
 def check_config_issues():
     try:
-        from app.core.rkhunter_optimizer import RKHunterOptimizer
+        from app.core.unified_rkhunter_integration import RKHunterOptimizer
 
         config_path = str(Path.home() / '.config' / 'search-and-destroy' / 'rkhunter.conf')
         print(f"🔍 Checking config: {config_path}")
