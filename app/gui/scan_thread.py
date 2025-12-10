@@ -56,13 +56,17 @@ class ScanThread(QThread, CooperativeCancellationMixin):
                     if self._scan_cancelled:
                         break
 
-                    self.status_updated.emit(f"Scanning {idx + 1}/{total_paths}: {path}")
+                    self.status_updated.emit(
+                        f"Scanning {idx + 1}/{total_paths}: {path}"
+                    )
 
                     try:
+                        # Don't save individual reports - only save the combined result
                         scan_results = self.scanner.scan_directory(
                             path,
                             quick_scan=self.quick_scan,
-                            **self.scan_options
+                            save_report=False,  # Don't save individual directory reports
+                            **self.scan_options,
                         )
                         all_results.append(scan_results)
                     except Exception as e:
@@ -73,15 +77,26 @@ class ScanThread(QThread, CooperativeCancellationMixin):
                     progress = int((idx + 1) / total_paths * 100)
                     self.progress_updated.emit(progress)
 
-                # Combine results from all scans
+                # Combine results from all scans and save the combined report
                 combined_results = self._combine_scan_results(all_results)
+
+                # Save the combined report
+                if combined_results and hasattr(self.scanner, "scan_report_manager"):
+                    try:
+                        self.scanner.scan_report_manager.save_scan_result(
+                            combined_results
+                        )
+                        self.logger.info(
+                            f"Saved combined scan report: {combined_results.scan_id}"
+                        )
+                    except Exception as e:
+                        self.logger.error(f"Failed to save combined report: {e}")
+
                 scan_results = combined_results
             else:
                 # Scan single directory
                 scan_results = self.scanner.scan_directory(
-                    self.scan_path,
-                    quick_scan=self.quick_scan,
-                    **self.scan_options
+                    self.scan_path, quick_scan=self.quick_scan, **self.scan_options
                 )
 
             if not self._scan_cancelled:
@@ -123,7 +138,7 @@ class ScanThread(QThread, CooperativeCancellationMixin):
 
         for result in results_list:
             # Handle both ScanResult dataclass and dict formats
-            if hasattr(result, 'scanned_files'):
+            if hasattr(result, "scanned_files"):
                 # It's a ScanResult dataclass
                 total_scanned += result.scanned_files
                 total_threats += result.threats_found
@@ -141,9 +156,17 @@ class ScanThread(QThread, CooperativeCancellationMixin):
 
         # Create a new combined ScanResult
         combined_result = ScanResult(
-            scan_id=first_result.scan_id if hasattr(first_result, 'scan_id') else "combined",
-            scan_type=first_result.scan_type if hasattr(first_result, 'scan_type') else None,
-            start_time=first_result.start_time if hasattr(first_result, 'start_time') else datetime.now().isoformat(),
+            scan_id=(
+                first_result.scan_id if hasattr(first_result, "scan_id") else "combined"
+            ),
+            scan_type=(
+                first_result.scan_type if hasattr(first_result, "scan_type") else None
+            ),
+            start_time=(
+                first_result.start_time
+                if hasattr(first_result, "start_time")
+                else datetime.now().isoformat()
+            ),
             end_time=datetime.now().isoformat(),
             duration=total_duration,
             scanned_paths=combined_paths,
@@ -152,9 +175,21 @@ class ScanThread(QThread, CooperativeCancellationMixin):
             threats_found=total_threats,
             threats=combined_threats,
             errors=combined_errors,
-            scan_settings=first_result.scan_settings if hasattr(first_result, 'scan_settings') else {},
-            engine_version=first_result.engine_version if hasattr(first_result, 'engine_version') else "",
-            signature_version=first_result.signature_version if hasattr(first_result, 'signature_version') else "",
+            scan_settings=(
+                first_result.scan_settings
+                if hasattr(first_result, "scan_settings")
+                else {}
+            ),
+            engine_version=(
+                first_result.engine_version
+                if hasattr(first_result, "engine_version")
+                else ""
+            ),
+            signature_version=(
+                first_result.signature_version
+                if hasattr(first_result, "signature_version")
+                else ""
+            ),
             success=total_threats == 0 and len(combined_errors) == 0,
         )
 
