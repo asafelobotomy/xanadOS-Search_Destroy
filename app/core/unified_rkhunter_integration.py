@@ -516,13 +516,33 @@ class UnifiedRKHunterMonitor:
         status.binary_path = binary_path
         status.available = True
 
-        # Get version
+        # Get version using elevated_run since binary requires root
         try:
-            result = subprocess.run(
-                [binary_path, "--version"], capture_output=True, text=True, timeout=10
-            )
-            if result.returncode == 0:
-                status.version = result.stdout.strip()
+            if _ELEVATED_RUNNER_AVAILABLE and _elevated_run:
+                result = _elevated_run(
+                    [binary_path, "-V"],
+                    capture_output=True,
+                    timeout=10,
+                    text=True,
+                    gui=True
+                )
+                if result.returncode == 0:
+                    # Parse version from output (look for "Rootkit Hunter X.X.X" line)
+                    output = result.stdout if isinstance(result.stdout, str) else result.stdout.decode()
+                    for line in output.split('\n'):
+                        if 'Rootkit Hunter' in line:
+                            status.version = line.strip()
+                            break
+            else:
+                # Fallback without elevation (will likely fail but try anyway)
+                result = subprocess.run(
+                    [binary_path, "-V"], capture_output=True, text=True, timeout=10
+                )
+                if result.returncode == 0:
+                    for line in result.stdout.split('\n'):
+                        if 'Rootkit Hunter' in line:
+                            status.version = line.strip()
+                            break
         except Exception as e:
             self.logger.warning(f"Could not get RKHunter version: {e}")
 
@@ -539,18 +559,87 @@ class UnifiedRKHunterMonitor:
             status.config_path = config_path
             status.config_readable = os.access(config_path, os.R_OK)
 
+        # Try to get database version from rkhunter.dat (requires sudo)
+        db_paths = [
+            "/var/lib/rkhunter/db/rkhunter.dat",
+            "/usr/local/var/lib/rkhunter/db/rkhunter.dat",
+        ]
+        for db_path in db_paths:
+            # Try to read the file directly with elevated permissions (no os.path.exists check)
+            try:
+                if _ELEVATED_RUNNER_AVAILABLE and _elevated_run:
+                    # First check if file exists with test command
+                    test_result = _elevated_run(
+                        ["test", "-f", db_path],
+                        capture_output=True,
+                        timeout=5,
+                        text=True,
+                        gui=True
+                    )
+                    if test_result.returncode == 0:
+                        # File exists, read it
+                        result = _elevated_run(
+                            ["head", "-n", "1", db_path],
+                            capture_output=True,
+                            timeout=5,
+                            text=True,
+                            gui=True
+                        )
+                        if result.returncode == 0:
+                            output = result.stdout if isinstance(result.stdout, str) else result.stdout.decode()
+                            first_line = output.strip()
+                            if first_line.startswith("Version:"):
+                                status.database_version = first_line.split(":", 1)[1].strip()
+
+                        # Get last modified time
+                        result = _elevated_run(
+                            ["stat", "-c", "%Y", db_path],
+                            capture_output=True,
+                            timeout=5,
+                            text=True,
+                            gui=True
+                        )
+                        if result.returncode == 0:
+                            output = result.stdout if isinstance(result.stdout, str) else result.stdout.decode()
+                            timestamp = int(output.strip())
+                            status.database_last_updated = datetime.fromtimestamp(timestamp)
+
+                        # Found and processed database, break the loop
+                        break
+            except Exception as e:
+                self.logger.debug(f"Could not read database info from {db_path}: {e}")
+
         # Check for recent scans
         log_paths = ["/var/log/rkhunter.log", "/tmp/rkhunter.log"]
         for log_path in log_paths:
-            if os.path.exists(log_path) and os.access(log_path, os.R_OK):
-                status.scan_logs_available = True
-                status.log_path = log_path
+            if os.path.exists(log_path):
                 try:
-                    stat_info = os.stat(log_path)
-                    status.last_scan_time = datetime.fromtimestamp(stat_info.st_mtime)
-                except Exception:
-                    pass
-                break
+                    # Try to read log file with elevation if needed
+                    if not os.access(log_path, os.R_OK):
+                        if _ELEVATED_RUNNER_AVAILABLE and _elevated_run:
+                            result = _elevated_run(
+                                ["stat", "-c", "%Y", log_path],
+                                capture_output=True,
+                                timeout=5,
+                                text=True,
+                                gui=True
+                            )
+                            if result.returncode == 0:
+                                status.scan_logs_available = True
+                                status.log_path = log_path
+                                output = result.stdout if isinstance(result.stdout, str) else result.stdout.decode()
+                                timestamp = int(output.strip())
+                                status.last_scan_time = datetime.fromtimestamp(timestamp)
+                    else:
+                        status.scan_logs_available = True
+                        status.log_path = log_path
+                        stat_info = os.stat(log_path)
+                        status.last_scan_time = datetime.fromtimestamp(stat_info.st_mtime)
+                except Exception as e:
+                    self.logger.debug(f"Could not read log info: {e}")
+
+                if status.scan_logs_available:
+                    break
 
         status.status_message = "Enhanced status collected successfully"
         return status
@@ -570,19 +659,38 @@ class UnifiedRKHunterMonitor:
         status.binary_path = binary_path
         status.available = True
 
-        # Try to get version without elevation
+        # Try to get version - use elevation if available since binary requires root
         try:
-            result = subprocess.run(
-                [binary_path, "--version"],
-                capture_output=True,
-                text=True,
-                timeout=10,
-                user=os.getenv("USER"),  # Run as current user
-            )
-            if result.returncode == 0:
-                status.version = result.stdout.strip()
+            if _ELEVATED_RUNNER_AVAILABLE and _elevated_run:
+                result = _elevated_run(
+                    [binary_path, "-V"],
+                    capture_output=True,
+                    timeout=10,
+                    text=True,
+                    gui=True
+                )
+                if result.returncode == 0:
+                    # Parse version from output (look for "Rootkit Hunter X.X.X" line)
+                    output = result.stdout if isinstance(result.stdout, str) else result.stdout.decode()
+                    for line in output.split('\n'):
+                        if 'Rootkit Hunter' in line:
+                            status.version = line.strip()
+                            break
+            else:
+                # Fallback: try without elevation (will likely fail)
+                result = subprocess.run(
+                    [binary_path, "-V"],
+                    capture_output=True,
+                    text=True,
+                    timeout=10,
+                )
+                if result.returncode == 0:
+                    for line in result.stdout.split('\n'):
+                        if 'Rootkit Hunter' in line:
+                            status.version = line.strip()
+                            break
         except Exception as e:
-            self.logger.debug(f"Could not get version non-invasively: {e}")
+            self.logger.debug(f"Could not get version: {e}")
 
         # Check for config accessibility
         config_path = self._find_config_file()

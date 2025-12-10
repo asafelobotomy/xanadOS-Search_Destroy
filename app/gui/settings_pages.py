@@ -32,6 +32,7 @@ from app.core.unified_rkhunter_integration import (
     RKHunterConfig,
     RKHunterOptimizer,
     RKHunterStatus,
+    UnifiedRKHunterIntegration,
 )
 
 logger = logging.getLogger(__name__)
@@ -48,11 +49,12 @@ class RKHunterOptimizationWorker(QThread):
     def __init__(self, config):
         super().__init__()
         self.config = config
-        if RKHunterOptimizer:
-            # Use system config (single source of truth) instead of user config
-            # The RKHunterOptimizer will handle permission checks and sudo escalation
-            self.optimizer = RKHunterOptimizer()  # Uses /etc/rkhunter.conf by default
+        if RKHunterOptimizer and UnifiedRKHunterIntegration:
+            # Create unified integration for both status and optimization
+            self.integration = UnifiedRKHunterIntegration(config)
+            self.optimizer = self.integration.optimizer
         else:
+            self.integration = None
             self.optimizer = None
 
     def run(self):
@@ -64,14 +66,14 @@ class RKHunterOptimizationWorker(QThread):
         try:
             self.progress_updated.emit("Initializing RKHunter optimizer...")
 
-            # Get current status first
+            # Get current status first using the integration
             self.progress_updated.emit("Checking current RKHunter status...")
-            status = self.optimizer.get_current_status()
+            status = self.integration.get_status(force_refresh=True)
             self.status_updated.emit(status)
 
             # Run optimization
             self.progress_updated.emit("Applying configuration optimizations...")
-            report = self.optimizer.optimize_configuration(self.config)
+            report = self.optimizer.optimize_configuration()
 
             self.progress_updated.emit("Optimization complete")
             self.optimization_complete.emit(report)
@@ -134,12 +136,16 @@ class RKHunterStatusWidget(QWidget):
 
     def refresh_status(self):
         """Refresh RKHunter status"""
-        if RKHunterOptimizer:
+        if UnifiedRKHunterIntegration:
             try:
                 from pathlib import Path
-                user_config_path = str(Path.home() / ".config" / "search-and-destroy" / "rkhunter.conf")
-                optimizer = RKHunterOptimizer(config_path=user_config_path)
-                status = optimizer.get_current_status()
+                # Create proper RKHunterConfig object
+                config = RKHunterConfig(
+                    config_path="/etc/rkhunter.conf",
+                    user_config_path=str(Path.home() / ".config" / "search-and-destroy" / "rkhunter.conf")
+                )
+                integration = UnifiedRKHunterIntegration(config)
+                status = integration.get_status(force_refresh=True)
                 self.update_status(status)
             except Exception as e:
                 logger.error(f"Failed to refresh RKHunter status: {e}")
@@ -150,12 +156,47 @@ class RKHunterStatusWidget(QWidget):
             return
 
         self.current_status = status
-        self.version_label.setText(getattr(status, "version", "Unknown"))
-        self.db_version_label.setText(getattr(status, "database_version", "Unknown"))
-        self.last_update_label.setText(getattr(status, "last_update", "Never"))
-        self.last_scan_label.setText(getattr(status, "last_scan", "Never"))
-        self.baseline_label.setText(getattr(status, "baseline_status", "Unknown"))
-        self.mirror_label.setText(getattr(status, "mirror_status", "Unknown"))
+
+        # Check if RKHunter is available
+        if not getattr(status, "available", False):
+            self.version_label.setText("Not Available")
+            self.db_version_label.setText("N/A")
+            self.last_update_label.setText("N/A")
+            self.last_scan_label.setText("N/A")
+            self.baseline_label.setText("N/A")
+            self.mirror_label.setText("N/A")
+            return
+
+        # Display version (handle empty strings)
+        version = getattr(status, "version", "").strip()
+        self.version_label.setText(version if version else "Click Refresh again")
+
+        # Handle different status types (Enhanced vs NonInvasive)
+        if hasattr(status, "database_version"):
+            # Enhanced status
+            db_version = getattr(status, "database_version", "").strip()
+            self.db_version_label.setText(db_version if db_version else "Run: sudo rkhunter --propupd")
+
+            self.last_update_label.setText(
+                status.database_last_updated.strftime("%Y-%m-%d %H:%M")
+                if status.database_last_updated else "Never updated"
+            )
+            self.last_scan_label.setText(
+                status.last_scan_time.strftime("%Y-%m-%d %H:%M")
+                if status.last_scan_time else "Never scanned"
+            )
+        else:
+            # Non-invasive status
+            self.db_version_label.setText("Run scan to populate")
+            self.last_update_label.setText("Run scan to populate")
+            self.last_scan_label.setText(
+                status.last_activity_detected.strftime("%Y-%m-%d %H:%M")
+                if hasattr(status, "last_activity_detected") and status.last_activity_detected else "Never"
+            )
+
+        # Show helpful commands
+        self.baseline_label.setText("sudo rkhunter --propupd")
+        self.mirror_label.setText("sudo rkhunter --update")
 
 
 def build_general_page(host):
