@@ -329,7 +329,9 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
                 status = self.rkhunter.monitor.get_status_non_invasive()
                 # Convert to dict format for compatibility
                 return {
-                    "status": "available" if status.rkhunter_installed else "not_available",
+                    "status": (
+                        "available" if status.rkhunter_installed else "not_available"
+                    ),
                     "last_scan": status.last_scan_date,
                     "warnings": status.warning_count,
                 }
@@ -435,9 +437,7 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
 
     def _load_system_overview_data(self):
         """Load system overview data (cached)."""
-        return self.system_cache.get_or_set(
-            "overview", self._refresh_system_status
-        )
+        return self.system_cache.get_or_set("overview", self._refresh_system_status)
 
     def _load_recent_scans_data(self):
         """Load recent scans data."""
@@ -2750,6 +2750,7 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
         except Exception as e:
             logging.exception("Failed to initialize real-time monitoring: %s", e)
             return False
+
     def toggle_real_time_protection(self):
         """Toggle real-time protection on/off."""
         # Check current state by looking at the button text
@@ -5151,30 +5152,28 @@ System        {perf_status}"""
             import platform
             import subprocess
 
-            distro = platform.freedesktop_os_release().get('ID', '').lower()
+            distro = platform.freedesktop_os_release().get("ID", "").lower()
 
             # Determine the installation command based on distro
-            if distro in ['ubuntu', 'debian', 'linuxmint', 'pop']:
-                install_args = ['sh', '-c', 'apt update && apt install -y rkhunter']
-            elif distro in ['fedora', 'rhel', 'centos', 'rocky', 'almalinux']:
-                install_args = ['dnf', 'install', '-y', 'rkhunter']
-            elif distro in ['arch', 'manjaro', 'endeavouros']:
-                install_args = ['pacman', '-S', '--noconfirm', 'rkhunter']
-            elif distro in ['opensuse', 'suse']:
-                install_args = ['zypper', 'install', '-y', 'rkhunter']
+            if distro in ["ubuntu", "debian", "linuxmint", "pop"]:
+                install_args = ["sh", "-c", "apt update && apt install -y rkhunter"]
+            elif distro in ["fedora", "rhel", "centos", "rocky", "almalinux"]:
+                install_args = ["dnf", "install", "-y", "rkhunter"]
+            elif distro in ["arch", "manjaro", "endeavouros"]:
+                install_args = ["pacman", "-S", "--noconfirm", "rkhunter"]
+            elif distro in ["opensuse", "suse"]:
+                install_args = ["zypper", "install", "-y", "rkhunter"]
             else:
                 # Generic fallback
-                install_args = ['sh', '-c', 'apt update && apt install -y rkhunter']
+                install_args = ["sh", "-c", "apt update && apt install -y rkhunter"]
 
             # Run installation with GUI authentication
             from app.core.gui_auth_manager import GUIAuthManager
+
             auth_manager = GUIAuthManager()
 
             result = auth_manager.run_with_gui_auth(
-                install_args,
-                timeout=300,
-                capture_output=True,
-                text=True
+                install_args, timeout=300, capture_output=True, text=True
             )
 
             if result and result.returncode == 0:
@@ -5242,26 +5241,29 @@ System        {perf_status}"""
             # Install RKHunter using the same method as install_rkhunter
             import platform
 
-            distro = platform.freedesktop_os_release().get('ID', '').lower()
+            distro = platform.freedesktop_os_release().get("ID", "").lower()
 
             # Determine the installation command based on distro
-            if distro in ['ubuntu', 'debian', 'linuxmint', 'pop']:
-                install_args = ['sh', '-c', 'apt update && apt install -y rkhunter']
-            elif distro in ['fedora', 'rhel', 'centos', 'rocky', 'almalinux']:
-                install_args = ['dnf', 'install', '-y', 'rkhunter']
-            elif distro in ['arch', 'manjaro', 'endeavouros']:
-                install_args = ['pacman', '-S', '--noconfirm', 'rkhunter']
-            elif distro in ['opensuse', 'suse']:
-                install_args = ['zypper', 'install', '-y', 'rkhunter']
+            if distro in ["ubuntu", "debian", "linuxmint", "pop"]:
+                install_args = ["sh", "-c", "apt update && apt install -y rkhunter"]
+            elif distro in ["fedora", "rhel", "centos", "rocky", "almalinux"]:
+                install_args = ["dnf", "install", "-y", "rkhunter"]
+            elif distro in ["arch", "manjaro", "endeavouros"]:
+                install_args = ["pacman", "-S", "--noconfirm", "rkhunter"]
+            elif distro in ["opensuse", "suse"]:
+                install_args = ["zypper", "install", "-y", "rkhunter"]
             else:
-                install_args = ['sh', '-c', 'apt update && apt install -y rkhunter']
+                install_args = ["sh", "-c", "apt update && apt install -y rkhunter"]
 
             from app.core.gui_auth_manager import GUIAuthManager
+
             auth_manager = GUIAuthManager()
             result = auth_manager.run_with_gui_auth(install_args, timeout=300)
 
             success = result.returncode == 0
-            message = "Installation completed successfully" if success else result.stderr
+            message = (
+                "Installation completed successfully" if success else result.stderr
+            )
 
             progress.close()
 
@@ -5433,14 +5435,14 @@ System        {perf_status}"""
         try:
             # Use GUI auth manager to establish session
             from app.core.gui_auth_manager import GUIAuthManager
+
             auth_manager = GUIAuthManager()
 
             # Test auth with a simple command
             test_result = auth_manager.run_with_gui_auth(
-                ['true'],  # Simple no-op command
-                timeout=30
+                ["true"], timeout=30  # Simple no-op command
             )
-            auth_session_valid = (test_result.returncode == 0)
+            auth_session_valid = test_result.returncode == 0
 
             if not auth_session_valid:
                 # Try the new security integration system
@@ -6366,7 +6368,11 @@ System        {perf_status}"""
 
         # Reset progress bar
         from app.core.unified_rkhunter_integration import RKHunterResult
-        success = result.overall_result in (RKHunterResult.CLEAN, RKHunterResult.WARNING)
+
+        success = result.overall_result in (
+            RKHunterResult.CLEAN,
+            RKHunterResult.WARNING,
+        )
         self.progress_bar.setValue(100 if success else 0)
 
         if result.overall_result == RKHunterResult.ERROR:
@@ -7178,7 +7184,14 @@ Common False Positives:
                 self.rkhunter_progress_label.setText(f"Running {optimization_type}...")
 
             # Create config based on current settings
-            config = RKHunterConfig()
+            from pathlib import Path
+
+            config = RKHunterConfig(
+                config_path="/etc/rkhunter.conf",
+                user_config_path=str(
+                    Path.home() / ".config" / "search-and-destroy" / "rkhunter.conf"
+                ),
+            )
 
             # Set performance mode if available
             if hasattr(self, "rkhunter_perf_mode_combo"):
@@ -7326,7 +7339,9 @@ Common False Positives:
             logging.error(f"Error handling optimization error: {e}")
 
         except Exception as handler_error:
-            logging.exception("Failed to handle RKHunter optimization error: %s", handler_error)
+            logging.exception(
+                "Failed to handle RKHunter optimization error: %s", handler_error
+            )
 
     def _show_interactive_config_fixes(self):
         """Show interactive dialog for configuration fixes"""
@@ -7578,6 +7593,7 @@ Common False Positives:
 
         except Exception as e:
             print(f"Warning: Could not configure platform dropdown behavior: {e}")
+
     def stop_scan(self):
         print("\n🛑 === STOP_SCAN CALLED ===")
         print("DEBUG: stop_scan() called")
@@ -8254,8 +8270,8 @@ Common False Positives:
                 return
         else:
             # For ScanResult dataclass, check success attribute
-            if hasattr(result, 'success') and not result.success:
-                error_msgs = getattr(result, 'errors', [])
+            if hasattr(result, "success") and not result.success:
+                error_msgs = getattr(result, "errors", [])
                 if error_msgs:
                     error_msg = "; ".join(error_msgs[:3])  # Show first 3 errors
                     self.results_text.setText(f"Scan error: {error_msg}")
@@ -11285,9 +11301,7 @@ Common False Positives:
                 "status": "good" if not quick_issues else "issues_found",
             }
 
-            self.system_cache.set(
-                "startup_check", check_result, ttl=300
-            )  # 5 min cache
+            self.system_cache.set("startup_check", check_result, ttl=300)  # 5 min cache
 
             if quick_issues:
                 print(f"⚠️ Startup issues found: {len(quick_issues)} items")

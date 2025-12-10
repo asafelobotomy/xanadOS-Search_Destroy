@@ -258,6 +258,11 @@ class RKHunterConfig:
     max_scan_time: int = 3600  # 1 hour
     enable_analysis: bool = True
     auto_explain_warnings: bool = True
+    # Optimization settings
+    update_mirrors: bool = False
+    mirror_mode: str = "auto"
+    update_baseline: bool = False
+    performance_mode: str = "balanced"
 
 
 # ================== WARNING ANALYSIS ENGINE ==================
@@ -524,13 +529,17 @@ class UnifiedRKHunterMonitor:
                     capture_output=True,
                     timeout=10,
                     text=True,
-                    gui=True
+                    gui=True,
                 )
                 if result.returncode == 0:
                     # Parse version from output (look for "Rootkit Hunter X.X.X" line)
-                    output = result.stdout if isinstance(result.stdout, str) else result.stdout.decode()
-                    for line in output.split('\n'):
-                        if 'Rootkit Hunter' in line:
+                    output = (
+                        result.stdout
+                        if isinstance(result.stdout, str)
+                        else result.stdout.decode()
+                    )
+                    for line in output.split("\n"):
+                        if "Rootkit Hunter" in line:
                             status.version = line.strip()
                             break
             else:
@@ -539,8 +548,8 @@ class UnifiedRKHunterMonitor:
                     [binary_path, "-V"], capture_output=True, text=True, timeout=10
                 )
                 if result.returncode == 0:
-                    for line in result.stdout.split('\n'):
-                        if 'Rootkit Hunter' in line:
+                    for line in result.stdout.split("\n"):
+                        if "Rootkit Hunter" in line:
                             status.version = line.strip()
                             break
         except Exception as e:
@@ -574,7 +583,7 @@ class UnifiedRKHunterMonitor:
                         capture_output=True,
                         timeout=5,
                         text=True,
-                        gui=True
+                        gui=True,
                     )
                     if test_result.returncode == 0:
                         # File exists, read it
@@ -583,13 +592,19 @@ class UnifiedRKHunterMonitor:
                             capture_output=True,
                             timeout=5,
                             text=True,
-                            gui=True
+                            gui=True,
                         )
                         if result.returncode == 0:
-                            output = result.stdout if isinstance(result.stdout, str) else result.stdout.decode()
+                            output = (
+                                result.stdout
+                                if isinstance(result.stdout, str)
+                                else result.stdout.decode()
+                            )
                             first_line = output.strip()
                             if first_line.startswith("Version:"):
-                                status.database_version = first_line.split(":", 1)[1].strip()
+                                status.database_version = first_line.split(":", 1)[
+                                    1
+                                ].strip()
 
                         # Get last modified time
                         result = _elevated_run(
@@ -597,12 +612,18 @@ class UnifiedRKHunterMonitor:
                             capture_output=True,
                             timeout=5,
                             text=True,
-                            gui=True
+                            gui=True,
                         )
                         if result.returncode == 0:
-                            output = result.stdout if isinstance(result.stdout, str) else result.stdout.decode()
+                            output = (
+                                result.stdout
+                                if isinstance(result.stdout, str)
+                                else result.stdout.decode()
+                            )
                             timestamp = int(output.strip())
-                            status.database_last_updated = datetime.fromtimestamp(timestamp)
+                            status.database_last_updated = datetime.fromtimestamp(
+                                timestamp
+                            )
 
                         # Found and processed database, break the loop
                         break
@@ -622,19 +643,27 @@ class UnifiedRKHunterMonitor:
                                 capture_output=True,
                                 timeout=5,
                                 text=True,
-                                gui=True
+                                gui=True,
                             )
                             if result.returncode == 0:
                                 status.scan_logs_available = True
                                 status.log_path = log_path
-                                output = result.stdout if isinstance(result.stdout, str) else result.stdout.decode()
+                                output = (
+                                    result.stdout
+                                    if isinstance(result.stdout, str)
+                                    else result.stdout.decode()
+                                )
                                 timestamp = int(output.strip())
-                                status.last_scan_time = datetime.fromtimestamp(timestamp)
+                                status.last_scan_time = datetime.fromtimestamp(
+                                    timestamp
+                                )
                     else:
                         status.scan_logs_available = True
                         status.log_path = log_path
                         stat_info = os.stat(log_path)
-                        status.last_scan_time = datetime.fromtimestamp(stat_info.st_mtime)
+                        status.last_scan_time = datetime.fromtimestamp(
+                            stat_info.st_mtime
+                        )
                 except Exception as e:
                     self.logger.debug(f"Could not read log info: {e}")
 
@@ -667,13 +696,17 @@ class UnifiedRKHunterMonitor:
                     capture_output=True,
                     timeout=10,
                     text=True,
-                    gui=True
+                    gui=True,
                 )
                 if result.returncode == 0:
                     # Parse version from output (look for "Rootkit Hunter X.X.X" line)
-                    output = result.stdout if isinstance(result.stdout, str) else result.stdout.decode()
-                    for line in output.split('\n'):
-                        if 'Rootkit Hunter' in line:
+                    output = (
+                        result.stdout
+                        if isinstance(result.stdout, str)
+                        else result.stdout.decode()
+                    )
+                    for line in output.split("\n"):
+                        if "Rootkit Hunter" in line:
                             status.version = line.strip()
                             break
             else:
@@ -685,8 +718,8 @@ class UnifiedRKHunterMonitor:
                     timeout=10,
                 )
                 if result.returncode == 0:
-                    for line in result.stdout.split('\n'):
-                        if 'Rootkit Hunter' in line:
+                    for line in result.stdout.split("\n"):
+                        if "Rootkit Hunter" in line:
                             status.version = line.strip()
                             break
         except Exception as e:
@@ -979,6 +1012,15 @@ class UnifiedRKHunterIntegration:
         self._current_scan: subprocess.Popen | None = None
         self._scan_lock = threading.Lock()
 
+    def is_available(self) -> bool:
+        """Check if RKHunter is available on the system."""
+        try:
+            binary_path = self.monitor._find_rkhunter_binary()
+            return binary_path is not None
+        except Exception as e:
+            self.logger.debug(f"RKHunter availability check failed: {e}")
+            return False
+
     def terminate_current_scan(self) -> bool:
         """Terminate the currently running scan process.
 
@@ -1091,10 +1133,18 @@ class UnifiedRKHunterIntegration:
                     raise RuntimeError("RKHunter binary not found")
 
                 # Use --sk (skip keypress) like the old implementation
-                args = [binary_path, "--check", "--sk", "--nocolors", "--no-mail-on-warning"]
+                args = [
+                    binary_path,
+                    "--check",
+                    "--sk",
+                    "--nocolors",
+                    "--no-mail-on-warning",
+                ]
 
                 # Add config file if it exists
-                config_path = Path.home() / ".config" / "search-and-destroy" / "rkhunter.conf"
+                config_path = (
+                    Path.home() / ".config" / "search-and-destroy" / "rkhunter.conf"
+                )
                 if config_path.exists():
                     args.extend(["--configfile", str(config_path)])
                 elif os.path.exists("/etc/rkhunter.conf"):
@@ -1109,6 +1159,7 @@ class UnifiedRKHunterIntegration:
                 if update_database:
                     # Run propupd first with elevated_popen
                     from app.core.elevated_runner import elevated_popen
+
                     update_args = [binary_path, "--propupd"]
                     try:
                         self.logger.info("Running RKHunter property update...")
@@ -1358,6 +1409,58 @@ class UnifiedRKHunterIntegration:
     def optimize_configuration(self) -> OptimizationReport:
         """Optimize RKHunter configuration."""
         return self.optimizer.optimize_configuration()
+
+    def update_mirrors(self) -> bool:
+        """Update RKHunter mirrors/database."""
+        try:
+            binary_path = self.monitor._find_rkhunter_binary()
+            if not binary_path:
+                self.logger.error("RKHunter binary not found")
+                return False
+
+            # Use elevated_run to update mirrors
+            if _ELEVATED_RUNNER_AVAILABLE and _elevated_run:
+                self.logger.info("Updating RKHunter mirrors...")
+                result = _elevated_run(
+                    [binary_path, "--update"],
+                    capture_output=True,
+                    timeout=300,
+                    text=True,
+                    gui=True,
+                )
+                return result.returncode == 0
+            else:
+                self.logger.error("Elevated runner not available")
+                return False
+        except Exception as e:
+            self.logger.error(f"Failed to update mirrors: {e}")
+            return False
+
+    def update_baseline(self) -> bool:
+        """Update RKHunter baseline/file properties."""
+        try:
+            binary_path = self.monitor._find_rkhunter_binary()
+            if not binary_path:
+                self.logger.error("RKHunter binary not found")
+                return False
+
+            # Use elevated_run to update properties
+            if _ELEVATED_RUNNER_AVAILABLE and _elevated_run:
+                self.logger.info("Updating RKHunter file properties...")
+                result = _elevated_run(
+                    [binary_path, "--propupd"],
+                    capture_output=True,
+                    timeout=300,
+                    text=True,
+                    gui=True,
+                )
+                return result.returncode == 0
+            else:
+                self.logger.error("Elevated runner not available")
+                return False
+        except Exception as e:
+            self.logger.error(f"Failed to update baseline: {e}")
+            return False
 
     def analyze_findings(self, findings: list[RKHunterFinding]) -> dict[str, Any]:
         """Analyze scan findings."""
