@@ -192,6 +192,17 @@ class RKHunterScanResult:
         if self.end_time and self.scan_duration == 0.0:
             self.scan_duration = (self.end_time - self.start_time).total_seconds()
 
+    # Backwards compatibility properties
+    @property
+    def warnings_found(self) -> int:
+        """Alias for warnings_count for backwards compatibility."""
+        return self.warnings_count
+
+    @property
+    def infections_found(self) -> int:
+        """Count of infections found for backwards compatibility."""
+        return len([f for f in self.findings if f.result == RKHunterResult.INFECTED])
+
 
 @dataclass
 class RKHunterStatusEnhanced:
@@ -1214,12 +1225,33 @@ class UnifiedRKHunterIntegration:
                             finding.test_name, finding.description, finding.details
                         )
 
+                # Determine overall result based on findings, not just return code
+                # RKHunter return codes: 0=clean, 1=warnings, 2+=errors
+                # We should rely on parsed findings, not return code alone
+                overall_result = self._determine_overall_result(findings)
+
+                # If we got no findings but non-zero return code, try to extract info from output
+                if len(findings) == 0 and returncode != 0:
+                    # Check if stdout/stderr give us hints about what happened
+                    if "Warning" in stdout or "warning" in stdout.lower():
+                        # Scan completed but had warnings we couldn't parse
+                        overall_result = RKHunterResult.WARNING
+                    elif returncode == 1:
+                        # Return code 1 typically means warnings in RKHunter
+                        overall_result = RKHunterResult.WARNING
+                    elif returncode >= 2:
+                        # Return codes 2+ indicate errors
+                        overall_result = RKHunterResult.ERROR
+                    else:
+                        # Default to CLEAN if return code is 0
+                        overall_result = RKHunterResult.CLEAN
+
                 # Create scan result
                 scan_result = RKHunterScanResult(
                     scan_id=scan_id,
                     start_time=start_time,
                     end_time=datetime.now(),
-                    overall_result=self._determine_overall_result(findings),
+                    overall_result=overall_result,
                     findings=findings,
                     warnings_count=len(
                         [f for f in findings if f.result == RKHunterResult.WARNING]
@@ -1228,8 +1260,26 @@ class UnifiedRKHunterIntegration:
                         [f for f in findings if f.result == RKHunterResult.ERROR]
                     ),
                     total_tests=len(findings),
-                    metadata={"return_code": returncode},
+                    metadata={
+                        "return_code": returncode,
+                        "stdout_lines": len(stdout_lines),
+                        "stderr_lines": len(stderr_lines),
+                    },
                 )
+
+                # Log scan completion details
+                self.logger.info(
+                    f"RKHunter scan completed: return_code={returncode}, findings={len(findings)}, result={scan_result.overall_result}"
+                )
+                if returncode == 1:
+                    self.logger.info(
+                        f"RKHunter return code 1 (warnings found) - this is normal if system has warnings"
+                    )
+                elif returncode >= 2:
+                    self.logger.warning(
+                        f"RKHunter return code {returncode} indicates errors"
+                    )
+                    self.logger.debug(f"Stderr output: {stderr}")
 
                 return scan_result
 
@@ -1326,15 +1376,34 @@ class UnifiedRKHunterIntegration:
                     )
                     findings.append(finding)
 
-        # Parse stderr for errors
+        # Parse stderr for errors (but treat grep warnings as warnings, not errors)
         if stderr:
-            error_finding = RKHunterFinding(
-                test_name="scan_errors",
-                result=RKHunterResult.ERROR,
-                severity=RKHunterSeverity.HIGH,
-                description="Scan generated errors",
-                details=stderr,
+            # Check if stderr only contains grep/egrep warnings (not actual errors)
+            stderr_lines = stderr.strip().split("\n")
+            is_only_grep_warnings = all(
+                "grep: warning:" in line or "egrep: warning:" in line
+                for line in stderr_lines
+                if line.strip()
             )
+
+            if is_only_grep_warnings:
+                # Grep warnings are not actual errors
+                error_finding = RKHunterFinding(
+                    test_name="scan_warnings",
+                    result=RKHunterResult.WARNING,
+                    severity=RKHunterSeverity.LOW,
+                    description="Scan generated warnings (grep deprecation notices)",
+                    details=stderr,
+                )
+            else:
+                # Real errors
+                error_finding = RKHunterFinding(
+                    test_name="scan_errors",
+                    result=RKHunterResult.ERROR,
+                    severity=RKHunterSeverity.HIGH,
+                    description="Scan generated errors",
+                    details=stderr,
+                )
             findings.append(error_finding)
 
         return findings

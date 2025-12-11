@@ -20,7 +20,9 @@ from PyQt6.QtWidgets import (
 )
 
 from app.core.security_integration import get_security_coordinator
-from app.core.unified_rkhunter_integration import UnifiedRKHunterIntegration as RKHunterWrapper
+from app.core.unified_rkhunter_integration import (
+    UnifiedRKHunterIntegration as RKHunterWrapper,
+)
 from app.core.unified_threading_manager import CooperativeCancellationMixin
 
 
@@ -357,12 +359,36 @@ class RKHunterScanThread(QThread, CooperativeCancellationMixin):
     def __init__(
         self, rkhunter: RKHunterWrapper, test_categories: list[str] | None = None
     ):
-        super().__init__()
-        self.rkhunter = rkhunter
-        self.test_categories = test_categories
-        self.logger = logging.getLogger(__name__)
-        self._scan_cancelled = False
-        self._current_process = None  # Track the current RKHunter process
+        print("🔵 RKHunterScanThread.__init__() CALLED")
+        try:
+            # Use super().__init__() to properly initialize both parent classes via MRO
+            super().__init__()
+            print(f"🔵 super().__init__() completed")
+
+            self.rkhunter = rkhunter
+            self.test_categories = test_categories
+            self.logger = logging.getLogger(__name__)
+            self._scan_cancelled = False
+            self._current_process = None  # Track the current RKHunter process
+
+            # Log thread creation
+            print(f"🔵 About to log thread creation")
+            self.logger.info(
+                f"RKHunterScanThread created with test_categories: {test_categories}"
+            )
+            self.logger.info(f"RKHunter object type: {type(rkhunter)}")
+            self.logger.info(f"Has monitor attr: {hasattr(rkhunter, 'monitor')}")
+            print(f"🔵 RKHunterScanThread.__init__() COMPLETED successfully")
+        except Exception as e:
+            import traceback
+
+            print(f"❌ EXCEPTION IN RKHunterScanThread.__init__: {e}")
+            print(f"Traceback:\n{traceback.format_exc()}")
+            raise
+
+    def mark_cancellation_complete(self):
+        """Override to call parent's mark_cancellation_complete."""
+        super().mark_cancellation_complete()
 
     def stop_scan(self):
         """Request to stop the current scan safely."""
@@ -385,18 +411,35 @@ class RKHunterScanThread(QThread, CooperativeCancellationMixin):
 
     def run(self):
         """Run the RKHunter scan in a separate thread."""
+        print("🟢 === RKHunterScanThread.run() STARTED ===")
+        self.logger.info("=== RKHunterScanThread.run() STARTED ===")
         try:
+            print("🟢 Inside run() try block")
             # Only emit initial status, no progress bar updates until scan actually starts
             self.progress_updated.emit("Preparing RKHunter scan...")
+            print("🟢 Emitted initial progress message")
+            self.logger.info("Emitted initial progress message")
 
             # Check if GUI sudo authentication is available
+            print("🟢 About to check sudo availability")
             import shutil
+
             sudo_available = shutil.which("sudo")
+            print(f"🟢 Sudo available: {sudo_available}")
+            self.logger.info(f"Sudo available: {sudo_available}")
 
             # Check if RKHunter binary exists
+            print("🟢 About to call self.rkhunter.monitor._find_rkhunter_binary()")
+            print(f"🟢 self.rkhunter type: {type(self.rkhunter)}")
+            print(f"🟢 Has monitor: {hasattr(self.rkhunter, 'monitor')}")
             rkhunter_binary = self.rkhunter.monitor._find_rkhunter_binary()
+            print(f"🟢 RKHunter binary found: {rkhunter_binary}")
+            self.logger.info(f"RKHunter binary found: {rkhunter_binary}")
             if not rkhunter_binary:
-                self.progress_updated.emit("❌ RKHunter not found. Please install RKHunter first.")
+                self.progress_updated.emit(
+                    "❌ RKHunter not found. Please install RKHunter first."
+                )
+                self.logger.error("RKHunter binary not found, aborting scan")
                 raise RuntimeError("RKHunter binary not found")
 
             # Don't emit progress updates until we know authentication succeeded
@@ -445,13 +488,16 @@ class RKHunterScanThread(QThread, CooperativeCancellationMixin):
                             )
 
             def run_scan():
+                print("🔴 run_scan() STARTED in background thread")
                 try:
                     # Check for cancellation before starting
                     if self._scan_cancelled:
                         self.logger.info("Scan cancelled before starting")
+                        print("🔴 Scan cancelled before starting")
                         return
 
                     # Simple authentication check using new security system
+                    print("🔴 Checking authentication...")
                     self.logger.info("Checking authentication for scan thread...")
                     try:
                         # Note: Our new security system handles authentication automatically
@@ -459,22 +505,27 @@ class RKHunterScanThread(QThread, CooperativeCancellationMixin):
                         session_valid = True
                         if session_valid:
                             self.logger.info("Authentication validated for scan thread")
+                            print("🔴 Authentication validated")
                         else:
                             self.logger.warning(
                                 "Authentication validation failed in scan thread"
                             )
-                            self.signals.message.emit("Authentication failed")
+                            self.progress_updated.emit("Authentication failed")
                             return
                     except Exception as e:
                         self.logger.warning(
                             "Could not check auth session in scan thread: %s", str(e)
                         )
 
+                    print("🔴 About to call scan_system_with_output_callback...")
+                    self.logger.info("Starting RKHunter scan execution...")
                     result = self.rkhunter.scan_system_with_output_callback(
                         test_categories=self.test_categories,
                         update_database=True,  # Include database update to avoid double authentication
                         output_callback=output_callback,
                     )
+                    print(f"🔴 scan_system_with_output_callback returned: {result}")
+                    self.logger.info(f"RKHunter scan returned result: {result}")
 
                     # Check for cancellation after scan completes
                     if self._scan_cancelled:
@@ -484,6 +535,9 @@ class RKHunterScanThread(QThread, CooperativeCancellationMixin):
                     scan_result[0] = result
                 except Exception as e:
                     self.logger.error("Error in RKHunter scan execution: %s", str(e))
+                    import traceback
+
+                    self.logger.error(f"Traceback: {traceback.format_exc()}")
                     scan_error[0] = e
                 finally:
                     scan_completed.set()
@@ -494,14 +548,20 @@ class RKHunterScanThread(QThread, CooperativeCancellationMixin):
                 return
 
             # Start scan in background thread
+            print("🟢 Creating background scan thread")
             scan_thread = threading.Thread(target=run_scan)
+            print("🟢 Starting background scan thread")
             scan_thread.start()
+            print("🟢 Background scan thread started")
 
             # Wait for scan to actually start before emitting progress
+            print("🟢 Waiting for scan_started event (120s timeout)...")
             scan_started.wait(timeout=120)  # Wait up to 2 minutes for scan to start
+            print(f"🟢 scan_started.is_set() = {scan_started.is_set()}")
 
             if not scan_started.is_set():
                 # If scan hasn't started after timeout, something went wrong
+                print("❌ Scan failed to start - scan_started event never set!")
                 self.progress_updated.emit(
                     "❌ Scan failed to start - authentication may have been cancelled"
                 )
@@ -557,7 +617,11 @@ class RKHunterScanThread(QThread, CooperativeCancellationMixin):
             self.scan_completed.emit(result)
 
         except Exception as e:
+            import traceback
+
+            # Log full exception with traceback
             self.logger.error("Error in RKHunter scan thread: %s", str(e))
+            self.logger.error("Full traceback:\n%s", traceback.format_exc())
             self.progress_value_updated.emit(0)  # Reset progress on error
 
             # Create error result

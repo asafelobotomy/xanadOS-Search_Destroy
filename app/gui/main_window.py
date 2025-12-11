@@ -28,6 +28,8 @@ from app.core.unified_rkhunter_integration import (
 )
 from app.core.scan_results_formatter import ModernScanResultsFormatter
 
+from PyQt6.QtCore import Qt
+
 # RKHunter integration is now always available from unified module
 RKHUNTER_OPTIMIZER_AVAILABLE = True
 # Import compatible update system
@@ -5005,9 +5007,9 @@ System        {perf_status}"""
         rkhunter_data = {
             "warnings": rkhunter_result.warnings_found,
             "infections": rkhunter_result.infections_found,
-            "tests_run": getattr(rkhunter_result, "tests_run", 0),
+            "tests_run": getattr(rkhunter_result, "total_tests", 0),
             "total_tests": getattr(rkhunter_result, "total_tests", 0),
-            "skipped_tests": getattr(rkhunter_result, "skipped_tests", 0),
+            "skipped_tests": 0,
         }
 
         # Extract files scanned using same logic as display_scan_results
@@ -5052,7 +5054,7 @@ System        {perf_status}"""
         print(f"  - ClamAV total files: {total_files}")
         print(f"  - RKHunter warnings: {rkhunter_result.warnings_found}")
         print(f"  - RKHunter infections: {rkhunter_result.infections_found}")
-        print(f"  - RKHunter tests run: {getattr(rkhunter_result, 'tests_run', 0)}")
+        print(f"  - RKHunter tests run: {getattr(rkhunter_result, 'total_tests', 0)}")
 
         clamav_data = {
             "threats": clamav_threats,
@@ -5537,21 +5539,51 @@ System        {perf_status}"""
         self._rkhunter_max_progress = 0
         self._rkhunter_scan_actually_started = False
 
-        self.current_rkhunter_thread = RKHunterScanThread(
-            self.rkhunter, test_categories
-        )
-        self.current_rkhunter_thread.progress_updated.connect(
-            self.update_rkhunter_progress
-        )
-        # Don't connect directly to progress bar - use our handler instead
-        self.current_rkhunter_thread.progress_value_updated.connect(
-            self.handle_rkhunter_progress_value
-        )
-        self.current_rkhunter_thread.output_updated.connect(self.update_rkhunter_output)
-        self.current_rkhunter_thread.scan_completed.connect(
-            self.rkhunter_scan_completed
-        )
-        self.current_rkhunter_thread.start()
+        try:
+            print(f"🟡 Creating RKHunterScanThread with categories: {test_categories}")
+            self.current_rkhunter_thread = RKHunterScanThread(
+                self.rkhunter, test_categories
+            )
+            print(f"🟡 RKHunterScanThread created successfully")
+
+            # Connect signals BEFORE starting - use AutoConnection (default)
+            # Qt will automatically use QueuedConnection for cross-thread
+            print(f"🟡 Connecting signals with AutoConnection...")
+            self.current_rkhunter_thread.progress_updated.connect(
+                self.update_rkhunter_progress, Qt.ConnectionType.AutoConnection
+            )
+            self.current_rkhunter_thread.progress_value_updated.connect(
+                self.handle_rkhunter_progress_value, Qt.ConnectionType.AutoConnection
+            )
+            self.current_rkhunter_thread.output_updated.connect(
+                self.update_rkhunter_output, Qt.ConnectionType.AutoConnection
+            )
+            self.current_rkhunter_thread.scan_completed.connect(
+                self.rkhunter_scan_completed, Qt.ConnectionType.AutoConnection
+            )
+            print(f"🟡 Signals connected, starting thread...")
+
+            # Start the thread AFTER connections
+            self.current_rkhunter_thread.start()
+            print(f"🟡 Thread started")
+        except Exception as e:
+            import traceback
+
+            error_details = traceback.format_exc()
+            self.logger.error(f"Failed to create/start RKHunter scan thread: {e}")
+            self.logger.error(f"Traceback:\n{error_details}")
+
+            # Reset UI state
+            self.rkhunter_scan_btn.setEnabled(True)
+            self.rkhunter_scan_btn.setText("🔍 RKHunter Scan")
+            self.update_scan_button_state(False)
+
+            self.show_themed_message_box(
+                "error",
+                "Scan Thread Error",
+                f"Failed to start RKHunter scan thread:\n\n{e}\n\nCheck terminal for details.",
+            )
+            return
 
         # Update status - use a more appropriate initial message
         self.status_label.setText("RKHunter scan starting...")
@@ -6377,8 +6409,15 @@ System        {perf_status}"""
 
         if result.overall_result == RKHunterResult.ERROR:
             error_msg = result.metadata.get("error_message", "Unknown error")
+            self.logger.error(f"RKHunter scan failed with error: {error_msg}")
             self.results_text.append(f"❌ RKHunter scan failed: {error_msg}")
             self.status_label.setText("RKHunter scan failed")
+            # Show error in message box for visibility
+            self.show_themed_message_box(
+                "error",
+                "RKHunter Scan Failed",
+                f"The RKHunter scan encountered an error:\n\n{error_msg}\n\nCheck the terminal output for more details.",
+            )
             return
 
         # Display results
@@ -6432,7 +6471,7 @@ System        {perf_status}"""
         scan_config = {
             "options": {
                 "Scan Type": "Comprehensive Rootkit Detection",
-                "Tests Run": result.tests_run,
+                "Tests Run": result.total_tests,
                 "Scan ID": result.scan_id,
             }
         }
@@ -6486,10 +6525,9 @@ System        {perf_status}"""
 
         # Statistics
         self.results_text.append("📈 Detailed Results:")
-        self.results_text.append(f"   • Total Tests: {result.tests_run}")
+        self.results_text.append(f"   • Total Tests: {result.total_tests}")
         self.results_text.append(f"   • Infections: {result.infections_found}")
         self.results_text.append(f"   • Warnings: {result.warnings_found}")
-        self.results_text.append(f"   • Skipped: {result.skipped_tests}")
         self.results_text.append("")
 
         # Detailed findings if available
@@ -6550,13 +6588,7 @@ System        {perf_status}"""
                 self.results_text.append("")
 
         # Recommendations section
-        recommendations = self.rkhunter.get_scan_recommendations(result)
-        if recommendations:
-            self.results_text.append("🔧 RECOMMENDED ACTIONS:")
-            for i, rec in enumerate(recommendations, 1):
-                self.results_text.append(f"   {i}. {rec}")
-            self.results_text.append("")
-        elif result.infections_found == 0 and result.warnings_found == 0:
+        if result.infections_found == 0 and result.warnings_found == 0:
             self.results_text.append("💡 MAINTENANCE RECOMMENDATIONS:")
             self.results_text.append("   • Run regular rootkit scans weekly")
             self.results_text.append("   • Keep system packages updated")
@@ -6568,7 +6600,7 @@ System        {perf_status}"""
         if hasattr(result, "scan_stats") or duration > 0:
             self.results_text.append("📈 SCAN STATISTICS:")
             if duration > 0:
-                tests_per_second = result.tests_run / duration if duration > 0 else 0
+                tests_per_second = result.total_tests / duration if duration > 0 else 0
                 self.results_text.append(
                     f"   ⚡ Performance: {tests_per_second:.1f} tests/second"
                 )
@@ -6624,14 +6656,14 @@ System        {perf_status}"""
                     if result.end_time
                     else 0
                 ),
-                "success": result.success,
-                "summary": result.scan_summary,
+                "success": result.overall_result != RKHunterResult.ERROR,
+                "summary": f"Scan completed with {result.warnings_count} warnings, {result.errors_count} errors",
                 "statistics": {
                     "total_tests": result.total_tests,
-                    "tests_run": result.tests_run,
+                    "tests_run": result.total_tests,
                     "warnings_found": result.warnings_found,
                     "infections_found": result.infections_found,
-                    "skipped_tests": result.skipped_tests,
+                    "skipped_tests": 0,
                 },
                 "findings": [
                     {
