@@ -20,6 +20,7 @@ from app.core.file_scanner import FileScanner
 from app.core.firewall_detector import get_firewall_status, toggle_firewall
 from app.core.unified_rkhunter_integration import (
     RKHunterScanResult,
+    RKHunterResult,
     UnifiedRKHunterIntegration as RKHunterWrapper,
     RKHunterConfig,
     RKHunterOptimizer,
@@ -6625,72 +6626,215 @@ System        {perf_status}"""
         cursor.movePosition(cursor.MoveOperation.End)
         self.results_text.setTextCursor(cursor)
 
+    def _convert_findings_safely(self, findings):
+        """Safely convert RKHunter findings to dict format."""
+        converted = []
+        for f in findings:
+            try:
+                # Get result value safely
+                if hasattr(f.result, "value"):
+                    result_val = f.result.value
+                elif isinstance(f.result, str):
+                    result_val = f.result
+                else:
+                    result_val = str(f.result)
+
+                # Get severity value safely
+                if hasattr(f.severity, "value"):
+                    severity_val = f.severity.value
+                elif isinstance(f.severity, str):
+                    severity_val = f.severity
+                else:
+                    severity_val = str(f.severity)
+
+                # Only include warnings, errors, and infections
+                if result_val in ("warning", "error", "infected"):
+                    converted.append(
+                        {
+                            "test_name": f.test_name or "Unknown",
+                            "result": result_val,
+                            "severity": severity_val,
+                            "description": f.description or "",
+                        }
+                    )
+            except Exception as e:
+                print(f"DEBUG: Error converting finding: {e}")
+                continue
+        return converted
+
     def save_rkhunter_report(self, result: RKHunterScanResult):
-        """Save RKHunter scan results to a report file."""
+        """Save RKHunter scan results to a report file using the report manager."""
         print("\n📄 === SAVE RKHUNTER REPORT ===")
         print("DEBUG: save_rkhunter_report() called")
         print(f"DEBUG: RKHunter result scan_id: {result.scan_id}")
         print(f"DEBUG: RKHunter result has end_time: {result.end_time is not None}")
 
         try:
+            from app.utils.scan_reports import ScanResult
+
+            # Convert RKHunterScanResult to ScanResult for report manager
+            print("DEBUG: 🔄 Converting RKHunter result to ScanResult")
+            print(f"DEBUG: Result overall_result type: {type(result.overall_result)}")
+            print(f"DEBUG: Result overall_result value: {result.overall_result}")
+
+            # Convert findings to threat format for compatibility
+            threats = []
+            for finding in result.findings or []:
+                try:
+                    # Get the result value - handle both enum and string
+                    result_val = (
+                        finding.result.value
+                        if hasattr(finding.result, "value")
+                        else str(finding.result)
+                    )
+                    severity_val = (
+                        finding.severity.value
+                        if hasattr(finding.severity, "value")
+                        else str(finding.severity)
+                    )
+                except Exception as e:
+                    print(f"DEBUG: Error processing finding: {e}")
+                    print(f"DEBUG: Finding result type: {type(finding.result)}")
+                    print(f"DEBUG: Finding severity type: {type(finding.severity)}")
+                    continue
+
+                if result_val in ("warning", "error", "infected"):
+                    threats.append(
+                        {
+                            "type": "rkhunter_finding",
+                            "name": finding.test_name or "Unknown test",
+                            "severity": severity_val,
+                            "description": finding.description or "No description",
+                            "details": finding.details or "",
+                            "file_path": finding.file_path or "",
+                            "recommendation": finding.recommendation or "",
+                            "result": result_val,
+                        }
+                    )
+
+            # Get overall result value safely
+            try:
+                overall_result_val = (
+                    result.overall_result.value
+                    if hasattr(result.overall_result, "value")
+                    else str(result.overall_result)
+                )
+                print(f"DEBUG: overall_result_val = {overall_result_val}")
+            except Exception as e:
+                print(f"DEBUG: Error getting overall_result: {e}")
+                overall_result_val = "unknown"
+
+            print(f"DEBUG: Creating ScanResult object...")
+            scan_result = ScanResult(
+                scan_id=result.scan_id,
+                scan_type=ScanType.RKHUNTER,
+                start_time=result.start_time,
+                end_time=result.end_time,
+                duration=result.scan_duration,
+                scanned_paths=[],
+                total_files=result.total_tests,
+                scanned_files=result.total_tests,
+                threats_found=result.infections_found + result.warnings_found,
+                threats=threats,
+                errors=[],
+                scan_settings={
+                    "overall_result": overall_result_val,
+                    "warnings_count": result.warnings_count,
+                    "errors_count": result.errors_count,
+                    "statistics": {
+                        "total_tests": result.total_tests,
+                        "warnings_found": result.warnings_found,
+                        "infections_found": result.infections_found,
+                        "tests_run": result.total_tests,
+                        "skipped_tests": 0,
+                    },
+                    "findings": self._convert_findings_safely(result.findings or []),
+                },
+                engine_version=result.rkhunter_version or "RKHunter 1.4.6",
+                signature_version=result.config_used or "Unknown",
+                success=result.overall_result != RKHunterResult.ERROR,
+            )
+
+            # Save using report manager
+            saved_path = self.report_manager.save_scan_result(scan_result)
+            print(f"DEBUG: ✅ RKHunter report saved to: {saved_path}")
+
+            # Auto-refresh the reports list so the new report appears
+            print("DEBUG: 🔄 Auto-refreshing reports list...")
+            QTimer.singleShot(500, self.refresh_reports)
+
+            # Also save the detailed RKHunter-specific data
             reports_dir = (
                 Path.home() / ".local/share/search-and-destroy/rkhunter_reports"
             )
-            print(f"DEBUG: 📁 RKHunter reports directory: {reports_dir}")
-
             reports_dir.mkdir(parents=True, exist_ok=True)
-            print("DEBUG: ✅ RKHunter reports directory created/verified")
 
-            report_file = reports_dir / f"rkhunter_scan_{result.scan_id}.json"
-            print(f"DEBUG: 📝 Will save RKHunter report to: {report_file}")
-
-            # Convert result to dictionary for JSON serialization
-            print("DEBUG: 🔄 Converting RKHunter result to dictionary")
-            report_data = {
+            detailed_file = reports_dir / f"rkhunter_detailed_{result.scan_id}.json"
+            detailed_data = {
                 "scan_id": result.scan_id,
                 "scan_type": "rkhunter_rootkit_scan",
                 "start_time": result.start_time.isoformat(),
                 "end_time": result.end_time.isoformat() if result.end_time else None,
-                "duration": (
-                    (result.end_time - result.start_time).total_seconds()
-                    if result.end_time
-                    else 0
-                ),
-                "success": result.overall_result != RKHunterResult.ERROR,
-                "summary": f"Scan completed with {result.warnings_count} warnings, {result.errors_count} errors",
+                "duration": result.scan_duration,
+                "overall_result": overall_result_val,
                 "statistics": {
                     "total_tests": result.total_tests,
-                    "tests_run": result.total_tests,
-                    "warnings_found": result.warnings_found,
+                    "warnings_count": result.warnings_count,
+                    "errors_count": result.errors_count,
                     "infections_found": result.infections_found,
-                    "skipped_tests": 0,
                 },
-                "findings": [
+                "findings": self._convert_findings_for_detailed_report(
+                    result.findings or []
+                ),
+                "metadata": result.metadata,
+            }
+
+            with open(detailed_file, "w", encoding="utf-8") as f:
+                json.dump(detailed_data, f, indent=2, ensure_ascii=False)
+
+            print(f"DEBUG: ✅ Detailed RKHunter report saved to: {detailed_file}")
+
+        except Exception as e:
+            print(f"Error saving RKHunter report: {e}")
+            import traceback
+
+            traceback.print_exc()
+
+    def _convert_findings_for_detailed_report(self, findings):
+        """Convert findings for detailed JSON report."""
+        converted = []
+        for finding in findings:
+            try:
+                # Get values safely
+                result_val = (
+                    finding.result.value
+                    if hasattr(finding.result, "value")
+                    else str(finding.result)
+                )
+                severity_val = (
+                    finding.severity.value
+                    if hasattr(finding.severity, "value")
+                    else str(finding.severity)
+                )
+
+                converted.append(
                     {
-                        "test_name": finding.test_name,
-                        "result": finding.result.value,
-                        "severity": finding.severity.value,
-                        "description": finding.description,
-                        "details": finding.details,
-                        "file_path": finding.file_path,
-                        "recommendation": finding.recommendation,
+                        "test_name": finding.test_name or "Unknown",
+                        "result": result_val,
+                        "severity": severity_val,
+                        "description": finding.description or "",
+                        "details": finding.details or "",
+                        "file_path": finding.file_path or "",
+                        "recommendation": finding.recommendation or "",
                         "timestamp": (
                             finding.timestamp.isoformat() if finding.timestamp else None
                         ),
                     }
-                    for finding in (result.findings or [])
-                ],
-                "recommendations": self.rkhunter.get_scan_recommendations(result),
-                "error_message": result.error_message,
-            }
-
-            with open(report_file, "w", encoding="utf-8") as f:
-                json.dump(report_data, f, indent=2, ensure_ascii=False)
-
-            print(f"RKHunter report saved to {report_file}")
-
-        except Exception as e:
-            print(f"Error saving RKHunter report: {e}")
+                )
+            except Exception as e:
+                print(f"DEBUG: Error converting finding for detailed report: {e}")
+                continue
+        return converted
 
     def _add_warning_explanation_buttons(self, result: RKHunterScanResult):
         """Add a single button to view all warning explanations."""
@@ -9826,23 +9970,30 @@ Common False Positives:
             print("DEBUG: 🧹 Clearing current reports list")
             self.reports_list.clear()
 
-            # Get ClamAV reports directory from the report manager
-            clamav_reports_dir = self.report_manager.daily_reports
-            print(f"DEBUG: 📁 ClamAV reports directory: {clamav_reports_dir}")
-
-            # Get RKHunter reports directory
-            rkhunter_reports_dir = (
-                Path.home() / ".local/share/search-and-destroy/rkhunter_reports"
-            )
-            print(f"DEBUG: 📁 RKHunter reports directory: {rkhunter_reports_dir}")
+            # Get reports directory from the report manager
+            # Both ClamAV and RKHunter reports are now stored in the same directory
+            reports_dir = self.report_manager.daily_reports
+            print(f"DEBUG: 📁 Reports directory: {reports_dir}")
 
             all_reports = []
 
-            # Load ClamAV reports
-            if clamav_reports_dir.exists():
-                clamav_files = list(clamav_reports_dir.glob("scan_*.json"))
-                print(f"DEBUG: 🔍 Found {len(clamav_files)} ClamAV report files")
+            # Load all reports from the unified reports directory
+            if reports_dir.exists():
+                # Load all scan reports (both ClamAV and RKHunter)
+                all_files = list(reports_dir.glob("scan_*.json"))
 
+                # Separate ClamAV and RKHunter reports by filename prefix
+                clamav_files = [
+                    f for f in all_files if not f.stem.startswith("scan_rkhunter")
+                ]
+                rkhunter_files = [
+                    f for f in all_files if f.stem.startswith("scan_rkhunter")
+                ]
+
+                print(f"DEBUG: 🔍 Found {len(clamav_files)} ClamAV report files")
+                print(f"DEBUG: 🔍 Found {len(rkhunter_files)} RKHunter report files")
+
+                # Process ClamAV reports
                 for report_file in clamav_files:
                     try:
                         with open(report_file, encoding="utf-8") as f:
@@ -9865,18 +10016,14 @@ Common False Positives:
                     except (OSError, PermissionError, json.JSONDecodeError) as e:
                         print(f"Error loading ClamAV report {report_file}: {e}")
 
-            # Load RKHunter reports
-            if rkhunter_reports_dir.exists():
-                rkhunter_files = list(rkhunter_reports_dir.glob("rkhunter_scan_*.json"))
-                print(f"DEBUG: 🔍 Found {len(rkhunter_files)} RKHunter report files")
-
+                # Process RKHunter reports from the same directory
                 for report_file in rkhunter_files:
                     try:
                         with open(report_file, encoding="utf-8") as f:
                             data = json.load(f)
 
-                        # Extract scan ID from filename
-                        scan_id = report_file.stem
+                        # Extract scan ID from filename (remove "scan_" prefix)
+                        scan_id = report_file.stem.replace("scan_", "")
 
                         all_reports.append(
                             {
@@ -9885,7 +10032,8 @@ Common False Positives:
                                 "scan_id": scan_id,
                                 "data": data,
                                 "start_time": data.get("start_time", "Unknown"),
-                                "scan_type": data.get("scan_type", "Unknown"),
+                                "scan_type": data.get("scan_type", "rkhunter"),
+                                "threats": data.get("threats_found", 0),
                                 "warnings": data.get("statistics", {}).get(
                                     "warnings_found", 0
                                 ),
@@ -12078,44 +12226,94 @@ Common False Positives:
 
         # Basic info
         output += f"<p><b>Date:</b> {data.get('start_time', 'Unknown')}</p>"
-        output += f"<p><b>Scan Type:</b> {data.get('scan_type', 'Unknown')}</p>"
+        output += (
+            f"<p><b>Scan Type:</b> {data.get('scan_type', 'rkhunter').upper()}</p>"
+        )
         output += f"<p><b>Duration:</b> {data.get('duration', 0):.2f} seconds</p>"
+        output += f"<p><b>Engine:</b> {data.get('engine_version', 'Unknown')}</p>"
         output += (
             f"<p><b>Success:</b> {'Yes' if data.get('success', False) else 'No'}</p>"
         )
 
-        # Statistics
-        stats = data.get("statistics", {})
+        # Statistics - check both locations for backward compatibility
+        stats = data.get("scan_settings", {}).get(
+            "statistics", data.get("statistics", {})
+        )
+        warnings_found = stats.get(
+            "warnings_found", data.get("scan_settings", {}).get("warnings_count", 0)
+        )
+        infections_found = stats.get(
+            "infections_found", data.get("scan_settings", {}).get("infections_found", 0)
+        )
+        total_tests = stats.get("total_tests", data.get("total_files", 0))
+
         output += "<h3>Scan Statistics:</h3>"
-        output += f"<p><b>Total Tests:</b> {stats.get('total_tests', 0)}</p>"
-        output += f"<p><b>Tests Run:</b> {stats.get('tests_run', 0)}</p>"
-        output += f"<p><b>Warnings Found:</b> {stats.get('warnings_found', 0)}</p>"
-        output += f"<p><b>Infections Found:</b> {stats.get('infections_found', 0)}</p>"
+        output += f"<p><b>Total Tests:</b> {total_tests}</p>"
+        output += f"<p><b>Tests Run:</b> {stats.get('tests_run', total_tests)}</p>"
+        output += f"<p><b>Warnings Found:</b> {warnings_found}</p>"
+        output += f"<p><b>Infections Found:</b> {infections_found}</p>"
         output += f"<p><b>Skipped Tests:</b> {stats.get('skipped_tests', 0)}</p>"
 
         # Overall status
-        infections = stats.get("infections_found", 0)
-        warnings = stats.get("warnings_found", 0)
-
-        if infections > 0:
+        if infections_found > 0:
             output += "<h3 style='color: #F14666;'>🚨 CRITICAL: Potential rootkits detected!</h3>"
-        elif warnings > 0:
+        elif warnings_found > 0:
             output += (
                 "<h3 style='color: #FFA500;'>⚠️ Warnings found - review carefully</h3>"
             )
         else:
             output += "<h3 style='color: #4CAF50;'>✅ No rootkits detected</h3>"
 
-        # Detailed findings
-        findings = data.get("findings", [])
-        if findings:
-            output += "<h3>Detailed Findings:</h3>"
+        # Display threats in table format (compatible with saved format)
+        threats = data.get("threats", [])
+        if threats:
+            output += "<h3>Detected Threats:</h3>"
+            output += "<table border='1' cellpadding='3'>"
+            output += (
+                "<tr><th>File</th><th>Threat</th><th>Level</th><th>Action</th></tr>"
+            )
+
+            for threat in threats:
+                result_value = threat.get("result", "warning")
+                status_icon = (
+                    "🚨"
+                    if result_value == "infected"
+                    else ("⚠️" if result_value == "warning" else "❌")
+                )
+
+                # Display file path or test name
+                file_or_test = (
+                    threat.get("file_path") or threat.get("name") or "Unknown"
+                )
+                threat_name = (
+                    threat.get("name")
+                    or threat.get("description", "").split("[")[0].strip()
+                )
+                severity = threat.get("severity", "unknown")
+
+                output += "<tr>"
+                output += f"<td>{status_icon} {file_or_test}</td>"
+                output += f"<td>{threat_name}</td>"
+                output += f"<td>{severity.upper()}</td>"
+                output += f"<td>{result_value.upper()}</td>"
+                output += "</tr>"
+
+            output += "</table>"
+
+        # Also show detailed findings if available
+        findings = data.get("scan_settings", {}).get("findings", [])
+        if findings and len(findings) < 50:  # Only show if not too many
+            output += "<h3>Detailed Test Results:</h3>"
             output += "<table border='1' cellpadding='3'>"
             output += "<tr><th>Test</th><th>Result</th><th>Severity</th><th>Description</th></tr>"
 
-            for finding in findings:
+            for finding in findings[:30]:  # Limit to first 30
                 result_value = finding.get("result", "unknown")
-                status_icon = "🚨" if result_value == "infected" else "⚠️"
+                status_icon = (
+                    "🚨"
+                    if result_value == "infected"
+                    else ("⚠️" if result_value == "warning" else "❌")
+                )
 
                 output += "<tr>"
                 output += (
@@ -12125,6 +12323,9 @@ Common False Positives:
                 output += f"<td>{finding.get('severity', 'unknown').upper()}</td>"
                 output += f"<td>{finding.get('description', 'No description')}</td>"
                 output += "</tr>"
+
+            if len(findings) > 30:
+                output += f"<tr><td colspan='4'><i>...and {len(findings) - 30} more findings</i></td></tr>"
 
             output += "</table>"
 

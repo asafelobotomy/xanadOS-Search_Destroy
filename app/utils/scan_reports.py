@@ -30,6 +30,8 @@ class ScanType(Enum):
     FULL = "full"
     CUSTOM = "custom"
     SCHEDULED = "scheduled"
+    RKHUNTER = "rkhunter"
+    CLAMAV = "clamav"
 
 
 @dataclass
@@ -130,11 +132,20 @@ class ScanReportManager:
         self.threat_logs.mkdir(parents=True, exist_ok=True)
 
         threat_file = self.threat_logs / f"threats_{result.scan_id}.json"
+
+        # Convert threats to dictionaries - handle both dataclass instances and dicts
+        threats_list = []
+        for threat in result.threats:
+            if isinstance(threat, dict):
+                threats_list.append(threat)
+            else:
+                threats_list.append(asdict(threat))
+
         threat_data = {
             "scan_id": result.scan_id,
             "timestamp": result.start_time,
             "scan_type": result.scan_type.value,
-            "threats": [asdict(threat) for threat in result.threats],
+            "threats": threats_list,
         }
 
         with open(threat_file, "w", encoding="utf-8") as f:
@@ -180,7 +191,11 @@ class ScanReportManager:
 
         # Track threat types
         for threat in result.threats:
-            threat_type = threat.threat_type
+            # Handle both dict and dataclass formats
+            if isinstance(threat, dict):
+                threat_type = threat.get("type", "unknown")
+            else:
+                threat_type = threat.threat_type
             summary["threat_types"][threat_type] = (
                 summary["threat_types"].get(threat_type, 0) + 1
             )
