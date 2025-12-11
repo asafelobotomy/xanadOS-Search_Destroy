@@ -25,12 +25,14 @@ class ScanThread(QThread, CooperativeCancellationMixin):
         scan_path: Union[str, List[str]],
         quick_scan: bool = False,
         scan_options: Dict[str, Any] = None,
+        effective_scan_type: str = None,
     ):
         super().__init__()
         self.scanner = scanner
         self.scan_path = scan_path
         self.quick_scan = quick_scan
         self.scan_options = scan_options or {}
+        self.effective_scan_type = effective_scan_type  # Track actual scan type
         self.logger = logging.getLogger(__name__)
         self._scan_cancelled = False
 
@@ -65,6 +67,7 @@ class ScanThread(QThread, CooperativeCancellationMixin):
                         scan_results = self.scanner.scan_directory(
                             path,
                             quick_scan=self.quick_scan,
+                            effective_scan_type=self.effective_scan_type,
                             save_report=False,  # Don't save individual directory reports
                             **self.scan_options,
                         )
@@ -96,7 +99,10 @@ class ScanThread(QThread, CooperativeCancellationMixin):
             else:
                 # Scan single directory
                 scan_results = self.scanner.scan_directory(
-                    self.scan_path, quick_scan=self.quick_scan, **self.scan_options
+                    self.scan_path,
+                    quick_scan=self.quick_scan,
+                    effective_scan_type=self.effective_scan_type,
+                    **self.scan_options,
                 )
 
             if not self._scan_cancelled:

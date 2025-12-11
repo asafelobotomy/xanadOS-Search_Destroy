@@ -290,11 +290,9 @@ class ScanReportManager:
                 }
                 recent_scans.append(summary)
 
-            except (OSError, json.JSONDecodeError, KeyError):
-                self.logwarning(
-                    "Failed to read scan summary from %s: %s".replace(
-                        "%s", "{scan_file, e}"
-                    ).replace("%d", "{scan_file, e}")
+            except (OSError, json.JSONDecodeError, KeyError) as e:
+                self.logger.warning(
+                    f"Failed to read scan summary from {scan_file}: {e}"
                 )
                 continue
 
@@ -353,12 +351,8 @@ class ScanReportManager:
                             stats["most_infected_paths"].get(path_parent, 0) + 1
                         )
 
-            except (OSError, json.JSONDecodeError, KeyError, ValueError):
-                self.logwarning(
-                    "Failed to process threat file %s: %s".replace(
-                        "%s", "{threat_file, e}"
-                    ).replace("%d", "{threat_file, e}")
-                )
+            except (OSError, json.JSONDecodeError, KeyError, ValueError) as e:
+                self.logger.warning(f"Failed to process threat file {threat_file}: {e}")
                 continue
 
         return stats
@@ -379,10 +373,12 @@ class ScanReportManager:
                         report_file.unlink()
                         deleted_count += 1
                 except OSError as e:
-                    self.logwarning(f"Failed to delete old report {report_file}: {e}")
+                    self.logger.warning(
+                        f"Failed to delete old report {report_file}: {e}"
+                    )
 
         if deleted_count > 0:
-            self.loginfo(f"Cleaned up {deleted_count} old report files")
+            self.logger.info(f"Cleaned up {deleted_count} old report files")
 
     def export_reports(
         self,
@@ -451,11 +447,7 @@ class ScanReportManager:
                 self.logger.error("Unsupported export format: %s", format_type)
                 return False
 
-            self.loginfo(
-                "Reports exported to %s".replace("%s", "{output_path}").replace(
-                    "%d", "{output_path}"
-                )
-            )
+            self.logger.info(f"Reports exported to {output_path}")
             return True
 
         except OSError as e:

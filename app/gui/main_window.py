@@ -967,13 +967,13 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
 
         # Tab widget for different views
         self.tab_widget = QTabWidget()
-        self.create_dashboard_tab()  # Add dashboard as first tab
-        self.create_scan_tab()
-        self.create_real_time_tab()
-        self.create_hardening_tab()  # System hardening assessment
-        self.create_reports_tab()
-        self.create_quarantine_tab()
-        self.create_settings_tab()
+        self.create_dashboard_tab()  # 0: Dashboard
+        self.create_scan_tab()  # 1: Scan
+        self.create_real_time_tab()  # 2: Protection
+        self.create_hardening_tab()  # 3: Hardening
+        self.create_reports_tab()  # 4: Reports
+        self.create_quarantine_tab()  # 5: Quarantine
+        self.create_settings_tab()  # 6: Settings
 
         main_layout.addWidget(self.tab_widget)
 
@@ -1148,7 +1148,7 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
         show_more_btn.setFlat(True)
         show_more_btn.clicked.connect(
             lambda: self.tab_widget.setCurrentIndex(2)
-        )  # Go to protection tab
+        )  # Go to Protection tab (index 2)
         activity_layout.addWidget(show_more_btn)
 
         layout.addWidget(activity_group)
@@ -1412,8 +1412,8 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
 
     def open_quarantine_tab(self):
         """Open the Quarantine tab when Threats Found card is clicked."""
-        # Switch to the Quarantine tab (index 4)
-        self.tab_widget.setCurrentIndex(4)
+        # Switch to the Quarantine tab (index 5)
+        self.tab_widget.setCurrentIndex(5)
         # Refresh quarantine list to show current state
         if hasattr(self, "refresh_quarantine"):
             self.refresh_quarantine()
@@ -3633,18 +3633,20 @@ System        {perf_status}"""
         self.update_definitions_shortcut = QShortcut(QKeySequence("Ctrl+U"), self)
         self.update_definitions_shortcut.activated.connect(self.update_definitions)
 
-        # Tab navigation shortcuts
+        # Tab navigation shortcuts (matching tab order)
         self.dashboard_shortcut = QShortcut(QKeySequence("Ctrl+1"), self)
         self.dashboard_shortcut.activated.connect(
-            lambda: self.tab_widget.setCurrentIndex(0)
+            lambda: self.tab_widget.setCurrentIndex(0)  # Dashboard
         )
 
         self.scan_shortcut = QShortcut(QKeySequence("Ctrl+2"), self)
-        self.scan_shortcut.activated.connect(lambda: self.tab_widget.setCurrentIndex(1))
+        self.scan_shortcut.activated.connect(
+            lambda: self.tab_widget.setCurrentIndex(1)  # Scan
+        )
 
         self.protection_shortcut = QShortcut(QKeySequence("Ctrl+3"), self)
         self.protection_shortcut.activated.connect(
-            lambda: self.tab_widget.setCurrentIndex(2)
+            lambda: self.tab_widget.setCurrentIndex(2)  # Protection
         )
 
         # Help shortcut
@@ -4786,6 +4788,7 @@ System        {perf_status}"""
             self.scan_path,
             quick_scan=(effective_scan_type == "QUICK"),
             scan_options=scan_options,
+            effective_scan_type=effective_scan_type,
         )
         self.current_scan_thread.progress_updated.connect(self.progress_bar.setValue)
         self.current_scan_thread.status_updated.connect(self.status_label.setText)
@@ -4882,6 +4885,7 @@ System        {perf_status}"""
             self.scan_path,
             quick_scan=quick_scan,
             scan_options=scan_options,
+            effective_scan_type="QUICK" if quick_scan else "FULL",
         )
         self.current_scan_thread.progress_updated.connect(self.progress_bar.setValue)
         self.current_scan_thread.status_updated.connect(self.status_label.setText)
@@ -4951,10 +4955,16 @@ System        {perf_status}"""
                         )
                         threats.append(threat)
 
+                # Determine proper scan type for report
+                # Check if this was from a combined scan with stored parameters
+                clamav_params = getattr(self, "_pending_clamav_scan", {})
+                was_quick_scan = clamav_params.get("quick_scan", False)
+                backup_scan_type = ScanType.QUICK if was_quick_scan else ScanType.CUSTOM
+
                 # Create backup ScanResult
                 backup_scan_result = ScanResult(
                     scan_id=scan_id,
-                    scan_type=ScanType.CUSTOM,  # Default for ClamAV scans
+                    scan_type=backup_scan_type,
                     start_time=start_time,
                     end_time=datetime.now().isoformat(),
                     duration=duration,
@@ -6679,6 +6689,7 @@ System        {perf_status}"""
 
             # Convert findings to threat format for compatibility
             threats = []
+            warnings = []  # Separate list for warnings
             for finding in result.findings or []:
                 try:
                     # Get the result value - handle both enum and string
@@ -6698,19 +6709,22 @@ System        {perf_status}"""
                     print(f"DEBUG: Finding severity type: {type(finding.severity)}")
                     continue
 
-                if result_val in ("warning", "error", "infected"):
-                    threats.append(
-                        {
-                            "type": "rkhunter_finding",
-                            "name": finding.test_name or "Unknown test",
-                            "severity": severity_val,
-                            "description": finding.description or "No description",
-                            "details": finding.details or "",
-                            "file_path": finding.file_path or "",
-                            "recommendation": finding.recommendation or "",
-                            "result": result_val,
-                        }
-                    )
+                finding_data = {
+                    "type": "rkhunter_finding",
+                    "name": finding.test_name or "Unknown test",
+                    "severity": severity_val,
+                    "description": finding.description or "No description",
+                    "details": finding.details or "",
+                    "file_path": finding.file_path or "",
+                    "recommendation": finding.recommendation or "",
+                    "result": result_val,
+                }
+
+                # Only count actual threats (infected), not warnings or errors
+                if result_val == "infected":
+                    threats.append(finding_data)
+                elif result_val == "warning":
+                    warnings.append(finding_data)
 
             # Get overall result value safely
             try:
@@ -6734,13 +6748,14 @@ System        {perf_status}"""
                 scanned_paths=[],
                 total_files=result.total_tests,
                 scanned_files=result.total_tests,
-                threats_found=result.infections_found + result.warnings_found,
+                threats_found=result.infections_found,  # Only count actual infections, not warnings
                 threats=threats,
                 errors=[],
                 scan_settings={
                     "overall_result": overall_result_val,
                     "warnings_count": result.warnings_count,
                     "errors_count": result.errors_count,
+                    "warnings": warnings,  # Add warnings list for report display
                     "statistics": {
                         "total_tests": result.total_tests,
                         "warnings_found": result.warnings_found,
@@ -8295,6 +8310,8 @@ Common False Positives:
                                 "full": "Full",
                                 "custom": "Custom",
                                 "scheduled": "Scheduled",
+                                "rkhunter": "RKHunter",
+                                "clamav": "ClamAV",
                             }.get(scan_type.lower(), "Unknown")
 
                             if scan_time:
@@ -12297,6 +12314,34 @@ Common False Positives:
                 output += f"<td>{severity.upper()}</td>"
                 output += f"<td>{result_value.upper()}</td>"
                 output += "</tr>"
+
+            output += "</table>"
+        else:
+            output += "<h3 style='color: #4CAF50;'>✅ No threats detected!</h3>"
+
+        # Display warnings separately (not as threats)
+        warnings = data.get("scan_settings", {}).get("warnings", [])
+        if warnings:
+            output += "<h3>⚠️ Warnings Found ({}):</h3>".format(len(warnings))
+            output += "<p style='color: #FFA500;'><i>Note: These are warnings, not threats. They may indicate configuration issues or false positives.</i></p>"
+            output += "<table border='1' cellpadding='3'>"
+            output += "<tr><th>Test</th><th>Severity</th><th>Description</th><th>Recommendation</th></tr>"
+
+            for warning in warnings[:20]:  # Limit to first 20 warnings
+                test_name = warning.get("name", "Unknown")
+                severity = warning.get("severity", "medium")
+                description = warning.get("description", "No description")
+                recommendation = warning.get("recommendation", "Review and verify")
+
+                output += "<tr>"
+                output += f"<td>⚠️ {test_name}</td>"
+                output += f"<td>{severity.upper()}</td>"
+                output += f"<td>{description}</td>"
+                output += f"<td>{recommendation}</td>"
+                output += "</tr>"
+
+            if len(warnings) > 20:
+                output += f"<tr><td colspan='4'><i>...and {len(warnings) - 20} more warnings (see detailed findings below)</i></td></tr>"
 
             output += "</table>"
 

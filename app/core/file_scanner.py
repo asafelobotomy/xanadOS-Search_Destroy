@@ -866,8 +866,21 @@ class FileScanner:
         """Scan all files in a directory with security validation."""
         from app.utils.scan_reports import ScanType
 
+        # Determine scan_type from various sources
         if scan_type is None:
-            scan_type = ScanType.CUSTOM
+            # Check for effective_scan_type in kwargs first
+            effective_scan_type = kwargs.get("effective_scan_type")
+            if effective_scan_type == "QUICK":
+                scan_type = ScanType.QUICK
+            elif effective_scan_type == "FULL":
+                scan_type = ScanType.FULL
+            elif effective_scan_type == "CUSTOM":
+                scan_type = ScanType.CUSTOM
+            # Fallback to quick_scan boolean parameter
+            elif kwargs.get("quick_scan", False):
+                scan_type = ScanType.QUICK
+            else:
+                scan_type = ScanType.CUSTOM
         """Scan a directory recursively."""
         directory_obj = Path(directory_path)
 
