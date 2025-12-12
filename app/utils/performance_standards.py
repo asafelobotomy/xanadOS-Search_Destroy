@@ -217,7 +217,9 @@ class PerformanceOptimizer:
         """Get cache performance statistics"""
         with self._lock:
             total_requests = self._cache_hits + self._cache_misses
-            hit_rate = (self._cache_hits / total_requests) if total_requests > 0 else 0.0
+            hit_rate = (
+                (self._cache_hits / total_requests) if total_requests > 0 else 0.0
+            )
 
             return {
                 "cache_size": len(self._cache),
@@ -234,7 +236,9 @@ class PerformanceOptimizer:
 
         with self._lock:
             # Filter metrics in time window
-            recent_metrics = [m for m in self.metrics_history if m.timestamp >= window_start]
+            recent_metrics = [
+                m for m in self.metrics_history if m.timestamp >= window_start
+            ]
 
         if not recent_metrics:
             return {"error": "No metrics available"}
@@ -257,7 +261,8 @@ class PerformanceOptimizer:
                 "min": min(memory_values),
             },
             "threads": {
-                "avg": sum(m.thread_count for m in recent_metrics) / len(recent_metrics),
+                "avg": sum(m.thread_count for m in recent_metrics)
+                / len(recent_metrics),
                 "max": max(m.thread_count for m in recent_metrics),
             },
         }
@@ -272,17 +277,23 @@ class PerformanceOptimizer:
         recommendations = []
 
         if analysis["cpu"]["avg"] > 80:
-            recommendations.append("High CPU usage detected - consider reducing scan threads")
+            recommendations.append(
+                "High CPU usage detected - consider reducing scan threads"
+            )
 
         if analysis["memory"]["avg"] > 85:
-            recommendations.append("High memory usage - increase garbage collection frequency")
+            recommendations.append(
+                "High memory usage - increase garbage collection frequency"
+            )
 
         if analysis["threads"]["max"] > self.config.max_threads:
             recommendations.append("Thread count exceeds limit - optimize concurrency")
 
         cache_stats = self.get_cache_stats()
         if cache_stats["hit_rate"] < 0.5:
-            recommendations.append("Low cache hit rate - consider increasing cache size")
+            recommendations.append(
+                "Low cache hit rate - consider increasing cache size"
+            )
 
         return recommendations
 
@@ -315,7 +326,9 @@ class ResourceMonitor:
             return
 
         self._monitoring = True
-        self._monitor_thread = threading.Thread(target=self._monitor_loop, args=(interval,))
+        self._monitor_thread = threading.Thread(
+            target=self._monitor_loop, args=(interval,)
+        )
         self._monitor_thread.start()
 
     def stop_monitoring(self):
@@ -363,6 +376,7 @@ class ResourceMonitor:
         # Keep only recent alerts
         if len(self.alerts) > 100:
             self.alerts = self.alerts[-50:]
+
     def get_recent_alerts(self, limit: int = 10) -> list[dict[str, Any]]:
         """Get recent alerts"""
         return self.alerts[-limit:]

@@ -27,8 +27,10 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.gui.security_dashboard import (
-    RealTimeDataCollector, ThreatEvent, SystemMetrics,
-    DashboardConfig
+    RealTimeDataCollector,
+    ThreatEvent,
+    SystemMetrics,
+    DashboardConfig,
 )
 from app.core.ml_threat_detector import MLThreatDetector
 from app.core.edr_engine import EDREngine
@@ -43,7 +45,7 @@ class WebDashboardManager:
         self.app = FastAPI(
             title="xanadOS Security Dashboard API",
             description="Real-time security monitoring and threat intelligence",
-            version="2.0.0"
+            version="2.0.0",
         )
 
         # Initialize components
@@ -74,7 +76,9 @@ class WebDashboardManager:
         # Setup static files (for dashboard assets)
         dashboard_static = Path(__file__).parent / "dashboard_static"
         if dashboard_static.exists():
-            self.app.mount("/static", StaticFiles(directory=str(dashboard_static)), name="static")
+            self.app.mount(
+                "/static", StaticFiles(directory=str(dashboard_static)), name="static"
+            )
 
     def setup_routes(self):
         """Setup API routes."""
@@ -92,8 +96,8 @@ class WebDashboardManager:
                 "timestamp": time.time(),
                 "components": {
                     "data_collector": self.data_collector is not None,
-                    "active_connections": len(self.active_connections)
-                }
+                    "active_connections": len(self.active_connections),
+                },
             }
 
         @self.app.get("/api/dashboard/overview")
@@ -101,33 +105,46 @@ class WebDashboardManager:
             """Get dashboard overview data."""
             try:
                 if not self.data_collector:
-                    raise HTTPException(status_code=503, detail="Data collector not initialized")
+                    raise HTTPException(
+                        status_code=503, detail="Data collector not initialized"
+                    )
 
                 # Get recent threats summary
-                recent_threats = [t for t in self.recent_threats
-                                if time.time() - t.timestamp < 3600]  # Last hour
+                recent_threats = [
+                    t for t in self.recent_threats if time.time() - t.timestamp < 3600
+                ]  # Last hour
 
                 threat_summary = {
                     "total": len(recent_threats),
-                    "critical": len([t for t in recent_threats if t.severity == "CRITICAL"]),
+                    "critical": len(
+                        [t for t in recent_threats if t.severity == "CRITICAL"]
+                    ),
                     "high": len([t for t in recent_threats if t.severity == "HIGH"]),
-                    "medium": len([t for t in recent_threats if t.severity == "MEDIUM"]),
-                    "low": len([t for t in recent_threats if t.severity == "LOW"])
+                    "medium": len(
+                        [t for t in recent_threats if t.severity == "MEDIUM"]
+                    ),
+                    "low": len([t for t in recent_threats if t.severity == "LOW"]),
                 }
 
                 # Get latest metrics
-                latest_metrics = self.recent_metrics[-1] if self.recent_metrics else None
+                latest_metrics = (
+                    self.recent_metrics[-1] if self.recent_metrics else None
+                )
 
                 return {
                     "timestamp": time.time(),
                     "threats": threat_summary,
                     "system_metrics": {
                         "cpu_usage": latest_metrics.cpu_usage if latest_metrics else 0,
-                        "memory_usage": latest_metrics.memory_usage if latest_metrics else 0,
+                        "memory_usage": (
+                            latest_metrics.memory_usage if latest_metrics else 0
+                        ),
                         "scan_rate": latest_metrics.scan_rate if latest_metrics else 0,
-                        "active_processes": latest_metrics.active_processes if latest_metrics else 0
+                        "active_processes": (
+                            latest_metrics.active_processes if latest_metrics else 0
+                        ),
                     },
-                    "status": "operational"
+                    "status": "operational",
                 }
 
             except Exception as e:
@@ -139,23 +156,28 @@ class WebDashboardManager:
             limit: int = 100,
             severity: str | None = None,
             event_type: str | None = None,
-            hours: int = 24
+            hours: int = 24,
         ):
             """Get recent threats with filtering."""
             try:
                 # Filter by time
                 cutoff_time = time.time() - (hours * 3600)
-                filtered_threats = [t for t in self.recent_threats
-                                  if t.timestamp >= cutoff_time]
+                filtered_threats = [
+                    t for t in self.recent_threats if t.timestamp >= cutoff_time
+                ]
 
                 # Apply filters
                 if severity:
-                    filtered_threats = [t for t in filtered_threats
-                                      if t.severity == severity.upper()]
+                    filtered_threats = [
+                        t for t in filtered_threats if t.severity == severity.upper()
+                    ]
 
                 if event_type:
-                    filtered_threats = [t for t in filtered_threats
-                                      if t.event_type == event_type.upper()]
+                    filtered_threats = [
+                        t
+                        for t in filtered_threats
+                        if t.event_type == event_type.upper()
+                    ]
 
                 # Sort by timestamp (most recent first)
                 filtered_threats.sort(key=lambda x: x.timestamp, reverse=True)
@@ -166,24 +188,28 @@ class WebDashboardManager:
                 # Convert to dict format
                 threats_data = []
                 for threat in filtered_threats:
-                    threats_data.append({
-                        "event_id": threat.event_id,
-                        "timestamp": threat.timestamp,
-                        "datetime": datetime.fromtimestamp(threat.timestamp).isoformat(),
-                        "event_type": threat.event_type,
-                        "severity": threat.severity,
-                        "source": threat.source,
-                        "target": threat.target,
-                        "description": threat.description,
-                        "confidence": threat.confidence,
-                        "status": threat.status,
-                        "geolocation": threat.geolocation
-                    })
+                    threats_data.append(
+                        {
+                            "event_id": threat.event_id,
+                            "timestamp": threat.timestamp,
+                            "datetime": datetime.fromtimestamp(
+                                threat.timestamp
+                            ).isoformat(),
+                            "event_type": threat.event_type,
+                            "severity": threat.severity,
+                            "source": threat.source,
+                            "target": threat.target,
+                            "description": threat.description,
+                            "confidence": threat.confidence,
+                            "status": threat.status,
+                            "geolocation": threat.geolocation,
+                        }
+                    )
 
                 return {
                     "threats": threats_data,
                     "total_count": len(threats_data),
-                    "query_time": time.time()
+                    "query_time": time.time(),
                 }
 
             except Exception as e:
@@ -191,16 +217,14 @@ class WebDashboardManager:
                 raise HTTPException(status_code=500, detail=str(e))
 
         @self.app.get("/api/metrics")
-        async def get_metrics(
-            limit: int = 100,
-            hours: int = 1
-        ):
+        async def get_metrics(limit: int = 100, hours: int = 1):
             """Get recent system metrics."""
             try:
                 # Filter by time
                 cutoff_time = time.time() - (hours * 3600)
-                filtered_metrics = [m for m in self.recent_metrics
-                                  if m.timestamp >= cutoff_time]
+                filtered_metrics = [
+                    m for m in self.recent_metrics if m.timestamp >= cutoff_time
+                ]
 
                 # Sort by timestamp
                 filtered_metrics.sort(key=lambda x: x.timestamp)
@@ -211,22 +235,26 @@ class WebDashboardManager:
                 # Convert to dict format
                 metrics_data = []
                 for metric in filtered_metrics:
-                    metrics_data.append({
-                        "timestamp": metric.timestamp,
-                        "datetime": datetime.fromtimestamp(metric.timestamp).isoformat(),
-                        "cpu_usage": metric.cpu_usage,
-                        "memory_usage": metric.memory_usage,
-                        "disk_usage": metric.disk_usage,
-                        "scan_rate": metric.scan_rate,
-                        "threat_detection_rate": metric.threat_detection_rate,
-                        "active_connections": metric.active_connections,
-                        "active_processes": metric.active_processes
-                    })
+                    metrics_data.append(
+                        {
+                            "timestamp": metric.timestamp,
+                            "datetime": datetime.fromtimestamp(
+                                metric.timestamp
+                            ).isoformat(),
+                            "cpu_usage": metric.cpu_usage,
+                            "memory_usage": metric.memory_usage,
+                            "disk_usage": metric.disk_usage,
+                            "scan_rate": metric.scan_rate,
+                            "threat_detection_rate": metric.threat_detection_rate,
+                            "active_connections": metric.active_connections,
+                            "active_processes": metric.active_processes,
+                        }
+                    )
 
                 return {
                     "metrics": metrics_data,
                     "total_count": len(metrics_data),
-                    "query_time": time.time()
+                    "query_time": time.time(),
                 }
 
             except Exception as e:
@@ -255,7 +283,7 @@ class WebDashboardManager:
                             "critical": 0,
                             "high": 0,
                             "medium": 0,
-                            "low": 0
+                            "low": 0,
                         }
 
                     hourly_counts[hour_key]["total"] += 1
@@ -267,25 +295,27 @@ class WebDashboardManager:
                     "datasets": [
                         {
                             "label": "Critical",
-                            "data": [hourly_counts[h]["critical"] for h in hourly_counts],
-                            "backgroundColor": "#e74c3c"
+                            "data": [
+                                hourly_counts[h]["critical"] for h in hourly_counts
+                            ],
+                            "backgroundColor": "#e74c3c",
                         },
                         {
                             "label": "High",
                             "data": [hourly_counts[h]["high"] for h in hourly_counts],
-                            "backgroundColor": "#f39c12"
+                            "backgroundColor": "#f39c12",
                         },
                         {
                             "label": "Medium",
                             "data": [hourly_counts[h]["medium"] for h in hourly_counts],
-                            "backgroundColor": "#f1c40f"
+                            "backgroundColor": "#f1c40f",
                         },
                         {
                             "label": "Low",
                             "data": [hourly_counts[h]["low"] for h in hourly_counts],
-                            "backgroundColor": "#95a5a6"
-                        }
-                    ]
+                            "backgroundColor": "#95a5a6",
+                        },
+                    ],
                 }
 
                 return chart_data
@@ -301,7 +331,9 @@ class WebDashboardManager:
             self.active_connections.append(websocket)
 
             try:
-                self.logger.info(f"New WebSocket connection established. Total: {len(self.active_connections)}")
+                self.logger.info(
+                    f"New WebSocket connection established. Total: {len(self.active_connections)}"
+                )
 
                 # Send initial data
                 await self.send_initial_data(websocket)
@@ -313,10 +345,9 @@ class WebDashboardManager:
                         await asyncio.wait_for(websocket.receive_text(), timeout=30.0)
                     except asyncio.TimeoutError:
                         # Send ping to keep connection alive
-                        await websocket.send_text(json.dumps({
-                            "type": "ping",
-                            "timestamp": time.time()
-                        }))
+                        await websocket.send_text(
+                            json.dumps({"type": "ping", "timestamp": time.time()})
+                        )
                     except WebSocketDisconnect:
                         break
 
@@ -326,7 +357,9 @@ class WebDashboardManager:
             finally:
                 if websocket in self.active_connections:
                     self.active_connections.remove(websocket)
-                self.logger.info(f"WebSocket connection closed. Remaining: {len(self.active_connections)}")
+                self.logger.info(
+                    f"WebSocket connection closed. Remaining: {len(self.active_connections)}"
+                )
 
     async def send_initial_data(self, websocket: WebSocket):
         """Send initial dashboard data to new WebSocket connection."""
@@ -334,33 +367,41 @@ class WebDashboardManager:
             # Send recent threats
             recent_threats = self.recent_threats[-50:]  # Last 50 threats
             for threat in recent_threats:
-                await websocket.send_text(json.dumps({
-                    "type": "threat_event",
-                    "data": {
-                        "event_id": threat.event_id,
-                        "timestamp": threat.timestamp,
-                        "event_type": threat.event_type,
-                        "severity": threat.severity,
-                        "source": threat.source,
-                        "target": threat.target,
-                        "description": threat.description,
-                        "confidence": threat.confidence
-                    }
-                }))
+                await websocket.send_text(
+                    json.dumps(
+                        {
+                            "type": "threat_event",
+                            "data": {
+                                "event_id": threat.event_id,
+                                "timestamp": threat.timestamp,
+                                "event_type": threat.event_type,
+                                "severity": threat.severity,
+                                "source": threat.source,
+                                "target": threat.target,
+                                "description": threat.description,
+                                "confidence": threat.confidence,
+                            },
+                        }
+                    )
+                )
 
             # Send recent metrics
             recent_metrics = self.recent_metrics[-10:]  # Last 10 metrics
             for metric in recent_metrics:
-                await websocket.send_text(json.dumps({
-                    "type": "metrics_update",
-                    "data": {
-                        "timestamp": metric.timestamp,
-                        "cpu_usage": metric.cpu_usage,
-                        "memory_usage": metric.memory_usage,
-                        "scan_rate": metric.scan_rate,
-                        "threat_detection_rate": metric.threat_detection_rate
-                    }
-                }))
+                await websocket.send_text(
+                    json.dumps(
+                        {
+                            "type": "metrics_update",
+                            "data": {
+                                "timestamp": metric.timestamp,
+                                "cpu_usage": metric.cpu_usage,
+                                "memory_usage": metric.memory_usage,
+                                "scan_rate": metric.scan_rate,
+                                "threat_detection_rate": metric.threat_detection_rate,
+                            },
+                        }
+                    )
+                )
 
         except Exception as e:
             self.logger.error(f"Error sending initial data: {e}")
@@ -370,21 +411,23 @@ class WebDashboardManager:
         if not self.active_connections:
             return
 
-        message = json.dumps({
-            "type": "threat_event",
-            "data": {
-                "event_id": threat.event_id,
-                "timestamp": threat.timestamp,
-                "datetime": datetime.fromtimestamp(threat.timestamp).isoformat(),
-                "event_type": threat.event_type,
-                "severity": threat.severity,
-                "source": threat.source,
-                "target": threat.target,
-                "description": threat.description,
-                "confidence": threat.confidence,
-                "status": threat.status
+        message = json.dumps(
+            {
+                "type": "threat_event",
+                "data": {
+                    "event_id": threat.event_id,
+                    "timestamp": threat.timestamp,
+                    "datetime": datetime.fromtimestamp(threat.timestamp).isoformat(),
+                    "event_type": threat.event_type,
+                    "severity": threat.severity,
+                    "source": threat.source,
+                    "target": threat.target,
+                    "description": threat.description,
+                    "confidence": threat.confidence,
+                    "status": threat.status,
+                },
             }
-        })
+        )
 
         # Send to all connected clients
         disconnected = []
@@ -392,7 +435,9 @@ class WebDashboardManager:
             try:
                 await websocket.send_text(message)
             except Exception as e:
-                self.logger.warning(f"Failed to send threat event to WebSocket client: {e}")
+                self.logger.warning(
+                    f"Failed to send threat event to WebSocket client: {e}"
+                )
                 disconnected.append(websocket)
 
         # Remove disconnected clients
@@ -404,20 +449,22 @@ class WebDashboardManager:
         if not self.active_connections:
             return
 
-        message = json.dumps({
-            "type": "metrics_update",
-            "data": {
-                "timestamp": metrics.timestamp,
-                "datetime": datetime.fromtimestamp(metrics.timestamp).isoformat(),
-                "cpu_usage": metrics.cpu_usage,
-                "memory_usage": metrics.memory_usage,
-                "disk_usage": metrics.disk_usage,
-                "scan_rate": metrics.scan_rate,
-                "threat_detection_rate": metrics.threat_detection_rate,
-                "active_connections": metrics.active_connections,
-                "active_processes": metrics.active_processes
+        message = json.dumps(
+            {
+                "type": "metrics_update",
+                "data": {
+                    "timestamp": metrics.timestamp,
+                    "datetime": datetime.fromtimestamp(metrics.timestamp).isoformat(),
+                    "cpu_usage": metrics.cpu_usage,
+                    "memory_usage": metrics.memory_usage,
+                    "disk_usage": metrics.disk_usage,
+                    "scan_rate": metrics.scan_rate,
+                    "threat_detection_rate": metrics.threat_detection_rate,
+                    "active_connections": metrics.active_connections,
+                    "active_processes": metrics.active_processes,
+                },
             }
-        })
+        )
 
         # Send to all connected clients
         disconnected = []
@@ -880,7 +927,7 @@ class WebDashboardManager:
             host=host,
             port=port,
             log_level="info" if debug else "warning",
-            access_log=debug
+            access_log=debug,
         )
 
 
@@ -902,12 +949,7 @@ async def start_web_dashboard(host: str = "0.0.0.0", port: int = 8080):
     await dashboard.start_data_collection()
 
     # Configure uvicorn server
-    config = uvicorn.Config(
-        dashboard.app,
-        host=host,
-        port=port,
-        log_level="info"
-    )
+    config = uvicorn.Config(dashboard.app, host=host, port=port, log_level="info")
 
     server = uvicorn.Server(config)
     await server.serve()

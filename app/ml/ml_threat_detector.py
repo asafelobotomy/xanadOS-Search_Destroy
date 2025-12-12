@@ -28,15 +28,19 @@ from dataclasses import dataclass, field
 from typing import Any
 from datetime import datetime
 
+
 class ThreatLevel(Enum):
     """Threat severity levels."""
+
     LOW = "low"
     MEDIUM = "medium"
     HIGH = "high"
     CRITICAL = "critical"
 
+
 class ThreatType(Enum):
     """Types of threats."""
+
     MALWARE = "malware"
     SUSPICIOUS = "suspicious"
     ROOTKIT = "rootkit"
@@ -45,9 +49,11 @@ class ThreatType(Enum):
     TROJAN = "trojan"
     BEHAVIORAL = "behavioral"
 
+
 @dataclass
 class ThreatDetection:
     """Represents a detected threat."""
+
     file_path: str
     threat_level: ThreatLevel
     threat_type: ThreatType
@@ -58,9 +64,11 @@ class ThreatDetection:
     metadata: dict[str, Any] = field(default_factory=dict)
     timestamp: datetime = field(default_factory=datetime.now)
 
+
 @dataclass
 class ScanResult:
     """Result from a security scan."""
+
     scan_id: str
     file_path: str
     is_threat: bool
@@ -84,6 +92,7 @@ ANOMALY_CONFIDENCE_LOW = 0.2
 
 class MLModelType(Enum):
     """Types of ML models available."""
+
     MALWARE_CLASSIFIER = "malware_classifier"
     BEHAVIORAL_ANALYZER = "behavioral_analyzer"
     ANOMALY_DETECTOR = "anomaly_detector"
@@ -92,6 +101,7 @@ class MLModelType(Enum):
 
 class MLThreatLevel(Enum):
     """ML-specific threat levels with confidence scores."""
+
     BENIGN = ("benign", 0.0)
     SUSPICIOUS = ("suspicious", 0.3)
     LIKELY_THREAT = ("likely_threat", 0.6)
@@ -102,6 +112,7 @@ class MLThreatLevel(Enum):
 @dataclass
 class MLPrediction:
     """ML model prediction result."""
+
     model_type: MLModelType
     prediction_class: str
     confidence_score: float
@@ -113,6 +124,7 @@ class MLPrediction:
 @dataclass
 class FileFeatures:
     """Extracted features from a file for ML analysis."""
+
     file_path: str
     file_size: int
     file_entropy: float
@@ -156,7 +168,7 @@ class MLThreatDetector:
         if enable_gpu:
             self._configure_tensorflow_gpu()
         else:
-            tf.config.set_visible_devices([], 'GPU')
+            tf.config.set_visible_devices([], "GPU")
 
         # Models
         self.malware_classifier: tf.keras.Model | None = None
@@ -185,7 +197,7 @@ class MLThreatDetector:
     def _configure_tensorflow_gpu(self) -> None:
         """Configure TensorFlow for optimal GPU usage with memory management."""
         try:
-            gpus = tf.config.experimental.list_physical_devices('GPU')
+            gpus = tf.config.experimental.list_physical_devices("GPU")
             if gpus:
                 for gpu in gpus:
                     # Enable memory growth to prevent allocation of all GPU memory
@@ -200,7 +212,9 @@ class MLThreatDetector:
 
             # Configure TensorFlow for memory efficiency
             tf.config.optimizer.set_jit(True)  # Enable XLA compilation
-            tf.config.threading.set_inter_op_parallelism_threads(0)  # Use all available cores
+            tf.config.threading.set_inter_op_parallelism_threads(
+                0
+            )  # Use all available cores
 
         except RuntimeError as e:
             self.logger.error("Error configuring GPU: %s", e)
@@ -253,22 +267,24 @@ class MLThreatDetector:
 
     def _create_malware_classifier_model(self) -> tf.keras.Model:
         """Create a deep neural network for malware classification."""
-        model = tf.keras.Sequential([
-            tf.keras.layers.Dense(512, activation='relu', input_shape=(1000,)),
-            tf.keras.layers.Dropout(0.3),
-            tf.keras.layers.Dense(256, activation='relu'),
-            tf.keras.layers.Dropout(0.3),
-            tf.keras.layers.Dense(128, activation='relu'),
-            tf.keras.layers.Dropout(0.2),
-            tf.keras.layers.Dense(64, activation='relu'),
-            tf.keras.layers.Dense(32, activation='relu'),
-            tf.keras.layers.Dense(1, activation='sigmoid')  # Binary classification
-        ])
+        model = tf.keras.Sequential(
+            [
+                tf.keras.layers.Dense(512, activation="relu", input_shape=(1000,)),
+                tf.keras.layers.Dropout(0.3),
+                tf.keras.layers.Dense(256, activation="relu"),
+                tf.keras.layers.Dropout(0.3),
+                tf.keras.layers.Dense(128, activation="relu"),
+                tf.keras.layers.Dropout(0.2),
+                tf.keras.layers.Dense(64, activation="relu"),
+                tf.keras.layers.Dense(32, activation="relu"),
+                tf.keras.layers.Dense(1, activation="sigmoid"),  # Binary classification
+            ]
+        )
 
         model.compile(
-            optimizer='adam',
-            loss='binary_crossentropy',
-            metrics=['accuracy', 'precision', 'recall']
+            optimizer="adam",
+            loss="binary_crossentropy",
+            metrics=["accuracy", "precision", "recall"],
         )
 
         return model
@@ -295,20 +311,20 @@ class MLThreatDetector:
 
     def _create_behavioral_analyzer_model(self) -> tf.keras.Model:
         """Create an LSTM model for behavioral sequence analysis."""
-        model = tf.keras.Sequential([
-            tf.keras.layers.LSTM(128, return_sequences=True, input_shape=(100, 50)),
-            tf.keras.layers.Dropout(0.3),
-            tf.keras.layers.LSTM(64, return_sequences=False),
-            tf.keras.layers.Dropout(0.3),
-            tf.keras.layers.Dense(32, activation='relu'),
-            tf.keras.layers.Dense(16, activation='relu'),
-            tf.keras.layers.Dense(1, activation='sigmoid')
-        ])
+        model = tf.keras.Sequential(
+            [
+                tf.keras.layers.LSTM(128, return_sequences=True, input_shape=(100, 50)),
+                tf.keras.layers.Dropout(0.3),
+                tf.keras.layers.LSTM(64, return_sequences=False),
+                tf.keras.layers.Dropout(0.3),
+                tf.keras.layers.Dense(32, activation="relu"),
+                tf.keras.layers.Dense(16, activation="relu"),
+                tf.keras.layers.Dense(1, activation="sigmoid"),
+            ]
+        )
 
         model.compile(
-            optimizer='adam',
-            loss='binary_crossentropy',
-            metrics=['accuracy']
+            optimizer="adam", loss="binary_crossentropy", metrics=["accuracy"]
         )
 
         return model
@@ -320,16 +336,14 @@ class MLThreatDetector:
 
             if model_path.exists():
                 loop = asyncio.get_event_loop()
-                with open(model_path, 'rb') as f:
+                with open(model_path, "rb") as f:
                     self.anomaly_detector = await loop.run_in_executor(
                         None, pickle.load, f
                     )
                 self.logger.info("Loaded existing anomaly detector")
             else:
                 self.anomaly_detector = IsolationForest(
-                    contamination=0.1,
-                    random_state=42,
-                    n_estimators=100
+                    contamination=0.1, random_state=42, n_estimators=100
                 )
                 self.logger.info("Created new anomaly detector")
 
@@ -360,23 +374,23 @@ class MLThreatDetector:
 
     def _create_pattern_recognizer_model(self) -> tf.keras.Model:
         """Create a CNN model for pattern recognition in binary data."""
-        model = tf.keras.Sequential([
-            tf.keras.layers.Conv1D(64, 3, activation='relu', input_shape=(1024, 1)),
-            tf.keras.layers.MaxPooling1D(2),
-            tf.keras.layers.Conv1D(128, 3, activation='relu'),
-            tf.keras.layers.MaxPooling1D(2),
-            tf.keras.layers.Conv1D(256, 3, activation='relu'),
-            tf.keras.layers.GlobalAveragePooling1D(),
-            tf.keras.layers.Dense(128, activation='relu'),
-            tf.keras.layers.Dropout(0.5),
-            tf.keras.layers.Dense(64, activation='relu'),
-            tf.keras.layers.Dense(1, activation='sigmoid')
-        ])
+        model = tf.keras.Sequential(
+            [
+                tf.keras.layers.Conv1D(64, 3, activation="relu", input_shape=(1024, 1)),
+                tf.keras.layers.MaxPooling1D(2),
+                tf.keras.layers.Conv1D(128, 3, activation="relu"),
+                tf.keras.layers.MaxPooling1D(2),
+                tf.keras.layers.Conv1D(256, 3, activation="relu"),
+                tf.keras.layers.GlobalAveragePooling1D(),
+                tf.keras.layers.Dense(128, activation="relu"),
+                tf.keras.layers.Dropout(0.5),
+                tf.keras.layers.Dense(64, activation="relu"),
+                tf.keras.layers.Dense(1, activation="sigmoid"),
+            ]
+        )
 
         model.compile(
-            optimizer='adam',
-            loss='binary_crossentropy',
-            metrics=['accuracy']
+            optimizer="adam", loss="binary_crossentropy", metrics=["accuracy"]
         )
 
         return model
@@ -386,9 +400,7 @@ class MLThreatDetector:
         try:
             # TF-IDF vectorizer for string analysis
             self.tfidf_vectorizer = TfidfVectorizer(
-                max_features=1000,
-                stop_words='english',
-                ngram_range=(1, 3)
+                max_features=1000, stop_words="english", ngram_range=(1, 3)
             )
 
             # Standard scaler for numerical features
@@ -409,13 +421,13 @@ class MLThreatDetector:
             loop = asyncio.get_event_loop()
 
             if tfidf_path.exists():
-                with open(tfidf_path, 'rb') as f:
+                with open(tfidf_path, "rb") as f:
                     self.tfidf_vectorizer = await loop.run_in_executor(
                         None, pickle.load, f
                     )
 
             if scaler_path.exists():
-                with open(scaler_path, 'rb') as f:
+                with open(scaler_path, "rb") as f:
                     self.feature_scaler = await loop.run_in_executor(
                         None, pickle.load, f
                     )
@@ -435,7 +447,7 @@ class MLThreatDetector:
                     file_path=file_path,
                     file_size=file_size,
                     file_entropy=0.0,
-                    file_hash=await self._calculate_file_hash_async(file_path)
+                    file_hash=await self._calculate_file_hash_async(file_path),
                 )
 
             # Calculate file hash
@@ -462,21 +474,17 @@ class MLThreatDetector:
                 file_hash=file_hash,
                 magic_bytes=magic_bytes,
                 creation_time=datetime.fromtimestamp(stat_result.st_ctime),
-                modification_time=datetime.fromtimestamp(stat_result.st_mtime)
+                modification_time=datetime.fromtimestamp(stat_result.st_mtime),
             )
 
         except Exception as e:
             self.logger.error("Error extracting features from %s: %s", file_path, e)
-            return FileFeatures(
-                file_path=file_path,
-                file_size=0,
-                file_entropy=0.0
-            )
+            return FileFeatures(file_path=file_path, file_size=0, file_entropy=0.0)
 
     async def _calculate_file_hash_async(self, file_path: str) -> str:
         """Calculate file hash asynchronously."""
         loop = asyncio.get_event_loop()
-        return await loop.run_in_executor(None, secure_file_hash, file_path, 'sha256')
+        return await loop.run_in_executor(None, secure_file_hash, file_path, "sha256")
 
     async def _calculate_entropy_async(self, file_path: str) -> float:
         """Calculate file entropy asynchronously."""
@@ -485,7 +493,7 @@ class MLThreatDetector:
             from collections import Counter
 
             def calc_entropy():
-                with open(file_path, 'rb') as f:
+                with open(file_path, "rb") as f:
                     # Read sample of file for entropy calculation
                     data = f.read(min(8192, os.path.getsize(file_path)))
                     if not data:
@@ -512,22 +520,28 @@ class MLThreatDetector:
     async def _extract_strings_async(self, file_path: str) -> list[str]:
         """Extract printable strings from file."""
         try:
+
             def extract_strings():
                 import re
+
                 strings = []
 
-                with open(file_path, 'rb') as f:
-                    content = f.read(min(65536, os.path.getsize(file_path)))  # Read up to 64KB
+                with open(file_path, "rb") as f:
+                    content = f.read(
+                        min(65536, os.path.getsize(file_path))
+                    )  # Read up to 64KB
 
                     # Extract ASCII strings (minimum length 4)
-                    ascii_strings = re.findall(rb'[ -~]{4,}', content)
-                    strings.extend([s.decode('ascii', errors='ignore') for s in ascii_strings])
+                    ascii_strings = re.findall(rb"[ -~]{4,}", content)
+                    strings.extend(
+                        [s.decode("ascii", errors="ignore") for s in ascii_strings]
+                    )
 
                     # Extract Unicode strings
-                    unicode_strings = re.findall(rb'(?:[\x20-\x7E]\x00){4,}', content)
+                    unicode_strings = re.findall(rb"(?:[\x20-\x7E]\x00){4,}", content)
                     for s in unicode_strings:
                         try:
-                            decoded = s.decode('utf-16le', errors='ignore')
+                            decoded = s.decode("utf-16le", errors="ignore")
                             if decoded.strip():
                                 strings.append(decoded)
                         except Exception:
@@ -545,8 +559,9 @@ class MLThreatDetector:
     async def _read_magic_bytes_async(self, file_path: str) -> bytes | None:
         """Read magic bytes from file header."""
         try:
+
             def read_magic():
-                with open(file_path, 'rb') as f:
+                with open(file_path, "rb") as f:
                     return f.read(16)  # Read first 16 bytes
 
             loop = asyncio.get_event_loop()
@@ -561,7 +576,7 @@ class MLThreatDetector:
         try:
             # Check if file is PE by magic bytes
             magic = await self._read_magic_bytes_async(file_path)
-            if not magic or not magic.startswith(b'MZ'):
+            if not magic or not magic.startswith(b"MZ"):
                 return None
 
             # Basic PE analysis (would use pefile library in production)
@@ -593,9 +608,7 @@ class MLThreatDetector:
             # Make prediction
             loop = asyncio.get_event_loop()
             prediction = await loop.run_in_executor(
-                None,
-                self.malware_classifier.predict,
-                np.array([feature_vector])
+                None, self.malware_classifier.predict, np.array([feature_vector])
             )
 
             confidence = float(prediction[0][0])
@@ -612,7 +625,7 @@ class MLThreatDetector:
                 prediction_class=prediction_class,
                 confidence_score=confidence,
                 model_version=self.model_versions.get("malware_classifier", "1.0"),
-                prediction_time=datetime.now()
+                prediction_time=datetime.now(),
             )
 
         except Exception as e:
@@ -621,7 +634,7 @@ class MLThreatDetector:
                 model_type=MLModelType.MALWARE_CLASSIFIER,
                 prediction_class="unknown",
                 confidence_score=0.0,
-                prediction_time=datetime.now()
+                prediction_time=datetime.now(),
             )
 
     async def analyze_behavior_async(self, features: FileFeatures) -> MLPrediction:
@@ -638,28 +651,28 @@ class MLThreatDetector:
                     model_type=MLModelType.BEHAVIORAL_ANALYZER,
                     prediction_class="insufficient_data",
                     confidence_score=0.0,
-                    prediction_time=datetime.now()
+                    prediction_time=datetime.now(),
                 )
 
             # Make prediction
             loop = asyncio.get_event_loop()
             prediction = await loop.run_in_executor(
-                None,
-                self.behavioral_analyzer.predict,
-                np.array([sequence_features])
+                None, self.behavioral_analyzer.predict, np.array([sequence_features])
             )
 
             confidence = float(prediction[0][0])
             is_suspicious = confidence > BEHAVIORAL_CONFIDENCE_THRESHOLD
 
-            prediction_class = "suspicious_behavior" if is_suspicious else "normal_behavior"
+            prediction_class = (
+                "suspicious_behavior" if is_suspicious else "normal_behavior"
+            )
 
             return MLPrediction(
                 model_type=MLModelType.BEHAVIORAL_ANALYZER,
                 prediction_class=prediction_class,
                 confidence_score=confidence,
                 model_version=self.model_versions.get("behavioral_analyzer", "1.0"),
-                prediction_time=datetime.now()
+                prediction_time=datetime.now(),
             )
 
         except Exception as e:
@@ -668,7 +681,7 @@ class MLThreatDetector:
                 model_type=MLModelType.BEHAVIORAL_ANALYZER,
                 prediction_class="error",
                 confidence_score=0.0,
-                prediction_time=datetime.now()
+                prediction_time=datetime.now(),
             )
 
     async def detect_anomaly_async(self, features: FileFeatures) -> MLPrediction:
@@ -683,9 +696,7 @@ class MLThreatDetector:
             # Make prediction
             loop = asyncio.get_event_loop()
             prediction = await loop.run_in_executor(
-                None,
-                self.anomaly_detector.predict,
-                np.array([feature_vector])
+                None, self.anomaly_detector.predict, np.array([feature_vector])
             )
 
             is_anomaly = prediction[0] == -1
@@ -698,7 +709,7 @@ class MLThreatDetector:
                 prediction_class=prediction_class,
                 confidence_score=confidence,
                 model_version=self.model_versions.get("anomaly_detector", "1.0"),
-                prediction_time=datetime.now()
+                prediction_time=datetime.now(),
             )
 
         except Exception as e:
@@ -707,7 +718,7 @@ class MLThreatDetector:
                 model_type=MLModelType.ANOMALY_DETECTOR,
                 prediction_class="error",
                 confidence_score=0.0,
-                prediction_time=datetime.now()
+                prediction_time=datetime.now(),
             )
 
     async def _features_to_vector_async(self, features: FileFeatures) -> np.ndarray:
@@ -732,7 +743,9 @@ class MLThreatDetector:
             self.logger.error("Error converting features to vector: %s", e)
             return np.zeros(FEATURE_VECTOR_SIZE, dtype=np.float32)
 
-    async def _create_sequence_features_async(self, features: FileFeatures) -> np.ndarray | None:
+    async def _create_sequence_features_async(
+        self, features: FileFeatures
+    ) -> np.ndarray | None:
         """Create sequence features for LSTM behavioral analysis."""
         try:
             if not features.string_features:
@@ -742,9 +755,13 @@ class MLThreatDetector:
             # This is a simplified version - would use more sophisticated encoding in production
             sequences = []
 
-            for string in features.string_features[:MAX_STRING_SEQUENCES]:  # Use first 100 strings
+            for string in features.string_features[
+                :MAX_STRING_SEQUENCES
+            ]:  # Use first 100 strings
                 # Convert string to character codes
-                char_codes = [ord(c) % 256 for c in string[:MAX_STRING_LENGTH]]  # Limit string length
+                char_codes = [
+                    ord(c) % 256 for c in string[:MAX_STRING_LENGTH]
+                ]  # Limit string length
 
                 # Pad to fixed length
                 while len(char_codes) < MAX_STRING_LENGTH:
@@ -762,7 +779,9 @@ class MLThreatDetector:
             self.logger.error("Error creating sequence features: %s", e)
             return None
 
-    async def comprehensive_ml_analysis_async(self, file_path: str) -> list[MLPrediction]:
+    async def comprehensive_ml_analysis_async(
+        self, file_path: str
+    ) -> list[MLPrediction]:
         """Perform comprehensive ML analysis using all available models."""
         try:
             start_time = datetime.now()
@@ -775,27 +794,25 @@ class MLThreatDetector:
                 self.predict_malware_async(features),
                 self.analyze_behavior_async(features),
                 self.detect_anomaly_async(features),
-                return_exceptions=True
+                return_exceptions=True,
             )
 
             # Filter out exceptions
-            valid_predictions = [
-                p for p in predictions
-                if isinstance(p, MLPrediction)
-            ]
+            valid_predictions = [p for p in predictions if isinstance(p, MLPrediction)]
 
             # Update performance metrics
             end_time = datetime.now()
             prediction_time = (end_time - start_time).total_seconds()
             self.avg_prediction_time = (
-                (self.avg_prediction_time * (self.predictions_made - 1) + prediction_time)
-                / self.predictions_made
-            )
+                self.avg_prediction_time * (self.predictions_made - 1) + prediction_time
+            ) / self.predictions_made
 
             return valid_predictions
 
         except Exception as e:
-            self.logger.error("Error in comprehensive ML analysis for %s: %s", file_path, e)
+            self.logger.error(
+                "Error in comprehensive ML analysis for %s: %s", file_path, e
+            )
             return []
 
     async def ml_to_threat_detection_async(
@@ -811,9 +828,15 @@ class MLThreatDetector:
             threat_details = []
 
             for prediction in ml_predictions:
-                if prediction.prediction_class in ['malware', 'suspicious_behavior', 'anomaly']:
+                if prediction.prediction_class in [
+                    "malware",
+                    "suspicious_behavior",
+                    "anomaly",
+                ]:
                     threat_scores.append(prediction.confidence_score)
-                    threat_details.append(f"{prediction.model_type.value}: {prediction.prediction_class}")
+                    threat_details.append(
+                        f"{prediction.model_type.value}: {prediction.prediction_class}"
+                    )
 
             if not threat_scores:
                 return None
@@ -855,11 +878,13 @@ class MLThreatDetector:
                         for p in ml_predictions
                     ],
                     "overall_confidence": overall_confidence,
-                }
+                },
             )
 
         except Exception as e:
-            self.logger.error("Error converting ML predictions to threat detection: %s", e)
+            self.logger.error(
+                "Error converting ML predictions to threat detection: %s", e
+            )
             return None
 
     async def get_ml_statistics_async(self) -> dict[str, Any]:
@@ -869,7 +894,8 @@ class MLThreatDetector:
             "ml_detections": self.ml_detections,
             "detection_rate": (
                 self.ml_detections / self.predictions_made
-                if self.predictions_made > 0 else 0.0
+                if self.predictions_made > 0
+                else 0.0
             ),
             "avg_prediction_time_seconds": self.avg_prediction_time,
             "models_loaded": {
@@ -880,7 +906,8 @@ class MLThreatDetector:
             },
             "model_versions": self.model_versions,
             "tensorflow_version": tf.__version__,
-            "gpu_available": len(tf.config.experimental.list_physical_devices('GPU')) > 0,
+            "gpu_available": len(tf.config.experimental.list_physical_devices("GPU"))
+            > 0,
         }
 
     async def save_models_async(self) -> bool:
@@ -893,36 +920,42 @@ class MLThreatDetector:
                 await loop.run_in_executor(
                     None,
                     self.malware_classifier.save,
-                    str(self.models_dir / "malware_classifier.h5")
+                    str(self.models_dir / "malware_classifier.h5"),
                 )
 
             if self.behavioral_analyzer:
                 await loop.run_in_executor(
                     None,
                     self.behavioral_analyzer.save,
-                    str(self.models_dir / "behavioral_analyzer.h5")
+                    str(self.models_dir / "behavioral_analyzer.h5"),
                 )
 
             if self.pattern_recognizer:
                 await loop.run_in_executor(
                     None,
                     self.pattern_recognizer.save,
-                    str(self.models_dir / "pattern_recognizer.h5")
+                    str(self.models_dir / "pattern_recognizer.h5"),
                 )
 
             # Save scikit-learn models
             if self.anomaly_detector:
-                with open(self.models_dir / "anomaly_detector.pkl", 'wb') as f:
-                    await loop.run_in_executor(None, pickle.dump, self.anomaly_detector, f)
+                with open(self.models_dir / "anomaly_detector.pkl", "wb") as f:
+                    await loop.run_in_executor(
+                        None, pickle.dump, self.anomaly_detector, f
+                    )
 
             # Save feature extractors
             if self.tfidf_vectorizer:
-                with open(self.models_dir / "tfidf_vectorizer.pkl", 'wb') as f:
-                    await loop.run_in_executor(None, pickle.dump, self.tfidf_vectorizer, f)
+                with open(self.models_dir / "tfidf_vectorizer.pkl", "wb") as f:
+                    await loop.run_in_executor(
+                        None, pickle.dump, self.tfidf_vectorizer, f
+                    )
 
             if self.feature_scaler:
-                with open(self.models_dir / "feature_scaler.pkl", 'wb') as f:
-                    await loop.run_in_executor(None, pickle.dump, self.feature_scaler, f)
+                with open(self.models_dir / "feature_scaler.pkl", "wb") as f:
+                    await loop.run_in_executor(
+                        None, pickle.dump, self.feature_scaler, f
+                    )
 
             self.logger.info("All models saved successfully")
             return True
@@ -956,8 +989,7 @@ class MLThreatDetector:
 
 # Integration function for existing threat detector
 async def enhance_threat_detector_with_ml(
-    threat_detector: Any,
-    ml_detector: MLThreatDetector
+    threat_detector: Any, ml_detector: MLThreatDetector
 ) -> None:
     """Enhance existing threat detector with ML capabilities."""
     try:
@@ -972,8 +1004,12 @@ async def enhance_threat_detector_with_ml(
 
             # If no threat found by traditional methods, try ML
             if not original_result.is_threat:
-                ml_predictions = await ml_detector.comprehensive_ml_analysis_async(file_path)
-                ml_threat = await ml_detector.ml_to_threat_detection_async(file_path, ml_predictions)
+                ml_predictions = await ml_detector.comprehensive_ml_analysis_async(
+                    file_path
+                )
+                ml_threat = await ml_detector.ml_to_threat_detection_async(
+                    file_path, ml_predictions
+                )
 
                 if ml_threat:
                     # ScanResult is now defined at the top of this file
@@ -981,7 +1017,7 @@ async def enhance_threat_detector_with_ml(
                         scan_id=f"ml_scan_{int(datetime.now().timestamp())}",
                         file_path=file_path,
                         is_threat=True,
-                        threat_detection=ml_threat
+                        threat_detection=ml_threat,
                     )
 
             return original_result
@@ -991,7 +1027,6 @@ async def enhance_threat_detector_with_ml(
 
     except Exception as e:
         logging.error("Error enhancing threat detector with ML: %s", e)
-
 
     async def cleanup_ml_resources_async(self) -> None:
         """Clean up ML resources and memory properly."""
@@ -1026,11 +1061,12 @@ async def enhance_threat_detector_with_ml(
 
             # Clear TensorFlow session and backend
             tf.keras.backend.clear_session()
-            if hasattr(tf.python.keras.backend, 'clear_session'):
+            if hasattr(tf.python.keras.backend, "clear_session"):
                 tf.python.keras.backend.clear_session()
 
             # Force garbage collection
             import gc
+
             gc.collect()
 
             # Reset performance tracking

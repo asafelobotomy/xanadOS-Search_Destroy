@@ -286,7 +286,7 @@ def hashlib_sha256_compat(data: str | bytes) -> str:
     """
     Drop-in replacement for hashlib.sha256().hexdigest()
     Maintains compatibility while using cryptography library.
-    
+
     This function provides a secure alternative to direct hashlib usage,
     leveraging the cryptography library for enhanced security.
     """

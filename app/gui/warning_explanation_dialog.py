@@ -10,7 +10,10 @@ from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtGui import QPixmap
 from PyQt6.QtWidgets import QLabel, QMessageBox
 
-from app.core.unified_rkhunter_integration import RKHunterSeverity, RKHunterWarningAnalyzer
+from app.core.unified_rkhunter_integration import (
+    RKHunterSeverity,
+    RKHunterWarningAnalyzer,
+)
 from app.gui.theme_manager import get_theme_manager
 from app.gui.themed_widgets import ThemedDialog
 
@@ -21,9 +24,11 @@ SeverityLevel = RKHunterSeverity
 # We'll create a simple dataclass for compatibility
 from dataclasses import dataclass
 
+
 @dataclass
 class WarningExplanation:
     """Compatibility wrapper for warning explanations."""
+
     severity: RKHunterSeverity
     description: str
     likely_cause: str = ""
@@ -34,6 +39,7 @@ class WarningExplanation:
     def __post_init__(self):
         if self.false_positive_indicators is None:
             self.false_positive_indicators = []
+
 
 # Add project root to Python path for imports
 project_root = Path(__file__).parent.parent.parent
@@ -89,12 +95,16 @@ class WarningExplanationDialog(ThemedDialog):
         # Color based on severity - using theme colors where appropriate
         colors = {
             SeverityLevel.LOW: get_theme_manager().get_color("success"),  # Green
-            SeverityLevel.MEDIUM: get_theme_manager().get_color("warning"),  # Yellow/Orange
+            SeverityLevel.MEDIUM: get_theme_manager().get_color(
+                "warning"
+            ),  # Yellow/Orange
             SeverityLevel.HIGH: get_theme_manager().get_color("warning"),  # Orange
             SeverityLevel.CRITICAL: get_theme_manager().get_color("error"),  # Red
         }
 
-        color = colors.get(self.explanation.severity, get_theme_manager().get_color("muted_text"))
+        color = colors.get(
+            self.explanation.severity, get_theme_manager().get_color("muted_text")
+        )
         badge.setStyleSheet(
             f"""
             QLabel {{

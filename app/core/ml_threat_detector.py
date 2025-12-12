@@ -80,7 +80,8 @@ class SecurityFeatureExtractor:
             # Time window for analysis (last 5 minutes)
             current_time = time.time()
             recent_events = [
-                e for e in self.event_history
+                e
+                for e in self.event_history
                 if current_time - e.timestamp < 300  # 5 minutes
             ]
 
@@ -91,38 +92,48 @@ class SecurityFeatureExtractor:
             features = self._extract_behavioral_features(recent_events)
 
             # Convert to numpy array
-            feature_vector = np.array([
-                features.file_operations_per_minute,
-                features.unique_processes_spawned,
-                features.network_connections_count,
-                features.privilege_escalation_attempts,
-                features.suspicious_file_patterns,
-                features.execution_frequency_anomaly,
-                features.time_based_anomaly,
-                features.process_parent_child_anomaly,
-                # Additional derived features
-                len(recent_events) / 300,  # Events per second
-                self._calculate_entropy(recent_events),
-                self._calculate_variance_score(recent_events),
-                self._calculate_pattern_deviation(recent_events),
-                self._calculate_temporal_clustering(recent_events),
-                self._calculate_privilege_patterns(recent_events),
-                self._calculate_network_anomaly_score(recent_events),
-            ])
+            feature_vector = np.array(
+                [
+                    features.file_operations_per_minute,
+                    features.unique_processes_spawned,
+                    features.network_connections_count,
+                    features.privilege_escalation_attempts,
+                    features.suspicious_file_patterns,
+                    features.execution_frequency_anomaly,
+                    features.time_based_anomaly,
+                    features.process_parent_child_anomaly,
+                    # Additional derived features
+                    len(recent_events) / 300,  # Events per second
+                    self._calculate_entropy(recent_events),
+                    self._calculate_variance_score(recent_events),
+                    self._calculate_pattern_deviation(recent_events),
+                    self._calculate_temporal_clustering(recent_events),
+                    self._calculate_privilege_patterns(recent_events),
+                    self._calculate_network_anomaly_score(recent_events),
+                ]
+            )
 
-            self.logger.debug(f"Extracted {len(feature_vector)} features from {len(recent_events)} events")
+            self.logger.debug(
+                f"Extracted {len(feature_vector)} features from {len(recent_events)} events"
+            )
             return feature_vector
 
         except Exception as e:
             self.logger.error(f"Feature extraction failed: {e}")
             return np.zeros(15)
 
-    def _extract_behavioral_features(self, events: list[SecurityEvent]) -> BehavioralFeatures:
+    def _extract_behavioral_features(
+        self, events: list[SecurityEvent]
+    ) -> BehavioralFeatures:
         """Extract high-level behavioral features."""
         file_ops = sum(1 for e in events if "file" in e.event_type.event_name.lower())
         unique_processes = len(set(e.process_id for e in events if e.process_id))
-        network_conns = sum(1 for e in events if e.event_type.event_name == "network_connection")
-        privilege_escalations = sum(1 for e in events if e.event_type.event_name == "privilege_escalation")
+        network_conns = sum(
+            1 for e in events if e.event_type.event_name == "network_connection"
+        )
+        privilege_escalations = sum(
+            1 for e in events if e.event_type.event_name == "privilege_escalation"
+        )
 
         # Analyze file patterns for suspicious activity
         suspicious_patterns = 0
@@ -196,7 +207,9 @@ class SecurityFeatureExtractor:
 
         # Calculate deviation from expected uniform distribution
         expected_per_hour = len(events) / 24
-        deviation = sum(abs(count - expected_per_hour) for count in hour_counts.values())
+        deviation = sum(
+            abs(count - expected_per_hour) for count in hour_counts.values()
+        )
         return deviation / len(events) if events else 0.0
 
     def _calculate_temporal_clustering(self, events: list[SecurityEvent]) -> float:
@@ -209,12 +222,16 @@ class SecurityFeatureExtractor:
 
         # Calculate clustering coefficient
         mean_interval = np.mean(intervals)
-        clustering_score = sum(1 for interval in intervals if interval < mean_interval / 2)
+        clustering_score = sum(
+            1 for interval in intervals if interval < mean_interval / 2
+        )
         return clustering_score / len(intervals) if intervals else 0.0
 
     def _calculate_privilege_patterns(self, events: list[SecurityEvent]) -> float:
         """Analyze privilege escalation patterns."""
-        privilege_events = [e for e in events if e.event_type.event_name == "privilege_escalation"]
+        privilege_events = [
+            e for e in events if e.event_type.event_name == "privilege_escalation"
+        ]
         if not privilege_events:
             return 0.0
 
@@ -227,7 +244,9 @@ class SecurityFeatureExtractor:
 
     def _calculate_network_anomaly_score(self, events: list[SecurityEvent]) -> float:
         """Calculate network behavior anomaly score."""
-        network_events = [e for e in events if e.event_type.event_name == "network_connection"]
+        network_events = [
+            e for e in events if e.event_type.event_name == "network_connection"
+        ]
         if not network_events:
             return 0.0
 
@@ -247,7 +266,9 @@ class SecurityFeatureExtractor:
 
         intervals = np.diff(sorted(exec_times))
         # High frequency execution is suspicious
-        rapid_executions = sum(1 for interval in intervals if interval < 1.0)  # < 1 second
+        rapid_executions = sum(
+            1 for interval in intervals if interval < 1.0
+        )  # < 1 second
         return rapid_executions / len(intervals) if intervals else 0.0
 
     def _calculate_time_anomaly(self, events: list[SecurityEvent]) -> float:
@@ -277,7 +298,11 @@ class SecurityFeatureExtractor:
         total_process_events = len(process_events)
 
         # High ratio of unique processes to events is suspicious
-        return min(unique_processes / total_process_events, 1.0) if total_process_events > 0 else 0.0
+        return (
+            min(unique_processes / total_process_events, 1.0)
+            if total_process_events > 0
+            else 0.0
+        )
 
 
 class MLThreatDetector:
@@ -288,9 +313,7 @@ class MLThreatDetector:
         self.feature_extractor = SecurityFeatureExtractor()
         self.scaler = StandardScaler()
         self.anomaly_detector = IsolationForest(
-            contamination=0.1,  # Expect 10% anomalies
-            random_state=42,
-            n_estimators=100
+            contamination=0.1, random_state=42, n_estimators=100  # Expect 10% anomalies
         )
         self.is_trained = False
         self.model_path = model_path or Path("models/threat_detector.pkl")
@@ -303,13 +326,15 @@ class MLThreatDetector:
         """Load pre-trained model if available."""
         try:
             if self.model_path.exists():
-                with open(self.model_path, 'rb') as f:
+                with open(self.model_path, "rb") as f:
                     model_data = pickle.load(f)
-                    self.anomaly_detector = model_data['detector']
-                    self.scaler = model_data['scaler']
-                    self.is_trained = model_data['is_trained']
+                    self.anomaly_detector = model_data["detector"]
+                    self.scaler = model_data["scaler"]
+                    self.is_trained = model_data["is_trained"]
 
-                self.logger.info(f"Loaded pre-trained threat detection model from {self.model_path}")
+                self.logger.info(
+                    f"Loaded pre-trained threat detection model from {self.model_path}"
+                )
                 return True
         except Exception as e:
             self.logger.warning(f"Failed to load model from {self.model_path}: {e}")
@@ -321,12 +346,12 @@ class MLThreatDetector:
         try:
             self.model_path.parent.mkdir(parents=True, exist_ok=True)
             model_data = {
-                'detector': self.anomaly_detector,
-                'scaler': self.scaler,
-                'is_trained': self.is_trained
+                "detector": self.anomaly_detector,
+                "scaler": self.scaler,
+                "is_trained": self.is_trained,
             }
 
-            with open(self.model_path, 'wb') as f:
+            with open(self.model_path, "wb") as f:
                 pickle.dump(model_data, f)
 
             self.logger.info(f"Saved threat detection model to {self.model_path}")
@@ -359,7 +384,9 @@ class MLThreatDetector:
             self.is_trained = True
             self._save_model()
 
-            self.logger.info(f"Successfully trained threat detection model with {len(training_features)} samples")
+            self.logger.info(
+                f"Successfully trained threat detection model with {len(training_features)} samples"
+            )
             return True
 
         except Exception as e:
@@ -379,7 +406,7 @@ class MLThreatDetector:
                     reasoning="No events to analyze",
                     timestamp=datetime.now(),
                     events_analyzed=0,
-                    recommended_actions=[]
+                    recommended_actions=[],
                 )
 
             # Extract features
@@ -399,13 +426,19 @@ class MLThreatDetector:
             confidence = min(abs(anomaly_score) * 2, 1.0)  # Convert to 0-1 confidence
 
             # Generate behavioral indicators
-            behavioral_indicators = self._generate_behavioral_indicators(features, events)
+            behavioral_indicators = self._generate_behavioral_indicators(
+                features, events
+            )
 
             # Generate reasoning
-            reasoning = self._generate_reasoning(anomaly_score, is_anomaly, behavioral_indicators)
+            reasoning = self._generate_reasoning(
+                anomaly_score, is_anomaly, behavioral_indicators
+            )
 
             # Generate recommended actions
-            recommended_actions = self._generate_recommendations(threat_level, behavioral_indicators)
+            recommended_actions = self._generate_recommendations(
+                threat_level, behavioral_indicators
+            )
 
             assessment = ThreatAssessment(
                 threat_level=threat_level,
@@ -416,13 +449,15 @@ class MLThreatDetector:
                 reasoning=reasoning,
                 timestamp=datetime.now(),
                 events_analyzed=len(events),
-                recommended_actions=recommended_actions
+                recommended_actions=recommended_actions,
             )
 
             # Store in history for learning
             self.threat_history.append(assessment)
 
-            self.logger.debug(f"Threat analysis: {threat_level.name} (confidence: {confidence:.2f})")
+            self.logger.debug(
+                f"Threat analysis: {threat_level.name} (confidence: {confidence:.2f})"
+            )
             return assessment
 
         except Exception as e:
@@ -436,10 +471,12 @@ class MLThreatDetector:
                 reasoning=f"Error during analysis: {e}",
                 timestamp=datetime.now(),
                 events_analyzed=len(events) if events else 0,
-                recommended_actions=["Review system logs"]
+                recommended_actions=["Review system logs"],
             )
 
-    async def _heuristic_analysis(self, events: list[SecurityEvent], features: np.ndarray) -> ThreatAssessment:
+    async def _heuristic_analysis(
+        self, events: list[SecurityEvent], features: np.ndarray
+    ) -> ThreatAssessment:
         """Fallback heuristic analysis when ML model is not trained."""
         # Simple rule-based analysis
         threat_indicators = []
@@ -476,10 +513,14 @@ class MLThreatDetector:
             reasoning="Heuristic analysis (ML model not trained)",
             timestamp=datetime.now(),
             events_analyzed=len(events),
-            recommended_actions=self._generate_recommendations(threat_level, threat_indicators)
+            recommended_actions=self._generate_recommendations(
+                threat_level, threat_indicators
+            ),
         )
 
-    def _calculate_threat_level(self, anomaly_score: float, features: np.ndarray) -> ThreatLevel:
+    def _calculate_threat_level(
+        self, anomaly_score: float, features: np.ndarray
+    ) -> ThreatLevel:
         """Calculate threat level based on anomaly score and features."""
         # More negative scores indicate higher anomaly
         if anomaly_score < -0.6:
@@ -491,13 +532,17 @@ class MLThreatDetector:
         else:
             return ThreatLevel.LOW
 
-    def _generate_behavioral_indicators(self, features: np.ndarray, events: list[SecurityEvent]) -> list[str]:
+    def _generate_behavioral_indicators(
+        self, features: np.ndarray, events: list[SecurityEvent]
+    ) -> list[str]:
         """Generate human-readable behavioral indicators."""
         indicators = []
 
         # File operation indicators
         if features[0] > 50:  # file_operations_per_minute
-            indicators.append(f"High file activity: {features[0]:.1f} operations/minute")
+            indicators.append(
+                f"High file activity: {features[0]:.1f} operations/minute"
+            )
 
         # Process indicators
         if features[1] > 5:  # unique_processes_spawned
@@ -523,7 +568,9 @@ class MLThreatDetector:
 
         return indicators
 
-    def _generate_reasoning(self, anomaly_score: float, is_anomaly: bool, indicators: list[str]) -> str:
+    def _generate_reasoning(
+        self, anomaly_score: float, is_anomaly: bool, indicators: list[str]
+    ) -> str:
         """Generate human-readable reasoning for the threat assessment."""
         if not is_anomaly:
             return "Behavior appears normal based on ML analysis"
@@ -537,40 +584,49 @@ class MLThreatDetector:
         else:
             return f"Minor anomaly detected (score: {anomaly_score:.3f}). Low-level suspicious activity"
 
-    def _generate_recommendations(self, threat_level: ThreatLevel, indicators: list[str]) -> list[str]:
+    def _generate_recommendations(
+        self, threat_level: ThreatLevel, indicators: list[str]
+    ) -> list[str]:
         """Generate recommended actions based on threat assessment."""
         recommendations = []
 
         if threat_level == ThreatLevel.CRITICAL:
-            recommendations.extend([
-                "Immediately quarantine affected systems",
-                "Perform comprehensive malware scan",
-                "Review all recent file modifications",
-                "Check for unauthorized network connections",
-                "Analyze system logs for attack vectors"
-            ])
+            recommendations.extend(
+                [
+                    "Immediately quarantine affected systems",
+                    "Perform comprehensive malware scan",
+                    "Review all recent file modifications",
+                    "Check for unauthorized network connections",
+                    "Analyze system logs for attack vectors",
+                ]
+            )
         elif threat_level == ThreatLevel.HIGH:
-            recommendations.extend([
-                "Perform thorough system scan",
-                "Monitor process activity closely",
-                "Review recent file access patterns",
-                "Check system integrity"
-            ])
+            recommendations.extend(
+                [
+                    "Perform thorough system scan",
+                    "Monitor process activity closely",
+                    "Review recent file access patterns",
+                    "Check system integrity",
+                ]
+            )
         elif threat_level == ThreatLevel.MEDIUM:
-            recommendations.extend([
-                "Schedule comprehensive scan",
-                "Monitor system activity",
-                "Review security logs"
-            ])
+            recommendations.extend(
+                [
+                    "Schedule comprehensive scan",
+                    "Monitor system activity",
+                    "Review security logs",
+                ]
+            )
         else:
-            recommendations.extend([
-                "Continue normal monitoring",
-                "Log activity for trend analysis"
-            ])
+            recommendations.extend(
+                ["Continue normal monitoring", "Log activity for trend analysis"]
+            )
 
         return recommendations
 
-    async def update_model(self, feedback_events: list[tuple[list[SecurityEvent], bool]]) -> bool:
+    async def update_model(
+        self, feedback_events: list[tuple[list[SecurityEvent], bool]]
+    ) -> bool:
         """Update model with feedback (events, is_malicious)."""
         try:
             if not feedback_events:
@@ -583,14 +639,18 @@ class MLThreatDetector:
             for events, is_malicious in feedback_events:
                 features = self.feature_extractor.extract_features(events)
                 feedback_features.append(features)
-                feedback_labels.append(-1 if is_malicious else 1)  # -1 for anomaly, 1 for normal
+                feedback_labels.append(
+                    -1 if is_malicious else 1
+                )  # -1 for anomaly, 1 for normal
 
             if not feedback_features:
                 return False
 
             # For now, we'll retrain with combined data
             # In a production system, you'd want incremental learning
-            self.logger.info(f"Updating model with {len(feedback_features)} feedback samples")
+            self.logger.info(
+                f"Updating model with {len(feedback_features)} feedback samples"
+            )
 
             # This is a simplified update - in production you'd want more sophisticated online learning
             return True

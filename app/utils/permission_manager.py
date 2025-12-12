@@ -171,7 +171,9 @@ class PermissionDialog:
     """GUI dialog for handling permission-related user choices."""
 
     @staticmethod
-    def ask_for_sudo_permission(parent=None, privileged_paths: list[str] | None = None) -> str:
+    def ask_for_sudo_permission(
+        parent=None, privileged_paths: list[str] | None = None
+    ) -> str:
         """
         Ask user how to handle privileged directory access.
 

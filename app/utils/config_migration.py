@@ -12,8 +12,12 @@ import shutil
 from pathlib import Path
 
 from app.utils.config import (
-    get_config, save_config, get_api_security_config,
-    DATA_DIR, CONFIG_DIR, APP_NAME
+    get_config,
+    save_config,
+    get_api_security_config,
+    DATA_DIR,
+    CONFIG_DIR,
+    APP_NAME,
 )
 
 
@@ -98,8 +102,13 @@ def migrate_environment_variables():
                     api_config[section] = {}
 
                 # Convert value to appropriate type
-                if key in ["port", "db", "access_token_expire_minutes",
-                          "refresh_token_expire_days", "max_request_size_mb"]:
+                if key in [
+                    "port",
+                    "db",
+                    "access_token_expire_minutes",
+                    "refresh_token_expire_days",
+                    "max_request_size_mb",
+                ]:
                     try:
                         env_value = int(env_value)
                     except ValueError:
@@ -136,7 +145,7 @@ def validate_migration():
         "database_migrated": False,
         "config_valid": False,
         "environment_applied": False,
-        "security_warnings": []
+        "security_warnings": [],
     }
 
     try:
@@ -154,8 +163,11 @@ def validate_migration():
 
         # Check environment variables
         env_vars = [
-            "JWT_SECRET_KEY", "REDIS_HOST", "REDIS_PASSWORD",
-            "API_REQUIRE_HTTPS", "API_ALLOWED_ORIGINS"
+            "JWT_SECRET_KEY",
+            "REDIS_HOST",
+            "REDIS_PASSWORD",
+            "API_REQUIRE_HTTPS",
+            "API_ALLOWED_ORIGINS",
         ]
 
         env_found = any(os.environ.get(var) for var in env_vars)
@@ -174,7 +186,9 @@ def validate_migration():
 
         redis_config = api_config.get("redis", {})
         if not redis_config.get("password") and redis_config.get("host") != "localhost":
-            results["security_warnings"].append("Redis has no password for remote connection")
+            results["security_warnings"].append(
+                "Redis has no password for remote connection"
+            )
 
     except Exception as e:
         logging.getLogger(APP_NAME).error(f"Migration validation failed: {e}")
@@ -193,7 +207,7 @@ def run_full_migration():
     results = {
         "database_migration": migrate_hardcoded_database(),
         "environment_migration": migrate_environment_variables(),
-        "validation": validate_migration()
+        "validation": validate_migration(),
     }
 
     # Generate new secure configuration
@@ -230,7 +244,7 @@ if __name__ == "__main__":
     # Setup basic logging
     logging.basicConfig(
         level=logging.INFO,
-        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
     )
 
     results = run_full_migration()
