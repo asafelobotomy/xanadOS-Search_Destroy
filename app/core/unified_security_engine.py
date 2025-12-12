@@ -40,9 +40,9 @@ except (ModuleNotFoundError, AttributeError):
     EBPF_AVAILABLE = False
 
 try:
-    INOTIFY_AVAILABLE = _find_spec("inotify.adapters") is not None
+    WATCHDOG_AVAILABLE = _find_spec("watchdog") is not None
 except (ModuleNotFoundError, AttributeError):
-    INOTIFY_AVAILABLE = False
+    WATCHDOG_AVAILABLE = False
 
 # fanotify constants for advanced monitoring (statically defined for internal use)
 FAN_ACCESS = 0x00000001
@@ -620,7 +620,7 @@ class UnifiedSecurityEngine:
         capabilities = {
             "ebpf": EBPF_AVAILABLE and os.geteuid() == 0,
             "fanotify": FANOTIFY_AVAILABLE and os.geteuid() == 0,
-            "inotify": INOTIFY_AVAILABLE,
+            "watchdog": WATCHDOG_AVAILABLE,
             "root_privileges": os.geteuid() == 0,
             "kernel_version": self._get_kernel_version(),
         }
@@ -697,7 +697,7 @@ class UnifiedSecurityEngine:
         """Advanced file system monitoring with 2025 optimizations."""
         self.logger.info("👁️ Starting file system monitoring...")
 
-        # This would implement fanotify/inotify monitoring
+        # This would implement fanotify/watchdog monitoring
         # For now, simulating with periodic checks
         while self.is_running:
             try:
@@ -716,7 +716,7 @@ class UnifiedSecurityEngine:
 
     async def _simulate_fs_events(self, path: str):
         """Simulate file system events for testing."""
-        # This would be replaced with actual fanotify/inotify implementation
+        # This would be replaced with actual fanotify/watchdog implementation
         try:
             for root, dirs, files in os.walk(path):
                 if not self.is_running:

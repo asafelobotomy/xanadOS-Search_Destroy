@@ -21,8 +21,8 @@ import psutil
 
 # Import our enhanced components
 try:
-    from .enhanced_file_watcher import (
-        EnhancedFileSystemWatcher,
+    from app.monitoring.file_watcher import (
+        FileSystemWatcher as EnhancedFileSystemWatcher,
         WatchEvent,
         WatchEventType,
     )
