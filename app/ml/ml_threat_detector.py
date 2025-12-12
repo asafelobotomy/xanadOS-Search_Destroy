@@ -25,7 +25,7 @@ from app.utils.secure_crypto import secure_file_hash
 # Define threat detection classes inline (previously from async_threat_detector)
 from enum import Enum
 from dataclasses import dataclass, field
-from typing import Dict, List, Any
+from typing import Any
 from datetime import datetime
 
 class ThreatLevel(Enum):
@@ -54,8 +54,8 @@ class ThreatDetection:
     confidence: float
     detection_method: str = ""
     description: str = ""
-    indicators: List[str] = field(default_factory=list)
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    indicators: list[str] = field(default_factory=list)
+    metadata: dict[str, Any] = field(default_factory=dict)
     timestamp: datetime = field(default_factory=datetime.now)
 
 @dataclass
@@ -64,9 +64,9 @@ class ScanResult:
     scan_id: str
     file_path: str
     is_threat: bool
-    threat_detection: ThreatDetection = None
+    threat_detection: ThreatDetection | None = None
     scan_time: float = 0.0
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
 
 # ML Model Constants

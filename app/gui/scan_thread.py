@@ -2,7 +2,7 @@
 """Scan thread for running file scans without blocking the UI."""
 
 import logging
-from typing import Dict, Any, Union, List
+from typing import Any
 
 from PyQt6.QtCore import QThread, pyqtSignal
 
@@ -22,10 +22,10 @@ class ScanThread(QThread, CooperativeCancellationMixin):
     def __init__(
         self,
         scanner: FileScanner,
-        scan_path: Union[str, List[str]],
+        scan_path: str | list[str],
         quick_scan: bool = False,
-        scan_options: Dict[str, Any] = None,
-        effective_scan_type: str = None,
+        scan_options: dict[str, Any] | None = None,
+        effective_scan_type: str | None = None,
     ):
         super().__init__()
         self.scanner = scanner
@@ -117,7 +117,7 @@ class ScanThread(QThread, CooperativeCancellationMixin):
             self.error_occurred.emit(str(e))
             self.status_updated.emit(f"Scan error: {e}")
 
-    def _combine_scan_results(self, results_list: List) -> Any:
+    def _combine_scan_results(self, results_list: list) -> Any:
         """Combine multiple scan results into a single result."""
         if not results_list:
             # Return empty dict or similar structure

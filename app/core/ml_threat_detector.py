@@ -23,7 +23,6 @@ from collections import defaultdict, deque
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Optional
 
 import joblib
 import numpy as np
@@ -284,7 +283,7 @@ class SecurityFeatureExtractor:
 class MLThreatDetector:
     """Advanced ML-based threat detection system."""
 
-    def __init__(self, model_path: Optional[Path] = None):
+    def __init__(self, model_path: Path | None = None):
         self.logger = logging.getLogger(__name__)
         self.feature_extractor = SecurityFeatureExtractor()
         self.scaler = StandardScaler()

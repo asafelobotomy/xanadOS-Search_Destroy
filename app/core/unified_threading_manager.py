@@ -9,13 +9,16 @@ This module consolidates all threading and async functionality from:
 - app/core/async_scanner_engine.py (828 lines) - Primary async scanner
 - app/core/async_threat_detector.py (720 lines) - Async threat detection
 - app/core/advanced_async_scanner.py (700 lines) - Advanced async patterns
-- app/core/async_file_watcher.py (524 lines) - Async file monitoring
 - app/core/async_scanner.py (479 lines) - Basic async scanner
 - app/gui/scan_thread.py (479 lines) - GUI scan threading
 - app/core/async_integration.py (405 lines) - Async component integration
 - app/core/async_file_metadata_cache.py (319 lines) - Async metadata cache
 - app/core/async_resource_coordinator.py (281 lines) - Resource management
 - app/gui/thread_cancellation.py (80 lines) - Thread cancellation
+
+Note: File system monitoring was consolidated into app/monitoring/file_watcher.py
+with integrated async support (fanotify + watchdog + async/await). See that
+module for file monitoring functionality.
 
 Features:
 - Unified async/await patterns for modern Python
@@ -27,7 +30,8 @@ Features:
 - Deadlock prevention and resource monitoring
 - Unified logging and metrics collection
 
-Total consolidation: 10 files (4,815 lines) → 1 unified system
+Total consolidation: 9 files (4,291 lines) → 1 unified system
+File monitoring: Separate consolidation in app/monitoring/file_watcher.py
 """
 
 import asyncio

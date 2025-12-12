@@ -20,7 +20,6 @@ SeverityLevel = RKHunterSeverity
 # WarningExplanation is now returned by RKHunterWarningAnalyzer.analyze_warning()
 # We'll create a simple dataclass for compatibility
 from dataclasses import dataclass
-from typing import List
 
 @dataclass
 class WarningExplanation:
@@ -30,7 +29,7 @@ class WarningExplanation:
     likely_cause: str = ""
     recommended_action: str = ""
     technical_details: str = ""
-    false_positive_indicators: List[str] = None
+    false_positive_indicators: list[str] | None = None
 
     def __post_init__(self):
         if self.false_positive_indicators is None:

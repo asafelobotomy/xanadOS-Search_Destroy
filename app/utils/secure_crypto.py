@@ -8,7 +8,6 @@ import hashlib
 import hmac
 import os
 import secrets
-from typing import Union
 
 from cryptography.fernet import Fernet
 from cryptography.hazmat.primitives import hashes, serialization
@@ -35,7 +34,7 @@ class SecureCrypto:
         self._fernet_key = key
         self._fernet = Fernet(key)
 
-    def encrypt_data(self, data: Union[str, bytes]) -> bytes:
+    def encrypt_data(self, data: str | bytes) -> bytes:
         """Encrypt data using Fernet symmetric encryption."""
         if self._fernet is None:
             raise ValueError("Encryption key not set. Call set_encryption_key() first.")
@@ -52,7 +51,7 @@ class SecureCrypto:
 
         return self._fernet.decrypt(encrypted_data)
 
-    def secure_hash(self, data: Union[str, bytes], algorithm: str = "sha256") -> str:
+    def secure_hash(self, data: str | bytes, algorithm: str = "sha256") -> str:
         """Generate secure hash using specified algorithm."""
         if isinstance(data, str):
             data = data.encode("utf-8")
@@ -77,7 +76,7 @@ class SecureCrypto:
         return digest.finalize().hex()
 
     def secure_hmac(
-        self, key: bytes, data: Union[str, bytes], algorithm: str = "sha256"
+        self, key: bytes, data: str | bytes, algorithm: str = "sha256"
     ) -> str:
         """Generate HMAC using secure implementation."""
         if isinstance(data, str):
@@ -92,7 +91,7 @@ class SecureCrypto:
 
     def derive_key_pbkdf2(
         self,
-        password: Union[str, bytes],
+        password: str | bytes,
         salt: bytes,
         iterations: int = 100000,
         key_length: int = 32,
@@ -111,7 +110,7 @@ class SecureCrypto:
 
     def derive_key_scrypt(
         self,
-        password: Union[str, bytes],
+        password: str | bytes,
         salt: bytes,
         n: int = 2**14,
         r: int = 8,
@@ -139,7 +138,7 @@ class SecureCrypto:
         """Generate cryptographically secure random token."""
         return secrets.token_hex(length)
 
-    def constant_time_compare(self, a: Union[str, bytes], b: Union[str, bytes]) -> bool:
+    def constant_time_compare(self, a: str | bytes, b: str | bytes) -> bool:
         """Constant-time comparison to prevent timing attacks."""
         if isinstance(a, str):
             a = a.encode("utf-8")
@@ -283,10 +282,13 @@ def secure_file_hash(file_path: str, algorithm: str = "sha256") -> str:
         raise RuntimeError(f"Failed to hash file {file_path}: {e}") from e
 
 
-def legacy_hashlib_sha256(data: Union[str, bytes]) -> str:
+def hashlib_sha256_compat(data: str | bytes) -> str:
     """
     Drop-in replacement for hashlib.sha256().hexdigest()
     Maintains compatibility while using cryptography library.
+    
+    This function provides a secure alternative to direct hashlib usage,
+    leveraging the cryptography library for enhanced security.
     """
     return secure_crypto.secure_hash(data, "sha256")
 

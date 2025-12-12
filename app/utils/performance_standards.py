@@ -17,7 +17,7 @@ from collections import deque
 from contextlib import contextmanager
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any, Dict, List
+from typing import Any
 
 import psutil
 
@@ -75,7 +75,7 @@ class PerformanceOptimizer:
         self.config = config or PerformanceConfig()
         self.metrics_history: deque = deque(maxlen=1000)
         self.operation_counter = 0
-        self._cache: Dict[str, Any] = {}
+        self._cache: dict[str, Any] = {}
         self._cache_hits = 0
         self._cache_misses = 0
         self._lock = threading.Lock()
@@ -156,7 +156,7 @@ class PerformanceOptimizer:
                 open_files=0,
             )
 
-    def optimize_for_level(self, level: PerformanceLevel) -> Dict[str, Any]:
+    def optimize_for_level(self, level: PerformanceLevel) -> dict[str, Any]:
         """Optimize settings for performance level"""
         settings = self.performance_settings[level]
 
@@ -213,7 +213,7 @@ class PerformanceOptimizer:
             self._cache_hits = 0
             self._cache_misses = 0
 
-    def get_cache_stats(self) -> Dict[str, Any]:
+    def get_cache_stats(self) -> dict[str, Any]:
         """Get cache performance statistics"""
         with self._lock:
             total_requests = self._cache_hits + self._cache_misses
@@ -227,7 +227,7 @@ class PerformanceOptimizer:
                 "hit_rate": hit_rate,
             }
 
-    def analyze_performance(self, window_minutes: int = 5) -> Dict[str, Any]:
+    def analyze_performance(self, window_minutes: int = 5) -> dict[str, Any]:
         """Analyze performance over time window"""
         current_time = time.time()
         window_start = current_time - (window_minutes * 60)
@@ -267,7 +267,7 @@ class PerformanceOptimizer:
 
         return analysis
 
-    def _get_performance_recommendations(self, analysis: Dict[str, Any]) -> List[str]:
+    def _get_performance_recommendations(self, analysis: dict[str, Any]) -> list[str]:
         """Get performance recommendations based on analysis"""
         recommendations = []
 
@@ -305,7 +305,7 @@ class ResourceMonitor:
 
     def __init__(self, optimizer: PerformanceOptimizer):
         self.optimizer = optimizer
-        self.alerts: List[Dict[str, Any]] = []
+        self.alerts: list[dict[str, Any]] = []
         self._monitoring = False
         self._monitor_thread: threading.Thread | None = None
 
@@ -363,7 +363,7 @@ class ResourceMonitor:
         # Keep only recent alerts
         if len(self.alerts) > 100:
             self.alerts = self.alerts[-50:]
-    def get_recent_alerts(self, limit: int = 10) -> List[Dict[str, Any]]:
+    def get_recent_alerts(self, limit: int = 10) -> list[dict[str, Any]]:
         """Get recent alerts"""
         return self.alerts[-limit:]
 
@@ -385,7 +385,7 @@ def performance_monitoring(level: PerformanceLevel = PerformanceLevel.BALANCED):
         monitor.stop_monitoring()
 
 
-def optimize_for_scanning(file_count: int = 1000) -> Dict[str, Any]:
+def optimize_for_scanning(file_count: int = 1000) -> dict[str, Any]:
     """Optimize settings for file scanning based on file count"""
     if file_count < 100:
         level = PerformanceLevel.BATTERY_SAVER

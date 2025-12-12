@@ -11,7 +11,6 @@ import os
 import shutil
 import subprocess
 import tempfile
-from typing import List, Tuple
 
 from PyQt6.QtCore import QThread, pyqtSignal
 from PyQt6.QtWidgets import QMessageBox
@@ -74,7 +73,7 @@ class PermissionChecker:
             self._checked_paths[abs_path] = False
             return False
 
-    def test_directory_access(self, path: str) -> Tuple[bool, str | None]:
+    def test_directory_access(self, path: str) -> tuple[bool, str | None]:
         """
         Test if a directory can be accessed and return detailed error info.
 
@@ -105,7 +104,7 @@ class PermissionChecker:
 
     def find_privileged_subdirectories(
         self, root_path: str, max_depth: int = 2
-    ) -> List[str]:
+    ) -> list[str]:
         """
         Find subdirectories that require root access within a given path.
 
@@ -172,7 +171,7 @@ class PermissionDialog:
     """GUI dialog for handling permission-related user choices."""
 
     @staticmethod
-    def ask_for_sudo_permission(parent=None, privileged_paths: List[str] = None) -> str:
+    def ask_for_sudo_permission(parent=None, privileged_paths: list[str] | None = None) -> str:
         """
         Ask user how to handle privileged directory access.
 
@@ -229,7 +228,7 @@ class SudoAuthenticator(QThread):
 
     authentication_result = pyqtSignal(bool, str)  # success, message
 
-    def __init__(self, command: List[str]):
+    def __init__(self, command: list[str]):
         super().__init__()
         self.command = command
         self._process = None
@@ -349,7 +348,7 @@ class PrivilegedScanner:
 
     def prepare_scan_with_permissions(
         self, path: str, parent_widget=None
-    ) -> Tuple[bool, str, List[str]]:
+    ) -> tuple[bool, str, list[str]]:
         """
         Prepare scanning by checking permissions and getting user consent.
 

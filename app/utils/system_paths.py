@@ -22,7 +22,6 @@ import shutil
 import tempfile
 from enum import Enum
 from pathlib import Path
-from typing import List
 
 
 class PathType(Enum):
@@ -200,7 +199,7 @@ class SystemPaths:
             return False
 
     @classmethod
-    def get_common_scan_paths(cls) -> List[str]:
+    def get_common_scan_paths(cls) -> list[str]:
         """Get common paths for security scanning"""
         home = cls.get_user_home()
         return [
@@ -219,7 +218,7 @@ class SystemPaths:
         ]
 
     @classmethod
-    def get_excluded_scan_paths(cls) -> List[str]:
+    def get_excluded_scan_paths(cls) -> list[str]:
         """Get paths that should be excluded from scanning"""
         return [
             "/proc",

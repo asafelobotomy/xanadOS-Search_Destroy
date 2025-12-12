@@ -59,13 +59,15 @@ except Exception:
     _SCHED_AVAILABLE = False
 
 try:
-    from .async_file_watcher import AsyncFileSystemWatcher
     from .async_threat_detector import AsyncThreatDetector
     from .async_resource_coordinator import get_resource_coordinator, ResourceType
 
     _ADVANCED_FEATURES = True
 except Exception:
     _ADVANCED_FEATURES = False
+
+# Note: File system monitoring is now in app/monitoring/file_watcher.py
+# with integrated async support via enable_async_mode()
 
 try:
     from .ml_threat_detector import get_threat_detector

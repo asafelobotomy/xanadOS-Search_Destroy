@@ -27,8 +27,12 @@ from collections import deque
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any
 import warnings
+
+# Suppress FutureWarnings from third-party ML libraries (transformers, torch, sklearn)
+# These are library implementation details outside our control and don't affect functionality
+# Primarily from: transformers (Hugging Face), torch (PyTorch), sklearn version changes
 warnings.filterwarnings('ignore', category=FutureWarning)
 
 import torch

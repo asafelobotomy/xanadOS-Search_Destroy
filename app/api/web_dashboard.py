@@ -19,7 +19,6 @@ import logging
 import time
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Dict, List, Optional
 
 import uvicorn
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException
@@ -49,9 +48,9 @@ class WebDashboardManager:
 
         # Initialize components
         self.data_collector = None
-        self.active_connections: List[WebSocket] = []
-        self.recent_threats: List[ThreatEvent] = []
-        self.recent_metrics: List[SystemMetrics] = []
+        self.active_connections: list[WebSocket] = []
+        self.recent_threats: list[ThreatEvent] = []
+        self.recent_metrics: list[SystemMetrics] = []
         self.max_history = 1000
 
         # Setup FastAPI app
@@ -138,8 +137,8 @@ class WebDashboardManager:
         @self.app.get("/api/threats")
         async def get_threats(
             limit: int = 100,
-            severity: Optional[str] = None,
-            event_type: Optional[str] = None,
+            severity: str | None = None,
+            event_type: str | None = None,
             hours: int = 24
         ):
             """Get recent threats with filtering."""
