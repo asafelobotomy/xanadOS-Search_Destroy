@@ -176,13 +176,22 @@ echo -e "${GREEN}✓${NC} Desktop file installed"
 echo -e "${YELLOW}→${NC} Installing application icons..."
 mkdir -p "$APPDIR/usr/share/icons/hicolor/128x128/apps"
 mkdir -p "$APPDIR/usr/share/icons/hicolor/scalable/apps"
+mkdir -p "$APPDIR/usr/app/icons"
 if [ -f "$PROJECT_ROOT/packaging/icons/io.github.asafelobotomy.SearchAndDestroy-128.png" ]; then
     cp "$PROJECT_ROOT/packaging/icons/io.github.asafelobotomy.SearchAndDestroy-128.png" "$APPDIR/xanadOS-Search-Destroy.png"
     cp "$PROJECT_ROOT/packaging/icons/io.github.asafelobotomy.SearchAndDestroy-128.png" "$APPDIR/usr/share/icons/hicolor/128x128/apps/xanadOS-Search-Destroy.png"
     cp "$PROJECT_ROOT/packaging/icons/io.github.asafelobotomy.SearchAndDestroy-128.png" "$APPDIR/.DirIcon"
+    # Also copy to app/icons for code path resolution (banner icon)
+    cp "$PROJECT_ROOT/packaging/icons/io.github.asafelobotomy.SearchAndDestroy-128.png" "$APPDIR/usr/app/icons/io.github.asafelobotomy.SearchAndDestroy-128.png"
+fi
+# Copy large PNG icon for splash screen (org.xanados version exists)
+if [ -f "$PROJECT_ROOT/packaging/icons/org.xanados.SearchAndDestroy.png" ]; then
+    cp "$PROJECT_ROOT/packaging/icons/org.xanados.SearchAndDestroy.png" "$APPDIR/usr/app/icons/io.github.asafelobotomy.SearchAndDestroy.png"
 fi
 if [ -f "$PROJECT_ROOT/packaging/icons/io.github.asafelobotomy.SearchAndDestroy.svg" ]; then
     cp "$PROJECT_ROOT/packaging/icons/io.github.asafelobotomy.SearchAndDestroy.svg" "$APPDIR/usr/share/icons/hicolor/scalable/apps/xanadOS-Search-Destroy.svg"
+    # Also copy to app/icons for code path resolution (system tray icon)
+    cp "$PROJECT_ROOT/packaging/icons/io.github.asafelobotomy.SearchAndDestroy.svg" "$APPDIR/usr/app/icons/io.github.asafelobotomy.SearchAndDestroy.svg"
 fi
 echo -e "${GREEN}✓${NC} Icons installed"
 

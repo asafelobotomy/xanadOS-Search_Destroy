@@ -69,13 +69,30 @@ class ModernSplashScreen(QSplashScreen):
 
         # Load and draw the logo
         try:
-            # Get the project root directory
-            current_dir = Path(__file__).parent.parent.parent
-            logo_path = (
-                current_dir / "packaging" / "icons" / "io.github.asafelobotomy.SearchAndDestroy.png"
-            )
+            # Try multiple paths for logo (AppImage and development)
+            logo_paths = [
+                # AppImage path (from app/gui/ up to usr/app/icons/)
+                Path(__file__).parent.parent.parent
+                / "icons"
+                / "io.github.asafelobotomy.SearchAndDestroy.png",
+                # Development path
+                Path(__file__).parent.parent.parent
+                / "packaging"
+                / "icons"
+                / "io.github.asafelobotomy.SearchAndDestroy.png",
+                # AppImage system path
+                Path(
+                    "/usr/share/icons/hicolor/128x128/apps/xanadOS-Search-Destroy.png"
+                ),
+            ]
 
-            if logo_path.exists():
+            logo_path = None
+            for path in logo_paths:
+                if path.exists():
+                    logo_path = path
+                    break
+
+            if logo_path:
                 logo_pixmap = QPixmap(str(logo_path))
                 if not logo_pixmap.isNull():
                     # Scale logo to appropriate size (64x64 for splash screen)
@@ -153,16 +170,24 @@ class ModernSplashScreen(QSplashScreen):
         try:
             # Try to load a larger icon (128x128 or fallback to the main icon)
             large_logo_paths = [
-                current_dir
+                # AppImage path (from app/gui/ up to usr/app/icons/)
+                Path(__file__).parent.parent.parent
+                / "icons"
+                / "io.github.asafelobotomy.SearchAndDestroy-128.png",
+                # Development path
+                Path(__file__).parent.parent.parent
                 / "packaging"
                 / "icons"
                 / "io.github.asafelobotomy.SearchAndDestroy-128.png",
-                current_dir / "packaging" / "icons" / "org.xanados.SearchAndDestroy-128.png",
-                current_dir
+                # Development path - org.xanados version
+                Path(__file__).parent.parent.parent
                 / "packaging"
                 / "icons"
-                / "io.github.asafelobotomy.SearchAndDestroy.png",
-                current_dir / "packaging" / "icons" / "org.xanados.SearchAndDestroy.png",
+                / "org.xanados.SearchAndDestroy-128.png",
+                # AppImage system path
+                Path(
+                    "/usr/share/icons/hicolor/128x128/apps/xanadOS-Search-Destroy.png"
+                ),
             ]
 
             large_logo_pixmap = None

@@ -723,6 +723,9 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
         # Update dashboard cards to show latest scan information
         QTimer.singleShot(600, self.update_dashboard_cards)
 
+        # Load quarantine list to show current quarantined files
+        QTimer.singleShot(700, self.refresh_quarantine)
+
         # Activity log saving is now handled by unified timer system for better performance
         # (Consolidated with other periodic tasks to reduce timer overhead)
 
@@ -953,14 +956,27 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
         self.setMinimumSize(1000, 750)
         self.resize(1200, 850)
 
-        # Set window icon
-        icon_path = (
+        # Set window icon - support both dev and AppImage paths
+        icon_paths = [
+            # AppImage path (relative to usr/app)
+            Path(__file__).parent.parent
+            / "icons"
+            / "io.github.asafelobotomy.SearchAndDestroy.svg",
+            # Development path
             Path(__file__).parent.parent.parent
             / "packaging"
             / "icons"
-            / "io.github.asafelobotomy.SearchAndDestroy.svg"
-        )
-        if icon_path.exists():
+            / "io.github.asafelobotomy.SearchAndDestroy.svg",
+            # AppImage alternate path
+            Path("/usr/share/icons/hicolor/scalable/apps/xanadOS-Search-Destroy.svg"),
+        ]
+        icon_path = None
+        for path in icon_paths:
+            if path.exists():
+                icon_path = path
+                break
+
+        if icon_path:
             self.setWindowIcon(QIcon(str(icon_path)))
 
         # Central widget
@@ -3545,15 +3561,28 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
 
         self.tray_icon = QSystemTrayIcon(self)
 
-        # Create a system tray icon
+        # Create a system tray icon - support both dev and AppImage paths
         app_icon = QIcon()
-        icon_path = (
+        icon_paths = [
+            # AppImage path (from app/gui/ up to usr/app/icons/)
+            Path(__file__).parent.parent.parent
+            / "icons"
+            / "io.github.asafelobotomy.SearchAndDestroy.svg",
+            # Development path
             Path(__file__).parent.parent.parent
             / "packaging"
             / "icons"
-            / "io.github.asafelobotomy.SearchAndDestroy.svg"
-        )
-        if icon_path.exists():
+            / "io.github.asafelobotomy.SearchAndDestroy.svg",
+            # AppImage system path
+            Path("/usr/share/icons/hicolor/scalable/apps/xanadOS-Search-Destroy.svg"),
+        ]
+        icon_path = None
+        for path in icon_paths:
+            if path.exists():
+                icon_path = path
+                break
+
+        if icon_path:
             app_icon = QIcon(str(icon_path))
         else:
             # Create a default icon if the SVG is not found
@@ -3713,13 +3742,29 @@ System        {perf_status}"""
     def update_icon_for_theme(self):
         """Update the application icon based on the current theme."""
         current_theme = get_theme_manager().get_current_theme()
-        icon_path = (
+
+        # Try multiple paths for icon (AppImage and development)
+        icon_paths = [
+            # AppImage path (from app/gui/ up to usr/app/icons/)
+            Path(__file__).parent.parent.parent
+            / "icons"
+            / "io.github.asafelobotomy.SearchAndDestroy-128.png",
+            # Development path
             Path(__file__).parent.parent.parent
             / "packaging"
             / "icons"
-            / "io.github.asafelobotomy.SearchAndDestroy-128.png"
-        )
-        if icon_path.exists():
+            / "io.github.asafelobotomy.SearchAndDestroy-128.png",
+            # AppImage system path
+            Path("/usr/share/icons/hicolor/128x128/apps/xanadOS-Search-Destroy.png"),
+        ]
+
+        icon_path = None
+        for path in icon_paths:
+            if path.exists():
+                icon_path = path
+                break
+
+        if icon_path:
             pixmap = QPixmap(str(icon_path))
 
             # Convert to black and white in dark mode
@@ -8369,14 +8414,26 @@ Common False Positives:
                                         f"{scan_type_display} scan - {status_text}"
                                     )
 
-                            # Update Threats Found card
+                            # Update Threats Found card with quarantine count
                             if hasattr(self, "threats_card"):
+                                # Get actual quarantine count instead of scan threats
+                                quarantine_count = 0
+                                if hasattr(self, "quarantine_manager"):
+                                    try:
+                                        quarantine_count = len(
+                                            self.quarantine_manager.list_quarantined_files()
+                                        )
+                                    except Exception as qe:
+                                        print(
+                                            f"DEBUG: Error getting quarantine count: {qe}"
+                                        )
+
                                 for child in self.threats_card.findChildren(QLabel):
                                     if child.objectName() == "cardValue":
-                                        child.setText(str(threats_count))
+                                        child.setText(str(quarantine_count))
                                         color = (
                                             "#dc3545"
-                                            if threats_count > 0
+                                            if quarantine_count > 0
                                             else "#28a745"
                                         )
                                         child.setStyleSheet(
@@ -8384,9 +8441,7 @@ Common False Positives:
                                         )
                                     elif child.objectName() == "cardDescription":
                                         child.setText(
-                                            "Click to view quarantine"
-                                            if threats_count > 0
-                                            else "Click to view quarantine"
+                                            f"{quarantine_count} item{'s' if quarantine_count != 1 else ''} in quarantine"
                                         )
                         except (OSError, ValueError, KeyError) as file_error:
                             print(f"Error reading report file: {file_error}")
@@ -9543,6 +9598,9 @@ Common False Positives:
                 # Refresh the quarantine list
                 self.refresh_quarantine()
 
+                # Update dashboard threat card to reflect quarantine change
+                self.update_dashboard_cards()
+
                 # SECURITY: Automatically rescan the restored file
                 # This ensures the user is prompted about the threat again
                 self._rescan_restored_file(qfile.original_path, qfile.threat_name)
@@ -9606,6 +9664,9 @@ Common False Positives:
                 )
                 # Refresh the quarantine list
                 self.refresh_quarantine()
+
+                # Update dashboard threat card to reflect quarantine change
+                self.update_dashboard_cards()
             else:
                 self.show_themed_message_box(
                     "critical",
