@@ -207,6 +207,50 @@ class ClamAVWrapper:
 
         return "Unknown", "Unknown"
 
+    def verify_cache_disabled(self) -> bool:
+        """Verify that ClamAV daemon has caching disabled for security.
+
+        Returns:
+            True if cache is disabled or daemon not in use, False if cache is enabled (SECURITY RISK)
+        """
+        clamd_conf = Path("/etc/clamav/clamd.conf")
+
+        if not clamd_conf.exists():
+            self.logger.warning("clamd.conf not found - daemon caching status unknown")
+            return True  # Assume safe if daemon not configured
+
+        try:
+            with open(clamd_conf, "r") as f:
+                content = f.read()
+
+            # Check if DisableCache yes is present and not commented
+            for line in content.split("\n"):
+                line = line.strip()
+                if line.startswith("DisableCache") and not line.startswith("#"):
+                    if "yes" in line.lower():
+                        self.logger.info(
+                            "✓ SECURITY: ClamAV cache disabled - daemon safe to use"
+                        )
+                        return True
+                    else:
+                        self.logger.critical(
+                            "⚠ SECURITY RISK: ClamAV cache enabled! "
+                            "Restored malware may not be detected. "
+                            "Set 'DisableCache yes' in /etc/clamav/clamd.conf"
+                        )
+                        return False
+
+            # DisableCache not found or commented - cache is ENABLED by default
+            self.logger.warning(
+                "⚠ SECURITY: ClamAV cache not explicitly disabled. "
+                "Add 'DisableCache yes' to /etc/clamav/clamd.conf for security."
+            )
+            return False
+
+        except (OSError, PermissionError) as e:
+            self.logger.error(f"Cannot read clamd.conf: {e}")
+            return True  # Fail-safe: don't block operation
+
     def scan_file(
         self, file_path: str, use_daemon: bool = True, **kwargs
     ) -> ScanFileResult:
@@ -250,37 +294,64 @@ class ClamAVWrapper:
 
         file_path_obj = Path(file_path)
         if not file_path_obj.exists():
+            # SECURITY: Log when EICAR file is not found
+            if "eicar" in file_path.lower():
+                print(f"⚠️ SECURITY: EICAR file not found at scan time: {file_path}")
             return ScanFileResult(
                 file_path=file_path,
                 result=ScanResult.ERROR,
                 error_message="File not found",
             )
 
+        # SECURITY: Log when scanning test files to detect bypasses
+        if "eicar" in file_path.lower():
+            print(f"🔍 SECURITY: Scanning EICAR test file: {file_path}")
+            print(f"   File exists: {file_path_obj.exists()}")
+            print(
+                f"   File size: {file_path_obj.stat().st_size if file_path_obj.exists() else 'N/A'}"
+            )
+
         # Get file info
         file_size = file_path_obj.stat().st_size
         start_time = datetime.now()
 
+        # SECURITY: ClamAV daemon performance with cache disabled
+        # The clamd.conf file MUST have "DisableCache yes" to prevent security bypass
+        # With caching disabled, daemon provides multi-threaded performance without
+        # the risk of cached results hiding restored malware
+        use_daemon = kwargs.get("use_daemon", True)
+
         # Try clamdscan first if requested and available
         if use_daemon and self.clamdscan_path and not os.environ.get("FLATPAK_ID"):
-            # Check if daemon is running, try to start it if configured but not running
-            if not self._is_clamd_running():
-                # Only try to start daemon if configured to do so
-                if self.config.get("performance", {}).get("enable_clamav_daemon", True):
-                    self.logger.debug(
-                        "Daemon not running, attempting to start for scan operation"
-                    )
-                    self._try_start_daemon_if_needed()
+            # SECURITY CHECK: Verify cache is disabled before using daemon
+            if not self.verify_cache_disabled():
+                self.logger.warning(
+                    "Daemon cache not disabled - using clamscan for security"
+                )
+                use_daemon = False
 
-            # Use daemon if it's now running
-            if self._is_clamd_running():
-                try:
-                    return self._scan_file_with_daemon(
-                        file_path, file_size, start_time, **kwargs
-                    )
-                except (subprocess.SubprocessError, OSError, ValueError) as e:
-                    self.logger.warning(
-                        "Daemon scan failed, falling back to clamscan: %s", e
-                    )
+            if use_daemon:
+                # Check if daemon is running, try to start it if configured but not running
+                if not self._is_clamd_running():
+                    # Only try to start daemon if configured to do so
+                    if self.config.get("performance", {}).get(
+                        "enable_clamav_daemon", True
+                    ):
+                        self.logger.debug(
+                            "Daemon not running, attempting to start for scan operation"
+                        )
+                        self._try_start_daemon_if_needed()
+
+                # Use daemon if it's now running
+                if self._is_clamd_running():
+                    try:
+                        return self._scan_file_with_daemon(
+                            file_path, file_size, start_time, **kwargs
+                        )
+                    except (subprocess.SubprocessError, OSError, ValueError) as e:
+                        self.logger.warning(
+                            "Daemon scan failed, falling back to clamscan: %s", e
+                        )
 
         # Fallback to regular clamscan
         try:
@@ -300,7 +371,7 @@ class ClamAVWrapper:
             scan_time = (datetime.now() - start_time).total_seconds()
 
             # Parse result
-            return self._parse_scan_output(
+            scan_result = self._parse_scan_output(
                 file_path,
                 result.stdout,
                 result.stderr,
@@ -308,6 +379,17 @@ class ClamAVWrapper:
                 file_size,
                 scan_time,
             )
+
+            # SECURITY: Log scan results for test files
+            if "eicar" in file_path.lower():
+                print(f"📊 SECURITY: EICAR scan completed")
+                print(f"   Result: {scan_result.result}")
+                print(f"   Threat: {scan_result.threat_name}")
+                print(f"   Return code: {result.returncode}")
+                if result.returncode != 0:
+                    print(f"   stdout: {result.stdout[:200]}")
+
+            return scan_result
 
         except subprocess.TimeoutExpired:
             scan_time = (datetime.now() - start_time).total_seconds()
@@ -432,9 +514,9 @@ class ClamAVWrapper:
         # Performance optimization for quick scans
         if quick_scan:
             # Reduced limits for faster scanning
-            options.extend(["--max-filesize", "25M"])  # Smaller than default
-            options.extend(["--max-recursion", "8"])  # Less recursion
-            options.extend(["--max-files", "5000"])  # Fewer files per archive
+            options.append("--max-filesize=25M")  # Smaller than default
+            options.append("--max-recursion=8")  # Less recursion
+            options.append("--max-files=5000")  # Fewer files per archive
 
             # Skip some intensive scan types in quick mode
             options.append("--scan-archive")  # Still scan archives but with limits
@@ -471,19 +553,19 @@ class ClamAVWrapper:
                 "max_filesize", scan_settings.get("max_filesize", "100M")
             )
             if max_filesize:
-                options.extend(["--max-filesize", str(max_filesize)])
+                options.append(f"--max-filesize={max_filesize}")
 
             # Recursion limits
             max_recursion = kwargs.get(
                 "max_recursion", scan_settings.get("max_recursion", 16)
             )
             if max_recursion:
-                options.extend(["--max-recursion", str(max_recursion)])
+                options.append(f"--max-recursion={max_recursion}")
 
             # Max files
             max_files = kwargs.get("max_files", scan_settings.get("max_files", 10000))
             if max_files:
-                options.extend(["--max-files", str(max_files)])
+                options.append(f"--max-files={max_files}")
 
         # Performance optimizations that apply to all scans
         # Detect broken executables and don't scan them (saves time)
@@ -851,18 +933,29 @@ class ClamAVWrapper:
     def _scan_file_with_daemon(
         self, file_path: str, file_size: int, start_time: datetime, **kwargs
     ) -> ScanFileResult:
-        """Scan file using ClamAV daemon (faster)."""
+        """Scan file using ClamAV daemon (faster).
+
+        Note: File size limits and other scan settings for the daemon are configured
+        in clamd.conf, not via command-line arguments like clamscan.
+
+        Security: Uses --stream to allow daemon to scan user files.
+        --fdpass causes "Broken pipe" errors with subprocess capture_output=True.
+        """
         cmd = [self.clamdscan_path]
 
+        # SECURITY: Use --stream instead of --fdpass to avoid broken pipe errors
+        # --fdpass doesn't work well with subprocess.run() and capture_output=True
+        # --stream streams the file content to clamd, allowing access to user files
+        cmd.append("--stream")
+
         # Add basic daemon options
+        # Note: clamdscan has limited command-line options compared to clamscan
+        # Most settings are controlled by clamd.conf
         cmd.extend(["--infected", "--verbose"])
 
-        # Add file size limit if specified
-        max_filesize = kwargs.get(
-            "max_filesize", self.config.get("scan_settings", {}).get("max_filesize")
-        )
-        if max_filesize:
-            cmd.extend(["--max-filesize", str(max_filesize)])
+        # NOTE: --max-filesize is NOT supported by clamdscan (daemon)
+        # File size limits must be configured in /etc/clamav/clamd.conf instead
+        # Example: MaxFileSize 100M in clamd.conf
 
         cmd.append(file_path)
 
@@ -1146,7 +1239,21 @@ class ClamAVWrapper:
         """Parse ClamAV scan output for a single file."""
         # Check for errors first
         if returncode == 2:  # ClamAV error
-            error_msg = stderr.strip() if stderr else "ClamAV scan error"
+            # Check for specific error types in output
+            combined_output = f"{stdout}\n{stderr}".lower()
+
+            if "permission denied" in combined_output:
+                error_msg = f"Permission denied - ClamAV daemon cannot access this file. Try running a regular scan instead of daemon scan, or check file permissions."
+            elif "file path check failure" in combined_output:
+                error_msg = f"File access error - ClamAV daemon cannot read this file. File may be in a protected location."
+            else:
+                # Use stderr first, fall back to stdout, then generic message
+                error_msg = (
+                    stderr.strip()
+                    if stderr
+                    else stdout.strip() if stdout else "ClamAV scan error"
+                )
+
             return ScanFileResult(
                 file_path=file_path,
                 result=ScanResult.ERROR,

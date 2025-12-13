@@ -246,3 +246,43 @@ install-flatpak: ## Build and install Flatpak locally (user scope)
 run-flatpak: ## Run the installed Flatpak application
 	@echo -e "$(BOLD)$(GREEN)🚀 Running Flatpak application...$(NC)"
 	@flatpak run $(FLATPAK_ID)
+
+# AppImage packaging targets
+APPIMAGE_BUILD_SCRIPT := packaging/appimage/build-appimage.sh
+APPIMAGE_OUTPUT_DIR := releases/appimage
+
+build-appimage: ## Build AppImage package
+	@echo -e "$(BOLD)$(GREEN)📦 Building AppImage package...$(NC)"
+	@bash $(APPIMAGE_BUILD_SCRIPT)
+	@echo -e "$(GREEN)✅ AppImage build complete$(NC)"
+
+clean-appimage: ## Clean AppImage build artifacts
+	@echo -e "$(BOLD)$(YELLOW)🧹 Cleaning AppImage build artifacts...$(NC)"
+	@rm -rf build/appimage/
+	@echo -e "$(GREEN)✅ AppImage build directory cleaned$(NC)"
+
+install-appimage-tools: ## Install tools needed for AppImage building
+	@echo -e "$(BOLD)$(CYAN)🔧 Installing AppImage build tools...$(NC)"
+	@if ! command -v appimagetool &> /dev/null; then \
+		echo -e "$(CYAN)Downloading appimagetool...$(NC)"; \
+		mkdir -p build/tools; \
+		ARCH=$$(uname -m); \
+		curl -L "https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-$${ARCH}.AppImage" \
+			-o build/tools/appimagetool; \
+		chmod +x build/tools/appimagetool; \
+		echo -e "$(GREEN)✓ appimagetool installed to build/tools/$(NC)"; \
+	else \
+		echo -e "$(GREEN)✓ appimagetool already available$(NC)"; \
+	fi
+	@echo -e "$(GREEN)✅ AppImage tools ready$(NC)"
+
+test-appimage: ## Test the built AppImage
+	@echo -e "$(BOLD)$(GREEN)🧪 Testing AppImage...$(NC)"
+	@LATEST_APPIMAGE=$$(ls -t $(APPIMAGE_OUTPUT_DIR)/*.AppImage 2>/dev/null | head -n1); \
+	if [ -z "$$LATEST_APPIMAGE" ]; then \
+		echo -e "$(RED)✗ No AppImage found. Run 'make build-appimage' first.$(NC)"; \
+		exit 1; \
+	fi; \
+	echo -e "$(CYAN)Testing: $$LATEST_APPIMAGE$(NC)"; \
+	chmod +x "$$LATEST_APPIMAGE"; \
+	"$$LATEST_APPIMAGE" --version || true

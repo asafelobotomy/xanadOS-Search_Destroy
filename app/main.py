@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Application entry point for xanadOS Search & Destroy (PyQt6 GUI)."""
 
+import argparse
 import os
 import sys
 from pathlib import Path
@@ -24,6 +25,22 @@ if os.environ.get("XDG_SESSION_TYPE") == "wayland":
 
 def main():
     """Launch the application with single-instance guard and splash workflow."""
+    # Parse command-line arguments first
+    parser = argparse.ArgumentParser(
+        prog="xanadOS Search & Destroy",
+        description="Advanced malware detection and system security scanner",
+        epilog="For more information, visit https://github.com/asafelobotomy/xanadOS-Search_Destroy",
+    )
+    parser.add_argument("-v", "--version", action="version", version="%(prog)s 3.0.0")
+    parser.add_argument(
+        "--skip-policy-check",
+        action="store_true",
+        help="Skip PolicyKit policy installation check (AppImage only)",
+    )
+
+    # Parse arguments before initializing GUI
+    args = parser.parse_args()
+
     # Check for existing instance before creating QApplication
     instance_manager = SingleInstanceManager()
 

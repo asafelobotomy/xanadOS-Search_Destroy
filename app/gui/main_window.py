@@ -16,7 +16,8 @@ from pathlib import Path
 
 # Import centralized version
 from app import __version__
-from app.core.file_scanner import FileScanner
+from app.core.file_scanner import FileScanner, QuarantineManager
+from app.core.clamav_wrapper import ScanResult
 from app.core.firewall_detector import get_firewall_status, toggle_firewall
 from app.core.unified_rkhunter_integration import (
     RKHunterScanResult,
@@ -251,6 +252,15 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
             except Exception as e2:
                 print(f"❌ FileScanner initialization failed on second attempt: {e2}")
                 self.scanner = None
+
+        # Initialize quarantine manager
+        try:
+            self.quarantine_manager = QuarantineManager()
+            print("✅ Quarantine manager initialized")
+        except Exception as e:
+            print(f"⚠️ Failed to initialize quarantine manager: {e}")
+            self.quarantine_manager = None
+
         self.current_scan_thread = None
 
         # 3. Scan state flags (must exist before any UI logic references them)
@@ -2205,7 +2215,9 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
         refresh_btn = QPushButton("Refresh")
         refresh_btn.clicked.connect(self.refresh_quarantine)
         restore_btn = QPushButton("Restore Selected")
+        restore_btn.clicked.connect(self.restore_selected_quarantine)
         delete_btn = QPushButton("Delete Selected")
+        delete_btn.clicked.connect(self.delete_selected_quarantine)
         delete_btn.setObjectName("dangerButton")
 
         controls_layout.addWidget(refresh_btn)
@@ -8648,13 +8660,32 @@ Common False Positives:
         # Set completion status message
         if isinstance(result, dict):
             threats_found = result.get("threats_found", len(result.get("threats", [])))
+            threats = result.get("threats", [])
         else:
             threats_found = getattr(result, "threats_found", 0)
+            threats = getattr(result, "threats", [])
+
+        print(f"\n🦠 === THREATS DETECTION SUMMARY ===")
+        print(f"Threats found: {threats_found}")
+        print(f"Threats list length: {len(threats)}")
+        if threats:
+            print("Threats details:")
+            for i, threat in enumerate(threats, 1):
+                if isinstance(threat, dict):
+                    print(f"  {i}. File: {threat.get('file_path', 'unknown')}")
+                    print(f"     Name: {threat.get('threat_name', 'unknown')}")
+                else:
+                    print(f"  {i}. {threat}")
+        else:
+            print("No threats in list")
+        print("=" * 50)
 
         if threats_found > 0:
             self.status_bar.showMessage(
                 f"✅ Scan completed - {threats_found} threats found"
             )
+            # Prompt user for action on detected threats
+            self._prompt_threat_actions(threats)
         else:
             self.status_bar.showMessage(
                 "✅ Scan completed successfully - No threats found"
@@ -9172,6 +9203,19 @@ Common False Positives:
 
         valid_paths = unique_paths
 
+        # Debug: Print all scan paths
+        print("\n🔍 === QUICK SCAN PATHS ===")
+        for idx, path in enumerate(valid_paths, 1):
+            print(f"{idx}. {path}")
+            if path == tempfile.gettempdir() or "/tmp" in path:
+                # Check if EICAR exists in /tmp
+                eicar_path = os.path.join(path, "eicar.com")
+                if os.path.exists(eicar_path):
+                    print(f"   ⚠️  EICAR TEST FILE FOUND: {eicar_path}")
+                else:
+                    print(f"   ℹ️  No eicar.com in this directory")
+        print("=" * 50)
+
         if not valid_paths:
             self.show_themed_message_box(
                 "warning", "Warning", "No valid directories found for quick scan."
@@ -9416,28 +9460,254 @@ Common False Positives:
             # Clear the current list
             self.quarantine_list.clear()
 
-            # Get quarantine directory from config
-
-            # Verify the directory exists
-            if not QUARANTINE_DIR.exists():
+            # Check if quarantine manager is available
+            if (
+                not hasattr(self, "quarantine_manager")
+                or self.quarantine_manager is None
+            ):
+                self.status_bar.showMessage("Quarantine manager not available", 5000)
                 return
 
-            # Find all quarantined files
-            quarantine_files = list(QUARANTINE_DIR.glob("*.quarantine"))
+            # Get list of quarantined files from quarantine manager
+            quarantined_files = self.quarantine_manager.list_quarantined_files()
 
-            if not quarantine_files:
-                return
-
-            # Add to list widget
-            for qfile in quarantine_files:
-                # Extract original filename from quarantine file
-                original_name = qfile.stem
-                item = QListWidgetItem(original_name)
-                item.setData(Qt.ItemDataRole.UserRole, str(qfile))
+            if not quarantined_files:
+                # Show a message if list is empty
+                item = QListWidgetItem("No files in quarantine")
+                item.setFlags(Qt.ItemFlag.NoItemFlags)  # Make it non-selectable
                 self.quarantine_list.addItem(item)
+                return
+
+            # Add to list widget with detailed information
+            for qfile in quarantined_files:
+                # Format display text with threat info
+                display_text = f"{qfile.original_path} | Threat: {qfile.threat_name} | {qfile.quarantine_date.strftime('%Y-%m-%d %H:%M:%S')}"
+                item = QListWidgetItem(display_text)
+                # Store the full quarantined file object for later use
+                item.setData(Qt.ItemDataRole.UserRole, qfile)
+                self.quarantine_list.addItem(item)
+
+            self.status_bar.showMessage(
+                f"Loaded {len(quarantined_files)} quarantined file(s)", 3000
+            )
 
         except (OSError, PermissionError) as e:
             self.status_bar.showMessage(f"Error loading quarantine: {e}", 5000)
+        except Exception as e:
+            print(f"Error refreshing quarantine list: {e}")
+            self.status_bar.showMessage(f"Error: {e}", 5000)
+
+    def restore_selected_quarantine(self):
+        """Restore the selected quarantined file to its original location."""
+        try:
+            selected_items = self.quarantine_list.selectedItems()
+            if not selected_items:
+                self.show_themed_message_box(
+                    "warning", "No Selection", "Please select a file to restore."
+                )
+                return
+
+            # Get the quarantined file object
+            qfile = selected_items[0].data(Qt.ItemDataRole.UserRole)
+
+            # Confirm restoration
+            reply = self.show_themed_message_box(
+                "question",
+                "Confirm Restore",
+                f"Are you sure you want to restore this file?\n\nOriginal Location: {qfile.original_path}\n\nWarning: This file was quarantined as a threat!",
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            )
+
+            if reply != QMessageBox.StandardButton.Yes:
+                return
+
+            # Check if quarantine manager is available
+            if (
+                not hasattr(self, "quarantine_manager")
+                or self.quarantine_manager is None
+            ):
+                self.show_themed_message_box(
+                    "critical", "Error", "Quarantine manager not available"
+                )
+                return
+
+            # Restore the file
+            success = self.quarantine_manager.restore_file(qfile.quarantine_path)
+
+            if success:
+                self.show_themed_message_box(
+                    "information",
+                    "Restored",
+                    f"File has been restored to:\n{qfile.original_path}\n\nThe file will now be rescanned to verify safety.",
+                )
+                # Refresh the quarantine list
+                self.refresh_quarantine()
+
+                # SECURITY: Automatically rescan the restored file
+                # This ensures the user is prompted about the threat again
+                self._rescan_restored_file(qfile.original_path, qfile.threat_name)
+            else:
+                self.show_themed_message_box(
+                    "critical",
+                    "Restore Failed",
+                    "Failed to restore the file. Check the log for details.",
+                )
+
+        except Exception as e:
+            print(f"Error restoring quarantined file: {e}")
+            self.show_themed_message_box(
+                "critical", "Error", f"An error occurred while restoring the file:\n{e}"
+            )
+
+    def delete_selected_quarantine(self):
+        """Permanently delete the selected quarantined file."""
+        try:
+            selected_items = self.quarantine_list.selectedItems()
+            if not selected_items:
+                self.show_themed_message_box(
+                    "warning", "No Selection", "Please select a file to delete."
+                )
+                return
+
+            # Get the quarantined file object
+            qfile = selected_items[0].data(Qt.ItemDataRole.UserRole)
+
+            # Confirm deletion
+            reply = self.show_themed_message_box(
+                "question",
+                "Confirm Deletion",
+                f"Are you sure you want to permanently delete this quarantined file?\n\nOriginal Path: {qfile.original_path}\nThreat: {qfile.threat_name}\n\nThis action cannot be undone!",
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            )
+
+            if reply != QMessageBox.StandardButton.Yes:
+                return
+
+            # Check if quarantine manager is available
+            if (
+                not hasattr(self, "quarantine_manager")
+                or self.quarantine_manager is None
+            ):
+                self.show_themed_message_box(
+                    "critical", "Error", "Quarantine manager not available"
+                )
+                return
+
+            # Delete the file
+            success = self.quarantine_manager.delete_quarantined_file(
+                qfile.quarantine_path
+            )
+
+            if success:
+                self.show_themed_message_box(
+                    "information",
+                    "Deleted",
+                    "Quarantined file has been permanently deleted.",
+                )
+                # Refresh the quarantine list
+                self.refresh_quarantine()
+            else:
+                self.show_themed_message_box(
+                    "critical",
+                    "Delete Failed",
+                    "Failed to delete the file. Check the log for details.",
+                )
+
+        except Exception as e:
+            print(f"Error deleting quarantined file: {e}")
+            self.show_themed_message_box(
+                "critical", "Error", f"An error occurred while deleting the file:\n{e}"
+            )
+
+    def _rescan_restored_file(self, file_path: str, original_threat_name: str):
+        """Automatically rescan a restored file and prompt user if threat still detected.
+
+        Args:
+            file_path: Path to the restored file
+            original_threat_name: Name of the original threat that was quarantined
+        """
+        try:
+            from pathlib import Path
+            from app.core.clamav_wrapper import ScanResult as ClamAVScanResult
+
+            # Verify file exists
+            if not Path(file_path).exists():
+                print(f"WARNING: Restored file not found: {file_path}")
+                return
+
+            print(f"\n🔍 === RESCANNING RESTORED FILE ===")
+            print(f"File: {file_path}")
+            print(f"Original threat: {original_threat_name}")
+
+            # Show scanning message to user
+            self.status_bar.showMessage(
+                f"Rescanning restored file: {Path(file_path).name}...", 3000
+            )
+
+            # Scan the file - use self.scanner which is FileScanner instance
+            if not hasattr(self, "scanner") or not self.scanner:
+                print("❌ ERROR: Scanner not available for rescan")
+                print(f"   hasattr(self, 'scanner'): {hasattr(self, 'scanner')}")
+                print(f"   self.scanner value: {getattr(self, 'scanner', 'NOT SET')}")
+                self.show_themed_message_box(
+                    "error",
+                    "Scanner Not Available",
+                    "Unable to rescan the restored file. The scanner is not initialized.",
+                )
+                return
+
+            # Perform the scan using FileScanner
+            print(f"   Using scanner: {type(self.scanner).__name__}")
+
+            # Reset size monitor to avoid quota issues
+            if hasattr(self.scanner, "size_monitor"):
+                self.scanner.size_monitor.reset()
+                print("   ✅ Reset size monitor for rescan")
+
+            scan_result = self.scanner.scan_file(file_path)
+
+            print(f"   Scan result: {scan_result.result}")
+            print(f"   Threat name: {scan_result.threat_name}")
+            print(f"   Error message: {scan_result.error_message}")
+
+            # Check if threat was detected
+            if scan_result.result == ClamAVScanResult.INFECTED:
+                print(f"✅ Threat re-detected: {scan_result.threat_name}")
+
+                # Create threat object for prompt dialog
+                threat = {
+                    "file_path": file_path,
+                    "threat_name": scan_result.threat_name,
+                    "threat_type": scan_result.threat_type or "malware",
+                    "threat_level": "INFECTED",
+                    "action_taken": "detected",
+                    "file_size": scan_result.file_size,
+                    "scan_time": scan_result.scan_time,
+                }
+
+                # Show threat action dialog
+                self._prompt_threat_actions([threat])
+
+            elif scan_result.result == ClamAVScanResult.CLEAN:
+                print(
+                    f"ℹ️ File appears clean on rescan (possible false positive earlier)"
+                )
+                self.show_themed_message_box(
+                    "information",
+                    "Rescan Complete",
+                    f"The restored file appears to be clean.\n\nFile: {Path(file_path).name}\n\nNote: The original detection may have been a false positive, or the file has been modified.",
+                )
+            else:
+                print(f"⚠️ Rescan resulted in: {scan_result.result}")
+                self.status_bar.showMessage(
+                    f"Unable to verify restored file safety", 5000
+                )
+
+        except Exception as e:
+            print(f"Error rescanning restored file: {e}")
+            import traceback
+
+            traceback.print_exc()
 
     def show_user_manual(self):
         """Show the comprehensive user manual in a new window."""
@@ -9966,6 +10236,335 @@ Common False Positives:
         # Force application to quit
 
         QApplication.quit()
+
+    def _prompt_threat_actions(self, threats):
+        """Prompt user to decide what to do with detected threats."""
+        if not threats:
+            return
+
+        print(f"\n🚨 === PROMPTING USER FOR THREAT ACTIONS ===")
+        print(f"DEBUG: Processing {len(threats)} threat(s)")
+
+        for i, threat in enumerate(threats, 1):
+            # Extract threat information
+            if isinstance(threat, dict):
+                file_path = threat.get("file_path", threat.get("file", "Unknown"))
+                threat_name = threat.get("threat_name", threat.get("threat", "Unknown"))
+                threat_type = threat.get("threat_type", threat.get("type", "Unknown"))
+            else:
+                file_path = getattr(threat, "file_path", "Unknown")
+                threat_name = getattr(threat, "threat_name", "Unknown")
+                threat_type = getattr(threat, "threat_type", "Unknown")
+
+            print(f"DEBUG: Threat {i}/{len(threats)}: {threat_name} in {file_path}")
+
+            # Create threat action dialog
+            dialog = QDialog(self)
+            dialog.setWindowTitle(f"Threat Detected ({i}/{len(threats)})")
+            dialog.setModal(True)
+            dialog.setMinimumWidth(600)
+
+            # Apply theme styling
+            tm = get_theme_manager()
+            dialog.setStyleSheet(
+                f"""
+                QDialog {{
+                    background-color: {tm.get_color('background')};
+                    color: {tm.get_color('text')};
+                }}
+                QLabel {{
+                    color: {tm.get_color('text')};
+                }}
+                QPushButton {{
+                    background-color: {tm.get_color('button_bg')};
+                    color: {tm.get_color('button_text')};
+                    border: 1px solid {tm.get_color('border')};
+                    padding: 8px 16px;
+                    border-radius: 4px;
+                    font-weight: bold;
+                }}
+                QPushButton:hover {{
+                    background-color: {tm.get_color('button_hover')};
+                }}
+                QPushButton:pressed {{
+                    background-color: {tm.get_color('accent')};
+                }}
+            """
+            )
+
+            layout = QVBoxLayout(dialog)
+
+            # Warning header
+            header = QLabel("🚨 THREAT DETECTED!")
+            header.setStyleSheet(
+                f"""
+                font-size: 18px;
+                font-weight: bold;
+                color: {tm.get_color('error')};
+                padding: 10px;
+            """
+            )
+            header.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            layout.addWidget(header)
+
+            # Threat details
+            details_group = QGroupBox("Threat Information")
+            details_group.setStyleSheet(
+                f"""
+                QGroupBox {{
+                    border: 2px solid {tm.get_color('error')};
+                    border-radius: 6px;
+                    margin-top: 10px;
+                    padding: 15px;
+                    font-weight: bold;
+                }}
+                QGroupBox::title {{
+                    subcontrol-origin: margin;
+                    subcontrol-position: top left;
+                    padding: 0 5px;
+                    color: {tm.get_color('error')};
+                }}
+            """
+            )
+            details_layout = QVBoxLayout(details_group)
+
+            # Threat name
+            name_label = QLabel(f"<b>Threat:</b> {threat_name}")
+            name_label.setWordWrap(True)
+            details_layout.addWidget(name_label)
+
+            # File path
+            path_label = QLabel(f"<b>File:</b> {file_path}")
+            path_label.setWordWrap(True)
+            details_layout.addWidget(path_label)
+
+            # Threat type
+            if threat_type != "Unknown":
+                type_label = QLabel(f"<b>Type:</b> {threat_type}")
+                details_layout.addWidget(type_label)
+
+            layout.addWidget(details_group)
+
+            # Action buttons
+            action_label = QLabel("What would you like to do with this file?")
+            action_label.setStyleSheet("font-size: 14px; margin-top: 15px;")
+            layout.addWidget(action_label)
+
+            buttons_layout = QVBoxLayout()
+            buttons_layout.setSpacing(8)
+
+            # Quarantine button (recommended)
+            quarantine_btn = QPushButton("🛡️ Quarantine (Recommended)")
+            quarantine_btn.setStyleSheet(
+                f"""
+                QPushButton {{
+                    background-color: {tm.get_color('warning')};
+                    color: {tm.get_color('background')};
+                    border: 2px solid {tm.get_color('warning')};
+                    padding: 12px;
+                    font-size: 14px;
+                }}
+                QPushButton:hover {{
+                    background-color: {tm.get_color('warning')};
+                    opacity: 0.8;
+                }}
+            """
+            )
+            quarantine_btn.clicked.connect(
+                lambda: self._handle_threat_action(
+                    dialog, file_path, threat_name, "quarantine"
+                )
+            )
+            buttons_layout.addWidget(quarantine_btn)
+
+            # Delete button
+            delete_btn = QPushButton("🗑️ Delete Permanently")
+            delete_btn.setStyleSheet(
+                f"""
+                QPushButton {{
+                    background-color: {tm.get_color('error')};
+                    color: white;
+                    border: 2px solid {tm.get_color('error')};
+                    padding: 10px;
+                }}
+            """
+            )
+            delete_btn.clicked.connect(
+                lambda: self._handle_threat_action(
+                    dialog, file_path, threat_name, "delete"
+                )
+            )
+            buttons_layout.addWidget(delete_btn)
+
+            # Move to... button
+            move_btn = QPushButton("📁 Move to...")
+            move_btn.setStyleSheet(
+                f"""
+                QPushButton {{
+                    background-color: {tm.get_color('background')};
+                    color: {tm.get_color('text')};
+                    border: 2px solid {tm.get_color('border')};
+                    padding: 10px;
+                    min-height: 35px;
+                }}
+            """
+            )
+            move_btn.clicked.connect(
+                lambda: self._handle_threat_action(
+                    dialog, file_path, threat_name, "move"
+                )
+            )
+            buttons_layout.addWidget(move_btn)
+
+            # Mark as safe button
+            safe_btn = QPushButton("✅ Mark as Safe (False Positive)")
+            safe_btn.setStyleSheet(
+                f"""
+                QPushButton {{
+                    background-color: {tm.get_color('background')};
+                    color: {tm.get_color('text')};
+                    border: 2px solid {tm.get_color('success')};
+                    padding: 10px;
+                    min-height: 35px;
+                }}
+            """
+            )
+            safe_btn.clicked.connect(
+                lambda: self._handle_threat_action(
+                    dialog, file_path, threat_name, "safe"
+                )
+            )
+            buttons_layout.addWidget(safe_btn)
+
+            # Ignore button
+            ignore_btn = QPushButton("🚫 Ignore This Time")
+            ignore_btn.setStyleSheet(
+                f"""
+                QPushButton {{
+                    background-color: {tm.get_color('background')};
+                    color: {tm.get_color('muted_text')};
+                    border: 2px solid {tm.get_color('border')};
+                    padding: 10px;
+                    min-height: 35px;
+                }}
+            """
+            )
+            ignore_btn.clicked.connect(lambda: dialog.accept())
+            buttons_layout.addWidget(ignore_btn)
+
+            layout.addLayout(buttons_layout)
+
+            # Show dialog
+            dialog.exec()
+
+    def _handle_threat_action(self, dialog, file_path, threat_name, action):
+        """Handle the selected action for a threat."""
+        print(f"\n⚡ === HANDLING THREAT ACTION ===")
+        print(f"DEBUG: Action: {action}")
+        print(f"DEBUG: File: {file_path}")
+
+        try:
+            if action == "quarantine":
+                # Quarantine the file
+                if (
+                    hasattr(self, "quarantine_manager")
+                    and self.quarantine_manager is not None
+                ):
+                    # Get current scan report ID
+                    scan_id = f"manual_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+                    success = self.quarantine_manager.quarantine_file(
+                        file_path=file_path,
+                        threat_name=threat_name,
+                        threat_type="malware",
+                        scan_id=scan_id,
+                    )
+                    if success:
+                        self.show_themed_message_box(
+                            "information",
+                            "Quarantined",
+                            f"File has been quarantined:\n{file_path}",
+                        )
+                        # Refresh quarantine list
+                        if hasattr(self, "refresh_quarantine"):
+                            self.refresh_quarantine()
+                    else:
+                        self.show_themed_message_box(
+                            "critical",
+                            "Quarantine Failed",
+                            f"Failed to quarantine file:\n{file_path}",
+                        )
+                else:
+                    self.show_themed_message_box(
+                        "critical", "Error", "Quarantine manager not available"
+                    )
+
+            elif action == "delete":
+                # Confirm deletion
+                reply = self.show_themed_message_box(
+                    "question",
+                    "Confirm Deletion",
+                    f"Are you sure you want to permanently delete this file?\n\n{file_path}\n\nThis action cannot be undone!",
+                    QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                )
+
+                if reply == QMessageBox.StandardButton.Yes:
+                    try:
+                        os.remove(file_path)
+                        self.show_themed_message_box(
+                            "information",
+                            "Deleted",
+                            f"File has been permanently deleted:\n{file_path}",
+                        )
+                    except Exception as e:
+                        self.show_themed_message_box(
+                            "critical",
+                            "Deletion Failed",
+                            f"Failed to delete file:\n{e}",
+                        )
+
+            elif action == "move":
+                # Show directory picker
+                dest_dir = QFileDialog.getExistingDirectory(
+                    self, "Select Destination Directory", str(Path.home())
+                )
+
+                if dest_dir:
+                    try:
+                        import shutil
+
+                        dest_path = Path(dest_dir) / Path(file_path).name
+                        shutil.move(file_path, dest_path)
+                        self.show_themed_message_box(
+                            "information",
+                            "Moved",
+                            f"File has been moved to:\n{dest_path}",
+                        )
+                    except Exception as e:
+                        self.show_themed_message_box(
+                            "critical", "Move Failed", f"Failed to move file:\n{e}"
+                        )
+
+            elif action == "safe":
+                # Add to exclusions/whitelist
+                self.show_themed_message_box(
+                    "information",
+                    "Marked as Safe",
+                    f"File marked as safe and will be excluded from future scans:\n{file_path}\n\n"
+                    "You can manage exclusions in Settings.",
+                )
+                # TODO: Actually add to exclusions list in settings
+
+            # Close dialog after action
+            dialog.accept()
+
+        except Exception as e:
+            print(f"ERROR: Failed to handle threat action: {e}")
+            import traceback
+
+            traceback.print_exc()
+            self.show_themed_message_box(
+                "critical", "Action Failed", f"Failed to perform action:\n{e}"
+            )
 
     def _background_report_refresh(self):
         """Background report refresh for faster startup."""

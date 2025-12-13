@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>io.github.asafelobotomy.SearchAndDestroy</id>
+  <name>xanadOS Search &amp; Destroy</name>
+  <summary>Advanced malware detection and system security scanning tool</summary>
+
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>GPL-3.0-or-later</project_license>
+
+  <description>
+    <p>
+      xanadOS Search &amp; Destroy is a comprehensive Linux security scanner and system
+      protection suite with advanced threat detection capabilities. It provides an
+      intuitive PyQt6 interface for ClamAV, RKhunter, and custom security engines.
+    </p>
+    <p>Key Features:</p>
+    <ul>
+      <li>Real-time malware scanning with ClamAV integration</li>
+      <li>Rootkit detection using RKhunter</li>
+      <li>Custom YARA rule-based threat analysis</li>
+      <li>System monitoring and file watching</li>
+      <li>Quarantine management with secure isolation</li>
+      <li>Advanced security reporting and analytics</li>
+      <li>GPU-accelerated scanning capabilities</li>
+      <li>REST API for automation and integration</li>
+      <li>PolicyKit integration for secure privilege escalation</li>
+    </ul>
+  </description>
+
+  <categories>
+    <category>Security</category>
+    <category>System</category>
+    <category>Utility</category>
+  </categories>
+
+  <keywords>
+    <keyword>antivirus</keyword>
+    <keyword>scanner</keyword>
+    <keyword>malware</keyword>
+    <keyword>security</keyword>
+    <keyword>clamav</keyword>
+    <keyword>virus</keyword>
+    <keyword>rootkit</keyword>
+    <keyword>threat</keyword>
+    <keyword>protection</keyword>
+    <keyword>rkhunter</keyword>
+    <keyword>yara</keyword>
+  </keywords>
+
+  <url type="homepage">https://github.com/asafelobotomy/xanadOS-Search_Destroy</url>
+  <url type="bugtracker">https://github.com/asafelobotomy/xanadOS-Search_Destroy/issues</url>
+  <url type="help">https://github.com/asafelobotomy/xanadOS-Search_Destroy/blob/master/README.md</url>
+  <url type="vcs-browser">https://github.com/asafelobotomy/xanadOS-Search_Destroy</url>
+  <url type="contribute">https://github.com/asafelobotomy/xanadOS-Search_Destroy/blob/master/CONTRIBUTING.md</url>
+
+  <developer id="io.github.asafelobotomy">
+    <name>xanadOS Development Team</name>
+  </developer>
+
+  <screenshots>
+    <screenshot type="default">
+      <caption>Main dashboard with security status and scan controls</caption>
+      <image>https://raw.githubusercontent.com/asafelobotomy/xanadOS-Search_Destroy/master/docs/screenshots/dashboard.png</image>
+    </screenshot>
+  </screenshots>
+
+  <launchable type="desktop-id">xanadOS-Search-Destroy.desktop</launchable>
+
+  <provides>
+    <binary>xanadOS-Search-Destroy</binary>
+  </provides>
+
+  <content_rating type="oars-1.1">
+    <content_attribute id="social-info">none</content_attribute>
+  </content_rating>
+
+  <releases>
+    <release version="3.0.0" date="2025-12-12">
+      <description>
+        <p>Major version 3.0 release with modernized architecture and AppImage support.</p>
+        <ul>
+          <li>Python 3.13 support with latest dependencies</li>
+          <li>PyQt6 6.9+ with improved UI responsiveness</li>
+          <li>AppImage packaging for universal Linux distribution</li>
+          <li>Enhanced PolicyKit integration for secure operations</li>
+          <li>FastAPI-based REST API for automation</li>
+          <li>Improved GPU acceleration support</li>
+          <li>Advanced YARA rule engine integration</li>
+          <li>Real-time file system monitoring with watchdog</li>
+          <li>Comprehensive security reporting</li>
+        </ul>
+      </description>
+    </release>
+  </releases>
+
+  <supports>
+    <control>pointing</control>
+    <control>keyboard</control>
+  </supports>
+
+  <requires>
+    <display_length compare="ge">640</display_length>
+  </requires>
+</component>

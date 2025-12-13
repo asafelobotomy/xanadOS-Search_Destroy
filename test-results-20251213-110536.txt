@@ -1,0 +1,40 @@
+AppImage Automated Test Results
+Generated: Sat 13 Dec 11:05:36 GMT 2025
+AppImage: ./releases/appimage/xanadOS-Search-Destroy-3.0.0-x86_64.AppImage
+
+[1] File exists: PASS
+[2] File is executable: PASS
+  File size: 319MB
+[3] Size is reasonable (300-400 MB): PASS
+[4] Version flag works: PASS
+  Output: 📝 No valid persistent cache found, will create fresh status
+xanadOS Search & Destroy 3.0.0
+[5] Help flag works: PASS
+  Output: 📝 No valid persistent cache found, will create fresh status
+usage: xanadOS Search & Destroy [-h] [-v] [--skip-policy-check]
+
+Advanced malware detection and system security scanner
+
+options:
+  -h, --help           show this help message and exit
+  -v, --version        show program's version number and exit
+  --skip-policy-check  Skip PolicyKit policy installation check (AppImage
+                       only)
+
+For more information, visit https://github.com/asafelobotomy/xanadOS-
+Search_Destroy
+[6] Help shows options: FAIL
+  Expected: --skip-policy-check
+  Got: 📝 No valid persistent cache found, will create fresh status
+usage: xanadOS Search & Destroy [-h] [-v] [--skip-policy-check]
+
+Advanced malware detection and system security scanner
+
+options:
+  -h, --help           show this help message and exit
+  -v, --version        show program's version number and exit
+  --skip-policy-check  Skip PolicyKit policy installation check (AppImage
+                       only)
+
+For more information, visit https://github.com/asafelobotomy/xanadOS-
+Search_Destroy

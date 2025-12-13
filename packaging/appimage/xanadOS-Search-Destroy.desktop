@@ -1,0 +1,36 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=xanadOS Search & Destroy
+GenericName=Advanced Security Scanner
+Comment=Comprehensive malware detection and system security scanning tool
+Comment[es]=Herramienta integral de detección de malware y escaneo de seguridad del sistema
+Comment[fr]=Outil complet de détection de malware et d'analyse de sécurité système
+Comment[de]=Umfassendes Malware-Erkennungs- und Systemsicherheits-Scan-Tool
+Comment[pt]=Ferramenta abrangente de detecção de malware e verificação de segurança do sistema
+Comment[it]=Strumento completo per il rilevamento di malware e la scansione della sicurezza del sistema
+Icon=xanadOS-Search-Destroy
+Exec=xanadOS-Search-Destroy
+Terminal=false
+Categories=Security;System;Utility;
+Keywords=security;malware;antivirus;scan;protection;clamav;virus;threat;detection;system;
+StartupNotify=true
+StartupWMClass=SearchAndDestroy
+
+# Action entries for advanced users
+Actions=scan-quick;scan-full;update-definitions;
+
+[Desktop Action scan-quick]
+Name=Quick Scan
+Exec=xanadOS-Search-Destroy --scan-mode=quick
+Icon=xanadOS-Search-Destroy
+
+[Desktop Action scan-full]
+Name=Full System Scan
+Exec=xanadOS-Search-Destroy --scan-mode=full
+Icon=xanadOS-Search-Destroy
+
+[Desktop Action update-definitions]
+Name=Update Virus Definitions
+Exec=xanadOS-Search-Destroy --update-definitions
+Icon=xanadOS-Search-Destroy

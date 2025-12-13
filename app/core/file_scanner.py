@@ -525,7 +525,25 @@ class FileScanner:
         scan_type = kwargs.get("scan_type", "full")
         quick_scan = scan_type.lower() in ["quick", "fast", "basic"]
 
-        if not self.clamav_wrapper.should_scan_file(file_path, quick_scan=quick_scan):
+        should_scan = self.clamav_wrapper.should_scan_file(
+            file_path, quick_scan=quick_scan
+        )
+
+        # SECURITY: Log when EICAR files are being checked/skipped
+        if "eicar" in file_path.lower():
+            print(f"🔍 SECURITY: Checking if EICAR should be scanned")
+            print(f"   File: {file_path}")
+            print(f"   Quick scan: {quick_scan}")
+            print(f"   Should scan: {should_scan}")
+
+        if not should_scan:
+            # SECURITY: Alert if EICAR file is being skipped
+            if "eicar" in file_path.lower():
+                print(f"⚠️ CRITICAL SECURITY: EICAR FILE BEING SKIPPED!")
+                print(
+                    f"   This is a security vulnerability - test files must always be scanned"
+                )
+
             # Return clean result for skipped files
             result = ScanFileResult(
                 file_path=file_path,
@@ -596,7 +614,16 @@ class FileScanner:
         scan_context: str = "file_scan",
         **kwargs,
     ):
-        """Scan multiple files with progress tracking and enhanced reporting."""
+        """Scan multiple files with progress tracking and enhanced reporting.
+
+        Resets the size monitor at the start to ensure each scan session
+        has a fresh quota.
+        """
+        # Reset size monitor for new scan session
+        if hasattr(self, "size_monitor"):
+            self.size_monitor.reset()
+            self.logger.debug("Size monitor reset for new scan session")
+
         from app.utils.scan_reports import ScanResult as ReportScanResult
         from app.utils.scan_reports import ScanType, ThreatInfo, ThreatLevel
 
@@ -1121,6 +1148,21 @@ class FileScanner:
         self.logger.info(
             "Found %d files in directory: %s", len(file_paths), directory_path
         )
+
+        # SECURITY: Log if EICAR file was found in collection
+        if directory_path and "/tmp" in directory_path:
+            eicar_files = [f for f in file_paths if "eicar" in f.lower()]
+            if eicar_files:
+                print(f"🔍 SECURITY: Found {len(eicar_files)} EICAR files in /tmp:")
+                for f in eicar_files:
+                    print(f"   - {f}")
+            else:
+                print(
+                    f"⚠️ SECURITY: No EICAR files found in /tmp (collected {len(file_paths)} files)"
+                )
+                # Show first few files for debugging
+                if file_paths:
+                    print(f"   Sample files collected: {file_paths[:5]}")
 
         return self.scan_files(
             file_paths,
