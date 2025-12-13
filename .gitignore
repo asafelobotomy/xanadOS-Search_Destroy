@@ -219,6 +219,10 @@ _repo/
 build-dir/
 *.flatpak
 
+# AppImage builds (too large for GitHub)
+*.AppImage
+releases/appimage/*.AppImage
+
 # Test files (prevent accidental commits)
 test.md
 test_*.md
