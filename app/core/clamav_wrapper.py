@@ -99,13 +99,8 @@ class ClamAVWrapper:
         self.freshclam_path = self._find_executable("freshclam")
         self.clamd_path = self._find_executable("clamd")
 
-        # Database paths
-        if os.environ.get("FLATPAK_ID"):
-            # Prefer a bundled database within the sandbox if present
-            bundled = Path("/app/share/clamav")
-            self.db_path = bundled if bundled.exists() else Path("/var/lib/clamav")
-        else:
-            self.db_path = Path("/var/lib/clamav")
+        # Database path
+        self.db_path = Path("/var/lib/clamav")
 
         # Handle cache_dir which might be mocked during testing
         try:
@@ -1357,19 +1352,76 @@ class ClamAVWrapper:
         except OSError:
             return 0
 
+    def _check_freshclam_daemon_running(self) -> bool:
+        """Check if freshclam daemon (clamav-freshclam.service) is running.
+
+        Returns:
+            bool: True if daemon is running, False otherwise
+        """
+        try:
+            result = run_secure(
+                ["systemctl", "is-active", "clamav-freshclam.service"],
+                capture_output=True,
+                text=True,
+                check=False,
+                timeout=5,
+            )
+            # systemctl is-active returns "active" if running
+            is_active = result.stdout.strip() == "active"
+            if is_active:
+                self.logger.debug("freshclam daemon is running")
+            return is_active
+        except (subprocess.SubprocessError, OSError, FileNotFoundError) as e:
+            self.logger.debug("Could not check freshclam daemon status: %s", e)
+            return False
+
+    def _restart_freshclam_daemon(self) -> bool:
+        """Restart freshclam daemon to trigger virus definition update.
+
+        Returns:
+            bool: True if restart was successful, False otherwise
+        """
+        try:
+            # Try to restart the service with elevated privileges
+            if elevated_run is None:
+                self.logger.warning("Elevated runner not available for daemon restart")
+                return False
+
+            self.logger.info(
+                "Restarting clamav-freshclam daemon with GUI authentication..."
+            )
+
+            # Restart the service
+            result = elevated_run(
+                ["systemctl", "restart", "clamav-freshclam.service"],
+                capture_output=True,
+                timeout=30,
+                gui=True,
+            )
+
+            if result.returncode == 0:
+                self.logger.info("freshclam daemon restarted successfully")
+                # Give the daemon a moment to start updating
+                time.sleep(2)
+                return True
+            else:
+                self.logger.warning(
+                    "Failed to restart freshclam daemon (code %s): %s",
+                    result.returncode,
+                    result.stderr,
+                )
+                return False
+
+        except (subprocess.SubprocessError, OSError) as e:
+            self.logger.error("Error restarting freshclam daemon: %s", e)
+            return False
+
     def update_virus_definitions(self) -> bool:
         """Update virus definitions using freshclam.
 
         Returns:
             bool: True if update was successful, False otherwise
         """
-        # Inside Flatpak sandbox, system freshclam is not available; updates
-        # should be provided via app updates
-        if os.environ.get("FLATPAK_ID"):
-            self.logger.info(
-                "Flatpak environment detected: virus definitions are bundled and updated via app updates"
-            )
-            return False
         if not self.available:
             self.logger.error("ClamAV not available")
             return False
@@ -1379,6 +1431,17 @@ class ClamAVWrapper:
             return False
 
         self.logger.info("Starting virus definitions update...")
+
+        # Check if freshclam daemon is running (locks the log file)
+        daemon_running = self._check_freshclam_daemon_running()
+
+        if daemon_running:
+            self.logger.info(
+                "freshclam daemon is running, restarting service to trigger update..."
+            )
+            return self._restart_freshclam_daemon()
+
+        # If daemon not running, use manual freshclam update
 
         # Try different approaches to update definitions
         update_commands = [

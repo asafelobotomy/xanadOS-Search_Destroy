@@ -15,7 +15,7 @@ class ScanThread(QThread, CooperativeCancellationMixin):
 
     progress_updated = pyqtSignal(int)  # Progress percentage
     status_updated = pyqtSignal(str)  # Status message
-    scan_detail_updated = pyqtSignal(str, str)  # file_path, status
+    scan_detail_updated = pyqtSignal(dict)  # Detailed scan progress info
     scan_completed = pyqtSignal(object)  # Scan results
     error_occurred = pyqtSignal(str)  # Error message
 
@@ -47,6 +47,21 @@ class ScanThread(QThread, CooperativeCancellationMixin):
         try:
             self.status_updated.emit("Starting scan...")
             self.progress_updated.emit(0)
+
+            # Set up detailed progress callback to emit scan details to GUI
+            def detailed_progress_handler(detail_info: dict):
+                """Handle detailed scan progress and emit to GUI."""
+                self.logger.debug(
+                    f"Detailed progress received: {detail_info.get('current_file', 'unknown')}"
+                )
+                self.scan_detail_updated.emit(detail_info)
+
+            self.scanner.set_detailed_progress_callback(detailed_progress_handler)
+
+            # Debug: Verify callback is set
+            self.logger.debug(
+                f"Detailed progress callback set: {self.scanner.detailed_progress_callback is not None}"
+            )
 
             # Handle both single path and multiple paths
             if isinstance(self.scan_path, list):

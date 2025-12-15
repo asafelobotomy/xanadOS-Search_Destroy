@@ -1,15 +1,11 @@
 [project]
 name = "xanadOS-Search_Destroy"
-version = "3.0.0"
+version = "0.3.0-beta"
 description = "xanadOS Security Scanner and System Protection Suite"
 readme = "README.md"
-license = {file = "LICENSE"}
-authors = [
-    {name = "xanadOS Development Team"}
-]
-maintainers = [
-    {name = "xanadOS Development Team"}
-]
+license = { file = "LICENSE" }
+authors = [{ name = "xanadOS Development Team" }]
+maintainers = [{ name = "xanadOS Development Team" }]
 keywords = ["security", "antivirus", "malware", "scanner", "protection"]
 classifiers = [
     "Development Status :: 5 - Production/Stable",
@@ -23,98 +19,98 @@ classifiers = [
     "Programming Language :: Python :: 3.13",
     "Topic :: Security",
     "Topic :: System :: Systems Administration",
-    "Topic :: Utilities"
+    "Topic :: Utilities",
 ]
 requires-python = ">=3.13"
 dependencies = [
     # Core dependencies - latest versions for Python 3.13
-    "pyqt6>=6.9.1",              # Latest PyQt6 (was 6.4.0)
-    "requests>=2.32.0",          # Latest stable (was 2.25.0)
-    "psutil>=6.1.0",             # Latest stable (was 5.9.0)
-    "cryptography>=44.0.0",      # Latest with security fixes (was 3.4.0)
-    "pyyaml>=6.0.2",             # Latest stable (was 6.0)
-    "click>=8.1.7",              # Latest stable (was 8.0.0)
-    "rich>=13.9.4",              # Latest stable (was 12.0.0)
-    "colorama>=0.4.6",           # Latest stable (was 0.4.4)
+    "pyqt6>=6.9.1",         # Latest PyQt6 (was 6.4.0)
+    "requests>=2.32.0",     # Latest stable (was 2.25.0)
+    "psutil>=6.1.0",        # Latest stable (was 5.9.0)
+    "cryptography>=44.0.0", # Latest with security fixes (was 3.4.0)
+    "pyyaml>=6.0.2",        # Latest stable (was 6.0)
+    "click>=8.1.7",         # Latest stable (was 8.0.0)
+    "rich>=13.9.4",         # Latest stable (was 12.0.0)
+    "colorama>=0.4.6",      # Latest stable (was 0.4.4)
     "tabulate>=0.9.0",
     # Essential runtime dependencies for core functionality
-    "numpy>=2.2.0",              # Latest with Python 3.13 support (was 1.24.0)
-    "schedule>=1.2.2",           # Latest stable (was 1.2.0)
-    "aiohttp>=3.11.0",           # Latest stable (was 3.9.0)
-    "watchdog>=6.0.0",           # Modern file system monitoring (replaces inotify for Python 3.13+)
-    "dnspython>=2.8.0",          # Latest stable (was 2.6.0)
-    "python-dotenv>=1.0.1",      # Latest stable (was 1.0.0)
+    "numpy>=2.2.0",         # Latest with Python 3.13 support (was 1.24.0)
+    "schedule>=1.2.2",      # Latest stable (was 1.2.0)
+    "aiohttp>=3.11.0",      # Latest stable (was 3.9.0)
+    "watchdog>=6.0.0",      # Modern file system monitoring (replaces inotify for Python 3.13+)
+    "dnspython>=2.8.0",     # Latest stable (was 2.6.0)
+    "python-dotenv>=1.0.1", # Latest stable (was 1.0.0)
     # API Framework dependencies - required for app/api/ modules
-    "fastapi>=0.104.0",          # Modern async web framework
-    "uvicorn[standard]>=0.24.0", # ASGI server with performance extras
-    "httpx>=0.25.0",             # Modern async HTTP client
-    "websockets>=12.0",          # WebSocket support for real-time features
-    "pyjwt[crypto]>=2.8.0",      # JWT tokens with cryptographic signing
-    "redis>=5.0.0",              # In-memory data store for caching/sessions
-    "sqlalchemy>=2.0.0",         # Modern SQL toolkit and ORM
+    "fastapi>=0.104.0",            # Modern async web framework
+    "uvicorn[standard]>=0.24.0",   # ASGI server with performance extras
+    "httpx>=0.25.0",               # Modern async HTTP client
+    "websockets>=12.0",            # WebSocket support for real-time features
+    "pyjwt[crypto]>=2.8.0",        # JWT tokens with cryptographic signing
+    "redis>=5.0.0",                # In-memory data store for caching/sessions
+    "sqlalchemy>=2.0.0",           # Modern SQL toolkit and ORM
     "strawberry-graphql>=0.206.0", # GraphQL implementation
-    "slowapi>=0.1.9",            # Rate limiting for FastAPI
+    "slowapi>=0.1.9",              # Rate limiting for FastAPI
 ]
 
 [project.optional-dependencies]
 # Modern security analysis tools for 2025 - latest versions
 security = [
-    "yara-python>=4.5.1",       # Latest YARA rule engine (was 4.5.0)
-    "volatility3>=2.8.0",       # Latest memory forensics (was 2.7.0)
-    "scapy>=2.6.1",             # Latest packet manipulation (was 2.5.0)
-    "pycryptodome>=3.21.0",     # Latest crypto library (was 3.20.0)
-    "capstone>=5.0.3",          # Latest disassembly engine (was 5.0.0)
+    "yara-python>=4.5.1",     # Latest YARA rule engine (was 4.5.0)
+    "volatility3>=2.8.0",     # Latest memory forensics (was 2.7.0)
+    "scapy>=2.6.1",           # Latest packet manipulation (was 2.5.0)
+    "pycryptodome>=3.21.0",   # Latest crypto library (was 3.20.0)
+    "capstone>=5.0.3",        # Latest disassembly engine (was 5.0.0)
     "keystone-engine>=0.9.2",
-    "unicorn>=2.1.1",           # Latest CPU emulator (was 2.0.0)
-    "frida>=16.5.9",            # Latest instrumentation (was 16.0.0)
+    "unicorn>=2.1.1",         # Latest CPU emulator (was 2.0.0)
+    "frida>=16.5.9",          # Latest instrumentation (was 16.0.0)
 ]
 # Advanced malware analysis (inspired by CAPA)
 malware-analysis = [
-    "vivisect>=1.0.8",           # Binary analysis platform
-    "pefile>=2023.2.7",          # PE file analysis
-    "pyelftools>=0.31",          # ELF file analysis (correct package name)
-    "oletools>=0.60.2",          # Office document analysis
-    "pyclamd>=0.4.0",            # ClamAV interface (corrected version)
+    "vivisect>=1.0.8",  # Binary analysis platform
+    "pefile>=2023.2.7", # PE file analysis
+    "pyelftools>=0.31", # ELF file analysis (correct package name)
+    "oletools>=0.60.2", # Office document analysis
+    "pyclamd>=0.4.0",   # ClamAV interface (corrected version)
 ]
 # Advanced features requiring additional dependencies
 advanced = [
-    "pandas>=2.1.0",             # Data analysis for reporting
-    "matplotlib>=3.7.0",         # Plotting for security reports
-    "scikit-learn>=1.3.0",       # Machine learning for heuristic analysis
-    "aiofiles>=24.1.0",          # Async file operations
-    "jinja2>=3.1.0",             # Template engine for reports
-    "markdown>=3.4.0",           # Markdown processing for reports
-    "boto3>=1.35.0",             # AWS cloud integration
+    "pandas>=2.1.0",       # Data analysis for reporting
+    "matplotlib>=3.7.0",   # Plotting for security reports
+    "scikit-learn>=1.3.0", # Machine learning for heuristic analysis
+    "aiofiles>=24.1.0",    # Async file operations
+    "jinja2>=3.1.0",       # Template engine for reports
+    "markdown>=3.4.0",     # Markdown processing for reports
+    "boto3>=1.35.0",       # AWS cloud integration
 ]
 dev = [
     # Core linting and formatting - latest versions
-    "ruff>=0.8.4",               # Latest fast linter (was 0.2.0)
-    "black>=24.10.0",            # Latest code formatter (was 24.0.0)
-    "isort>=5.13.2",             # Latest import sorter (was 5.13.0)
+    "ruff>=0.8.4",    # Latest fast linter (was 0.2.0)
+    "black>=24.10.0", # Latest code formatter (was 24.0.0)
+    "isort>=5.13.2",  # Latest import sorter (was 5.13.0)
     # Type checking
-    "mypy>=1.13.0",              # Latest type checker (was 1.8.0)
+    "mypy>=1.13.0", # Latest type checker (was 1.8.0)
     # Testing framework - latest versions
-    "pytest>=8.3.4",            # Latest testing framework (was 8.0.0)
-    "pytest-cov>=6.0.0",        # Latest coverage (was 4.0.0)
-    "pytest-asyncio>=0.25.0",   # Latest async testing (was 0.23.0)
-    "pytest-mock>=3.14.0",      # Latest mocking (was 3.12.0)
+    "pytest>=8.3.4",           # Latest testing framework (was 8.0.0)
+    "pytest-cov>=6.0.0",       # Latest coverage (was 4.0.0)
+    "pytest-asyncio>=0.25.0",  # Latest async testing (was 0.23.0)
+    "pytest-mock>=3.14.0",     # Latest mocking (was 3.12.0)
     "pytest-benchmark>=4.0.0",
-    "pytest-xdist>=3.6.0",      # Latest parallel execution (was 3.5.0)
+    "pytest-xdist>=3.6.0",     # Latest parallel execution (was 3.5.0)
     "pytest-timeout>=2.3.1",
     # Security scanning - latest versions
-    "bandit[toml]>=1.8.0",      # Latest security scanner (was 1.7.5)
-    "safety>=3.6.1",            # Latest vulnerability scanner (was 2.3.0)
-    "pip-audit>=2.7.3",         # Latest dependency scanner (was 2.6.0)
+    "bandit[toml]>=1.8.0", # Latest security scanner (was 1.7.5)
+    "safety>=3.6.1",       # Latest vulnerability scanner (was 2.3.0)
+    "pip-audit>=2.7.3",    # Latest dependency scanner (was 2.6.0)
     # Pre-commit and automation
-    "pre-commit>=4.0.1",        # Latest pre-commit (was 3.3.0)
-    "tox>=4.23.2",              # Latest tox (was 4.6.0)
+    "pre-commit>=4.0.1", # Latest pre-commit (was 3.3.0)
+    "tox>=4.23.2",       # Latest tox (was 4.6.0)
     # Build and packaging tools - latest versions
-    "build>=1.2.2",             # Latest build tool (was 0.10.0)
-    "wheel>=0.45.1",            # Latest wheel (was 0.41.0)
-    "setuptools>=75.6.0",       # Latest setuptools (was 68.0.0)
-    "twine>=6.0.1",             # Latest PyPI uploader (was 4.0.0)
+    "build>=1.2.2",       # Latest build tool (was 0.10.0)
+    "wheel>=0.45.1",      # Latest wheel (was 0.41.0)
+    "setuptools>=75.6.0", # Latest setuptools (was 68.0.0)
+    "twine>=6.0.1",       # Latest PyPI uploader (was 4.0.0)
     # Development utilities
-    "coverage>=7.6.9",          # Latest coverage (was 7.2.0)
+    "coverage>=7.6.9", # Latest coverage (was 7.2.0)
 ]
 docs = [
     "mkdocs>=1.5.0",
@@ -130,18 +126,11 @@ packaging = [
     "wheel>=0.41.0",
     "setuptools>=68.0.0",
 ]
-debugging = [
-    "ipdb>=0.13.13",
-    "memory-profiler>=0.61.0",
-    "line-profiler>=4.1.0",
-]
-gui-testing = [
-    "pytest-qt>=4.2.0",
-    "pytest-xvfb>=3.0.0",
-]
+debugging = ["ipdb>=0.13.13", "memory-profiler>=0.61.0", "line-profiler>=4.1.0"]
+gui-testing = ["pytest-qt>=4.2.0", "pytest-xvfb>=3.0.0"]
 # Complete installation with all optional features
 all = [
-    "xanadOS-Search_Destroy[security,malware-analysis,advanced,debugging,gui-testing]"
+    "xanadOS-Search_Destroy[security,malware-analysis,advanced,debugging,gui-testing]",
 ]
 
 [project.urls]
@@ -164,15 +153,7 @@ build-backend = "hatchling.build"
 version.source = "vcs"
 
 [tool.hatch.build]
-exclude = [
-    "/.github",
-    "/docs",
-    "/tests",
-    "/dev",
-    "/archive",
-    "/logs",
-    "*.log",
-]
+exclude = ["/.github", "/docs", "/tests", "/dev", "/archive", "/logs", "*.log"]
 
 # =============================================================================
 # Tool Configuration - Consolidated from multiple config files
@@ -180,7 +161,7 @@ exclude = [
 
 [tool.ruff]
 # Modern Python 3.13 focused linting and formatting
-target-version = "py313"  # Updated from py311 to py313
+target-version = "py313" # Updated from py311 to py313
 line-length = 88
 indent-width = 4
 
@@ -210,7 +191,7 @@ exclude = [
     "archive",
     "logs",
     "packaging/icons",
-    "dev/node"
+    "dev/node",
 ]
 
 [tool.ruff.lint]
@@ -231,15 +212,15 @@ select = [
 ]
 
 ignore = [
-    "D100",  # Missing docstring in public module
-    "D101",  # Missing docstring in public class
-    "D102",  # Missing docstring in public method
-    "D103",  # Missing docstring in public function
-    "D104",  # Missing docstring in public package
-    "D105",  # Missing docstring in magic method
-    "D107",  # Missing docstring in __init__
-    "E501",  # Line too long (handled by formatter)
-    "S101",  # Use of assert (acceptable in tests)
+    "D100",    # Missing docstring in public module
+    "D101",    # Missing docstring in public class
+    "D102",    # Missing docstring in public method
+    "D103",    # Missing docstring in public function
+    "D104",    # Missing docstring in public package
+    "D105",    # Missing docstring in magic method
+    "D107",    # Missing docstring in __init__
+    "E501",    # Line too long (handled by formatter)
+    "S101",    # Use of assert (acceptable in tests)
     "PLR0913", # Too many arguments to function call
     "PLR0915", # Too many statements
 ]
@@ -257,32 +238,86 @@ dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
 # Narrow ignores for top-level tests: drop F401 and UP015 here (cleaned files)
 "tests/*.py" = [
     # Pre-existing test tolerances
-    "S101", "D", "PLR2004",
+    "S101",
+    "D",
+    "PLR2004",
     # Temporary: keep other noise reductions
-    "B007", "PLW1510", "PLR1722", "RUF100", "S603",
+    "B007",
+    "PLW1510",
+    "PLR1722",
+    "RUF100",
+    "S603",
     # Additional temporary tolerances
-    "S110", "F841", "E402", "B011", "PLC0415",
+    "S110",
+    "F841",
+    "E402",
+    "B011",
+    "PLC0415",
 ]
 
 # Tests: hardening and demos are now cleaner — drop F401 and UP015 there
 "tests/hardening/*.py" = [
-    "S101", "D", "PLR2004",
-    "B007", "PLW1510", "PLR1722", "RUF100", "S603",
-    "S110", "F841", "E402", "B011", "PLC0415",
+    "S101",
+    "D",
+    "PLR2004",
+    "B007",
+    "PLW1510",
+    "PLR1722",
+    "RUF100",
+    "S603",
+    "S110",
+    "F841",
+    "E402",
+    "B011",
+    "PLC0415",
 ]
 "tests/demos/*.py" = [
-    "S101", "D", "PLR2004",
-    "B007", "PLW1510", "PLR1722", "RUF100", "S603",
-    "S110", "F841", "E402", "B011", "PLC0415",
+    "S101",
+    "D",
+    "PLR2004",
+    "B007",
+    "PLW1510",
+    "PLR1722",
+    "RUF100",
+    "S603",
+    "S110",
+    "F841",
+    "E402",
+    "B011",
+    "PLC0415",
 ]
 "tests/**/**/*.py" = [
-    "S101", "D", "PLR2004",
-    "F401", "UP035", "UP006", "UP007", "UP015",
-    "B007", "PLW1510", "PLR1722", "RUF100", "S603",
-    "S110", "F841", "E402", "B011", "PLC0415",
+    "S101",
+    "D",
+    "PLR2004",
+    "F401",
+    "UP035",
+    "UP006",
+    "UP007",
+    "UP015",
+    "B007",
+    "PLW1510",
+    "PLR1722",
+    "RUF100",
+    "S603",
+    "S110",
+    "F841",
+    "E402",
+    "B011",
+    "PLC0415",
 ]
 "dev/**/*" = ["S101", "D", "PLR2004"]
-"scripts/**" = ["S101", "D", "RUF001", "PLR1722", "C401", "PLR0912", "PLR2004", "PLC0415", "B007"]
+"scripts/**" = [
+    "S101",
+    "D",
+    "RUF001",
+    "PLR1722",
+    "C401",
+    "PLR0912",
+    "PLR2004",
+    "PLC0415",
+    "B007",
+]
 
 # Quality exceptions for scripts/tools/ utility scripts
 "scripts/tools/**/*.py" = [
@@ -326,18 +361,23 @@ dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
 ]
 "app/utils/**" = [
     # Docstring/style noise to be cleaned up incrementally
-    "D", "D202", "D205", "D212", "D415",
+    "D",
+    "D202",
+    "D205",
+    "D212",
+    "D415",
     # Pyupgrade typing modernizations (will be addressed later)
-    "UP006", "UP007",
+    "UP006",
+    "UP007",
     # Magic numbers flagged by pylint rules
     "PLR2004",
     # ClassVar requirement for mutable class attributes (legacy design)
     "RUF012",
     # Hard-coded temp dirs (tracked to replace with tempfile in follow-up)
     "S108",
-    "S603",    # subprocess vetted via wrappers
-    "UP035",   # typing.List/Dict deprecations (migrate later)
-    "RUF013",  # implicit Optional (migrate later)
+    "S603",   # subprocess vetted via wrappers
+    "UP035",  # typing.List/Dict deprecations (migrate later)
+    "RUF013", # implicit Optional (migrate later)
     # Local import patterns and exception handling tolerances in utils
     "PLC0415", # import-outside-top-level within helper functions
     "S110",    # bare except/pass in guarded utils
@@ -399,7 +439,7 @@ docstring-code-format = true
 [tool.black]
 # Black configuration targeting Python 3.13
 line-length = 88
-target-version = ['py313']  # Updated from py311 to py313
+target-version = ['py313'] # Updated from py311 to py313
 include = '\.pyi?$'
 extend-exclude = '''
 /(
@@ -420,7 +460,7 @@ extend-exclude = '''
 
 [tool.mypy]
 # Enhanced type checking configuration for Python 3.13
-python_version = "3.13"  # Updated from 3.11 to 3.13
+python_version = "3.13" # Updated from 3.11 to 3.13
 platform = "linux"
 
 # Import discovery
@@ -485,11 +525,7 @@ module = [
 ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
-module = [
-    "tests.*",
-    "dev.*",
-    "archive.*",
-]
+module = ["tests.*", "dev.*", "archive.*"]
 ignore_errors = true
 
 # Exclude directories that are currently untyped to keep strict checks actionable
@@ -500,31 +536,32 @@ exclude = '^(archive/|logs/|dev/|packaging/|scripts/)'
 minversion = "7.4"
 addopts = [
     # Output and reporting
-    "-ra",  # Show extra test summary info for all except passed
+    "-ra",              # Show extra test summary info for all except passed
     "--strict-markers",
     "--strict-config",
-    "--showlocals",  # Show local variables in tracebacks
-    "--tb=short",  # Shorter traceback format
+    "--showlocals",     # Show local variables in tracebacks
+    "--tb=short",       # Shorter traceback format
 
     # Coverage reporting
     "--cov=app",
     "--cov-report=term-missing",
     "--cov-report=html:archive/testing-coverage",
     "--cov-report=xml:coverage.xml",
-    "--cov-branch",  # Include branch coverage
-    "--cov-fail-under=80",  # Fail if coverage below 80%
+    "--cov-branch",                               # Include branch coverage
+    "--cov-fail-under=80",                        # Fail if coverage below 80%
 
     # Parallel execution (requires pytest-xdist)
-    "--numprocesses=auto",  # Use all available CPUs
-    "--dist=loadfile",  # Distribute tests by file
+    "--numprocesses=auto", # Use all available CPUs
+    "--dist=loadfile",     # Distribute tests by file
 
     # Warnings and deprecations
-    "--disable-warnings",  # Reduce noise in test output
-    "-p", "no:cacheprovider",  # Disable cache for cleaner runs
+    "--disable-warnings", # Reduce noise in test output
+    "-p",
+    "no:cacheprovider",   # Disable cache for cleaner runs
 
     # Performance and debugging
-    "--durations=10",  # Show 10 slowest tests
-    "--maxfail=5",  # Stop after 5 failures
+    "--durations=10", # Show 10 slowest tests
+    "--maxfail=5",    # Stop after 5 failures
 
     # Directory exclusions
     "--ignore=archive",
@@ -536,7 +573,15 @@ testpaths = ["tests"]
 python_files = ["test_*.py", "*_test.py"]
 python_classes = ["Test*", "*Tests"]
 python_functions = ["test_*"]
-norecursedirs = ["archive", "logs", ".git", ".venv", "venv", "node_modules", ".pytest_cache"]
+norecursedirs = [
+    "archive",
+    "logs",
+    ".git",
+    ".venv",
+    "venv",
+    "node_modules",
+    ".pytest_cache",
+]
 
 # Test markers for categorization
 markers = [
@@ -572,7 +617,7 @@ log_cli_format = "%(asctime)s [%(levelname)8s] %(name)s: %(message)s"
 log_cli_date_format = "%Y-%m-%d %H:%M:%S"
 
 # Timeout for long-running tests
-timeout = 300  # 5 minutes max per test
+timeout = 300             # 5 minutes max per test
 timeout_method = "thread"
 
 # PyQt6 GUI testing
@@ -585,9 +630,9 @@ asyncio_mode = "auto"
 [tool.coverage.run]
 # Coverage measurement configuration
 source = ["app"]
-branch = true  # Measure branch coverage
-parallel = true  # Support parallel test execution
-context = "pytest"  # Add context for better reporting
+branch = true      # Measure branch coverage
+parallel = true    # Support parallel test execution
+context = "pytest" # Add context for better reporting
 
 # Files to include/exclude
 omit = [
@@ -695,10 +740,10 @@ show_contexts = true
 # Align flake8 with Black and repository standards
 max-line-length = 88
 extend-ignore = [
-    "E203",  # Whitespace before ':' (conflicts with Black)
-    "E266",  # Too many leading '#' for block comment
-    "E501",  # Line too long (handled by Black)
-    "W503",  # Line break before binary operator (Black's style)
+    "E203", # Whitespace before ':' (conflicts with Black)
+    "E266", # Too many leading '#' for block comment
+    "E501", # Line too long (handled by Black)
+    "W503", # Line break before binary operator (Black's style)
 ]
 exclude = [
     ".git",
@@ -730,8 +775,8 @@ per-file-ignores = [
 targets = ["app"]
 exclude_dirs = ["tests", "dev", "archive", "logs"]
 skips = [
-    "B101",  # Test for use of assert
-    "B603",  # subprocess call - check for execution of untrusted input
+    "B101", # Test for use of assert
+    "B603", # subprocess call - check for execution of untrusted input
 ]
 
 [tool.safety]
@@ -749,11 +794,7 @@ include_trailing_comma = true
 force_grid_wrap = 0
 use_parentheses = true
 ensure_newline_before_comments = true
-skip_glob = [
-    "archive/**/*",
-    "logs/**/*",
-    "dev/node/**/*",
-]
+skip_glob = ["archive/**/*", "logs/**/*", "dev/node/**/*"]
 
 [tool.pylint]
 # Enhanced pylint configuration
@@ -773,12 +814,12 @@ load-plugins = [
 
 [tool.pylint.messages_control]
 disable = [
-    "C0103",  # Invalid name (doesn't conform to naming convention)
-    "C0111",  # Missing docstring
-    "R0903",  # Too few public methods
-    "R0913",  # Too many arguments
-    "W0613",  # Unused argument
-    "W0622",  # Redefined builtin
+    "C0103", # Invalid name (doesn't conform to naming convention)
+    "C0111", # Missing docstring
+    "R0903", # Too few public methods
+    "R0913", # Too many arguments
+    "W0613", # Unused argument
+    "W0622", # Redefined builtin
 ]
 
 [tool.pylint.format]
@@ -838,16 +879,11 @@ commands =
 """
 
 
-
 [tool.hatch.build.targets.wheel]
 packages = ["app"]
 
 [tool.hatch.envs.default]
-dependencies = [
-    "pytest>=7.4.0",
-    "pytest-cov>=4.1.0",
-    "pytest-qt>=4.2.0",
-]
+dependencies = ["pytest>=7.4.0", "pytest-cov>=4.1.0", "pytest-qt>=4.2.0"]
 
 [tool.hatch.envs.default.scripts]
 test = "pytest {args:tests}"
@@ -857,11 +893,7 @@ cov-html = "coverage html"
 
 [tool.hatch.envs.lint]
 detached = true
-dependencies = [
-    "ruff>=0.1.0",
-    "black>=23.7.0",
-    "mypy>=1.5.0",
-]
+dependencies = ["ruff>=0.1.0", "black>=23.7.0", "mypy>=1.5.0"]
 
 [tool.hatch.envs.lint.scripts]
 typing = "mypy --install-types --non-interactive {args:app tests}"
@@ -876,22 +908,13 @@ fmt = [
     "ruff check --fix {args:.}",
     "style",
 ]
-all = [
-    "style",
-    "typing",
-]
+all = ["style", "typing"]
 
 [tool.hatch.envs.security]
-dependencies = [
-    "bandit>=1.7.5",
-    "safety>=3.6.1",
-]
+dependencies = ["bandit>=1.7.5", "safety>=3.6.1"]
 
 [tool.hatch.envs.security.scripts]
-scan = [
-    "bandit -r app",
-    "safety check",
-]
+scan = ["bandit -r app", "safety check"]
 
 [tool.semantic_release]
 # Automated versioning and changelog generation
@@ -912,7 +935,16 @@ prerelease_token = "rc"
 prerelease = false
 
 [tool.semantic_release.commit_parser_options]
-allowed_tags = ["feat", "fix", "docs", "style", "refactor", "perf", "test", "chore"]
+allowed_tags = [
+    "feat",
+    "fix",
+    "docs",
+    "style",
+    "refactor",
+    "perf",
+    "test",
+    "chore",
+]
 minor_tags = ["feat"]
 patch_tags = ["fix", "perf"]
 
@@ -964,10 +996,7 @@ force-wrap = false
 tab-width = 4
 
 [dependency-groups]
-dev = [
-    "flake8>=7.3.0",
-    "prettier>=0.0.7",
-]
+dev = ["flake8>=7.3.0", "prettier>=0.0.7"]
 
 # Quality exceptions for scripts/tools/ utility scripts
 [tool.ruff.per-file-ignores]

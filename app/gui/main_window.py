@@ -5809,13 +5809,19 @@ System        {perf_status}"""
 
                     self._last_displayed_directory = current_dir
 
+                # Get file size and format it
+                file_size = detail_info.get("file_size", 0)
+                size_str = self._format_file_size(file_size)
+
                 # Display file only if not already displayed (prevents duplicates)
                 if not file_already_displayed:
                     if scan_result == "clean":
-                        self._append_with_autoscroll(f"    ✅ {current_file}")
+                        self._append_with_autoscroll(
+                            f"    ✅ {current_file} <i>({size_str})</i>"
+                        )
                     elif scan_result == "infected":
                         self.results_text.append(
-                            f"    🚨 <span style='color: {get_theme_manager().get_color('error')};'><b>INFECTED:</b></span> {current_file}"
+                            f"    🚨 <span style='color: {get_theme_manager().get_color('error')};'><b>INFECTED:</b></span> {current_file} <i>({size_str})</i>"
                         )
 
         except Exception as e:
@@ -5914,6 +5920,36 @@ System        {perf_status}"""
 
         # Default: return the directory as-is if we can't group it
         return directory_path
+
+    def _format_file_size(self, size_bytes):
+        """Format file size in human-readable format.
+
+        Args:
+            size_bytes: Size in bytes
+
+        Returns:
+            Formatted string (e.g., "1.2 MB", "345 KB")
+        """
+        if size_bytes == 0:
+            return "0 B"
+
+        units = ["B", "KB", "MB", "GB", "TB"]
+        unit_index = 0
+        size = float(size_bytes)
+
+        while size >= 1024.0 and unit_index < len(units) - 1:
+            size /= 1024.0
+            unit_index += 1
+
+        # Format with appropriate precision
+        if unit_index == 0:  # Bytes
+            return f"{int(size)} {units[unit_index]}"
+        elif size >= 100:  # 100+ MB, GB, etc
+            return f"{size:.0f} {units[unit_index]}"
+        elif size >= 10:  # 10-99 MB, GB, etc
+            return f"{size:.1f} {units[unit_index]}"
+        else:  # < 10 MB, GB, etc
+            return f"{size:.2f} {units[unit_index]}"
 
     def _on_scroll_changed(self, value):
         """Track when user manually scrolls to disable auto-scrolling."""
@@ -9387,6 +9423,18 @@ Common False Positives:
                     self.update_status = "Checking current definitions..."
                     self.update_progress = 10
 
+                    # Check if running in AppImage or Flatpak - updates not supported
+                    if os.environ.get("APPIMAGE") or os.environ.get("APPDIR"):
+                        self.update_status = "AppImage: Definitions bundled with app"
+                        self.update_progress = 100
+                        self.update_result = False
+                        return
+                    elif os.environ.get("FLATPAK_ID"):
+                        self.update_status = "Flatpak: Definitions bundled with app"
+                        self.update_progress = 100
+                        self.update_result = False
+                        return
+
                     # Check if update is needed
                     if not freshness.get("needs_update", True):
                         self.update_status = "Definitions are already up to date"
@@ -9486,19 +9534,51 @@ Common False Positives:
                                 # small delay
                                 QTimer.singleShot(500, self.update_definition_status)
                             else:
-                                self.show_themed_message_box(
-                                    "warning",
-                                    "Update Failed",
-                                    f"Failed to update virus definitions.\n\n"
-                                    f"Status: {self.update_status}\n\n"
-                                    f"You may need to:\n"
-                                    f"• Run the application as administrator\n"
-                                    f"• Check your internet connection\n"
-                                    f"• Verify ClamAV is properly installed",
-                                )
-                                self.status_bar.showMessage(
-                                    "Failed to update virus definitions", 5000
-                                )
+                                # Check if running in AppImage or Flatpak
+                                if os.environ.get("APPIMAGE") or os.environ.get(
+                                    "APPDIR"
+                                ):
+                                    self.show_themed_message_box(
+                                        "information",
+                                        "AppImage Environment",
+                                        "Virus definitions cannot be updated separately in AppImage.\n\n"
+                                        "The virus definitions are bundled with the AppImage itself.\n\n"
+                                        "To update definitions:\n"
+                                        "• Download the latest AppImage version\n"
+                                        "• New releases include updated virus definitions\n\n"
+                                        "Current bundled definitions are used for scanning.",
+                                    )
+                                    self.status_bar.showMessage(
+                                        "AppImage: Definitions bundled with app", 5000
+                                    )
+                                elif os.environ.get("FLATPAK_ID"):
+                                    self.show_themed_message_box(
+                                        "information",
+                                        "Flatpak Environment",
+                                        "Virus definitions cannot be updated separately in Flatpak.\n\n"
+                                        "The virus definitions are bundled with the Flatpak package.\n\n"
+                                        "To update definitions:\n"
+                                        "• Run: flatpak update\n"
+                                        "• Updates include latest virus definitions\n\n"
+                                        "Current bundled definitions are used for scanning.",
+                                    )
+                                    self.status_bar.showMessage(
+                                        "Flatpak: Definitions bundled with app", 5000
+                                    )
+                                else:
+                                    self.show_themed_message_box(
+                                        "warning",
+                                        "Update Failed",
+                                        f"Failed to update virus definitions.\n\n"
+                                        f"Status: {self.update_status}\n\n"
+                                        f"You may need to:\n"
+                                        f"• Run the application as administrator\n"
+                                        f"• Check your internet connection\n"
+                                        f"• Verify ClamAV is properly installed",
+                                    )
+                                    self.status_bar.showMessage(
+                                        "Failed to update virus definitions", 5000
+                                    )
                         return
 
             timer.timeout.connect(update_progress)

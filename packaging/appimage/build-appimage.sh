@@ -74,6 +74,8 @@ mkdir -p "$APPDIR/usr/share/icons/hicolor/256x256/apps"
 mkdir -p "$APPDIR/usr/share/icons/hicolor/scalable/apps"
 mkdir -p "$APPDIR/usr/share/polkit-1/actions"
 mkdir -p "$APPDIR/usr/app"
+mkdir -p "$APPDIR/usr/share/clamav"
+mkdir -p "$APPDIR/usr/share/rkhunter"
 echo -e "${GREEN}✓${NC} Directory structure created"
 
 # Bundle system Python with all dependencies
@@ -194,6 +196,75 @@ if [ -f "$PROJECT_ROOT/packaging/icons/io.github.asafelobotomy.SearchAndDestroy.
     cp "$PROJECT_ROOT/packaging/icons/io.github.asafelobotomy.SearchAndDestroy.svg" "$APPDIR/usr/app/icons/io.github.asafelobotomy.SearchAndDestroy.svg"
 fi
 echo -e "${GREEN}✓${NC} Icons installed"
+
+# Bundle ClamAV if available on the system
+echo ""
+echo -e "${YELLOW}→${NC} Bundling ClamAV..."
+if command -v clamscan &> /dev/null; then
+    # Copy ClamAV binaries
+    for clamav_bin in clamscan clamdscan freshclam clamd; do
+        if command -v "$clamav_bin" &> /dev/null; then
+            CLAMAV_BIN_PATH=$(which "$clamav_bin")
+            cp -L "$CLAMAV_BIN_PATH" "$APPDIR/usr/bin/" 2>/dev/null || true
+            echo -e "${CYAN}  Copied $clamav_bin${NC}"
+        fi
+    done
+
+    # Copy ClamAV libraries
+    for lib in $(ldd $(which clamscan) | grep "=>" | awk '{print $3}' | grep -E "libclam|libfreshclam"); do
+        if [ -f "$lib" ]; then
+            cp -L "$lib" "$APPDIR/usr/lib/"
+            echo -e "${CYAN}  Copied $(basename $lib)${NC}"
+        fi
+    done
+
+    # Copy ClamAV virus definitions if available
+    if [ -d "/var/lib/clamav" ]; then
+        cp /var/lib/clamav/*.cvd "$APPDIR/usr/share/clamav/" 2>/dev/null || true
+        cp /var/lib/clamav/*.cld "$APPDIR/usr/share/clamav/" 2>/dev/null || true
+        echo -e "${CYAN}  Copied virus definitions${NC}"
+    fi
+
+    # Copy ClamAV configuration
+    if [ -f "/etc/clamav/clamd.conf" ]; then
+        mkdir -p "$APPDIR/usr/etc/clamav"
+        cp /etc/clamav/clamd.conf "$APPDIR/usr/etc/clamav/" 2>/dev/null || true
+    fi
+
+    echo -e "${GREEN}✓${NC} ClamAV bundled"
+else
+    echo -e "${YELLOW}⚠${NC} ClamAV not found on system - AppImage will use system ClamAV if available"
+fi
+
+# Bundle RKHunter if available on the system
+echo ""
+echo -e "${YELLOW}→${NC} Bundling RKHunter..."
+if command -v rkhunter &> /dev/null; then
+    # Copy RKHunter binary
+    RKHUNTER_PATH=$(which rkhunter)
+    cp -L "$RKHUNTER_PATH" "$APPDIR/usr/bin/"
+    chmod +x "$APPDIR/usr/bin/rkhunter"
+    echo -e "${CYAN}  Copied rkhunter binary${NC}"
+
+    # Copy RKHunter data files
+    if [ -d "/usr/share/rkhunter" ]; then
+        cp -r /usr/share/rkhunter/* "$APPDIR/usr/share/rkhunter/" 2>/dev/null || true
+        echo -e "${CYAN}  Copied rkhunter data files${NC}"
+    elif [ -d "/var/lib/rkhunter" ]; then
+        cp -r /var/lib/rkhunter/* "$APPDIR/usr/share/rkhunter/" 2>/dev/null || true
+        echo -e "${CYAN}  Copied rkhunter data files${NC}"
+    fi
+
+    # Copy RKHunter configuration
+    if [ -f "/etc/rkhunter.conf" ]; then
+        mkdir -p "$APPDIR/usr/etc"
+        cp /etc/rkhunter.conf "$APPDIR/usr/etc/" 2>/dev/null || true
+    fi
+
+    echo -e "${GREEN}✓${NC} RKHunter bundled"
+else
+    echo -e "${YELLOW}⚠${NC} RKHunter not found on system - AppImage will use system RKHunter if available"
+fi
 
 # Strip binaries to reduce size (optional)
 echo ""

@@ -553,6 +553,23 @@ class FileScanner:
                 ),
                 scan_time=0.001,  # Minimal time for skipped file
             )
+
+            # Invoke detailed progress callback for skipped files too
+            if self.detailed_progress_callback:
+                try:
+                    detail_info = {
+                        "type": "file_scanned",
+                        "current_file": str(file_path),
+                        "file_size": result.file_size,
+                        "scan_result": result.result.value,
+                    }
+                    self.detailed_progress_callback(detail_info)
+                except Exception as e:
+                    self.logger.debug(
+                        "Error invoking detailed progress callback for skipped file: %s",
+                        e,
+                    )
+
             if self.result_callback:
                 self.result_callback(result)
             return result
@@ -563,6 +580,22 @@ class FileScanner:
 
         # Record processed file for size monitoring
         self.size_monitor.record_processed_file(file_path)
+
+        # Invoke detailed progress callback for real-time UI updates
+        if self.detailed_progress_callback:
+            try:
+                file_size = (
+                    Path(file_path).stat().st_size if Path(file_path).exists() else 0
+                )
+                detail_info = {
+                    "type": "file_scanned",
+                    "current_file": str(file_path),
+                    "file_size": file_size,
+                    "scan_result": result.result.value,
+                }
+                self.detailed_progress_callback(detail_info)
+            except Exception as e:
+                self.logger.debug("Error invoking detailed progress callback: %s", e)
 
         # Handle infected files
         if result.result == ScanResult.INFECTED:
@@ -789,10 +822,18 @@ class FileScanner:
                         current_dir = str(
                             Path(file_path).parent.resolve()
                         )  # Use resolve() for consistent paths
+
+                        # Get file size
+                        try:
+                            file_size = Path(file_path).stat().st_size
+                        except (OSError, FileNotFoundError):
+                            file_size = 0
+
                         detail_info = {
                             "type": "file_scanned",
                             "current_directory": current_dir,
                             "current_file": Path(file_path).name,
+                            "file_size": file_size,
                             "files_completed": completed,
                             "files_remaining": files_remaining,
                             "total_files": len(file_paths),

@@ -19,8 +19,24 @@ export PYTHONPATH="$PYTHONPATH:$APPDIR/usr/lib/$PYTHON_VERSION/site-packages"
 # Set library path for bundled Python
 export LD_LIBRARY_PATH="$APPDIR/usr/lib:${LD_LIBRARY_PATH}"
 
-# Set PATH to use bundled Python
+# Set PATH to use bundled binaries (Python, ClamAV, RKHunter)
 export PATH="$APPDIR/usr/bin:$PATH"
+
+# ClamAV configuration
+if [ -d "$APPDIR/usr/share/clamav" ]; then
+    export CLAMAV_DB_DIR="$APPDIR/usr/share/clamav"
+fi
+if [ -d "$APPDIR/usr/etc/clamav" ]; then
+    export CLAMAV_CONF_DIR="$APPDIR/usr/etc/clamav"
+fi
+
+# RKHunter configuration
+if [ -d "$APPDIR/usr/share/rkhunter" ]; then
+    export RKHUNTER_DIR="$APPDIR/usr/share/rkhunter"
+fi
+
+# Mark that we're running in AppImage
+export APPIMAGE_RUNTIME="1"
 
 # SSL certificates
 if [ -f "$APPDIR/usr/lib/$PYTHON_VERSION/site-packages/certifi/cacert.pem" ]; then

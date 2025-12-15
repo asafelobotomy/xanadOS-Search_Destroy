@@ -123,7 +123,9 @@ class InstallationWorker(QThread):  # pylint: disable=too-many-instance-attribut
                 install_cmd = self.package_info.install_commands[self.distro]
 
             # Update progress
-            self.progress_updated.emit(f"Installing {self.package_info.display_name}...", 25)
+            self.progress_updated.emit(
+                f"Installing {self.package_info.display_name}...", 25
+            )
             self.output_updated.emit(f"Running: {install_cmd}")
 
             success = False
@@ -134,7 +136,9 @@ class InstallationWorker(QThread):  # pylint: disable=too-many-instance-attribut
                 # Parse the command properly for elevated execution
                 if install_cmd.startswith("sh -c"):
                     # Extract shell command from sh wrapper
-                    shell_cmd = install_cmd.split('"')[1]  # Extract the command between quotes
+                    shell_cmd = install_cmd.split('"')[
+                        1
+                    ]  # Extract the command between quotes
                     # Execute using shell with elevated_run
                     install_result = elevated_run(
                         ["sh", "-c", shell_cmd],
@@ -146,7 +150,9 @@ class InstallationWorker(QThread):  # pylint: disable=too-many-instance-attribut
                 else:
                     # Handle simple commands directly - no shell wrapper needed
                     cmd_parts = install_cmd.split()
-                    self.output_updated.emit(f"Executing command: {' '.join(cmd_parts)}")
+                    self.output_updated.emit(
+                        f"Executing command: {' '.join(cmd_parts)}"
+                    )
 
                     # For better GUI authentication, try elevated_run with retries
                     max_retries = 2
@@ -171,7 +177,9 @@ class InstallationWorker(QThread):  # pylint: disable=too-many-instance-attribut
                                     f"Attempt {attempt + 1} failed with code {install_result.returncode}"
                                 )
                                 if install_result.stderr:
-                                    self.output_updated.emit(f"Error: {install_result.stderr}")
+                                    self.output_updated.emit(
+                                        f"Error: {install_result.stderr}"
+                                    )
                                 if attempt < max_retries - 1:
                                     self.output_updated.emit(
                                         "Retrying with fresh authentication..."
@@ -181,7 +189,9 @@ class InstallationWorker(QThread):  # pylint: disable=too-many-instance-attribut
 
                                     time.sleep(1)  # Brief pause between attempts
                         except Exception as e:
-                            self.output_updated.emit(f"Attempt {attempt + 1} error: {e!s}")
+                            self.output_updated.emit(
+                                f"Attempt {attempt + 1} error: {e!s}"
+                            )
                             if attempt == max_retries - 1:
                                 raise  # Re-raise on final attempt
 
@@ -213,7 +223,9 @@ class InstallationWorker(QThread):  # pylint: disable=too-many-instance-attribut
                 success = False
 
             if success:
-                self.progress_updated.emit(f"Configuring {self.package_info.display_name}...", 75)
+                self.progress_updated.emit(
+                    f"Configuring {self.package_info.display_name}...", 75
+                )
 
                 # Run post-installation commands if any
                 if self.package_info.post_install_commands:
@@ -222,7 +234,8 @@ class InstallationWorker(QThread):  # pylint: disable=too-many-instance-attribut
                         try:
                             # Check if command needs elevated privileges
                             if any(
-                                keyword in cmd for keyword in ["freshclam", "systemctl", "sudo"]
+                                keyword in cmd
+                                for keyword in ["freshclam", "systemctl", "sudo"]
                             ):
                                 # Use elevated_run for commands that need privileges
                                 if " || " in cmd:
@@ -306,7 +319,9 @@ class InstallationWorker(QThread):  # pylint: disable=too-many-instance-attribut
 
                             # For ClamAV daemon, also handle freshclam service
                             if self.package_info.service_name == "clamav-daemon":
-                                self.output_updated.emit("Setting up ClamAV auto-update service...")
+                                self.output_updated.emit(
+                                    "Setting up ClamAV auto-update service..."
+                                )
                                 freshclam_enable = elevated_run(
                                     ["systemctl", "enable", "clamav-freshclam"],
                                     timeout=30,
@@ -315,7 +330,9 @@ class InstallationWorker(QThread):  # pylint: disable=too-many-instance-attribut
                                     gui=True,
                                 )
                                 if freshclam_enable.returncode == 0:
-                                    self.output_updated.emit("Enabled ClamAV auto-update service")
+                                    self.output_updated.emit(
+                                        "Enabled ClamAV auto-update service"
+                                    )
                                 else:
                                     self.output_updated.emit(
                                         "Note: ClamAV auto-update service setup skipped"
@@ -361,7 +378,9 @@ class ClamAVDaemonWorker(QThread):
     def run(self):
         """Configure ClamAV daemon."""
         try:
-            self.progress_updated.emit("Initializing ClamAV daemon configuration...", 10)
+            self.progress_updated.emit(
+                "Initializing ClamAV daemon configuration...", 10
+            )
             self.output_updated.emit("🔧 Importing ClamAV wrapper...")
 
             # Import ClamAV wrapper
@@ -380,13 +399,17 @@ class ClamAVDaemonWorker(QThread):
 
             # Update virus definitions first (required for daemon to start)
             self.progress_updated.emit("Downloading virus definitions...", 40)
-            self.output_updated.emit("📡 Downloading latest virus definitions (required for daemon)...")
+            self.output_updated.emit(
+                "📡 Downloading latest virus definitions (required for daemon)..."
+            )
 
             definitions_updated = wrapper.update_virus_definitions()
             if definitions_updated:
                 self.output_updated.emit("✅ Virus definitions updated successfully!")
             else:
-                self.output_updated.emit("⚠️ Virus definitions update failed, but continuing...")
+                self.output_updated.emit(
+                    "⚠️ Virus definitions update failed, but continuing..."
+                )
 
             # Start the daemon
             self.progress_updated.emit("Starting ClamAV daemon...", 70)
@@ -399,9 +422,13 @@ class ClamAVDaemonWorker(QThread):
                 self.output_updated.emit("✅ ClamAV daemon started successfully!")
                 self.progress_updated.emit("ClamAV daemon ready!", 100)
             else:
-                self.output_updated.emit("⚠️ Failed to start ClamAV daemon. Scanning will use slower direct mode.")
+                self.output_updated.emit(
+                    "⚠️ Failed to start ClamAV daemon. Scanning will use slower direct mode."
+                )
                 if not definitions_updated:
-                    self.output_updated.emit("ℹ️ Daemon startup failed - virus definitions may be missing.")
+                    self.output_updated.emit(
+                        "ℹ️ Daemon startup failed - virus definitions may be missing."
+                    )
                 self.progress_updated.emit("Configuration completed with warnings", 100)
 
             self.configuration_finished.emit("clamav", success)
@@ -454,7 +481,9 @@ class PackageCard(QFrame):
                 status = check_existing_installations()
                 clamav_status = status.get("clamav", {})
 
-                if clamav_status.get("installed", False) and not clamav_status.get("service_running", False):
+                if clamav_status.get("installed", False) and not clamav_status.get(
+                    "service_running", False
+                ):
                     self.daemon_needs_config = True
             except Exception:
                 pass
@@ -489,7 +518,9 @@ class PackageCard(QFrame):
 
         # Install checkbox (only if not installed)
         if not self.is_installed:
-            self.install_checkbox = QCheckBox(f"Install {self.package_info.display_name}")
+            self.install_checkbox = QCheckBox(
+                f"Install {self.package_info.display_name}"
+            )
             if self.package_info.is_critical:
                 self.install_checkbox.setChecked(True)
                 self.install_checkbox.setText(
@@ -500,10 +531,18 @@ class PackageCard(QFrame):
 
         # ClamAV daemon configuration checkbox (if installed but daemon not running)
         elif self.daemon_needs_config:
-            self.daemon_config_checkbox = QCheckBox("Start ClamAV Daemon for Better Performance")
-            self.daemon_config_checkbox.setChecked(True)  # Default to checked for better UX
-            self.daemon_config_checkbox.setStyleSheet("color: #f39c12; font-weight: bold;")
-            self.daemon_config_checkbox.stateChanged.connect(self.on_daemon_config_toggled)
+            self.daemon_config_checkbox = QCheckBox(
+                "Start ClamAV Daemon for Better Performance"
+            )
+            self.daemon_config_checkbox.setChecked(
+                True
+            )  # Default to checked for better UX
+            self.daemon_config_checkbox.setStyleSheet(
+                "color: #f39c12; font-weight: bold;"
+            )
+            self.daemon_config_checkbox.stateChanged.connect(
+                self.on_daemon_config_toggled
+            )
             layout.addWidget(self.daemon_config_checkbox)
 
             # Add explanation label for daemon benefits
@@ -513,7 +552,9 @@ class PackageCard(QFrame):
             )
             daemon_info_label.setObjectName("daemon_info_label")
             daemon_info_label.setWordWrap(True)
-            daemon_info_label.setStyleSheet("color: #666; font-size: 11px; margin: 5px 0px;")
+            daemon_info_label.setStyleSheet(
+                "color: #666; font-size: 11px; margin: 5px 0px;"
+            )
             layout.addWidget(daemon_info_label)
 
         self.setLayout(layout)
@@ -569,8 +610,12 @@ class SetupWizard(ThemedDialog):  # pylint: disable=too-many-instance-attributes
                 purpose=("Core virus scanning and real-time protection capabilities"),
                 install_commands={
                     "arch": "pacman -S --noconfirm clamav",
-                    "ubuntu": ('sh -c "apt update && apt install -y clamav clamav-daemon"'),
-                    "debian": ('sh -c "apt update && apt install -y clamav clamav-daemon"'),
+                    "ubuntu": (
+                        'sh -c "apt update && apt install -y clamav clamav-daemon"'
+                    ),
+                    "debian": (
+                        'sh -c "apt update && apt install -y clamav clamav-daemon"'
+                    ),
                     "fedora": "dnf install -y clamav clamav-update",
                     "opensuse": "zypper install -y clamav",
                     # Add fallback for unknown distributions
@@ -942,14 +987,21 @@ class SetupWizard(ThemedDialog):  # pylint: disable=too-many-instance-attributes
 
             # Fallback to content-based detection
             detected = "unknown"
-            if any(keyword in content for keyword in ["arch", "manjaro", "endeavour", "garuda"]):
+            if any(
+                keyword in content
+                for keyword in ["arch", "manjaro", "endeavour", "garuda"]
+            ):
                 detected = "arch"
-            elif any(keyword in content for keyword in ["ubuntu", "pop", "mint", "elementary"]):
+            elif any(
+                keyword in content
+                for keyword in ["ubuntu", "pop", "mint", "elementary"]
+            ):
                 detected = "ubuntu"
             elif "debian" in content or "raspbian" in content:
                 detected = "debian"
             elif any(
-                keyword in content for keyword in ["fedora", "centos", "rhel", "rocky", "alma"]
+                keyword in content
+                for keyword in ["fedora", "centos", "rhel", "rocky", "alma"]
             ):
                 detected = "fedora"
             elif "opensuse" in content or "suse" in content:
@@ -975,7 +1027,9 @@ class SetupWizard(ThemedDialog):  # pylint: disable=too-many-instance-attributes
 
         for pm, distro in package_managers.items():
             try:
-                result = run_secure(["which", pm], check=False, capture_output=True, timeout=3)
+                result = run_secure(
+                    ["which", pm], check=False, capture_output=True, timeout=3
+                )
                 if result.returncode == 0:
                     return distro
             except Exception:
@@ -997,7 +1051,9 @@ class SetupWizard(ThemedDialog):  # pylint: disable=too-many-instance-attributes
             "alpine": f"apk add {package}",
         }
 
-        return fallback_commands.get(pm_distro, f"echo 'Please install {package} manually'")
+        return fallback_commands.get(
+            pm_distro, f"echo 'Please install {package} manually'"
+        )
 
     def check_package_availability(self) -> dict[str, bool]:
         """Check which packages are already installed"""
@@ -1015,7 +1071,9 @@ class SetupWizard(ThemedDialog):  # pylint: disable=too-many-instance-attributes
                         "/usr/local/bin/rkhunter",
                         "/bin/rkhunter",
                     ]
-                    status[package_name] = any(os.path.exists(path) for path in rkhunter_paths)
+                    status[package_name] = any(
+                        os.path.exists(path) for path in rkhunter_paths
+                    )
                 else:
                     check_result = run_secure(
                         package_info.check_command.split(),
@@ -1098,8 +1156,12 @@ class SetupWizard(ThemedDialog):  # pylint: disable=too-many-instance-attributes
         try:
             # Prefer running pip as a module of current interpreter
             cmd = [sys.executable, "-m", "pip", "install", "--user", package]
-            result = run_secure(cmd, capture_output=True, text=True, check=False, timeout=900)
-            output = (result.stdout or "") + ("\n" + result.stderr if result.stderr else "")
+            result = run_secure(
+                cmd, capture_output=True, text=True, check=False, timeout=900
+            )
+            output = (result.stdout or "") + (
+                "\n" + result.stderr if result.stderr else ""
+            )
             return result.returncode == 0, output.strip()
         except Exception as e:  # pylint: disable=broad-exception-caught
             return False, str(e)
@@ -1379,7 +1441,9 @@ class SetupWizard(ThemedDialog):  # pylint: disable=too-many-instance-attributes
 
         # Get list of daemons to configure
         daemons_to_configure = [
-            name for name, card in self.package_cards.items() if card.should_configure_daemon()
+            name
+            for name, card in self.package_cards.items()
+            if card.should_configure_daemon()
         ]
 
         if not packages_to_install and not daemons_to_configure:
@@ -1393,7 +1457,9 @@ class SetupWizard(ThemedDialog):  # pylint: disable=too-many-instance-attributes
         # Build confirmation message
         confirmation_text = ""
         if packages_to_install:
-            package_names = [self.packages[name].display_name for name in packages_to_install]
+            package_names = [
+                self.packages[name].display_name for name in packages_to_install
+            ]
             confirmation_text += "Install the following packages?\n\n"
             confirmation_text += "\n".join(f"• {name}" for name in package_names)
 
@@ -1420,7 +1486,9 @@ class SetupWizard(ThemedDialog):  # pylint: disable=too-many-instance-attributes
         if reply == QMessageBox.StandardButton.Yes:
             self.show_installation_dialog(packages_to_install, daemons_to_configure)
 
-    def show_installation_dialog(self, packages_to_install: list[str], daemons_to_configure: list[str] = None):
+    def show_installation_dialog(
+        self, packages_to_install: list[str], daemons_to_configure: list[str] = None
+    ):
         """Show installation progress dialog."""
         if daemons_to_configure is None:
             daemons_to_configure = []
@@ -1428,7 +1496,9 @@ class SetupWizard(ThemedDialog):  # pylint: disable=too-many-instance-attributes
         self.installation_dialog = InstallationDialog(
             packages_to_install, self.packages, self.distro, self, daemons_to_configure
         )
-        self.installation_dialog.installation_complete.connect(self.on_installation_complete)
+        self.installation_dialog.installation_complete.connect(
+            self.on_installation_complete
+        )
         self.installation_dialog.exec()
 
     def on_installation_complete(self, results: dict[str, bool]):
@@ -1696,7 +1766,9 @@ class InstallationDialog(QDialog):  # pylint: disable=too-many-instance-attribut
         self.results[package_name] = success
 
         if success:
-            self.update_output(f"✅ {package_name} installation completed successfully!")
+            self.update_output(
+                f"✅ {package_name} installation completed successfully!"
+            )
         else:
             self.update_output(f"❌ {package_name} installation failed!")
 
@@ -1711,10 +1783,14 @@ class InstallationDialog(QDialog):  # pylint: disable=too-many-instance-attribut
 
         if success:
             if daemon_name == "clamav":
-                self.update_output("✅ ClamAV daemon started successfully! Scanning will be 3-10x faster.")
+                self.update_output(
+                    "✅ ClamAV daemon started successfully! Scanning will be 3-10x faster."
+                )
         else:
             if daemon_name == "clamav":
-                self.update_output("⚠️ ClamAV daemon startup failed. Will use regular scanning.")
+                self.update_output(
+                    "⚠️ ClamAV daemon startup failed. Will use regular scanning."
+                )
 
         self.current_daemon_index += 1
 
@@ -1821,6 +1897,7 @@ def show_setup_wizard_express(parent=None):
     Returns:
         bool: True if setup completed successfully, False otherwise
     """
+
     try:
         from PyQt6.QtCore import QTimer
 
@@ -2011,7 +2088,8 @@ def check_existing_installations():
                     )
                     enabled_states = ["enabled", "static", "enabled-runtime"]
                     status["ufw"]["enabled"] = (
-                        result.returncode == 0 and result.stdout.strip() in enabled_states
+                        result.returncode == 0
+                        and result.stdout.strip() in enabled_states
                     )
                 except (subprocess.TimeoutExpired, subprocess.SubprocessError):
                     pass
