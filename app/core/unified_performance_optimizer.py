@@ -228,7 +228,9 @@ class AdvancedMemoryManager:
 
             # Calculate improvement
             memory_freed = initial_mb - final_mb
-            improvement_percentage = (memory_freed / initial_mb * 100) if initial_mb > 0 else 0
+            improvement_percentage = (
+                (memory_freed / initial_mb * 100) if initial_mb > 0 else 0
+            )
 
             self.optimization_stats["memory_freed_mb"] += memory_freed
 
@@ -440,14 +442,18 @@ class DatabaseOptimizer:
             # Apply initial optimizations
             self._optimize_sqlite_database(pool_name)
 
-            self.logger.info(f"✅ Created optimized SQLite pool '{pool_name}' for {db_path}")
+            self.logger.info(
+                f"✅ Created optimized SQLite pool '{pool_name}' for {db_path}"
+            )
             return True
 
         except Exception as e:
             self.logger.error(f"Failed to create SQLite pool: {e}")
             return False
 
-    def create_postgresql_pool(self, connection_string: str, pool_name: str = "default") -> bool:
+    def create_postgresql_pool(
+        self, connection_string: str, pool_name: str = "default"
+    ) -> bool:
         """Create optimized PostgreSQL connection pool."""
         if not POSTGRESQL_AVAILABLE:
             self.logger.warning("PostgreSQL not available")
@@ -593,11 +599,15 @@ class DatabaseOptimizer:
                         cursor.execute(setting)
                         self.optimization_stats["optimizations_applied"] += 1
                     except Exception as e:
-                        self.logger.debug(f"PostgreSQL optimization failed: {setting} - {e}")
+                        self.logger.debug(
+                            f"PostgreSQL optimization failed: {setting} - {e}"
+                        )
 
                 conn.commit()
 
-            self.logger.info(f"🔧 Applied PostgreSQL optimizations to pool '{pool_name}'")
+            self.logger.info(
+                f"🔧 Applied PostgreSQL optimizations to pool '{pool_name}'"
+            )
 
         except Exception as e:
             self.logger.error(f"Failed to optimize PostgreSQL database: {e}")
@@ -606,7 +616,9 @@ class DatabaseOptimizer:
         """Analyze query performance and suggest optimizations."""
         analysis = {
             "total_queries": sum(stats["count"] for stats in self.query_stats.values()),
-            "total_time": sum(stats["total_time"] for stats in self.query_stats.values()),
+            "total_time": sum(
+                stats["total_time"] for stats in self.query_stats.values()
+            ),
             "slow_queries": [],
             "frequent_queries": [],
             "cache_hit_rate": 0.0,
@@ -626,7 +638,9 @@ class DatabaseOptimizer:
                 )
 
         # Find frequent queries
-        frequent = sorted(self.query_stats.items(), key=lambda x: x[1]["count"], reverse=True)[:10]
+        frequent = sorted(
+            self.query_stats.items(), key=lambda x: x[1]["count"], reverse=True
+        )[:10]
 
         for query, stats in frequent:
             analysis["frequent_queries"].append(
@@ -713,7 +727,7 @@ class SQLiteConnectionPool:
             elif len(self._in_use) < self.max_connections:
                 conn = self._create_connection()
             else:
-                raise Exception("No connections available")
+                raise ConnectionError("No connections available in pool")
 
             self._in_use.add(conn)
             return conn
@@ -849,7 +863,9 @@ class UnifiedPerformanceOptimizer:
         if len(self.optimization_results) == 0:
             return True
 
-        last_optimization = self.optimization_results[-1] if self.optimization_results else None
+        last_optimization = (
+            self.optimization_results[-1] if self.optimization_results else None
+        )
         if last_optimization:
             time_since_last = datetime.now() - last_optimization.details.get(
                 "timestamp", datetime.now()
@@ -894,7 +910,9 @@ class UnifiedPerformanceOptimizer:
             total_queries = sum(
                 stats["count"] for stats in self.database_optimizer.query_stats.values()
             )
-            cache_hit_rate = (cache_hits / total_queries * 100) if total_queries > 0 else 0
+            cache_hit_rate = (
+                (cache_hits / total_queries * 100) if total_queries > 0 else 0
+            )
 
             return PerformanceMetrics(
                 cpu_usage=cpu_usage,
@@ -912,7 +930,9 @@ class UnifiedPerformanceOptimizer:
             self.logger.error(f"Error getting performance metrics: {e}")
             return PerformanceMetrics()
 
-    def optimize_performance(self, force_aggressive: bool = False) -> OptimizationResult:
+    def optimize_performance(
+        self, force_aggressive: bool = False
+    ) -> OptimizationResult:
         """Perform comprehensive performance optimization."""
         start_time = time.time()
 
@@ -970,7 +990,8 @@ class UnifiedPerformanceOptimizer:
 
             result = OptimizationResult(
                 operation="comprehensive_optimization",
-                before_value=initial_metrics.memory_usage_mb + initial_metrics.cpu_usage,
+                before_value=initial_metrics.memory_usage_mb
+                + initial_metrics.cpu_usage,
                 after_value=final_metrics.memory_usage_mb + final_metrics.cpu_usage,
                 improvement_percentage=overall_improvement,
                 duration_ms=duration_ms,
@@ -1049,7 +1070,9 @@ class UnifiedPerformanceOptimizer:
             # This would update cache settings in a real implementation
             pass
 
-        self.logger.info(f"🔄 Performance mode changed: {old_mode.value} → {mode.value}")
+        self.logger.info(
+            f"🔄 Performance mode changed: {old_mode.value} → {mode.value}"
+        )
 
     def get_optimization_report(self) -> dict[str, Any]:
         """Generate comprehensive optimization report."""
@@ -1090,13 +1113,19 @@ class UnifiedPerformanceOptimizer:
             recommendations.append("Consider reducing memory usage or adding more RAM")
 
         if metrics.cpu_usage > 90:
-            recommendations.append("High CPU usage detected - consider optimizing algorithms")
+            recommendations.append(
+                "High CPU usage detected - consider optimizing algorithms"
+            )
 
         if metrics.cache_hit_rate < 50:
-            recommendations.append("Low cache hit rate - consider increasing cache size")
+            recommendations.append(
+                "Low cache hit rate - consider increasing cache size"
+            )
 
         if metrics.database_connections > 20:
-            recommendations.append("High database connection count - consider connection pooling")
+            recommendations.append(
+                "High database connection count - consider connection pooling"
+            )
 
         if not recommendations:
             recommendations.append("System performance is optimal")
@@ -1164,7 +1193,9 @@ async def demonstrate_performance_optimizer():
         # Force optimization
         result = optimizer.optimize_performance(force_aggressive=True)
         if result.success:
-            print(f"🎯 Optimization completed: {result.improvement_percentage:.1f}% improvement")
+            print(
+                f"🎯 Optimization completed: {result.improvement_percentage:.1f}% improvement"
+            )
 
         # Get final metrics
         final_metrics = optimizer.get_performance_metrics()
@@ -1177,9 +1208,13 @@ async def demonstrate_performance_optimizer():
         # Generate report
         report = optimizer.get_optimization_report()
         print(f"   Recent optimizations: {len(report['recent_optimizations'])}")
-        print(f"   Memory freed (total): {optimizer.memory_manager.optimization_stats['memory_freed_mb']:.1f}MB")
+        print(
+            f"   Memory freed (total): {optimizer.memory_manager.optimization_stats['memory_freed_mb']:.1f}MB"
+        )
         print(f"   GC runs: {optimizer.memory_manager.optimization_stats['gc_runs']}")
-        print(f"   Database cache hits: {optimizer.database_optimizer.optimization_stats['cache_hits']}")
+        print(
+            f"   Database cache hits: {optimizer.database_optimizer.optimization_stats['cache_hits']}"
+        )
         print("\n💡 Recommendations:")
         for rec in report["recommendations"]:
             print(f"   - {rec}")

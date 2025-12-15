@@ -95,14 +95,14 @@ sudo rpm -ivh ~/rpmbuild/RPMS/noarch/xanados-search-destroy-*.rpm
 
 ## 📦 Building DEB Packages
 
-### Automatic Build
+### Automatic Build (DEB)
 
 ```bash
 cd /home/solon/Documents/xanadOS-Search_Destroy
 ./packaging/debian/build-deb.sh
 ```
 
-### Manual Build
+### Manual Build (DEB)
 
 ```bash
 # Create build directory
@@ -137,14 +137,14 @@ sudo gdebi /tmp/xanados-search-destroy_*.deb
 
 ## 🏔️ Building AUR Packages
 
-### Automatic Build
+### Automatic Build (AUR)
 
 ```bash
 cd /home/solon/Documents/xanadOS-Search_Destroy
 ./packaging/aur/build-aur.sh
 ```
 
-### Manual Build
+### Manual Build (AUR)
 
 ```bash
 # Copy PKGBUILD to build directory
@@ -171,28 +171,37 @@ makepkg -si
 
 ### Publishing to AUR
 
-1. **Create AUR Account**: https://aur.archlinux.org/register
+1. **Create AUR Account**: [Register at AUR](https://aur.archlinux.org/register)
 2. **Setup SSH Key**: Add your SSH key to AUR account
 3. **Clone AUR Repository**:
+
    ```bash
    git clone ssh://aur@aur.archlinux.org/xanados-search-destroy.git
    cd xanados-search-destroy
    ```
+
 4. **Copy Files**:
+
    ```bash
    cp ../packaging/aur/PKGBUILD .
    cp ../packaging/aur/.SRCINFO .
    ```
+
 5. **Update Checksums**:
+
    ```bash
    updpkgsums
    makepkg --printsrcinfo > .SRCINFO
    ```
+
 6. **Test Build**:
+
    ```bash
    makepkg -si
    ```
+
 7. **Commit and Push**:
+
    ```bash
    git add PKGBUILD .SRCINFO
    git commit -m "Update to version X.Y.Z"
@@ -204,32 +213,39 @@ makepkg -si
 All packages include:
 
 ### Binaries & Libraries
+
 - Python package installed to site-packages
 - Main executable: `xanados-search-destroy`
 
 ### Desktop Integration
+
 - Desktop file: `/usr/share/applications/io.github.asafelobotomy.SearchAndDestroy.desktop`
 - Icons: `/usr/share/icons/hicolor/*/apps/` (16, 32, 48, 64, 128, SVG)
 - AppStream metadata: `/usr/share/metainfo/io.github.asafelobotomy.SearchAndDestroy.metainfo.xml`
 
 ### System Integration
+
 - Polkit policy: `/usr/share/polkit-1/actions/`
 - Systemd service: `/usr/lib/systemd/system/xanados-search-destroy-monitor.service`
 
 ### Configuration
+
 - `/etc/xanados-search-destroy/security_config.toml`
 - `/etc/xanados-search-destroy/monitoring_config.toml`
 - `/etc/xanados-search-destroy/gui_config.toml`
 
 ### YARA Rules
+
 - `/usr/share/xanados-search-destroy/yara_rules/malware_detection.yar`
 
 ### Runtime Directories
+
 - `/var/lib/xanados-search-destroy/` - Application data
 - `/var/lib/xanados-search-destroy/quarantine/` - Quarantined files
 - `/var/log/xanados-search-destroy/` - Log files
 
 ### Documentation
+
 - `/usr/share/doc/xanados-search-destroy/`
 - `/usr/share/licenses/xanados-search-destroy/` (or `/usr/share/doc/` on Debian)
 
@@ -310,12 +326,14 @@ pacman -Si xanados-search-destroy  # Show details
 ### RPM Build Issues
 
 **Problem**: Missing dependencies
+
 ```bash
 # Install build dependencies
 sudo dnf builddep packaging/rpm/xanados-search-destroy.spec
 ```
 
 **Problem**: Signature verification fails
+
 ```bash
 # Build without signature
 rpmbuild -ba --define '_gpg_name %{nil}' xanados-search-destroy.spec
@@ -324,12 +342,14 @@ rpmbuild -ba --define '_gpg_name %{nil}' xanados-search-destroy.spec
 ### DEB Build Issues
 
 **Problem**: Missing build dependencies
+
 ```bash
 # Install dependencies from control file
 sudo apt-get build-dep .
 ```
 
 **Problem**: Lintian warnings
+
 ```bash
 # Check package for issues
 lintian -i xanados-search-destroy_*.deb
@@ -338,12 +358,14 @@ lintian -i xanados-search-destroy_*.deb
 ### AUR Build Issues
 
 **Problem**: Checksum mismatch
+
 ```bash
 # Update checksums
 updpkgsums
 ```
 
 **Problem**: Missing dependencies
+
 ```bash
 # Install dependencies
 makepkg -s
@@ -352,14 +374,17 @@ makepkg -s
 ## 🎯 Distribution-Specific Notes
 
 ### Fedora
+
 - Uses DNF package manager
 - Requires `python3-pyqt6` from repositories
 
 ### Ubuntu/Debian
+
 - Uses APT package manager
 - May need to enable universe repository for some dependencies
 
 ### Arch Linux
+
 - Uses Pacman package manager
 - Most Python packages available in repositories
 - Some may need AUR helpers like `yay` or `paru`
@@ -384,6 +409,6 @@ To contribute packaging improvements:
 
 ## 📞 Support
 
-- **Issues**: https://github.com/asafelobotomy/xanadOS-Search_Destroy/issues
-- **Discussions**: https://github.com/asafelobotomy/xanadOS-Search_Destroy/discussions
-- **Wiki**: https://github.com/asafelobotomy/xanadOS-Search_Destroy/wiki
+- **Issues**: [GitHub Issues](https://github.com/asafelobotomy/xanadOS-Search_Destroy/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/asafelobotomy/xanadOS-Search_Destroy/discussions)
+- **Wiki**: [Project Wiki](https://github.com/asafelobotomy/xanadOS-Search_Destroy/wiki)

@@ -1,6 +1,7 @@
 # Packaging Directory
 
-This directory contains all packaging files for distributing xanadOS Search & Destroy across different Linux distributions.
+This directory contains all packaging files for distributing
+xanadOS Search & Destroy across different Linux distributions.
 
 ## 📦 Supported Package Formats
 
@@ -36,7 +37,7 @@ sudo pacman -U /tmp/xanados-search-destroy-aur/*.pkg.tar.zst
 
 ## 📁 Directory Structure
 
-```
+```text
 packaging/
 ├── rpm/                    # RPM packaging
 │   ├── xanados-search-destroy.spec
@@ -86,20 +87,24 @@ All packages include:
 ## 🔍 Package Contents
 
 ### Application Files
+
 - Python package in site-packages
 - Main executable: `xanados-search-destroy`
 - Desktop launcher with quick actions
 
 ### Configuration
+
 - `/etc/xanados-search-destroy/*.toml` - Configuration files
 - `/usr/share/xanados-search-destroy/yara_rules/` - YARA detection rules
 
 ### Runtime Directories
+
 - `/var/lib/xanados-search-destroy/` - Application data
 - `/var/lib/xanados-search-destroy/quarantine/` - Quarantine (secure)
 - `/var/log/xanados-search-destroy/` - Log files
 
 ### System Integration
+
 - Desktop file with actions (Quick Scan, Update, Real-Time)
 - Icons in multiple sizes (16, 32, 48, 64, 128, SVG)
 - Polkit policy for privilege elevation
@@ -109,17 +114,21 @@ All packages include:
 ## 🎯 Quick Reference
 
 ### Version Information
+
 Version is automatically read from `VERSION` file in project root.
 
 ### Build Requirements
 
 **RPM:**
+
 - rpm-build, rpmdevtools, desktop-file-utils, libappstream-glib
 
 **DEB:**
+
 - build-essential, debhelper, devscripts, dh-python, appstream
 
 **AUR:**
+
 - base-devel, git
 
 ### Testing Packages

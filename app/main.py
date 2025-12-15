@@ -2,6 +2,7 @@
 """Application entry point for xanadOS Search & Destroy (PyQt6 GUI)."""
 
 import argparse
+import logging
 import os
 import sys
 from pathlib import Path
@@ -17,6 +18,7 @@ if str(project_root) not in sys.path:
 from app.core.single_instance import SingleInstanceManager
 
 # Import version info
+logger = logging.getLogger(__name__)
 
 # Suppress Wayland popup warnings if on Wayland
 if os.environ.get("XDG_SESSION_TYPE") == "wayland":
@@ -45,7 +47,9 @@ def main() -> None:
     instance_manager = SingleInstanceManager()
 
     if instance_manager.is_already_running():
-        print("Application is already running. Bringing existing instance to front...")
+        logger.info(
+            "Application is already running. Bringing existing instance to front..."
+        )
         instance_manager.notify_existing_instance()
         sys.exit(0)  # Exit silently, existing instance will be shown
 
@@ -92,7 +96,7 @@ def main() -> None:
     setup_completed = show_setup_wizard()
     if not setup_completed:
         # User cancelled setup, exit gracefully
-        print("Setup cancelled by user")
+        logger.info("Setup cancelled by user")
         splash.close()
         sys.exit(0)
 

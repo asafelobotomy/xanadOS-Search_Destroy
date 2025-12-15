@@ -246,18 +246,21 @@ if __name__ == "__main__":
         level=logging.INFO,
         format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
     )
+    logger = logging.getLogger(__name__)
 
     results = run_full_migration()
 
-    print("=== Configuration Migration Results ===")
+    # Log migration results
+    logger.info("Configuration Migration Results")
     for key, value in results.items():
         if key == "validation":
-            print(f"{key}:")
+            logger.info(f"{key}:")
             for subkey, subvalue in value.items():
-                print(f"  {subkey}: {subvalue}")
+                logger.info(f"  {subkey}: {subvalue}")
         else:
-            print(f"{key}: {value}")
+            logger.info(f"{key}: {value}")
 
     # Exit with error code if critical migrations failed
     if not (results["database_migration"] and results["config_generated"]):
+        logger.error("Critical migration failed")
         sys.exit(1)

@@ -1528,14 +1528,14 @@ class SetupWizard(ThemedDialog):  # pylint: disable=too-many-instance-attributes
 
             save_config(config)
         except OSError as e:
-            print(f"Warning: Could not save setup completion status: {e}")
+            logger.warning(f"Could not save setup completion status: {e}")
 
         # Force refresh of system status in main application
         try:
             # Clear RKHunter cache to force fresh detection
 
             rkhunter_monitor.get_status_non_invasive(force_refresh=True)
-            print("✅ Forced RKHunter status refresh")
+            logger.info("Forced RKHunter status refresh")
 
             # Also clear any other system status caches
             cache_files = [
@@ -1546,10 +1546,10 @@ class SetupWizard(ThemedDialog):  # pylint: disable=too-many-instance-attributes
             for cache_file in cache_files:
                 if cache_file.exists():
                     cache_file.unlink()
-                    print(f"✅ Cleared cache file: {cache_file.name}")
+                    logger.debug(f"Cleared cache file: {cache_file.name}")
 
         except Exception as e:  # pylint: disable=broad-exception-caught
-            print(f"Warning: Could not refresh system status: {e}")
+            logger.warning(f"Could not refresh system status: {e}")
 
         message = []
         if successful:

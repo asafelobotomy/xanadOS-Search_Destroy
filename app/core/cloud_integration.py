@@ -914,7 +914,8 @@ class CloudIntegrationSystem:
                         return True
 
                     elif self.cloud_config.provider == CloudProvider.CUSTOM_API:
-                        assert self.session is not None
+                        if self.session is None:
+                            raise RuntimeError("Session not initialized for cloud API")
                         async with self.session.put(
                             f"{self.cloud_config.endpoint_url}/{path}",
                             data=data,
@@ -947,7 +948,8 @@ class CloudIntegrationSystem:
                         return response["Body"].read()
 
                     elif self.cloud_config.provider == CloudProvider.CUSTOM_API:
-                        assert self.session is not None
+                        if self.session is None:
+                            raise RuntimeError("Session not initialized for cloud API")
                         async with self.session.get(
                             f"{self.cloud_config.endpoint_url}/{path}",
                             headers={
@@ -1015,7 +1017,8 @@ class CloudIntegrationSystem:
                 )
                 return []
 
-            assert self.session is not None
+            if self.session is None:
+                raise RuntimeError("HTTP session not initialized for VirusTotal API")
             async with self.session.get(url, params=params) as response:
                 if response.status == 200:
                     data = await response.json()

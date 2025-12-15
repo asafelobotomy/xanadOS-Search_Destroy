@@ -298,7 +298,10 @@ class StartupProgressTracker:
             self.phase_times[phase] = time.time() - self.start_time
 
         self.splash.update_progress(phase)
-        print(f"✅ Phase '{phase}' completed in {self.phase_times.get(phase, 0):.2f}s")
+        # Debug logging instead of print for production
+        logger.debug(
+            f"Phase '{phase}' completed in {self.phase_times.get(phase, 0):.2f}s"
+        )
 
     def get_total_time(self) -> float:
         """Get total startup time."""
@@ -307,9 +310,9 @@ class StartupProgressTracker:
         return 0.0
 
     def print_summary(self):
-        """Print startup performance summary."""
+        """Log startup performance summary."""
         total_time = self.get_total_time()
-        print("\n🚀 Startup Performance Summary:")
-        print(f"Total startup time: {total_time:.2f}s")
+        logger.info("Startup Performance Summary")
+        logger.info(f"Total startup time: {total_time:.2f}s")
         for phase, time_taken in self.phase_times.items():
-            print(f"  {phase}: {time_taken:.2f}s")
+            logger.debug(f"  {phase}: {time_taken:.2f}s")

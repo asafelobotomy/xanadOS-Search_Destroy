@@ -125,7 +125,9 @@ class PerformanceOptimizer:
 
             # Network activity (simplified)
             net_io = psutil.net_io_counters()
-            network_activity = (net_io.bytes_sent + net_io.bytes_recv) / (1024 * 1024)  # MB
+            network_activity = (net_io.bytes_sent + net_io.bytes_recv) / (
+                1024 * 1024
+            )  # MB
 
             # Process count
             active_processes = len(psutil.pids())
@@ -151,9 +153,13 @@ class PerformanceOptimizer:
 
         except Exception as e:
             self.logger.error(f"Error analyzing system health: {e}")
-            return SystemHealth(0, 0, 0, 0, 0, ThreatLevel.LOW, "balanced", datetime.now())
+            return SystemHealth(
+                0, 0, 0, 0, 0, ThreatLevel.LOW, "balanced", datetime.now()
+            )
 
-    def _assess_threat_level(self, cpu_usage: float, memory_usage: float) -> ThreatLevel:
+    def _assess_threat_level(
+        self, cpu_usage: float, memory_usage: float
+    ) -> ThreatLevel:
         """Assess current threat level based on system activity."""
         # High resource usage might indicate malicious activity
         if cpu_usage > 90 or memory_usage > 90:
@@ -253,7 +259,9 @@ class IntegratedProtectionManager:
             # Optimize initial settings
             await self._optimize_settings()
 
-            self.logger.info("✅ Integrated Protection Manager initialized successfully")
+            self.logger.info(
+                "✅ Integrated Protection Manager initialized successfully"
+            )
             return True
 
         except Exception as e:
@@ -270,7 +278,7 @@ class IntegratedProtectionManager:
 
             # Start file system monitoring
             if self.file_watcher is None or not self.file_watcher.start_monitoring():
-                raise Exception("Failed to start file system monitoring")
+                raise RuntimeError("Failed to start file system monitoring")
 
             # Start protection engine
             if self.protection_engine is not None:
@@ -278,7 +286,9 @@ class IntegratedProtectionManager:
 
             # Start background monitoring tasks
             self.health_monitor_task = asyncio.create_task(self._health_monitor_loop())
-            self.performance_task = asyncio.create_task(self._performance_monitor_loop())
+            self.performance_task = asyncio.create_task(
+                self._performance_monitor_loop()
+            )
 
             self.is_running = True
             self.start_time = time.time()
@@ -417,7 +427,9 @@ class IntegratedProtectionManager:
                 self.logger.error(f"Error in performance monitor loop: {e}")
                 await asyncio.sleep(10.0)
 
-    def _update_performance_averages(self, cpu_usage: float, memory_usage: float) -> None:
+    def _update_performance_averages(
+        self, cpu_usage: float, memory_usage: float
+    ) -> None:
         """Update rolling performance averages."""
         # Simple exponential moving average
         alpha = 0.1  # Smoothing factor
@@ -427,7 +439,8 @@ class IntegratedProtectionManager:
         )
 
         self.performance_metrics["memory_usage_avg"] = (
-            alpha * memory_usage + (1 - alpha) * self.performance_metrics["memory_usage_avg"]
+            alpha * memory_usage
+            + (1 - alpha) * self.performance_metrics["memory_usage_avg"]
         )
 
     async def _check_optimization_opportunities(self) -> None:
@@ -589,7 +602,9 @@ async def demonstrate_integrated_protection() -> None:
                 # Show status
                 status = protection_manager.get_status()
                 print("\n📊 Final Status:")
-                print(f"   Files scanned: {status['performance_metrics']['files_scanned']}")
+                print(
+                    f"   Files scanned: {status['performance_metrics']['files_scanned']}"
+                )
                 print(f"   Uptime: {status['system_status']['uptime_seconds']:.1f}s")
                 print(f"   Current mode: {status['system_status']['current_mode']}")
                 print(f"   CPU usage: {status['system_health']['cpu_usage']:.1f}%")
