@@ -467,6 +467,8 @@ platform = "linux"
 mypy_path = ["app", "tests"]
 packages = ["app"]
 namespace_packages = true
+# Exclude directories from type checking
+exclude = '^(archive/|logs/|dev/|packaging/|scripts/)'
 
 # Untyped definitions
 disallow_untyped_calls = true
@@ -527,9 +529,6 @@ ignore_missing_imports = true
 [[tool.mypy.overrides]]
 module = ["tests.*", "dev.*", "archive.*"]
 ignore_errors = true
-
-# Exclude directories that are currently untyped to keep strict checks actionable
-exclude = '^(archive/|logs/|dev/|packaging/|scripts/)'
 
 [tool.pytest.ini_options]
 # Comprehensive test configuration

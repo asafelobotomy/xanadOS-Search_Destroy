@@ -69,18 +69,18 @@ class ModernSplashScreen(QSplashScreen):
 
         # Load and draw the logo
         try:
-            # Try multiple paths for logo (AppImage and development)
+            # Try multiple paths for logo
             logo_paths = [
-                # AppImage path (from app/gui/ up to usr/app/icons/)
+                # Icons directory
                 Path(__file__).parent.parent.parent
                 / "icons"
                 / "io.github.asafelobotomy.SearchAndDestroy.png",
-                # Development path
+                # Packaging icons path
                 Path(__file__).parent.parent.parent
                 / "packaging"
                 / "icons"
                 / "io.github.asafelobotomy.SearchAndDestroy.png",
-                # AppImage system path
+                # System installation path
                 Path(
                     "/usr/share/icons/hicolor/128x128/apps/xanadOS-Search-Destroy.png"
                 ),
@@ -170,21 +170,21 @@ class ModernSplashScreen(QSplashScreen):
         try:
             # Try to load a larger icon (128x128 or fallback to the main icon)
             large_logo_paths = [
-                # AppImage path (from app/gui/ up to usr/app/icons/)
+                # Icons directory
                 Path(__file__).parent.parent.parent
                 / "icons"
                 / "io.github.asafelobotomy.SearchAndDestroy-128.png",
-                # Development path
+                # Packaging icons path
                 Path(__file__).parent.parent.parent
                 / "packaging"
                 / "icons"
                 / "io.github.asafelobotomy.SearchAndDestroy-128.png",
-                # Development path - org.xanados version
+                # Packaging icons path - org.xanados version
                 Path(__file__).parent.parent.parent
                 / "packaging"
                 / "icons"
                 / "org.xanados.SearchAndDestroy-128.png",
-                # AppImage system path
+                # System installation path
                 Path(
                     "/usr/share/icons/hicolor/128x128/apps/xanadOS-Search-Destroy.png"
                 ),

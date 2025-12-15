@@ -956,18 +956,18 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
         self.setMinimumSize(1000, 750)
         self.resize(1200, 850)
 
-        # Set window icon - support both dev and AppImage paths
+        # Set window icon - support both dev and system installation paths
         icon_paths = [
-            # AppImage path (relative to usr/app)
+            # Icons directory
             Path(__file__).parent.parent
             / "icons"
             / "io.github.asafelobotomy.SearchAndDestroy.svg",
-            # Development path
+            # Packaging icons path
             Path(__file__).parent.parent.parent
             / "packaging"
             / "icons"
             / "io.github.asafelobotomy.SearchAndDestroy.svg",
-            # AppImage alternate path
+            # System installation path
             Path("/usr/share/icons/hicolor/scalable/apps/xanadOS-Search-Destroy.svg"),
         ]
         icon_path = None
@@ -2894,6 +2894,8 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
             self.protection_status_label.setStyleSheet(
                 f"color: {self.get_theme_color('error')}; font-weight: bold; font-size: 12px; padding: 5px;"
             )
+
+    def on_threat_detected(self, file_path: str, threat_name: str):
         """Handle threat detection callback."""
         message = f"🚨 THREAT DETECTED: {threat_name} in {file_path}"
         self.add_activity_message(message)

@@ -23,7 +23,7 @@ if os.environ.get("XDG_SESSION_TYPE") == "wayland":
     os.environ.setdefault("QT_WAYLAND_DISABLE_WINDOWDECORATION", "1")
 
 
-def main():
+def main() -> None:
     """Launch the application with single-instance guard and splash workflow."""
     # Parse command-line arguments first
     parser = argparse.ArgumentParser(
@@ -35,11 +35,11 @@ def main():
     parser.add_argument(
         "--skip-policy-check",
         action="store_true",
-        help="Skip PolicyKit policy installation check (AppImage only)",
+        help="Skip PolicyKit policy installation check",
     )
 
-    # Parse arguments before initializing GUI
-    args = parser.parse_args()
+    # Parse arguments (currently unused but reserved for future features)
+    _ = parser.parse_args()
 
     # Check for existing instance before creating QApplication
     instance_manager = SingleInstanceManager()
