@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Copyright 2024 xanadOS Team -->
+<component type="desktop-application">
+  <id>io.github.asafelobotomy.SearchAndDestroy</id>
+  
+  <name>xanadOS Search &amp; Destroy</name>
+  <summary>Comprehensive Linux security scanner and system protection suite</summary>
+  
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>GPL-3.0-or-later</project_license>
+  
+  <description>
+    <p>
+      xanadOS Search &amp; Destroy is a powerful and user-friendly security scanner 
+      that brings enterprise-grade malware detection to Linux desktop users and 
+      system administrators.
+    </p>
+    <p>Features include:</p>
+    <ul>
+      <li>ClamAV virus and malware scanning with modern PyQt6 GUI</li>
+      <li>Real-time file system monitoring and protection</li>
+      <li>RKHunter rootkit detection integration</li>
+      <li>YARA heuristic malware detection engine</li>
+      <li>Hybrid multi-engine scanning (ClamAV + YARA)</li>
+      <li>Smart scan result caching (70-80% faster rescans)</li>
+      <li>Adaptive worker thread scaling for optimal performance</li>
+      <li>System load-aware scanning with automatic throttling</li>
+      <li>Comprehensive performance metrics and reporting</li>
+      <li>Scheduled security scans</li>
+      <li>Quarantine management for detected threats</li>
+      <li>Multiple scan modes: Quick, Full, and Custom</li>
+    </ul>
+    <p>
+      Designed for ease of use while providing powerful features for advanced users.
+      Perfect for protecting your desktop, laptop, or server from malware and security threats.
+    </p>
+  </description>
+  
+  <launchable type="desktop-id">io.github.asafelobotomy.SearchAndDestroy.desktop</launchable>
+  
+  <screenshots>
+    <screenshot type="default">
+      <caption>Main Dashboard - System Overview</caption>
+      <image>https://raw.githubusercontent.com/asafelobotomy/xanadOS-Search_Destroy/master/docs/screenshots/dashboard.png</image>
+    </screenshot>
+    <screenshot>
+      <caption>Scan Tab - Active Security Scan</caption>
+      <image>https://raw.githubusercontent.com/asafelobotomy/xanadOS-Search_Destroy/master/docs/screenshots/scan-tab.png</image>
+    </screenshot>
+    <screenshot>
+      <caption>Real-Time Protection Monitor</caption>
+      <image>https://raw.githubusercontent.com/asafelobotomy/xanadOS-Search_Destroy/master/docs/screenshots/realtime-protection.png</image>
+    </screenshot>
+  </screenshots>
+  
+  <url type="homepage">https://github.com/asafelobotomy/xanadOS-Search_Destroy</url>
+  <url type="bugtracker">https://github.com/asafelobotomy/xanadOS-Search_Destroy/issues</url>
+  <url type="help">https://github.com/asafelobotomy/xanadOS-Search_Destroy/wiki</url>
+  <url type="donation">https://github.com/sponsors/asafelobotomy</url>
+  <url type="vcs-browser">https://github.com/asafelobotomy/xanadOS-Search_Destroy</url>
+  
+  <developer id="org.xanados">
+    <name>xanadOS Team</name>
+  </developer>
+  
+  <categories>
+    <category>System</category>
+    <category>Security</category>
+    <category>Utility</category>
+  </categories>
+  
+  <keywords>
+    <keyword>security</keyword>
+    <keyword>antivirus</keyword>
+    <keyword>malware</keyword>
+    <keyword>scanner</keyword>
+    <keyword>clamav</keyword>
+    <keyword>rkhunter</keyword>
+    <keyword>protection</keyword>
+    <keyword>virus</keyword>
+    <keyword>yara</keyword>
+    <keyword>rootkit</keyword>
+  </keywords>
+  
+  <provides>
+    <binary>xanados-search-destroy</binary>
+  </provides>
+  
+  <requires>
+    <display_length compare="ge">768</display_length>
+  </requires>
+  
+  <recommends>
+    <control>keyboard</control>
+    <control>pointing</control>
+  </recommends>
+  
+  <content_rating type="oars-1.1" />
+  
+  <releases>
+    <release version="0.3.0" date="2024-12-15">
+      <description>
+        <p>Major performance and security update:</p>
+        <ul>
+          <li>Real-Time Protection optimizations (Phases 1-4)</li>
+          <li>Scan result caching (70-80% performance improvement)</li>
+          <li>Smart file prioritization and pre-processing</li>
+          <li>YARA heuristic detection engine integration</li>
+          <li>Hybrid multi-engine scanner (ClamAV + YARA)</li>
+          <li>System load monitoring and adaptive throttling</li>
+          <li>Adaptive worker thread scaling (2-8 workers)</li>
+          <li>Comprehensive performance metrics tracking</li>
+          <li>Scan safety features (prevent concurrent scans)</li>
+          <li>Real-time file size display during scanning</li>
+          <li>Fixed Update Definitions for ClamAV freshclam daemon</li>
+          <li>Improved GUI responsiveness and user experience</li>
+        </ul>
+      </description>
+    </release>
+    <release version="0.2.0" date="2024-11-01">
+      <description>
+        <p>Initial public release:</p>
+        <ul>
+          <li>Modern PyQt6 GUI for ClamAV scanning</li>
+          <li>RKHunter integration for rootkit detection</li>
+          <li>Real-time file system monitoring</li>
+          <li>Quarantine management</li>
+          <li>Scheduled scan support</li>
+        </ul>
+      </description>
+    </release>
+  </releases>
+  
+  <update_contact>dev@xanados.org</update_contact>
+</component>

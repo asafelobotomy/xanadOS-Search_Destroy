@@ -1,0 +1,35 @@
+[Unit]
+Description=xanadOS Search & Destroy Real-Time Protection Monitor
+Documentation=https://github.com/asafelobotomy/xanadOS-Search_Destroy
+After=network.target clamav-daemon.service
+
+[Service]
+Type=simple
+User=root
+Group=root
+
+# Main service executable
+ExecStart=/usr/bin/python3 -m app.monitoring.real_time_monitor
+
+# Restart on failure
+Restart=on-failure
+RestartSec=10s
+
+# Security hardening
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=/var/lib/xanados-search-destroy /var/log/xanados-search-destroy
+
+# Resource limits
+MemoryLimit=512M
+CPUQuota=50%
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=xanados-rt-monitor
+
+[Install]
+WantedBy=multi-user.target

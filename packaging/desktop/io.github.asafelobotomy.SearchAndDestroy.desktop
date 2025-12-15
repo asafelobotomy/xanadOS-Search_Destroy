@@ -1,0 +1,37 @@
+[Desktop Entry]
+Version=1.5
+Type=Application
+Name=xanadOS Search & Destroy
+GenericName=Security Scanner
+Comment=Comprehensive Linux security scanner and system protection suite
+Keywords=security;antivirus;malware;scanner;clamav;rkhunter;protection;virus;
+Icon=io.github.asafelobotomy.SearchAndDestroy
+Exec=xanados-search-destroy
+Terminal=false
+Categories=System;Security;Utility;
+StartupNotify=true
+StartupWMClass=xanados-search-destroy
+
+# Desktop Actions
+Actions=QuickScan;UpdateDefinitions;RealTimeProtection;
+
+[Desktop Action QuickScan]
+Name=Quick Scan
+Exec=xanados-search-destroy --quick-scan
+Icon=io.github.asafelobotomy.SearchAndDestroy
+
+[Desktop Action UpdateDefinitions]
+Name=Update Virus Definitions
+Exec=xanados-search-destroy --update-definitions
+Icon=io.github.asafelobotomy.SearchAndDestroy
+
+[Desktop Action RealTimeProtection]
+Name=Real-Time Protection
+Exec=xanados-search-destroy --real-time
+Icon=io.github.asafelobotomy.SearchAndDestroy
+
+# Additional metadata
+X-GNOME-FullName=xanadOS Search & Destroy Security Scanner
+X-GNOME-UsesNotifications=true
+X-KDE-SubstituteUID=false
+X-KDE-Username=

@@ -1,0 +1,72 @@
+Source: xanados-search-destroy
+Section: admin
+Priority: optional
+Maintainer: xanadOS Team <dev@xanados.org>
+Build-Depends: debhelper-compat (= 13),
+               dh-python,
+               python3-all (>= 3.13),
+               python3-setuptools,
+               python3-pip,
+               python3-wheel,
+               desktop-file-utils,
+               appstream
+Standards-Version: 4.6.2
+Homepage: https://github.com/asafelobotomy/xanadOS-Search_Destroy
+Vcs-Browser: https://github.com/asafelobotomy/xanadOS-Search_Destroy
+Vcs-Git: https://github.com/asafelobotomy/xanadOS-Search_Destroy.git
+Rules-Requires-Root: no
+
+Package: xanados-search-destroy
+Architecture: all
+Depends: ${misc:Depends},
+         ${python3:Depends},
+         python3 (>= 3.13),
+         python3-pyqt6 (>= 6.9.1),
+         python3-requests (>= 2.32.0),
+         python3-psutil (>= 6.1.0),
+         python3-cryptography (>= 44.0.0),
+         python3-yaml (>= 6.0.2),
+         python3-click (>= 8.1.7),
+         python3-rich (>= 13.9.4),
+         python3-colorama (>= 0.4.6),
+         python3-tabulate (>= 0.9.0),
+         python3-numpy (>= 2.2.0),
+         python3-schedule (>= 1.2.2),
+         python3-aiohttp (>= 3.11.0),
+         python3-watchdog (>= 6.0.0),
+         python3-dnspython (>= 2.8.0),
+         python3-dotenv (>= 1.0.1),
+         clamav (>= 0.103.0),
+         clamav-daemon,
+         clamav-freshclam,
+         rkhunter (>= 1.4.6),
+         inotify-tools,
+         sudo,
+         policykit-1
+Recommends: chkrootkit,
+            lynis,
+            aide
+Description: Comprehensive Linux security scanner and system protection suite
+ xanadOS Search & Destroy is a comprehensive security scanner and system
+ protection suite for Linux. It provides:
+ .
+  * ClamAV virus and malware scanning with modern GUI
+  * Real-time file system monitoring and protection
+  * RKHunter rootkit detection integration
+  * System integrity monitoring
+  * Scheduled security scans
+  * Quarantine management for threats
+  * Comprehensive security reporting
+  * Modern PyQt6 graphical interface
+ .
+ Designed for both desktop users and system administrators who need
+ powerful security tools with an intuitive interface.
+ .
+ Features include:
+  - Smart scan result caching (70-80% performance improvement)
+  - YARA heuristic malware detection
+  - Hybrid multi-engine scanning (ClamAV + YARA)
+  - Adaptive worker thread scaling
+  - System load-aware scanning
+  - Real-time performance metrics
+  - Prevention of concurrent scans

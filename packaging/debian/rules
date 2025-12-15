@@ -1,0 +1,78 @@
+#!/usr/bin/make -f
+# Debian rules for xanadOS Search & Destroy
+
+# Enable all hardening options
+export DEB_BUILD_MAINT_OPTIONS = hardening=+all
+
+# Python 3 settings
+export PYBUILD_NAME=xanados-search-destroy
+export PYBUILD_DESTDIR=debian/xanados-search-destroy
+
+%:
+	dh $@ --with python3 --buildsystem=pybuild
+
+override_dh_auto_clean:
+	dh_auto_clean
+	rm -rf build/
+	rm -rf *.egg-info/
+	find . -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null || true
+
+override_dh_auto_install:
+	dh_auto_install
+	
+	# Install desktop file
+	install -D -m 0644 packaging/desktop/io.github.asafelobotomy.SearchAndDestroy.desktop \
+		debian/xanados-search-destroy/usr/share/applications/io.github.asafelobotomy.SearchAndDestroy.desktop
+	
+	# Install icons
+	for size in 16 32 48 64 128; do \
+		install -D -m 0644 packaging/icons/io.github.asafelobotomy.SearchAndDestroy-$${size}.png \
+			debian/xanados-search-destroy/usr/share/icons/hicolor/$${size}x$${size}/apps/io.github.asafelobotomy.SearchAndDestroy.png; \
+	done
+	
+	# Install SVG icon
+	install -D -m 0644 packaging/icons/io.github.asafelobotomy.SearchAndDestroy.svg \
+		debian/xanados-search-destroy/usr/share/icons/hicolor/scalable/apps/io.github.asafelobotomy.SearchAndDestroy.svg
+	
+	# Install AppStream metadata
+	install -D -m 0644 packaging/appdata/io.github.asafelobotomy.SearchAndDestroy.metainfo.xml \
+		debian/xanados-search-destroy/usr/share/metainfo/io.github.asafelobotomy.SearchAndDestroy.metainfo.xml
+	
+	# Install polkit policy
+	install -D -m 0644 config/io.github.asafelobotomy.searchanddestroy.policy \
+		debian/xanados-search-destroy/usr/share/polkit-1/actions/io.github.asafelobotomy.searchanddestroy.policy
+	
+	# Install configuration files
+	install -D -m 0644 config/security_config.toml \
+		debian/xanados-search-destroy/etc/xanados-search-destroy/security_config.toml
+	install -D -m 0644 config/monitoring_config.toml \
+		debian/xanados-search-destroy/etc/xanados-search-destroy/monitoring_config.toml
+	install -D -m 0644 config/gui_config.toml \
+		debian/xanados-search-destroy/etc/xanados-search-destroy/gui_config.toml
+	
+	# Install YARA rules
+	install -D -m 0644 config/yara_rules/malware_detection.yar \
+		debian/xanados-search-destroy/usr/share/xanados-search-destroy/yara_rules/malware_detection.yar
+	
+	# Install systemd service
+	install -D -m 0644 packaging/systemd/xanados-search-destroy-monitor.service \
+		debian/xanados-search-destroy/lib/systemd/system/xanados-search-destroy-monitor.service
+	
+	# Install documentation
+	install -D -m 0644 README.md debian/xanados-search-destroy/usr/share/doc/xanados-search-destroy/README.md
+	install -D -m 0644 CHANGELOG.md debian/xanados-search-destroy/usr/share/doc/xanados-search-destroy/changelog
+
+override_dh_installdocs:
+	dh_installdocs
+	# Compress changelog
+	gzip -9 -n debian/xanados-search-destroy/usr/share/doc/xanados-search-destroy/changelog
+
+override_dh_installchangelogs:
+	# Skip - we handle this in override_dh_installdocs
+
+override_dh_python3:
+	dh_python3 --requires=pyproject.toml
+
+# Skip tests during build (can be run separately)
+override_dh_auto_test:
+	@echo "Skipping tests during package build"

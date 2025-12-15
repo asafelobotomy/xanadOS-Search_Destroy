@@ -4382,10 +4382,20 @@ System        {perf_status}"""
             self.scan_toggle_btn.setText("⏹️ Stop Scan")
             self.scan_toggle_btn.setObjectName("dangerButton")
             print("🔴 Button updated to Stop Scan mode")
+            
+            # Disable RKHunter scan button during ClamAV scan for safety
+            if hasattr(self, "rkhunter_scan_btn"):
+                self.rkhunter_scan_btn.setEnabled(False)
+                print("🔒 RKHunter Scan button disabled during active scan")
         else:
             self.scan_toggle_btn.setText("🚀 Start Scan")
             self.scan_toggle_btn.setObjectName("primaryButton")
             print("🟢 Button updated to Start Scan mode")
+            
+            # Re-enable RKHunter scan button when scan completes
+            if hasattr(self, "rkhunter_scan_btn"):
+                self.rkhunter_scan_btn.setEnabled(True)
+                print("🔓 RKHunter Scan button re-enabled")
 
         # Reapply style to pick up the new object name
         self.scan_toggle_btn.style().unpolish(self.scan_toggle_btn)
@@ -8501,6 +8511,10 @@ Common False Positives:
             print(
                 "DEBUG: ❌ Ignoring scan_completed signal - scan was manually stopped"
             )
+            # Still re-enable RKHunter button even on manual stop
+            if hasattr(self, "rkhunter_scan_btn"):
+                self.rkhunter_scan_btn.setEnabled(True)
+                print("🔓 RKHunter Scan button re-enabled after manual stop")
             return
 
         # Also ignore if the scan was cancelled
@@ -8508,16 +8522,24 @@ Common False Positives:
             print("DEBUG: ❌ Ignoring scan_completed signal - scan was cancelled")
             self.results_text.append("🛑 Scan was cancelled")
             self.status_bar.showMessage("🛑 Scan cancelled")
+            # Re-enable RKHunter button even on cancellation
+            if hasattr(self, "rkhunter_scan_btn"):
+                self.rkhunter_scan_btn.setEnabled(True)
+                print("🔓 RKHunter Scan button re-enabled after cancellation")
             return
 
         # Ignore if no thread reference (shouldn't happen)
         if not self.current_scan_thread:
             print("DEBUG: ❌ Ignoring scan_completed signal - no active thread")
+            # Re-enable RKHunter button as safety measure
+            if hasattr(self, "rkhunter_scan_btn"):
+                self.rkhunter_scan_btn.setEnabled(True)
+                print("🔓 RKHunter Scan button re-enabled (no active thread)")
             return
 
         print("DEBUG: ✅ Processing scan completion (natural completion)")
 
-        self.update_scan_button_state(False)  # Reset to "Start Scan" mode
+        self.update_scan_button_state(False)  # Reset to "Start Scan" mode (also re-enables RKHunter button)
         self.scan_toggle_btn.setEnabled(True)  # Re-enable the button
         self.progress_bar.setValue(100)
 
@@ -8552,7 +8574,7 @@ Common False Positives:
                 error_msg = result["error"]
                 self.results_text.setText(f"Scan error: {error_msg}")
                 self.status_bar.showMessage(f"Scan failed: {error_msg}")
-                # Reset button state on error
+                # Reset button state on error (also re-enables RKHunter button)
                 self.update_scan_button_state(False)
                 self.scan_toggle_btn.setEnabled(True)
                 return
@@ -8562,7 +8584,7 @@ Common False Positives:
                 cancel_msg = result.get("message", "Scan was cancelled")
                 self.results_text.setText(cancel_msg)
                 self.status_bar.showMessage(cancel_msg)
-                # Reset button state on cancellation
+                # Reset button state on cancellation (also re-enables RKHunter button)
                 self.update_scan_button_state(False)
                 self.scan_toggle_btn.setEnabled(True)
                 return
@@ -8574,12 +8596,10 @@ Common False Positives:
                     error_msg = "; ".join(error_msgs[:3])  # Show first 3 errors
                     self.results_text.setText(f"Scan error: {error_msg}")
                     self.status_bar.showMessage(f"Scan failed: {error_msg}")
-                    # Reset button state on error
+                    # Reset button state on error (also re-enables RKHunter button)
                     self.update_scan_button_state(False)
                     self.scan_toggle_btn.setEnabled(True)
-                    return
-
-        # Save the scan result to a report file
+                    return        # Save the scan result to a report file
         try:
             print("\n📊 === SCAN RESULT PROCESSING ===")
             print("DEBUG: Processing scan result for reporting")
