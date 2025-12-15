@@ -10,12 +10,14 @@ xanadOS-Search_Destroy/
 ├── �️ app/                       # Main security application
 │   ├── � __init__.py            # Package initialization
 │   ├── � main.py                # Application entry point
-│   ├── � core/                  # Security engine components
+│   ├── 🔧 core/                  # Security engine components
 │   │   ├── 📄 clamav_wrapper.py  # Malware detection engine
-│   │   ├── � privilege_escalation.py # Secure authentication
+│   │   ├── 🔐 gui_auth_manager.py # GUI authentication manager
 │   │   ├── 📄 input_validation.py # Command injection prevention
-│   │   ├── � network_security.py # SSL/TLS certificate validation
-│   │   ├── 📄 file_monitor.py    # Real-time file monitoring
+│   │   ├── 🌐 network_security.py # SSL/TLS certificate validation
+│   │   ├── 📄 file_scanner.py    # File scanning engine
+│   │   ├── 📄 unified_scanner_engine.py # Unified scanning framework
+│   │   ├── 📄 unified_rkhunter_integration.py # RKHunter integration
 │   │   └── 📄 ...                # Additional security modules
 │   ├── 🎮 gui/                   # PyQt6 user interface
 │   │   ├── 📄 main_window.py     # Primary application interface

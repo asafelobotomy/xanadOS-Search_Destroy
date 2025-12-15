@@ -8,6 +8,91 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0-beta] - 2025-12-15
+
+### Added
+
+- **📦 Comprehensive Linux Distribution Packaging**
+  - Complete RPM packaging for Fedora, RHEL, CentOS, openSUSE (spec file + automated build script)
+  - Full DEB packaging for Debian, Ubuntu, Mint, Pop!_OS (debian/ directory + automated build script)
+  - AUR packaging for Arch Linux, Manjaro, EndeavourOS (PKGBUILD + automated build script)
+  - Desktop integration with quick actions (Quick Scan, Update Definitions, Real-Time Protection)
+  - AppStream metadata for GNOME Software and KDE Discover
+  - Systemd service with security hardening for real-time protection
+  - Comprehensive packaging documentation and distribution guides
+  - Support for 18+ Linux distributions with one-command builds
+
+- **🔍 Enhanced Scan Display Features**
+  - Real-time file scanning display with human-readable file sizes
+  - Smart file size formatting (B, KB, MB, GB, TB with appropriate precision)
+  - Live scan progress showing each file as it's scanned
+  - Improved scan results panel matching RKHunter display style
+  - Better visual feedback during scanning operations
+
+- **🔄 ClamAV Definition Updates Fix**
+  - Intelligent freshclam daemon detection and handling
+  - Automatic daemon restart for definition updates when daemon is running
+  - Manual freshclam execution when daemon is not active
+  - Proper GUI authentication integration (ksshaskpass, zenity, kdialog)
+  - Fixed update failures due to locked log files
+  - Improved update success messaging and timestamp display
+
+- **🛡️ Scan Safety Improvements**
+  - RKHunter scan button now disabled during active ClamAV scans
+  - Prevents concurrent scans that could cause conflicts
+  - Clear UI feedback for scan state
+  - Enhanced scan button state management
+
+- **⚡ Real-Time Protection Optimizations**
+  - Enhanced background scanner performance
+  - Improved performance metrics collection
+  - Better resource management during monitoring
+  - Optimized file system watching
+
+### Changed
+
+- **📝 Type Annotation Modernization**
+  - Updated to use built-in generics (list[], dict[], tuple[]) for Python 3.13+
+  - Removed deprecated typing module imports where applicable
+  - Improved code readability and IDE support
+
+- **🗂️ File System Monitoring Modernization**
+  - Removed legacy inotify support in favor of watchdog library
+  - Comprehensive modernization of monitoring subsystem
+  - Enhanced integration with core features
+  - Improved backwards compatibility handling
+
+- **📊 RKHunter Integration Enhancements**
+  - Better scan type determination and reporting
+  - Improved warning message display
+  - Enhanced report handling with detailed findings conversion
+  - Optimized status checking and update methods
+  - Backwards compatibility properties for legacy code
+
+### Fixed
+
+- **🔧 Update Definitions Button**
+  - Fixed freshclam failures when daemon is running
+  - Resolved log file locking issues
+  - Improved error handling and user feedback
+
+- **🛡️ Scan Concurrency**
+  - Fixed potential conflicts from running multiple scan types simultaneously
+  - Improved scan state synchronization
+
+### Documentation
+
+- **📚 Packaging Documentation**
+  - Added comprehensive PACKAGING_GUIDE.md with build instructions for all formats
+  - Created packaging/README.md with quick reference
+  - Distribution-specific notes and troubleshooting guides
+  - Publishing guidelines for repositories (COPR, PPA, AUR)
+
+- **🔬 Feature Implementation Reports**
+  - File system monitoring modernization documentation
+  - Scan enhancements implementation notes
+  - Real-time protection optimization reports
+
 ## [3.0.0] - 2025-09-22
 
 ### Added

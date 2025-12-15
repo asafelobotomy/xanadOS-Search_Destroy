@@ -72,12 +72,14 @@ npm run quick:validate
 ./scripts/tools/validation/validate-structure.sh
 ```
 
-**Recent Improvements (v2.13.1)**:
+**Recent Improvements**:
 
-- Fixed recurring "First Time Setup" dialog issue
-- Enhanced setup wizard with auto-recovery logic
-- Improved security with `run_secure()` in setup processes
-- Added comprehensive validation and quality tools
+- Comprehensive packaging system for RPM, DEB, and AUR distributions
+- Enhanced scan display with real-time file size information
+- Fixed ClamAV definition update issues with daemon detection
+- Improved scan safety with concurrent scan prevention
+- Type annotation modernization for Python 3.13+
+- Real-time protection performance optimizations
 
 ## Notes
 
