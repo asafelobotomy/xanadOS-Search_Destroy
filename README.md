@@ -1,7 +1,6 @@
 # xanadOS Search & Destroy
 
-A comprehensive Linux security scanner and system protection suite with advanced
-AI-assisted development framework.
+A comprehensive Linux security scanner and system protection suite for Linux.
 
 ![Dashboard](docs/screenshots/1%20-%20Dashboard.png)
 
@@ -150,12 +149,6 @@ For complete documentation, visit our [Documentation Hub](docs/README.md).
 - **Setup Instructions**: [Setup Guide](docs/guides/SETUP.md)
 - **Packaging Guide**: [Distribution Packages](packaging/PACKAGING_GUIDE.md)
 
-### AI Development Framework
-
-- **Chat Modes**: [AI Interaction Modes](.github/chatmodes/)
-- **Development Tools**: [AI Development Instructions](.github/instructions/)
-- **Prompt Templates**: [Reusable Prompts](.github/prompts/)
-
 ## 📁 Project Structure
 
 ```text
@@ -164,8 +157,7 @@ For complete documentation, visit our [Documentation Hub](docs/README.md).
 ├── scripts/                # Build and utility scripts
 ├── config/                 # Configuration files
 ├── tests/                  # Test suites
-├── packaging/              # Distribution packages
-└── examples/               # Examples and templates
+└── packaging/              # Distribution packages
 ```
 
 ## 🛠️ Development

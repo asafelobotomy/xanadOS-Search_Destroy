@@ -70,7 +70,7 @@ if [ $? -eq 0 ]; then
     echo "  3. Test build: makepkg -si"
     echo "  4. Commit and push to AUR"
     echo ""
-    
+
     # Copy back to packaging directory
     mkdir -p "$(git rev-parse --show-toplevel)/packaging/aur/output"
     cp "${BUILD_DIR}"/xanados-search-destroy-*.pkg.tar.zst "$(git rev-parse --show-toplevel)/packaging/aur/output/"

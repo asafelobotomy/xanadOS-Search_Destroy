@@ -1,23 +1,14 @@
 # Contributing
 
-Thanks for contributing to **xanadOS Search & Destroy**! This repository contains a Linux security
-application with AI-enhanced development tools.
+Thanks for contributing to **xanadOS Search & Destroy**! This repository contains a comprehensive
+Linux security scanner and system protection suite.
 
 ## Before you start
 
-### For Security Application Development
-
-- Review security guidelines: `.github/instructions/security.instructions.md`
-- Check implementation guide: `docs/implementation/CONSOLIDATED_IMPLEMENTATION_GUIDE.md`
+- Review implementation guide: `docs/implementation/CONSOLIDATED_IMPLEMENTATION_GUIDE.md`
 - Understand security architecture: `docs/project/SECURITY_PERFORMANCE_REPORT.md`
-- Install Python dependencies: `pip install -r requirements-dev.txt`
-
-### For Development Tool Usage
-
-- Read `.github/copilot-instructions.md` for AI development guidance
+- Install Python dependencies: `pip install -e .[dev]`
 - Review available tools: `scripts/tools/README.md`
-- Install Node.js dependencies: `npm install` (for validation tools)
-- Follow quality guidelines: `.github/instructions/code-quality.instructions.md`
 
 ## Workflow
 
@@ -56,20 +47,6 @@ python -m pytest tests/
 
 # Launch application
 make run  # OR: python -m app.main
-```
-
-### AI Framework Setup
-
-```bash
-# Install Node.js dependencies (for development tools)
-npm install
-
-# Run validation tools
-npm run quick:validate
-
-# Use development tools
-./scripts/tools/quality/check-quality.sh --fix
-./scripts/tools/validation/validate-structure.sh
 ```
 
 **Recent Improvements**:

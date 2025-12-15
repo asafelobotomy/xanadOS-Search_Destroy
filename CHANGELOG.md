@@ -8,6 +8,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Removed
+
+- **AI Development Framework** - Removed all AI framework components to focus on core security application
+  - Removed `examples/project-templates/` directory (AI project templates)
+  - Removed `examples/repo-template/` directory (AI repository template)
+  - Removed `examples/awesome-playground/` directory (AI development playground)
+  - Removed `examples/mcp/` directory (MCP integration examples)
+  - Updated documentation to remove AI Framework references
+  - Simplified project description and focus
+
 ## [0.3.0-beta] - 2025-12-15
 
 ### Added

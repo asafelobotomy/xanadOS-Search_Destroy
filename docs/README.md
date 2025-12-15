@@ -1,28 +1,21 @@
 # 📚 Documentation Index
 
 Welcome to **xanadOS Search & Destroy** - a comprehensive Linux security scanner and system
-protection suite with advanced AI-assisted development framework.
+protection suite for Linux.
 
-## 🛡️ Security Application Quick Start
+## 🛡️ Quick Start
 
-- 🚀 [Launch Guide](implementation/CONSOLIDATED_IMPLEMENTATION_GUIDE.md) - Complete application
-  overview
-- 🔒 [Security Analysis](project/SECURITY_PERFORMANCE_REPORT.md) - Comprehensive security report
-- 📈 [Performance Metrics](project/SECURITY_PERFORMANCE_REPORT.md#performance-analysis) - System
-  optimization
+- 🚀 [Launch Guide](implementation/CONSOLIDATED_IMPLEMENTATION_GUIDE.md) - Complete application overview
+- �� [Security Analysis](project/SECURITY_PERFORMANCE_REPORT.md) - Comprehensive security report
+- 📈 [Performance Metrics](project/SECURITY_PERFORMANCE_REPORT.md#performance-analysis) - System optimization
 - 📋 [Feature Documentation](implementation/) - All implemented features
-
-## 🤖 AI Development Tools Quick Start
-
-- 🎯 [Chat Modes Overview](../.github/chatmodes/) - 11 specialized AI interactions
-- 📝 [Prompt Templates](../.github/prompts/) - 7 reusable prompt templates
-- 🔧 [Development Instructions](../.github/instructions/) - Advanced AI guidance
+- 📦 [Packaging Guide](../packaging/PACKAGING_GUIDE.md) - Build packages for RPM, DEB, and AUR
 
 ## 📁 Documentation Structure
 
 ```text
 docs/
-├── �️ project/              # Security application analysis and reports
+├── 🛡️ project/              # Security application analysis and reports
 │   ├── SECURITY_PERFORMANCE_REPORT.md   # Comprehensive security analysis
 │   └── ...                              # Additional security documentation
 ├── 📋 implementation/        # Security application implementation guides
@@ -30,130 +23,60 @@ docs/
 │   ├── SECURITY_IMPROVEMENTS.md         # Security enhancement reports
 │   └── ...                              # Additional implementation docs
 ├── 📈 releases/             # Version release notes and changelogs
-├── 📖 guides/              # AI development framework guides
-│   ├── Copilot-INSTRUCTIONS-GUIDE.md    # Complete AI framework guide
-│   ├── PROJECT_STRUCTURE.md             # Repository organization
-│   ├── TOOLSHED-REFERENCE.md           # Development tool catalog
-│   └── ...                             # Additional framework guides
+├── 📖 guides/              # Development and setup guides
+│   ├── SETUP.md                        # Installation and setup
+│   ├── PROJECT_STRUCTURE.md            # Repository organization
+│   └── ...                             # Additional guides
 ├── 📚 tutorials/           # Step-by-step learning materials
 ├── 📋 reference/           # Quick-lookup specifications
 ├── 🔧 api/                # API documentation and integration
-└── � reports/            # Analysis and quality reports
+└── 📊 reports/            # Analysis and quality reports
 ```
 
 ## 📖 Documentation Categories
 
-### 🛡️ Security Application Documentation
+### 🛡️ Security Application
 
-- 🔒 [**Security Analysis Report**](project/SECURITY_PERFORMANCE_REPORT.md) - A- grade security
-  assessment
-- 📋 [**Implementation Guide**](implementation/CONSOLIDATED_IMPLEMENTATION_GUIDE.md) Complete
-  feature overview
-- 🚀 [**Performance Analysis**](project/SECURITY_PERFORMANCE_REPORT.md#performance-analysis)
-  Optimization metrics
+- 🔒 [**Security Analysis Report**](project/SECURITY_PERFORMANCE_REPORT.md) - A- grade security assessment
+- 📋 [**Implementation Guide**](implementation/CONSOLIDATED_IMPLEMENTATION_GUIDE.md) - Complete feature overview
+- 🚀 [**Performance Analysis**](project/SECURITY_PERFORMANCE_REPORT.md#performance-analysis) - Optimization metrics
 - 📈 [**Release Notes**](releases/) - Version history and improvements
 - 🔧 [**Security Improvements**](implementation/SECURITY_IMPROVEMENTS.md) - Enhancement reports
+- 📦 [**Packaging Guide**](../packaging/PACKAGING_GUIDE.md) - Distribution packages
 
-### 🤖 AI Development Framework Documentation
+### Development Guides
 
-- 🎯 [**Model Targeting Guide**](guides/model-targeting-guide.md) - AI model selection for
-  development
-- 🏗️ [**Project Structure Guide**](guides/PROJECT_STRUCTURE.md) - Repository organization
-- 🛠️ [**Toolshed Reference**](guides/TOOLSHED-REFERENCE.md) - Development automation tools
-- � [**Python Modernization**](guides/PYTHON_MODERNIZATION_PLAN_2025.md) - Code modernization guide
-- 🔧 [**Troubleshooting**](guides/troubleshooting.md) - Development problem resolution
-
-- 📘 [**Agent Runbooks**](../.GitHub/runbooks/) - Step-by-step workflows for common
-
-  engineering tasks
-
-- 📚 [**Documentation Reference**](guides/DOCUMENTATION-REFERENCE.md) - Documentation
-
-  awareness guide
-
-- 🔧 [**Troubleshooting Guide**](guides/troubleshooting.md) - Problem resolution
+- 🏗️ [**Project Structure**](guides/PROJECT_STRUCTURE.md) - Repository organization
+- 🔧 [**Setup Guide**](guides/SETUP.md) - Installation and configuration
+- 📘 [**Troubleshooting**](guides/troubleshooting.md) - Problem resolution
+- 🐍 [**Python Modernization**](guides/PYTHON_MODERNIZATION_PLAN_2025.md) - Code modernization guide
 
 ### Learning Resources
 
 - 📚 [**Tutorials**](tutorials/) - Step-by-step learning materials
 - 📋 [**Reference**](reference/) - Quick-lookup specifications
-- 🔧 [**API Documentation**](API/) - Integration guides and specifications
-
-## � Framework Components
-
-### Specialized Chatmodes (11 total)
-
-- **architect.chatmode.md** - System design and architecture planning
-- **elite-engineer.chatmode.md** - Advanced coding and optimization
-- **security.chatmode.md** - Security analysis and hardening
-- **testing.chatmode.md** - Test-driven development
-- **performance.chatmode.md** - Performance optimization
-- **documentation.chatmode.md** - Professional documentation
-- **And 5 more specialized modes...**
-
-### Professional Prompts (7 total)
-
-- **code-review.prompt.md** - Comprehensive code analysis
-- **documentation.prompt.md** - Professional documentation generation
-- **refactoring.prompt.md** - Code improvement strategies
-- **security-review.prompt.md** - Security assessment
-- **And 3 more professional prompts...**
-
-### Advanced Instructions (6 total)
-
-- **security.instructions.md** - OWASP Top 10 2024/2025 compliance
-- **testing.instructions.md** - Shift-Left Testing methodology
-- **best-practices.instructions.md** - Industry standards
-- **And 3 more instruction sets...**
-
-## � Repository Structure
-
-````text
-xanadOS-Search_Destroy/
-├── .GitHub/
-│   ├── chatmodes/              # 11 specialized AI interactions
-│   ├── prompts/                # 7 reusable prompt templates
-│   ├── instructions/           # 6 advanced instruction sets
-│   └── workflows/              # CI/CD automation
-├── docs/
-│   ├── guides/                 # User documentation (this directory)
-│   └── README.md              # This documentation index
-├── archive/                    # Historical development documentation
-├── examples/                   # Usage examples and templates
-└── scripts/                    # Validation and automation
-
-```Markdown
-
-## � Enterprise Features
-
-- ✅ **100% Policy Compliance** - 21 mandatory checks validated
-- ✅ **Code Quality Standards** - ShellCheck, Prettier, Markdown linting
-- ✅ **Professional Structure** - GitHub best practices
-- ✅ **Multi-Model Support** - GPT-5, Claude Sonnet 4, Gemini Pro optimized
-- ✅ **Automated Validation** - Comprehensive testing framework
+- 🔧 [**API Documentation**](api/) - Integration guides and specifications
 
 ## 📋 Getting Started
 
-1. **Choose a Chatmode**: Browse `.GitHub/chatmodes/` directory
-2. **Copy Content**: Paste the chatmode content into GitHub Copilot Chat
-3. **Start Coding**: Enhanced AI assistance for your development tasks
-4. **Use Prompts**: Apply templates from `.GitHub/prompts/` as needed
-5. **Follow Instructions**: Implement advanced patterns from `.GitHub/instructions/`
+1. **Install**: Follow the [Setup Guide](guides/SETUP.md) for installation
+2. **Configure**: Review security settings and preferences
+3. **Scan**: Run your first security scan
+4. **Monitor**: Enable real-time protection
+5. **Report**: Review security reports and metrics
 
-## �️ Historical Documentation
+## 🗂️ Historical Documentation
 
 Development progress reports, analysis documents, and implementation details
-have been archived to `../archive/superseded/` to maintain repository focus on
+have been archived to `../archive/` to maintain repository focus on
 essential user documentation.
 
 For historical reference:
 
-- **Implementation Reports** → `../archive/superseded/implementation-reports/`
-- **Analysis Documents** → `../archive/superseded/analysis/`
-- **Development Reports** → `../archive/superseded/development-reports/`
+- **Implementation Reports** → `../archive/`
+- **Analysis Documents** → `../archive/`
+- **Development Reports** → `../archive/`
 
 ---
 
-**🎯 Ready to enhance your GitHub Copilot experience?** Start with any
-[chatmode](../.GitHub/chatmodes/) or [prompt template](../.GitHub/prompts/)!
-````
+**🎯 Ready to secure your Linux system?** Start with the [Setup Guide](guides/SETUP.md)!

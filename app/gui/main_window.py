@@ -4382,7 +4382,7 @@ System        {perf_status}"""
             self.scan_toggle_btn.setText("⏹️ Stop Scan")
             self.scan_toggle_btn.setObjectName("dangerButton")
             print("🔴 Button updated to Stop Scan mode")
-            
+
             # Disable RKHunter scan button during ClamAV scan for safety
             if hasattr(self, "rkhunter_scan_btn"):
                 self.rkhunter_scan_btn.setEnabled(False)
@@ -4391,7 +4391,7 @@ System        {perf_status}"""
             self.scan_toggle_btn.setText("🚀 Start Scan")
             self.scan_toggle_btn.setObjectName("primaryButton")
             print("🟢 Button updated to Start Scan mode")
-            
+
             # Re-enable RKHunter scan button when scan completes
             if hasattr(self, "rkhunter_scan_btn"):
                 self.rkhunter_scan_btn.setEnabled(True)
@@ -8539,7 +8539,9 @@ Common False Positives:
 
         print("DEBUG: ✅ Processing scan completion (natural completion)")
 
-        self.update_scan_button_state(False)  # Reset to "Start Scan" mode (also re-enables RKHunter button)
+        self.update_scan_button_state(
+            False
+        )  # Reset to "Start Scan" mode (also re-enables RKHunter button)
         self.scan_toggle_btn.setEnabled(True)  # Re-enable the button
         self.progress_bar.setValue(100)
 
@@ -8599,7 +8601,7 @@ Common False Positives:
                     # Reset button state on error (also re-enables RKHunter button)
                     self.update_scan_button_state(False)
                     self.scan_toggle_btn.setEnabled(True)
-                    return        # Save the scan result to a report file
+                    return  # Save the scan result to a report file
         try:
             print("\n📊 === SCAN RESULT PROCESSING ===")
             print("DEBUG: Processing scan result for reporting")

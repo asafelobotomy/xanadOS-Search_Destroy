@@ -19,29 +19,29 @@ override_dh_auto_clean:
 
 override_dh_auto_install:
 	dh_auto_install
-	
+
 	# Install desktop file
 	install -D -m 0644 packaging/desktop/io.github.asafelobotomy.SearchAndDestroy.desktop \
 		debian/xanados-search-destroy/usr/share/applications/io.github.asafelobotomy.SearchAndDestroy.desktop
-	
+
 	# Install icons
 	for size in 16 32 48 64 128; do \
 		install -D -m 0644 packaging/icons/io.github.asafelobotomy.SearchAndDestroy-$${size}.png \
 			debian/xanados-search-destroy/usr/share/icons/hicolor/$${size}x$${size}/apps/io.github.asafelobotomy.SearchAndDestroy.png; \
 	done
-	
+
 	# Install SVG icon
 	install -D -m 0644 packaging/icons/io.github.asafelobotomy.SearchAndDestroy.svg \
 		debian/xanados-search-destroy/usr/share/icons/hicolor/scalable/apps/io.github.asafelobotomy.SearchAndDestroy.svg
-	
+
 	# Install AppStream metadata
 	install -D -m 0644 packaging/appdata/io.github.asafelobotomy.SearchAndDestroy.metainfo.xml \
 		debian/xanados-search-destroy/usr/share/metainfo/io.github.asafelobotomy.SearchAndDestroy.metainfo.xml
-	
+
 	# Install polkit policy
 	install -D -m 0644 config/io.github.asafelobotomy.searchanddestroy.policy \
 		debian/xanados-search-destroy/usr/share/polkit-1/actions/io.github.asafelobotomy.searchanddestroy.policy
-	
+
 	# Install configuration files
 	install -D -m 0644 config/security_config.toml \
 		debian/xanados-search-destroy/etc/xanados-search-destroy/security_config.toml
@@ -49,15 +49,15 @@ override_dh_auto_install:
 		debian/xanados-search-destroy/etc/xanados-search-destroy/monitoring_config.toml
 	install -D -m 0644 config/gui_config.toml \
 		debian/xanados-search-destroy/etc/xanados-search-destroy/gui_config.toml
-	
+
 	# Install YARA rules
 	install -D -m 0644 config/yara_rules/malware_detection.yar \
 		debian/xanados-search-destroy/usr/share/xanados-search-destroy/yara_rules/malware_detection.yar
-	
+
 	# Install systemd service
 	install -D -m 0644 packaging/systemd/xanados-search-destroy-monitor.service \
 		debian/xanados-search-destroy/lib/systemd/system/xanados-search-destroy-monitor.service
-	
+
 	# Install documentation
 	install -D -m 0644 README.md debian/xanados-search-destroy/usr/share/doc/xanados-search-destroy/README.md
 	install -D -m 0644 CHANGELOG.md debian/xanados-search-destroy/usr/share/doc/xanados-search-destroy/changelog

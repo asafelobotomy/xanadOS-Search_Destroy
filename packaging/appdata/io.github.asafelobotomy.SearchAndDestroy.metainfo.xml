@@ -2,17 +2,17 @@
 <!-- Copyright 2024 xanadOS Team -->
 <component type="desktop-application">
   <id>io.github.asafelobotomy.SearchAndDestroy</id>
-  
+
   <name>xanadOS Search &amp; Destroy</name>
   <summary>Comprehensive Linux security scanner and system protection suite</summary>
-  
+
   <metadata_license>CC0-1.0</metadata_license>
   <project_license>GPL-3.0-or-later</project_license>
-  
+
   <description>
     <p>
-      xanadOS Search &amp; Destroy is a powerful and user-friendly security scanner 
-      that brings enterprise-grade malware detection to Linux desktop users and 
+      xanadOS Search &amp; Destroy is a powerful and user-friendly security scanner
+      that brings enterprise-grade malware detection to Linux desktop users and
       system administrators.
     </p>
     <p>Features include:</p>
@@ -35,9 +35,9 @@
       Perfect for protecting your desktop, laptop, or server from malware and security threats.
     </p>
   </description>
-  
+
   <launchable type="desktop-id">io.github.asafelobotomy.SearchAndDestroy.desktop</launchable>
-  
+
   <screenshots>
     <screenshot type="default">
       <caption>Main Dashboard - System Overview</caption>
@@ -52,23 +52,23 @@
       <image>https://raw.githubusercontent.com/asafelobotomy/xanadOS-Search_Destroy/master/docs/screenshots/realtime-protection.png</image>
     </screenshot>
   </screenshots>
-  
+
   <url type="homepage">https://github.com/asafelobotomy/xanadOS-Search_Destroy</url>
   <url type="bugtracker">https://github.com/asafelobotomy/xanadOS-Search_Destroy/issues</url>
   <url type="help">https://github.com/asafelobotomy/xanadOS-Search_Destroy/wiki</url>
   <url type="donation">https://github.com/sponsors/asafelobotomy</url>
   <url type="vcs-browser">https://github.com/asafelobotomy/xanadOS-Search_Destroy</url>
-  
+
   <developer id="org.xanados">
     <name>xanadOS Team</name>
   </developer>
-  
+
   <categories>
     <category>System</category>
     <category>Security</category>
     <category>Utility</category>
   </categories>
-  
+
   <keywords>
     <keyword>security</keyword>
     <keyword>antivirus</keyword>
@@ -81,22 +81,22 @@
     <keyword>yara</keyword>
     <keyword>rootkit</keyword>
   </keywords>
-  
+
   <provides>
     <binary>xanados-search-destroy</binary>
   </provides>
-  
+
   <requires>
     <display_length compare="ge">768</display_length>
   </requires>
-  
+
   <recommends>
     <control>keyboard</control>
     <control>pointing</control>
   </recommends>
-  
+
   <content_rating type="oars-1.1" />
-  
+
   <releases>
     <release version="0.3.0" date="2024-12-15">
       <description>
@@ -130,6 +130,6 @@
       </description>
     </release>
   </releases>
-  
+
   <update_contact>dev@xanados.org</update_contact>
 </component>

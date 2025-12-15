@@ -58,53 +58,53 @@ sha256sums=('SKIP')  # Update with actual checksum for releases
 
 prepare() {
     cd "${srcdir}/xanadOS-Search_Destroy-${pkgver}"
-    
+
     # Ensure we have the VERSION file
     echo "${pkgver}" > VERSION
 }
 
 build() {
     cd "${srcdir}/xanadOS-Search_Destroy-${pkgver}"
-    
+
     # Build Python package
     python -m build --wheel --no-isolation
 }
 
 check() {
     cd "${srcdir}/xanadOS-Search_Destroy-${pkgver}"
-    
+
     # Basic import test
     python -c "import sys; sys.path.insert(0, 'app'); import app; print('Version:', app.__version__)"
 }
 
 package() {
     cd "${srcdir}/xanadOS-Search_Destroy-${pkgver}"
-    
+
     # Install Python package
     python -m installer --destdir="${pkgdir}" dist/*.whl
-    
+
     # Install desktop file
     install -Dm644 "packaging/desktop/io.github.asafelobotomy.SearchAndDestroy.desktop" \
         "${pkgdir}/usr/share/applications/io.github.asafelobotomy.SearchAndDestroy.desktop"
-    
+
     # Install icons
     for size in 16 32 48 64 128; do
         install -Dm644 "packaging/icons/io.github.asafelobotomy.SearchAndDestroy-${size}.png" \
             "${pkgdir}/usr/share/icons/hicolor/${size}x${size}/apps/io.github.asafelobotomy.SearchAndDestroy.png"
     done
-    
+
     # Install SVG icon
     install -Dm644 "packaging/icons/io.github.asafelobotomy.SearchAndDestroy.svg" \
         "${pkgdir}/usr/share/icons/hicolor/scalable/apps/io.github.asafelobotomy.SearchAndDestroy.svg"
-    
+
     # Install AppStream metadata
     install -Dm644 "packaging/appdata/io.github.asafelobotomy.SearchAndDestroy.metainfo.xml" \
         "${pkgdir}/usr/share/metainfo/io.github.asafelobotomy.SearchAndDestroy.metainfo.xml"
-    
+
     # Install polkit policy
     install -Dm644 "config/io.github.asafelobotomy.searchanddestroy.policy" \
         "${pkgdir}/usr/share/polkit-1/actions/io.github.asafelobotomy.searchanddestroy.policy"
-    
+
     # Install configuration files
     install -Dm644 "config/security_config.toml" \
         "${pkgdir}/etc/xanados-search-destroy/security_config.toml"
@@ -112,20 +112,20 @@ package() {
         "${pkgdir}/etc/xanados-search-destroy/monitoring_config.toml"
     install -Dm644 "config/gui_config.toml" \
         "${pkgdir}/etc/xanados-search-destroy/gui_config.toml"
-    
+
     # Install YARA rules
     install -Dm644 "config/yara_rules/malware_detection.yar" \
         "${pkgdir}/usr/share/xanados-search-destroy/yara_rules/malware_detection.yar"
-    
+
     # Install systemd service
     install -Dm644 "packaging/systemd/xanados-search-destroy-monitor.service" \
         "${pkgdir}/usr/lib/systemd/system/xanados-search-destroy-monitor.service"
-    
+
     # Install documentation
     install -Dm644 README.md "${pkgdir}/usr/share/doc/${pkgname}/README.md"
     install -Dm644 LICENSE "${pkgdir}/usr/share/licenses/${pkgname}/LICENSE"
     install -Dm644 CHANGELOG.md "${pkgdir}/usr/share/doc/${pkgname}/CHANGELOG.md"
-    
+
     # Create runtime directories
     install -dm755 "${pkgdir}/var/lib/xanados-search-destroy"
     install -dm700 "${pkgdir}/var/lib/xanados-search-destroy/quarantine"

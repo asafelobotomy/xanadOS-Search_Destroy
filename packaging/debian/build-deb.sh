@@ -72,7 +72,7 @@ if [ $? -eq 0 ]; then
     echo -e "${BLUE}📝 Additional files:${NC}"
     ls -lh /tmp/xanados-search-destroy_${VERSION}*.{dsc,changes,buildinfo} 2>/dev/null || true
     echo ""
-    
+
     # Copy to packaging output directory
     mkdir -p packaging/deb/output
     cp /tmp/xanados-search-destroy_${VERSION}*.deb packaging/deb/output/

@@ -19,7 +19,7 @@ echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━�
 if ! command -v rpmbuild &> /dev/null; then
     echo -e "${RED}❌ Error: rpmbuild not found${NC}"
     echo -e "${YELLOW}Installing RPM build tools...${NC}"
-    
+
     if [ -f /etc/fedora-release ]; then
         sudo dnf install -y rpm-build rpmdevtools
     elif [ -f /etc/redhat-release ]; then
