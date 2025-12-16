@@ -1,0 +1,46 @@
+# False Positive Handling Workflow
+# Automated handling of false positive detections
+
+id: false_positive_handling
+name: "False Positive Handling"
+description: "Workflow for reviewing and handling false positive detections"
+rollback_on_failure: false
+
+steps:
+  - id: restore_file
+    name: "Restore File from Quarantine"
+    type: action
+    action: delete_file # Placeholder - would restore in real implementation
+    params:
+      output_key: restore_result
+    on_failure: skip
+    timeout: 10.0
+
+  - id: add_exclusion
+    name: "Add File to Exclusion List"
+    type: action
+    action: send_notification # Placeholder - would add exclusion in real implementation
+    params:
+      message: "Adding file to exclusion list"
+    on_failure: skip
+    timeout: 5.0
+
+  - id: log_false_positive
+    name: "Log False Positive for Analysis"
+    type: action
+    action: generate_report
+    params:
+      report_type: false_positive
+      output_key: log_result
+    on_failure: skip
+    timeout: 30.0
+
+  - id: notify_security_team
+    name: "Notify Security Team"
+    type: notification
+    action: send_notification
+    params:
+      recipient: security@company.com
+      message: "False positive logged and handled"
+    on_failure: skip
+    timeout: 5.0

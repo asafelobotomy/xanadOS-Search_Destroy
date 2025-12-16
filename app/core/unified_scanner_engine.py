@@ -45,6 +45,8 @@ import psutil
 from app.utils.config import get_config
 from app.utils.scan_reports import ThreatLevel
 
+from .adaptive_worker_pool import AdaptiveWorkerPool, WorkerPoolMetrics
+from .advanced_io import AdvancedIOManager, IOConfig, IOStrategy
 from .clamav_wrapper import ClamAVWrapper, ScanResult
 from .input_validation import SecurityValidationError
 from .rate_limiting import configure_rate_limits, rate_limit_manager
@@ -249,6 +251,11 @@ class PerformanceMetrics:
     cache_misses: int = 0
     optimization_ratio: float = 0.0
 
+    # Advanced I/O metrics
+    io_throughput_mbps: float = 0.0
+    io_strategy_usage: dict[str, int] = field(default_factory=dict)
+    total_bytes_read: int = 0
+
 
 # ================== MEMORY AND RESOURCE MANAGEMENT ==================
 
@@ -436,7 +443,7 @@ class ScanCache:
 class QuarantineManager:
     """Manages quarantined files with secure storage and tracking."""
 
-    def __init__(self, quarantine_dir: str | None = None):
+    def __init__(self, quarantine_dir: str | None = None, io_manager=None):
         self.config = get_config()
         self.quarantine_dir = Path(
             quarantine_dir or self.config.get("quarantine_dir", "/tmp/quarantine")
@@ -445,6 +452,7 @@ class QuarantineManager:
         self.index_file = self.quarantine_dir / "quarantine_index.json"
         self.logger = logging.getLogger(__name__)
         self._quarantined_files: dict[str, QuarantinedFile] = {}
+        self.io_manager = io_manager  # Will be set by UnifiedScannerEngine
         self._load_index()
 
     def _load_index(self) -> None:
@@ -564,11 +572,13 @@ class QuarantineManager:
         return list(self._quarantined_files.values())
 
     async def _calculate_checksum(self, file_path: Path) -> str:
-        """Calculate SHA-256 checksum of a file."""
+        """Calculate SHA-256 checksum using advanced I/O."""
         hasher = hashlib.sha256()
-        async with aiofiles.open(file_path, "rb") as f:
-            while chunk := await f.read(8192):
-                hasher.update(chunk)
+
+        # Use chunked reading for memory efficiency on large files
+        async for chunk in self.io_manager.scan_file_chunks(file_path):
+            hasher.update(chunk)
+
         return hasher.hexdigest()
 
 
@@ -591,18 +601,54 @@ class UnifiedScannerEngine:
         self.resource_monitor = ResourceMonitor()
         self.io_optimizer = IOOptimizer()
         self.scan_cache = ScanCache()
-        self.quarantine_manager = QuarantineManager()
+
+        # Advanced I/O system with automatic strategy selection (create before quarantine manager)
+        io_config = IOConfig(
+            chunk_size=(
+                config.chunk_size if hasattr(config, "chunk_size") else 256 * 1024
+            ),
+            max_concurrent_ops=(
+                config.max_workers if hasattr(config, "max_workers") else 20
+            ),
+            strategy=IOStrategy.AUTO,  # Automatic selection based on file size
+        )
+        self.io_manager = AdvancedIOManager(io_config)
+        self.logger.info(
+            f"Advanced I/O initialized: chunk_size={io_config.chunk_size}, "
+            f"max_concurrent={io_config.max_concurrent_ops}, strategy={io_config.strategy.name}"
+        )
+
+        # Quarantine manager (needs io_manager for checksums)
+        self.quarantine_manager = QuarantineManager(io_manager=self.io_manager)
 
         # Progress tracking
         self.progress = ScanProgress()
         self.statistics = ScanStatistics()
         self.status = ScanStatus.NOT_STARTED
 
-        # Threading and concurrency
-        self.executor = ThreadPoolExecutor(max_workers=4)
+        # Adaptive worker pool for I/O-bound file scanning
+        self.adaptive_pool = AdaptiveWorkerPool(
+            min_workers=None,  # Use auto-calculated defaults
+            max_workers=None,
+            adjustment_interval=5.0,  # Adjust every 5 seconds
+            enable_monitoring=True,
+        )
+
+        # Threading and concurrency with adaptive pool
+        initial_workers = self.adaptive_pool.current_workers
+        self.executor = ThreadPoolExecutor(max_workers=initial_workers)
+        self.adaptive_pool.set_executor(self.executor)
+
         self.scan_queue: asyncio.Queue[ScanRequest] = asyncio.Queue()
+        self.adaptive_pool.set_task_queue(self.scan_queue)
+
         self.active_scans: set[asyncio.Task] = set()
         self.scan_semaphore = asyncio.Semaphore(10)  # Limit concurrent scans
+
+        self.logger.info(
+            f"Initialized with adaptive worker pool: {initial_workers} workers "
+            f"(min: {self.adaptive_pool.min_workers}, max: {self.adaptive_pool.max_workers})"
+        )
 
         # Event handling
         self.progress_callbacks: list[Callable[[ScanProgress], None]] = []
@@ -633,6 +679,7 @@ class UnifiedScannerEngine:
 
         # Start background tasks
         asyncio.create_task(self._process_scan_queue())
+        asyncio.create_task(self._adaptive_pool_monitor())
 
         self.status = ScanStatus.NOT_STARTED
         self.logger.info("Scanner engine initialized successfully")
@@ -804,6 +851,9 @@ class UnifiedScannerEngine:
             self._notify_progress()
             self._notify_result(result)
 
+            # Record task time for adaptive pool performance tracking
+            self.adaptive_pool.record_task_time(result.scan_duration)
+
             return result
 
         except Exception as e:
@@ -817,11 +867,16 @@ class UnifiedScannerEngine:
             )
 
     async def _perform_virus_scan(self, file_path: Path) -> ScanResult:
-        """Perform virus scan using ClamAV."""
+        """Perform virus scan using ClamAV with advanced I/O."""
+        # Use advanced I/O manager to read file with optimal strategy
+        # (ASYNC for small files, MMAP for large files, BUFFERED for medium)
+        file_data = await self.io_manager.read_file_async(file_path)
+
+        # Scan the file data in executor to avoid blocking
         loop = asyncio.get_event_loop()
 
         def _scan():
-            return self.clamav.scan_file(str(file_path))
+            return self.clamav.scan_data(file_data, str(file_path))
 
         return await loop.run_in_executor(self.executor, _scan)
 
@@ -946,6 +1001,37 @@ class UnifiedScannerEngine:
             except Exception as e:
                 self.logger.error(f"Error processing scan queue: {e}")
 
+    async def _adaptive_pool_monitor(self) -> None:
+        """Background task to monitor and adjust worker pool."""
+        self.logger.info("Starting adaptive worker pool monitoring")
+
+        while not self._cancel_event.is_set():
+            try:
+                # Sleep for adjustment interval
+                await asyncio.sleep(self.adaptive_pool.adjustment_interval)
+
+                # Attempt to adjust workers
+                adjusted = self.adaptive_pool.adjust_workers()
+
+                # Log metrics periodically (every 30 seconds)
+                if int(time.time()) % 30 == 0:
+                    status = self.adaptive_pool.get_status_dict()
+                    self.logger.info(
+                        f"Adaptive pool status: {status['current_workers']} workers, "
+                        f"{status['total_adjustments']} adjustments "
+                        f"(↑{status['scale_ups']}, ↓{status['scale_downs']}), "
+                        f"Performance gain: {status['performance_gain_percent']}%"
+                    )
+
+            except asyncio.CancelledError:
+                self.logger.info("Adaptive pool monitoring cancelled")
+                break
+            except Exception as e:
+                self.logger.error(f"Error in adaptive pool monitoring: {e}")
+                await asyncio.sleep(5.0)  # Back off on error
+
+        self.logger.info("Adaptive worker pool monitoring stopped")
+
     async def _process_scan_results(self) -> AsyncIterator[UnifiedScanResult]:
         """Process and yield scan results."""
         # Simplified implementation - in practice would use result queues
@@ -992,11 +1078,19 @@ class UnifiedScannerEngine:
         return self.statistics
 
     def get_performance_metrics(self) -> PerformanceMetrics:
-        """Get performance metrics."""
+        """Get performance metrics including I/O statistics."""
         self.resource_monitor.update_metrics()
 
         cache_stats = self.scan_cache.get_cache_stats()
         self.resource_monitor.metrics.cache_hits = cache_stats.get("total_accesses", 0)
+
+        # Add I/O metrics from AdvancedIOManager (use correct property name)
+        io_metrics = self.io_manager.metrics  # Use metrics property
+        self.resource_monitor.metrics.io_throughput_mbps = (
+            io_metrics.avg_throughput_mbps
+        )  # Property
+        self.resource_monitor.metrics.total_bytes_read = io_metrics.total_bytes_read
+        self.resource_monitor.metrics.io_strategy_usage = io_metrics.strategy_usage
 
         return self.resource_monitor.metrics
 

@@ -1,0 +1,50 @@
+# Scheduled Maintenance Workflow
+# Automated system maintenance and scanning
+
+id: scheduled_maintenance
+name: "Scheduled Maintenance"
+description: "Periodic system maintenance workflow with updates and scanning"
+rollback_on_failure: false
+
+steps:
+  - id: update_definitions
+    name: "Update Virus Definitions"
+    type: action
+    action: update_definitions
+    params:
+      output_key: update_result
+    on_failure: retry
+    max_retries: 3
+    timeout: 300.0
+
+  - id: quick_scan
+    name: "Run Quick System Scan"
+    type: action
+    action: run_scan
+    params:
+      path: /home
+      scan_type: quick
+      output_key: scan_result
+    on_failure: skip
+    timeout: 600.0
+
+  - id: generate_report
+    name: "Generate Compliance Report"
+    type: action
+    action: generate_report
+    params:
+      report_type: compliance
+      output_key: report_result
+    on_failure: skip
+    timeout: 60.0
+
+  - id: email_report
+    name: "Email Report to Admins"
+    type: notification
+    action: send_notification
+    params:
+      recipient: admin@company.com
+      message: "Weekly maintenance completed"
+    condition: 'context.get("report_result") is not None'
+    on_failure: skip
+    timeout: 10.0

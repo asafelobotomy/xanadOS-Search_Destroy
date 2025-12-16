@@ -177,6 +177,9 @@ class ScanConfiguration(BaseConfigurationModel):
     exclusion_patterns: str = ""
     scan_timeout: int = 300
 
+    # Safe files list (files marked as safe by user)
+    safe_files: List[str] = []
+
     # Performance settings
     scan_batch_size: int = 50
     enable_async_scanning: bool = True
@@ -1199,6 +1202,135 @@ class UnifiedConfigurationManager:
         """Get log directory path"""
         paths = self.config_cache.get("paths", {})
         return Path(paths.get("log_dir", str(self.data_dir / "logs")))
+
+    def add_safe_file(self, file_path: str) -> bool:
+        """Add a file to the safe files list.
+
+        Args:
+            file_path: Path to the file to mark as safe
+
+        Returns:
+            True if file was added, False if already in list
+        """
+        try:
+            # Normalize path
+            normalized_path = str(Path(file_path).resolve())
+
+            # Get current safe files list from config cache
+            if "scan_settings" not in self.config_cache:
+                self.config_cache["scan_settings"] = {}
+
+            safe_files = self.config_cache["scan_settings"].get("safe_files", [])
+
+            # Check if already in list
+            if normalized_path in safe_files:
+                self.logger.info(f"File already in safe list: {normalized_path}")
+                return False
+
+            # Add to list
+            safe_files.append(normalized_path)
+            self.config_cache["scan_settings"]["safe_files"] = safe_files
+
+            # Update _config_data as well for consistency
+            if "scan_settings" not in self._config_data:
+                self._config_data["scan_settings"] = {}
+            self._config_data["scan_settings"]["safe_files"] = safe_files
+
+            # Save using the standard save function (non-async for compatibility)
+            import asyncio
+
+            try:
+                loop = asyncio.get_event_loop()
+                if loop.is_running():
+                    # If loop is running, schedule coroutine
+                    asyncio.create_task(self.save_configuration())
+                else:
+                    # Otherwise run it
+                    loop.run_until_complete(self.save_configuration())
+            except RuntimeError:
+                # Fallback to creating new event loop
+                asyncio.run(self.save_configuration())
+
+            self.logger.info(f"Added file to safe list: {normalized_path}")
+            return True
+
+        except Exception as e:
+            self.logger.error(f"Failed to add safe file: {e}")
+            return False
+
+    def remove_safe_file(self, file_path: str) -> bool:
+        """Remove a file from the safe files list.
+
+        Args:
+            file_path: Path to the file to remove from safe list
+
+        Returns:
+            True if file was removed, False if not in list
+        """
+        try:
+            # Normalize path
+            normalized_path = str(Path(file_path).resolve())
+
+            # Get current safe files list
+            safe_files = self.config_cache.get("scan_settings", {}).get(
+                "safe_files", []
+            )
+
+            # Check if in list
+            if normalized_path not in safe_files:
+                self.logger.info(f"File not in safe list: {normalized_path}")
+                return False
+
+            # Remove from list
+            safe_files.remove(normalized_path)
+            self.config_cache["scan_settings"]["safe_files"] = safe_files
+
+            # Update _config_data as well
+            if "scan_settings" in self._config_data:
+                self._config_data["scan_settings"]["safe_files"] = safe_files
+
+            # Save using the standard save function (non-async for compatibility)
+            import asyncio
+
+            try:
+                loop = asyncio.get_event_loop()
+                if loop.is_running():
+                    asyncio.create_task(self.save_configuration())
+                else:
+                    loop.run_until_complete(self.save_configuration())
+            except RuntimeError:
+                asyncio.run(self.save_configuration())
+
+            self.logger.info(f"Removed file from safe list: {normalized_path}")
+            return True
+
+        except Exception as e:
+            self.logger.error(f"Failed to remove safe file: {e}")
+            return False
+
+    def get_safe_files(self) -> List[str]:
+        """Get the list of safe files.
+
+        Returns:
+            List of file paths marked as safe
+        """
+        return self.config_cache.get("scan_settings", {}).get("safe_files", [])
+
+    def is_safe_file(self, file_path: str) -> bool:
+        """Check if a file is in the safe files list.
+
+        Args:
+            file_path: Path to check
+
+        Returns:
+            True if file is marked as safe
+        """
+        try:
+            normalized_path = str(Path(file_path).resolve())
+            safe_files = self.get_safe_files()
+            return normalized_path in safe_files
+        except Exception:
+            return False
 
     def export_configuration(self, include_sensitive: bool = False) -> dict[str, Any]:
         """Export configuration for backup/sharing"""

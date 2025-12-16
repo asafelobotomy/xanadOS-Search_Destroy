@@ -1733,7 +1733,24 @@ class FileScanner:
         return file_path.suffix.lower() in archive_extensions
 
     def _is_excluded_file(self, file_path, exclusions):
-        """Check if a file matches any exclusion pattern."""
+        """Check if a file matches any exclusion pattern or is in safe files list."""
+        from pathlib import Path
+
+        # Check safe files list first (exact path matches)
+        try:
+            from app.core.unified_configuration_manager import get_config
+
+            config = get_config()
+            safe_files = config.get("scan_settings", {}).get("safe_files", [])
+            normalized_path = str(Path(file_path).resolve())
+
+            if normalized_path in safe_files:
+                self.logger.debug(f"Skipping safe file: {file_path}")
+                return True
+        except Exception as e:
+            self.logger.debug(f"Could not check safe files list: {e}")
+
+        # Check exclusion patterns
         file_str = str(file_path)
         for pattern in exclusions:
             if fnmatch.fnmatch(file_str, pattern) or fnmatch.fnmatch(

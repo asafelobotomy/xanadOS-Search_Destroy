@@ -40,6 +40,8 @@ dependencies = [
     "watchdog>=6.0.0",      # Modern file system monitoring (replaces inotify for Python 3.13+)
     "dnspython>=2.8.0",     # Latest stable (was 2.6.0)
     "python-dotenv>=1.0.1", # Latest stable (was 1.0.0)
+    "cachetools>=5.5.0",    # Advanced caching with TTL/LRU/LFU support - Task 1.2
+    "aiofiles>=24.1.0",     # Async file I/O for advanced I/O optimization - Task 1.3
     # API Framework dependencies - required for app/api/ modules
     "fastapi>=0.104.0",            # Modern async web framework
     "uvicorn[standard]>=0.24.0",   # ASGI server with performance extras
@@ -81,6 +83,11 @@ advanced = [
     "jinja2>=3.1.0",       # Template engine for reports
     "markdown>=3.4.0",     # Markdown processing for reports
     "boto3>=1.35.0",       # AWS cloud integration
+]
+# Phase 2: Real-time security dashboard components (Task 2.1.1)
+dashboard = [
+    "pyqtgraph>=0.13.0", # High-performance real-time plotting
+    "numpy>=2.2.0",      # Numerical operations (already in core deps, but explicit here)
 ]
 dev = [
     # Core linting and formatting - latest versions
@@ -618,10 +625,6 @@ log_cli_date_format = "%Y-%m-%d %H:%M:%S"
 # Timeout for long-running tests
 timeout = 300             # 5 minutes max per test
 timeout_method = "thread"
-
-# PyQt6 GUI testing
-qt_api = "pyqt6"
-qt_no_exception_capture = false
 
 # Asyncio configuration
 asyncio_mode = "auto"

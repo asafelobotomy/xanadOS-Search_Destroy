@@ -405,6 +405,87 @@ class ClamAVWrapper:
                 error_message=str(e),
             )
 
+    def scan_data(self, file_data: bytes, file_path: str, **kwargs) -> ScanFileResult:
+        """Scan pre-read file data with ClamAV.
+
+        This method accepts file data that has already been read into memory,
+        avoiding redundant file I/O operations. Ideal for integration with
+        advanced I/O systems.
+
+        Args:
+            file_data: File content as bytes
+            file_path: Original file path (for reporting purposes)
+            **kwargs: Additional scan options
+
+        Returns:
+            ScanFileResult with scan details
+        """
+        if not self.available:
+            return ScanFileResult(
+                file_path=file_path,
+                result=ScanResult.ERROR,
+                error_message="ClamAV not available",
+            )
+
+        # Get file info
+        file_size = len(file_data)
+        start_time = datetime.now()
+
+        try:
+            # Use clamscan with stdin input
+            cmd = [self.clamscan_path]
+            cmd.extend(self._build_scan_options(**kwargs))
+            cmd.append("-")  # Read from stdin
+
+            # Run scan with data as stdin
+            result = run_secure(
+                cmd,
+                timeout=self.config["advanced_settings"]["scan_timeout"],
+                capture_output=True,
+                text=True,
+                input=file_data,
+            )
+
+            scan_time = (datetime.now() - start_time).total_seconds()
+
+            # Parse result (use file_path for reporting)
+            scan_result = self._parse_scan_output(
+                file_path,
+                result.stdout,
+                result.stderr,
+                result.returncode,
+                file_size,
+                scan_time,
+            )
+
+            # SECURITY: Log scan results for test files
+            if "eicar" in file_path.lower():
+                print(f"📊 SECURITY: EICAR data scan completed")
+                print(f"   Result: {scan_result.result}")
+                print(f"   Threat: {scan_result.threat_name}")
+                print(f"   Data size: {file_size} bytes")
+
+            return scan_result
+
+        except subprocess.TimeoutExpired:
+            scan_time = (datetime.now() - start_time).total_seconds()
+            return ScanFileResult(
+                file_path=file_path,
+                result=ScanResult.TIMEOUT,
+                file_size=file_size,
+                scan_time=scan_time,
+                error_message="Scan timeout",
+            )
+        except (subprocess.SubprocessError, OSError, ValueError, PermissionError) as e:
+            scan_time = (datetime.now() - start_time).total_seconds()
+            return ScanFileResult(
+                file_path=file_path,
+                result=ScanResult.ERROR,
+                file_size=file_size,
+                scan_time=scan_time,
+                error_message=str(e),
+            )
+
     def scan_directory(self, directory_path: str, **kwargs) -> list[ScanFileResult]:
         """Scan a directory recursively."""
         # Directory validation

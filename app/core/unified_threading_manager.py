@@ -53,6 +53,15 @@ from weakref import WeakSet
 
 import psutil
 
+# Import AdaptiveWorkerPool from separate module to avoid circular imports
+try:
+    from .adaptive_worker_pool import AdaptiveWorkerPool
+
+    HAS_ADAPTIVE_POOL = True
+except ImportError:
+    HAS_ADAPTIVE_POOL = False
+    AdaptiveWorkerPool = None
+
 try:
     from PyQt6.QtCore import QThread, pyqtSignal
 
@@ -618,8 +627,11 @@ class UnifiedThreadingManager:
         # Core components
         self.resource_coordinator = AsyncResourceCoordinator()
 
-        # Thread pools
+        # Thread pools with adaptive scaling
         self.thread_pools: dict[ThreadPoolType, ThreadPoolExecutor] = {}
+        self.adaptive_pools: dict[ThreadPoolType, Any] = (
+            {}
+        )  # AdaptiveWorkerPool instances
         self._initialize_thread_pools()
 
         # Async components
@@ -648,10 +660,32 @@ class UnifiedThreadingManager:
         try:
             cpu_count = psutil.cpu_count(logical=False) or 4
 
-            # IO-bound operations (file I/O, network)
-            self.thread_pools[ThreadPoolType.IO_BOUND] = ThreadPoolExecutor(
-                max_workers=min(cpu_count * 4, 32), thread_name_prefix="IO"
-            )
+            # IO-bound operations with adaptive worker pool (file scanning)
+            if HAS_ADAPTIVE_POOL and AdaptiveWorkerPool:
+                adaptive_pool = AdaptiveWorkerPool(
+                    min_workers=None,  # Auto-calculate based on cores
+                    max_workers=None,
+                    adjustment_interval=5.0,
+                    enable_monitoring=True,
+                )
+                initial_workers = adaptive_pool.current_workers
+                self.thread_pools[ThreadPoolType.IO_BOUND] = ThreadPoolExecutor(
+                    max_workers=initial_workers, thread_name_prefix="IO"
+                )
+                adaptive_pool.set_executor(self.thread_pools[ThreadPoolType.IO_BOUND])
+                self.adaptive_pools[ThreadPoolType.IO_BOUND] = adaptive_pool
+                self.logger.info(
+                    f"IO-bound pool with adaptive scaling: {initial_workers} workers "
+                    f"(min: {adaptive_pool.min_workers}, max: {adaptive_pool.max_workers})"
+                )
+            else:
+                # Fallback without adaptive scaling
+                self.thread_pools[ThreadPoolType.IO_BOUND] = ThreadPoolExecutor(
+                    max_workers=min(cpu_count * 4, 32), thread_name_prefix="IO"
+                )
+                self.logger.info(
+                    f"IO-bound pool: {min(cpu_count * 4, 32)} workers (fixed)"
+                )
 
             # CPU-bound operations (computations, analysis)
             self.thread_pools[ThreadPoolType.CPU_BOUND] = ThreadPoolExecutor(

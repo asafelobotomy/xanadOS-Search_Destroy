@@ -10711,13 +10711,52 @@ Common False Positives:
 
             elif action == "safe":
                 # Add to exclusions/whitelist
-                self.show_themed_message_box(
-                    "information",
-                    "Marked as Safe",
-                    f"File marked as safe and will be excluded from future scans:\n{file_path}\n\n"
-                    "You can manage exclusions in Settings.",
-                )
-                # TODO: Actually add to exclusions list in settings
+                try:
+                    from app.core.unified_configuration_manager import (
+                        get_config,
+                        save_config,
+                    )
+
+                    # Get current config
+                    config = get_config()
+
+                    # Initialize safe_files list if not present
+                    if "scan_settings" not in config:
+                        config["scan_settings"] = {}
+                    if "safe_files" not in config["scan_settings"]:
+                        config["scan_settings"]["safe_files"] = []
+
+                    # Normalize file path
+                    from pathlib import Path
+
+                    normalized_path = str(Path(file_path).resolve())
+
+                    # Add to safe files if not already present
+                    if normalized_path not in config["scan_settings"]["safe_files"]:
+                        config["scan_settings"]["safe_files"].append(normalized_path)
+
+                        # Save config
+                        save_config(config)
+
+                        self.show_themed_message_box(
+                            "information",
+                            "Marked as Safe",
+                            f"File marked as safe and will be excluded from future scans:\n{file_path}\n\n"
+                            "You can manage exclusions in Settings.",
+                        )
+                    else:
+                        self.show_themed_message_box(
+                            "information",
+                            "Already Safe",
+                            f"This file is already in the safe list:\n{file_path}",
+                        )
+                except Exception as e:
+                    self.logger.error(f"Failed to add file to safe list: {e}")
+                    self.show_themed_message_box(
+                        "warning",
+                        "Error",
+                        f"Failed to mark file as safe:\n{e}",
+                    )
 
             # Close dialog after action
             dialog.accept()

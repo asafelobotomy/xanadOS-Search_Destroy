@@ -540,10 +540,51 @@ class AuthenticationFramework:
             return None
 
     async def check_rate_limit(self, identifier: str) -> bool:
-        """Check if identifier is within rate limits."""
-        # Simplified rate limiting - in production would use Redis or similar
-        # This is a placeholder for the rate limiting logic
-        return True
+        """Check if identifier is within rate limits.
+
+        Args:
+            identifier: Unique identifier for the entity (user_id, IP, API key hash)
+
+        Returns:
+            True if within rate limits, False if rate limited
+        """
+        try:
+            # Import rate limiting functionality
+            from app.core.rate_limiting import rate_limit_manager, RateLimit
+
+            # Get or create a rate limiter for this identifier
+            limiter_key = f"auth_{identifier}"
+
+            # Try to get existing limiter
+            if limiter_key not in rate_limit_manager.limiters:
+                # Create a new rate limiter for authentication attempts
+                # Use configuration values or defaults
+                rate_limit = RateLimit(
+                    calls=(
+                        self.config.api_rate_limit_per_minute
+                        if hasattr(self.config, "api_rate_limit_per_minute")
+                        else 60
+                    ),
+                    period=60.0,  # 1 minute window
+                    burst=20,  # Allow some burst traffic
+                )
+                rate_limit_manager.set_rate_limit(
+                    limiter_key, rate_limit, adaptive=False
+                )
+
+            # Check if we can acquire a token (i.e., make another request)
+            allowed = rate_limit_manager.acquire(limiter_key)
+
+            if not allowed:
+                self.logger.warning(f"Rate limit exceeded for identifier: {identifier}")
+
+            return allowed
+
+        except Exception as e:
+            # On error, allow the request but log the issue
+            # This prevents rate limiting failures from blocking legitimate requests
+            self.logger.error(f"Rate limit check failed: {e}")
+            return True
 
     def is_locked_out(self, identifier: str) -> bool:
         """Check if identifier is currently locked out."""

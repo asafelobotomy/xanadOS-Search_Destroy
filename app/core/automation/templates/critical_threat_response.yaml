@@ -1,0 +1,57 @@
+# Critical Threat Response Workflow
+# Automated response to critical malware detection
+
+id: critical_threat_response
+name: "Critical Threat Response"
+description: "Automated workflow for handling critical malware detections"
+rollback_on_failure: true
+
+steps:
+  - id: quarantine
+    name: "Quarantine Malicious File"
+    type: action
+    action: quarantine_file
+    params:
+      output_key: quarantine_result
+    on_failure: rollback
+    rollback_action: delete_file
+    timeout: 10.0
+
+  - id: kill_process
+    name: "Terminate Associated Process"
+    type: action
+    action: kill_process
+    params:
+      output_key: process_result
+    condition: 'context.get("process_id") is not None'
+    on_failure: skip
+    timeout: 5.0
+
+  - id: generate_report
+    name: "Generate Incident Report"
+    type: action
+    action: generate_report
+    params:
+      report_type: incident
+      output_key: report_result
+    on_failure: skip
+    timeout: 30.0
+
+  - id: notify_admin
+    name: "Send Admin Notification"
+    type: notification
+    action: send_notification
+    params:
+      recipient: admin@company.com
+      message: "Critical threat detected and quarantined"
+    on_failure: skip
+    timeout: 5.0
+
+  - id: webhook_alert
+    name: "Trigger Security Alert Webhook"
+    type: webhook
+    action: call_webhook
+    params:
+      url: "https://security.company.com/api/alerts"
+    on_failure: skip
+    timeout: 10.0
