@@ -227,6 +227,10 @@ def test_detect_time_weekend(mock_datetime, context_manager):
 def test_detect_network_lan(mock_addrs, mock_stats, context_manager):
     """Test LAN network detection."""
     # Mock network interfaces
+@patch("psutil.net_if_addrs")
+@patch("psutil.net_if_stats")
+def test_detect_network_lan(mock_stats, mock_addrs, context_manager):
+    """Test LAN network detection."""
     mock_stats.return_value = {"eth0": Mock(isup=True)}
 
     mock_addr = Mock()

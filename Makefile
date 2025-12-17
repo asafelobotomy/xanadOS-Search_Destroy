@@ -87,7 +87,7 @@ install-deps: check-env ## Install all dependencies with modern package managers
 
 validate: ## Run comprehensive validation
 	@echo -e "$(BOLD)$(GREEN)✅ Running comprehensive validation...$(NC)"
-	@npm run quick:validate
+	@bash scripts/tools/validation/enhanced-quick-validate.sh
 
 test: ## Run tests
 	@echo -e "$(BOLD)$(GREEN)🧪 Running tests...$(NC)"

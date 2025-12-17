@@ -2,11 +2,11 @@
 
 ## Project Overview
 
-A comprehensive Linux security scanner and protection suite combining ClamAV signature-based detection, YARA heuristic analysis, real-time file system monitoring, and automated system hardening. Built with Python 3.13+, PyQt6 GUI, FastAPI REST API/WebSocket backend, and enterprise-grade security frameworks.
+A comprehensive Linux security scanner combining ClamAV signature-based detection, YARA heuristic analysis, real-time file system monitoring, and automated system hardening.
 
 **Current Version**: 0.3.0-beta
-**Technology Stack**: Python 3.13+, PyQt6, FastAPI/uvicorn, aiohttp, watchdog, Redis, SQLAlchemy, YARA, ClamAV, PolicyKit, systemd
-**Package Management**: `uv` (Python), `pnpm` (Node.js), `fnm` (Node version management)
+**Stack**: Python 3.13+, PyQt6, FastAPI, watchdog, Redis, SQLAlchemy, YARA, ClamAV, PolicyKit
+**Package Manager**: `uv` (preferred) or `pip`
 
 ## Core Architecture
 
@@ -176,27 +176,17 @@ app/
 
 ### Setup & Dependencies
 
-**One-Command Setup** (handles everything):
+**One-Command Setup**:
 ```bash
-make setup           # Installs uv, Python deps, system deps, pre-commit hooks
+make setup           # Installs uv, Python deps, system deps
 ```
 
-**Manual Steps**:
+**Package Manager**: Use `uv` (modern, fast Rust-based) over `pip`
 ```bash
-make setup-python-env    # Create .venv with uv or python3
-make install-deps        # Install dependencies (uv sync --all-extras OR pip install -e .)
-make validate            # Run validation via npm run quick:validate
+uv sync --all-extras  # Install all dependencies from pyproject.toml
 ```
 
-**CRITICAL**: There is **NO package.json** in this project. Validation runs via bash scripts:
-- `make validate` → executes bash validation scripts via Make targets
-- Validation scripts are in `scripts/tools/validation/`
-- Do NOT expect `npm install` or Node.js dependencies (legacy documentation artifact)
-
-**Package Manager Preference**:
-- Use `uv` (modern, fast Rust-based package manager) over `pip`
-- `uv sync --all-extras` installs dependencies from `pyproject.toml`
-- Optional dependency groups: `[security]`, `[malware-analysis]`, `[advanced]`, `[dev]`
+**Optional dependency groups**: `[security]`, `[malware-analysis]`, `[advanced]`, `[dev]`, `[dashboard]`
 
 **System Dependencies** (Debian/Ubuntu):
 ```bash
@@ -208,63 +198,35 @@ sudo apt install clamav clamav-daemon freshclam yara python3-dev build-essential
 ```bash
 python -m pytest tests/              # All tests
 python -m pytest tests/test_core/    # Core logic only
-python -m pytest tests/test_gui.py -v  # GUI tests (mocked PyQt6)
 python -m pytest -k test_scanner     # Specific test pattern
 python -m pytest --cov=app           # With coverage
 ```
 
-**Test Fixtures** (`tests/conftest.py`):
-- `mock_pyqt`: Auto-mocks all PyQt6 modules for headless testing
-- `temp_workspace`: Provides temporary directory (auto-cleanup)
-- `mock_file_system`: Creates common directory structure
-- All fixtures have session/function scope management
+**Test Structure**: Mirror `app/` structure: `app/core/scanner.py` → `tests/test_core/test_scanner.py`
 
-**Test Structure Rules**:
-- Mirror `app/` structure: `app/core/scanner.py` → `tests/test_core/test_scanner.py`
-- Use descriptive test names: `test_scanner_detects_malware_with_clamav()`
-- Mock external dependencies (ClamAV, network, filesystem)
+### Validation & Quality
 
-### Validation & Quality Assurance
-
-**Validation System** (bash-based, NO package.json):
+**Validation is bash-based** (NOT npm):
 ```bash
-make validate                       # Primary validation command
-# Internally calls: bash scripts/tools/validation/enhanced-quick-validate.sh
+make validate  # Runs bash validation scripts from scripts/tools/validation/
+```
 
-# Alternative invocation (equivalent)
+**Alternative invocation**:
+```bash
 bash scripts/tools/validation/enhanced-quick-validate.sh
 ```
 
-**Validation Phases** (from `scripts/tools/validation/enhanced-quick-validate.sh`):
-1. **Development Tools**: Checks for `uv`, `pnpm`, `fnm` availability
-2. **Core Infrastructure**: Python environment, directory structure
-3. **Essential Validation**: Markdown linting, spell checking, version sync
-4. **Code Quality**: Python code quality (non-blocking warnings)
-
-**Common Validation Commands**:
-```bash
-make validate                       # Quick validation (recommended)
-bash scripts/tools/validation/validate-structure.sh  # Structure validation
-bash scripts/tools/quality/check-python.sh          # Python quality only
-bash scripts/tools/security/privilege-escalation-audit.py  # Security audit
-```
-
-**IMPORTANT**: The project references `npm run quick:validate` in documentation, but this is **legacy**. Use `make validate` or direct bash script invocation instead.
+**IMPORTANT**: There is NO real `package.json` workflow. The Makefile reference to `npm run quick:validate` is legacy - it actually invokes bash scripts.
 
 ### Running the Application
 
 ```bash
-make run                    # Preferred (handles environment setup)
-python -m app.main          # Alternative (direct Python execution)
-python -m app.main --skip-policy-check  # Skip PolicyKit verification
+make run                              # Preferred
+python -m app.main                    # Alternative
+python -m app.main --skip-policy-check  # Skip PolicyKit check
 ```
 
-**Entry Point Details** (`app/main.py`):
-1. **Single-Instance Guard**: Uses Unix socket in `/tmp/` to prevent multiple instances
-2. **Splash Screen**: `ModernSplashScreen` with progressive loading phases
-3. **Setup Wizard**: First-time setup for PolicyKit policies and ClamAV
-4. **Progressive Loading**: 5 phases (UI init, cache, system check, dashboard, finalization)
-5. **Wayland Compatibility**: Sets `QT_WAYLAND_DISABLE_WINDOWDECORATION=1` automatically
+**Entry Point** (`app/main.py`): Single-instance guard → Splash screen → Setup wizard → Main window
 
 ## Critical Conventions
 
