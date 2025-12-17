@@ -1,0 +1,246 @@
+name: Train ML Models
+
+on:
+  # Manual trigger
+  workflow_dispatch:
+    inputs:
+      dataset_size:
+        description: "Dataset size (quick/full)"
+        required: true
+        default: "quick"
+        type: choice
+        options:
+          - quick
+          - full
+
+  # Scheduled monthly retraining
+  schedule:
+    - cron: "0 0 1 * *" # 1st of every month at midnight UTC
+
+  # Trigger on relevant code changes
+  push:
+    paths:
+      - "scripts/ml/**"
+      - "app/ml/**"
+      - ".github/workflows/train-models.yml"
+    branches:
+      - master
+
+jobs:
+  train-models:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180 # 3 hours max
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install uv
+        run: |
+          curl -LsSf https://astral.sh/uv/install.sh | sh
+          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+
+      - name: Install dependencies
+        run: |
+          uv sync --extra malware-analysis --extra dev
+
+      - name: Acquire dataset
+        run: |
+          # Whitelist validation to prevent command injection (CWE-78)
+          INPUT_SIZE="${{ github.event.inputs.dataset_size || 'quick' }}"
+          case "$INPUT_SIZE" in
+            quick|full)
+              DATASET_SIZE="$INPUT_SIZE"
+              ;;
+            *)
+              echo "❌ ERROR: Invalid dataset_size. Must be 'quick' or 'full'"
+              echo "Received: $INPUT_SIZE"
+              exit 1
+              ;;
+          esac
+
+          # Override for scheduled builds
+          if [ "${{ github.event_name }}" = "schedule" ]; then
+            DATASET_SIZE="full"
+          fi
+
+          echo "📦 Acquiring dataset: $DATASET_SIZE"
+          uv run python scripts/ml/dataset_workflow.py --${DATASET_SIZE}
+        env:
+          PYTHONUNBUFFERED: 1
+
+      - name: Train Random Forest model
+        run: |
+          echo "🤖 Training Random Forest model..."
+          uv run python scripts/ml/train_random_forest.py
+        env:
+          PYTHONUNBUFFERED: 1
+
+      - name: Tune hyperparameters (full dataset only)
+        if: github.event.inputs.dataset_size == 'full' || github.event_name == 'schedule'
+        run: |
+          echo "⚙️  Tuning hyperparameters..."
+          uv run python scripts/ml/tune_random_forest.py
+        env:
+          PYTHONUNBUFFERED: 1
+
+      - name: Promote to production
+        run: |
+          echo "🚀 Promoting model to production..."
+          uv run python scripts/ml/promote_to_production.py
+        env:
+          PYTHONUNBUFFERED: 1
+
+      - name: Run tests
+        run: |
+          echo "🧪 Testing ML integration..."
+          uv run pytest tests/test_core/test_ml_integration.py -v
+
+      - name: Generate model metadata
+        run: |
+          echo "📝 Generating model metadata..."
+          python3 << 'PYTHON'
+          import json
+          import hashlib
+          from pathlib import Path
+          from datetime import datetime
+
+          model_path = Path("models/production/malware_detector_rf").glob("*.pkl")
+          model_path = next(model_path)
+
+          with open(model_path, 'rb') as f:
+              sha256 = hashlib.sha256(f.read()).hexdigest()
+
+          metadata = {
+              "filename": model_path.name,
+              "sha256": sha256,
+              "size_bytes": model_path.stat().st_size,
+              "build_date": datetime.utcnow().isoformat(),
+              "github_run": "${{ github.run_id }}",
+              "github_sha": "${{ github.sha }}"
+          }
+
+          with open("build_metadata.json", 'w') as f:
+              json.dump(metadata, f, indent=2)
+
+          print(f"✅ Model: {model_path.name}")
+          print(f"✅ SHA256: {sha256}")
+          print(f"✅ Size: {model_path.stat().st_size} bytes")
+          PYTHON
+
+      - name: Package models
+        run: |
+          echo "📦 Packaging models..."
+          cd models
+          tar -czf ../models.tar.gz production/ checkpoints/
+          cd ..
+
+          echo "📊 Package size:"
+          ls -lh models.tar.gz
+
+      - name: Upload model artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ml-models-${{ github.run_id }}
+          path: |
+            models.tar.gz
+            build_metadata.json
+            models/production/*/model_metadata.json
+            models/production/*/MODEL_CARD.md
+            models/production/*/checksums.txt
+          retention-days: 90
+
+      - name: Create release (scheduled only)
+        if: github.event_name == 'schedule'
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: models-${{ github.run_number }}
+          name: ML Models - ${{ github.run_number }}
+          body: |
+            ## Automated ML Model Release
+
+            **Build Date**: ${{ github.event.head_commit.timestamp }}
+            **Dataset**: Full (50K samples)
+            **Model Version**: Auto-incremented
+
+            ### Files Included:
+            - `models.tar.gz` - All trained models
+            - `build_metadata.json` - Build information
+            - SHA256 checksums for verification
+
+            ### Usage:
+            ```bash
+            wget https://github.com/${{ github.repository }}/releases/download/models-${{ github.run_number }}/models.tar.gz
+            tar -xzf models.tar.gz
+            sha256sum -c models/production/*/checksums.txt
+            ```
+
+            ### Performance:
+            See `models/production/*/MODEL_CARD.md` for detailed metrics.
+          files: |
+            models.tar.gz
+            build_metadata.json
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Comment on PR (if applicable)
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const metadata = JSON.parse(fs.readFileSync('build_metadata.json', 'utf8'));
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `## 🤖 ML Model Training Complete
+
+              **Model**: ${metadata.filename}
+              **SHA256**: \`${metadata.sha256}\`
+              **Size**: ${metadata.size_bytes} bytes
+
+              Download artifacts from this workflow run to test the updated model.`
+            });
+
+  security-scan:
+    runs-on: ubuntu-latest
+    needs: train-models
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: ml-models-${{ github.run_id }}
+
+      - name: Security scan of model files
+        run: |
+          echo "🔒 Running security checks..."
+
+          # Verify no malware samples in artifacts
+          if tar -tzf models.tar.gz | grep -E "(\.exe|\.dll|\.bin|malware/|benign/)"; then
+            echo "❌ SECURITY ALERT: Binary files detected in model archive!"
+            exit 1
+          fi
+
+          # Verify only .pkl and metadata files
+          if ! tar -tzf models.tar.gz | grep -vE "(\.pkl|\.json|\.md|\.txt|/$)"; then
+            echo "✅ Security check passed: Only model and metadata files"
+          fi
+
+          # Verify reasonable file sizes (models should be <10MB)
+          MAX_SIZE=10485760  # 10MB
+          if [ $(stat -c%s models.tar.gz) -gt $MAX_SIZE ]; then
+            echo "⚠️  WARNING: Archive larger than expected"
+          fi
+
+          echo "✅ Security scan complete"

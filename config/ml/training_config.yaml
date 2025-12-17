@@ -1,0 +1,48 @@
+# ML Training Configuration
+# Phase 3: Task 3.1 - ML-Based Threat Detection
+
+dataset:
+  train_split: 0.7
+  val_split: 0.15
+  test_split: 0.15
+  cache_dir: "data/cache"
+  malware_dir: "data/malware"
+  benign_dir: "data/benign"
+  organized_dir: "data/organized"
+
+training:
+  batch_size: 32
+  epochs: 50
+  learning_rate: 0.0001
+  weight_decay: 0.01
+  checkpoint_dir: "models/checkpoints"
+  experiment_name: "malware-detection"
+
+random_forest:
+  n_estimators: 500
+  max_depth: 30
+  min_samples_split: 10
+  min_samples_leaf: 5
+  class_weight: "balanced"
+
+transformer:
+  vocab_size: 10000
+  embedding_dim: 256
+  num_heads: 8
+  num_layers: 6
+  dropout: 0.1
+  max_seq_length: 512
+
+ensemble:
+  models:
+    - name: "random_forest"
+      weight: 0.3
+    - name: "transformer"
+      weight: 0.5
+    - name: "anomaly_detector"
+      weight: 0.2
+
+wandb:
+  project: "xanados-ml-detection"
+  entity: null # Set to your wandb username/team
+  enabled: true

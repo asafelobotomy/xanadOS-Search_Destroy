@@ -1,0 +1,26 @@
+{
+  "experiments": [
+    {
+      "experiment_id": "e41465a65ef45cf7",
+      "name": "rf_baseline_20251217_095101",
+      "created_at": "2025-12-17T09:51:01.034699",
+      "model_architecture": "RandomForest",
+      "tags": [
+        "baseline",
+        "random-forest"
+      ]
+    },
+    {
+      "experiment_id": "d5ee0b2169134867",
+      "name": "rf_tuned_20251217_100243",
+      "created_at": "2025-12-17T10:02:43.188933+00:00",
+      "model_architecture": "RandomForest",
+      "tags": [
+        "tuned",
+        "random-forest",
+        "hyperparameter-search"
+      ]
+    }
+  ],
+  "last_updated": "2025-12-17T10:02:43.189880"
+}

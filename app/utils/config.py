@@ -42,7 +42,9 @@ def _ensure_secure_dir(path: Path):
             if current_mode != 0o700:
                 path.chmod(0o700)
     except OSError as e:
-        logging.getLogger(APP_NAME).warning("Could not set secure permissions on %s: %s", path, e)
+        logging.getLogger(APP_NAME).warning(
+            "Could not set secure permissions on %s: %s", path, e
+        )
 
 
 _ensure_secure_dir(CONFIG_DIR)
@@ -96,7 +98,9 @@ def setup_logging():
 
         # File handler with rotation
         log_file = LOG_DIR / "application.log"
-        file_handler = RotatingFileHandler(log_file, maxBytes=10 * 1024 * 1024, backupCount=5)
+        file_handler = RotatingFileHandler(
+            log_file, maxBytes=10 * 1024 * 1024, backupCount=5
+        )
         file_handler.setFormatter(formatter)
         file_handler.setLevel(logging.INFO)
 
@@ -109,7 +113,9 @@ def setup_logging():
         try:
             with open(CONFIG_FILE, encoding="utf-8") as cf:
                 cfg_json = json.load(cf)
-            structured = cfg_json.get("advanced_settings", {}).get("structured_logging", False)
+            structured = cfg_json.get("advanced_settings", {}).get(
+                "structured_logging", False
+            )
         except Exception:
             structured = False
         if structured:
@@ -167,7 +173,9 @@ def _atomic_write_json(config_path: Path, config_data):
     tmp_path = None
     try:
         _ensure_secure_dir(config_path.parent)
-        tmp_fd, tmp_path = tempfile.mkstemp(prefix=".config.", dir=str(config_path.parent))
+        tmp_fd, tmp_path = tempfile.mkstemp(
+            prefix=".config.", dir=str(config_path.parent)
+        )
         with os.fdopen(tmp_fd, "w", encoding="utf-8") as tmp_file:
             json.dump(config_data, tmp_file, indent=4, sort_keys=True)
             tmp_file.flush()
@@ -226,7 +234,9 @@ def update_config_setting(config_dict, section, key, value, file_path=None):
         return True
 
     except Exception as e:
-        logging.getLogger(APP_NAME).error("Failed to update setting %s.%s: %s", section, key, e)
+        logging.getLogger(APP_NAME).error(
+            "Failed to update setting %s.%s: %s", section, key, e
+        )
         return False
 
 
@@ -384,6 +394,13 @@ def create_initial_config():
             "enable_async_scanning": True,
             "enable_memory_optimization": True,
         },
+        "ml_scanning": {
+            "enabled": False,  # ML scanning disabled by default
+            "model_name": "malware_detector_rf",
+            "model_version": None,  # None = use production model
+            "confidence_threshold": 0.7,
+            "fallback_to_signature": True,  # Use ClamAV if ML fails
+        },
         "setup": {
             "first_time_setup_completed": False,
             "setup_version": __version__,
@@ -508,17 +525,19 @@ def get_api_security_config():
     # Set secure database path if not configured
     if not db_config.get("path"):
         secure_db_path = DATA_DIR / "security_api.db"
-        db_config.update({
-            "type": "sqlite",
-            "path": str(secure_db_path),
-            "pool_size": 10,
-            "max_overflow": 20,
-            "pool_timeout": 30,
-            "pool_recycle": 3600,
-            "echo": False,
-            "backup_enabled": True,
-            "backup_retention_days": 30
-        })
+        db_config.update(
+            {
+                "type": "sqlite",
+                "path": str(secure_db_path),
+                "pool_size": 10,
+                "max_overflow": 20,
+                "pool_timeout": 30,
+                "pool_recycle": 3600,
+                "echo": False,
+                "backup_enabled": True,
+                "backup_retention_days": 30,
+            }
+        )
 
     # Redis configuration with environment variable support
     if "redis" not in api_config:
@@ -529,7 +548,9 @@ def get_api_security_config():
     redis_config.setdefault("port", int(os.environ.get("REDIS_PORT", "6379")))
     redis_config.setdefault("db", int(os.environ.get("REDIS_DB", "0")))
     redis_config.setdefault("password", os.environ.get("REDIS_PASSWORD", ""))
-    redis_config.setdefault("ssl", os.environ.get("REDIS_SSL", "false").lower() == "true")
+    redis_config.setdefault(
+        "ssl", os.environ.get("REDIS_SSL", "false").lower() == "true"
+    )
     redis_config.setdefault("connection_pool_size", 10)
     redis_config.setdefault("socket_timeout", 30)
     redis_config.setdefault("retry_on_timeout", True)
@@ -549,7 +570,7 @@ def get_api_security_config():
         else:
             # Generate 64-character secure random key
             alphabet = string.ascii_letters + string.digits + "!@#$%^&*()-_=+"
-            secret_key = ''.join(secrets.choice(alphabet) for _ in range(64))
+            secret_key = "".join(secrets.choice(alphabet) for _ in range(64))
             jwt_config["secret_key"] = secret_key
 
             # Log warning about generated key
@@ -559,9 +580,16 @@ def get_api_security_config():
 
     # Set JWT defaults with environment variable overrides
     jwt_config.setdefault("algorithm", os.environ.get("JWT_ALGORITHM", "HS256"))
-    jwt_config.setdefault("access_token_expire_minutes", int(os.environ.get("JWT_ACCESS_EXPIRE_MINUTES", "15")))
-    jwt_config.setdefault("refresh_token_expire_days", int(os.environ.get("JWT_REFRESH_EXPIRE_DAYS", "7")))
-    jwt_config.setdefault("issuer", os.environ.get("JWT_ISSUER", "xanadOS-Security-API"))
+    jwt_config.setdefault(
+        "access_token_expire_minutes",
+        int(os.environ.get("JWT_ACCESS_EXPIRE_MINUTES", "15")),
+    )
+    jwt_config.setdefault(
+        "refresh_token_expire_days", int(os.environ.get("JWT_REFRESH_EXPIRE_DAYS", "7"))
+    )
+    jwt_config.setdefault(
+        "issuer", os.environ.get("JWT_ISSUER", "xanadOS-Security-API")
+    )
     jwt_config.setdefault("audience", os.environ.get("JWT_AUDIENCE", "xanadOS-clients"))
     jwt_config.setdefault("auto_rotate_keys", True)
     jwt_config.setdefault("key_rotation_days", 30)
@@ -571,23 +599,44 @@ def get_api_security_config():
         api_config["rate_limiting"] = {}
 
     rate_config = api_config["rate_limiting"]
-    rate_config.setdefault("enabled", os.environ.get("RATE_LIMIT_ENABLED", "true").lower() == "true")
-    rate_config.setdefault("requests_per_minute", int(os.environ.get("RATE_LIMIT_PER_MINUTE", "60")))
-    rate_config.setdefault("requests_per_hour", int(os.environ.get("RATE_LIMIT_PER_HOUR", "1000")))
-    rate_config.setdefault("requests_per_day", int(os.environ.get("RATE_LIMIT_PER_DAY", "10000")))
+    rate_config.setdefault(
+        "enabled", os.environ.get("RATE_LIMIT_ENABLED", "true").lower() == "true"
+    )
+    rate_config.setdefault(
+        "requests_per_minute", int(os.environ.get("RATE_LIMIT_PER_MINUTE", "60"))
+    )
+    rate_config.setdefault(
+        "requests_per_hour", int(os.environ.get("RATE_LIMIT_PER_HOUR", "1000"))
+    )
+    rate_config.setdefault(
+        "requests_per_day", int(os.environ.get("RATE_LIMIT_PER_DAY", "10000"))
+    )
     rate_config.setdefault("burst_limit", int(os.environ.get("RATE_LIMIT_BURST", "10")))
 
     # IP lists from environment (comma-separated)
     env_whitelist = os.environ.get("RATE_LIMIT_WHITELIST_IPS", "")
     env_blacklist = os.environ.get("RATE_LIMIT_BLACKLIST_IPS", "")
 
-    rate_config.setdefault("whitelist_ips", env_whitelist.split(",") if env_whitelist else [])
-    rate_config.setdefault("blacklist_ips", env_blacklist.split(",") if env_blacklist else [])
+    rate_config.setdefault(
+        "whitelist_ips", env_whitelist.split(",") if env_whitelist else []
+    )
+    rate_config.setdefault(
+        "blacklist_ips", env_blacklist.split(",") if env_blacklist else []
+    )
 
     # Advanced rate limiting features
-    rate_config.setdefault("enable_adaptive_limits", os.environ.get("RATE_LIMIT_ADAPTIVE", "false").lower() == "true")
-    rate_config.setdefault("dos_protection_threshold", int(os.environ.get("RATE_LIMIT_DOS_THRESHOLD", "1000")))
-    rate_config.setdefault("geo_blocking_enabled", os.environ.get("RATE_LIMIT_GEO_BLOCKING", "false").lower() == "true")
+    rate_config.setdefault(
+        "enable_adaptive_limits",
+        os.environ.get("RATE_LIMIT_ADAPTIVE", "false").lower() == "true",
+    )
+    rate_config.setdefault(
+        "dos_protection_threshold",
+        int(os.environ.get("RATE_LIMIT_DOS_THRESHOLD", "1000")),
+    )
+    rate_config.setdefault(
+        "geo_blocking_enabled",
+        os.environ.get("RATE_LIMIT_GEO_BLOCKING", "false").lower() == "true",
+    )
 
     # API keys configuration
     if "api_keys" not in api_config:
@@ -596,7 +645,7 @@ def get_api_security_config():
             "default_rate_limit": 1000,
             "key_length": 32,
             "auto_expire_days": 365,
-            "require_permissions": True
+            "require_permissions": True,
         }
 
     # Security configuration with environment overrides
@@ -604,10 +653,19 @@ def get_api_security_config():
         api_config["security"] = {}
 
     security_config = api_config["security"]
-    security_config.setdefault("require_https", os.environ.get("API_REQUIRE_HTTPS", "true").lower() == "true")
-    security_config.setdefault("allowed_origins", os.environ.get("API_ALLOWED_ORIGINS", "localhost,127.0.0.1").split(","))
-    security_config.setdefault("max_request_size_mb", int(os.environ.get("API_MAX_REQUEST_SIZE_MB", "10")))
-    security_config.setdefault("enable_cors", os.environ.get("API_ENABLE_CORS", "false").lower() == "true")
+    security_config.setdefault(
+        "require_https", os.environ.get("API_REQUIRE_HTTPS", "true").lower() == "true"
+    )
+    security_config.setdefault(
+        "allowed_origins",
+        os.environ.get("API_ALLOWED_ORIGINS", "localhost,127.0.0.1").split(","),
+    )
+    security_config.setdefault(
+        "max_request_size_mb", int(os.environ.get("API_MAX_REQUEST_SIZE_MB", "10"))
+    )
+    security_config.setdefault(
+        "enable_cors", os.environ.get("API_ENABLE_CORS", "false").lower() == "true"
+    )
     security_config.setdefault("csrf_protection", True)
     security_config.setdefault("input_validation", True)
     security_config.setdefault("sql_injection_protection", True)

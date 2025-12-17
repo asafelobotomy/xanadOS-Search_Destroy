@@ -27,6 +27,30 @@ from app.core.automation.workflow_engine import (
     WorkflowStatus,
 )
 
+from app.core.automation.rule_generator import (
+    RuleGenerator,
+    MalwareSample,
+    GeneratedRule,
+    RuleGenerationResult,
+    RuleType,
+    RuleStatus,
+    ThreatCategory,
+)
+
+from app.core.automation.context_manager import (
+    ContextManager,
+    SecurityContext,
+    PolicyRule,
+    ContextChangeEvent,
+    PolicyApplication,
+    Environment,
+    UserRole,
+    TimeOfDay,
+    NetworkType,
+    BatteryStatus,
+    Priority,
+)
+
 __all__ = [
     # Auto-tuning
     "AutoTuner",
@@ -41,4 +65,24 @@ __all__ = [
     "StepType",
     "StepStatus",
     "WorkflowStatus",
+    # Rule generation
+    "RuleGenerator",
+    "MalwareSample",
+    "GeneratedRule",
+    "RuleGenerationResult",
+    "RuleType",
+    "RuleStatus",
+    "ThreatCategory",
+    # Context-aware automation
+    "ContextManager",
+    "SecurityContext",
+    "PolicyRule",
+    "ContextChangeEvent",
+    "PolicyApplication",
+    "Environment",
+    "UserRole",
+    "TimeOfDay",
+    "NetworkType",
+    "BatteryStatus",
+    "Priority",
 ]

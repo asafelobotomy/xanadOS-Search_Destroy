@@ -82,6 +82,16 @@ try:
 except Exception:
     _ML_AVAILABLE = False
 
+# ML Scanner Integration
+try:
+    from .ml_scanner_integration import MLThreatDetector, MLScanResult
+
+    _ML_SCANNER_AVAILABLE = True
+except Exception:
+    _ML_SCANNER_AVAILABLE = False
+    MLThreatDetector = None  # type: ignore
+    MLScanResult = None  # type: ignore
+
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -448,7 +458,21 @@ class QuarantineManager:
         self.quarantine_dir = Path(
             quarantine_dir or self.config.get("quarantine_dir", "/tmp/quarantine")
         )
-        self.quarantine_dir.mkdir(parents=True, exist_ok=True)
+
+        # SECURITY: Create with restrictive permissions (CWE-732 mitigation)
+        self.quarantine_dir.mkdir(parents=True, exist_ok=True, mode=0o700)
+
+        # Verify and fix permissions if needed
+        import stat
+
+        current_mode = self.quarantine_dir.stat().st_mode & 0o777
+        if current_mode != 0o700:
+            self.logger = logging.getLogger(__name__)
+            self.logger.warning(
+                f"Fixing quarantine permissions from {oct(current_mode)} to 0o700"
+            )
+            self.quarantine_dir.chmod(0o700)
+
         self.index_file = self.quarantine_dir / "quarantine_index.json"
         self.logger = logging.getLogger(__name__)
         self._quarantined_files: dict[str, QuarantinedFile] = {}
@@ -479,36 +503,73 @@ class QuarantineManager:
     async def quarantine_file(self, file_path: str, threat_name: str) -> str:
         """Quarantine a file and return the quarantine ID."""
         try:
+            # SECURITY: Use file descriptor to prevent TOCTOU race (CWE-367 mitigation)
+            import os
+            import stat as stat_module
+
             source_path = Path(file_path)
-            if not source_path.exists():
-                raise FileNotFoundError(f"Source file not found: {file_path}")
 
-            # Generate unique quarantine ID using secure hash
-            quarantine_id = f"q_{int(time.time())}_{hashlib.sha256(file_path.encode()).hexdigest()[:16]}"
-            quarantine_path = self.quarantine_dir / quarantine_id
+            # Open with O_NOFOLLOW to prevent symlink attacks
+            try:
+                fd = os.open(file_path, os.O_RDONLY | os.O_NOFOLLOW)
+            except (FileNotFoundError, OSError) as e:
+                raise FileNotFoundError(
+                    f"Cannot open file (may be symlink): {file_path} - {e}"
+                )
 
-            # Calculate file checksum
-            checksum = await self._calculate_checksum(source_path)
+            try:
+                # Use fstat (not stat) to get file info via file descriptor
+                file_stat = os.fstat(fd)
 
-            # Move file to quarantine
-            shutil.move(str(source_path), str(quarantine_path))
+                # Verify it's a regular file (not directory, socket, etc.)
+                if not stat_module.S_ISREG(file_stat.st_mode):
+                    raise ValueError(f"Not a regular file: {file_path}")
 
-            # Create quarantine record
-            quarantined_file = QuarantinedFile(
-                original_path=file_path,
-                quarantine_path=str(quarantine_path),
-                threat_name=threat_name,
-                timestamp=datetime.now(),
-                file_size=quarantine_path.stat().st_size,
-                checksum=checksum,
-                quarantine_id=quarantine_id,
-            )
+                # Generate unique quarantine ID using secure hash
+                quarantine_id = f"q_{int(time.time())}_{hashlib.sha256(file_path.encode()).hexdigest()[:16]}"
+                quarantine_path = self.quarantine_dir / quarantine_id
 
-            self._quarantined_files[quarantine_id] = quarantined_file
-            self._save_index()
+                # Calculate file checksum from file descriptor
+                os.lseek(fd, 0, os.SEEK_SET)  # Reset to start
+                hasher = hashlib.sha256()
+                while True:
+                    chunk = os.read(fd, 8192)
+                    if not chunk:
+                        break
+                    hasher.update(chunk)
+                checksum = hasher.hexdigest()
 
-            self.logger.info(f"File quarantined: {file_path} -> {quarantine_id}")
-            return quarantine_id
+                # Close fd before move (required on some systems)
+                os.close(fd)
+                fd = None
+
+                # Atomic move operation
+                shutil.move(str(source_path), str(quarantine_path))
+
+                # Set restrictive permissions on quarantined file
+                quarantine_path.chmod(0o600)
+
+                # Create quarantine record
+                quarantined_file = QuarantinedFile(
+                    original_path=file_path,
+                    quarantine_path=str(quarantine_path),
+                    threat_name=threat_name,
+                    timestamp=datetime.now(),
+                    file_size=file_stat.st_size,
+                    checksum=checksum,
+                    quarantine_id=quarantine_id,
+                )
+
+                self._quarantined_files[quarantine_id] = quarantined_file
+                self._save_index()
+
+                self.logger.info(f"File quarantined: {file_path} -> {quarantine_id}")
+                return quarantine_id
+
+            finally:
+                # Ensure fd is closed even if error occurs
+                if fd is not None:
+                    os.close(fd)
 
         except Exception as e:
             self.logger.error(f"Failed to quarantine file {file_path}: {e}")
@@ -620,6 +681,29 @@ class UnifiedScannerEngine:
 
         # Quarantine manager (needs io_manager for checksums)
         self.quarantine_manager = QuarantineManager(io_manager=self.io_manager)
+
+        # ML threat detector (optional)
+        self.ml_detector: MLThreatDetector | None = None
+        self.ml_enabled = False
+        if _ML_SCANNER_AVAILABLE:
+            ml_config = get_config().get("ml_scanning", {})
+            if ml_config.get("enabled", False):
+                try:
+                    self.ml_detector = MLThreatDetector(
+                        model_name=ml_config.get("model_name", "malware_detector_rf"),
+                        model_version=ml_config.get(
+                            "model_version"
+                        ),  # None = production
+                    )
+                    self.ml_enabled = True
+                    self.logger.info(
+                        f"ML scanning enabled with {self.ml_detector.model_name} "
+                        f"v{self.ml_detector.metadata.version}"
+                    )
+                except Exception as e:
+                    self.logger.warning(f"Failed to initialize ML detector: {e}")
+                    self.ml_detector = None
+                    self.ml_enabled = False
 
         # Progress tracking
         self.progress = ScanProgress()
@@ -816,15 +900,41 @@ class UnifiedScannerEngine:
             file_size = path_obj.stat().st_size
             scan_result = await self._perform_virus_scan(path_obj)
 
+            # Perform ML scan if enabled
+            ml_result: MLScanResult | None = None
+            if self.ml_enabled and self.ml_detector:
+                try:
+                    loop = asyncio.get_event_loop()
+                    ml_result = await loop.run_in_executor(
+                        self.executor, self.ml_detector.scan_file, path_obj
+                    )
+                except Exception as e:
+                    self.logger.warning(f"ML scan failed for {file_path}: {e}")
+
+            # Combine scan results (ClamAV + ML)
+            is_infected = scan_result.is_infected
+            threat_name = scan_result.virus_name
+            threat_level = (
+                ThreatLevel.HIGH if scan_result.is_infected else ThreatLevel.CLEAN
+            )
+
+            # If ClamAV didn't detect but ML did, flag as infected
+            if ml_result and ml_result.is_malware and not is_infected:
+                is_infected = True
+                threat_name = f"ML:{ml_result.description}"
+                threat_level = (
+                    ThreatLevel.MEDIUM
+                    if ml_result.confidence >= 0.7
+                    else ThreatLevel.LOW
+                )
+
             # Create unified result
             result = UnifiedScanResult(
                 file_path=file_path,
                 scan_id=self._generate_scan_id(),
-                is_infected=scan_result.is_infected,
-                threat_name=scan_result.virus_name,
-                threat_level=(
-                    ThreatLevel.HIGH if scan_result.is_infected else ThreatLevel.CLEAN
-                ),
+                is_infected=is_infected,
+                threat_name=threat_name,
+                threat_level=threat_level,
                 scan_duration=time.time() - start_time,
                 file_size=file_size,
                 metadata={
@@ -834,6 +944,17 @@ class UnifiedScannerEngine:
                         if hasattr(scan_result, "__dict__")
                         else str(scan_result)
                     ),
+                    "ml_result": (
+                        {
+                            "is_malware": ml_result.is_malware,
+                            "confidence": ml_result.confidence,
+                            "model_version": ml_result.model_version,
+                            "detection_time": ml_result.detection_time,
+                        }
+                        if ml_result
+                        else None
+                    ),
+                    "ml_enabled": self.ml_enabled,
                 },
             )
 

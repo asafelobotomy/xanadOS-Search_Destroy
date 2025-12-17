@@ -1,0 +1,152 @@
+name: Continuous Integration
+
+on:
+    push:
+        branches: [master, develop]
+    pull_request:
+        branches: [master, develop]
+
+jobs:
+    test:
+        name: Test Python ${{ matrix.python-version }} on ${{ matrix.os }}
+        runs-on: ${{ matrix.os }}
+        strategy:
+            fail-fast: false
+            matrix:
+                os: [ubuntu-latest, ubuntu-22.04]
+                python-version: ["3.13", "3.14"]
+
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v4
+
+            - name: Set up Python ${{ matrix.python-version }}
+              uses: actions/setup-python@v5
+              with:
+                  python-version: ${{ matrix.python-version }}
+
+            - name: Install uv
+              run: |
+                  curl -LsSf https://astral.sh/uv/install.sh | sh
+                  echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+
+            - name: Install system dependencies
+              run: |
+                  sudo apt-get update
+                  sudo apt-get install -y clamav clamav-daemon yara python3-dev build-essential
+
+            - name: Create Python environment
+              run: |
+                  uv venv .venv
+                  source .venv/bin/activate
+                  uv pip install -e ".[dev,security,malware-analysis,advanced,dashboard,reporting]"
+
+            - name: Run pytest
+              run: |
+                  source .venv/bin/activate
+                  python -m pytest tests/ -v --cov=app --cov-report=xml --cov-report=term
+
+            - name: Upload coverage to Codecov
+              uses: codecov/codecov-action@v4
+              with:
+                  file: ./coverage.xml
+                  flags: unittests
+                  name: codecov-umbrella
+
+    lint:
+        name: Code Quality Checks
+        runs-on: ubuntu-latest
+
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v4
+
+            - name: Set up Python 3.13
+              uses: actions/setup-python@v5
+              with:
+                  python-version: "3.13"
+
+            - name: Install uv
+              run: |
+                  curl -LsSf https://astral.sh/uv/install.sh | sh
+                  echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+
+            - name: Create Python environment
+              run: |
+                  uv venv .venv
+                  source .venv/bin/activate
+                  uv pip install -e ".[dev]"
+
+            - name: Run ruff (linting)
+              run: |
+                  source .venv/bin/activate
+                  ruff check app/ tests/ --output-format=github
+
+            - name: Run ruff (formatting)
+              run: |
+                  source .venv/bin/activate
+                  ruff format --check app/ tests/
+
+            - name: Run mypy (type checking)
+              run: |
+                  source .venv/bin/activate
+                  mypy app/ --config-file=config/mypy.ini
+
+    security:
+        name: Security Scanning
+        runs-on: ubuntu-latest
+
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v4
+
+            - name: Set up Python 3.13
+              uses: actions/setup-python@v5
+              with:
+                  python-version: "3.13"
+
+            - name: Install uv and dependencies
+              run: |
+                  curl -LsSf https://astral.sh/uv/install.sh | sh
+                  echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+                  uv venv .venv
+                  source .venv/bin/activate
+                  uv pip install bandit[toml] safety
+
+            - name: Run bandit (security linting)
+              run: |
+                  source .venv/bin/activate
+                  bandit -r app/ -f json -o bandit-report.json || true
+                  bandit -r app/ -f screen
+
+            - name: Run safety (dependency security)
+              run: |
+                  source .venv/bin/activate
+                  uv pip freeze | safety check --stdin || true
+
+    markdown:
+        name: Markdown Validation
+        runs-on: ubuntu-latest
+
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v4
+
+            - name: Set up Node.js
+              uses: actions/setup-node@v4
+              with:
+                  node-version: "20"
+
+            - name: Install markdownlint-cli2
+              run: npm install -g markdownlint-cli2
+
+            - name: Run markdown linting
+              run: |
+                  markdownlint-cli2 "**/*.md" --config config/.markdownlint.json || true
+
+            - name: Spell check
+              uses: streetsidesoftware/cspell-action@v6
+              with:
+                  config: config/cspell.json
+                  files: "**/*.md"
+                  incremental_files_only: false

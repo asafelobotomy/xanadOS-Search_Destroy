@@ -1,0 +1,22 @@
+# Ignore all data files (malware samples, datasets)
+# These are too large for git and should be acquired separately
+
+# Malware samples
+malware/
+benign/
+organized/
+
+# Cached features
+cache/
+*.npz
+*.pkl
+*.pt
+*.pth
+
+# Temporary files
+*.tmp
+*.log
+
+# Keep directory structure
+!.gitignore
+!README.md

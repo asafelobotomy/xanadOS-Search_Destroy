@@ -459,9 +459,13 @@ class WorkflowEngine:
     def _evaluate_condition(self, condition: str, context: dict[str, Any]) -> bool:
         """Evaluate a condition expression."""
         try:
-            # Simple expression evaluation (safe subset)
-            # Supports: context["key"], context.get("key"), ==, !=, >, <, and, or
-            return eval(condition, {"__builtins__": {}}, {"context": context})
+            # SECURITY: Use AST-based parser instead of eval() (CWE-95 mitigation)
+            from app.core.automation.safe_expression_evaluator import (
+                SafeExpressionEvaluator,
+            )
+
+            evaluator = SafeExpressionEvaluator()
+            return evaluator.evaluate(condition, context)
         except Exception as e:
             logger.error(f"Condition evaluation failed: {e}")
             return False
