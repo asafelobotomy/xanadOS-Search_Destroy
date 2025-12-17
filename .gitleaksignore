@@ -8,5 +8,18 @@
 7a7021727aa670119a0e749498b9845d49bfcabb:app/utils/error_sanitizer.py:generic-api-key:199
 7a7021727aa670119a0e749498b9845d49bfcabb:app/utils/error_sanitizer.py:generic-api-key:200
 
+# SECURITY_FIXES_PHASE2.5.md - Documentation references to example patterns
+# File: SECURITY_FIXES_PHASE2.5.md
+# Reason: Documentation file describing false positive investigation, contains quoted examples
+57716ed5346c8532e3934572c060c2c9c32ae347:SECURITY_FIXES_PHASE2.5.md:generic-api-key:*
+57716ed5346c8532e3934572c060c2c9c32ae347:SECURITY_FIXES_PHASE2.5.md:generic-password:*
+
+# GITLEAKS_RESOLUTION.md - Investigation report with quoted examples
+# File: GITLEAKS_RESOLUTION.md
+# Reason: Security investigation report, contains quoted false positive examples
+dc8b67044e050231f5adb926c24c2f1b90cf7e39:GITLEAKS_RESOLUTION.md:generic-api-key:*
+dc8b67044e050231f5adb926c24c2f1b90cf7e39:GITLEAKS_RESOLUTION.md:generic-password:*
+
 # Pattern format: <commit>:<file>:<rule>:<line>
+# Use * for line number to match all occurrences in documentation files
 # The commit hash and line numbers ensure we only ignore specific instances
