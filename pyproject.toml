@@ -53,6 +53,10 @@ dependencies = [
     "strawberry-graphql>=0.206.0", # GraphQL implementation
     "slowapi>=0.1.9",              # Rate limiting for FastAPI
     "python-multipart>=0.0.21",
+    "urllib3>=2.6.0",
+    "authlib>=1.6.5",
+    "filelock>=3.20.1",
+    "fonttools>=4.60.2",
 ]
 
 [project.optional-dependencies]

@@ -1,0 +1,12 @@
+# Gitleaks False Positive Exceptions
+# This file contains legitimate patterns that Gitleaks incorrectly flags as secrets
+
+# ErrorSanitizer test cases - These are example strings used to demonstrate sanitization
+# File: app/utils/error_sanitizer.py
+# Lines: 196-202 (test_cases list in __main__ block)
+# Reason: Example data for testing error sanitization, not real credentials
+7a7021727aa670119a0e749498b9845d49bfcabb:app/utils/error_sanitizer.py:generic-api-key:199
+7a7021727aa670119a0e749498b9845d49bfcabb:app/utils/error_sanitizer.py:generic-api-key:200
+
+# Pattern format: <commit>:<file>:<rule>:<line>
+# The commit hash and line numbers ensure we only ignore specific instances
