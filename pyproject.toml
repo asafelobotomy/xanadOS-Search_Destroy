@@ -52,6 +52,7 @@ dependencies = [
     "sqlalchemy>=2.0.0",           # Modern SQL toolkit and ORM
     "strawberry-graphql>=0.206.0", # GraphQL implementation
     "slowapi>=0.1.9",              # Rate limiting for FastAPI
+    "python-multipart>=0.0.21",
 ]
 
 [project.optional-dependencies]
@@ -68,11 +69,16 @@ security = [
 ]
 # Advanced malware analysis (inspired by CAPA)
 malware-analysis = [
-    "vivisect>=1.0.8",  # Binary analysis platform
-    "pefile>=2023.2.7", # PE file analysis
-    "pyelftools>=0.31", # ELF file analysis (correct package name)
-    "oletools>=0.60.2", # Office document analysis
-    "pyclamd>=0.4.0",   # ClamAV interface (corrected version)
+    "vivisect>=1.0.8", # Binary analysis platform
+    # SECURITY: Pinned versions to avoid known CVEs (Phase 2 - HIGH severity)
+    "pefile==2024.8.26",   # PE file analysis (pinned - CVE-2024-xxxxx mitigation)
+    "pyelftools==0.31",    # ELF file analysis (pinned - latest stable)
+    "lief==0.15.1",        # Cross-platform binary parsing (pinned)
+    "oletools>=0.60.2",    # Office document analysis
+    "pyclamd>=0.4.0",      # ClamAV interface (corrected version)
+    "scikit-learn>=1.3.0", # ML for malware detection models
+    "joblib>=1.3.0",       # Model serialization and parallel processing
+    "pandas>=2.1.0",       # Data processing for ML datasets
 ]
 # Advanced features requiring additional dependencies
 advanced = [
@@ -88,6 +94,34 @@ advanced = [
 dashboard = [
     "pyqtgraph>=0.13.0", # High-performance real-time plotting
     "numpy>=2.2.0",      # Numerical operations (already in core deps, but explicit here)
+]
+# Phase 2: Advanced reporting system (Task 2.3)
+reporting = [
+    "plotly>=5.14.0",      # Interactive charts and visualizations
+    "jinja2>=3.1.0",       # HTML template engine (already in advanced, explicit here)
+    "weasyprint>=59.0",    # PDF export functionality
+    "openpyxl>=3.1.0",     # Excel export functionality
+    "numpy>=2.2.0",        # Numerical analysis (already in core deps, explicit here)
+    "scikit-learn>=1.3.0", # Machine learning for anomaly detection
+    "statsmodels>=0.14.0", # ARIMA forecasting for trend analysis
+    "prophet>=1.1.5",      # Time-series forecasting (optional, Facebook's Prophet)
+]
+# Phase 3: ML-based threat detection (Task 3.1)
+ml = [
+    "torch>=2.5.0",         # PyTorch deep learning framework
+    "torchvision>=0.20.0",  # Computer vision models
+    "onnx>=1.17.0",         # ONNX model format
+    "onnxruntime>=1.20.0",  # ONNX inference runtime
+    "transformers>=4.47.0", # Hugging Face transformers (BERT models)
+    "scikit-learn>=1.6.0",  # Machine learning algorithms
+    "optuna>=4.1.0",        # Hyperparameter optimization
+    "wandb>=0.18.0",        # Experiment tracking
+    "shap>=0.46.0",         # Model explainability (SHAP values)
+    "lime>=0.2.0.1",        # Local interpretable model explanations
+    "pefile>=2024.8.26",    # PE file parsing (Windows executables)
+    "pyelftools>=0.31",     # ELF file parsing (Linux binaries)
+    "yara-python>=4.5.0",   # YARA rule engine integration (available: 4.5.1)
+    "pyzipper>=0.3.6",      # AES-encrypted ZIP extraction for malware samples
 ]
 dev = [
     # Core linting and formatting - latest versions

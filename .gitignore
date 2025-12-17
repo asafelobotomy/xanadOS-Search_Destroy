@@ -234,3 +234,52 @@ build-log.txt
 *.build.log
 flatpak-build.log
 build-*.log
+
+# ========================================
+# ML/API Phase 4 Artifacts (Added 2025-12-17)
+# ========================================
+
+# ML Model Files (large binary files)
+models/checkpoints/**/*.pkl
+models/production/**/*.pkl
+*.pkl
+*.npz
+*.joblib
+
+# ML Training Data (large datasets)
+data/malware/
+data/benign/
+data/organized/
+data/features/
+data/cache/
+data/*/metadata.json
+
+# ML Feature Caches
+*.features.npy
+features_cache/
+
+# API Logs and Runtime Files
+/tmp/api_server.log
+api_*.log
+uvicorn_*.log
+
+# Coverage Reports (test artifacts)
+coverage.xml
+*.coverage.*
+.coverage.*
+htmlcov/
+.nyc_output/
+
+# Benchmark Results (move to archive/)
+benchmark_results.txt
+*_benchmark_*.txt
+
+# Orphaned/Unknown Files
+=*
+
+# Jupyter Notebook Checkpoints
+.ipynb_checkpoints/
+*/.ipynb_checkpoints/*
+models/checkpoints/
+models/production/*.pkl
+models/production/*.joblib
