@@ -114,7 +114,7 @@ python scripts/ml/dataset_workflow.py --quick
    • Files analyzed statically only (no execution)
    • Saved with 0600 permissions (no execute bit)
    • SHA256 verified before saving
-   
+
 Continue? (yes/no):
 ```
 
@@ -213,13 +213,13 @@ python scripts/ml/train_random_forest.py
 ✅ Training complete in 3.77 seconds
 
 ======================================================================
-Metric               Train        Val          Test        
+Metric               Train        Val          Test
 -------------------- ------------ ------------ ------------
-Accuracy             1.0000       1.0000       0.9889      
-Precision            1.0000       1.0000       1.0000      
-Recall               1.0000       1.0000       0.9333      
-F1                   1.0000       1.0000       0.9655      
-Auc                  1.0000       1.0000       1.0000      
+Accuracy             1.0000       1.0000       0.9889
+Precision            1.0000       1.0000       1.0000
+Recall               1.0000       1.0000       0.9333
+F1                   1.0000       1.0000       0.9655
+Auc                  1.0000       1.0000       1.0000
 ======================================================================
 
 💾 Model saved: models/checkpoints/malware_detector_rf/malware_detector_rf_v1.0.0.pkl

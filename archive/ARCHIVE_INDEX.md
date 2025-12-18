@@ -31,9 +31,9 @@ Comprehensive inventory of all archived content in the repository following arch
     - **Legacy Test Files**: test_phase2_integration.py (28KB), test_phase1_enhancements.py (20KB), test_issue_detection.py (662 bytes)
     - **Node.js Config** (Python-only project): package.json, .npmrc, .nvmrc, .node-version
     - **Deprecated Scripts**: check-organization.py, prevent-file-restoration.sh, create_test_config.py
-  - **Reason**: 
+  - **Reason**:
     * Coverage artifacts regenerated on each test run
-    * Test files marked with `pytest.skip("Legacy...")` 
+    * Test files marked with `pytest.skip("Legacy...")`
     * Node.js configs obsolete (switched to Python-only with uv)
     * Utility scripts superseded by modern tooling
   - **Retention**: 6 months (can be deleted after verification)

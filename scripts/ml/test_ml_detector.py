@@ -41,7 +41,9 @@ def main():
         console.print("[yellow]⚠️  Test files not found")
         return 1
 
-    console.print(f"[cyan]Testing on {len(malware_files)} malware + {len(benign_files)} benign samples\n")
+    console.print(
+        f"[cyan]Testing on {len(malware_files)} malware + {len(benign_files)} benign samples\n"
+    )
 
     # Results table
     results_table = Table(show_header=True, header_style="bold cyan")

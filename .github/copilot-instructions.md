@@ -2,11 +2,48 @@
 
 ## Project Overview
 
-A comprehensive Linux security scanner combining ClamAV signature-based detection, YARA heuristic analysis, real-time file system monitoring, and automated system hardening.
+A comprehensive Linux security scanner combining ClamAV signature-based detection, YARA heuristic analysis, real-time file system monitoring, and ML-based threat detection.
 
 **Current Version**: 0.3.0-beta
 **Stack**: Python 3.13+, PyQt6, FastAPI, watchdog, Redis, SQLAlchemy, YARA, ClamAV, PolicyKit
 **Package Manager**: `uv` (preferred) or `pip`
+
+## Essential Quick Reference
+
+**Start Here**:
+```bash
+make setup           # One-command setup (installs everything)
+make run             # Launch application
+make test            # Run test suite
+make validate        # Run quality checks (bash-based, NOT npm)
+```
+
+**Key Files**:
+- Entry point: `app/main.py` (single-instance guard → splash → setup wizard → main window)
+- Main scanner: `app/core/unified_scanner_engine.py` (1,076 lines)
+- Threading: `app/core/unified_threading_manager.py` (1,059 lines)
+- Security: `app/core/security_integration.py` (830 lines)
+- Config: `app/utils/config.py` (XDG-compliant, explicit save only)
+
+**Component Boundaries** (STRICT):
+- `app/core/` → NO PyQt6 imports (business logic only)
+- `app/gui/` → Can import `core/` and `utils/`
+- `app/api/` → Can import `core/` and `utils/`
+- Tests mirror structure: `app/core/scanner.py` → `tests/test_core/test_scanner.py`
+
+**Critical Security Rules**:
+- ALL user input → `app/core/input_validation.py` validation
+- NO raw `sudo` → Use `app/core/security_integration.py::elevate_privileges()`
+- NO auto-save config → Explicit `save_config()` only
+- Scanner cache → NEVER bypass (70-80% performance loss)
+- GUI updates → MUST use `QTimer.singleShot()` from worker threads
+
+**ML Development** (⚠️ LIVE MALWARE):
+- NEVER execute files from `data/malware/`
+- ALWAYS work in isolated VM/container
+- ALWAYS verify SHA256 hashes
+- Quick test: `uv run python scripts/ml/dataset_workflow.py --quick`
+- See "ML Development Conventions" section for complete security checklist
 
 ## Core Architecture
 
@@ -705,7 +742,7 @@ def train_model_secure(X_train, y_train, experiment_name: str):
 - Export to CSV/JSON/PDF formats
 - Advanced filtering by severity, type, time range
 
-### Phase 3 In Progress: ML-Based Threat Detection
+### Phase 3 Complete: ML-Based Threat Detection (v0.3.0-beta)
 
 ⚠️ **CRITICAL SECURITY NOTICE** ⚠️
 
@@ -718,7 +755,14 @@ This phase involves **LIVE MALWARE SAMPLES**. Security is paramount:
 - **Immediate quarantine** if suspicious activity detected
 - **Review all code** that touches malware samples for injection vulnerabilities
 
-**Dataset Acquisition (Days 1-3 COMPLETE)**:
+**Current Status** (December 2025):
+- ✅ Dataset acquisition: 600+ samples collected
+- ✅ Feature extraction: 318-dimensional vectors extracted
+- ✅ Random Forest model: 98.89% accuracy trained
+- ✅ Production detector: ~400ms per scan latency
+- ✅ Integration: ML detector available in `app/ml/ml_threat_detector.py`
+
+**Dataset Acquisition (COMPLETE)**:
 
 Location: `scripts/ml/` (acquisition scripts), `data/` (datasets), `app/ml/` (ML models)
 
@@ -776,55 +820,87 @@ data/
     └── metadata.json
 ```
 
-**ML Pipeline Usage** (Days 4-7 IN PROGRESS):
+**ML Pipeline Usage**:
 
-**SECURITY CHECKLIST** (complete BEFORE running any ML scripts):
-- [ ] **Isolated environment**: VM/container/air-gapped system active
-- [ ] **Network isolation**: Disable network for malware handling (optional for downloads)
-- [ ] **Backups current**: System backed up before malware download
-- [ ] **Monitoring active**: File integrity monitoring enabled
-- [ ] **No production data**: Keep malware samples isolated from sensitive data
-- [ ] **Antivirus disabled**: (temporarily) to prevent interference with malware samples
-
+**Quick Start (15-minute workflow)**:
 ```bash
-# STEP 1: Environment verification (MANDATORY)
-# Verify you're in isolated environment
-hostname  # Should show VM/container name, NOT production machine
-ip addr   # Verify network isolation if required
+# 1. Install ML dependencies
+uv sync --extra malware-analysis
 
-# STEP 2: Quick dataset acquisition (testing - 600 samples)
+# 2. Download dataset (600 samples, ~10 min)
 uv run python scripts/ml/dataset_workflow.py --quick
-# ⚠️  Prompts for confirmation before downloading malware
-# ✅  Safe for initial testing and development
 
-# STEP 3: Full dataset (production - 100K samples)
+# 3. Extract features (~5 min, creates 318-dim vectors)
+uv run python scripts/ml/extract_features_batch.py
+
+# 4. Train Random Forest model (~5 sec)
+uv run python scripts/ml/train_random_forest.py
+
+# 5. Test production detector
+uv run python scripts/ml/test_ml_detector.py
+# Expected: 98%+ accuracy, ~400ms per scan
+```
+
+**Production Dataset (Advanced)**:
+```bash
+# Full 100K dataset (requires hours + 10GB space)
 uv run python scripts/ml/dataset_workflow.py --full
-# ⚠️  WARNING: Downloads ~50K LIVE malware samples
-# ⚠️  Requires ~10GB disk space
-# ⚠️  Takes several hours with rate limiting
 
-# STEP 4: Individual steps (advanced usage)
-# Download malware only (with security confirmation)
-uv run python scripts/ml/download_malwarebazaar.py --samples 500
-
-# Collect benign only (safe - no malware)
-uv run python scripts/ml/collect_benign.py --samples 500
-
-# Organize existing dataset (safe - read-only on samples)
+# Individual steps (for customization)
+uv run python scripts/ml/download_malwarebazaar.py --samples 50000
+uv run python scripts/ml/collect_benign.py --samples 50000
 uv run python scripts/ml/organize_dataset.py --split-ratio 0.7 0.15 0.15
 ```
 
-**ML Infrastructure** (`app/ml/`):
-- **`ml_threat_detector.py`**: Main ML threat detection engine (in development)
-- **`deep_learning.py`**: Deep learning models (PyTorch-based)
-- **`models/`**: Trained model checkpoints
-- **`training/`**: Training scripts and experiment tracking
+**Feature Extraction (COMPLETE)**:
+- Location: `scripts/ml/extract_features_batch.py`
+- **318-dimensional feature vectors**: Entropy, byte histograms, PE/ELF headers, strings
+- **Static analysis ONLY**: No code execution
+- **Safe parsers**: pefile, pyelftools, LIEF with exception handling
+- **Caching**: Features cached as `.npz` files in `data/features/`
+- **Parallel processing**: Uses joblib for batch operations
 
-**ML Dependencies** (install with `uv sync --extra malware-analysis`):
-- PyTorch for deep learning
-- scikit-learn for classical ML
-- pandas/numpy for data processing
-- LIEF/pefile/pyelftools for binary feature extraction
+**Model Training (COMPLETE)**:
+- Location: `scripts/ml/train_random_forest.py`, `scripts/ml/tune_random_forest.py`
+- **Random Forest baseline**: 98.89% accuracy on 600-sample dataset
+- **Model files**: Saved to `models/checkpoints/malware_detector_rf/`
+- **Model registry**: `app/ml/model_registry.py` for version management
+- **Experiment tracking**: JSON logs in `models/experiments/`
+- **Security**: Models saved with 0600 permissions, SHA256 verified
+
+**Production Integration (COMPLETE)**:
+- **Detector**: `app/ml/ml_threat_detector.py` - Production-ready ML scanner
+- **Random Forest**: `app/ml/random_forest_detector.py` - Trained classifier wrapper
+- **Feature extractor**: `app/ml/feature_extractor.py` - 318-dimensional extraction
+- **Model verification**: `app/ml/model_signature_verification.py` - Hash validation
+- **Performance**: ~400ms per file scan (cached features ~50ms)
+
+**Using ML Detector in Code**:
+```python
+from app.ml.ml_threat_detector import MLThreatDetector
+
+detector = MLThreatDetector()
+await detector.load_model()  # Async model loading with verification
+
+# Scan single file
+result = await detector.scan_file("/path/to/suspicious.exe")
+# Returns: {'is_malware': bool, 'confidence': float, 'model_version': str}
+
+# Batch scanning
+results = await detector.scan_directory("/path/to/directory")
+```
+
+**Available ML Scripts** (`scripts/ml/`):
+- `dataset_workflow.py` - Complete workflow orchestrator (--quick or --full)
+- `download_malwarebazaar.py` - Malware sample acquisition
+- `collect_benign.py` - Clean file collection
+- `organize_dataset.py` - Train/val/test splitting
+- `extract_features_batch.py` - Batch feature extraction
+- `train_random_forest.py` - Model training
+- `tune_random_forest.py` - Hyperparameter optimization
+- `test_ml_detector.py` - Production detector testing
+- `list_models.py` - Model registry explorer
+- `promote_to_production.py` - Model deployment helper
 
 ## Advanced Topics
 
@@ -1010,36 +1086,50 @@ qemu-system-x86_64 -enable-kvm -m 4096 -net none ...
 **ML File Structure** (with security annotations):
 ```
 app/ml/
-├── ml_threat_detector.py    # Main ML detection engine
-├── deep_learning.py          # PyTorch models
-├── models/                   # Trained model files (0600 permissions)
-│   ├── checkpoints/         # Training checkpoints
-│   ├── experiments/         # Experiment logs (JSON)
-│   └── production/          # Production models (hash-verified)
-└── training/                # Training scripts
+├── ml_threat_detector.py              # Main ML detection engine (COMPLETE)
+├── random_forest_detector.py          # Random Forest wrapper (COMPLETE)
+├── feature_extractor.py               # 318-dim feature extraction (COMPLETE)
+├── model_registry.py                  # Model version management (COMPLETE)
+├── model_signature_verification.py    # Hash verification (COMPLETE)
+├── experiment_tracker.py              # Experiment logging
+├── experiment_logger.py               # Training metrics
+├── deep_learning.py                   # PyTorch models (future)
+├── training_utils.py                  # Training helpers
+├── models/                            # Trained model files (0600 permissions)
+│   ├── checkpoints/                   # Training checkpoints
+│   ├── experiments/                   # Experiment logs (JSON)
+│   └── production/                    # Production models (hash-verified)
+└── training/                          # Training scripts
 
 scripts/ml/
-├── download_malwarebazaar.py  # Malware acquisition (security confirmation)
-├── collect_benign.py          # Benign collection (safe)
-├── organize_dataset.py        # Train/val/test splitting (read-only)
-└── dataset_workflow.py        # Orchestration script (prompts user)
+├── dataset_workflow.py                # Complete workflow orchestrator
+├── download_malwarebazaar.py          # Malware acquisition (security confirmation)
+├── collect_benign.py                  # Benign collection (safe)
+├── organize_dataset.py                # Train/val/test splitting (read-only)
+├── extract_features_batch.py          # Batch feature extraction (COMPLETE)
+├── train_random_forest.py             # Model training (COMPLETE)
+├── tune_random_forest.py              # Hyperparameter optimization (COMPLETE)
+├── test_ml_detector.py                # Detector testing (COMPLETE)
+├── list_models.py                     # Model explorer
+├── promote_to_production.py           # Deployment helper
+└── README.md                          # Complete ML documentation
 
 data/  # ⚠️ CONTAINS LIVE MALWARE - HANDLE WITH EXTREME CAUTION
-├── malware/                  # Raw malware (SHA256 names, 0600 perms)
-│   └── metadata.json         # Sample metadata (file types, signatures)
-├── benign/                   # System binaries (SHA256 names, safe)
+├── malware/                           # Raw malware (SHA256 names, 0600 perms)
+│   └── metadata.json                  # Sample metadata (file types, signatures)
+├── benign/                            # System binaries (SHA256 names, safe)
 │   └── metadata.json
-└── organized/                # Split datasets (read-only after split)
-    ├── train/
-    │   ├── malware/          # 70% of malware samples
-    │   └── benign/           # 70% of benign samples
-    ├── val/
-    │   ├── malware/          # 15% of malware samples
-    │   └── benign/           # 15% of benign samples
-    ├── test/
-    │   ├── malware/          # 15% of malware samples
-    │   └── benign/           # 15% of benign samples
-    └── metadata.json         # Split statistics and integrity hashes
+├── features/                          # Cached feature vectors (.npz files)
+└── organized/                         # Split datasets (read-only after split)
+    ├── train/, val/, test/            # 70/15/15 splits
+    └── metadata.json                  # Split statistics and integrity hashes
+
+models/
+├── checkpoints/                       # Training checkpoints
+│   └── malware_detector_rf/           # Random Forest model (98.89% acc)
+├── experiments/                       # Experiment logs
+├── production/                        # Production-deployed models
+└── trusted_hashes.json                # Model integrity verification
 ```
 
 **Critical ML Security Rules** (ZERO TOLERANCE):

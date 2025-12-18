@@ -84,7 +84,9 @@ class RandomForestDetector:
     def _load_model(self) -> None:
         """Load trained Random Forest model from registry."""
         try:
-            model_path = self.models_dir / f"malware_detector_rf_v{self.model_version}.pkl"
+            model_path = (
+                self.models_dir / f"malware_detector_rf_v{self.model_version}.pkl"
+            )
 
             if not model_path.exists():
                 raise FileNotFoundError(
@@ -143,7 +145,9 @@ class RandomForestDetector:
 
             return MLScanResult(
                 file_path=str(file_path),
-                is_malware=bool(prediction == 1 and confidence >= self.confidence_threshold),
+                is_malware=bool(
+                    prediction == 1 and confidence >= self.confidence_threshold
+                ),
                 confidence=float(confidence),
                 prediction_time=scan_time,
                 model_version=self.model_version,
@@ -169,7 +173,9 @@ class RandomForestDetector:
             Dictionary of statistics
         """
         avg_scan_time = (
-            self.total_scan_time / self.scans_performed if self.scans_performed > 0 else 0.0
+            self.total_scan_time / self.scans_performed
+            if self.scans_performed > 0
+            else 0.0
         )
 
         return {
@@ -177,7 +183,9 @@ class RandomForestDetector:
             "scans_performed": self.scans_performed,
             "malware_detected": self.malware_detected,
             "detection_rate": (
-                self.malware_detected / self.scans_performed if self.scans_performed > 0 else 0.0
+                self.malware_detected / self.scans_performed
+                if self.scans_performed > 0
+                else 0.0
             ),
             "total_scan_time": self.total_scan_time,
             "avg_scan_time": avg_scan_time,
