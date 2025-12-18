@@ -143,7 +143,9 @@ class SecureNetworkManager:
                     self.CLAMAV_ENDPOINTS[host].certificate_fingerprint = candidate
         except Exception:  # pragma: no cover - best effort logging
             self.logger.debug(
-                "Failed to load certificate pins: %s".replace("%s", "{e}").replace("%d", "{e}")
+                "Failed to load certificate pins: %s".replace("%s", "{e}").replace(
+                    "%d", "{e}"
+                )
             )
 
     def refresh_pins(self) -> bool:
@@ -151,9 +153,13 @@ class SecureNetworkManager:
 
         Ignores pin files with insecure permissions (group/other access).
         """
-        before = {h: ep.certificate_fingerprint for h, ep in self.CLAMAV_ENDPOINTS.items()}
+        before = {
+            h: ep.certificate_fingerprint for h, ep in self.CLAMAV_ENDPOINTS.items()
+        }
         self._load_certificate_pins()
-        after = {h: ep.certificate_fingerprint for h, ep in self.CLAMAV_ENDPOINTS.items()}
+        after = {
+            h: ep.certificate_fingerprint for h, ep in self.CLAMAV_ENDPOINTS.items()
+        }
         return before != after
 
     def _verify_certificate_fingerprint(
@@ -179,9 +185,9 @@ class SecureNetworkManager:
             # Validate certificate data
             if cert_der is None:
                 self.logger.error(
-                    "No certificate data received from %s".replace("%s", "{hostname}").replace(
-                        "%d", "{hostname}"
-                    )
+                    "No certificate data received from %s".replace(
+                        "%s", "{hostname}"
+                    ).replace("%d", "{hostname}")
                 )
                 return False
 
@@ -193,9 +199,9 @@ class SecureNetworkManager:
 
         except Exception:
             self.logger.error(
-                "Certificate verification failed for %s: %s".replace("%s", "{hostname, e}").replace(
-                    "%d", "{hostname, e}"
-                )
+                "Certificate verification failed for %s: %s".replace(
+                    "%s", "{hostname, e}"
+                ).replace("%d", "{hostname, e}")
             )
             return False
 
@@ -232,7 +238,9 @@ class SecureNetworkManager:
         request = urllib.request.Request(url, headers=secure_headers)
         return request
 
-    def _validate_response(self, response, expected_content_type: str | None = None) -> bool:
+    def _validate_response(
+        self, response, expected_content_type: str | None = None
+    ) -> bool:
         """Validate HTTP response for security issues.
 
         Args:
@@ -247,9 +255,9 @@ class SecureNetworkManager:
             content_type = response.headers.get("Content-Type", "")
             if not content_type.startswith(expected_content_type):
                 self.logger.warning(
-                    "Unexpected content type: %s".replace("%s", "{content_type}").replace(
-                        "%d", "{content_type}"
-                    )
+                    "Unexpected content type: %s".replace(
+                        "%s", "{content_type}"
+                    ).replace("%d", "{content_type}")
                 )
                 return False
 
@@ -260,9 +268,9 @@ class SecureNetworkManager:
                 length = int(content_length)
                 if length > 100 * 1024 * 1024:  # 100MB limit
                     self.logger.error(
-                        "Response too large: %d bytes".replace("%s", "{length}").replace(
-                            "%d", "{length}"
-                        )
+                        "Response too large: %d bytes".replace(
+                            "%s", "{length}"
+                        ).replace("%d", "{length}")
                     )
                     return False
             except ValueError:
@@ -279,9 +287,9 @@ class SecureNetworkManager:
             actual_value = response.headers.get(header)
             if expected_value and actual_value != expected_value:
                 self.logger.warning(
-                    "Missing or incorrect security header: %s".replace("%s", "{header}").replace(
-                        "%d", "{header}"
-                    )
+                    "Missing or incorrect security header: %s".replace(
+                        "%s", "{header}"
+                    ).replace("%d", "{header}")
                 )
 
         return True
@@ -381,9 +389,9 @@ class SecureNetworkManager:
                                 f.write(chunk)
 
                         self.logger.info(
-                            "Download completed: %d bytes".replace("%s", "{total_size}").replace(
-                                "%d", "{total_size}"
-                            )
+                            "Download completed: %d bytes".replace(
+                                "%s", "{total_size}"
+                            ).replace("%d", "{total_size}")
                         )
 
                         # Verify file signature if requested
@@ -396,9 +404,9 @@ class SecureNetworkManager:
 
                 except urllib.error.URLError as e:
                     self.logger.warning(
-                        "Download attempt %d failed: %s".replace("%s", "{attempt + 1, e}").replace(
-                            "%d", "{attempt + 1, e}"
-                        )
+                        "Download attempt %d failed: %s".replace(
+                            "%s", "{attempt + 1, e}"
+                        ).replace("%d", "{attempt + 1, e}")
                     )
                     if attempt == endpoint.max_retries - 1:
                         return (
@@ -409,7 +417,9 @@ class SecureNetworkManager:
 
         except Exception as e:
             self.logger.error(
-                "Unexpected error during download: %s".replace("%s", "{e}").replace("%d", "{e}")
+                "Unexpected error during download: %s".replace("%s", "{e}").replace(
+                    "%d", "{e}"
+                )
             )
             return False, f"Download error: {e}"
 
@@ -437,12 +447,16 @@ class SecureNetworkManager:
             if not sig_file.exists():
                 # This would need to be implemented based on the actual
                 # signature URL
-                self.logger.info("Signature verification not implemented for this file type")
+                self.logger.info(
+                    "Signature verification not implemented for this file type"
+                )
                 return True  # Skip verification for now
 
             # Verify signature using GPG or similar
 
-            result = run_secure(["gpg", "--verify", str(sig_file), str(file_path)], timeout=30)
+            result = run_secure(
+                ["gpg", "--verify", str(sig_file), str(file_path)], timeout=30
+            )
 
             return result.returncode == 0
 
@@ -451,7 +465,9 @@ class SecureNetworkManager:
             return True  # Skip if GPG not available
         except Exception:
             self.logger.error(
-                "Signature verification failed: %s".replace("%s", "{e}").replace("%d", "{e}")
+                "Signature verification failed: %s".replace("%s", "{e}").replace(
+                    "%d", "{e}"
+                )
             )
             return False
 
@@ -487,7 +503,9 @@ class SecureNetworkManager:
                 )
 
                 dest_file = db_path / db_file
-                success, result = self.secure_download(download_endpoint, str(dest_file))
+                success, result = self.secure_download(
+                    download_endpoint, str(dest_file)
+                )
 
                 if success:
                     self.logger.info(
@@ -564,9 +582,9 @@ class SecureNetworkManager:
             # Prefer HTTPS
             if parsed.scheme == "http":
                 self.logger.warning(
-                    "Using insecure HTTP protocol for %s".replace("%s", "{url}").replace(
-                        "%d", "{url}"
-                    )
+                    "Using insecure HTTP protocol for %s".replace(
+                        "%s", "{url}"
+                    ).replace("%d", "{url}")
                 )
 
             # Check hostname
