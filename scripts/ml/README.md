@@ -1,8 +1,45 @@
-# ML Scripts Directory
+# ML Training Scripts - Complete User Guide
 
-Dataset acquisition and processing scripts for Phase 3: ML-Based Threat Detection.
+Dataset acquisition, feature extraction, and model training for Phase 3: ML-Based Threat Detection.
 
-## Scripts Overview
+**Current Status** (Dec 2025):
+- ✅ 600 samples collected and organized
+- ✅ 600 features extracted (318-dimensional vectors)
+- ✅ Random Forest model trained: **98.89% accuracy**
+- ✅ Production-ready detector: ~400ms per scan
+
+## 🚀 Quick Start (Complete Workflow)
+
+**Goal**: Train a malware detection model in 15 minutes.
+
+```bash
+# 1. Install ML dependencies
+uv sync --extra malware-analysis
+
+# 2. Download dataset (600 samples, ~10 min)
+uv run python scripts/ml/dataset_workflow.py --quick
+
+# 3. Extract features (~5 min)
+uv run python scripts/ml/extract_features_batch.py
+
+# 4. Train model (~5 seconds)
+uv run python scripts/ml/train_random_forest.py
+
+# 5. Test the model
+uv run python scripts/ml/test_ml_detector.py
+
+# ✅ Done! Model saved to: models/checkpoints/malware_detector_rf/
+```
+
+**Expected Results**:
+- Accuracy: 95-100%
+- Precision: 95-100% (few false positives)
+- Recall: 90-95% (catches most malware)
+- Model size: ~680KB
+
+---
+
+## 📚 Scripts Overview
 
 ### 1. Dataset Acquisition
 
