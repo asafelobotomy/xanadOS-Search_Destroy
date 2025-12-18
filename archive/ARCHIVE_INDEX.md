@@ -23,6 +23,23 @@ Comprehensive inventory of all archived content in the repository following arch
   - **Original Location**: Root directory
   - **Context**: Security hardening, dependency fixes, ML implementation completion reports
 
+#### Deprecated Artifacts and Legacy Code
+- **Deprecated Build Artifacts and Legacy Tests** (`deprecated-artifacts/2025-12-18/`)
+  - **Archived Date**: 2025-12-18
+  - **Files**: 13 deprecated files (~2.1MB total)
+    - **Coverage Artifacts**: .coverage (188KB), coverage.xml (1.9MB)
+    - **Legacy Test Files**: test_phase2_integration.py (28KB), test_phase1_enhancements.py (20KB), test_issue_detection.py (662 bytes)
+    - **Node.js Config** (Python-only project): package.json, .npmrc, .nvmrc, .node-version
+    - **Deprecated Scripts**: check-organization.py, prevent-file-restoration.sh, create_test_config.py
+  - **Reason**: 
+    * Coverage artifacts regenerated on each test run
+    * Test files marked with `pytest.skip("Legacy...")` 
+    * Node.js configs obsolete (switched to Python-only with uv)
+    * Utility scripts superseded by modern tooling
+  - **Retention**: 6 months (can be deleted after verification)
+  - **Original Locations**: Root directory, tests/, scripts/
+  - **Additional Cleanup**: Removed node_modules/ directory (npm dependencies no longer needed)
+
 ### Recently Added (2025-12-09)
 
 #### Compressed Archive Files
