@@ -100,7 +100,7 @@ class SecureRandom:
         return secrets.randbelow(exclusive_upper_bound)
 
     @staticmethod
-    def choice(sequence: Sequence) -> any:
+    def choice(sequence: Sequence) -> Any:
         """
         Choose random element from sequence.
 

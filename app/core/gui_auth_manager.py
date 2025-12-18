@@ -389,7 +389,7 @@ kdialog --password "Enter your password for administrative access:"
             self._sudo_session_active = False
             self._session_start_time = 0
 
-    def get_session_info(self) -> dict[str, any]:
+    def get_session_info(self) -> dict[str, Any]:
         """Get information about the current authentication session."""
         current_time = time.time()
         elapsed = current_time - self._session_start_time if self._session_start_time else 0

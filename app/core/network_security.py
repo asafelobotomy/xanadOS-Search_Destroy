@@ -142,7 +142,7 @@ class SecureNetworkManager:
                 if host in self.CLAMAV_ENDPOINTS:
                     self.CLAMAV_ENDPOINTS[host].certificate_fingerprint = candidate
         except Exception:  # pragma: no cover - best effort logging
-            self.logdebug(
+            self.logger.debug(
                 "Failed to load certificate pins: %s".replace("%s", "{e}").replace("%d", "{e}")
             )
 
@@ -178,7 +178,7 @@ class SecureNetworkManager:
 
             # Validate certificate data
             if cert_der is None:
-                self.logerror(
+                self.logger.error(
                     "No certificate data received from %s".replace("%s", "{hostname}").replace(
                         "%d", "{hostname}"
                     )
@@ -192,7 +192,7 @@ class SecureNetworkManager:
             return actual_fingerprint == expected_fingerprint
 
         except Exception:
-            self.logerror(
+            self.logger.error(
                 "Certificate verification failed for %s: %s".replace("%s", "{hostname, e}").replace(
                     "%d", "{hostname, e}"
                 )
@@ -246,7 +246,7 @@ class SecureNetworkManager:
         if expected_content_type:
             content_type = response.headers.get("Content-Type", "")
             if not content_type.startswith(expected_content_type):
-                self.logwarning(
+                self.logger.warning(
                     "Unexpected content type: %s".replace("%s", "{content_type}").replace(
                         "%d", "{content_type}"
                     )
@@ -259,7 +259,7 @@ class SecureNetworkManager:
             try:
                 length = int(content_length)
                 if length > 100 * 1024 * 1024:  # 100MB limit
-                    self.logerror(
+                    self.logger.error(
                         "Response too large: %d bytes".replace("%s", "{length}").replace(
                             "%d", "{length}"
                         )
@@ -278,7 +278,7 @@ class SecureNetworkManager:
         for header, expected_value in security_headers.items():
             actual_value = response.headers.get(header)
             if expected_value and actual_value != expected_value:
-                self.logwarning(
+                self.logger.warning(
                     "Missing or incorrect security header: %s".replace("%s", "{header}").replace(
                         "%d", "{header}"
                     )
@@ -302,7 +302,7 @@ class SecureNetworkManager:
         Returns:
             Tuple of (success, file_path_or_error_message)
         """
-        self.loginfo(
+        self.logger.info(
             "Starting secure download from: %s".replace("%s", "{endpoint.url}").replace(
                 "%d", "{endpoint.url}"
             )
@@ -344,7 +344,7 @@ class SecureNetworkManager:
             # Perform download with retries
             for attempt in range(endpoint.max_retries):
                 try:
-                    self.logdebug(
+                    self.logger.debug(
                         "Download attempt %d/%d".replace(
                             "%s", "{attempt + 1, endpoint.max_retries}"
                         ).replace("%d", "{attempt + 1, endpoint.max_retries}")
@@ -380,7 +380,7 @@ class SecureNetworkManager:
 
                                 f.write(chunk)
 
-                        self.loginfo(
+                        self.logger.info(
                             "Download completed: %d bytes".replace("%s", "{total_size}").replace(
                                 "%d", "{total_size}"
                             )
@@ -395,7 +395,7 @@ class SecureNetworkManager:
                         return True, str(dest_path)
 
                 except urllib.error.URLError as e:
-                    self.logwarning(
+                    self.logger.warning(
                         "Download attempt %d failed: %s".replace("%s", "{attempt + 1, e}").replace(
                             "%d", "{attempt + 1, e}"
                         )
@@ -408,7 +408,7 @@ class SecureNetworkManager:
                     time.sleep(2**attempt)  # Exponential backoff
 
         except Exception as e:
-            self.logerror(
+            self.logger.error(
                 "Unexpected error during download: %s".replace("%s", "{e}").replace("%d", "{e}")
             )
             return False, f"Download error: {e}"
@@ -450,7 +450,7 @@ class SecureNetworkManager:
             self.logger.warning("GPG not available, skipping signature verification")
             return True  # Skip if GPG not available
         except Exception:
-            self.logerror(
+            self.logger.error(
                 "Signature verification failed: %s".replace("%s", "{e}").replace("%d", "{e}")
             )
             return False
@@ -490,7 +490,7 @@ class SecureNetworkManager:
                 success, result = self.secure_download(download_endpoint, str(dest_file))
 
                 if success:
-                    self.loginfo(
+                    self.logger.info(
                         "Successfully downloaded %s from %s".replace(
                             "%s", "{db_file, endpoint_name}"
                         ).replace("%d", "{db_file, endpoint_name}")
@@ -533,7 +533,7 @@ class SecureNetworkManager:
         for host, port in test_hosts:
             try:
                 socket.create_connection((host, port), timeout=5)
-                self.logdebug(
+                self.logger.debug(
                     "Network connectivity confirmed via %s:%d".replace(
                         "%s", "{host, port}"
                     ).replace("%d", "{host, port}")
@@ -563,7 +563,7 @@ class SecureNetworkManager:
 
             # Prefer HTTPS
             if parsed.scheme == "http":
-                self.logwarning(
+                self.logger.warning(
                     "Using insecure HTTP protocol for %s".replace("%s", "{url}").replace(
                         "%d", "{url}"
                     )
