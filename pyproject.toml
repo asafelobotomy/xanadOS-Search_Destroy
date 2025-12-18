@@ -43,7 +43,8 @@ dependencies = [
     "cachetools>=5.5.0",    # Advanced caching with TTL/LRU/LFU support - Task 1.2
     "aiofiles>=24.1.0",     # Async file I/O for advanced I/O optimization - Task 1.3
     # API Framework dependencies - required for app/api/ modules
-    "fastapi>=0.104.0",            # Modern async web framework
+    "fastapi>=0.125.0",            # Modern async web framework (pulls starlette >=0.49.1)
+    "starlette>=0.49.1",           # Explicit constraint to fix CVE-2025-62727
     "uvicorn[standard]>=0.24.0",   # ASGI server with performance extras
     "httpx>=0.25.0",               # Modern async HTTP client
     "websockets>=12.0",            # WebSocket support for real-time features
@@ -64,9 +65,9 @@ dependencies = [
 security = [
     "yara-python>=4.5.1",     # Latest YARA rule engine (was 4.5.0)
     "volatility3>=2.8.0",     # Latest memory forensics (was 2.7.0)
-    "scapy>=2.6.1",           # Latest packet manipulation (was 2.5.0)
+    "scapy>=2.7.0rc1",        # Latest packet manipulation (fixes PVE-2025-80587)
     "pycryptodome>=3.21.0",   # Latest crypto library (was 3.20.0)
-    "capstone>=5.0.3",        # Latest disassembly engine (was 5.0.0)
+    "capstone>=6.0.0a5",      # Latest disassembly engine (fixes PVE-2024-73501)
     "keystone-engine>=0.9.2",
     "unicorn>=2.1.1",         # Latest CPU emulator (was 2.0.0)
     "frida>=16.5.9",          # Latest instrumentation (was 16.0.0)
