@@ -7,7 +7,7 @@ Provides local experiment logging independent of external services.
 
 import hashlib
 import json
-from dataclasses import dataclass, asdict
+from dataclasses import dataclass, asdict, field
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Optional
