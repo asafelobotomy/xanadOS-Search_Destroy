@@ -43,11 +43,7 @@ class ExperimentLog:
     tags: list[str] = field(default_factory=list)
     notes: str = ""
 
-    def __post_init__(self):
-        if self.checkpoint_paths is None:
-            self.checkpoint_paths = []
-        if self.tags is None:
-            self.tags = []
+    # __post_init__ removed - using field(default_factory=list) for defaults
 
 
 class ExperimentLogger:

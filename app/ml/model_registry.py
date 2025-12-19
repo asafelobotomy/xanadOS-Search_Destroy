@@ -49,9 +49,7 @@ class ModelMetadata:
     tags: list[str] = None
     experiment_id: Optional[str] = None  # wandb run ID
 
-    def __post_init__(self):
-        if self.tags is None:
-            self.tags = []
+    # __post_init__ removed - using field(default_factory=list) for defaults
 
     @property
     def stage(self) -> str:

@@ -233,7 +233,7 @@ class SudoAuthenticator(QThread):
     def __init__(self, command: list[str]):
         super().__init__()
         self.command = command
-        self._process = None
+        self._process: subprocess.CompletedProcess[str] | None = None
 
     def run(self):
         """Run sudo authentication in background thread."""

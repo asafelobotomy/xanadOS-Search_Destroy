@@ -24,7 +24,7 @@ class GUIAuthManager:
 
     def __init__(self):
         self._sudo_session_active = False
-        self._session_start_time = 0
+        self._session_start_time: float = 0.0
         self._session_timeout = 900  # 15 minutes default sudo timeout
         self._gui_helper = None
         self._discover_gui_helper()

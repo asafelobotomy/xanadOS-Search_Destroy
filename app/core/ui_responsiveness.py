@@ -20,12 +20,8 @@ class UITask:
     task_id: str
     callback: callable
     args: tuple = ()
-    kwargs: dict = None
+    kwargs: dict = field(default_factory=dict)
     priority: int = 1  # Lower number = higher priority
-
-    def __post_init__(self):
-        if self.kwargs is None:
-            self.kwargs = {}
 
 
 class ResponsiveUI(QObject):
@@ -293,7 +289,7 @@ class ScanProgressManager(QObject):
         self.scanned_files = 0
         self.infected_files = 0
         self.errors = 0
-        self.start_time = time.time()
+        self.start_time: float = time.time()
 
         self.loginfo(
             "Started scan progress tracking for %d files".replace("%s", "{total_files}").replace(
