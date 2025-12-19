@@ -667,7 +667,7 @@ class HeuristicAnalysisEngine:
         try:
             file_path_obj = Path(file_path)
             threat_indicators = []
-            details = {}
+            details: dict[str, Any] = {}
             confidence = 0.0
 
             # Check file extension vs content type

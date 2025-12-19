@@ -885,13 +885,13 @@ class UnifiedPerformanceOptimizer:
 
             # Disk I/O
             disk_io = psutil.disk_io_counters()
-            disk_io_mb = 0
+            disk_io_mb: float = 0.0
             if disk_io:
                 disk_io_mb = (disk_io.read_bytes + disk_io.write_bytes) / (1024 * 1024)
 
             # Network I/O
             net_io = psutil.net_io_counters()
-            network_io_mb = 0
+            network_io_mb: float = 0.0
             if net_io:
                 network_io_mb = (net_io.bytes_sent + net_io.bytes_recv) / (1024 * 1024)
 
