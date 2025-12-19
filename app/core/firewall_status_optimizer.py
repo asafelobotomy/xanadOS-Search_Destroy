@@ -276,7 +276,7 @@ class FirewallStatusOptimizer(QObject):
 
         return None
 
-    def get_firewall_status(self, use_cache: bool = True, max_age: int = None) -> dict:
+    def get_firewall_status(self, use_cache: bool = True, max_age: int | None = None) -> dict:
         """Get firewall status with optimized caching."""
         if max_age is None:
             max_age = self.current_cache_duration

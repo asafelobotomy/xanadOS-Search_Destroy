@@ -58,7 +58,7 @@ try:
     THEMING_AVAILABLE = True
 except ImportError:
     THEMING_AVAILABLE = False
-    ThemedDialog = QDialog
+    ThemedDialog = QDialog  # type: ignore[assignment,misc]
 
     def get_theme_manager():
         """Fallback theme manager getter when theming is unavailable."""

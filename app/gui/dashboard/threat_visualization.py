@@ -24,7 +24,7 @@ try:
     PYQT6_AVAILABLE = True
 except ImportError:
     PYQT6_AVAILABLE = False
-    QWidget = object
+    QWidget = object  # type: ignore[assignment,misc]
 
 from .widgets.threat_timeline import ThreatTimelineWidget, ThreatEvent, ThreatSeverity
 from .widgets.threat_map import ThreatMapWidget, ThreatLocation
@@ -114,6 +114,11 @@ class ThreatVisualizationWidget(QWidget):
         # Tab widget for different views
         self.tab_widget = QTabWidget()
         self.tab_widget.currentChanged.connect(self._on_tab_changed)
+
+        # Initialize widget types (will be set in try blocks below)
+        self.timeline_widget: ThreatTimelineWidget | None
+        self.map_widget: ThreatMapWidget | None
+        self.heatmap_widget: SeverityHeatmapWidget | None
 
         # Timeline view
         try:

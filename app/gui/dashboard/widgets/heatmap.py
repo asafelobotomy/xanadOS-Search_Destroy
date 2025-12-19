@@ -18,7 +18,7 @@ try:
     DEPENDENCIES_AVAILABLE = True
 except ImportError:
     DEPENDENCIES_AVAILABLE = False
-    QWidget = object
+    QWidget = object  # type: ignore[assignment,misc]
 
 
 @dataclass

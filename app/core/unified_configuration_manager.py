@@ -50,7 +50,7 @@ try:
 except ImportError:
     # Fallback for systems without pydantic
     HAS_PYDANTIC = False
-    BaseModel = object
+    BaseModel = object  # type: ignore[assignment,misc]
 
 # Import centralized version
 from app import __version__

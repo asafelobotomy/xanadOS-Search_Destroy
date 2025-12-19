@@ -60,7 +60,7 @@ try:
     HAS_ADAPTIVE_POOL = True
 except ImportError:
     HAS_ADAPTIVE_POOL = False
-    AdaptiveWorkerPool = None
+    AdaptiveWorkerPool = None  # type: ignore[assignment]
 
 try:
     from PyQt6.QtCore import QThread, pyqtSignal
@@ -68,7 +68,7 @@ try:
     HAS_PYQT6 = True
 except ImportError:
     HAS_PYQT6 = False
-    QThread = object  # Fallback base class
+    QThread = object  # type: ignore[assignment,misc]  # Fallback base class
 
     def pyqtSignal(*args, **kwargs):
         return None
