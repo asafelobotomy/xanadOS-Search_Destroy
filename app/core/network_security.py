@@ -367,9 +367,9 @@ class SecureNetworkManager:
                         if destination:
                             dest_path = Path(destination)
                         else:
-                            fd, dest_path = tempfile.mkstemp(prefix="xanados_download_")
+                            fd, temp_path_str = tempfile.mkstemp(prefix="xanados_download_")
                             os.close(fd)
-                            dest_path = Path(dest_path)
+                            dest_path = Path(temp_path_str)
 
                         # Download with size limit
                         total_size = 0

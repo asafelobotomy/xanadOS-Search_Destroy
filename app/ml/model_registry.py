@@ -46,7 +46,7 @@ class ModelMetadata:
 
     # Additional metadata
     description: str = ""
-    tags: list[str] = None
+    tags: list[str] = field(default_factory=list)
     experiment_id: Optional[str] = None  # wandb run ID
 
     # __post_init__ removed - using field(default_factory=list) for defaults
@@ -345,8 +345,8 @@ class ModelRegistry:
             metadata2.hyperparameters.keys()
         )
         for key in all_hp_keys:
-            val1 = metadata1.hyperparameters.get(key)
-            val2 = metadata2.hyperparameters.get(key)
+            val1: Any = metadata1.hyperparameters.get(key)
+            val2: Any = metadata2.hyperparameters.get(key)
             if val1 != val2:
                 comparison["hyperparameters_diff"][key] = {
                     "version1": val1,
