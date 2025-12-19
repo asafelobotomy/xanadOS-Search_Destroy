@@ -37,10 +37,10 @@ class ExperimentLog:
 
     # Artifacts
     model_path: Optional[str] = None
-    checkpoint_paths: list[str] = None
+    checkpoint_paths: list[str] = field(default_factory=list)
 
     # Metadata
-    tags: list[str] = None
+    tags: list[str] = field(default_factory=list)
     notes: str = ""
 
     def __post_init__(self):
@@ -216,7 +216,7 @@ class ExperimentLogger:
         }
 
         # Compare metrics
-        all_metric_keys = set()
+        all_metric_keys: set[str] = set()
         for exp in experiments:
             all_metric_keys.update(exp.metrics.keys())
 
@@ -226,7 +226,7 @@ class ExperimentLogger:
             }
 
         # Compare hyperparameters
-        all_hp_keys = set()
+        all_hp_keys: set[str] = set()
         for exp in experiments:
             all_hp_keys.update(exp.hyperparameters.keys())
 

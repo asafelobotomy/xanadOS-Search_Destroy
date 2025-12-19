@@ -10,6 +10,7 @@ import subprocess
 import tempfile
 import time
 from collections.abc import Sequence
+from typing import Any
 
 from .secure_subprocess import popen_secure, run_secure
 

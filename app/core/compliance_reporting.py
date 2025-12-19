@@ -416,8 +416,8 @@ class ComplianceAssessmentEngine:
         # For now, simulate assessment based on control requirements
 
         score = 0.0
-        findings = []
-        evidence = []
+        findings: list[str] = []
+        evidence: list[dict] = []
 
         if control.control_id.startswith("SOC2-CC6"):
             # Access control assessments

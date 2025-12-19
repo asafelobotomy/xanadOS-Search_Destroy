@@ -11,7 +11,7 @@ Phase: 2 (HIGH severity - CWE-338 mitigation)
 
 import secrets
 import string
-from typing import Sequence
+from typing import Any, Sequence
 
 
 class SecureRandom:

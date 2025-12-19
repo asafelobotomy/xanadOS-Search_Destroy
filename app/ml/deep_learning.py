@@ -23,7 +23,7 @@ import logging
 import numpy as np
 import pickle
 import time
-from collections import deque
+from collections import deque, defaultdict
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from pathlib import Path
@@ -83,7 +83,7 @@ class ModelConfig:
 
     model_type: str
     architecture: str
-    input_shape: Tuple[int, ...]
+    input_shape: tuple[int, ...]
     num_classes: int
     learning_rate: float = 0.001
     batch_size: int = 32
@@ -348,7 +348,7 @@ class NLPThreatAnalyzer:
             self.logger.error(f"Error initializing NLP models: {e}")
             return False
 
-    def _load_threat_keywords(self) -> List[str]:
+    def _load_threat_keywords(self) -> list[str]:
         """Load threat-related keywords."""
         return [
             "malware",
@@ -386,7 +386,7 @@ class NLPThreatAnalyzer:
             "warning",
         ]
 
-    def _load_suspicious_patterns(self) -> List[str]:
+    def _load_suspicious_patterns(self) -> list[str]:
         """Load suspicious regex patterns."""
         return [
             r"\b(?:\d{1,3}\.){3}\d{1,3}\b",  # IP addresses
@@ -398,7 +398,7 @@ class NLPThreatAnalyzer:
             r"\bencode|decode\b",  # Encoding references
         ]
 
-    async def analyze_log_entry(self, log_text: str) -> Dict[str, Any]:
+    async def analyze_log_entry(self, log_text: str) -> dict[str, Any]:
         """Analyze single log entry for threats."""
         try:
             analysis = {
@@ -437,7 +437,7 @@ class NLPThreatAnalyzer:
             self.logger.error(f"Error analyzing log entry: {e}")
             return {"threat_score": 0.0, "error": str(e)}
 
-    def _analyze_keywords(self, text: str, analysis: Dict[str, Any]) -> float:
+    def _analyze_keywords(self, text: str, analysis: dict[str, Any]) -> float:
         """Analyze text for threat keywords."""
         text_lower = text.lower()
         found_keywords = []
@@ -452,7 +452,7 @@ class NLPThreatAnalyzer:
         score = min(len(found_keywords) * 0.2, 1.0)
         return score
 
-    def _analyze_patterns(self, text: str, analysis: Dict[str, Any]) -> float:
+    def _analyze_patterns(self, text: str, analysis: dict[str, Any]) -> float:
         """Analyze text for suspicious patterns."""
         import re
 
@@ -468,7 +468,7 @@ class NLPThreatAnalyzer:
         score = min(len(matched_patterns) * 0.15, 1.0)
         return score
 
-    async def _analyze_with_nlp(self, text: str, analysis: Dict[str, Any]) -> float:
+    async def _analyze_with_nlp(self, text: str, analysis: dict[str, Any]) -> float:
         """Analyze text with NLP models."""
         try:
             # Named Entity Recognition
@@ -513,7 +513,7 @@ class NLPThreatAnalyzer:
             self.logger.error(f"Error in NLP analysis: {e}")
             return 0.0
 
-    async def _get_bert_embeddings(self, text: str) -> List[float]:
+    async def _get_bert_embeddings(self, text: str) -> list[float]:
         """Get BERT embeddings for text."""
         try:
             # Tokenize and encode
@@ -537,7 +537,7 @@ class NLPThreatAnalyzer:
             self.logger.error(f"Error getting BERT embeddings: {e}")
             return []
 
-    async def analyze_log_batch(self, log_entries: List[str]) -> List[Dict[str, Any]]:
+    async def analyze_log_batch(self, log_entries: list[str]) -> list[Dict[str, Any]]:
         """Analyze batch of log entries."""
         tasks = [self.analyze_log_entry(entry) for entry in log_entries]
         results = await asyncio.gather(*tasks, return_exceptions=True)
@@ -594,7 +594,7 @@ class ComputerVisionAnalyzer:
             self.logger.error(f"Error initializing CV models: {e}")
             return False
 
-    async def analyze_file_visual(self, file_path: str) -> Dict[str, Any]:
+    async def analyze_file_visual(self, file_path: str) -> dict[str, Any]:
         """Analyze file using visual/binary representation."""
         try:
             analysis = {
@@ -676,7 +676,7 @@ class ComputerVisionAnalyzer:
         return mime_type in binary_types
 
     async def _analyze_binary_visual(
-        self, binary_data: bytes, analysis: Dict[str, Any]
+        self, binary_data: bytes, analysis: dict[str, Any]
     ) -> float:
         """Analyze binary data using visual representation."""
         try:
@@ -718,7 +718,7 @@ class ComputerVisionAnalyzer:
             return 0.0
 
     async def _analyze_pe_sections(
-        self, file_path: str, analysis: Dict[str, Any]
+        self, file_path: str, analysis: dict[str, Any]
     ) -> float:
         """Analyze PE file sections for suspicious characteristics."""
         try:
@@ -772,8 +772,8 @@ class BehavioralAnalyzer:
             return False
 
     async def analyze_behavior_sequence(
-        self, events: List[Dict[str, Any]]
-    ) -> Dict[str, Any]:
+        self, events: list[Dict[str, Any]]
+    ) -> dict[str, Any]:
         """Analyze sequence of behavioral events."""
         try:
             # Extract features from events
@@ -818,8 +818,8 @@ class BehavioralAnalyzer:
             return {"threat_score": 0.0, "error": str(e)}
 
     def _extract_behavioral_features(
-        self, events: List[Dict[str, Any]]
-    ) -> List[List[float]]:
+        self, events: list[Dict[str, Any]]
+    ) -> list[List[float]]:
         """Extract behavioral features from events."""
         features = []
 
@@ -879,7 +879,7 @@ class BehavioralAnalyzer:
 
         return features
 
-    def _identify_patterns(self, events: List[Dict[str, Any]]) -> List[str]:
+    def _identify_patterns(self, events: list[Dict[str, Any]]) -> list[str]:
         """Identify behavioral patterns in events."""
         patterns = []
 
@@ -967,7 +967,7 @@ class TransferLearningManager:
     async def fine_tune_model(
         self,
         base_model_name: str,
-        training_data: List[Tuple[torch.Tensor, torch.Tensor]],
+        training_data: list[Tuple[torch.Tensor, torch.Tensor]],
         num_epochs: int = 10,
     ) -> str:
         """Fine-tune pretrained model on new data."""
@@ -1024,7 +1024,7 @@ class TransferLearningManager:
             self.logger.error(f"Error fine-tuning model: {e}")
             return ""
 
-    def _get_model_params(self, model) -> Dict[str, Any]:
+    def _get_model_params(self, model) -> dict[str, Any]:
         """Extract model parameters for recreation."""
         if isinstance(model, ThreatLSTM):
             return {
@@ -1070,7 +1070,7 @@ class EnsemblePredictor:
         self.logger.info(f"Added model to ensemble: {model_name} (weight: {weight})")
 
     async def predict_ensemble(
-        self, inputs: Dict[str, torch.Tensor]
+        self, inputs: dict[str, torch.Tensor]
     ) -> ModelPrediction:
         """Make ensemble prediction."""
         try:
@@ -1118,8 +1118,8 @@ class EnsemblePredictor:
             )
 
     def _weighted_voting(
-        self, predictions: Dict[str, int], confidences: Dict[str, float]
-    ) -> Dict[str, Any]:
+        self, predictions: dict[str, int], confidences: dict[str, float]
+    ) -> dict[str, Any]:
         """Weighted voting based on model confidence and weights."""
         weighted_scores = defaultdict(float)
         total_weight = 0.0
@@ -1145,7 +1145,7 @@ class EnsemblePredictor:
             "probabilities": list(weighted_scores.values()),
         }
 
-    def _majority_voting(self, predictions: Dict[str, int]) -> Dict[str, Any]:
+    def _majority_voting(self, predictions: dict[str, int]) -> dict[str, Any]:
         """Simple majority voting."""
         from collections import Counter
 
@@ -1157,8 +1157,8 @@ class EnsemblePredictor:
         return {"prediction": final_pred[0], "confidence": confidence}
 
     def _average_voting(
-        self, predictions: Dict[str, int], confidences: Dict[str, float]
-    ) -> Dict[str, Any]:
+        self, predictions: dict[str, int], confidences: dict[str, float]
+    ) -> dict[str, Any]:
         """Average voting with confidence weighting."""
         if not predictions:
             return {"prediction": 0, "confidence": 0.0}
@@ -1223,8 +1223,8 @@ class DeepLearningThreatDetector:
             return False
 
     async def analyze_comprehensive(
-        self, target_data: Dict[str, Any]
-    ) -> Dict[str, Any]:
+        self, target_data: dict[str, Any]
+    ) -> dict[str, Any]:
         """Comprehensive threat analysis using all available models."""
         try:
             results = {
@@ -1329,8 +1329,8 @@ class DeepLearningThreatDetector:
             self.ensemble.add_model(model_name, model, weight=0.8)
 
     async def _prepare_ensemble_inputs(
-        self, target_data: Dict[str, Any], analysis_results: Dict[str, Any]
-    ) -> Dict[str, torch.Tensor]:
+        self, target_data: dict[str, Any], analysis_results: dict[str, Any]
+    ) -> dict[str, torch.Tensor]:
         """Prepare inputs for ensemble prediction."""
         inputs = {}
 
@@ -1344,7 +1344,7 @@ class DeepLearningThreatDetector:
 
         return inputs
 
-    def get_performance_metrics(self) -> Dict[str, Any]:
+    def get_performance_metrics(self) -> dict[str, Any]:
         """Get performance metrics for the deep learning system."""
         if not self.prediction_history:
             return {}

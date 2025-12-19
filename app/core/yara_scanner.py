@@ -113,7 +113,7 @@ class YaraScanner:
                 return None
 
             # Find all .yar and .yara files
-            rule_files = []
+            rule_files: list[Path] = []
             for ext in ("*.yar", "*.yara"):
                 rule_files.extend(self.rules_dir.glob(ext))
 
