@@ -417,7 +417,7 @@ class ComplianceAssessmentEngine:
 
         score = 0.0
         findings: list[str] = []
-        evidence: list[dict] = []
+        evidence: list[str] = []
 
         if control.control_id.startswith("SOC2-CC6"):
             # Access control assessments
