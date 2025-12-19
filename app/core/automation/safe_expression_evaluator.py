@@ -214,7 +214,7 @@ class SafeExpressionEvaluator:
 
         # Dict literals (e.g., "{'key': 'value'}")
         if isinstance(node, ast.Dict):
-            result = {}
+            result: dict = {}  # type: ignore[assignment]
             for key_node, val_node in zip(node.keys, node.values):
                 key = self._eval_node(key_node, context)
                 val = self._eval_node(val_node, context)

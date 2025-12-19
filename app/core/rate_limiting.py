@@ -448,7 +448,7 @@ class GlobalRateLimitManager:
                     "type": "standard",
                 }
             for operation, limiter in self.adaptive_limiters.items():
-                limits[operation] = {
+                limits[operation] = {  # type: ignore[assignment]
                     "calls": limiter.base_limit.calls,
                     "period": limiter.base_limit.period,
                     "burst": limiter.base_limit.burst,

@@ -476,4 +476,4 @@ def _monitored_init(self, message: str = "", **kwargs):
 
 
 # Replace __init__ with monitored version
-BaseXanadOSError.__init__ = _monitored_init
+BaseXanadOSError.__init__ = _monitored_init  # type: ignore[assignment]

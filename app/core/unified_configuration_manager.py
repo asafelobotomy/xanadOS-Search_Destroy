@@ -1084,7 +1084,7 @@ class UnifiedConfigurationManager:
                     if key in ["require_https", "ssl"]:
                         env_value = env_value.lower() in ("true", "1", "yes", "on")
 
-                    self.config_cache[section][subsection][key] = env_value
+                    self.config_cache[section][subsection][key] = env_value  # type: ignore[assignment]
                     updated = True
 
             if updated:

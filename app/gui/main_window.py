@@ -41,7 +41,7 @@ try:
     UPDATES_AVAILABLE = True
 except ImportError:
     UPDATES_AVAILABLE = False
-    AutoUpdateSystem = None
+    AutoUpdateSystem = None  # type: ignore[assignment]
 
 # Import non-invasive monitoring system for status checks without sudo
 try:
@@ -51,9 +51,9 @@ try:
     NON_INVASIVE_MONITORING_AVAILABLE = True
 except ImportError:
     NON_INVASIVE_MONITORING_AVAILABLE = False
-    get_system_status = None
-    record_activity = None
-    get_rkhunter_status_non_invasive = None
+    get_system_status = None  # type: ignore[assignment]
+    record_activity = None  # type: ignore[assignment]
+    get_rkhunter_status_non_invasive = None  # type: ignore[assignment]
 
 # Import firewall status optimization
 try:
@@ -62,7 +62,7 @@ try:
     FIREWALL_OPTIMIZATION_AVAILABLE = True
 except ImportError:
     FIREWALL_OPTIMIZATION_AVAILABLE = False
-    apply_firewall_optimization = None
+    apply_firewall_optimization = None  # type: ignore[assignment]
 
 from threading import Thread
 
