@@ -308,7 +308,7 @@ class FileScanner:
         self._scan_progress = 0.0
         self._scan_running = False
         self._scan_cancelled = False
-        self._current_scan_id = None
+        self._current_scan_id: str | None = None
         self._total_files_to_scan = 0
         self._files_completed = 0
         self._current_thread = None  # Reference to QThread for interruption checks
@@ -321,7 +321,7 @@ class FileScanner:
         self.result_callback: Callable[[ScanFileResult], None] | None = None
 
         # Scheduled scanning
-        self._scheduler_thread = None
+        self._scheduler_thread: threading.Thread | None = None
         self._scheduler_running = False
         self._scheduler_stop_event = threading.Event()
 

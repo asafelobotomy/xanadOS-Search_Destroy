@@ -76,6 +76,8 @@ class HybridScanner:
         # Initialize scanners
         self.clamav_enabled = enable_clamav
         self.yara_enabled = enable_yara
+        self.clamav: FileScanner | None
+        self.yara: YaraScanner | None
 
         if enable_clamav:
             try:

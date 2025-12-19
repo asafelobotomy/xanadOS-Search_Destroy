@@ -100,7 +100,7 @@ class SecurityEvent:
     process_id: int | None = None
     user_id: int | None = None
     threat_level: ThreatLevel = ThreatLevel.LOW
-    additional_data: dict[str, Any] = None
+    additional_data: dict[str, Any] | None = None
     detection_latency_ms: float = 0.0
 
     def __post_init__(self):

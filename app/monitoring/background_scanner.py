@@ -76,10 +76,10 @@ except ImportError:
                 """Mock scan result object returned by the fallback scanner."""
 
                 result: ScanResult = ScanResult.CLEAN
-                threat_name: str = None
-                threat_type: str = None
+                threat_name: str | None = None
+                threat_type: str | None = None
                 file_size: int = 0
-                error_message: str = None
+                error_message: str | None = None
 
             return Result()
 
@@ -163,7 +163,7 @@ class BackgroundScanner:
             )
             self.logger.info("Using hybrid multi-engine scanner (ClamAV + YARA)")
         else:
-            self.file_scanner = file_scanner or ClamAVWrapper()
+            self.file_scanner = file_scanner or ClamAVWrapper()  # type: ignore[assignment]
             if enable_hybrid:
                 self.logger.warning(
                     "Hybrid scanner requested but not available, using ClamAV only"
