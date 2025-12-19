@@ -32,12 +32,12 @@ try:
     from .rate_limiting import RateLimitingCoordinator
 except ImportError:
     # Fallback for development/testing
-    EnterprisePerformanceManager = None
-    PerformanceTarget = None
-    OptimizationStrategy = None
-    SecurityIntegrationCoordinator = None
-    PerformanceMetrics = None
-    RateLimitingCoordinator = None
+    EnterprisePerformanceManager = None  # type: ignore[assignment]
+    PerformanceTarget = None  # type: ignore[assignment]
+    OptimizationStrategy = None  # type: ignore[assignment]
+    SecurityIntegrationCoordinator = None  # type: ignore[assignment]
+    PerformanceMetrics = None  # type: ignore[assignment]
+    RateLimitingCoordinator = None  # type: ignore[assignment]
 
 
 @dataclass

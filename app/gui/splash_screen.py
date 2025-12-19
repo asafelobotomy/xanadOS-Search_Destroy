@@ -224,8 +224,8 @@ class ModernSplashScreen(QSplashScreen):
         """Update progress for a specific phase."""
         if phase in self.phases:
             phase_data = self.phases[phase]
-            self.current_progress = phase_data["progress"]
-            self.current_message = phase_data["message"]
+            self.current_progress = int(phase_data["progress"])
+            self.current_message = str(phase_data["message"])
             self.progress_updated.emit(self.current_progress, self.current_message)
             self.phase_completed.emit(phase)
 

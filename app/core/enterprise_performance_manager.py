@@ -49,12 +49,12 @@ try:
     )
 except ImportError:
     # Fallback for development/testing
-    RateLimitingCoordinator = None
-    SecurityIntegrationCoordinator = None
-    PerformanceMetrics = None
-    PerformanceOptimizer = None
-    PerformanceLevel = None
-    ResourceMonitor = None
+    RateLimitingCoordinator = None  # type: ignore[assignment]
+    SecurityIntegrationCoordinator = None  # type: ignore[assignment]
+    PerformanceMetrics = None  # type: ignore[assignment]
+    PerformanceOptimizer = None  # type: ignore[assignment]
+    PerformanceLevel = None  # type: ignore[assignment]
+    ResourceMonitor = None  # type: ignore[assignment]
 
 
 class OptimizationStrategy(Enum):

@@ -25,7 +25,7 @@ try:
     UPDATES_AVAILABLE = True
 except ImportError:
     UPDATES_AVAILABLE = False
-    AutoUpdateSystem = None
+    AutoUpdateSystem = None  # type: ignore[assignment]
 from pathlib import Path
 
 from app.gui.theme_manager import get_theme_manager

@@ -84,9 +84,9 @@ class MLThreatDetector:
         self.registry = ModelRegistry()
         self.feature_extractor = FeatureExtractor()
 
-        # Load model
-        self.model = None
-        self.metadata = None
+        # Load model (types set for model registry tuple unpacking)
+        self.model: Any = None
+        self.metadata: ModelMetadata | None = None
         self._load_model()
 
         logger.info(
