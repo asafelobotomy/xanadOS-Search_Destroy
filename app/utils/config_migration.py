@@ -116,8 +116,8 @@ def migrate_environment_variables():
                 elif key in ["ssl", "require_https", "enable_cors"]:
                     env_value = env_value.lower() in ("true", "1", "yes", "on")
 
-                # Update configuration
-                api_config[section][key] = env_value
+                # Update configuration (cast to str for type compatibility)
+                api_config[section][key] = str(env_value)
                 updated = True
 
                 logging.getLogger(APP_NAME).info(

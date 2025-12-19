@@ -161,9 +161,9 @@ class PerformanceOptimizer:
         settings = self.performance_settings[level]
 
         # Update configuration
-        self.config.max_threads = settings["max_threads"]
-        self.config.gc_frequency = settings["gc_frequency"]
-        self.config.cache_size = settings["cache_size"]
+        self.config.max_threads = int(settings["max_threads"])
+        self.config.gc_frequency = int(settings["gc_frequency"])
+        self.config.cache_size = int(settings["cache_size"])
 
         # Clear cache if size changed
         if len(self._cache) > self.config.cache_size:

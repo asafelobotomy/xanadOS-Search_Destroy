@@ -439,7 +439,7 @@ class GlobalRateLimitManager:
     def get_current_limits(self) -> dict[str, dict]:
         """Get current rate limit configuration."""
         with self.lock:
-            limits = {}
+            limits: dict[str, dict[str, Any]] = {}
             for operation, limiter in self.limiters.items():
                 limits[operation] = {
                     "calls": limiter.rate_limit.calls,
