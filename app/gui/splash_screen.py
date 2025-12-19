@@ -41,8 +41,8 @@ class ModernSplashScreen(QSplashScreen):
         )
 
         # Initialize progress tracking
-        self.current_progress = 0
-        self.current_message = "Initializing xanadOS Search & Destroy..."
+        self.current_progress: int = 0
+        self.current_message: str = "Initializing xanadOS Search & Destroy..."
         self.phases = {
             "ui_init": {"progress": 20, "message": "Loading user interface..."},
             "cache_init": {"progress": 40, "message": "Initializing cache system..."},
@@ -285,7 +285,7 @@ class StartupProgressTracker:
 
     def __init__(self, splash_screen: ModernSplashScreen):
         self.splash = splash_screen
-        self.start_time = None
+        self.start_time: float | None = None
         self.phase_times = {}
 
     def start_tracking(self):

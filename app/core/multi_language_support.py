@@ -108,8 +108,8 @@ class MultiLanguageSupport:
         self.preferences = LanguagePreferences()
 
         # Qt translation objects
-        self.qt_translator = None
-        self.app_translator = None
+        self.qt_translator: QTranslator | None = None
+        self.app_translator: QTranslator | None = None
 
         # Translation database
         self.translation_db = {}

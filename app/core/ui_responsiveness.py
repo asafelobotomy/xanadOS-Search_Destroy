@@ -281,10 +281,10 @@ class ScanProgressManager(QObject):
         self.scanned_files = 0
         self.infected_files = 0
         self.errors = 0
-        self.start_time = 0
+        self.start_time: float = 0.0
 
         # Update throttling
-        self.last_update = 0
+        self.last_update: float = 0.0
         self.update_interval = 0.1  # Update UI every 100ms max
 
     def start_scan(self, total_files: int):

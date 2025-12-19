@@ -242,7 +242,7 @@ class IntelligentCache:
         }
 
         # Background cleanup
-        self._cleanup_thread = None
+        self._cleanup_thread: threading.Thread | None = None
         self._stop_cleanup = threading.Event()
         self._start_background_cleanup()
 
