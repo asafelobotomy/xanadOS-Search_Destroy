@@ -57,10 +57,10 @@ try:
 except ImportError:
     PYQT6_AVAILABLE = False
     # Dummy classes for type checking without PyQt6
-    QMainWindow = object
-    QDockWidget = object
-    QWidget = object
-    pyqtSignal = lambda *args: None
+    QMainWindow = object  # type: ignore[assignment,misc]
+    QDockWidget = object  # type: ignore[assignment,misc]
+    QWidget = object  # type: ignore[assignment,misc]
+    pyqtSignal = lambda *args: None  # type: ignore[assignment,misc]
 
 
 from app.utils.config import CONFIG_DIR

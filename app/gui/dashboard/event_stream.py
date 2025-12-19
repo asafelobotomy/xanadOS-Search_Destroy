@@ -64,9 +64,9 @@ try:
 except ImportError:
     PYQT6_AVAILABLE = False
     # Dummy classes for type checking
-    QWidget = object
-    QThread = object
-    pyqtSignal = lambda *args: None
+    QWidget = object  # type: ignore[assignment,misc]
+    QThread = object  # type: ignore[assignment,misc]
+    pyqtSignal = lambda *args: None  # type: ignore[assignment,misc]
 
 
 from app.utils.config import DATA_DIR

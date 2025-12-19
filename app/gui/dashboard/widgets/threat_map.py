@@ -16,7 +16,7 @@ try:
     PYQT6_AVAILABLE = True
 except ImportError:
     PYQT6_AVAILABLE = False
-    QWidget = object
+    QWidget = object  # type: ignore[assignment,misc]
 
 
 @dataclass

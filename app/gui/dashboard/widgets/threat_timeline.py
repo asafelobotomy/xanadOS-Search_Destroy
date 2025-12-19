@@ -27,7 +27,7 @@ try:
 except ImportError:
     PYQTGRAPH_AVAILABLE = False
     # Fallback for testing/headless environments
-    QWidget = object
+    QWidget = object  # type: ignore[assignment,misc]
 
 
 class ThreatSeverity(Enum):
