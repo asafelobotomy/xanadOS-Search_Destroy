@@ -811,7 +811,9 @@ class ClamAVWrapper:
 
         return recommendations
 
-    def optimize_for_parallel_scanning(self, max_threads: int | None = None) -> dict[str, Any]:
+    def optimize_for_parallel_scanning(
+        self, max_threads: int | None = None
+    ) -> dict[str, Any]:
         """Configure ClamAV for optimal parallel scanning performance."""
         if max_threads is None:
             try:

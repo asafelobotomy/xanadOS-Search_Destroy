@@ -532,7 +532,10 @@ class WorkflowEngine:
         }
 
     async def _delete_file(
-        self, file_path: str | None = None, context: dict[str, Any] | None = None, **kwargs
+        self,
+        file_path: str | None = None,
+        context: dict[str, Any] | None = None,
+        **kwargs,
     ) -> dict[str, Any]:
         """Delete a file."""
         if context is None:
@@ -551,7 +554,10 @@ class WorkflowEngine:
         }
 
     async def _kill_process(
-        self, process_id: int | None = None, context: dict[str, Any] | None = None, **kwargs
+        self,
+        process_id: int | None = None,
+        context: dict[str, Any] | None = None,
+        **kwargs,
     ) -> dict[str, Any]:
         """Kill a process."""
         if context is None:
@@ -636,7 +642,10 @@ class WorkflowEngine:
         }
 
     async def _generate_report(
-        self, report_type: str = "summary", context: dict[str, Any] | None = None, **kwargs
+        self,
+        report_type: str = "summary",
+        context: dict[str, Any] | None = None,
+        **kwargs,
     ) -> dict[str, Any]:
         """Generate a security report."""
         if context is None:

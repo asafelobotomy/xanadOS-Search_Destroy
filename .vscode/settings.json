@@ -34,7 +34,9 @@
   "github.copilot.chat.localeOverride": "en",
   "github.copilot.chat.welcomeMessage": "never",
   "github.copilot.chat.insertionIndicator": true,
-  "cSpell.files": ["**/*.md"],
+  "cSpell.files": [
+    "**/*.md"
+  ],
   "cSpell.useGitignore": true,
   "cSpell.ignorePaths": [
     ".cspellignore",
@@ -52,7 +54,10 @@
   "editor.wordWrap": "on",
   "editor.lineNumbers": "on",
   "editor.minimap.enabled": false,
-  "editor.rulers": [80, 120],
+  "editor.rulers": [
+    80,
+    120
+  ],
   "editor.formatOnSave": true,
   "files.trimTrailingWhitespace": true,
   "files.insertFinalNewline": true,
@@ -125,12 +130,18 @@
   "python.analysis.autoImportCompletions": true,
   "python.analysis.indexing": true,
   "python.analysis.packageIndexDepths": [
-    { "name": "", "depth": 2, "includeAllSymbols": false }
+    {
+      "name": "",
+      "depth": 2,
+      "includeAllSymbols": false
+    }
   ],
   "python.analysis.userFileIndexingLimit": 2000,
   "ruff.configurationPreference": "filesystemFirst",
   "ruff.importStrategy": "fromEnvironment",
-  "ruff.path": [".venv/bin/ruff"],
+  "ruff.path": [
+    ".venv/bin/ruff"
+  ],
   "files.watcherExclude": {
     "**/__pycache__/**": true,
     "**/node_modules/**": true,
@@ -172,5 +183,8 @@
   "workbench.editor.restoreViewState": false,
   "workbench.editor.enablePreview": false,
   "workbench.startup.editor": "none",
-  "files.restoreUndoStack": false
+  "files.restoreUndoStack": false,
+  "cSpell.words": [
+    "xanad"
+  ]
 }

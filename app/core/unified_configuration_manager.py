@@ -953,7 +953,9 @@ class UnifiedConfigurationManager:
     # Component Management (from component_manager.py)
     # ========================================================================
 
-    def register_component(self, name: str, dependencies: list[str] | None = None) -> None:
+    def register_component(
+        self, name: str, dependencies: list[str] | None = None
+    ) -> None:
         """Register a component for management"""
         if dependencies is None:
             dependencies = []

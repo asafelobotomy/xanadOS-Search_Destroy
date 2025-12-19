@@ -75,7 +75,9 @@ class UpdateDownloadThread(QThread):
             def progress_callback(percent):
                 self.progress_updated.emit(percent)
 
-            download_path = updater.download_update(self.download_url, progress_callback)
+            download_path = updater.download_update(
+                self.download_url, progress_callback
+            )
 
             if download_path:
                 self.download_completed.emit(str(download_path))
@@ -115,7 +117,9 @@ class UpdateDialog(QDialog):
             icon_label = QLabel()
             pixmap = QPixmap(":/icons/update.png")
             if not pixmap.isNull():
-                icon_label.setPixmap(pixmap.scaled(48, 48, Qt.AspectRatioMode.KeepAspectRatio))
+                icon_label.setPixmap(
+                    pixmap.scaled(48, 48, Qt.AspectRatioMode.KeepAspectRatio)
+                )
                 header_layout.addWidget(icon_label)
             else:
                 # Use text icon as fallback
@@ -276,7 +280,9 @@ class UpdateDialog(QDialog):
     def on_no_update(self):
         """Handle when no update is available."""
         self.status_label.setText("Your application is up to date!")
-        self.status_label.setStyleSheet(f"color: {get_theme_manager().get_color('success')};")
+        self.status_label.setStyleSheet(
+            f"color: {get_theme_manager().get_color('success')};"
+        )
         self.check_button.setEnabled(True)
         self.check_button.setText("Check Again")
 
@@ -286,7 +292,9 @@ class UpdateDialog(QDialog):
     def on_check_error(self, error_message):
         """Handle errors during update check."""
         self.status_label.setText(f"Error checking for updates: {error_message}")
-        self.status_label.setStyleSheet(f"color: {get_theme_manager().get_color('error')};")
+        self.status_label.setStyleSheet(
+            f"color: {get_theme_manager().get_color('error')};"
+        )
         self.check_button.setEnabled(True)
 
         # Update last check time even on error (since we did attempt to check)
@@ -326,14 +334,18 @@ class UpdateDialog(QDialog):
         self.progress_label.setText("Download completed!")
         self.install_button.setVisible(True)
         self.status_label.setText("Update downloaded. Ready to install.")
-        self.status_label.setStyleSheet(f"color: {get_theme_manager().get_color('success')};")
+        self.status_label.setStyleSheet(
+            f"color: {get_theme_manager().get_color('success')};"
+        )
 
     def on_download_failed(self, error_message):
         """Handle download failure."""
         self.progress_label.setText(f"Download failed: {error_message}")
         self.download_button.setEnabled(True)
         self.status_label.setText("Download failed. Please try again.")
-        self.status_label.setStyleSheet(f"color: {get_theme_manager().get_color('error')};")
+        self.status_label.setStyleSheet(
+            f"color: {get_theme_manager().get_color('error')};"
+        )
 
     def install_update(self):
         """Install the downloaded update."""
@@ -498,7 +510,9 @@ class UpdateNotifier:
                             hasattr(self.main_window, "auto_updater")
                             and self.main_window.auto_updater
                         ):
-                            update_info = self.main_window.auto_updater.check_for_updates_sync()
+                            update_info = (
+                                self.main_window.auto_updater.check_for_updates_sync()
+                            )
                             if update_info and update_info.get("available", False):
                                 self.update_found.emit(update_info)
                     except Exception as e:

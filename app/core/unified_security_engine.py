@@ -225,7 +225,8 @@ class MLAnomalyDetector:
             recent_events = [
                 e
                 for e in self.training_data["process_behavior"][-100:]
-                if e["pid"] == event.process_id and event.timestamp - e["timestamp"] < 1.0
+                if e["pid"] == event.process_id
+                and event.timestamp - e["timestamp"] < 1.0
             ]
 
             # High frequency of events in short time = suspicious
@@ -344,7 +345,9 @@ class SmartEventFilter:
                 return True
 
             # Process high-priority paths
-            if any(event.source_path.startswith(path) for path in self.high_priority_paths):
+            if any(
+                event.source_path.startswith(path) for path in self.high_priority_paths
+            ):
                 if event.event_type in [
                     EventType.FILE_CREATED,
                     EventType.EXECUTABLE_MODIFIED,
@@ -462,7 +465,9 @@ class AdaptiveResourceManager:
             active_processes = len(processes)
 
             # Threat level assessment (enhanced)
-            threat_level = self._assess_threat_level(cpu_percent, memory.percent, processes)
+            threat_level = self._assess_threat_level(
+                cpu_percent, memory.percent, processes
+            )
 
             # Protection mode determination
             protection_mode = self._determine_optimal_mode(
@@ -488,7 +493,9 @@ class AdaptiveResourceManager:
 
         except Exception as e:
             self.logger.error(f"Error analyzing system health: {e}")
-            return SystemHealth(0, 0, 0, 0, 0, ThreatLevel.LOW, "balanced", datetime.now())
+            return SystemHealth(
+                0, 0, 0, 0, 0, ThreatLevel.LOW, "balanced", datetime.now()
+            )
 
     def _assess_threat_level(
         self, cpu_usage: float, memory_usage: float, processes: list
@@ -518,7 +525,9 @@ class AdaptiveResourceManager:
 
         return ThreatLevel.LOW
 
-    def _determine_optimal_mode(self, cpu: float, memory: float, disk: float) -> ProtectionMode:
+    def _determine_optimal_mode(
+        self, cpu: float, memory: float, disk: float
+    ) -> ProtectionMode:
         """Determine optimal protection mode with ML learning."""
         # Critical resource usage - minimize overhead
         if cpu > 90 or memory > 90:
@@ -536,7 +545,9 @@ class AdaptiveResourceManager:
         else:
             return ProtectionMode.BALANCED
 
-    def _calculate_performance_score(self, cpu: float, memory: float, disk: float) -> float:
+    def _calculate_performance_score(
+        self, cpu: float, memory: float, disk: float
+    ) -> float:
         """Calculate overall system performance score (0-100)."""
         # Weighted performance calculation
         cpu_score = max(0, 100 - cpu)
@@ -796,7 +807,9 @@ class UnifiedSecurityEngine:
             "action_taken": "logged",  # Would implement actual response
         }
 
-        self.logger.warning(f"🚨 THREAT DETECTED: {event.source_path} (score: {anomaly_score:.3f})")
+        self.logger.warning(
+            f"🚨 THREAT DETECTED: {event.source_path} (score: {anomaly_score:.3f})"
+        )
 
         # Call threat callbacks
         for callback in self.threat_callbacks:
@@ -843,11 +856,15 @@ class UnifiedSecurityEngine:
         while self.is_running:
             try:
                 # Update uptime
-                self.performance_metrics["uptime_seconds"] = time.time() - self.start_time
+                self.performance_metrics["uptime_seconds"] = (
+                    time.time() - self.start_time
+                )
 
                 # Calculate system impact
                 health = self.resource_manager.analyze_system_health()
-                self.performance_metrics["system_impact"] = 100 - health.performance_score
+                self.performance_metrics["system_impact"] = (
+                    100 - health.performance_score
+                )
 
                 await asyncio.sleep(30.0)  # Monitor every 30 seconds
 
@@ -954,12 +971,18 @@ async def demonstrate_unified_engine():
                 # Show final status
                 status = engine.get_status()
                 print("\n📊 Final Status:")
-                print(f"   Events processed: {status['performance_metrics']['events_processed']}")
-                print(f"   Threats detected: {status['performance_metrics']['threats_detected']}")
+                print(
+                    f"   Events processed: {status['performance_metrics']['events_processed']}"
+                )
+                print(
+                    f"   Threats detected: {status['performance_metrics']['threats_detected']}"
+                )
                 print(
                     f"   Avg processing time: {status['performance_metrics']['avg_processing_time']:.2f}ms"
                 )
-                print(f"   System impact: {status['performance_metrics']['system_impact']:.1f}%")
+                print(
+                    f"   System impact: {status['performance_metrics']['system_impact']:.1f}%"
+                )
 
             else:
                 print("❌ Failed to start protection")

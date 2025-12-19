@@ -9,6 +9,7 @@ Features:
 - Fallback handling for missing logo files
 """
 
+import logging
 import time
 from pathlib import Path
 
@@ -18,6 +19,8 @@ from PyQt6.QtWidgets import QSplashScreen
 
 # Import centralized version
 from app import __version__
+
+logger = logging.getLogger(__name__)
 
 
 class ModernSplashScreen(QSplashScreen):

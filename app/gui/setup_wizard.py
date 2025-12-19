@@ -1487,7 +1487,9 @@ class SetupWizard(ThemedDialog):  # pylint: disable=too-many-instance-attributes
             self.show_installation_dialog(packages_to_install, daemons_to_configure)
 
     def show_installation_dialog(
-        self, packages_to_install: list[str], daemons_to_configure: list[str] | None = None
+        self,
+        packages_to_install: list[str],
+        daemons_to_configure: list[str] | None = None,
     ):
         """Show installation progress dialog."""
         if daemons_to_configure is None:
