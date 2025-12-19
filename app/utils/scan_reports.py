@@ -384,8 +384,8 @@ class ScanReportManager:
         self,
         output_path: str,
         format_type: str = "json",
-        start_date: str = None,
-        end_date: str = None,
+        start_date: str | None = None,
+        end_date: str | None = None,
     ) -> bool:
         """Export reports to the specified format.
 

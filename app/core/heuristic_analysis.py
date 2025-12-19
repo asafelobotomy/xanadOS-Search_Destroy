@@ -112,7 +112,7 @@ class HeuristicAnalysisEngine:
     using behavioral analysis, entropy calculation, and pattern matching.
     """
 
-    def __init__(self, database_path: str = None):
+    def __init__(self, database_path: str | None = None):
         self.logger = logging.getLogger(__name__)
 
         # Database for storing patterns and results

@@ -511,7 +511,7 @@ class WorkflowEngine:
         self,
         file_path: str | None = None,
         quarantine_dir: str = "/var/quarantine",
-        context: dict[str, Any] = None,
+        context: dict[str, Any] | None = None,
         **kwargs,
     ) -> dict[str, Any]:
         """Quarantine a file."""
@@ -532,7 +532,7 @@ class WorkflowEngine:
         }
 
     async def _delete_file(
-        self, file_path: str | None = None, context: dict[str, Any] = None, **kwargs
+        self, file_path: str | None = None, context: dict[str, Any] | None = None, **kwargs
     ) -> dict[str, Any]:
         """Delete a file."""
         if context is None:
@@ -551,7 +551,7 @@ class WorkflowEngine:
         }
 
     async def _kill_process(
-        self, process_id: int | None = None, context: dict[str, Any] = None, **kwargs
+        self, process_id: int | None = None, context: dict[str, Any] | None = None, **kwargs
     ) -> dict[str, Any]:
         """Kill a process."""
         if context is None:
@@ -573,7 +573,7 @@ class WorkflowEngine:
         self,
         message: str = "Security alert",
         recipient: str = "admin@example.com",
-        context: dict[str, Any] = None,
+        context: dict[str, Any] | None = None,
         **kwargs,
     ) -> dict[str, Any]:
         """Send a notification."""
@@ -593,7 +593,7 @@ class WorkflowEngine:
         }
 
     async def _update_definitions(
-        self, context: dict[str, Any] = None, **kwargs
+        self, context: dict[str, Any] | None = None, **kwargs
     ) -> dict[str, Any]:
         """Update virus definitions."""
         if context is None:
@@ -614,7 +614,7 @@ class WorkflowEngine:
         self,
         path: str = "/",
         scan_type: str = "quick",
-        context: dict[str, Any] = None,
+        context: dict[str, Any] | None = None,
         **kwargs,
     ) -> dict[str, Any]:
         """Run a security scan."""
@@ -636,7 +636,7 @@ class WorkflowEngine:
         }
 
     async def _generate_report(
-        self, report_type: str = "summary", context: dict[str, Any] = None, **kwargs
+        self, report_type: str = "summary", context: dict[str, Any] | None = None, **kwargs
     ) -> dict[str, Any]:
         """Generate a security report."""
         if context is None:
@@ -658,7 +658,7 @@ class WorkflowEngine:
         self,
         url: str | None = None,
         payload: dict | None = None,
-        context: dict[str, Any] = None,
+        context: dict[str, Any] | None = None,
         **kwargs,
     ) -> dict[str, Any]:
         """Call an external webhook."""
@@ -682,8 +682,8 @@ class WorkflowEngine:
     async def _run_script(
         self,
         script: str | None = None,
-        args: list = None,
-        context: dict[str, Any] = None,
+        args: list[Any] | None = None,
+        context: dict[str, Any] | None = None,
         **kwargs,
     ) -> dict[str, Any]:
         """Run an external script."""

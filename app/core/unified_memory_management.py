@@ -709,6 +709,7 @@ def memory_efficient(func: Callable) -> Callable:
     - Triggers garbage collection if memory pressure is detected
     - Logs memory statistics for performance monitoring
     """
+
     def wrapper(*args, **kwargs):
         # Get memory before
         manager = get_memory_manager()
@@ -722,7 +723,9 @@ def memory_efficient(func: Callable) -> Callable:
             after_metrics = manager.get_memory_metrics()
 
             # If memory increased significantly, trigger GC
-            memory_increase = after_metrics.used_memory_mb - before_metrics.used_memory_mb
+            memory_increase = (
+                after_metrics.used_memory_mb - before_metrics.used_memory_mb
+            )
             if memory_increase > 100:  # More than 100MB increase
                 logger.debug(
                     f"Function {func.__name__} increased memory by {memory_increase:.1f}MB, "

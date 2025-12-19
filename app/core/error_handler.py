@@ -115,9 +115,9 @@ class ErrorHandler:
                     exception: Exception,
                     component: str,
                     function: str,
-                    context: dict[str, Any] = None,
-                    severity: ErrorSeverity = None,
-                    category: ErrorCategory = None) -> ErrorInfo:
+                    context: dict[str, Any] | None = None,
+                    severity: ErrorSeverity | None = None,
+                    category: ErrorCategory | None = None) -> ErrorInfo:
         """Handle an exception with comprehensive logging and recovery."""
 
         if context is None:
