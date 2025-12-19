@@ -541,7 +541,7 @@ class QuarantineManager:
 
                 # Close fd before move (required on some systems)
                 os.close(fd)
-                fd = None
+                fd: int | None = None
 
                 # Atomic move operation
                 shutil.move(str(source_path), str(quarantine_path))

@@ -344,7 +344,7 @@ def get_error_handler() -> ErrorHandler:
     return _error_handler
 
 
-def handle_exceptions(component: str, severity: ErrorSeverity = ErrorSeverity.MEDIUM, category: ErrorCategory = None):
+def handle_exceptions(component: str, severity: ErrorSeverity = ErrorSeverity.MEDIUM, category: ErrorCategory | None = None):
     """Decorator for automatic exception handling."""
     def decorator(func: CallableABC) -> CallableABC:
         @functools.wraps(func)
@@ -376,7 +376,7 @@ def handle_exceptions(component: str, severity: ErrorSeverity = ErrorSeverity.ME
 def safe_execute(func: CallableABC,
                 component: str,
                 default_return: Any = None,
-                context: dict[str, Any] = None,
+                context: dict[str, Any] | None = None,
                 severity: ErrorSeverity = ErrorSeverity.MEDIUM) -> Any:
     """Safely execute a function with error handling."""
     try:

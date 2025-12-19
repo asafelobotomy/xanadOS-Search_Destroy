@@ -311,7 +311,7 @@ class CUDAAccelerator:
     def __init__(self, device_manager: GPUDeviceManager):
         self.device_manager = device_manager
         self.logger = logging.getLogger(__name__)
-        self.device = None
+        self.device: Any = None
         self.memory_pool = None
 
     async def initialize(self) -> bool:

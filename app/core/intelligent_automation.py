@@ -938,7 +938,7 @@ class IntelligentAutomation:
         self.current_profile = None
         self.current_threats = None
         self.current_config = None
-        self.last_optimization = 0
+        self.last_optimization: float = 0.0
         self.optimization_interval = 3600  # 1 hour
 
         # Integration with security components
