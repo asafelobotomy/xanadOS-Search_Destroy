@@ -13,7 +13,7 @@ Provides:
 import hashlib
 import json
 import shutil
-from dataclasses import dataclass, asdict
+from dataclasses import dataclass, asdict, field
 from datetime import datetime
 from pathlib import Path
 from typing import Optional, Any
