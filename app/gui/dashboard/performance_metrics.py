@@ -16,25 +16,25 @@ from typing import Any
 import psutil
 
 try:
+    from PyQt6.QtCore import Qt, QTimer, pyqtSignal
     from PyQt6.QtWidgets import (
-        QWidget,
-        QVBoxLayout,
-        QHBoxLayout,
-        QLabel,
-        QGroupBox,
-        QPushButton,
         QComboBox,
         QGridLayout,
+        QGroupBox,
+        QHBoxLayout,
+        QLabel,
+        QPushButton,
+        QVBoxLayout,
+        QWidget,
     )
-    from PyQt6.QtCore import Qt, QTimer, pyqtSignal
 
     PYQT6_AVAILABLE = True
 except ImportError:
     PYQT6_AVAILABLE = False
 
 try:
-    import pyqtgraph as pg
     import numpy as np
+    import pyqtgraph as pg
 
     PYQTGRAPH_AVAILABLE = True
 except ImportError:

@@ -81,7 +81,7 @@ class BaseXanadOSError(Exception):
         log_data = {
             "error_id": self.error_id,
             "error_code": self.error_code,
-            "message": self.message,
+            "error_message": self.message,
             "severity": self.severity.value,
             "category": self.category.value,
             "context": self.context,
@@ -120,7 +120,8 @@ class SystemError(BaseXanadOSError):
     """General system-level errors."""
 
     def __init__(self, message: str, **kwargs: Any) -> None:
-        super().__init__(message, category=ErrorCategory.SYSTEM, **kwargs)
+        kwargs.setdefault("category", ErrorCategory.SYSTEM)
+        super().__init__(message, **kwargs)
 
 
 class ConfigurationError(BaseXanadOSError):
@@ -268,8 +269,8 @@ def handle_exceptions(
 
                 error_data = {
                     "function": f"{func.__module__}.{func.__name__}",
-                    "args": str(args),
-                    "kwargs": str(kwargs),
+                    "call_args": str(args),
+                    "call_kwargs": str(kwargs),
                     "exception_type": type(e).__name__,
                     "exception_message": str(e),
                 }

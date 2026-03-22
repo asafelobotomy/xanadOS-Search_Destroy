@@ -32,26 +32,26 @@ Date: December 16, 2025
 from __future__ import annotations
 
 import json
-from dataclasses import dataclass, field, asdict
+from dataclasses import asdict, dataclass, field
 from datetime import datetime
 from pathlib import Path
 from typing import Any
 
 try:
-    from PyQt6.QtWidgets import (
-        QMainWindow,
-        QDockWidget,
-        QWidget,
-        QVBoxLayout,
-        QHBoxLayout,
-        QPushButton,
-        QLabel,
-        QComboBox,
-        QMessageBox,
-        QMenu,
-    )
-    from PyQt6.QtCore import Qt, QSettings, QByteArray, pyqtSignal
+    from PyQt6.QtCore import QByteArray, QSettings, Qt, pyqtSignal
     from PyQt6.QtGui import QAction, QScreen
+    from PyQt6.QtWidgets import (
+        QComboBox,
+        QDockWidget,
+        QHBoxLayout,
+        QLabel,
+        QMainWindow,
+        QMenu,
+        QMessageBox,
+        QPushButton,
+        QVBoxLayout,
+        QWidget,
+    )
 
     PYQT6_AVAILABLE = True
 except ImportError:
@@ -60,11 +60,11 @@ except ImportError:
     QMainWindow = object  # type: ignore[assignment,misc]
     QDockWidget = object  # type: ignore[assignment,misc]
     QWidget = object  # type: ignore[assignment,misc]
-    pyqtSignal = lambda *args: None  # type: ignore[assignment,misc]
+    def pyqtSignal(*args):
+        return None  # type: ignore[assignment,misc]
 
 
 from app.utils.config import CONFIG_DIR
-
 
 # Layout configuration storage path
 LAYOUTS_DIR = CONFIG_DIR / "dashboard_layouts"

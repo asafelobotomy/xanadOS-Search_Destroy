@@ -1002,7 +1002,7 @@ Do you want to proceed?"""
                             f"s|^{param_name}.*|{param_name} = {expected_value}|",
                             config_file,
                         ]
-                        update_result = _run_elevated_command(
+                        _run_elevated_command(
                             sed_cmd,
                             operation_desc=f"Update sysctl parameter {param_name}",
                         )

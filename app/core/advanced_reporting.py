@@ -868,7 +868,7 @@ class AdvancedReportingSystem:
             if labels and values:
                 colors = self.chart_config["color_palette"][: len(labels)]
 
-                wedges, texts, autotexts = ax.pie(
+                _wedges, _texts, _autotexts = ax.pie(
                     values,
                     labels=labels,
                     colors=colors,

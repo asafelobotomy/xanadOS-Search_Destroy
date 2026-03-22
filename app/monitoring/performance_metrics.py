@@ -158,8 +158,7 @@ class PerformanceMetrics:
 
         # Extract queue metrics
         queue_depth = scanner_stats.get("queued_scans", 0)
-        if queue_depth > self.max_queue_depth_seen:
-            self.max_queue_depth_seen = queue_depth
+        self.max_queue_depth_seen = max(self.max_queue_depth_seen, queue_depth)
 
         # Extract worker metrics
         active_scans = scanner_stats.get("active_scans", 0)

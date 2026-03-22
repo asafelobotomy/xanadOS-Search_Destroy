@@ -1,0 +1,31 @@
+{
+    "version": "4.0.0",
+    "project": "xanadOS Search & Destroy",
+    "setupDate": "2026-03-21",
+    "counts": {
+        "agents": 8,
+        "skills": 15,
+        "instructionStubs": 4,
+        "promptFiles": 6,
+        "hookScriptsShell": 9,
+        "hookConfig": 1,
+        "workspaceIdentity": 9,
+        "mcpConfig": 1,
+        "setupWorkflow": 1,
+        "versionRecord": 1,
+        "claudeCompat": 1
+    },
+    "locations": {
+        "instructions": ".github/copilot-instructions.md",
+        "agents": ".github/agents/",
+        "skills": ".github/skills/",
+        "instructionStubs": ".github/instructions/",
+        "prompts": ".github/prompts/",
+        "hooks": ".github/hooks/",
+        "workspace": ".copilot/workspace/",
+        "mcpConfig": ".vscode/mcp.json",
+        "setupWorkflow": ".github/workflows/copilot-setup-steps.yml",
+        "versionRecord": ".github/copilot-version.md",
+        "claudeCompat": "CLAUDE.md"
+    }
+}

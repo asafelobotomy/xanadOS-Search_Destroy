@@ -8,20 +8,20 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
-from typing import Any
 from enum import Enum
+from typing import Any
 
 try:
-    from PyQt6.QtWidgets import (
-        QWidget,
-        QVBoxLayout,
-        QHBoxLayout,
-        QPushButton,
-        QLabel,
-        QComboBox,
-    )
-    from PyQt6.QtCore import Qt, pyqtSignal, QTimer
     import pyqtgraph as pg
+    from PyQt6.QtCore import Qt, QTimer, pyqtSignal
+    from PyQt6.QtWidgets import (
+        QComboBox,
+        QHBoxLayout,
+        QLabel,
+        QPushButton,
+        QVBoxLayout,
+        QWidget,
+    )
 
     PYQTGRAPH_AVAILABLE = True
 except ImportError:

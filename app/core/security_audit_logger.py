@@ -9,13 +9,12 @@ Date: 2025-12-17
 Phase: 2 (HIGH severity - CWE-778 mitigation)
 """
 
-import logging
-import json
-from datetime import datetime
-from pathlib import Path
-from typing import Any, Optional
-import os
 import getpass
+import json
+import logging
+import os
+from pathlib import Path
+from typing import Any
 
 # Security event log location
 SECURITY_LOG_DIR = (
@@ -277,7 +276,7 @@ class SecurityAuditLogger:
 
 
 # Global audit logger instance
-_audit_logger: Optional[SecurityAuditLogger] = None
+_audit_logger: SecurityAuditLogger | None = None
 
 
 def get_audit_logger() -> SecurityAuditLogger:

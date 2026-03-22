@@ -14,23 +14,25 @@ import traceback
 from datetime import datetime, timedelta
 from pathlib import Path
 
+from PyQt6.QtCore import Qt
+
 # Import centralized version
 from app import __version__
-from app.core.file_scanner import FileScanner, QuarantineManager
 from app.core.clamav_wrapper import ScanResult
+from app.core.file_scanner import FileScanner, QuarantineManager
 from app.core.firewall_detector import get_firewall_status, toggle_firewall
+from app.core.scan_results_formatter import ModernScanResultsFormatter
 from app.core.unified_rkhunter_integration import (
-    RKHunterScanResult,
-    RKHunterResult,
-    UnifiedRKHunterIntegration as RKHunterWrapper,
+    OptimizationReport,
     RKHunterConfig,
     RKHunterOptimizer,
+    RKHunterResult,
+    RKHunterScanResult,
     RKHunterStatus,
-    OptimizationReport,
 )
-from app.core.scan_results_formatter import ModernScanResultsFormatter
-
-from PyQt6.QtCore import Qt
+from app.core.unified_rkhunter_integration import (
+    UnifiedRKHunterIntegration as RKHunterWrapper,
+)
 
 # RKHunter integration is now always available from unified module
 RKHUNTER_OPTIMIZER_AVAILABLE = True
@@ -66,7 +68,7 @@ except ImportError:
 
 from threading import Thread
 
-from PyQt6.QtCore import QDate, Qt, QTime, QTimer, pyqtSignal
+from PyQt6.QtCore import QDate, QTime, QTimer, pyqtSignal
 from PyQt6.QtGui import (
     QAction,
     QFont,
@@ -1289,9 +1291,9 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
         else:
             # Just update the config if the protection tab doesn't exist yet
             self.config["security_settings"] = self.config.get("security_settings", {})
-            self.config["security_settings"][
-                "real_time_protection"
-            ] = self.monitoring_enabled
+            self.config["security_settings"]["real_time_protection"] = (
+                self.monitoring_enabled
+            )
             save_config(self.config)
 
             if self.monitoring_enabled:
@@ -3626,7 +3628,7 @@ class MainWindow(QMainWindow, ThemedWidgetMixin):
                 return
 
             # Get performance data for system status
-            perf_status, perf_color, perf_details = self.get_performance_card_data()
+            perf_status, _perf_color, _perf_details = self.get_performance_card_data()
 
             # Get app status with visual indicators and descriptive text
             firewall_icon = "○"
@@ -4607,8 +4609,8 @@ System        {perf_status}"""
 
         # Check permissions for the scan path before proceeding
         try:
-            from app.core.security_integration import check_file_permissions
             from app.core.permission_controller import PermissionLevel
+            from app.core.security_integration import check_file_permissions
 
             # For custom scans, check if the path requires special permissions
             if effective_scan_type == "CUSTOM" and self.scan_path:
@@ -5522,7 +5524,8 @@ System        {perf_status}"""
 
             # Test auth with a simple command
             test_result = auth_manager.run_with_gui_auth(
-                ["true"], timeout=30  # Simple no-op command
+                ["true"],
+                timeout=30,  # Simple no-op command
             )
             auth_session_valid = test_result.returncode == 0
 
@@ -5624,11 +5627,11 @@ System        {perf_status}"""
             self.current_rkhunter_thread = RKHunterScanThread(
                 self.rkhunter, test_categories
             )
-            print(f"🟡 RKHunterScanThread created successfully")
+            print("🟡 RKHunterScanThread created successfully")
 
             # Connect signals BEFORE starting - use AutoConnection (default)
             # Qt will automatically use QueuedConnection for cross-thread
-            print(f"🟡 Connecting signals with AutoConnection...")
+            print("🟡 Connecting signals with AutoConnection...")
             self.current_rkhunter_thread.progress_updated.connect(
                 self.update_rkhunter_progress, Qt.ConnectionType.AutoConnection
             )
@@ -5641,11 +5644,11 @@ System        {perf_status}"""
             self.current_rkhunter_thread.scan_completed.connect(
                 self.rkhunter_scan_completed, Qt.ConnectionType.AutoConnection
             )
-            print(f"🟡 Signals connected, starting thread...")
+            print("🟡 Signals connected, starting thread...")
 
             # Start the thread AFTER connections
             self.current_rkhunter_thread.start()
-            print(f"🟡 Thread started")
+            print("🟡 Thread started")
         except Exception as e:
             import traceback
 
@@ -5736,9 +5739,7 @@ System        {perf_status}"""
                     self._scan_directories_info = {}
                     self._last_displayed_directory = None
                     self._scanned_directories = []  # Use list to maintain order
-                    self._completed_directories = (
-                        []
-                    )  # Track truly completed directories
+                    self._completed_directories = []  # Track truly completed directories
 
                 # Track files by directory
                 if current_dir not in self._scan_directories_info:
@@ -6082,9 +6083,8 @@ System        {perf_status}"""
                 return
 
             # Handle system summary sections with better formatting
-            if (
-                formatted_line == "System checks summary"
-                or formatted_line == "=" * len(formatted_line)
+            if formatted_line == "System checks summary" or formatted_line == "=" * len(
+                formatted_line
             ):  # Handle separator lines
                 if formatted_line == "System checks summary":
                     self._append_with_autoscroll("")  # Add spacing
@@ -6146,7 +6146,9 @@ System        {perf_status}"""
                         f"    ⏭️  <span style='color: {get_theme_manager().get_color('muted_text')};'><i>All checks skipped</i></span>"
                     )
                     self.results_text.append("")  # Add spacing
-                    self.results_text.append(f"  ⏱️  <b>Scan Duration:</b> {duration}")
+                    self.results_text.append(
+                        "  ⏱️  <b>Scan Duration:</b> N/A (checks skipped)"
+                    )
                 return
 
             # Handle log file references with better formatting
@@ -6843,7 +6845,7 @@ System        {perf_status}"""
                 print(f"DEBUG: Error getting overall_result: {e}")
                 overall_result_val = "unknown"
 
-            print(f"DEBUG: Creating ScanResult object...")
+            print("DEBUG: Creating ScanResult object...")
             scan_result = ScanResult(
                 scan_id=result.scan_id,
                 scan_type=ScanType.RKHUNTER,
@@ -7009,7 +7011,7 @@ System        {perf_status}"""
                 }
             """
             )
-            btn.clicked.connect(lambda: self._show_all_warnings_dialog())
+            btn.clicked.connect(self._show_all_warnings_dialog)
             self._warning_buttons_layout.addWidget(btn)
 
             # Add stretch to left-align button
@@ -7632,7 +7634,7 @@ Common False Positives:
             if hasattr(self, "rkhunter_results_text"):
                 error_text = f"❌ Optimization failed at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\nError: {error_message}"
                 self.rkhunter_results_text.setText(error_text)
-            logging.error(f"Error handling optimization error: {e}")
+            logging.error(f"Error handling optimization error: {error_message}")
 
         except Exception as handler_error:
             logging.exception(
@@ -7645,9 +7647,10 @@ Common False Positives:
             logging.info("🚀 INTERACTIVE CONFIG FIXES TRIGGERED")
 
             # Import required modules
+            from pathlib import Path
+
             from app.core.unified_rkhunter_integration import RKHunterOptimizer
             from app.gui.config_fix_dialog import ConfigFixDialog
-            from pathlib import Path
 
             # Use system config (single source of truth)
             # The RKHunterOptimizer will handle permission checks and sudo escalation
@@ -8590,18 +8593,17 @@ Common False Positives:
                 self.update_scan_button_state(False)
                 self.scan_toggle_btn.setEnabled(True)
                 return
-        else:
-            # For ScanResult dataclass, check success attribute
-            if hasattr(result, "success") and not result.success:
-                error_msgs = getattr(result, "errors", [])
-                if error_msgs:
-                    error_msg = "; ".join(error_msgs[:3])  # Show first 3 errors
-                    self.results_text.setText(f"Scan error: {error_msg}")
-                    self.status_bar.showMessage(f"Scan failed: {error_msg}")
-                    # Reset button state on error (also re-enables RKHunter button)
-                    self.update_scan_button_state(False)
-                    self.scan_toggle_btn.setEnabled(True)
-                    return  # Save the scan result to a report file
+        # For ScanResult dataclass, check success attribute
+        elif hasattr(result, "success") and not result.success:
+            error_msgs = getattr(result, "errors", [])
+            if error_msgs:
+                error_msg = "; ".join(error_msgs[:3])  # Show first 3 errors
+                self.results_text.setText(f"Scan error: {error_msg}")
+                self.status_bar.showMessage(f"Scan failed: {error_msg}")
+                # Reset button state on error (also re-enables RKHunter button)
+                self.update_scan_button_state(False)
+                self.scan_toggle_btn.setEnabled(True)
+                return  # Save the scan result to a report file
         try:
             print("\n📊 === SCAN RESULT PROCESSING ===")
             print("DEBUG: Processing scan result for reporting")
@@ -8780,7 +8782,7 @@ Common False Positives:
             threats_found = getattr(result, "threats_found", 0)
             threats = getattr(result, "threats", [])
 
-        print(f"\n🦠 === THREATS DETECTION SUMMARY ===")
+        print("\n🦠 === THREATS DETECTION SUMMARY ===")
         print(f"Threats found: {threats_found}")
         print(f"Threats list length: {len(threats)}")
         if threats:
@@ -9328,7 +9330,7 @@ Common False Positives:
                 if os.path.exists(eicar_path):
                     print(f"   ⚠️  EICAR TEST FILE FOUND: {eicar_path}")
                 else:
-                    print(f"   ℹ️  No eicar.com in this directory")
+                    print("   ℹ️  No eicar.com in this directory")
         print("=" * 50)
 
         if not valid_paths:
@@ -9557,52 +9559,49 @@ Common False Positives:
                                 # Refresh the definition status display with a
                                 # small delay
                                 QTimer.singleShot(500, self.update_definition_status)
+                            # Check if running in AppImage or Flatpak
+                            elif os.environ.get("APPIMAGE") or os.environ.get("APPDIR"):
+                                self.show_themed_message_box(
+                                    "information",
+                                    "AppImage Environment",
+                                    "Virus definitions cannot be updated separately in AppImage.\n\n"
+                                    "The virus definitions are bundled with the AppImage itself.\n\n"
+                                    "To update definitions:\n"
+                                    "• Download the latest AppImage version\n"
+                                    "• New releases include updated virus definitions\n\n"
+                                    "Current bundled definitions are used for scanning.",
+                                )
+                                self.status_bar.showMessage(
+                                    "AppImage: Definitions bundled with app", 5000
+                                )
+                            elif os.environ.get("FLATPAK_ID"):
+                                self.show_themed_message_box(
+                                    "information",
+                                    "Flatpak Environment",
+                                    "Virus definitions cannot be updated separately in Flatpak.\n\n"
+                                    "The virus definitions are bundled with the Flatpak package.\n\n"
+                                    "To update definitions:\n"
+                                    "• Run: flatpak update\n"
+                                    "• Updates include latest virus definitions\n\n"
+                                    "Current bundled definitions are used for scanning.",
+                                )
+                                self.status_bar.showMessage(
+                                    "Flatpak: Definitions bundled with app", 5000
+                                )
                             else:
-                                # Check if running in AppImage or Flatpak
-                                if os.environ.get("APPIMAGE") or os.environ.get(
-                                    "APPDIR"
-                                ):
-                                    self.show_themed_message_box(
-                                        "information",
-                                        "AppImage Environment",
-                                        "Virus definitions cannot be updated separately in AppImage.\n\n"
-                                        "The virus definitions are bundled with the AppImage itself.\n\n"
-                                        "To update definitions:\n"
-                                        "• Download the latest AppImage version\n"
-                                        "• New releases include updated virus definitions\n\n"
-                                        "Current bundled definitions are used for scanning.",
-                                    )
-                                    self.status_bar.showMessage(
-                                        "AppImage: Definitions bundled with app", 5000
-                                    )
-                                elif os.environ.get("FLATPAK_ID"):
-                                    self.show_themed_message_box(
-                                        "information",
-                                        "Flatpak Environment",
-                                        "Virus definitions cannot be updated separately in Flatpak.\n\n"
-                                        "The virus definitions are bundled with the Flatpak package.\n\n"
-                                        "To update definitions:\n"
-                                        "• Run: flatpak update\n"
-                                        "• Updates include latest virus definitions\n\n"
-                                        "Current bundled definitions are used for scanning.",
-                                    )
-                                    self.status_bar.showMessage(
-                                        "Flatpak: Definitions bundled with app", 5000
-                                    )
-                                else:
-                                    self.show_themed_message_box(
-                                        "warning",
-                                        "Update Failed",
-                                        f"Failed to update virus definitions.\n\n"
-                                        f"Status: {self.update_status}\n\n"
-                                        f"You may need to:\n"
-                                        f"• Run the application as administrator\n"
-                                        f"• Check your internet connection\n"
-                                        f"• Verify ClamAV is properly installed",
-                                    )
-                                    self.status_bar.showMessage(
-                                        "Failed to update virus definitions", 5000
-                                    )
+                                self.show_themed_message_box(
+                                    "warning",
+                                    "Update Failed",
+                                    f"Failed to update virus definitions.\n\n"
+                                    f"Status: {self.update_status}\n\n"
+                                    f"You may need to:\n"
+                                    f"• Run the application as administrator\n"
+                                    f"• Check your internet connection\n"
+                                    f"• Verify ClamAV is properly installed",
+                                )
+                                self.status_bar.showMessage(
+                                    "Failed to update virus definitions", 5000
+                                )
                         return
 
             timer.timeout.connect(update_progress)
@@ -9793,6 +9792,7 @@ Common False Positives:
         """
         try:
             from pathlib import Path
+
             from app.core.clamav_wrapper import ScanResult as ClamAVScanResult
 
             # Verify file exists
@@ -9800,7 +9800,7 @@ Common False Positives:
                 print(f"WARNING: Restored file not found: {file_path}")
                 return
 
-            print(f"\n🔍 === RESCANNING RESTORED FILE ===")
+            print("\n🔍 === RESCANNING RESTORED FILE ===")
             print(f"File: {file_path}")
             print(f"Original threat: {original_threat_name}")
 
@@ -9855,7 +9855,7 @@ Common False Positives:
 
             elif scan_result.result == ClamAVScanResult.CLEAN:
                 print(
-                    f"ℹ️ File appears clean on rescan (possible false positive earlier)"
+                    "ℹ️ File appears clean on rescan (possible false positive earlier)"
                 )
                 self.show_themed_message_box(
                     "information",
@@ -9865,7 +9865,7 @@ Common False Positives:
             else:
                 print(f"⚠️ Rescan resulted in: {scan_result.result}")
                 self.status_bar.showMessage(
-                    f"Unable to verify restored file safety", 5000
+                    "Unable to verify restored file safety", 5000
                 )
 
         except Exception as e:
@@ -10407,7 +10407,7 @@ Common False Positives:
         if not threats:
             return
 
-        print(f"\n🚨 === PROMPTING USER FOR THREAT ACTIONS ===")
+        print("\n🚨 === PROMPTING USER FOR THREAT ACTIONS ===")
         print(f"DEBUG: Processing {len(threats)} threat(s)")
 
         for i, threat in enumerate(threats, 1):
@@ -10434,25 +10434,25 @@ Common False Positives:
             dialog.setStyleSheet(
                 f"""
                 QDialog {{
-                    background-color: {tm.get_color('background')};
-                    color: {tm.get_color('text')};
+                    background-color: {tm.get_color("background")};
+                    color: {tm.get_color("text")};
                 }}
                 QLabel {{
-                    color: {tm.get_color('text')};
+                    color: {tm.get_color("text")};
                 }}
                 QPushButton {{
-                    background-color: {tm.get_color('button_bg')};
-                    color: {tm.get_color('button_text')};
-                    border: 1px solid {tm.get_color('border')};
+                    background-color: {tm.get_color("button_bg")};
+                    color: {tm.get_color("button_text")};
+                    border: 1px solid {tm.get_color("border")};
                     padding: 8px 16px;
                     border-radius: 4px;
                     font-weight: bold;
                 }}
                 QPushButton:hover {{
-                    background-color: {tm.get_color('button_hover')};
+                    background-color: {tm.get_color("button_hover")};
                 }}
                 QPushButton:pressed {{
-                    background-color: {tm.get_color('accent')};
+                    background-color: {tm.get_color("accent")};
                 }}
             """
             )
@@ -10465,7 +10465,7 @@ Common False Positives:
                 f"""
                 font-size: 18px;
                 font-weight: bold;
-                color: {tm.get_color('error')};
+                color: {tm.get_color("error")};
                 padding: 10px;
             """
             )
@@ -10477,7 +10477,7 @@ Common False Positives:
             details_group.setStyleSheet(
                 f"""
                 QGroupBox {{
-                    border: 2px solid {tm.get_color('error')};
+                    border: 2px solid {tm.get_color("error")};
                     border-radius: 6px;
                     margin-top: 10px;
                     padding: 15px;
@@ -10487,7 +10487,7 @@ Common False Positives:
                     subcontrol-origin: margin;
                     subcontrol-position: top left;
                     padding: 0 5px;
-                    color: {tm.get_color('error')};
+                    color: {tm.get_color("error")};
                 }}
             """
             )
@@ -10523,14 +10523,14 @@ Common False Positives:
             quarantine_btn.setStyleSheet(
                 f"""
                 QPushButton {{
-                    background-color: {tm.get_color('warning')};
-                    color: {tm.get_color('background')};
-                    border: 2px solid {tm.get_color('warning')};
+                    background-color: {tm.get_color("warning")};
+                    color: {tm.get_color("background")};
+                    border: 2px solid {tm.get_color("warning")};
                     padding: 12px;
                     font-size: 14px;
                 }}
                 QPushButton:hover {{
-                    background-color: {tm.get_color('warning')};
+                    background-color: {tm.get_color("warning")};
                     opacity: 0.8;
                 }}
             """
@@ -10547,9 +10547,9 @@ Common False Positives:
             delete_btn.setStyleSheet(
                 f"""
                 QPushButton {{
-                    background-color: {tm.get_color('error')};
+                    background-color: {tm.get_color("error")};
                     color: white;
-                    border: 2px solid {tm.get_color('error')};
+                    border: 2px solid {tm.get_color("error")};
                     padding: 10px;
                 }}
             """
@@ -10566,9 +10566,9 @@ Common False Positives:
             move_btn.setStyleSheet(
                 f"""
                 QPushButton {{
-                    background-color: {tm.get_color('background')};
-                    color: {tm.get_color('text')};
-                    border: 2px solid {tm.get_color('border')};
+                    background-color: {tm.get_color("background")};
+                    color: {tm.get_color("text")};
+                    border: 2px solid {tm.get_color("border")};
                     padding: 10px;
                     min-height: 35px;
                 }}
@@ -10586,9 +10586,9 @@ Common False Positives:
             safe_btn.setStyleSheet(
                 f"""
                 QPushButton {{
-                    background-color: {tm.get_color('background')};
-                    color: {tm.get_color('text')};
-                    border: 2px solid {tm.get_color('success')};
+                    background-color: {tm.get_color("background")};
+                    color: {tm.get_color("text")};
+                    border: 2px solid {tm.get_color("success")};
                     padding: 10px;
                     min-height: 35px;
                 }}
@@ -10606,15 +10606,15 @@ Common False Positives:
             ignore_btn.setStyleSheet(
                 f"""
                 QPushButton {{
-                    background-color: {tm.get_color('background')};
-                    color: {tm.get_color('muted_text')};
-                    border: 2px solid {tm.get_color('border')};
+                    background-color: {tm.get_color("background")};
+                    color: {tm.get_color("muted_text")};
+                    border: 2px solid {tm.get_color("border")};
                     padding: 10px;
                     min-height: 35px;
                 }}
             """
             )
-            ignore_btn.clicked.connect(lambda: dialog.accept())
+            ignore_btn.clicked.connect(dialog.accept)
             buttons_layout.addWidget(ignore_btn)
 
             layout.addLayout(buttons_layout)
@@ -10624,7 +10624,7 @@ Common False Positives:
 
     def _handle_threat_action(self, dialog, file_path, threat_name, action):
         """Handle the selected action for a threat."""
-        print(f"\n⚡ === HANDLING THREAT ACTION ===")
+        print("\n⚡ === HANDLING THREAT ACTION ===")
         print(f"DEBUG: Action: {action}")
         print(f"DEBUG: File: {file_path}")
 
@@ -12235,9 +12235,9 @@ Common False Positives:
                     checkbox,
                 ) in self.settings_rkhunter_category_checkboxes.items():
                     rkhunter_categories[category_id] = checkbox.isChecked()
-                settings_updates["rkhunter_settings"][
-                    "categories"
-                ] = rkhunter_categories
+                settings_updates["rkhunter_settings"]["categories"] = (
+                    rkhunter_categories
+                )
 
             # Save all settings in one operation for efficiency
             success = update_multiple_settings(self.config, settings_updates)
@@ -13125,7 +13125,7 @@ Common False Positives:
         # Display warnings separately (not as threats)
         warnings = data.get("scan_settings", {}).get("warnings", [])
         if warnings:
-            output += "<h3>⚠️ Warnings Found ({}):</h3>".format(len(warnings))
+            output += f"<h3>⚠️ Warnings Found ({len(warnings)}):</h3>"
             output += "<p style='color: #FFA500;'><i>Note: These are warnings, not threats. They may indicate configuration issues or false positives.</i></p>"
             output += "<table border='1' cellpadding='3'>"
             output += "<tr><th>Test</th><th>Severity</th><th>Description</th><th>Recommendation</th></tr>"

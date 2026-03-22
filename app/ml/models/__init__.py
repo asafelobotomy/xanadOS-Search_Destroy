@@ -1,5 +1,4 @@
-"""
-ML models for malware detection.
+"""ML models for malware detection.
 
 Includes:
 - Random Forest baseline

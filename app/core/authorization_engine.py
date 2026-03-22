@@ -22,7 +22,6 @@ from typing import Any
 
 from .unified_security_framework import APIPermissions, SecurityConfig
 
-
 # ================== ROLE AND PERMISSION STRUCTURES ==================
 
 

@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""
-Training utilities for ML model development.
+"""Training utilities for ML model development.
 
 Provides helper functions for:
 - Loading feature datasets
@@ -13,16 +12,15 @@ Provides helper functions for:
 import hashlib
 import time
 from pathlib import Path
-from typing import Optional
 
 import numpy as np
 from sklearn.metrics import (
     accuracy_score,
+    confusion_matrix,
+    f1_score,
     precision_score,
     recall_score,
-    f1_score,
     roc_auc_score,
-    confusion_matrix,
 )
 from sklearn.utils.class_weight import compute_class_weight
 
@@ -30,8 +28,7 @@ from sklearn.utils.class_weight import compute_class_weight
 def load_features(
     split: str = "train", features_dir: Path | str = "data/features"
 ) -> tuple[np.ndarray, np.ndarray]:
-    """
-    Load feature vectors from .npz files.
+    """Load feature vectors from .npz files.
 
     Args:
         split: Dataset split ("train", "val", or "test")
@@ -84,8 +81,7 @@ def load_features(
 
 
 def compute_dataset_hash(X: np.ndarray, y: np.ndarray) -> str:
-    """
-    Compute SHA256 hash of dataset for reproducibility tracking.
+    """Compute SHA256 hash of dataset for reproducibility tracking.
 
     Args:
         X: Feature matrix
@@ -105,8 +101,7 @@ def compute_dataset_hash(X: np.ndarray, y: np.ndarray) -> str:
 
 
 def get_class_weights(y: np.ndarray) -> dict[int, float]:
-    """
-    Compute class weights for handling imbalance.
+    """Compute class weights for handling imbalance.
 
     Args:
         y: Labels array
@@ -117,14 +112,13 @@ def get_class_weights(y: np.ndarray) -> dict[int, float]:
     classes = np.unique(y)
     weights = compute_class_weight("balanced", classes=classes, y=y)
 
-    return {cls: weight for cls, weight in zip(classes, weights)}
+    return dict(zip(classes, weights, strict=False))
 
 
 def compute_metrics(
-    y_true: np.ndarray, y_pred: np.ndarray, y_prob: Optional[np.ndarray] = None
+    y_true: np.ndarray, y_pred: np.ndarray, y_prob: np.ndarray | None = None
 ) -> dict[str, float]:
-    """
-    Compute comprehensive classification metrics.
+    """Compute comprehensive classification metrics.
 
     Args:
         y_true: True labels
@@ -181,8 +175,7 @@ def time_training(func):
 def get_feature_importance(
     model, feature_names: list[str], top_k: int = 20
 ) -> list[tuple[str, float]]:
-    """
-    Get feature importance from trained model.
+    """Get feature importance from trained model.
 
     Args:
         model: Trained model with feature_importances_ attribute
@@ -198,7 +191,7 @@ def get_feature_importance(
     importances = model.feature_importances_
 
     # Create (name, importance) pairs
-    feature_importance_pairs = list(zip(feature_names, importances))
+    feature_importance_pairs = list(zip(feature_names, importances, strict=False))
 
     # Sort by importance (descending)
     feature_importance_pairs.sort(key=lambda x: x[1], reverse=True)
@@ -213,8 +206,7 @@ def print_training_summary(
     test_metrics: dict[str, float],
     training_time: float,
 ):
-    """
-    Print formatted training summary.
+    """Print formatted training summary.
 
     Args:
         model_name: Name of trained model

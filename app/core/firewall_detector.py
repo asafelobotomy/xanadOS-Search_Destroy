@@ -854,7 +854,7 @@ class FirewallDetector:
 
                 # Check for compatible kernels
                 compatible_kernels = []
-                base_version = kernel_version.split("-")[
+                base_version = kernel_version.split("-", maxsplit=1)[
                     0
                 ]  # e.g., "6.15.8" from "6.15.8-zen1-2-zen"
 

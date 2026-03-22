@@ -193,7 +193,7 @@ class PerformanceRegistry:
         baseline_data = {"created_at": datetime.now().isoformat(), "operations": {}}
 
         # Get unique operations
-        operations = set(m.operation for m in cls._metrics)
+        operations = {m.operation for m in cls._metrics}
 
         for operation in operations:
             stats = cls.get_statistics(operation)
@@ -276,7 +276,7 @@ class PerformanceRegistry:
     @classmethod
     def generate_report(cls, output_file: str | Path | None = None) -> str:
         """Generate performance report."""
-        operations = set(m.operation for m in cls._metrics)
+        operations = {m.operation for m in cls._metrics}
 
         report_lines = [
             "# Performance Report",
@@ -313,9 +313,9 @@ class PerformanceRegistry:
                     compliant, violations = sla.check_compliance(latest)
 
                     if compliant:
-                        report_lines.append(f"✅ SLA Compliant")
+                        report_lines.append("✅ SLA Compliant")
                     else:
-                        report_lines.append(f"❌ SLA Violations:")
+                        report_lines.append("❌ SLA Violations:")
                         for violation in violations:
                             report_lines.append(f"   - {violation}")
                     report_lines.append("")

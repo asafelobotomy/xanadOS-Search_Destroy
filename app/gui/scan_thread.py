@@ -142,8 +142,9 @@ class ScanThread(QThread, CooperativeCancellationMixin):
             return results_list[0]
 
         # Import ScanResult to work with dataclass
-        from app.utils.scan_reports import ScanResult, ThreatInfo
         from datetime import datetime
+
+        from app.utils.scan_reports import ScanResult, ThreatInfo
 
         # Combine results from multiple scans (all should be ScanResult dataclasses)
         first_result = results_list[0]

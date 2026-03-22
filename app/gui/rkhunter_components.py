@@ -363,7 +363,7 @@ class RKHunterScanThread(QThread, CooperativeCancellationMixin):
         try:
             # Use super().__init__() to properly initialize both parent classes via MRO
             super().__init__()
-            print(f"🔵 super().__init__() completed")
+            print("🔵 super().__init__() completed")
 
             self.rkhunter = rkhunter
             self.test_categories = test_categories
@@ -372,13 +372,13 @@ class RKHunterScanThread(QThread, CooperativeCancellationMixin):
             self._current_process = None  # Track the current RKHunter process
 
             # Log thread creation
-            print(f"🔵 About to log thread creation")
+            print("🔵 About to log thread creation")
             self.logger.info(
                 f"RKHunterScanThread created with test_categories: {test_categories}"
             )
             self.logger.info(f"RKHunter object type: {type(rkhunter)}")
             self.logger.info(f"Has monitor attr: {hasattr(rkhunter, 'monitor')}")
-            print(f"🔵 RKHunterScanThread.__init__() COMPLETED successfully")
+            print("🔵 RKHunterScanThread.__init__() COMPLETED successfully")
         except Exception as e:
             import traceback
 
@@ -628,8 +628,8 @@ class RKHunterScanThread(QThread, CooperativeCancellationMixin):
             from datetime import datetime
 
             from app.core.unified_rkhunter_integration import (
-                RKHunterScanResult,
                 RKHunterResult,
+                RKHunterScanResult,
             )
 
             error_result = RKHunterScanResult(

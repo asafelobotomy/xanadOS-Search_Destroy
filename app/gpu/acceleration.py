@@ -17,25 +17,20 @@ Features:
 """
 
 import asyncio
+import hashlib
 import logging
 import time
-import platform
-import subprocess
 from collections import deque
-from dataclasses import dataclass, field
-from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple, Union
-import hashlib
-import concurrent.futures
 from concurrent.futures import ThreadPoolExecutor
+from dataclasses import dataclass, field
+from typing import Any
 
 import numpy as np
 import torch
-import torch.nn as nn
-import torch.cuda as cuda
+from torch import nn
+from torch.utils.data import DataLoader
 
 from app.utils.secure_crypto import secure_file_hash
-from torch.utils.data import DataLoader, TensorDataset
 
 try:
     import pyopencl as cl
@@ -63,8 +58,6 @@ except ImportError:
     numba = None
     numba_cuda = None
 
-from app.ml.deep_learning import DeepLearningThreatDetector
-from app.utils.config import get_config
 
 
 @dataclass
@@ -73,11 +66,11 @@ class GPUInfo:
 
     device_id: int
     name: str
-    compute_capability: Optional[Tuple[int, int]]
+    compute_capability: tuple[int, int] | None
     memory_total: int  # bytes
     memory_available: int  # bytes
-    cuda_cores: Optional[int]
-    clock_rate: Optional[int]  # MHz
+    cuda_cores: int | None
+    clock_rate: int | None  # MHz
     device_type: str  # 'CUDA', 'OpenCL', 'CPU'
 
 
@@ -275,7 +268,7 @@ class GPUDeviceManager:
                 f"Selected optimal device: {self.current_device.name} ({self.current_device.device_type})"
             )
 
-    def _estimate_cuda_cores(self, props) -> Optional[int]:
+    def _estimate_cuda_cores(self, props) -> int | None:
         """Estimate CUDA cores based on device properties."""
         # Approximate CUDA core counts for different architectures
         core_counts = {
@@ -296,11 +289,11 @@ class GPUDeviceManager:
 
         return props.multi_processor_count * cores_per_sm
 
-    def get_device_info(self) -> Optional[GPUInfo]:
+    def get_device_info(self) -> GPUInfo | None:
         """Get current device information."""
         return self.current_device
 
-    def get_all_devices(self) -> List[GPUInfo]:
+    def get_all_devices(self) -> list[GPUInfo]:
         """Get information about all available devices."""
         return self.available_devices.copy()
 
@@ -375,7 +368,7 @@ class CUDAAccelerator:
 
     async def accelerate_batch_processing(
         self, model: nn.Module, data_loader: DataLoader
-    ) -> List[torch.Tensor]:
+    ) -> list[torch.Tensor]:
         """Accelerate batch processing of data."""
         try:
             model = model.to(self.device)
@@ -410,8 +403,8 @@ class CUDAAccelerator:
             return []
 
     async def accelerate_hash_computation(
-        self, file_paths: List[str]
-    ) -> Dict[str, str]:
+        self, file_paths: list[str]
+    ) -> dict[str, str]:
         """Accelerate hash computation using GPU."""
         try:
             if not CUPY_AVAILABLE:
@@ -426,7 +419,7 @@ class CUDAAccelerator:
                         file_data = f.read()
 
                     # Transfer to GPU
-                    gpu_data = cp.frombuffer(file_data, dtype=cp.uint8)
+                    cp.frombuffer(file_data, dtype=cp.uint8)
 
                     # Compute SHA256 using secure cryptography
                     file_hash = secure_file_hash(file_path, "sha256")
@@ -442,7 +435,7 @@ class CUDAAccelerator:
             self.logger.error(f"Error in GPU hash computation: {e}")
             return await self._cpu_hash_computation(file_paths)
 
-    async def _cpu_hash_computation(self, file_paths: List[str]) -> Dict[str, str]:
+    async def _cpu_hash_computation(self, file_paths: list[str]) -> dict[str, str]:
         """Fallback CPU hash computation."""
         results = {}
 
@@ -457,7 +450,7 @@ class CUDAAccelerator:
 
         return results
 
-    def get_memory_info(self) -> Dict[str, int]:
+    def get_memory_info(self) -> dict[str, int]:
         """Get GPU memory information."""
         if self.device and torch.cuda.is_available():
             return {
@@ -510,7 +503,7 @@ class OpenCLAccelerator:
             self.logger.error(f"Error initializing OpenCL accelerator: {e}")
             return False
 
-    async def accelerate_parallel_scan(self, file_paths: List[str]) -> Dict[str, Any]:
+    async def accelerate_parallel_scan(self, file_paths: list[str]) -> dict[str, Any]:
         """Accelerate parallel file scanning using OpenCL."""
         try:
             if not self.context:
@@ -622,8 +615,8 @@ class CPUFallbackAccelerator:
             return False
 
     async def accelerate_batch_inference(
-        self, model: nn.Module, data_batches: List[torch.Tensor]
-    ) -> List[torch.Tensor]:
+        self, model: nn.Module, data_batches: list[torch.Tensor]
+    ) -> list[torch.Tensor]:
         """Accelerate batch inference using CPU parallelization."""
         try:
             model.eval()
@@ -648,8 +641,8 @@ class CPUFallbackAccelerator:
             return []
 
     async def accelerate_file_processing(
-        self, file_paths: List[str], process_func
-    ) -> List[Any]:
+        self, file_paths: list[str], process_func
+    ) -> list[Any]:
         """Accelerate file processing using CPU parallelization."""
         try:
             loop = asyncio.get_event_loop()
@@ -691,8 +684,8 @@ class PerformanceBenchmark:
         self.benchmark_results: deque = deque(maxlen=1000)
 
     async def benchmark_inference(
-        self, model: nn.Module, input_tensor: torch.Tensor, accelerators: Dict[str, Any]
-    ) -> Dict[str, PerformanceMetrics]:
+        self, model: nn.Module, input_tensor: torch.Tensor, accelerators: dict[str, Any]
+    ) -> dict[str, PerformanceMetrics]:
         """Benchmark inference performance across different accelerators."""
         results = {}
 
@@ -739,8 +732,8 @@ class PerformanceBenchmark:
         return results
 
     async def benchmark_batch_processing(
-        self, model: nn.Module, data_loader: DataLoader, accelerators: Dict[str, Any]
-    ) -> Dict[str, PerformanceMetrics]:
+        self, model: nn.Module, data_loader: DataLoader, accelerators: dict[str, Any]
+    ) -> dict[str, PerformanceMetrics]:
         """Benchmark batch processing performance."""
         results = {}
 
@@ -757,7 +750,7 @@ class PerformanceBenchmark:
                     )
                 elif hasattr(accelerator, "accelerate_batch_inference"):
                     # Convert data loader to list of batches
-                    batches = [batch for batch in data_loader]
+                    batches = list(data_loader)
                     batch_results = await accelerator.accelerate_batch_inference(
                         model, batches
                     )
@@ -796,7 +789,7 @@ class PerformanceBenchmark:
 
         return results
 
-    def get_performance_summary(self) -> Dict[str, Any]:
+    def get_performance_summary(self) -> dict[str, Any]:
         """Get performance summary statistics."""
         if not self.benchmark_results:
             return {}
@@ -920,7 +913,7 @@ class GPUAccelerationManager:
 
     async def accelerate_batch_processing(
         self, model: nn.Module, data_loader: DataLoader
-    ) -> List[torch.Tensor]:
+    ) -> list[torch.Tensor]:
         """Accelerate batch processing using best available method."""
         try:
             accelerator = self.active_accelerators.get(self.preferred_accelerator)
@@ -928,7 +921,7 @@ class GPUAccelerationManager:
             if accelerator and hasattr(accelerator, "accelerate_batch_processing"):
                 return await accelerator.accelerate_batch_processing(model, data_loader)
             elif accelerator and hasattr(accelerator, "accelerate_batch_inference"):
-                batches = [batch for batch in data_loader]
+                batches = list(data_loader)
                 return await accelerator.accelerate_batch_inference(model, batches)
 
             # Fallback to sequential processing
@@ -947,8 +940,8 @@ class GPUAccelerationManager:
             return []
 
     async def accelerate_file_operations(
-        self, file_paths: List[str], operation: str = "hash"
-    ) -> Dict[str, Any]:
+        self, file_paths: list[str], operation: str = "hash"
+    ) -> dict[str, Any]:
         """Accelerate file operations using GPU when possible."""
         try:
             accelerator = self.active_accelerators.get(self.preferred_accelerator)
@@ -983,7 +976,7 @@ class GPUAccelerationManager:
         except Exception:
             return ""
 
-    def _scan_file_cpu(self, file_path: str) -> Dict[str, Any]:
+    def _scan_file_cpu(self, file_path: str) -> dict[str, Any]:
         """Scan file for threats (CPU implementation)."""
         try:
             # Basic threat scoring
@@ -1037,7 +1030,7 @@ class GPUAccelerationManager:
         except Exception as e:
             self.logger.error(f"Error running initial benchmarks: {e}")
 
-    def get_acceleration_status(self) -> Dict[str, Any]:
+    def get_acceleration_status(self) -> dict[str, Any]:
         """Get current acceleration system status."""
         device_info = self.device_manager.get_device_info()
 

@@ -24,12 +24,12 @@ from typing import Any
 try:
     from .enterprise_performance_manager import (
         EnterprisePerformanceManager,
-        PerformanceTarget,
         OptimizationStrategy,
+        PerformanceTarget,
         create_enterprise_performance_manager,
     )
-    from .security_integration import SecurityIntegrationCoordinator, PerformanceMetrics
     from .rate_limiting import RateLimitingCoordinator
+    from .security_integration import PerformanceMetrics, SecurityIntegrationCoordinator
 except ImportError:
     # Fallback for development/testing
     EnterprisePerformanceManager = None  # type: ignore[assignment]

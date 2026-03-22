@@ -17,7 +17,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-from .exceptions import SecurityError, ErrorSeverity
+from .exceptions import ErrorSeverity, SecurityError
 from .secure_subprocess import run_secure
 
 logger = logging.getLogger(__name__)

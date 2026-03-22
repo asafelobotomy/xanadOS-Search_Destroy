@@ -1,15 +1,11 @@
 #!/usr/bin/env python3
-"""
-Python SDK for xanadOS ML Inference API
+"""Python SDK for xanadOS ML Inference API.
 
 Provides a simple client for interacting with the ML inference API.
 """
 
-import hashlib
 import logging
-import time
 from pathlib import Path
-from typing import Optional
 
 import httpx
 from pydantic import BaseModel
@@ -45,8 +41,7 @@ class ModelInfo(BaseModel):
 
 
 class MLScannerClient:
-    """
-    Client for xanadOS ML Inference API.
+    """Client for xanadOS ML Inference API.
 
     Example:
         >>> client = MLScannerClient("http://localhost:8000", api_key="your-key")
@@ -58,11 +53,10 @@ class MLScannerClient:
     def __init__(
         self,
         base_url: str = "http://localhost:8000",
-        api_key: Optional[str] = None,
+        api_key: str | None = None,
         timeout: float = 30.0,
     ):
-        """
-        Initialize ML scanner client.
+        """Initialize ML scanner client.
 
         Args:
             base_url: API base URL (default: http://localhost:8000)
@@ -91,8 +85,7 @@ class MLScannerClient:
         return headers
 
     def health_check(self) -> dict:
-        """
-        Check API health status.
+        """Check API health status.
 
         Returns:
             dict: Health status information
@@ -111,8 +104,7 @@ class MLScannerClient:
         return response.json()
 
     def scan_file(self, file_path: str | Path) -> PredictionResult:
-        """
-        Scan file for malware.
+        """Scan file for malware.
 
         Args:
             file_path: Path to file to scan
@@ -157,8 +149,7 @@ class MLScannerClient:
         return PredictionResult(**response.json())
 
     def scan_bytes(self, content: bytes, filename: str = "sample") -> PredictionResult:
-        """
-        Scan raw bytes for malware.
+        """Scan raw bytes for malware.
 
         Args:
             content: File content as bytes
@@ -191,8 +182,7 @@ class MLScannerClient:
         return PredictionResult(**response.json())
 
     def list_models(self) -> list[ModelInfo]:
-        """
-        List available ML models.
+        """List available ML models.
 
         Returns:
             list[ModelInfo]: Available models
@@ -215,8 +205,7 @@ class MLScannerClient:
         return [ModelInfo(**model) for model in data["models"]]
 
     def reload_model(self, version: str) -> dict:
-        """
-        Reload API with specified model version.
+        """Reload API with specified model version.
 
         Args:
             version: Model version to load (e.g., "v1.1.0")
@@ -242,8 +231,7 @@ class MLScannerClient:
     def scan_directory(
         self, directory: str | Path, recursive: bool = True, max_files: int = 1000
     ) -> list[PredictionResult]:
-        """
-        Scan all files in a directory.
+        """Scan all files in a directory.
 
         Args:
             directory: Directory path to scan

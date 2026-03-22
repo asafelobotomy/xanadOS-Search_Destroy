@@ -140,7 +140,7 @@ class SystemMonitor:
             memory_percent = memory.percent
 
             # Get disk I/O (basic metric)
-            disk_io = psutil.disk_io_counters()
+            psutil.disk_io_counters()
             # Simplified: use read/write count as proxy
             disk_io_percent = 0.0  # Not easily calculable without interval
 

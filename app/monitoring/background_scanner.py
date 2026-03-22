@@ -85,12 +85,12 @@ except ImportError:
 
 
 from .file_watcher import WatchEvent, WatchEventType
-from .scan_priority import ScanPriority
-from .scan_cache import ScanResultCache
-from .smart_prioritizer import SmartPrioritizer
-from .pre_processor import PreProcessor
-from .system_monitor import SystemMonitor
 from .performance_metrics import PerformanceMetrics, ScanMetrics
+from .pre_processor import PreProcessor
+from .scan_cache import ScanResultCache
+from .scan_priority import ScanPriority
+from .smart_prioritizer import SmartPrioritizer
+from .system_monitor import SystemMonitor
 
 try:
     from app.core.hybrid_scanner import HybridScanner

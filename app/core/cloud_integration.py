@@ -21,7 +21,7 @@ from pathlib import Path
 from typing import Any
 
 # Import standardized exception framework
-from app.core.exceptions import SecurityError, ErrorSeverity
+from app.core.exceptions import ErrorSeverity, SecurityError
 
 # Third-party imports with graceful fallbacks (E402 compliance: keep at top)
 try:

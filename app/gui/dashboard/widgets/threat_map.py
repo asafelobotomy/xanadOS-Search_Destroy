@@ -9,9 +9,9 @@ from dataclasses import dataclass
 from typing import Any
 
 try:
-    from PyQt6.QtWidgets import QWidget, QVBoxLayout, QLabel, QHBoxLayout, QPushButton
-    from PyQt6.QtCore import Qt, pyqtSignal, QTimer
-    from PyQt6.QtGui import QPainter, QColor, QPen, QBrush
+    from PyQt6.QtCore import Qt, QTimer, pyqtSignal
+    from PyQt6.QtGui import QBrush, QColor, QPainter, QPen
+    from PyQt6.QtWidgets import QHBoxLayout, QLabel, QPushButton, QVBoxLayout, QWidget
 
     PYQT6_AVAILABLE = True
 except ImportError:

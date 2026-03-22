@@ -22,14 +22,11 @@ from typing import Any
 
 # Import standardized exceptions
 from .exceptions import (
-    BaseXanadOSError,
     DatabaseError,
-    ErrorCategory,
     ErrorSeverity,
     FileIOError,
     PerformanceError,
     SecurityError,
-    ValidationError,
 )
 
 
@@ -1432,7 +1429,7 @@ class HeuristicAnalysisEngine:
             conn.commit()
             conn.close()
 
-        except Exception as e:
+        except Exception:
             self.logger.error(
                 "Error storing analysis result: %s".replace("%s", "{e}").replace(
                     "%d", "{e}"
@@ -1481,7 +1478,7 @@ class HeuristicAnalysisEngine:
                 "suspicious_strings_count": len(self.suspicious_strings),
             }
 
-        except Exception as e:
+        except Exception:
             self.logger.error(
                 "Error getting statistics: %s".replace("%s", "{e}").replace("%d", "{e}")
             )
@@ -1516,7 +1513,7 @@ class HeuristicAnalysisEngine:
             conn.commit()
             conn.close()
 
-        except Exception as e:
+        except Exception:
             self.logger.error(
                 "Error storing behavioral pattern: %s".replace("%s", "{e}").replace(
                     "%d", "{e}"
@@ -1551,7 +1548,7 @@ class HeuristicAnalysisEngine:
             conn.commit()
             conn.close()
 
-        except Exception as e:
+        except Exception:
             self.logger.error(
                 "Error storing file signature: %s".replace("%s", "{e}").replace(
                     "%d", "{e}"

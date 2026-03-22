@@ -32,33 +32,33 @@ Date: December 16, 2025
 
 from __future__ import annotations
 
+import csv
+import json
 import sqlite3
-from dataclasses import dataclass, field, asdict
+from dataclasses import asdict, dataclass, field
 from datetime import datetime
 from enum import Enum
 from pathlib import Path
 from typing import Any
-import json
-import csv
 
 try:
+    from PyQt6.QtCore import Qt, QThread, QTimer, pyqtSignal
+    from PyQt6.QtGui import QColor
     from PyQt6.QtWidgets import (
-        QWidget,
-        QVBoxLayout,
-        QHBoxLayout,
-        QPushButton,
-        QLineEdit,
+        QCheckBox,
         QComboBox,
+        QFileDialog,
+        QHBoxLayout,
+        QHeaderView,
+        QLabel,
+        QLineEdit,
+        QMessageBox,
+        QPushButton,
         QTableWidget,
         QTableWidgetItem,
-        QLabel,
-        QCheckBox,
-        QHeaderView,
-        QFileDialog,
-        QMessageBox,
+        QVBoxLayout,
+        QWidget,
     )
-    from PyQt6.QtCore import Qt, QTimer, pyqtSignal, QThread
-    from PyQt6.QtGui import QColor
 
     PYQT6_AVAILABLE = True
 except ImportError:
@@ -66,11 +66,11 @@ except ImportError:
     # Dummy classes for type checking
     QWidget = object  # type: ignore[assignment,misc]
     QThread = object  # type: ignore[assignment,misc]
-    pyqtSignal = lambda *args: None  # type: ignore[assignment,misc]
+    def pyqtSignal(*args):
+        return None  # type: ignore[assignment,misc]
 
 
 from app.utils.config import DATA_DIR
-
 
 # Event database location
 EVENTS_DIR = DATA_DIR / "events"

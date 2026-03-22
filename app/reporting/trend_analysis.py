@@ -1,5 +1,4 @@
-"""
-Trend Analysis & Predictive Forecasting for xanadOS Search & Destroy.
+"""Trend Analysis & Predictive Forecasting for xanadOS Search & Destroy.
 
 This module provides:
 - Historical trend analysis (7d, 30d, 90d, 1y)
@@ -12,12 +11,11 @@ Phase 2, Task 2.3.2: Trend Analysis & Predictions
 """
 
 import logging
-import numpy as np
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from typing import Any
-from collections import defaultdict
-import json
+
+import numpy as np
 
 # Optional ML dependencies
 try:
@@ -33,7 +31,7 @@ except ImportError:
 
 try:
     from statsmodels.tsa.arima.model import ARIMA
-    from statsmodels.tsa.statespace.sarimax import SARIMAX
+    from statsmodels.tsa.statespace.sarimax import SARIMAX  # noqa: F401
 
     STATSMODELS_AVAILABLE = True
 except ImportError:
@@ -190,8 +188,7 @@ class ForecastResult:
 
 
 class TrendAnalysisEngine:
-    """
-    Advanced trend analysis and forecasting engine.
+    """Advanced trend analysis and forecasting engine.
 
     Features:
     - Historical trend analysis (multiple timeframes)
@@ -213,8 +210,7 @@ class TrendAnalysisEngine:
     def analyze_trend(
         self, time_series: TimeSeriesData, timeframe_days: int = 30
     ) -> TrendAnalysis:
-        """
-        Analyze trend in time series data.
+        """Analyze trend in time series data.
 
         Args:
             time_series: Time series data to analyze
@@ -287,8 +283,7 @@ class TrendAnalysisEngine:
     def _detect_seasonality(
         self, values: np.ndarray, threshold: float = 0.3
     ) -> tuple[bool, int | None]:
-        """
-        Detect seasonality in time series using autocorrelation.
+        """Detect seasonality in time series using autocorrelation.
 
         Args:
             values: Time series values
@@ -345,8 +340,7 @@ class TrendAnalysisEngine:
         time_series: TimeSeriesData,
         contamination: float = 0.05,  # Expected anomaly rate (5%)
     ) -> list[Anomaly]:
-        """
-        Detect anomalies in time series data using Isolation Forest.
+        """Detect anomalies in time series data using Isolation Forest.
 
         Args:
             time_series: Time series data to analyze
@@ -377,7 +371,7 @@ class TrendAnalysisEngine:
         mean_value = float(np.mean(values))
         std_value = float(np.std(values))
 
-        for i, (pred, score) in enumerate(zip(predictions, anomaly_scores)):
+        for i, (pred, score) in enumerate(zip(predictions, anomaly_scores, strict=False)):
             if pred == -1:  # Anomaly detected
                 value = float(values[i][0])
                 deviation = abs(value - mean_value)
@@ -415,8 +409,7 @@ class TrendAnalysisEngine:
     def _detect_anomalies_simple(
         self, time_series: TimeSeriesData, threshold_std: float = 2.5
     ) -> list[Anomaly]:
-        """
-        Simple anomaly detection using standard deviation threshold.
+        """Simple anomaly detection using standard deviation threshold.
 
         Args:
             time_series: Time series data
@@ -478,8 +471,7 @@ class TrendAnalysisEngine:
         forecast_days: int = 7,
         model_type: str = "auto",  # "auto", "arima", "prophet", "sma"
     ) -> ForecastResult:
-        """
-        Forecast future values using time series models.
+        """Forecast future values using time series models.
 
         Args:
             time_series: Historical time series data
@@ -702,8 +694,7 @@ class TrendAnalysisEngine:
     def analyze_correlation(
         self, series_a: TimeSeriesData, series_b: TimeSeriesData
     ) -> dict[str, Any]:
-        """
-        Analyze correlation between two time series.
+        """Analyze correlation between two time series.
 
         Args:
             series_a: First time series

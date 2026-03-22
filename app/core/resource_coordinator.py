@@ -4,13 +4,13 @@ Resource Coordination and Optimization for xanadOS Search & Destroy
 Manages GPU, CPU, memory, and I/O resources across all Phase 1/2 components.
 """
 
-import asyncio
 import logging
 import threading
 import time
+from collections.abc import Callable
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any, Callable
+from typing import Any
 
 import psutil
 import torch
@@ -209,7 +209,7 @@ class ResourceCoordinator:
                     try:
                         gpu_memory = torch.cuda.memory_stats()
                         allocated = gpu_memory.get('allocated_bytes.all.current', 0)
-                        reserved = gpu_memory.get('reserved_bytes.all.current', 0)
+                        gpu_memory.get('reserved_bytes.all.current', 0)
                         total = torch.cuda.get_device_properties(0).total_memory
                         self.usage_stats["gpu_memory_percent"] = (allocated / total) * 100 if total > 0 else 0
                     except Exception:

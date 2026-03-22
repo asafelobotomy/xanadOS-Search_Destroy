@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""
-Static feature extraction for malware detection.
+"""Static feature extraction for malware detection.
 
 Extracts features from PE/ELF binaries without execution:
 - File metadata (size, entropy)
@@ -13,14 +12,11 @@ Extracts features from PE/ELF binaries without execution:
 All feature extraction is static analysis only - NO code execution.
 """
 
-import hashlib
 import math
 import re
-import struct
 import signal
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Optional
 
 import numpy as np
 import pefile
@@ -85,17 +81,15 @@ class FeatureExtractor:
     )  # 318 features total
 
     def __init__(self, max_file_size: int = 100 * 1024 * 1024):
-        """
-        Initialize feature extractor.
+        """Initialize feature extractor.
 
         Args:
             max_file_size: Maximum file size to process (default: 100MB)
         """
         self.max_file_size = max_file_size
 
-    def extract(self, file_path: Path) -> Optional[np.ndarray]:
-        """
-        Extract features from a file.
+    def extract(self, file_path: Path) -> np.ndarray | None:
+        """Extract features from a file.
 
         Args:
             file_path: Path to executable file
@@ -105,9 +99,8 @@ class FeatureExtractor:
         """
         return self.extract_features(file_path)
 
-    def extract_features(self, file_path: Path) -> Optional[np.ndarray]:
-        """
-        Extract features from a file (main implementation).
+    def extract_features(self, file_path: Path) -> np.ndarray | None:
+        """Extract features from a file (main implementation).
 
         Args:
             file_path: Path to executable file
@@ -126,9 +119,8 @@ class FeatureExtractor:
             print(f"[red]❌ Error extracting features from {file_path}: {e}")
             return None
 
-    def _extract_features_impl(self, file_path: Path) -> Optional[np.ndarray]:
-        """
-        Internal feature extraction implementation (called with timeout wrapper).
+    def _extract_features_impl(self, file_path: Path) -> np.ndarray | None:
+        """Internal feature extraction implementation (called with timeout wrapper).
 
         Args:
             file_path: Path to executable file
@@ -192,8 +184,7 @@ class FeatureExtractor:
             return None
 
     def _calculate_entropy(self, data: bytes) -> float:
-        """
-        Calculate Shannon entropy of data.
+        """Calculate Shannon entropy of data.
 
         Higher entropy indicates more randomness (common in packed/encrypted malware).
 
@@ -219,8 +210,7 @@ class FeatureExtractor:
         return float(entropy)
 
     def _byte_histogram(self, data: bytes) -> np.ndarray:
-        """
-        Calculate normalized byte histogram.
+        """Calculate normalized byte histogram.
 
         Args:
             data: Byte sequence
@@ -240,8 +230,7 @@ class FeatureExtractor:
         return hist
 
     def _extract_pe_features(self, content: bytes) -> np.ndarray:
-        """
-        Extract features from PE (Windows) executable.
+        """Extract features from PE (Windows) executable.
 
         Features:
         - Number of sections
@@ -323,8 +312,7 @@ class FeatureExtractor:
         return features
 
     def _extract_elf_features(self, file_path: Path) -> np.ndarray:
-        """
-        Extract features from ELF (Linux) executable.
+        """Extract features from ELF (Linux) executable.
 
         Features:
         - ELF class (32/64 bit)
@@ -421,8 +409,7 @@ class FeatureExtractor:
         return features
 
     def _extract_section_features(self, content: bytes) -> np.ndarray:
-        """
-        Extract section-based features (generic, works for both PE and ELF).
+        """Extract section-based features (generic, works for both PE and ELF).
 
         Features:
         - Average section entropy
@@ -484,8 +471,7 @@ class FeatureExtractor:
         return features
 
     def _extract_string_features(self, content: bytes) -> np.ndarray:
-        """
-        Extract string-based features.
+        """Extract string-based features.
 
         Features:
         - Number of printable strings
@@ -528,7 +514,6 @@ class FeatureExtractor:
             # Suspicious patterns
             url_pattern = r"https?://|www\."
             ip_pattern = r"\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b"
-            registry_pattern = r"HKEY_|SOFTWARE\\|CurrentVersion"
             api_pattern = r"(Create|Open|Read|Write|Delete|Execute|Load|Get|Set)(File|Process|Thread|Registry|Service)"
 
             features[3] = len(re.findall(url_pattern, full_text, re.IGNORECASE))
@@ -552,8 +537,7 @@ class FeatureExtractor:
 
 
 def get_feature_names() -> list[str]:
-    """
-    Get human-readable feature names for interpretability.
+    """Get human-readable feature names for interpretability.
 
     Returns:
         List of feature names (318 total)

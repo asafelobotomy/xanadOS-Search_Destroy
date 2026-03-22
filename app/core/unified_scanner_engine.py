@@ -45,11 +45,9 @@ import psutil
 from app.utils.config import get_config
 from app.utils.scan_reports import ThreatLevel
 
-from .adaptive_worker_pool import AdaptiveWorkerPool, WorkerPoolMetrics
+from .adaptive_worker_pool import AdaptiveWorkerPool
 from .advanced_io import AdvancedIOManager, IOConfig, IOStrategy
 from .clamav_wrapper import ClamAVWrapper, ScanResult
-from .input_validation import SecurityValidationError
-from .rate_limiting import configure_rate_limits, rate_limit_manager
 
 # Optional dependencies
 try:
@@ -61,8 +59,6 @@ except Exception:
     _SCHED_AVAILABLE = False
 
 try:
-    from .async_threat_detector import AsyncThreatDetector
-    from .async_resource_coordinator import get_resource_coordinator, ResourceType
 
     _ADVANCED_FEATURES = True
 except Exception:
@@ -72,11 +68,6 @@ except Exception:
 # with integrated async support via enable_async_mode()
 
 try:
-    from .ml_threat_detector import get_threat_detector
-    from .unified_security_engine import (
-        SecurityEvent,
-        ThreatLevel as SecurityThreatLevel,
-    )
 
     _ML_AVAILABLE = True
 except Exception:
@@ -84,7 +75,7 @@ except Exception:
 
 # ML Scanner Integration
 try:
-    from .ml_scanner_integration import MLThreatDetector, MLScanResult
+    from .ml_scanner_integration import MLScanResult, MLThreatDetector
 
     _ML_SCANNER_AVAILABLE = True
 except Exception:
@@ -463,7 +454,6 @@ class QuarantineManager:
         self.quarantine_dir.mkdir(parents=True, exist_ok=True, mode=0o700)
 
         # Verify and fix permissions if needed
-        import stat
 
         current_mode = self.quarantine_dir.stat().st_mode & 0o777
         if current_mode != 0o700:
@@ -1132,7 +1122,7 @@ class UnifiedScannerEngine:
                 await asyncio.sleep(self.adaptive_pool.adjustment_interval)
 
                 # Attempt to adjust workers
-                adjusted = self.adaptive_pool.adjust_workers()
+                self.adaptive_pool.adjust_workers()
 
                 # Log metrics periodically (every 30 seconds)
                 if int(time.time()) % 30 == 0:

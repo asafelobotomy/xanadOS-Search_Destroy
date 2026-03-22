@@ -15,10 +15,10 @@ import asyncio
 import logging
 import mmap
 import time
+from collections.abc import AsyncIterator, Iterator
 from dataclasses import dataclass, field
 from enum import Enum, auto
 from pathlib import Path
-from typing import AsyncIterator, Iterator
 
 try:
     import aiofiles

@@ -11,17 +11,15 @@ Phase 2, Task 2.2.3: Intelligent Rule Generation
 """
 
 import asyncio
-import hashlib
 import json
 import logging
-import re
 import time
 from collections import Counter, defaultdict
-from dataclasses import dataclass, field, asdict
+from dataclasses import asdict, dataclass, field
 from datetime import datetime, timedelta
 from enum import Enum
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -289,7 +287,7 @@ class RuleGenerator:
         """Load rules from database."""
         if self.rule_db_path.exists():
             try:
-                with open(self.rule_db_path, "r") as f:
+                with open(self.rule_db_path) as f:
                     data = json.load(f)
                     self.rules = {
                         rule_id: GeneratedRule.from_dict(rule_data)
@@ -589,7 +587,7 @@ class RuleGenerator:
         lines.append(f'        category = "{category}"')
         lines.append(f'        pattern_type = "{pattern_type}"')
         lines.append(f'        generated = "{datetime.utcnow().isoformat()}"')
-        lines.append(f'        author = "xanadOS Rule Generator"')
+        lines.append('        author = "xanadOS Rule Generator"')
 
         # Strings section
         lines.append("")

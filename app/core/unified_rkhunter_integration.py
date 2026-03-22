@@ -40,7 +40,7 @@ logger = logging.getLogger(__name__)
 
 # Import dependencies with fallbacks
 try:
-    from .safe_kill import kill_sequence
+    from .safe_kill import kill_sequence  # noqa: F401
 
     _SAFE_KILL_AVAILABLE = True
 except ImportError:
@@ -54,7 +54,7 @@ except ImportError:
     _SECURE_SUBPROCESS_AVAILABLE = False
 
 try:
-    from .security_validator import SecureRKHunterValidator
+    from .security_validator import SecureRKHunterValidator  # noqa: F401
 
     _SECURITY_VALIDATOR_AVAILABLE = True
 except ImportError:
@@ -1273,7 +1273,7 @@ class UnifiedRKHunterIntegration:
                 )
                 if returncode == 1:
                     self.logger.info(
-                        f"RKHunter return code 1 (warnings found) - this is normal if system has warnings"
+                        "RKHunter return code 1 (warnings found) - this is normal if system has warnings"
                     )
                 elif returncode >= 2:
                     self.logger.warning(
@@ -1350,7 +1350,6 @@ class UnifiedRKHunterIntegration:
 
         # Parse stdout for test results
         lines = stdout.split("\n")
-        current_test = None
 
         for line in lines:
             line = line.strip()

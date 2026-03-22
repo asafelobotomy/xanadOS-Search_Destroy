@@ -16,7 +16,7 @@ Date: 2025-12-17
 """
 
 import ast
-from typing import Any, Dict
+from typing import Any
 
 
 class SafeExpressionEvaluator:
@@ -74,11 +74,24 @@ class SafeExpressionEvaluator:
         "round": round,
     }
 
+    # Whitelisted methods (attr_name -> allowed on types)
+    ALLOWED_METHODS = {
+        "get": (dict,),
+        "keys": (dict,),
+        "values": (dict,),
+        "items": (dict,),
+        "upper": (str,),
+        "lower": (str,),
+        "strip": (str,),
+        "startswith": (str,),
+        "endswith": (str,),
+    }
+
     def __init__(self):
         """Initialize the safe expression evaluator."""
         pass
 
-    def evaluate(self, expression: str, context: Dict[str, Any]) -> Any:
+    def evaluate(self, expression: str, context: dict[str, Any]) -> Any:
         """
         Safely evaluate an expression with the given context.
 
@@ -110,7 +123,7 @@ class SafeExpressionEvaluator:
         # Validate and evaluate the AST
         return self._eval_node(tree.body, context)
 
-    def _eval_node(self, node: ast.AST, context: Dict[str, Any]) -> Any:
+    def _eval_node(self, node: ast.AST, context: dict[str, Any]) -> Any:
         """
         Recursively evaluate an AST node.
 
@@ -128,14 +141,6 @@ class SafeExpressionEvaluator:
         if isinstance(node, ast.Constant):
             return node.value
 
-        # For Python 3.7 compatibility (deprecated in 3.8+)
-        if isinstance(node, (ast.Num, ast.Str, ast.NameConstant)):
-            return (
-                node.n
-                if isinstance(node, ast.Num)
-                else (node.s if isinstance(node, ast.Str) else node.value)
-            )
-
         # Variable lookup (e.g., "status", "count")
         if isinstance(node, ast.Name):
             if node.id not in context:
@@ -147,7 +152,7 @@ class SafeExpressionEvaluator:
             left = self._eval_node(node.left, context)
             result = True
 
-            for op, comparator in zip(node.ops, node.comparators):
+            for op, comparator in zip(node.ops, node.comparators, strict=False):
                 if type(op) not in self.ALLOWED_OPS:
                     raise ValueError(
                         f"Comparison operator {type(op).__name__} not allowed"
@@ -184,19 +189,30 @@ class SafeExpressionEvaluator:
             return self.ALLOWED_UNARY_OPS[type(node.op)](operand)
 
         # Function calls (e.g., "len(items)", "str(count)")
+        # and method calls (e.g., "context.get('key')")
         if isinstance(node, ast.Call):
-            if not isinstance(node.func, ast.Name):
-                raise ValueError("Only simple function calls are allowed")
-
-            func_name = node.func.id
-            if func_name not in self.ALLOWED_FUNCTIONS:
-                raise ValueError(f"Function '{func_name}' not allowed")
-
             # Evaluate arguments
             args = [self._eval_node(arg, context) for arg in node.args]
 
-            # Call the function
-            return self.ALLOWED_FUNCTIONS[func_name](*args)
+            if isinstance(node.func, ast.Name):
+                func_name = node.func.id
+                if func_name not in self.ALLOWED_FUNCTIONS:
+                    raise ValueError(f"Function '{func_name}' not allowed")
+                return self.ALLOWED_FUNCTIONS[func_name](*args)
+
+            if isinstance(node.func, ast.Attribute):
+                obj = self._eval_node(node.func.value, context)
+                method_name = node.func.attr
+                if method_name not in self.ALLOWED_METHODS:
+                    raise ValueError(f"Method '{method_name}' not allowed")
+                allowed_types = self.ALLOWED_METHODS[method_name]
+                if not isinstance(obj, allowed_types):
+                    raise ValueError(
+                        f"Method '{method_name}' not allowed on {type(obj).__name__}"
+                    )
+                return getattr(obj, method_name)(*args)
+
+            raise ValueError("Only simple function and method calls are allowed")
 
         # Subscript access (e.g., "items[0]", "data['key']")
         if isinstance(node, ast.Subscript):
@@ -215,7 +231,7 @@ class SafeExpressionEvaluator:
         # Dict literals (e.g., "{'key': 'value'}")
         if isinstance(node, ast.Dict):
             result: dict = {}  # type: ignore[assignment]
-            for key_node, val_node in zip(node.keys, node.values):
+            for key_node, val_node in zip(node.keys, node.values, strict=False):
                 key = self._eval_node(key_node, context)
                 val = self._eval_node(val_node, context)
                 result[key] = val

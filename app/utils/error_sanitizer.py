@@ -10,9 +10,6 @@ Phase: 2 (HIGH severity - CWE-209 mitigation)
 """
 
 import re
-from pathlib import Path
-from typing import Any
-
 
 # Patterns to redact from error messages
 SENSITIVE_PATTERNS = [

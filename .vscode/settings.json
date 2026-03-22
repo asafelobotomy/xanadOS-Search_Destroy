@@ -172,7 +172,7 @@
   "search.quickOpen.includeSymbols": false,
   "python.defaultInterpreterPath": "./.venv/bin/python",
   "[python]": {
-    "editor.defaultFormatter": "ms-python.black-formatter"
+    "editor.defaultFormatter": "charliermarsh.ruff"
   },
   "python.testing.autoTestDiscoverOnSaveEnabled": false,
   "python.testing.pytestEnabled": false,

@@ -8,7 +8,9 @@ import asyncio
 import logging
 import os
 import pickle
-from dataclasses import dataclass
+
+# Define threat detection classes inline (previously from async_threat_detector)
+from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
 from pathlib import Path
@@ -21,12 +23,6 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.preprocessing import StandardScaler
 
 from app.utils.secure_crypto import secure_file_hash
-
-# Define threat detection classes inline (previously from async_threat_detector)
-from enum import Enum
-from dataclasses import dataclass, field
-from typing import Any
-from datetime import datetime
 
 
 class ThreatLevel(Enum):
@@ -139,8 +135,7 @@ class FileFeatures:
 
 
 class MLThreatDetector:
-    """
-    Machine Learning-powered threat detector using TensorFlow and scikit-learn.
+    """Machine Learning-powered threat detector using TensorFlow and scikit-learn.
 
     Features:
     - Deep neural networks for malware classification
@@ -236,7 +231,7 @@ class MLThreatDetector:
         except (ImportError, ModuleNotFoundError) as e:
             self.logger.error("Missing ML dependencies: %s", e)
             raise
-        except (OSError, IOError) as e:
+        except OSError as e:
             self.logger.error("Error accessing model files: %s", e)
         except RuntimeError as e:
             self.logger.error("Runtime error during ML initialization: %s", e)

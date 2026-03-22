@@ -15,22 +15,19 @@ Features:
 - Real-time threat assessment
 """
 
-import asyncio
 import logging
 import pickle
 import time
 from collections import defaultdict, deque
 from dataclasses import dataclass
-from datetime import datetime, timedelta
+from datetime import datetime
 from pathlib import Path
 
-import joblib
 import numpy as np
 from sklearn.ensemble import IsolationForest
 from sklearn.preprocessing import StandardScaler
 
 from app.core.unified_security_engine import SecurityEvent, ThreatLevel
-from app.utils.config import get_config
 
 
 @dataclass

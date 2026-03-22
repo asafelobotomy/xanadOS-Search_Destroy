@@ -10,6 +10,7 @@ Research-based implementation following Python 3.13 best practices and
 modern threading patterns for I/O-bound workloads.
 """
 
+import asyncio
 import logging
 import os
 import time
@@ -19,7 +20,6 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Any
 
-import asyncio
 import psutil
 
 

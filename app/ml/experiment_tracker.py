@@ -1,13 +1,12 @@
 #!/usr/bin/env python3
-"""
-Experiment tracking integration with wandb (Weights & Biases).
+"""Experiment tracking integration with wandb (Weights & Biases).
 
 Provides a unified interface for tracking ML experiments, metrics, and artifacts.
 """
 
 import os
 from pathlib import Path
-from typing import Optional, Any
+from typing import Any
 
 try:
     import wandb
@@ -18,8 +17,7 @@ except ImportError:
 
 
 class ExperimentTracker:
-    """
-    Wrapper for wandb experiment tracking.
+    """Wrapper for wandb experiment tracking.
 
     Features:
     - Automatic experiment initialization
@@ -32,11 +30,10 @@ class ExperimentTracker:
     def __init__(
         self,
         project_name: str = "xanadOS-malware-detection",
-        entity: Optional[str] = None,
+        entity: str | None = None,
         offline: bool = False,
     ):
-        """
-        Initialize experiment tracker.
+        """Initialize experiment tracker.
 
         Args:
             project_name: wandb project name
@@ -55,13 +52,12 @@ class ExperimentTracker:
 
     def start_run(
         self,
-        name: Optional[str] = None,
-        config: Optional[dict[str, Any]] = None,
-        tags: Optional[list[str]] = None,
-        notes: Optional[str] = None,
-    ) -> Optional[str]:
-        """
-        Start a new experiment run.
+        name: str | None = None,
+        config: dict[str, Any] | None = None,
+        tags: list[str] | None = None,
+        notes: str | None = None,
+    ) -> str | None:
+        """Start a new experiment run.
 
         Args:
             name: Run name
@@ -91,9 +87,8 @@ class ExperimentTracker:
 
         return self.run.id if self.run else None
 
-    def log_metrics(self, metrics: dict[str, float], step: Optional[int] = None):
-        """
-        Log metrics for current step.
+    def log_metrics(self, metrics: dict[str, float], step: int | None = None):
+        """Log metrics for current step.
 
         Args:
             metrics: Dictionary of metric name -> value
@@ -105,8 +100,7 @@ class ExperimentTracker:
         wandb.log(metrics, step=step)
 
     def log_hyperparameters(self, hyperparameters: dict[str, Any]):
-        """
-        Log hyperparameters (can be called after run starts).
+        """Log hyperparameters (can be called after run starts).
 
         Args:
             hyperparameters: Dictionary of hyperparameter values
@@ -120,11 +114,10 @@ class ExperimentTracker:
         self,
         artifact_path: Path | str,
         artifact_type: str,
-        name: Optional[str] = None,
-        metadata: Optional[dict[str, Any]] = None,
+        name: str | None = None,
+        metadata: dict[str, Any] | None = None,
     ):
-        """
-        Log an artifact (model, dataset, config file, etc.).
+        """Log an artifact (model, dataset, config file, etc.).
 
         Args:
             artifact_path: Path to artifact file/directory
@@ -155,10 +148,9 @@ class ExperimentTracker:
         self,
         model_path: Path | str,
         model_name: str,
-        metadata: Optional[dict[str, Any]] = None,
+        metadata: dict[str, Any] | None = None,
     ):
-        """
-        Log a trained model as an artifact.
+        """Log a trained model as an artifact.
 
         Args:
             model_path: Path to saved model file
@@ -176,10 +168,9 @@ class ExperimentTracker:
         self,
         dataset_path: Path | str,
         dataset_name: str,
-        metadata: Optional[dict[str, Any]] = None,
+        metadata: dict[str, Any] | None = None,
     ):
-        """
-        Log a dataset as an artifact.
+        """Log a dataset as an artifact.
 
         Args:
             dataset_path: Path to dataset directory
@@ -197,10 +188,9 @@ class ExperimentTracker:
         self,
         y_true: list[int],
         y_pred: list[int],
-        class_names: Optional[list[str]] = None,
+        class_names: list[str] | None = None,
     ):
-        """
-        Log a confusion matrix visualization.
+        """Log a confusion matrix visualization.
 
         Args:
             y_true: True labels
@@ -225,10 +215,9 @@ class ExperimentTracker:
         self,
         y_true: list[int],
         y_scores: list[float],
-        class_names: Optional[list[str]] = None,
+        class_names: list[str] | None = None,
     ):
-        """
-        Log ROC curve visualization.
+        """Log ROC curve visualization.
 
         Args:
             y_true: True binary labels

@@ -1,5 +1,4 @@
-"""
-Interactive Web-Based Reporting System for xanadOS Search & Destroy.
+"""Interactive Web-Based Reporting System for xanadOS Search & Destroy.
 
 This module provides interactive HTML reports with:
 - Plotly.js interactive charts
@@ -10,18 +9,15 @@ This module provides interactive HTML reports with:
 Phase 2, Task 2.3.1: Interactive Web-Based Reports
 """
 
-import json
 import logging
-from dataclasses import dataclass, asdict, field
+from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any
-import base64
-from io import BytesIO
 
 try:
+    import plotly.express as px  # noqa: F401
     import plotly.graph_objects as go
-    import plotly.express as px
     from plotly.subplots import make_subplots
 
     PLOTLY_AVAILABLE = True
@@ -49,8 +45,8 @@ except ImportError:
 
 try:
     from openpyxl import Workbook
-    from openpyxl.styles import Font, PatternFill, Alignment
-    from openpyxl.chart import BarChart, LineChart, PieChart, Reference
+    from openpyxl.chart import BarChart, LineChart, PieChart, Reference  # noqa: F401
+    from openpyxl.styles import Alignment, Font, PatternFill  # noqa: F401
 
     OPENPYXL_AVAILABLE = True
 except ImportError:
@@ -126,8 +122,7 @@ class ExportOptions:
 
 
 class WebReportGenerator:
-    """
-    Generates interactive web-based reports with Plotly charts.
+    """Generates interactive web-based reports with Plotly charts.
 
     Features:
     - HTML reports with interactive charts
@@ -137,8 +132,7 @@ class WebReportGenerator:
     """
 
     def __init__(self, template_dir: Path | None = None):
-        """
-        Initialize the web report generator.
+        """Initialize the web report generator.
 
         Args:
             template_dir: Directory containing Jinja2 templates
@@ -166,8 +160,7 @@ class WebReportGenerator:
     def generate_executive_report(
         self, scan_results: list[dict], timeframe_days: int = 30
     ) -> ReportData:
-        """
-        Generate executive dashboard report.
+        """Generate executive dashboard report.
 
         Args:
             scan_results: List of scan result dictionaries
@@ -236,8 +229,7 @@ class WebReportGenerator:
     def generate_threat_analysis_report(
         self, threats: list[dict], timeframe_days: int = 30
     ) -> ReportData:
-        """
-        Generate detailed threat analysis report.
+        """Generate detailed threat analysis report.
 
         Args:
             threats: List of detected threats
@@ -299,8 +291,7 @@ class WebReportGenerator:
     def generate_performance_report(
         self, performance_data: list[dict], timeframe_days: int = 30
     ) -> ReportData:
-        """
-        Generate system performance report.
+        """Generate system performance report.
 
         Args:
             performance_data: List of performance metrics
@@ -373,8 +364,7 @@ class WebReportGenerator:
     def generate_compliance_report(
         self, framework: str, compliance_data: dict
     ) -> ReportData:
-        """
-        Generate compliance audit report.
+        """Generate compliance audit report.
 
         Args:
             framework: Compliance framework name (PCI_DSS, NIST_CSF, etc.)
@@ -451,8 +441,8 @@ class WebReportGenerator:
                 y=counts,
                 mode="lines+markers",
                 name="Threats Detected",
-                line=dict(color="#e74c3c", width=2),
-                marker=dict(size=8),
+                line={"color": "#e74c3c", "width": 2},
+                marker={"size": 8},
             )
         )
 
@@ -490,7 +480,7 @@ class WebReportGenerator:
                 go.Pie(
                     labels=[l.capitalize() for l in labels],
                     values=values,
-                    marker=dict(colors=chart_colors),
+                    marker={"colors": chart_colors},
                     hole=0.3,
                     textinfo="label+percent",
                 )
@@ -590,7 +580,7 @@ class WebReportGenerator:
                     y=counts,
                     mode="lines+markers",
                     fill="tozeroy",
-                    line=dict(color="#e74c3c"),
+                    line={"color": "#e74c3c"},
                 )
             ]
         )
@@ -665,7 +655,7 @@ class WebReportGenerator:
                 y=cpu,
                 mode="lines",
                 name="CPU",
-                line=dict(color="#3498db"),
+                line={"color": "#3498db"},
             ),
             row=1,
             col=1,
@@ -677,7 +667,7 @@ class WebReportGenerator:
                 y=memory,
                 mode="lines",
                 name="Memory",
-                line=dict(color="#e74c3c"),
+                line={"color": "#e74c3c"},
             ),
             row=2,
             col=1,
@@ -714,7 +704,7 @@ class WebReportGenerator:
                     y=throughput,
                     mode="lines+markers",
                     name="Files/Second",
-                    line=dict(color="#27ae60"),
+                    line={"color": "#27ae60"},
                 )
             ]
         )
@@ -750,7 +740,7 @@ class WebReportGenerator:
                     mode="lines",
                     fill="tozeroy",
                     name="Cache Hit Rate",
-                    line=dict(color="#f39c12"),
+                    line={"color": "#f39c12"},
                 )
             ]
         )
@@ -890,8 +880,7 @@ class WebReportGenerator:
     # ========================================
 
     def render_html(self, report_data: ReportData) -> str:
-        """
-        Render report data to HTML using Jinja2 templates.
+        """Render report data to HTML using Jinja2 templates.
 
         Args:
             report_data: Report data to render
@@ -1010,8 +999,7 @@ class WebReportGenerator:
         output_path: Path,
         options: ExportOptions | None = None,
     ) -> bool:
-        """
-        Export report to PDF.
+        """Export report to PDF.
 
         Args:
             report_data: Report data to export
@@ -1043,8 +1031,7 @@ class WebReportGenerator:
         output_path: Path,
         options: ExportOptions | None = None,
     ) -> bool:
-        """
-        Export report to Excel.
+        """Export report to Excel.
 
         Args:
             report_data: Report data to export

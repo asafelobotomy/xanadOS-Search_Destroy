@@ -17,24 +17,19 @@ import asyncio
 import json
 import logging
 import time
-from datetime import datetime, timedelta
+from datetime import datetime
 from pathlib import Path
 
 import uvicorn
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException
-from fastapi.responses import HTMLResponse, FileResponse
-from fastapi.staticfiles import StaticFiles
-from fastapi.middleware.cors import CORSMiddleware
-
 from app.gui.security_dashboard import (
     RealTimeDataCollector,
-    ThreatEvent,
     SystemMetrics,
-    DashboardConfig,
+    ThreatEvent,
 )
-from app.core.ml_threat_detector import MLThreatDetector
-from app.core.edr_engine import EDREngine
-from app.core.unified_memory_management import get_memory_manager
+from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import HTMLResponse
+from fastapi.staticfiles import StaticFiles
 
 
 class WebDashboardManager:
@@ -60,7 +55,6 @@ class WebDashboardManager:
 
     def setup_app(self):
         """Setup FastAPI application with routes and middleware."""
-
         # Add CORS middleware
         self.app.add_middleware(
             CORSMiddleware,
@@ -343,7 +337,7 @@ class WebDashboardManager:
                     try:
                         # Wait for ping or client messages
                         await asyncio.wait_for(websocket.receive_text(), timeout=30.0)
-                    except asyncio.TimeoutError:
+                    except TimeoutError:
                         # Send ping to keep connection alive
                         await websocket.send_text(
                             json.dumps({"type": "ping", "timestamp": time.time()})

@@ -5,7 +5,6 @@ Fast pre-filtering before expensive ClamAV scans to improve throughput.
 """
 
 import logging
-import os
 from pathlib import Path
 from typing import Any
 

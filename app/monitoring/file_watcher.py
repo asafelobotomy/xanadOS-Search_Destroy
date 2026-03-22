@@ -57,8 +57,8 @@ except (ImportError, OSError, AttributeError):
 
 # Modern cross-platform file system monitoring
 try:
-    from watchdog.observers import Observer
     from watchdog.events import FileSystemEventHandler
+    from watchdog.observers import Observer
 
     WATCHDOG_AVAILABLE = True
 except ImportError:
@@ -753,7 +753,7 @@ class FileSystemWatcher:
             raise RuntimeError("Async mode not enabled. Call enable_async_mode() first.")
         return await self.async_queue.get()
 
-    async def watch_async(self) -> AsyncGenerator[WatchEvent, None]:
+    async def watch_async(self) -> AsyncGenerator[WatchEvent]:
         """Async context manager for watching events.
 
         Usage:
@@ -771,7 +771,7 @@ class FileSystemWatcher:
             try:
                 event = await asyncio.wait_for(self.async_queue.get(), timeout=1.0)
                 yield event
-            except asyncio.TimeoutError:
+            except TimeoutError:
                 continue
             except asyncio.CancelledError:
                 break

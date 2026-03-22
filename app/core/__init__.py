@@ -60,6 +60,7 @@ try:
     # Non-invasive monitor kept if available
     from .non_invasive_monitor import system_monitor
     from .system_service import SystemServiceManager
+
     # Note: rkhunter_monitor_non_invasive consolidated into unified_rkhunter_integration
     from .web_protection import WebProtectionSystem
 except ImportError as e:

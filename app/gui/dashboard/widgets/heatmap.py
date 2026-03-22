@@ -5,15 +5,15 @@ Displays threat severity distribution by type and location as a heatmap.
 
 from __future__ import annotations
 
+from collections import defaultdict
 from dataclasses import dataclass
 from typing import Any
-from collections import defaultdict
 
 try:
-    from PyQt6.QtWidgets import QWidget, QVBoxLayout, QLabel, QHBoxLayout, QComboBox
-    from PyQt6.QtCore import Qt, pyqtSignal, QTimer
-    import pyqtgraph as pg
     import numpy as np
+    import pyqtgraph as pg
+    from PyQt6.QtCore import Qt, QTimer, pyqtSignal
+    from PyQt6.QtWidgets import QComboBox, QHBoxLayout, QLabel, QVBoxLayout, QWidget
 
     DEPENDENCIES_AVAILABLE = True
 except ImportError:
@@ -186,7 +186,7 @@ class SeverityHeatmapWidget(QWidget):
         y_axis = self.y_axis_combo.currentText()
 
         # Aggregate data into 2D matrix
-        matrix, x_labels, y_labels = self._aggregate_data(x_axis, y_axis)
+        matrix, _x_labels, _y_labels = self._aggregate_data(x_axis, y_axis)
 
         # Update heatmap
         self.heatmap_view.setImage(
@@ -218,10 +218,10 @@ class SeverityHeatmapWidget(QWidget):
         """
         # Collect unique categories
         x_categories = sorted(
-            set(self._get_category(point, x_axis) for point in self.data_points)
+            {self._get_category(point, x_axis) for point in self.data_points}
         )
         y_categories = sorted(
-            set(self._get_category(point, y_axis) for point in self.data_points)
+            {self._get_category(point, y_axis) for point in self.data_points}
         )
 
         # Create mapping from category to index

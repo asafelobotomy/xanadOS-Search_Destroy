@@ -19,34 +19,28 @@ Features:
 import asyncio
 import json
 import logging
-import statistics
 import time
 from collections import defaultdict, deque
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Set, Tuple, Union
+from typing import Any
 
-import matplotlib.pyplot as plt
-import seaborn as sns
-import pandas as pd
 import numpy as np
-from reportlab.lib.pagesizes import letter, A4
-from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-from reportlab.lib.units import inch
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, Image
-from reportlab.lib import colors
-from jinja2 import Environment, FileSystemLoader, Template
-import plotly.graph_objs as go
-import plotly.express as px
-from plotly.offline import plot
 import openpyxl
-from openpyxl.styles import Font, PatternFill, Alignment
-from openpyxl.chart import LineChart, Reference
+import plotly.express as px
+from jinja2 import Environment, FileSystemLoader
+from reportlab.lib import colors
+from reportlab.lib.pagesizes import letter
+from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
+from reportlab.platypus import (
+    Paragraph,
+    SimpleDocTemplate,
+    Spacer,
+    Table,
+    TableStyle,
+)
 
-from app.core.ml_threat_detector import MLThreatDetector
-from app.core.edr_engine import EDREngine, SecurityEvent
-from app.core.intelligent_automation import get_intelligent_automation
 from app.utils.config import get_config
 
 
@@ -75,12 +69,12 @@ class ThreatTrend:
 
     threat_type: str
     count: int
-    severity_distribution: Dict[str, int]
-    time_series: List[Tuple[float, int]]  # (timestamp, count)
+    severity_distribution: dict[str, int]
+    time_series: list[tuple[float, int]]  # (timestamp, count)
     growth_rate: float
-    peak_times: List[str]
-    geographic_distribution: Dict[str, int]
-    attack_vectors: List[str]
+    peak_times: list[str]
+    geographic_distribution: dict[str, int]
+    attack_vectors: list[str]
     mitigation_effectiveness: float
 
 
@@ -90,11 +84,11 @@ class ComplianceReport:
 
     framework: str  # SOC2, ISO27001, NIST, etc.
     overall_score: float
-    control_assessments: Dict[str, Dict[str, Any]]
-    gaps_identified: List[Dict[str, str]]
-    recommendations: List[str]
-    remediation_timeline: Dict[str, str]
-    evidence_collected: List[str]
+    control_assessments: dict[str, dict[str, Any]]
+    gaps_identified: list[dict[str, str]]
+    recommendations: list[str]
+    remediation_timeline: dict[str, str]
+    evidence_collected: list[str]
     last_assessment: float
     next_assessment: float
 
@@ -104,12 +98,12 @@ class RiskAssessment:
     """Security risk assessment."""
 
     overall_risk_score: float
-    risk_categories: Dict[str, float]  # Category -> risk level
-    critical_risks: List[Dict[str, Any]]
-    risk_trends: Dict[str, float]  # Historical risk changes
-    mitigation_progress: Dict[str, float]
-    business_impact: Dict[str, str]
-    recommendations: List[str]
+    risk_categories: dict[str, float]  # Category -> risk level
+    critical_risks: list[dict[str, Any]]
+    risk_trends: dict[str, float]  # Historical risk changes
+    mitigation_progress: dict[str, float]
+    business_impact: dict[str, str]
+    recommendations: list[str]
     assessment_confidence: float
 
 
@@ -120,11 +114,11 @@ class ExecutiveSummary:
     security_posture: str  # EXCELLENT, GOOD, FAIR, POOR
     key_metrics: SecurityMetrics
     threat_landscape: str
-    major_incidents: List[str]
+    major_incidents: list[str]
     compliance_status: str
-    budget_impact: Dict[str, float]
-    strategic_recommendations: List[str]
-    quarterly_comparison: Dict[str, float]
+    budget_impact: dict[str, float]
+    strategic_recommendations: list[str]
+    quarterly_comparison: dict[str, float]
 
 
 @dataclass
@@ -135,11 +129,11 @@ class ReportTemplate:
     name: str
     description: str
     template_type: str  # executive, technical, compliance, risk
-    sections: List[str]
-    format_options: Dict[str, Any]
-    schedule_config: Optional[Dict[str, Any]]
-    recipients: List[str]
-    customizations: Dict[str, Any]
+    sections: list[str]
+    format_options: dict[str, Any]
+    schedule_config: dict[str, Any] | None
+    recipients: list[str]
+    customizations: dict[str, Any]
 
 
 class ThreatAnalyzer:
@@ -149,7 +143,7 @@ class ThreatAnalyzer:
         self.logger = logging.getLogger(__name__)
         self.historical_data = deque(maxlen=10000)
 
-    async def analyze_threat_trends(self, timeframe_days: int = 30) -> List[ThreatTrend]:
+    async def analyze_threat_trends(self, timeframe_days: int = 30) -> list[ThreatTrend]:
         """Analyze threat trends over specified timeframe."""
         try:
             # Get historical threat data
@@ -174,7 +168,7 @@ class ThreatAnalyzer:
             self.logger.error(f"Error analyzing threat trends: {e}")
             return []
 
-    async def _collect_threat_data(self, start_time: float, end_time: float) -> List[Dict[str, Any]]:
+    async def _collect_threat_data(self, start_time: float, end_time: float) -> list[dict[str, Any]]:
         """Collect threat data for specified time range."""
         # In a real implementation, this would query the security database
         # Mock data for demonstration
@@ -200,7 +194,7 @@ class ThreatAnalyzer:
 
         return threats
 
-    async def _analyze_threat_type_trend(self, threat_type: str, events: List[Dict[str, Any]],
+    async def _analyze_threat_type_trend(self, threat_type: str, events: list[dict[str, Any]],
                                        timeframe_days: int) -> ThreatTrend:
         """Analyze trend for specific threat type."""
         # Count by severity
@@ -302,7 +296,7 @@ class ComplianceAnalyzer:
             self.logger.error(f"Error assessing compliance: {e}")
             return self._default_compliance_report(framework)
 
-    def _get_soc2_controls(self) -> Dict[str, Dict[str, Any]]:
+    def _get_soc2_controls(self) -> dict[str, dict[str, Any]]:
         """Get SOC 2 security controls."""
         return {
             'CC6.1': {
@@ -332,7 +326,7 @@ class ComplianceAnalyzer:
             }
         }
 
-    def _get_iso27001_controls(self) -> Dict[str, Dict[str, Any]]:
+    def _get_iso27001_controls(self) -> dict[str, dict[str, Any]]:
         """Get ISO 27001 security controls."""
         return {
             'A.9.1.1': {
@@ -352,7 +346,7 @@ class ComplianceAnalyzer:
             }
         }
 
-    def _get_nist_controls(self) -> Dict[str, Dict[str, Any]]:
+    def _get_nist_controls(self) -> dict[str, dict[str, Any]]:
         """Get NIST Cybersecurity Framework controls."""
         return {
             'ID.AM-1': {
@@ -377,7 +371,7 @@ class ComplianceAnalyzer:
             }
         }
 
-    def _get_pci_controls(self) -> Dict[str, Dict[str, Any]]:
+    def _get_pci_controls(self) -> dict[str, dict[str, Any]]:
         """Get PCI DSS controls."""
         return {
             '1.1': {
@@ -397,7 +391,7 @@ class ComplianceAnalyzer:
             }
         }
 
-    async def _assess_control(self, control_id: str, control_info: Dict[str, Any]) -> Dict[str, Any]:
+    async def _assess_control(self, control_id: str, control_info: dict[str, Any]) -> dict[str, Any]:
         """Assess individual security control."""
         # Mock assessment logic
         # In real implementation, this would check actual system configurations
@@ -423,7 +417,7 @@ class ComplianceAnalyzer:
             'last_reviewed': time.time()
         }
 
-    def _generate_remediation_timeline(self, gaps: List[Dict[str, str]]) -> Dict[str, str]:
+    def _generate_remediation_timeline(self, gaps: list[dict[str, str]]) -> dict[str, str]:
         """Generate remediation timeline for gaps."""
         timeline = {}
 
@@ -434,7 +428,7 @@ class ComplianceAnalyzer:
 
         return timeline
 
-    def _collect_evidence(self) -> List[str]:
+    def _collect_evidence(self) -> list[str]:
         """Collect evidence for compliance assessment."""
         return [
             'Security policy documentation',
@@ -500,7 +494,7 @@ class RiskAnalyzer:
             self.logger.error(f"Error assessing security risks: {e}")
             return self._default_risk_assessment()
 
-    def _initialize_risk_matrix(self) -> Dict[str, Dict[str, float]]:
+    def _initialize_risk_matrix(self) -> dict[str, dict[str, float]]:
         """Initialize risk scoring matrix."""
         return {
             'probability': {
@@ -519,7 +513,7 @@ class RiskAnalyzer:
             }
         }
 
-    async def _assess_risk_categories(self) -> Dict[str, float]:
+    async def _assess_risk_categories(self) -> dict[str, float]:
         """Assess risk levels for different categories."""
         categories = {
             'Malware': await self._assess_malware_risk(),
@@ -588,7 +582,7 @@ class RiskAnalyzer:
         risk_score = 1.0 - (access_controls * monitoring * secure_disposal)
         return min(max(risk_score, 0.1), 0.9)
 
-    async def _identify_critical_risks(self) -> List[Dict[str, Any]]:
+    async def _identify_critical_risks(self) -> list[dict[str, Any]]:
         """Identify critical risks requiring immediate attention."""
         return [
             {
@@ -613,7 +607,7 @@ class RiskAnalyzer:
             }
         ]
 
-    async def _analyze_risk_trends(self) -> Dict[str, float]:
+    async def _analyze_risk_trends(self) -> dict[str, float]:
         """Analyze risk trends over time."""
         return {
             'Malware': -0.05,           # 5% improvement
@@ -624,7 +618,7 @@ class RiskAnalyzer:
             'Physical_Security': -0.01   # 1% improvement
         }
 
-    async def _assess_mitigation_progress(self) -> Dict[str, float]:
+    async def _assess_mitigation_progress(self) -> dict[str, float]:
         """Assess progress on risk mitigation efforts."""
         return {
             'CRIT_001': 0.65,  # 65% complete
@@ -633,7 +627,7 @@ class RiskAnalyzer:
             'CRIT_004': 0.45   # 45% complete
         }
 
-    def _assess_business_impact(self) -> Dict[str, str]:
+    def _assess_business_impact(self) -> dict[str, str]:
         """Assess business impact of various risk scenarios."""
         return {
             'Data_Breach': 'HIGH - Regulatory fines, reputation damage, customer loss',
@@ -642,7 +636,7 @@ class RiskAnalyzer:
             'Insider_Threat': 'HIGH - Data theft, intellectual property loss'
         }
 
-    def _generate_risk_recommendations(self, critical_risks: List[Dict[str, Any]]) -> List[str]:
+    def _generate_risk_recommendations(self, critical_risks: list[dict[str, Any]]) -> list[str]:
         """Generate recommendations based on critical risks."""
         recommendations = []
 
@@ -702,7 +696,7 @@ class ReportGenerator:
 
     async def generate_executive_report(self, metrics: SecurityMetrics,
                                       compliance: ComplianceReport,
-                                      risk_assessment: RiskAssessment) -> Dict[str, str]:
+                                      risk_assessment: RiskAssessment) -> dict[str, str]:
         """Generate executive security report."""
         try:
             # Create executive summary
@@ -733,8 +727,8 @@ class ReportGenerator:
             self.logger.error(f"Error generating executive report: {e}")
             return {}
 
-    async def generate_technical_report(self, threat_trends: List[ThreatTrend],
-                                      metrics: SecurityMetrics) -> Dict[str, str]:
+    async def generate_technical_report(self, threat_trends: list[ThreatTrend],
+                                      metrics: SecurityMetrics) -> dict[str, str]:
         """Generate technical security report."""
         try:
             report_data = {
@@ -760,7 +754,7 @@ class ReportGenerator:
             self.logger.error(f"Error generating technical report: {e}")
             return {}
 
-    async def generate_compliance_report(self, compliance: ComplianceReport) -> Dict[str, str]:
+    async def generate_compliance_report(self, compliance: ComplianceReport) -> dict[str, str]:
         """Generate compliance assessment report."""
         try:
             report_data = {
@@ -868,7 +862,7 @@ class ReportGenerator:
 
         return output_path
 
-    def _create_executive_pdf_content(self, summary: ExecutiveSummary, styles) -> List:
+    def _create_executive_pdf_content(self, summary: ExecutiveSummary, styles) -> list:
         """Create executive PDF content."""
         content = []
 
@@ -911,7 +905,7 @@ class ReportGenerator:
 
         return content
 
-    def _create_technical_pdf_content(self, data: Dict[str, Any], styles) -> List:
+    def _create_technical_pdf_content(self, data: dict[str, Any], styles) -> list:
         """Create technical PDF content."""
         content = []
 
@@ -926,7 +920,7 @@ class ReportGenerator:
 
         return content
 
-    def _create_compliance_pdf_content(self, data: Dict[str, Any], styles) -> List:
+    def _create_compliance_pdf_content(self, data: dict[str, Any], styles) -> list:
         """Create compliance PDF content."""
         content = []
 
@@ -1088,7 +1082,7 @@ class ReportGenerator:
             for col_idx, value in enumerate(row_data, 1):
                 ws_metrics.cell(row=row_idx, column=col_idx, value=value)
 
-    def _create_technical_excel_sheets(self, workbook, data: Dict[str, Any]):
+    def _create_technical_excel_sheets(self, workbook, data: dict[str, Any]):
         """Create technical Excel sheets."""
         # Threat trends sheet
         ws_threats = workbook.create_sheet("Threat Trends")
@@ -1104,7 +1098,7 @@ class ReportGenerator:
             ws_threats.cell(row=row_idx, column=3, value=f"{trend.growth_rate:.1f}%")
             ws_threats.cell(row=row_idx, column=4, value=', '.join(trend.peak_times))
 
-    def _create_compliance_excel_sheets(self, workbook, data: Dict[str, Any]):
+    def _create_compliance_excel_sheets(self, workbook, data: dict[str, Any]):
         """Create compliance Excel sheets."""
         compliance = data.get('compliance')
         if not compliance:
@@ -1157,7 +1151,7 @@ class ReportGenerator:
 
         return output_path
 
-    def _dataclass_to_dict(self, obj) -> Dict[str, Any]:
+    def _dataclass_to_dict(self, obj) -> dict[str, Any]:
         """Convert dataclass to dictionary."""
         if hasattr(obj, '__dict__'):
             result = {}
@@ -1226,7 +1220,7 @@ class ReportScheduler:
                 self.logger.error(f"Error in scheduler loop: {e}")
                 await asyncio.sleep(60)
 
-    async def _generate_scheduled_report(self, schedule: Dict[str, Any]):
+    async def _generate_scheduled_report(self, schedule: dict[str, Any]):
         """Generate a scheduled report."""
         try:
             template = schedule['template']
@@ -1270,7 +1264,7 @@ class AdvancedReporting:
             self.logger.error(f"Error initializing reporting system: {e}")
             return False
 
-    async def generate_comprehensive_report(self) -> Dict[str, str]:
+    async def generate_comprehensive_report(self) -> dict[str, str]:
         """Generate comprehensive security report."""
         try:
             # Collect current metrics
@@ -1342,7 +1336,7 @@ class AdvancedReporting:
 
         return metrics
 
-    def get_report_status(self) -> Dict[str, Any]:
+    def get_report_status(self) -> dict[str, Any]:
         """Get current reporting system status."""
         return {
             'scheduled_reports': len(self.scheduler.scheduled_reports),

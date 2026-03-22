@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""
-Compliance Frameworks Module
+"""Compliance Frameworks Module.
 
 Provides comprehensive compliance assessment, gap analysis, and remediation tracking
 for 6 major security frameworks:
@@ -1154,8 +1153,7 @@ class ComplianceFrameworkEngine:
         framework: FrameworkType,
         current_implementation: dict[str, ControlStatus] | None = None,
     ) -> FrameworkAssessment:
-        """
-        Assess compliance with a framework.
+        """Assess compliance with a framework.
 
         Args:
             framework: Framework to assess
@@ -1360,7 +1358,7 @@ class ComplianceFrameworkEngine:
 
         # Assign target dates (critical first, then staggered)
         base_date = datetime.utcnow()
-        for i, gap in enumerate(gaps):
+        for _i, gap in enumerate(gaps):
             # Critical: 2 weeks, High: 4 weeks, Medium: 8 weeks, Low: 12 weeks
             weeks = {
                 RiskLevel.CRITICAL: 2,

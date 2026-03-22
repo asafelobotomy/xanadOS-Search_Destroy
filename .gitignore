@@ -136,6 +136,7 @@ id_ed25519
 ssh_config
 *_secret*
 *secret*
+!.github/hooks/scripts/scan-secrets.sh
 *.asc
 config/secrets.json
 config/api_keys.json

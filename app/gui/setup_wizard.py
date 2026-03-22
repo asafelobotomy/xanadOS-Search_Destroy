@@ -10,12 +10,15 @@ Notes:
 
 # pylint: disable=too-many-lines  # UI-heavy module; tracked for later decomposition
 
+import logging
 import os
 import subprocess
 import sys
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
+
+logger = logging.getLogger(__name__)
 
 from PyQt6.QtCore import (
     Qt,
@@ -1788,11 +1791,10 @@ class InstallationDialog(QDialog):  # pylint: disable=too-many-instance-attribut
                 self.update_output(
                     "✅ ClamAV daemon started successfully! Scanning will be 3-10x faster."
                 )
-        else:
-            if daemon_name == "clamav":
-                self.update_output(
-                    "⚠️ ClamAV daemon startup failed. Will use regular scanning."
-                )
+        elif daemon_name == "clamav":
+            self.update_output(
+                "⚠️ ClamAV daemon startup failed. Will use regular scanning."
+            )
 
         self.current_daemon_index += 1
 

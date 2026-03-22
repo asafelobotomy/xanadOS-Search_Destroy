@@ -28,18 +28,17 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
-import subprocess
 import time
-from dataclasses import dataclass, field, asdict
+from collections.abc import Callable
+from dataclasses import asdict, dataclass, field
 from datetime import datetime
 from enum import Enum
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any
 
 import yaml
 
 from app.utils.config import DATA_DIR
-
 
 logger = logging.getLogger(__name__)
 
@@ -194,7 +193,7 @@ class Workflow:
     @classmethod
     def from_yaml(cls, filepath: Path) -> Workflow:
         """Load workflow from YAML template."""
-        with open(filepath, "r") as f:
+        with open(filepath) as f:
             data = yaml.safe_load(f)
 
         steps = [
@@ -277,7 +276,7 @@ class WorkflowEngine:
     def _load_history(self) -> None:
         """Load execution history from disk."""
         if EXECUTION_LOG.exists():
-            with open(EXECUTION_LOG, "r") as f:
+            with open(EXECUTION_LOG) as f:
                 data = json.load(f)
                 self.execution_history = [
                     WorkflowResult(**r) for r in data.get("executions", [])
@@ -449,10 +448,10 @@ class WorkflowEngine:
             step.end_time = time.time()
             return result
 
-        except asyncio.TimeoutError:
+        except TimeoutError:
             step.end_time = time.time()
             raise TimeoutError(f"Step timed out after {step.timeout}s")
-        except Exception as e:
+        except Exception:
             step.end_time = time.time()
             raise
 
@@ -465,7 +464,9 @@ class WorkflowEngine:
             )
 
             evaluator = SafeExpressionEvaluator()
-            return evaluator.evaluate(condition, context)
+            # Make "context" available as a variable in expressions
+            eval_vars = {"context": context, **context}
+            return evaluator.evaluate(condition, eval_vars)
         except Exception as e:
             logger.error(f"Condition evaluation failed: {e}")
             return False

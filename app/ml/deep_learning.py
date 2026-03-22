@@ -18,63 +18,48 @@ Features:
 """
 
 import asyncio
-import json
 import logging
-import numpy as np
-import pickle
 import time
-from collections import deque, defaultdict
+import warnings
+from collections import defaultdict, deque
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any
-import warnings
+
+import numpy as np
 
 # Suppress FutureWarnings from third-party ML libraries (transformers, torch, sklearn)
 # These are library implementation details outside our control and don't affect functionality
 # Primarily from: transformers (Hugging Face), torch (PyTorch), sklearn version changes
 warnings.filterwarnings("ignore", category=FutureWarning)
 
+
+import magic
+import nltk
+import spacy
 import torch
-import torch.nn as nn
 import torch.nn.functional as F
-import torch.optim as optim
-from torch.utils.data import DataLoader, Dataset, TensorDataset
+from PIL import Image
+from torch import nn, optim
+from torchvision import transforms
+from torchvision.models import resnet50
 from transformers import (
-    AutoTokenizer,
-    AutoModel,
-    BertTokenizer,
     BertModel,
-    GPT2Tokenizer,
-    GPT2Model,
+    BertTokenizer,
     pipeline,
 )
-from sklearn.preprocessing import StandardScaler, LabelEncoder
-from sklearn.model_selection import train_test_split
-from sklearn.metrics import classification_report, confusion_matrix
-import cv2
-import torchvision.transforms as transforms
-from torchvision.models import resnet50, efficientnet_b0
-import nltk
-from nltk.corpus import stopwords
-from nltk.tokenize import word_tokenize, sent_tokenize
-import spacy
-from PIL import Image
-import magic
-import hashlib
-import joblib
 
-from app.core.ml_threat_detector import MLThreatDetector
 from app.utils.config import get_config
-
 
 # Download required NLTK data
 try:
     nltk.download("punkt", quiet=True)
     nltk.download("stopwords", quiet=True)
     nltk.download("wordnet", quiet=True)
-except:
-    pass
+except Exception:
+    logging.getLogger(__name__).debug(
+        "NLTK data download failed; continuing without it"
+    )
 
 
 @dataclass
@@ -110,10 +95,10 @@ class TrainingMetrics:
 class ModelPrediction:
     """Model prediction result."""
 
-    prediction: Union[int, float, List[float]]
+    prediction: int | float | list[float]
     confidence: float
-    probabilities: Optional[List[float]] = None
-    features: Optional[Dict[str, Any]] = None
+    probabilities: list[float] | None = None
+    features: dict[str, Any] | None = None
     model_version: str = "1.0"
     inference_time: float = 0.0
 
@@ -129,7 +114,7 @@ class ThreatLSTM(nn.Module):
         num_classes: int = 2,
         dropout: float = 0.3,
     ):
-        super(ThreatLSTM, self).__init__()
+        super().__init__()
 
         self.hidden_size = hidden_size
         self.num_layers = num_layers
@@ -178,7 +163,7 @@ class ThreatCNN(nn.Module):
     """CNN for file content and binary analysis."""
 
     def __init__(self, input_channels: int = 1, num_classes: int = 2):
-        super(ThreatCNN, self).__init__()
+        super().__init__()
 
         # Convolutional layers
         self.conv1 = nn.Conv2d(input_channels, 32, kernel_size=3, padding=1)
@@ -237,7 +222,7 @@ class ThreatTransformer(nn.Module):
         num_classes: int = 2,
         max_seq_length: int = 512,
     ):
-        super(ThreatTransformer, self).__init__()
+        super().__init__()
 
         self.embed_dim = embed_dim
         self.max_seq_length = max_seq_length
@@ -537,7 +522,7 @@ class NLPThreatAnalyzer:
             self.logger.error(f"Error getting BERT embeddings: {e}")
             return []
 
-    async def analyze_log_batch(self, log_entries: list[str]) -> list[Dict[str, Any]]:
+    async def analyze_log_batch(self, log_entries: list[str]) -> list[dict[str, Any]]:
         """Analyze batch of log entries."""
         tasks = [self.analyze_log_entry(entry) for entry in log_entries]
         results = await asyncio.gather(*tasks, return_exceptions=True)
@@ -772,7 +757,7 @@ class BehavioralAnalyzer:
             return False
 
     async def analyze_behavior_sequence(
-        self, events: list[Dict[str, Any]]
+        self, events: list[dict[str, Any]]
     ) -> dict[str, Any]:
         """Analyze sequence of behavioral events."""
         try:
@@ -796,7 +781,7 @@ class BehavioralAnalyzer:
             # Get prediction
             if self.behavioral_model:
                 with torch.no_grad():
-                    logits, probabilities = self.behavioral_model(features_tensor)
+                    _logits, probabilities = self.behavioral_model(features_tensor)
                     threat_prob = probabilities[0][
                         1
                     ].item()  # Probability of threat class
@@ -818,8 +803,8 @@ class BehavioralAnalyzer:
             return {"threat_score": 0.0, "error": str(e)}
 
     def _extract_behavioral_features(
-        self, events: list[Dict[str, Any]]
-    ) -> list[List[float]]:
+        self, events: list[dict[str, Any]]
+    ) -> list[list[float]]:
         """Extract behavioral features from events."""
         features = []
 
@@ -879,7 +864,7 @@ class BehavioralAnalyzer:
 
         return features
 
-    def _identify_patterns(self, events: list[Dict[str, Any]]) -> list[str]:
+    def _identify_patterns(self, events: list[dict[str, Any]]) -> list[str]:
         """Identify behavioral patterns in events."""
         patterns = []
 
@@ -967,7 +952,7 @@ class TransferLearningManager:
     async def fine_tune_model(
         self,
         base_model_name: str,
-        training_data: list[Tuple[torch.Tensor, torch.Tensor]],
+        training_data: list[tuple[torch.Tensor, torch.Tensor]],
         num_epochs: int = 10,
     ) -> str:
         """Fine-tune pretrained model on new data."""
@@ -1012,7 +997,9 @@ class TransferLearningManager:
                     num_batches += 1
 
                 avg_loss = total_loss / num_batches if num_batches > 0 else 0
-                self.logger.info(f"Epoch {epoch+1}/{num_epochs}, Loss: {avg_loss:.4f}")
+                self.logger.info(
+                    f"Epoch {epoch + 1}/{num_epochs}, Loss: {avg_loss:.4f}"
+                )
 
             # Save fine-tuned model
             model_id = f"{base_model_name}_finetuned_{int(time.time())}"
@@ -1253,10 +1240,10 @@ class DeepLearningThreatDetector:
 
             # Behavioral analysis for event sequences
             if "events" in target_data:
-                results["behavioral_analysis"] = (
-                    await self.behavioral_analyzer.analyze_behavior_sequence(
-                        target_data["events"]
-                    )
+                results[
+                    "behavioral_analysis"
+                ] = await self.behavioral_analyzer.analyze_behavior_sequence(
+                    target_data["events"]
                 )
 
             # Ensemble prediction if models available

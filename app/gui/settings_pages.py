@@ -23,9 +23,6 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
-from app.gui import APP_VERSION
-from app.gui.theme_manager import get_theme_manager
-
 # Import from unified RKHunter integration
 from app.core.unified_rkhunter_integration import (
     OptimizationReport,
@@ -34,6 +31,8 @@ from app.core.unified_rkhunter_integration import (
     RKHunterStatus,
     UnifiedRKHunterIntegration,
 )
+from app.gui import APP_VERSION
+from app.gui.theme_manager import get_theme_manager
 
 logger = logging.getLogger(__name__)
 
@@ -101,8 +100,9 @@ class RKHunterOptimizationWorker(QThread):
                 self.optimization_complete.emit(report)
             else:
                 # Create a simple report for update operations
-                from app.core.unified_rkhunter_integration import OptimizationReport
                 from datetime import datetime
+
+                from app.core.unified_rkhunter_integration import OptimizationReport
 
                 report = OptimizationReport(
                     timestamp=datetime.now(),

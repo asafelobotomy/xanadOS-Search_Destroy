@@ -27,19 +27,17 @@ from collections import OrderedDict
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from enum import Enum
-from pathlib import Path
 from typing import Any, TypeVar
 
 import psutil
 
 try:
-    from PyQt6.QtCore import QTimer
+    from PyQt6.QtCore import QTimer  # noqa: F401
 
     QT_AVAILABLE = True
 except ImportError:
     QT_AVAILABLE = False
 
-from app.utils.config import get_config
 
 T = TypeVar("T")
 
@@ -266,7 +264,7 @@ class IntelligentCache:
 
     def _cleanup_expired(self):
         """Remove expired entries from cache."""
-        current_time = time.time()
+        time.time()
         expired_keys = []
 
         with self._lock:

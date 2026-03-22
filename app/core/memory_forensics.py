@@ -16,7 +16,6 @@ Features:
 """
 
 import asyncio
-import io
 import json
 import logging
 import os
@@ -27,7 +26,7 @@ import time
 from dataclasses import dataclass, field
 from enum import Enum
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Set, Tuple, Union
+from typing import Any
 
 from app.core.unified_memory_management import get_memory_manager, memory_efficient
 from app.utils.config import get_config
@@ -56,10 +55,10 @@ class MemoryArtifact:
     severity: str  # LOW, MEDIUM, HIGH, CRITICAL
     confidence: float
     location: str
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
     timestamp: float = field(default_factory=time.time)
-    related_processes: List[str] = field(default_factory=list)
-    iocs: List[str] = field(default_factory=list)  # Indicators of Compromise
+    related_processes: list[str] = field(default_factory=list)
+    iocs: list[str] = field(default_factory=list)  # Indicators of Compromise
 
 
 @dataclass
@@ -70,16 +69,16 @@ class ProcessInfo:
     ppid: int
     name: str
     command_line: str
-    create_time: Optional[str]
-    exit_time: Optional[str]
+    create_time: str | None
+    exit_time: str | None
     image_path: str
     threads: int
     handles: int
     virtual_size: int
     working_set: int
-    suspicious_indicators: List[str] = field(default_factory=list)
+    suspicious_indicators: list[str] = field(default_factory=list)
     injected_code: bool = False
-    network_connections: List[Dict[str, Any]] = field(default_factory=list)
+    network_connections: list[dict[str, Any]] = field(default_factory=list)
 
 
 @dataclass
@@ -94,9 +93,9 @@ class NetworkConnection:
     state: str
     pid: int
     process_name: str
-    creation_time: Optional[str] = None
+    creation_time: str | None = None
     suspicious: bool = False
-    threat_indicators: List[str] = field(default_factory=list)
+    threat_indicators: list[str] = field(default_factory=list)
 
 
 @dataclass
@@ -108,18 +107,18 @@ class MemoryForensicsReport:
     analysis_end: float
     volatility_version: str
     profile: str
-    artifacts: List[MemoryArtifact] = field(default_factory=list)
-    processes: List[ProcessInfo] = field(default_factory=list)
-    network_connections: List[NetworkConnection] = field(default_factory=list)
+    artifacts: list[MemoryArtifact] = field(default_factory=list)
+    processes: list[ProcessInfo] = field(default_factory=list)
+    network_connections: list[NetworkConnection] = field(default_factory=list)
     threat_score: float = 0.0
-    recommendations: List[str] = field(default_factory=list)
-    timeline: List[Dict[str, Any]] = field(default_factory=list)
+    recommendations: list[str] = field(default_factory=list)
+    timeline: list[dict[str, Any]] = field(default_factory=list)
 
 
 class VolatilityWrapper:
     """Wrapper for Volatility 3 command-line interface."""
 
-    def __init__(self, volatility_path: Optional[str] = None):
+    def __init__(self, volatility_path: str | None = None):
         self.logger = logging.getLogger(__name__)
         self.volatility_path = volatility_path or self._find_volatility()
         self.temp_dir = Path(tempfile.gettempdir()) / "xanados_volatility"
@@ -128,7 +127,7 @@ class VolatilityWrapper:
         if not self.volatility_path:
             raise RuntimeError("Volatility not found. Please install Volatility 3.")
 
-    def _find_volatility(self) -> Optional[str]:
+    def _find_volatility(self) -> str | None:
         """Find Volatility installation."""
         possible_paths = [
             "/usr/local/bin/vol.py",
@@ -151,7 +150,7 @@ class VolatilityWrapper:
         return None
 
     async def run_plugin(self, dump_file: str, plugin: str,
-                        output_format: str = "json", **kwargs) -> Dict[str, Any]:
+                        output_format: str = "json", **kwargs) -> dict[str, Any]:
         """Run a Volatility plugin asynchronously."""
         cmd = [
             self.volatility_path,
@@ -199,28 +198,28 @@ class VolatilityWrapper:
             self.logger.error(f"Error running Volatility plugin {plugin}: {e}")
             return {"error": str(e), "success": False}
 
-    async def get_image_info(self, dump_file: str) -> Dict[str, Any]:
+    async def get_image_info(self, dump_file: str) -> dict[str, Any]:
         """Get basic information about the memory dump."""
         return await self.run_plugin(dump_file, "windows.info")
 
-    async def list_processes(self, dump_file: str) -> Dict[str, Any]:
+    async def list_processes(self, dump_file: str) -> dict[str, Any]:
         """List all processes in the memory dump."""
         return await self.run_plugin(dump_file, "windows.pslist")
 
-    async def scan_processes(self, dump_file: str) -> Dict[str, Any]:
+    async def scan_processes(self, dump_file: str) -> dict[str, Any]:
         """Scan for hidden/unlinked processes."""
         return await self.run_plugin(dump_file, "windows.psscan")
 
-    async def list_network_connections(self, dump_file: str) -> Dict[str, Any]:
+    async def list_network_connections(self, dump_file: str) -> dict[str, Any]:
         """List network connections."""
         return await self.run_plugin(dump_file, "windows.netstat")
 
-    async def scan_for_malware(self, dump_file: str) -> Dict[str, Any]:
+    async def scan_for_malware(self, dump_file: str) -> dict[str, Any]:
         """Scan for malware indicators."""
         return await self.run_plugin(dump_file, "windows.malfind")
 
     async def dump_process_memory(self, dump_file: str, pid: int,
-                                 output_dir: str) -> Dict[str, Any]:
+                                 output_dir: str) -> dict[str, Any]:
         """Dump memory of a specific process."""
         return await self.run_plugin(
             dump_file,
@@ -237,7 +236,7 @@ class ThreatPatternMatcher:
         self.logger = logging.getLogger(__name__)
         self.patterns = self._load_threat_patterns()
 
-    def _load_threat_patterns(self) -> Dict[str, Any]:
+    def _load_threat_patterns(self) -> dict[str, Any]:
         """Load threat detection patterns."""
         return {
             "suspicious_processes": [
@@ -268,7 +267,7 @@ class ThreatPatternMatcher:
             }
         }
 
-    def analyze_process(self, process: ProcessInfo) -> List[str]:
+    def analyze_process(self, process: ProcessInfo) -> list[str]:
         """Analyze process for suspicious indicators."""
         indicators = []
 
@@ -294,7 +293,7 @@ class ThreatPatternMatcher:
 
         return indicators
 
-    def analyze_network_connection(self, conn: NetworkConnection) -> List[str]:
+    def analyze_network_connection(self, conn: NetworkConnection) -> list[str]:
         """Analyze network connection for threats."""
         indicators = []
 
@@ -342,8 +341,8 @@ class MemoryForensicsEngine:
 
     @memory_efficient(aggressive=True)
     async def analyze_memory_dump(self, dump_file: str,
-                                 analysis_types: Optional[List[MemoryAnalysisType]] = None,
-                                 progress_callback: Optional[callable] = None) -> MemoryForensicsReport:
+                                 analysis_types: list[MemoryAnalysisType] | None = None,
+                                 progress_callback: callable | None = None) -> MemoryForensicsReport:
         """Perform comprehensive memory dump analysis."""
         if not os.path.exists(dump_file):
             raise FileNotFoundError(f"Memory dump file not found: {dump_file}")
@@ -433,7 +432,7 @@ class MemoryForensicsEngine:
                 MemoryArtifact(
                     artifact_type="ERROR",
                     name="Analysis Error",
-                    description=f"Analysis failed: {str(e)}",
+                    description=f"Analysis failed: {e!s}",
                     severity="HIGH",
                     confidence=1.0,
                     location="Analysis Engine"
@@ -480,7 +479,7 @@ class MemoryForensicsEngine:
                 MemoryArtifact(
                     artifact_type="ERROR",
                     name=f"{analysis_type.value} Error",
-                    description=f"Analysis failed: {str(e)}",
+                    description=f"Analysis failed: {e!s}",
                     severity="MEDIUM",
                     confidence=1.0,
                     location="Analysis Engine"
@@ -603,7 +602,7 @@ class MemoryForensicsEngine:
                     report.artifacts.append(
                         MemoryArtifact(
                             artifact_type="SUSPICIOUS_NETWORK",
-                            name=f"Network Connection",
+                            name="Network Connection",
                             description=f"Suspicious network activity: {', '.join(indicators)}",
                             severity="MEDIUM",
                             confidence=0.7,
@@ -634,7 +633,7 @@ class MemoryForensicsEngine:
                             MemoryArtifact(
                                 artifact_type="ROOTKIT_INDICATOR",
                                 name="SSDT Hook",
-                                description=f"System Service Descriptor Table hook detected",
+                                description="System Service Descriptor Table hook detected",
                                 severity="HIGH",
                                 confidence=0.95,
                                 location=f"Table: {hook.get('Table')}, Index: {hook.get('Index')}",
@@ -704,7 +703,7 @@ class MemoryForensicsEngine:
                 report.artifacts.append(
                     MemoryArtifact(
                         artifact_type="CRYPTO_ACTIVITY",
-                        name=f"Cryptocurrency Activity",
+                        name="Cryptocurrency Activity",
                         description=f"Cryptocurrency-related process detected: {process.name}",
                         severity="MEDIUM",
                         confidence=0.7,
@@ -780,7 +779,7 @@ class MemoryForensicsEngine:
 
         report.recommendations = recommendations
 
-    def get_active_analyses(self) -> Dict[str, Any]:
+    def get_active_analyses(self) -> dict[str, Any]:
         """Get information about active analyses."""
         with self.analysis_lock:
             return dict(self.active_analyses)

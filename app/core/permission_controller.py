@@ -29,7 +29,6 @@ from enum import Enum
 
 from .unified_security_framework import SecurityConfig, UnifiedSecurityManager
 
-
 # ================== PERMISSION ENUMERATIONS AND DATA STRUCTURES ==================
 
 

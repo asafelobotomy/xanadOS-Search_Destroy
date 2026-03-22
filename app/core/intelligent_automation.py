@@ -15,27 +15,21 @@ Features:
 """
 
 import asyncio
-import json
 import logging
 import time
 from collections import defaultdict, deque
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
+from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Set, Tuple, Union
+from typing import Any
 
 import numpy as np
-from sklearn.ensemble import RandomForestClassifier, IsolationForest
 from sklearn.cluster import DBSCAN
+from sklearn.ensemble import IsolationForest, RandomForestClassifier
 from sklearn.preprocessing import StandardScaler
-from sklearn.model_selection import train_test_split
-from sklearn.metrics import classification_report, accuracy_score
-import joblib
 
-from app.core.ml_threat_detector import MLThreatDetector
-from app.core.edr_engine import EDREngine, SecurityEvent
+from app.core.edr_engine import SecurityEvent
 from app.core.unified_memory_management import get_memory_manager
-from app.core.unified_security_engine import UnifiedSecurityEngine
 from app.utils.config import get_config
 
 
@@ -47,12 +41,12 @@ class SystemProfile:
     avg_memory_usage: float
     peak_cpu_usage: float
     peak_memory_usage: float
-    scan_patterns: Dict[str, float]  # Time of day -> scan frequency
-    file_access_patterns: Dict[str, int]  # File type -> access count
-    network_patterns: Dict[str, float]  # Hour -> network activity
-    process_patterns: List[str]  # Common process names
-    threat_history: List[Dict[str, Any]]
-    performance_bottlenecks: List[str]
+    scan_patterns: dict[str, float]  # Time of day -> scan frequency
+    file_access_patterns: dict[str, int]  # File type -> access count
+    network_patterns: dict[str, float]  # Hour -> network activity
+    process_patterns: list[str]  # Common process names
+    threat_history: list[dict[str, Any]]
+    performance_bottlenecks: list[str]
     timestamp: float = field(default_factory=time.time)
 
 
@@ -60,14 +54,14 @@ class SystemProfile:
 class ThreatLandscape:
     """Current threat environment assessment."""
 
-    active_threats: List[str]
-    threat_trends: Dict[str, float]  # Threat type -> trend score
-    attack_vectors: List[str]
+    active_threats: list[str]
+    threat_trends: dict[str, float]  # Threat type -> trend score
+    attack_vectors: list[str]
     risk_score: float
-    geographic_threats: Dict[str, float]  # Country -> threat level
-    industry_threats: List[str]
-    seasonal_patterns: Dict[str, float]
-    intelligence_sources: List[str]
+    geographic_threats: dict[str, float]  # Country -> threat level
+    industry_threats: list[str]
+    seasonal_patterns: dict[str, float]
+    intelligence_sources: list[str]
     confidence_level: float
     timestamp: float = field(default_factory=time.time)
 
@@ -76,14 +70,14 @@ class ThreatLandscape:
 class OptimalConfiguration:
     """Optimized security configuration."""
 
-    scan_intervals: Dict[str, int]  # Scan type -> interval in seconds
-    detection_sensitivity: Dict[str, float]  # Detector -> sensitivity
-    resource_allocation: Dict[str, float]  # Component -> resource %
-    alert_thresholds: Dict[str, float]  # Metric -> threshold
-    automation_rules: List[Dict[str, Any]]
-    performance_tuning: Dict[str, Any]
-    priority_settings: Dict[str, int]
-    exclusion_rules: List[str]
+    scan_intervals: dict[str, int]  # Scan type -> interval in seconds
+    detection_sensitivity: dict[str, float]  # Detector -> sensitivity
+    resource_allocation: dict[str, float]  # Component -> resource %
+    alert_thresholds: dict[str, float]  # Metric -> threshold
+    automation_rules: list[dict[str, Any]]
+    performance_tuning: dict[str, Any]
+    priority_settings: dict[str, int]
+    exclusion_rules: list[str]
     confidence_score: float
     generated_timestamp: float = field(default_factory=time.time)
 
@@ -95,13 +89,13 @@ class AutomationRule:
     rule_id: str
     name: str
     description: str
-    trigger_conditions: Dict[str, Any]
-    action_sequence: List[Dict[str, Any]]
+    trigger_conditions: dict[str, Any]
+    action_sequence: list[dict[str, Any]]
     priority: int
     enabled: bool = True
     confidence_threshold: float = 0.8
     cooldown_period: int = 300  # seconds
-    last_triggered: Optional[float] = None
+    last_triggered: float | None = None
     trigger_count: int = 0
     success_rate: float = 0.0
     created_timestamp: float = field(default_factory=time.time)
@@ -117,9 +111,9 @@ class PredictiveThreat:
     probability: float
     severity_estimate: str
     attack_vector: str
-    target_assets: List[str]
-    indicators: List[str]
-    mitigation_strategies: List[str]
+    target_assets: list[str]
+    indicators: list[str]
+    mitigation_strategies: list[str]
     confidence: float
     model_version: str
     generated_timestamp: float = field(default_factory=time.time)
@@ -174,7 +168,7 @@ class SecurityLearningEngine:
             self.logger.error(f"Error initializing learning models: {e}")
 
     async def analyze_system_behavior(
-        self, historical_data: List[Dict[str, Any]]
+        self, historical_data: list[dict[str, Any]]
     ) -> SystemProfile:
         """Analyze system behavior patterns."""
         try:
@@ -184,7 +178,7 @@ class SecurityLearningEngine:
             # Extract features from historical data
             cpu_usage = [d.get("cpu_usage", 0) for d in historical_data]
             memory_usage = [d.get("memory_usage", 0) for d in historical_data]
-            scan_times = [d.get("scan_time", 0) for d in historical_data]
+            [d.get("scan_time", 0) for d in historical_data]
 
             # Calculate patterns
             avg_cpu = np.mean(cpu_usage) if cpu_usage else 0
@@ -230,8 +224,8 @@ class SecurityLearningEngine:
             return self._default_system_profile()
 
     def _analyze_temporal_patterns(
-        self, data: List[Dict[str, Any]], activity_key: str
-    ) -> Dict[str, float]:
+        self, data: list[dict[str, Any]], activity_key: str
+    ) -> dict[str, float]:
         """Analyze temporal patterns in activity data."""
         hourly_activity = defaultdict(list)
 
@@ -251,8 +245,8 @@ class SecurityLearningEngine:
         return patterns
 
     def _analyze_file_access_patterns(
-        self, data: List[Dict[str, Any]]
-    ) -> Dict[str, int]:
+        self, data: list[dict[str, Any]]
+    ) -> dict[str, int]:
         """Analyze file access patterns."""
         file_types = defaultdict(int)
 
@@ -265,7 +259,7 @@ class SecurityLearningEngine:
 
         return dict(file_types)
 
-    def _analyze_network_patterns(self, data: List[Dict[str, Any]]) -> Dict[str, float]:
+    def _analyze_network_patterns(self, data: list[dict[str, Any]]) -> dict[str, float]:
         """Analyze network activity patterns."""
         hourly_network = defaultdict(list)
 
@@ -283,7 +277,7 @@ class SecurityLearningEngine:
 
         return patterns
 
-    def _extract_process_patterns(self, data: List[Dict[str, Any]]) -> List[str]:
+    def _extract_process_patterns(self, data: list[dict[str, Any]]) -> list[str]:
         """Extract common process patterns."""
         process_counts = defaultdict(int)
 
@@ -301,8 +295,8 @@ class SecurityLearningEngine:
         ]
 
     def _extract_threat_history(
-        self, data: List[Dict[str, Any]]
-    ) -> List[Dict[str, Any]]:
+        self, data: list[dict[str, Any]]
+    ) -> list[dict[str, Any]]:
         """Extract threat history from data."""
         threats = []
 
@@ -321,7 +315,7 @@ class SecurityLearningEngine:
 
         return threats[-100:]  # Keep last 100 threats
 
-    def _identify_bottlenecks(self, data: List[Dict[str, Any]]) -> List[str]:
+    def _identify_bottlenecks(self, data: list[dict[str, Any]]) -> list[str]:
         """Identify performance bottlenecks."""
         bottlenecks = []
 
@@ -411,7 +405,7 @@ class SecurityLearningEngine:
 
     async def predict_threats(
         self, system_profile: SystemProfile, threat_landscape: ThreatLandscape
-    ) -> List[PredictiveThreat]:
+    ) -> list[PredictiveThreat]:
         """Predict potential threats based on analysis."""
         try:
             predictions = []
@@ -555,7 +549,7 @@ class ConfigurationOptimizer:
 
     def _optimize_scan_intervals(
         self, system_profile: SystemProfile, threat_landscape: ThreatLandscape
-    ) -> Dict[str, int]:
+    ) -> dict[str, int]:
         """Optimize scan intervals based on risk and usage patterns."""
         base_intervals = {
             "full_system_scan": 86400,  # 24 hours
@@ -587,7 +581,7 @@ class ConfigurationOptimizer:
 
     def _optimize_detection_sensitivity(
         self, threat_landscape: ThreatLandscape
-    ) -> Dict[str, float]:
+    ) -> dict[str, float]:
         """Optimize detection sensitivity based on threat landscape."""
         base_sensitivity = {
             "malware_detection": 0.7,
@@ -608,7 +602,7 @@ class ConfigurationOptimizer:
 
     def _optimize_resource_allocation(
         self, system_profile: SystemProfile
-    ) -> Dict[str, float]:
+    ) -> dict[str, float]:
         """Optimize resource allocation based on system capacity."""
         base_allocation = {
             "scanning_engine": 0.3,
@@ -636,7 +630,7 @@ class ConfigurationOptimizer:
 
     def _optimize_alert_thresholds(
         self, system_profile: SystemProfile
-    ) -> Dict[str, float]:
+    ) -> dict[str, float]:
         """Optimize alert thresholds based on system behavior."""
         return {
             "cpu_usage_threshold": min(system_profile.peak_cpu_usage * 0.9, 90.0),
@@ -648,7 +642,7 @@ class ConfigurationOptimizer:
 
     def _generate_automation_rules(
         self, threat_landscape: ThreatLandscape
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """Generate automation rules based on threat landscape."""
         rules = []
 
@@ -682,7 +676,7 @@ class ConfigurationOptimizer:
 
         return rules
 
-    def _optimize_performance(self, system_profile: SystemProfile) -> Dict[str, Any]:
+    def _optimize_performance(self, system_profile: SystemProfile) -> dict[str, Any]:
         """Optimize performance settings."""
         settings = {
             "thread_pool_size": 4,
@@ -702,7 +696,7 @@ class ConfigurationOptimizer:
 
         return settings
 
-    def _optimize_priorities(self, threat_landscape: ThreatLandscape) -> Dict[str, int]:
+    def _optimize_priorities(self, threat_landscape: ThreatLandscape) -> dict[str, int]:
         """Optimize scanning priorities."""
         priorities = {
             "executable_files": 1,
@@ -718,7 +712,7 @@ class ConfigurationOptimizer:
 
         return priorities
 
-    def _generate_exclusion_rules(self, system_profile: SystemProfile) -> List[str]:
+    def _generate_exclusion_rules(self, system_profile: SystemProfile) -> list[str]:
         """Generate exclusion rules based on system patterns."""
         exclusions = ["/tmp/*", "/var/log/*", "*.log", "/proc/*", "/sys/*"]
 
@@ -798,7 +792,7 @@ class AutomationRuleEngine:
         self.active_rules = [r for r in self.active_rules if r.rule_id != rule_id]
         self.logger.info(f"Removed automation rule: {rule_id}")
 
-    async def evaluate_triggers(self, event: SecurityEvent) -> List[AutomationRule]:
+    async def evaluate_triggers(self, event: SecurityEvent) -> list[AutomationRule]:
         """Evaluate which rules should be triggered by an event."""
         triggered_rules = []
 
@@ -895,7 +889,7 @@ class AutomationRuleEngine:
         return True
 
     async def _execute_action(
-        self, action: Dict[str, Any], event: SecurityEvent
+        self, action: dict[str, Any], event: SecurityEvent
     ) -> bool:
         """Execute a specific action."""
         try:
@@ -921,7 +915,7 @@ class AutomationRuleEngine:
             self.logger.error(f"Error executing action {action}: {e}")
             return False
 
-    async def _increase_scan_frequency(self, action: Dict[str, Any]) -> bool:
+    async def _increase_scan_frequency(self, action: dict[str, Any]) -> bool:
         """Increase scan frequency."""
         multiplier = action.get("multiplier", 2)
         self.logger.info(f"Increasing scan frequency by {multiplier}x")
@@ -934,7 +928,7 @@ class AutomationRuleEngine:
         # Implementation would activate additional monitoring
         return True
 
-    async def _send_alert(self, action: Dict[str, Any], event: SecurityEvent) -> bool:
+    async def _send_alert(self, action: dict[str, Any], event: SecurityEvent) -> bool:
         """Send alert notification."""
         priority = action.get("priority", "MEDIUM")
         self.logger.warning(f"SECURITY ALERT [{priority}]: {event.description}")
@@ -1085,7 +1079,7 @@ class IntelligentAutomation:
                 self.logger.error(f"Error in optimization loop: {e}")
                 await asyncio.sleep(60)  # Wait 1 minute before retrying
 
-    async def _collect_historical_data(self) -> List[Dict[str, Any]]:
+    async def _collect_historical_data(self) -> list[dict[str, Any]]:
         """Collect historical system and security data."""
         # In a real implementation, this would collect data from:
         # - System performance logs
@@ -1160,7 +1154,7 @@ class IntelligentAutomation:
 
         self.automation_engine.add_rule(resource_rule)
 
-    async def _setup_predictive_rules(self, predictions: List[PredictiveThreat]):
+    async def _setup_predictive_rules(self, predictions: list[PredictiveThreat]):
         """Setup automation rules based on threat predictions."""
         for prediction in predictions:
             if prediction.probability > 0.8:
@@ -1183,7 +1177,7 @@ class IntelligentAutomation:
 
                 self.automation_engine.add_rule(rule)
 
-    def get_system_status(self) -> Dict[str, Any]:
+    def get_system_status(self) -> dict[str, Any]:
         """Get current automation system status."""
         return {
             "last_optimization": self.last_optimization,

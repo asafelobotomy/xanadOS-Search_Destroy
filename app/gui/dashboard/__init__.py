@@ -8,26 +8,26 @@ customizable dashboard layouts.
 Phase 2, Task 2.1: Real-Time Security Dashboard
 """
 
-from .threat_visualization import ThreatVisualizationWidget
-from .performance_metrics import PerformanceMetricsWidget
-from .layout_manager import CustomizableLayoutManager, WidgetConfig, LayoutConfig
 from .event_stream import (
-    SecurityEventStreamWidget,
-    SecurityEventLog,
-    SecurityEvent,
-    EventType,
     EventSeverity,
+    EventType,
+    SecurityEvent,
+    SecurityEventLog,
+    SecurityEventStreamWidget,
 )
+from .layout_manager import CustomizableLayoutManager, LayoutConfig, WidgetConfig
+from .performance_metrics import PerformanceMetricsWidget
+from .threat_visualization import ThreatVisualizationWidget
 
 __all__ = [
-    "ThreatVisualizationWidget",
-    "PerformanceMetricsWidget",
     "CustomizableLayoutManager",
-    "WidgetConfig",
-    "LayoutConfig",
-    "SecurityEventStreamWidget",
-    "SecurityEventLog",
-    "SecurityEvent",
-    "EventType",
     "EventSeverity",
+    "EventType",
+    "LayoutConfig",
+    "PerformanceMetricsWidget",
+    "SecurityEvent",
+    "SecurityEventLog",
+    "SecurityEventStreamWidget",
+    "ThreatVisualizationWidget",
+    "WidgetConfig",
 ]

@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""
-Automated Report Scheduling System - Task 2.3.4
+"""Automated Report Scheduling System - Task 2.3.4.
 
 Implements scheduled report generation, email distribution, archiving with
 retention policies, and conditional triggers for comprehensive reporting automation.
@@ -30,19 +29,18 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
-import smtplib
 import time
-from dataclasses import dataclass, field, asdict
+from collections.abc import Callable
+from dataclasses import asdict, dataclass, field
 from datetime import datetime, timedelta
 from email.mime.application import MIMEApplication
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from enum import Enum
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any
 
 from app.utils.config import DATA_DIR, load_config
-
 
 logger = logging.getLogger(__name__)
 
@@ -624,7 +622,7 @@ class ReportScheduler:
         """Load schedules from persistent storage."""
         if SCHEDULER_DB_PATH.exists():
             try:
-                with open(SCHEDULER_DB_PATH, "r") as f:
+                with open(SCHEDULER_DB_PATH) as f:
                     data = json.load(f)
                     for schedule_data in data.get("schedules", []):
                         schedule = ReportSchedule.from_dict(schedule_data)
@@ -768,7 +766,7 @@ class ReportScheduler:
             report_data: dict[str, Any] = {}
 
             if schedule.report_type == ReportType.WEB_REPORT:
-                generator = WebReportGenerator()
+                WebReportGenerator()
                 # Simulate scan results for demo
                 report_data = {
                     "total_threats": 5,
@@ -777,7 +775,7 @@ class ReportScheduler:
                 }
 
             elif schedule.report_type == ReportType.TREND_ANALYSIS:
-                analyzer = TrendAnalysisEngine()
+                TrendAnalysisEngine()
                 # Simulate trend data
                 report_data = {
                     "total_threats": 8,
@@ -785,7 +783,7 @@ class ReportScheduler:
                 }
 
             elif schedule.report_type == ReportType.COMPLIANCE_AUDIT:
-                engine = ComplianceFrameworkEngine()
+                ComplianceFrameworkEngine()
                 # Simulate compliance data
                 report_data = {
                     "total_threats": 0,
@@ -844,7 +842,7 @@ class ReportScheduler:
             schedule.last_run = time.time()
 
             # Generate report
-            report_path, report_data = await self.generate_report(schedule)
+            report_path, _report_data = await self.generate_report(schedule)
 
             if report_path is None:
                 # Trigger condition not met
@@ -863,7 +861,7 @@ class ReportScheduler:
                 return True
 
             # Archive report
-            archived_path, archive_success = await self.archiver.archive_report(
+            archived_path, _archive_success = await self.archiver.archive_report(
                 report_path, schedule
             )
 

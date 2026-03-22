@@ -1,5 +1,4 @@
-"""
-Model signature verification for ML threat detection.
+"""Model signature verification for ML threat detection.
 
 Prevents model poisoning attacks by verifying cryptographic signatures
 before loading ML models. Uses SHA256 checksums and optional GPG signatures.
@@ -13,7 +12,6 @@ import hashlib
 import json
 import logging
 from pathlib import Path
-from typing import Optional
 
 logger = logging.getLogger(__name__)
 
@@ -25,8 +23,7 @@ class ModelSignatureVerificationError(Exception):
 
 
 class ModelSignatureVerifier:
-    """
-    Verifies cryptographic signatures of ML models before loading.
+    """Verifies cryptographic signatures of ML models before loading.
 
     Prevents model poisoning attacks by ensuring model integrity.
 
@@ -37,8 +34,7 @@ class ModelSignatureVerifier:
     """
 
     def __init__(self, trusted_hashes_file: Path | None = None):
-        """
-        Initialize model signature verifier.
+        """Initialize model signature verifier.
 
         Args:
             trusted_hashes_file: Path to JSON file containing trusted model hashes
@@ -61,8 +57,7 @@ class ModelSignatureVerifier:
             return {}
 
     def compute_model_hash(self, model_path: Path) -> str:
-        """
-        Compute SHA256 hash of model file.
+        """Compute SHA256 hash of model file.
 
         Args:
             model_path: Path to model file
@@ -85,8 +80,7 @@ class ModelSignatureVerifier:
         expected_hash: str | None = None,
         model_name: str | None = None,
     ) -> bool:
-        """
-        Verify model signature before loading.
+        """Verify model signature before loading.
 
         Args:
             model_path: Path to model file
@@ -129,8 +123,7 @@ class ModelSignatureVerifier:
         return True
 
     def add_trusted_model(self, model_name: str, model_path: Path) -> None:
-        """
-        Add a model to the trusted hashes registry.
+        """Add a model to the trusted hashes registry.
 
         Args:
             model_name: Identifier for the model
@@ -146,8 +139,7 @@ class ModelSignatureVerifier:
         logger.info(f"Added trusted model: {model_name} ({model_hash[:16]}...)")
 
     def verify_model_metadata(self, model_path: Path, metadata_path: Path) -> bool:
-        """
-        Verify model matches its metadata checksum.
+        """Verify model matches its metadata checksum.
 
         Args:
             model_path: Path to model file
@@ -183,8 +175,7 @@ class ModelSignatureVerifier:
 
 # Convenience function for quick verification
 def verify_model_file(model_path: Path, expected_hash: str) -> bool:
-    """
-    Quick model verification (convenience function).
+    """Quick model verification (convenience function).
 
     Args:
         model_path: Path to model file

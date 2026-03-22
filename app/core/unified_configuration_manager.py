@@ -34,17 +34,16 @@ import shutil
 import string
 import tempfile
 import time
-import weakref
 from collections.abc import Callable
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
-from pathlib import Path
-from typing import Any, Dict, List, Optional, Union, TypeVar, Generic
+from datetime import datetime
 from enum import Enum
 from logging.handlers import RotatingFileHandler
+from pathlib import Path
+from typing import Any, Optional
 
 try:
-    from pydantic import BaseModel, Field, ValidationError, validator
+    from pydantic import BaseModel, Field, ValidationError, validator  # noqa: F401
 
     HAS_PYDANTIC = True
 except ImportError:
@@ -178,7 +177,7 @@ class ScanConfiguration(BaseConfigurationModel):
     scan_timeout: int = 300
 
     # Safe files list (files marked as safe by user)
-    safe_files: List[str] = []
+    safe_files: list[str] = []
 
     # Performance settings
     scan_batch_size: int = 50
@@ -200,8 +199,8 @@ class UIConfiguration(BaseConfigurationModel):
 
     # Advanced UI settings
     auto_update_definitions: bool = True
-    window_geometry: Optional[str] = None
-    splitter_state: Optional[str] = None
+    window_geometry: str | None = None
+    splitter_state: str | None = None
 
 
 class SecurityConfiguration(BaseConfigurationModel):
@@ -229,8 +228,8 @@ class PerformanceConfiguration(BaseConfigurationModel):
     enable_memory_optimization: bool = True
 
     # CPU and threading
-    cpu_limit_percent: Optional[int] = None
-    thread_pool_size: Optional[int] = None
+    cpu_limit_percent: int | None = None
+    thread_pool_size: int | None = None
 
     # I/O optimization
     io_priority: str = "normal"
@@ -251,7 +250,7 @@ class APIConfiguration(BaseConfigurationModel):
     rate_limit_window: int = 60
 
     # Database
-    database_url: Optional[str] = None
+    database_url: str | None = None
     connection_pool_size: int = 10
 
     # Redis cache
@@ -280,7 +279,7 @@ class RKHunterConfiguration(BaseConfigurationModel):
     enabled: bool = False
     run_with_full_scan: bool = False
     auto_update: bool = True
-    config_file_path: Optional[str] = None
+    config_file_path: str | None = None
 
     # Categories
     check_applications: bool = False
@@ -304,8 +303,8 @@ class ComponentInfo:
     instance: object = None
     dependencies: list[str] = field(default_factory=list)
     resource_usage: dict[str, float] = field(default_factory=dict)
-    last_error: Optional[str] = None
-    initialization_time: Optional[float] = None
+    last_error: str | None = None
+    initialization_time: float | None = None
 
 
 class UnifiedConfigurationManager:
@@ -370,7 +369,7 @@ class UnifiedConfigurationManager:
 
         # Hot reload and change detection
         self.change_callbacks: dict[str, list[Callable]] = {}
-        self.file_watcher: Optional[Any] = None
+        self.file_watcher: Any | None = None
 
         # Migration tracking (from config_migration.py)
         self.migration_version = "2.0"
@@ -484,7 +483,7 @@ class UnifiedConfigurationManager:
         """Load configuration from file or create defaults"""
         try:
             if self.config_file.exists():
-                with open(self.config_file, "r", encoding="utf-8") as f:
+                with open(self.config_file, encoding="utf-8") as f:
                     config_data = json.load(f)
 
                 # Update configuration objects
@@ -827,7 +826,7 @@ class UnifiedConfigurationManager:
         }
 
     async def save_configuration(
-        self, config_data: Optional[Dict[str, Any]] = None
+        self, config_data: dict[str, Any] | None = None
     ) -> None:
         """Save configuration to file atomically"""
         if config_data is None:
@@ -912,7 +911,7 @@ class UnifiedConfigurationManager:
             self.logger.error(f"Failed to update setting {section}.{key}: {e}")
             return False
 
-    def update_multiple_settings(self, updates: dict[str, Dict[str, Any]]) -> bool:
+    def update_multiple_settings(self, updates: dict[str, dict[str, Any]]) -> bool:
         """Update multiple settings at once"""
         try:
             for section, settings in updates.items():
@@ -966,7 +965,7 @@ class UnifiedConfigurationManager:
 
         self.logger.debug(f"Registered component: {name}")
 
-    def get_component(self, name: str) -> Optional[Any]:
+    def get_component(self, name: str) -> Any | None:
         """Get a component instance"""
         return self.component_instances.get(name)
 
@@ -1205,6 +1204,21 @@ class UnifiedConfigurationManager:
         paths = self.config_cache.get("paths", {})
         return Path(paths.get("log_dir", str(self.data_dir / "logs")))
 
+    def _schedule_configuration_save(self) -> None:
+        """Persist the current configuration state.
+
+        This helper keeps synchronous call sites compatible whether an event loop
+        is already running or not.
+        """
+        try:
+            loop = asyncio.get_event_loop()
+            if loop.is_running():
+                asyncio.create_task(self.save_configuration())
+            else:
+                loop.run_until_complete(self.save_configuration())
+        except RuntimeError:
+            asyncio.run(self.save_configuration())
+
     def add_safe_file(self, file_path: str) -> bool:
         """Add a file to the safe files list.
 
@@ -1232,26 +1246,9 @@ class UnifiedConfigurationManager:
             # Add to list
             safe_files.append(normalized_path)
             self.config_cache["scan_settings"]["safe_files"] = safe_files
+            self.scan_config.safe_files = safe_files.copy()
 
-            # Update _config_data as well for consistency
-            if "scan_settings" not in self._config_data:
-                self._config_data["scan_settings"] = {}
-            self._config_data["scan_settings"]["safe_files"] = safe_files
-
-            # Save using the standard save function (non-async for compatibility)
-            import asyncio
-
-            try:
-                loop = asyncio.get_event_loop()
-                if loop.is_running():
-                    # If loop is running, schedule coroutine
-                    asyncio.create_task(self.save_configuration())
-                else:
-                    # Otherwise run it
-                    loop.run_until_complete(self.save_configuration())
-            except RuntimeError:
-                # Fallback to creating new event loop
-                asyncio.run(self.save_configuration())
+            self._schedule_configuration_save()
 
             self.logger.info(f"Added file to safe list: {normalized_path}")
             return True
@@ -1286,22 +1283,9 @@ class UnifiedConfigurationManager:
             # Remove from list
             safe_files.remove(normalized_path)
             self.config_cache["scan_settings"]["safe_files"] = safe_files
+            self.scan_config.safe_files = safe_files.copy()
 
-            # Update _config_data as well
-            if "scan_settings" in self._config_data:
-                self._config_data["scan_settings"]["safe_files"] = safe_files
-
-            # Save using the standard save function (non-async for compatibility)
-            import asyncio
-
-            try:
-                loop = asyncio.get_event_loop()
-                if loop.is_running():
-                    asyncio.create_task(self.save_configuration())
-                else:
-                    loop.run_until_complete(self.save_configuration())
-            except RuntimeError:
-                asyncio.run(self.save_configuration())
+            self._schedule_configuration_save()
 
             self.logger.info(f"Removed file from safe list: {normalized_path}")
             return True
@@ -1310,7 +1294,7 @@ class UnifiedConfigurationManager:
             self.logger.error(f"Failed to remove safe file: {e}")
             return False
 
-    def get_safe_files(self) -> List[str]:
+    def get_safe_files(self) -> list[str]:
         """Get the list of safe files.
 
         Returns:
@@ -1389,7 +1373,7 @@ class UnifiedConfigurationManager:
 # ============================================================================
 
 # Global instance
-_unified_config_manager: Optional[UnifiedConfigurationManager] = None
+_unified_config_manager: UnifiedConfigurationManager | None = None
 
 
 async def get_unified_config_manager() -> UnifiedConfigurationManager:
@@ -1401,7 +1385,7 @@ async def get_unified_config_manager() -> UnifiedConfigurationManager:
 
 
 # Compatibility functions for backward compatibility with original config.py
-def get_config(file_path: Optional[str] = None) -> Dict[str, Any]:
+def get_config(file_path: str | None = None) -> dict[str, Any]:
     """Get configuration (compatibility function)"""
     try:
         loop = asyncio.get_event_loop()
@@ -1412,12 +1396,12 @@ def get_config(file_path: Optional[str] = None) -> Dict[str, Any]:
         return _get_config_fallback(file_path)
 
 
-def load_config(file_path: Optional[str] = None) -> Dict[str, Any]:
+def load_config(file_path: str | None = None) -> dict[str, Any]:
     """Load configuration (compatibility function)"""
     return get_config(file_path)
 
 
-def save_config(config_data: Dict[str, Any], file_path: Optional[str] = None) -> None:
+def save_config(config_data: dict[str, Any], file_path: str | None = None) -> None:
     """Save configuration (compatibility function)"""
     try:
         loop = asyncio.get_event_loop()
@@ -1429,11 +1413,11 @@ def save_config(config_data: Dict[str, Any], file_path: Optional[str] = None) ->
 
 
 def update_config_setting(
-    config_dict: Dict[str, Any],
+    config_dict: dict[str, Any],
     section: str,
     key: str,
     value: Any,
-    file_path: Optional[str] = None,
+    file_path: str | None = None,
 ) -> bool:
     """Update config setting (compatibility function)"""
     try:
@@ -1448,9 +1432,9 @@ def update_config_setting(
 
 
 def update_multiple_settings(
-    config_dict: Dict[str, Any],
-    updates: Dict[str, Dict[str, Any]],
-    file_path: Optional[str] = None,
+    config_dict: dict[str, Any],
+    updates: dict[str, dict[str, Any]],
+    file_path: str | None = None,
 ) -> bool:
     """Update multiple settings (compatibility function)"""
     try:
@@ -1490,13 +1474,13 @@ def setup_logging() -> logging.Logger:
 # ============================================================================
 
 
-def _get_config_fallback(file_path: Optional[str] = None) -> Dict[str, Any]:
+def _get_config_fallback(file_path: str | None = None) -> dict[str, Any]:
     """Fallback config loading for synchronous contexts"""
     config_file = Path(file_path) if file_path else CONFIG_DIR / "config.json"
 
     if config_file.exists():
         try:
-            with open(config_file, "r", encoding="utf-8") as f:
+            with open(config_file, encoding="utf-8") as f:
                 return json.load(f)
         except Exception:
             pass
@@ -1505,7 +1489,7 @@ def _get_config_fallback(file_path: Optional[str] = None) -> Dict[str, Any]:
 
 
 def _save_config_fallback(
-    config_data: Dict[str, Any], file_path: Optional[str] = None
+    config_data: dict[str, Any], file_path: str | None = None
 ) -> None:
     """Fallback config saving for synchronous contexts"""
     config_file = Path(file_path) if file_path else CONFIG_DIR / "config.json"
@@ -1516,11 +1500,11 @@ def _save_config_fallback(
 
 
 def _update_config_setting_fallback(
-    config_dict: Dict[str, Any],
+    config_dict: dict[str, Any],
     section: str,
     key: str,
     value: Any,
-    file_path: Optional[str] = None,
+    file_path: str | None = None,
 ) -> bool:
     """Fallback setting update for synchronous contexts"""
     try:
@@ -1534,9 +1518,9 @@ def _update_config_setting_fallback(
 
 
 def _update_multiple_settings_fallback(
-    config_dict: Dict[str, Any],
-    updates: Dict[str, Dict[str, Any]],
-    file_path: Optional[str] = None,
+    config_dict: dict[str, Any],
+    updates: dict[str, dict[str, Any]],
+    file_path: str | None = None,
 ) -> bool:
     """Fallback multiple settings update for synchronous contexts"""
     try:
@@ -1776,51 +1760,51 @@ except RuntimeError:
 
 
 __all__ = [
-    # Main classes
-    "UnifiedConfigurationManager",
-    "ScanConfiguration",
-    "UIConfiguration",
-    "SecurityConfiguration",
-    "PerformanceConfiguration",
-    "APIConfiguration",
-    "ComponentConfiguration",
-    "RKHunterConfiguration",
-    # Enums
-    "ConfigurationLevel",
-    "ComponentState",
-    "SecurityLevel",
-    "PerformanceMode",
-    # Core functions (compatibility)
-    "get_config",
-    "load_config",
-    "save_config",
-    "update_config_setting",
-    "update_multiple_settings",
-    "get_config_setting",
-    "get_factory_defaults",
-    "setup_logging",
-    # Specialized functions
-    "get_api_security_config",
-    "get_secure_database_url",
-    "get_redis_config",
-    # Configuration creators
-    "create_quick_scan_config",
-    "create_full_scan_config",
-    "create_custom_scan_config",
-    "create_api_config",
-    "create_component_config",
-    "create_performance_config",
-    "create_security_config",
-    # Migration functions
-    "migrate_hardcoded_database",
-    "migrate_environment_variables",
-    "run_full_migration",
-    "validate_migration",
-    # Global manager access
-    "get_unified_config_manager",
+    "APP_NAME",
+    "CACHE_DIR",
     # Constants
     "CONFIG_DIR",
     "DATA_DIR",
-    "CACHE_DIR",
-    "APP_NAME",
+    "APIConfiguration",
+    "ComponentConfiguration",
+    "ComponentState",
+    # Enums
+    "ConfigurationLevel",
+    "PerformanceConfiguration",
+    "PerformanceMode",
+    "RKHunterConfiguration",
+    "ScanConfiguration",
+    "SecurityConfiguration",
+    "SecurityLevel",
+    "UIConfiguration",
+    # Main classes
+    "UnifiedConfigurationManager",
+    "create_api_config",
+    "create_component_config",
+    "create_custom_scan_config",
+    "create_full_scan_config",
+    "create_performance_config",
+    # Configuration creators
+    "create_quick_scan_config",
+    "create_security_config",
+    # Specialized functions
+    "get_api_security_config",
+    # Core functions (compatibility)
+    "get_config",
+    "get_config_setting",
+    "get_factory_defaults",
+    "get_redis_config",
+    "get_secure_database_url",
+    # Global manager access
+    "get_unified_config_manager",
+    "load_config",
+    "migrate_environment_variables",
+    # Migration functions
+    "migrate_hardcoded_database",
+    "run_full_migration",
+    "save_config",
+    "setup_logging",
+    "update_config_setting",
+    "update_multiple_settings",
+    "validate_migration",
 ]

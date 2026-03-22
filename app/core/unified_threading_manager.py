@@ -38,17 +38,14 @@ import asyncio
 import logging
 import threading
 import time
-import types
-import weakref
-from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor, as_completed
+from collections.abc import Callable
+from concurrent.futures import ThreadPoolExecutor
 from contextlib import asynccontextmanager
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
+from datetime import datetime
 from enum import Enum
-from pathlib import Path
-from queue import Queue, PriorityQueue
-from collections.abc import Callable, AsyncIterator
-from typing import Any, Optional, Union
+from queue import PriorityQueue, Queue
+from typing import Any
 from weakref import WeakSet
 
 import psutil
@@ -76,7 +73,7 @@ except ImportError:
 
 try:
     import aiofiles
-    import aiofiles.os
+    import aiofiles.os  # noqa: F401
 
     HAS_AIOFILES = True
 except ImportError:
@@ -154,8 +151,8 @@ class AsyncTaskRequest:
     task_id: str
     priority: TaskPriority
     coro: Any  # Coroutine to execute
-    callback: Optional[Callable] = None
-    timeout: Optional[float] = None
+    callback: Callable | None = None
+    timeout: float | None = None
     resource_type: ResourceType = ResourceType.CPU_INTENSIVE
     created_at: datetime = field(default_factory=datetime.utcnow)
 
@@ -169,8 +166,8 @@ class ThreadTaskRequest:
     func: Callable
     args: tuple = field(default_factory=tuple)
     kwargs: dict[str, Any] = field(default_factory=dict)
-    callback: Optional[Callable] = None
-    timeout: Optional[float] = None
+    callback: Callable | None = None
+    timeout: float | None = None
     pool_type: ThreadPoolType = ThreadPoolType.IO_BOUND
     created_at: datetime = field(default_factory=datetime.utcnow)
 
@@ -267,8 +264,8 @@ class ResourceContext:
         self,
         semaphore: asyncio.Semaphore,
         resource_type: ResourceType,
-        coordinator: "AsyncResourceCoordinator",
-        operation_id: Optional[str] = None,
+        coordinator: AsyncResourceCoordinator,
+        operation_id: str | None = None,
     ):
         self.semaphore = semaphore
         self.resource_type = resource_type
@@ -320,7 +317,7 @@ if HAS_PYQT6:
             scanner,
             path: str,
             quick_scan: bool = False,
-            scan_options: Optional[dict[str, Any]] = None,
+            scan_options: dict[str, Any] | None = None,
         ):
             QThread.__init__(self)
             CooperativeCancellationMixin.__init__(self)
@@ -463,10 +460,10 @@ else:
 class AsyncResourceCoordinator:
     """Unified coordinator for managing async resources across components."""
 
-    _instance: Optional["AsyncResourceCoordinator"] = None
+    _instance: AsyncResourceCoordinator | None = None
     _lock = threading.Lock()
 
-    def __new__(cls, *args: Any, **kwargs: Any) -> "AsyncResourceCoordinator":
+    def __new__(cls, *args: Any, **kwargs: Any) -> AsyncResourceCoordinator:
         """Singleton pattern implementation."""
         if cls._instance is None:
             with cls._lock:
@@ -536,7 +533,7 @@ class AsyncResourceCoordinator:
             self.usage.total_operations[resource_type] = 0
 
     def acquire_resource(
-        self, resource_type: ResourceType, operation_id: Optional[str] = None
+        self, resource_type: ResourceType, operation_id: str | None = None
     ) -> ResourceContext:
         """Acquire a resource with automatic tracking and cleanup."""
         return ResourceContext(
@@ -553,8 +550,7 @@ class AsyncResourceCoordinator:
 
             # Update peak usage
             current = self.usage.active_operations[resource_type]
-            if current > self.usage.peak_usage[resource_type]:
-                self.usage.peak_usage[resource_type] = current
+            self.usage.peak_usage[resource_type] = max(self.usage.peak_usage[resource_type], current)
 
             self.usage.last_updated = datetime.utcnow()
 
@@ -605,10 +601,10 @@ class UnifiedThreadingManager:
     - Performance monitoring
     """
 
-    _instance: "UnifiedThreadingManager" | None = None
+    _instance: UnifiedThreadingManager | None = None
     _lock = threading.Lock()
 
-    def __new__(cls, *args: Any, **kwargs: Any) -> "UnifiedThreadingManager":
+    def __new__(cls, *args: Any, **kwargs: Any) -> UnifiedThreadingManager:
         """Singleton pattern implementation."""
         if cls._instance is None:
             with cls._lock:
@@ -616,7 +612,7 @@ class UnifiedThreadingManager:
                     cls._instance = super().__new__(cls)
         return cls._instance
 
-    def __init__(self, config: Optional[dict[str, Any]] = None):
+    def __init__(self, config: dict[str, Any] | None = None):
         """Initialize the unified threading manager."""
         if hasattr(self, "_initialized"):
             return
@@ -783,7 +779,7 @@ class UnifiedThreadingManager:
 
                     return result
 
-            except asyncio.TimeoutError:
+            except TimeoutError:
                 await self._update_task_metrics(False, 0)
                 self.logger.warning(f"Task {task_request.task_id} timed out")
                 raise
@@ -808,7 +804,7 @@ class UnifiedThreadingManager:
                 # Clean up completed tasks
                 await self._cleanup_completed_async_tasks()
 
-            except asyncio.TimeoutError:
+            except TimeoutError:
                 continue  # Normal timeout, check running flag
             except Exception as e:
                 self.logger.error(f"Error processing async tasks: {e}")
@@ -878,7 +874,7 @@ class UnifiedThreadingManager:
                 await asyncio.sleep(0.1)  # Yield control
 
                 if not self.thread_task_queue.empty():
-                    priority, task_request = self.thread_task_queue.get_nowait()
+                    _priority, task_request = self.thread_task_queue.get_nowait()
 
                     # Execute in thread pool
                     loop = asyncio.get_event_loop()
@@ -899,7 +895,7 @@ class UnifiedThreadingManager:
         path: str,
         quick_scan: bool = False,
         scan_options: dict[str, Any] | None = None,
-    ) -> "UnifiedScanThread":
+    ) -> UnifiedScanThread:
         """Create a new unified scan thread."""
         if not HAS_PYQT6:
             raise RuntimeError("PyQt6 not available for GUI thread creation")
@@ -1065,21 +1061,23 @@ async def async_scan_directory(scanner, directory_path: str, recursive: bool = T
 __all__ = [
     # Core Classes
     "AsyncResourceCoordinator",
-    "CooperativeCancellationMixin",
-    "UnifiedScanThread",
-    "UnifiedThreadingManager",
     # Data Classes
     "AsyncTaskRequest",
     "CancellationMetric",
+    "CooperativeCancellationMixin",
     "PerformanceMetrics",
+    # Context Managers
+    "ResourceContext",
     "ResourceLimits",
     "ResourceType",
     "ResourceUsage",
     "TaskPriority",
     "ThreadPoolType",
     "ThreadTaskRequest",
-    # Context Managers
-    "ResourceContext",
+    "UnifiedScanThread",
+    "UnifiedThreadingManager",
+    # Legacy Compatibility
+    "async_scan_directory",
     # Global Functions
     "get_resource_coordinator",
     "get_threading_manager",
@@ -1087,6 +1085,4 @@ __all__ = [
     "with_ml_resource",
     "with_resource",
     "with_threat_analysis_resource",
-    # Legacy Compatibility
-    "async_scan_directory",
 ]

@@ -10,25 +10,25 @@ from datetime import datetime
 from typing import Any
 
 try:
+    from PyQt6.QtCore import Qt, QTimer, pyqtSignal
     from PyQt6.QtWidgets import (
-        QWidget,
-        QVBoxLayout,
-        QHBoxLayout,
-        QTabWidget,
-        QPushButton,
-        QLabel,
         QGroupBox,
+        QHBoxLayout,
+        QLabel,
+        QPushButton,
+        QTabWidget,
+        QVBoxLayout,
+        QWidget,
     )
-    from PyQt6.QtCore import Qt, pyqtSignal, QTimer
 
     PYQT6_AVAILABLE = True
 except ImportError:
     PYQT6_AVAILABLE = False
     QWidget = object  # type: ignore[assignment,misc]
 
-from .widgets.threat_timeline import ThreatTimelineWidget, ThreatEvent, ThreatSeverity
-from .widgets.threat_map import ThreatMapWidget, ThreatLocation
-from .widgets.heatmap import SeverityHeatmapWidget, HeatmapData
+from .widgets.heatmap import HeatmapData, SeverityHeatmapWidget
+from .widgets.threat_map import ThreatLocation, ThreatMapWidget
+from .widgets.threat_timeline import ThreatEvent, ThreatSeverity, ThreatTimelineWidget
 
 
 class ThreatVisualizationWidget(QWidget):

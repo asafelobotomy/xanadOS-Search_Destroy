@@ -531,7 +531,7 @@ class FileScanner:
 
         # SECURITY: Log when EICAR files are being checked/skipped
         if "eicar" in file_path.lower():
-            print(f"🔍 SECURITY: Checking if EICAR should be scanned")
+            print("🔍 SECURITY: Checking if EICAR should be scanned")
             print(f"   File: {file_path}")
             print(f"   Quick scan: {quick_scan}")
             print(f"   Should scan: {should_scan}")
@@ -539,9 +539,9 @@ class FileScanner:
         if not should_scan:
             # SECURITY: Alert if EICAR file is being skipped
             if "eicar" in file_path.lower():
-                print(f"⚠️ CRITICAL SECURITY: EICAR FILE BEING SKIPPED!")
+                print("⚠️ CRITICAL SECURITY: EICAR FILE BEING SKIPPED!")
                 print(
-                    f"   This is a security vulnerability - test files must always be scanned"
+                    "   This is a security vulnerability - test files must always be scanned"
                 )
 
             # Return clean result for skipped files

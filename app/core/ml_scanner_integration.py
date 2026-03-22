@@ -6,14 +6,15 @@ Provides ML threat detection using the production Random Forest model,
 integrated with the existing UnifiedScannerEngine.
 """
 
-import time
 import logging
+import time
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Optional
 
-from app.ml.model_registry import ModelRegistry
+from typing import Any
+
 from app.ml.feature_extractor import FeatureExtractor
+from app.ml.model_registry import ModelMetadata, ModelRegistry
 
 logger = logging.getLogger(__name__)
 
@@ -52,7 +53,7 @@ class MLScanResult:
                 self.description = f"ML model flagged file as suspicious ({self.confidence:.1%} confidence)"
         else:
             self.threat_level = "CLEAN"
-            self.description = f"ML model classified as clean ({1-self.confidence:.1%} confidence benign)"
+            self.description = f"ML model classified as clean ({1 - self.confidence:.1%} confidence benign)"
 
 
 class MLThreatDetector:
@@ -70,7 +71,7 @@ class MLThreatDetector:
     def __init__(
         self,
         model_name: str = "malware_detector_rf",
-        model_version: Optional[str] = None,
+        model_version: str | None = None,
     ):
         """
         Initialize ML threat detector.
@@ -198,7 +199,7 @@ class MLThreatDetector:
 
             logger.debug(
                 f"Scanned {file_path.name}: {'MALWARE' if result.is_malware else 'CLEAN'} "
-                f"({result.confidence:.1%} confidence, {detection_time*1000:.1f}ms)"
+                f"({result.confidence:.1%} confidence, {detection_time * 1000:.1f}ms)"
             )
 
             return result

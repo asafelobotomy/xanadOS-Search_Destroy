@@ -1,0 +1,44 @@
+{
+    "inputs": [
+        {
+            "type": "promptString",
+            "id": "github-token",
+            "description": "GitHub Personal Access Token (for github MCP server)",
+            "password": true
+        }
+    ],
+    "servers": {
+        "filesystem": {
+            "type": "stdio",
+            "command": "npx",
+            "args": [
+                "-y",
+                "@modelcontextprotocol/server-filesystem",
+                "${workspaceFolder}"
+            ]
+        },
+        "git": {
+            "type": "stdio",
+            "command": "uvx",
+            "args": [
+                "mcp-server-git",
+                "--repository",
+                "${workspaceFolder}"
+            ]
+        },
+        "github": {
+            "type": "http",
+            "url": "https://api.githubcopilot.com/mcp/",
+            "headers": {
+                "Authorization": "Bearer ${input:github-token}"
+            }
+        },
+        "fetch": {
+            "type": "stdio",
+            "command": "uvx",
+            "args": [
+                "mcp-server-fetch"
+            ]
+        }
+    }
+}

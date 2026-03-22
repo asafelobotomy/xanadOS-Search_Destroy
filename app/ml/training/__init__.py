@@ -1,5 +1,4 @@
-"""
-ML training pipeline.
+"""ML training pipeline.
 
 Includes:
 - Dataset management

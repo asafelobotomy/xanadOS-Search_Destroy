@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""
-Random Forest ML Detector for malware detection.
+"""Random Forest ML Detector for malware detection.
 
 Uses trained scikit-learn Random Forest model for real-time threat detection.
 Integrates with UnifiedScannerEngine for production scanning.
@@ -11,10 +10,8 @@ import time
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
-from typing import Optional
 
 import joblib
-import numpy as np
 
 from app.ml.feature_extractor import FeatureExtractor
 from app.ml.model_registry import ModelRegistry
@@ -30,13 +27,12 @@ class MLScanResult:
     prediction_time: float
     model_version: str
     features_extracted: bool = True
-    error: Optional[str] = None
+    error: str | None = None
     timestamp: datetime = field(default_factory=datetime.utcnow)
 
 
 class RandomForestDetector:
-    """
-    Production Random Forest malware detector.
+    """Production Random Forest malware detector.
 
     Uses trained scikit-learn model for real-time scanning.
     """
@@ -48,8 +44,7 @@ class RandomForestDetector:
         confidence_threshold: float = 0.5,
         max_file_size: int = 100 * 1024 * 1024,  # 100MB
     ):
-        """
-        Initialize Random Forest detector.
+        """Initialize Random Forest detector.
 
         Args:
             model_version: Version of model to load (e.g., "1.0.0")
@@ -104,8 +99,7 @@ class RandomForestDetector:
             raise
 
     def scan_file(self, file_path: str | Path) -> MLScanResult:
-        """
-        Scan a file using Random Forest model.
+        """Scan a file using Random Forest model.
 
         Args:
             file_path: Path to file to scan
@@ -166,8 +160,7 @@ class RandomForestDetector:
             )
 
     def get_statistics(self) -> dict:
-        """
-        Get detector statistics.
+        """Get detector statistics.
 
         Returns:
             Dictionary of statistics

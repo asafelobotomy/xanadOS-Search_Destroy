@@ -1,5 +1,4 @@
-"""
-ML-based threat detection module.
+"""ML-based threat detection module.
 
 This module implements machine learning-based malware detection using:
 - Static feature extraction from PE/ELF binaries
@@ -19,8 +18,8 @@ from pathlib import Path
 # Module exports
 __all__ = [
     "FeatureExtractor",
-    "ModelRegistry",
     "MalwareInferenceEngine",
+    "ModelRegistry",
 ]
 
 

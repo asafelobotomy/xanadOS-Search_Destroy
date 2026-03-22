@@ -23,9 +23,12 @@ import psutil
 try:
     from app.monitoring.file_watcher import (
         FileSystemWatcher as EnhancedFileSystemWatcher,
+    )
+    from app.monitoring.file_watcher import (
         WatchEvent,
         WatchEventType,
     )
+
     from .enhanced_real_time_protection import EnhancedRealTimeProtection
     from .unified_security_engine import (
         ProtectionMode,

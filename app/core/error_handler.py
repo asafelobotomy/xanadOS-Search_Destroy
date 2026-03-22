@@ -4,14 +4,14 @@ Standardized Error Handling for xanadOS Search & Destroy
 Provides consistent error handling, logging, and recovery across all components.
 """
 
-import logging
-import traceback
 import functools
+import logging
 import time
-from enum import Enum
-from dataclasses import dataclass
-from typing import Any, Callable, Type
+import traceback
 from collections.abc import Callable as CallableABC
+from dataclasses import dataclass
+from enum import Enum
+from typing import Any
 
 
 class ErrorSeverity(Enum):
@@ -345,7 +345,7 @@ class ErrorHandler:
         try:
             from app.core.unified_component_validator import get_component_validator
 
-            validator = get_component_validator()
+            get_component_validator()
             # This would need component restart capability
             self.logger.info(f"Attempting to recover component: {exception.component}")
             return True

@@ -27,18 +27,15 @@ from __future__ import annotations
 
 import json
 import logging
-import time
 from collections import deque
-from dataclasses import dataclass, field, asdict
+from dataclasses import asdict, dataclass, field
 from datetime import datetime, timedelta
 from enum import Enum
-from pathlib import Path
 from typing import Any
 
 import numpy as np
 
-from app.utils.config import DATA_DIR, load_config, save_config
-
+from app.utils.config import DATA_DIR
 
 logger = logging.getLogger(__name__)
 
@@ -277,7 +274,7 @@ class AutoTuner:
         """Load persisted metrics and Q-table."""
         # Load metrics history
         if METRICS_DB.exists():
-            with open(METRICS_DB, "r") as f:
+            with open(METRICS_DB) as f:
                 data = json.load(f)
                 for metric_dict in data.get("metrics", []):
                     self.metrics_history.append(AutoTuneMetrics.from_dict(metric_dict))
@@ -292,7 +289,7 @@ class AutoTuner:
 
         # Load config history
         if CONFIG_HISTORY.exists():
-            with open(CONFIG_HISTORY, "r") as f:
+            with open(CONFIG_HISTORY) as f:
                 data = json.load(f)
                 for config_dict in data.get("configs", []):
                     self.config_history.append(

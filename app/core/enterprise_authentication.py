@@ -195,7 +195,7 @@ class LDAPAuthenticator:
             safe_username = self._sanitize_ldap_input(username)
 
             # Build user DN for binding
-            user_filter = self.config.user_filter.format(username=safe_username)
+            self.config.user_filter.format(username=safe_username)
 
             # Simulate LDAP authentication (in production, use python-ldap)
             user_dn, user_attributes = await self._search_user(safe_username)

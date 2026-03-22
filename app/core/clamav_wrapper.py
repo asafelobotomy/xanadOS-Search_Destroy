@@ -215,7 +215,7 @@ class ClamAVWrapper:
             return True  # Assume safe if daemon not configured
 
         try:
-            with open(clamd_conf, "r") as f:
+            with open(clamd_conf) as f:
                 content = f.read()
 
             # Check if DisableCache yes is present and not commented
@@ -377,7 +377,7 @@ class ClamAVWrapper:
 
             # SECURITY: Log scan results for test files
             if "eicar" in file_path.lower():
-                print(f"📊 SECURITY: EICAR scan completed")
+                print("📊 SECURITY: EICAR scan completed")
                 print(f"   Result: {scan_result.result}")
                 print(f"   Threat: {scan_result.threat_name}")
                 print(f"   Return code: {result.returncode}")
@@ -460,7 +460,7 @@ class ClamAVWrapper:
 
             # SECURITY: Log scan results for test files
             if "eicar" in file_path.lower():
-                print(f"📊 SECURITY: EICAR data scan completed")
+                print("📊 SECURITY: EICAR data scan completed")
                 print(f"   Result: {scan_result.result}")
                 print(f"   Threat: {scan_result.threat_name}")
                 print(f"   Data size: {file_size} bytes")
@@ -1321,9 +1321,9 @@ class ClamAVWrapper:
             combined_output = f"{stdout}\n{stderr}".lower()
 
             if "permission denied" in combined_output:
-                error_msg = f"Permission denied - ClamAV daemon cannot access this file. Try running a regular scan instead of daemon scan, or check file permissions."
+                error_msg = "Permission denied - ClamAV daemon cannot access this file. Try running a regular scan instead of daemon scan, or check file permissions."
             elif "file path check failure" in combined_output:
-                error_msg = f"File access error - ClamAV daemon cannot read this file. File may be in a protected location."
+                error_msg = "File access error - ClamAV daemon cannot read this file. File may be in a protected location."
             else:
                 # Use stderr first, fall back to stdout, then generic message
                 error_msg = (

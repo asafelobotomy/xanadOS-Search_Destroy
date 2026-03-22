@@ -32,26 +32,20 @@ Features:
 import asyncio
 import hashlib
 import hmac
-import json
 import logging
-import os
 import secrets
 import time
 import uuid
 from collections import defaultdict, deque
-from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from enum import Enum
-from pathlib import Path
 from typing import Any
 
 import jwt
 from cryptography.fernet import Fernet
-from cryptography.hazmat.primitives import hashes, serialization
-from cryptography.hazmat.primitives.asymmetric import padding, rsa
+from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
-
 
 # ================== SECURITY ENUMERATIONS AND DATA STRUCTURES ==================
 
@@ -550,7 +544,7 @@ class AuthenticationFramework:
         """
         try:
             # Import rate limiting functionality
-            from app.core.rate_limiting import rate_limit_manager, RateLimit
+            from app.core.rate_limiting import RateLimit, rate_limit_manager
 
             # Get or create a rate limiter for this identifier
             limiter_key = f"auth_{identifier}"

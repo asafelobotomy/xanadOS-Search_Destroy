@@ -1,16 +1,15 @@
 #!/usr/bin/env python3
-"""
-JSON-based experiment logger for reproducibility.
+"""JSON-based experiment logger for reproducibility.
 
 Provides local experiment logging independent of external services.
 """
 
 import hashlib
 import json
-from dataclasses import dataclass, asdict, field
+from dataclasses import asdict, dataclass, field
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 
 @dataclass
@@ -36,7 +35,7 @@ class ExperimentLog:
     dependencies: dict[str, str]  # package -> version
 
     # Artifacts
-    model_path: Optional[str] = None
+    model_path: str | None = None
     checkpoint_paths: list[str] = field(default_factory=list)
 
     # Metadata
@@ -47,8 +46,7 @@ class ExperimentLog:
 
 
 class ExperimentLogger:
-    """
-    Local experiment logger using JSON files.
+    """Local experiment logger using JSON files.
 
     Features:
     - Structured experiment logging
@@ -58,8 +56,7 @@ class ExperimentLogger:
     """
 
     def __init__(self, log_dir: Path | str = "models/experiments"):
-        """
-        Initialize experiment logger.
+        """Initialize experiment logger.
 
         Args:
             log_dir: Directory for experiment logs
@@ -89,8 +86,7 @@ class ExperimentLogger:
             json.dump(self.index, f, indent=2)
 
     def log_experiment(self, experiment: ExperimentLog) -> str:
-        """
-        Log a new experiment.
+        """Log a new experiment.
 
         Args:
             experiment: Experiment log entry
@@ -124,9 +120,8 @@ class ExperimentLogger:
 
         return experiment.experiment_id
 
-    def get_experiment(self, experiment_id: str) -> Optional[ExperimentLog]:
-        """
-        Retrieve an experiment by ID.
+    def get_experiment(self, experiment_id: str) -> ExperimentLog | None:
+        """Retrieve an experiment by ID.
 
         Args:
             experiment_id: Experiment ID
@@ -146,12 +141,11 @@ class ExperimentLogger:
 
     def list_experiments(
         self,
-        tags: Optional[list[str]] = None,
-        architecture: Optional[str] = None,
-        limit: Optional[int] = None,
+        tags: list[str] | None = None,
+        architecture: str | None = None,
+        limit: int | None = None,
     ) -> list[dict[str, Any]]:
-        """
-        List experiments with optional filtering.
+        """List experiments with optional filtering.
 
         Args:
             tags: Filter by tags (any match)
@@ -184,8 +178,7 @@ class ExperimentLogger:
         return experiments
 
     def compare_experiments(self, experiment_ids: list[str]) -> dict[str, Any]:
-        """
-        Compare multiple experiments.
+        """Compare multiple experiments.
 
         Args:
             experiment_ids: List of experiment IDs to compare
@@ -238,10 +231,9 @@ class ExperimentLogger:
         self,
         metric: str = "accuracy",
         maximize: bool = True,
-        tags: Optional[list[str]] = None,
-    ) -> Optional[ExperimentLog]:
-        """
-        Find the best experiment based on a metric.
+        tags: list[str] | None = None,
+    ) -> ExperimentLog | None:
+        """Find the best experiment based on a metric.
 
         Args:
             metric: Metric name to optimize

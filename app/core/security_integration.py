@@ -72,10 +72,10 @@ except ImportError:
 
 try:
     from .compliance_reporting import (
+        AuditEventType,  # noqa: F401
         ComplianceCoordinator,
-        ComplianceStandard,
-        AuditEventType,
-        SeverityLevel,
+        ComplianceStandard,  # noqa: F401
+        SeverityLevel,  # noqa: F401
     )
 
     COMPLIANCE_REPORTING_AVAILABLE = True

@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""
-FastAPI ML Inference API
+"""FastAPI ML Inference API.
 
 Provides REST API endpoints for ML-based malware detection.
 """
@@ -9,18 +8,16 @@ import hashlib
 import logging
 import time
 from pathlib import Path
-from typing import Optional
 
-import aiofiles
 from fastapi import (
+    Depends,
     FastAPI,
     File,
-    HTTPException,
     Header,
-    UploadFile,
-    Depends,
-    status,
+    HTTPException,
     Request,
+    UploadFile,
+    status,
 )
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -29,7 +26,7 @@ from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.util import get_remote_address
 
-from app.core.ml_scanner_integration import MLThreatDetector, MLScanResult
+from app.core.ml_scanner_integration import MLScanResult, MLThreatDetector
 from app.ml.model_registry import ModelRegistry
 from app.utils.config import load_config
 
@@ -61,7 +58,7 @@ app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 # Global ML detector instance
-ml_detector: Optional[MLThreatDetector] = None
+ml_detector: MLThreatDetector | None = None
 model_registry = ModelRegistry()
 
 
@@ -75,7 +72,7 @@ class HealthResponse(BaseModel):
 
     status: str = Field(..., description="Service status")
     ml_enabled: bool = Field(..., description="ML detection enabled")
-    model_version: Optional[str] = Field(None, description="Loaded model version")
+    model_version: str | None = Field(None, description="Loaded model version")
     uptime_seconds: float = Field(..., description="Service uptime in seconds")
 
 
@@ -117,7 +114,7 @@ class ModelsListResponse(BaseModel):
     """List of available models."""
 
     models: list[ModelInfo] = Field(..., description="Available models")
-    production_model: Optional[str] = Field(
+    production_model: str | None = Field(
         None, description="Current production model version"
     )
 
@@ -126,15 +123,14 @@ class ErrorResponse(BaseModel):
     """Error response."""
 
     error: str = Field(..., description="Error message")
-    detail: Optional[str] = Field(None, description="Error details")
+    detail: str | None = Field(None, description="Error details")
 
 
 # ==================== Authentication ====================
 
 
-async def verify_api_key(x_api_key: Optional[str] = Header(None)) -> bool:
-    """
-    Verify API key from request header.
+async def verify_api_key(x_api_key: str | None = Header(None)) -> bool:
+    """Verify API key from request header.
 
     In production, implement proper API key management.
     For now, check against config or accept any key for testing.
@@ -201,8 +197,7 @@ async def shutdown_event():
 @app.get("/api/ml/health", response_model=HealthResponse, tags=["Health"])
 @limiter.limit("30/minute")
 async def health_check(request: Request):
-    """
-    Health check endpoint.
+    """Health check endpoint.
 
     Returns service status and ML detector availability.
     """
@@ -230,8 +225,7 @@ async def predict_file(
     file: UploadFile = File(..., description="File to scan for malware"),
     authenticated: bool = Depends(verify_api_key),
 ):
-    """
-    Scan uploaded file for malware using ML model.
+    """Scan uploaded file for malware using ML model.
 
     **Rate Limit:** 10 requests per minute per IP
 
@@ -301,15 +295,14 @@ async def predict_file(
         logger.error(f"Prediction error: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Prediction failed: {str(e)}",
+            detail=f"Prediction failed: {e!s}",
         )
 
 
 @app.get("/api/ml/models", response_model=ModelsListResponse, tags=["Models"])
 @limiter.limit("30/minute")
 async def list_models(request: Request, authenticated: bool = Depends(verify_api_key)):
-    """
-    List all available ML models.
+    """List all available ML models.
 
     Returns information about all registered models including
     production and checkpoint versions.
@@ -346,7 +339,7 @@ async def list_models(request: Request, authenticated: bool = Depends(verify_api
         logger.error(f"Failed to list models: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to retrieve models: {str(e)}",
+            detail=f"Failed to retrieve models: {e!s}",
         )
 
 
@@ -355,8 +348,7 @@ async def list_models(request: Request, authenticated: bool = Depends(verify_api
 async def reload_model(
     version: str, request: Request, authenticated: bool = Depends(verify_api_key)
 ):
-    """
-    Reload ML detector with specified model version.
+    """Reload ML detector with specified model version.
 
     Useful for switching between models or reloading after updates.
     """
@@ -383,7 +375,7 @@ async def reload_model(
         logger.error(f"Failed to reload model v{version}: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to reload model: {str(e)}",
+            detail=f"Failed to reload model: {e!s}",
         )
 
 

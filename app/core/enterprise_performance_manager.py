@@ -24,27 +24,24 @@ import asyncio
 import logging
 import threading
 import time
-import weakref
 from collections import defaultdict, deque
 from contextlib import asynccontextmanager
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
+from datetime import datetime
 from enum import Enum
-from pathlib import Path
 from typing import Any
-from collections.abc import Callable
 
 import psutil
 
 try:
     from ..core.rate_limiting import RateLimitingCoordinator
     from ..core.security_integration import (
-        SecurityIntegrationCoordinator,
         PerformanceMetrics,
+        SecurityIntegrationCoordinator,
     )
     from ..utils.performance_standards import (
-        PerformanceOptimizer,
         PerformanceLevel,
+        PerformanceOptimizer,
         ResourceMonitor,
     )
 except ImportError:
@@ -532,7 +529,7 @@ class AdaptiveResourceManager:
         throughput = 0.0
         if self.performance_monitor:
             try:
-                perf_metrics = self.performance_monitor.get_current_metrics()
+                self.performance_monitor.get_current_metrics()
                 # Calculate approximate throughput based on recent operations
                 throughput = self._estimate_throughput()
             except Exception:
@@ -589,7 +586,7 @@ class AdaptiveResourceManager:
             > self.targets.max_cache_size_mb * 1024 * 1024
         ):
             # Reduce cache size by 20%
-            target_size = self.cache.current_size_bytes * 0.8
+            self.cache.current_size_bytes * 0.8
             # Implementation would trigger cache eviction
             optimizations.append("cache_size_reduction")
 
@@ -646,7 +643,7 @@ class AdaptiveResourceManager:
 
         # Calculate average performance
         avg_cpu = sum(m.cpu_usage_percent for m in recent_metrics) / len(recent_metrics)
-        avg_memory = sum(m.memory_usage_mb for m in recent_metrics) / len(
+        sum(m.memory_usage_mb for m in recent_metrics) / len(
             recent_metrics
         )
 

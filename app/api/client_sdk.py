@@ -20,31 +20,27 @@ import asyncio
 import json
 import logging
 import time
+from collections.abc import AsyncGenerator
 from dataclasses import dataclass
 from datetime import datetime, timedelta
-from typing import Any, Dict, List, Optional, Union, AsyncGenerator
-from pathlib import Path
+from typing import Any
 
 import httpx
 import websockets
-from cryptography.fernet import Fernet
 
-from app.utils.secure_crypto import secure_crypto
 from app.core.exceptions import (
-    NetworkError,
     AuthenticationError,
-    ValidationError,
-    FileIOError,
-    SystemError
+    NetworkError,
 )
+from app.utils.secure_crypto import secure_crypto
 
 
 @dataclass
 class APIConfig:
     """API client configuration."""
     base_url: str = "http://localhost:8000"
-    api_key: Optional[str] = None
-    access_token: Optional[str] = None
+    api_key: str | None = None
+    access_token: str | None = None
     timeout: int = 30
     retries: int = 3
     retry_delay: float = 1.0
@@ -55,11 +51,11 @@ class APIConfig:
 class ThreatDetectionResult:
     """Threat detection result."""
     threat_detected: bool
-    threat_type: Optional[str]
+    threat_type: str | None
     confidence: float
     scan_duration: float
-    file_hash: Optional[str]
-    metadata: Dict[str, Any]
+    file_hash: str | None
+    metadata: dict[str, Any]
 
 
 @dataclass
@@ -71,7 +67,7 @@ class SystemScanResult:
     files_scanned: int
     scan_duration: float
     started_at: datetime
-    completed_at: Optional[datetime] = None
+    completed_at: datetime | None = None
 
 
 @dataclass
@@ -83,7 +79,7 @@ class SecurityEvent:
     source: str
     description: str
     timestamp: datetime
-    metadata: Dict[str, Any]
+    metadata: dict[str, Any]
 
 
 @dataclass
@@ -91,7 +87,7 @@ class WebhookSubscription:
     """Webhook subscription data."""
     webhook_id: str
     url: str
-    events: List[str]
+    events: list[str]
     is_active: bool
     created_at: datetime
 
@@ -102,16 +98,16 @@ class SecurityAPIClient:
     def __init__(self, config: APIConfig):
         self.config = config
         self.logger = logging.getLogger(__name__)
-        self._session: Optional[httpx.AsyncClient] = None
-        self._token_expires: Optional[datetime] = None
-        self._cache: Dict[str, Dict[str, Any]] = {}
+        self._session: httpx.AsyncClient | None = None
+        self._token_expires: datetime | None = None
+        self._cache: dict[str, dict[str, Any]] = {}
 
     async def __aenter__(self) -> "SecurityAPIClient":
         """Async context manager entry."""
         await self._ensure_session()
         return self
 
-    async def __aexit__(self, exc_type: Optional[type], exc_val: Optional[Exception], exc_tb: Optional[Any]) -> None:
+    async def __aexit__(self, exc_type: type | None, exc_val: Exception | None, exc_tb: Any | None) -> None:
         """Async context manager exit."""
         if self._session:
             await self._session.aclose()
@@ -215,7 +211,7 @@ class SecurityAPIClient:
         # This should never be reached due to the raise in the except block above
         raise NetworkError("Max retries exceeded - this should not happen")
 
-    def _get_cache_key(self, endpoint: str, params: Optional[Dict[str, Any]] = None) -> str:
+    def _get_cache_key(self, endpoint: str, params: dict[str, Any] | None = None) -> str:
         """Generate cache key for request."""
         key_data = f"{endpoint}:{json.dumps(params or {}, sort_keys=True)}"
         return f"cache:{hash(key_data)}"
@@ -229,7 +225,7 @@ class SecurityAPIClient:
         return time.time() - cached_time < self.config.cache_ttl
 
     # Authentication methods
-    async def create_api_key(self, name: str, permissions: Dict[str, bool]) -> Dict[str, str]:
+    async def create_api_key(self, name: str, permissions: dict[str, bool]) -> dict[str, str]:
         """Create new API key."""
         response = await self._make_request(
             "POST", "/auth/api-key",
@@ -238,8 +234,8 @@ class SecurityAPIClient:
         return response.json()
 
     # Threat detection methods
-    async def detect_threat(self, file_path: Optional[str] = None,
-                          file_content: Optional[str] = None,
+    async def detect_threat(self, file_path: str | None = None,
+                          file_content: str | None = None,
                           scan_type: str = "full",
                           include_metadata: bool = True) -> ThreatDetectionResult:
         """Detect threats in file or content."""
@@ -277,8 +273,8 @@ class SecurityAPIClient:
         return await self.detect_threat(file_content=content, scan_type=scan_type)
 
     # System scanning methods
-    async def start_system_scan(self, paths: Optional[List[str]] = None,
-                              exclude_patterns: Optional[List[str]] = None,
+    async def start_system_scan(self, paths: list[str] | None = None,
+                              exclude_patterns: list[str] | None = None,
                               scan_type: str = "full",
                               max_file_size: int = 100*1024*1024) -> SystemScanResult:
         """Start system-wide security scan."""
@@ -304,7 +300,7 @@ class SecurityAPIClient:
             started_at=datetime.fromisoformat(data["started_at"].replace("Z", "+00:00"))
         )
 
-    async def get_scan_status(self, scan_id: str) -> Dict[str, Any]:
+    async def get_scan_status(self, scan_id: str) -> dict[str, Any]:
         """Get scan status and results."""
         cache_key = self._get_cache_key(f"/v1/system/scan/{scan_id}")
 
@@ -328,7 +324,7 @@ class SecurityAPIClient:
 
     async def wait_for_scan_completion(self, scan_id: str,
                                      poll_interval: int = 5,
-                                     timeout: int = 3600) -> Dict[str, Any]:
+                                     timeout: int = 3600) -> dict[str, Any]:
         """Wait for scan to complete with polling."""
         start_time = time.time()
 
@@ -345,7 +341,7 @@ class SecurityAPIClient:
     # Security events methods
     async def create_security_event(self, event_type: str, severity: str,
                                   source: str, description: str,
-                                  metadata: Optional[Dict[str, Any]] = None) -> str:
+                                  metadata: dict[str, Any] | None = None) -> str:
         """Create new security event."""
         request_data = {
             "event_type": event_type,
@@ -364,8 +360,8 @@ class SecurityAPIClient:
         return data["event_id"]
 
     async def get_security_events(self, limit: int = 100, offset: int = 0,
-                                event_type: Optional[str] = None,
-                                severity: Optional[str] = None) -> List[SecurityEvent]:
+                                event_type: str | None = None,
+                                severity: str | None = None) -> list[SecurityEvent]:
         """Get security events with filtering."""
         params = {"limit": limit, "offset": offset}
         if event_type:
@@ -395,7 +391,7 @@ class SecurityAPIClient:
         return events
 
     # Reports methods
-    async def get_security_summary(self) -> Dict[str, Any]:
+    async def get_security_summary(self) -> dict[str, Any]:
         """Get security summary report."""
         cache_key = self._get_cache_key("/v1/reports/summary")
 
@@ -413,7 +409,7 @@ class SecurityAPIClient:
 
         return data
 
-    async def generate_report(self, report_type: str = "comprehensive") -> Dict[str, Any]:
+    async def generate_report(self, report_type: str = "comprehensive") -> dict[str, Any]:
         """Generate security report."""
         response = await self._make_request(
             "POST", "/v1/reports/generate",
@@ -422,8 +418,8 @@ class SecurityAPIClient:
         return response.json()
 
     # Webhook methods
-    async def create_webhook(self, url: str, events: List[str],
-                           secret: Optional[str] = None) -> WebhookSubscription:
+    async def create_webhook(self, url: str, events: list[str],
+                           secret: str | None = None) -> WebhookSubscription:
         """Create webhook subscription."""
         request_data = {
             "url": url,
@@ -446,7 +442,7 @@ class SecurityAPIClient:
             created_at=datetime.fromisoformat(data["created_at"])
         )
 
-    async def list_webhooks(self) -> List[WebhookSubscription]:
+    async def list_webhooks(self) -> list[WebhookSubscription]:
         """List webhook subscriptions."""
         response = await self._make_request("GET", "/v1/webhooks")
         data = response.json()
@@ -464,12 +460,12 @@ class SecurityAPIClient:
         return webhooks
 
     # System configuration methods
-    async def get_system_config(self) -> Dict[str, Any]:
+    async def get_system_config(self) -> dict[str, Any]:
         """Get system configuration."""
         response = await self._make_request("GET", "/v1/system/config")
         return response.json()
 
-    async def update_system_config(self, config: Dict[str, Any]) -> bool:
+    async def update_system_config(self, config: dict[str, Any]) -> bool:
         """Update system configuration."""
         response = await self._make_request(
             "PUT", "/v1/system/config",
@@ -479,7 +475,7 @@ class SecurityAPIClient:
         return data.get("updated", False)
 
     # Real-time methods
-    async def subscribe_to_events(self, event_types: Optional[List[str]] = None) -> AsyncGenerator[Dict[str, Any], None]:
+    async def subscribe_to_events(self, event_types: list[str] | None = None) -> AsyncGenerator[dict[str, Any]]:
         """Subscribe to real-time security events via WebSocket."""
         ws_url = self.config.base_url.replace("http", "ws") + "/ws/events"
 
@@ -505,9 +501,9 @@ class SecurityAPIClient:
                     self.logger.warning(f"Invalid JSON received: {message}")
 
     # Batch operations
-    async def batch_scan_files(self, file_paths: List[str],
+    async def batch_scan_files(self, file_paths: list[str],
                              scan_type: str = "full",
-                             max_concurrent: int = 5) -> List[ThreatDetectionResult]:
+                             max_concurrent: int = 5) -> list[ThreatDetectionResult]:
         """Scan multiple files concurrently."""
         semaphore = asyncio.Semaphore(max_concurrent)
 
@@ -544,7 +540,7 @@ class SecurityAPIClient:
             self.logger.error(f"Unexpected error during health check: {e}")
             return False
 
-    async def get_api_stats(self) -> Dict[str, Any]:
+    async def get_api_stats(self) -> dict[str, Any]:
         """Get API usage statistics."""
         # This would require additional endpoint on the server
         # For now, return basic client stats
@@ -576,7 +572,7 @@ class WebhookHandler:
 
         return secure_crypto.constant_time_compare(expected_signature, signature)
 
-    def parse_webhook(self, payload: str, signature: str) -> Optional[Dict[str, Any]]:
+    def parse_webhook(self, payload: str, signature: str) -> dict[str, Any] | None:
         """Parse and verify webhook payload."""
         if not self.verify_signature(payload, signature):
             self.logger.warning("Invalid webhook signature")
@@ -594,7 +590,7 @@ class SecurityAPIClientSync:
 
     def __init__(self, config: APIConfig):
         self.client = SecurityAPIClient(config)
-        self._loop: Optional[asyncio.AbstractEventLoop] = None
+        self._loop: asyncio.AbstractEventLoop | None = None
 
     def _run_async(self, coro: Any) -> Any:
         """Run async coroutine in sync context."""
@@ -608,7 +604,7 @@ class SecurityAPIClientSync:
         self._run_async(self.client.__aenter__())
         return self
 
-    def __exit__(self, exc_type: Optional[type], exc_val: Optional[Exception], exc_tb: Optional[Any]) -> None:
+    def __exit__(self, exc_type: type | None, exc_val: Exception | None, exc_tb: Any | None) -> None:
         self._run_async(self.client.__aexit__(exc_type, exc_val, exc_tb))
 
     # Synchronous wrapper methods
@@ -621,25 +617,25 @@ class SecurityAPIClientSync:
     def start_system_scan(self, **kwargs) -> SystemScanResult:
         return self._run_async(self.client.start_system_scan(**kwargs))
 
-    def get_scan_status(self, scan_id: str) -> Dict[str, Any]:
+    def get_scan_status(self, scan_id: str) -> dict[str, Any]:
         return self._run_async(self.client.get_scan_status(scan_id))
 
     def create_security_event(self, **kwargs) -> str:
         return self._run_async(self.client.create_security_event(**kwargs))
 
-    def get_security_events(self, **kwargs) -> List[SecurityEvent]:
+    def get_security_events(self, **kwargs) -> list[SecurityEvent]:
         return self._run_async(self.client.get_security_events(**kwargs))
 
-    def get_security_summary(self) -> Dict[str, Any]:
+    def get_security_summary(self) -> dict[str, Any]:
         return self._run_async(self.client.get_security_summary())
 
-    def generate_report(self, report_type: str = "comprehensive") -> Dict[str, Any]:
+    def generate_report(self, report_type: str = "comprehensive") -> dict[str, Any]:
         return self._run_async(self.client.generate_report(report_type))
 
     def create_webhook(self, **kwargs) -> WebhookSubscription:
         return self._run_async(self.client.create_webhook(**kwargs))
 
-    def list_webhooks(self) -> List[WebhookSubscription]:
+    def list_webhooks(self) -> list[WebhookSubscription]:
         return self._run_async(self.client.list_webhooks())
 
     def health_check(self) -> bool:

@@ -12,17 +12,19 @@ security policies and scanner behavior based on:
 Phase 2, Task 2.2.4: Context-Aware Decision Making
 """
 
+import json
 import logging
-import platform
-import psutil
-from dataclasses import dataclass, field, asdict
-from datetime import datetime, time as datetime_time
+import os
+import subprocess
+from collections.abc import Callable
+from dataclasses import asdict, dataclass, field
+from datetime import datetime
+from datetime import time as datetime_time
 from enum import Enum
 from pathlib import Path
-from typing import Callable, Any
-import json
-import subprocess
-import os
+from typing import Any
+
+import psutil
 
 logger = logging.getLogger(__name__)
 

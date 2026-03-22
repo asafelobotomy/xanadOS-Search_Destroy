@@ -12,12 +12,11 @@ import shutil
 from pathlib import Path
 
 from app.utils.config import (
+    APP_NAME,
+    DATA_DIR,
+    get_api_security_config,
     get_config,
     save_config,
-    get_api_security_config,
-    DATA_DIR,
-    CONFIG_DIR,
-    APP_NAME,
 )
 
 

@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""
-Model Registry for ML models with version management and metadata tracking.
+"""Model Registry for ML models with version management and metadata tracking.
 
 Provides:
 - Semantic versioning for models
@@ -13,10 +12,9 @@ Provides:
 import hashlib
 import json
 import shutil
-from dataclasses import dataclass, asdict, field
-from datetime import datetime
+from dataclasses import asdict, dataclass, field
 from pathlib import Path
-from typing import Optional, Any
+from typing import Any
 
 import joblib
 
@@ -47,7 +45,7 @@ class ModelMetadata:
     # Additional metadata
     description: str = ""
     tags: list[str] = field(default_factory=list)
-    experiment_id: Optional[str] = None  # wandb run ID
+    experiment_id: str | None = None  # wandb run ID
 
     # __post_init__ removed - using field(default_factory=list) for defaults
 
@@ -58,8 +56,7 @@ class ModelMetadata:
 
 
 class ModelRegistry:
-    """
-    Model registry for managing ML model versions.
+    """Model registry for managing ML model versions.
 
     Features:
     - Semantic versioning
@@ -70,8 +67,7 @@ class ModelRegistry:
     """
 
     def __init__(self, registry_dir: Path | str = "models"):
-        """
-        Initialize model registry.
+        """Initialize model registry.
 
         Args:
             registry_dir: Base directory for model storage
@@ -88,8 +84,7 @@ class ModelRegistry:
     def register_model(
         self, model: Any, metadata: ModelMetadata, stage: str = "checkpoint"
     ) -> Path:
-        """
-        Register a new model with metadata.
+        """Register a new model with metadata.
 
         Args:
             model: Trained model object (must be picklable)
@@ -145,8 +140,7 @@ class ModelRegistry:
     def load_model(
         self, name: str, version: str | None = None, verify_integrity: bool = True
     ) -> tuple[Any, ModelMetadata]:
-        """
-        Load a model by name and version.
+        """Load a model by name and version.
 
         Args:
             name: Model name
@@ -195,8 +189,7 @@ class ModelRegistry:
     def list_models(
         self, name: str | None = None, stage: str | None = None
     ) -> list[ModelMetadata]:
-        """
-        List all registered models.
+        """List all registered models.
 
         Args:
             name: Filter by model name (None = all)
@@ -231,8 +224,7 @@ class ModelRegistry:
         return models
 
     def get_latest_version(self, name: str) -> str:
-        """
-        Get the latest version of a model.
+        """Get the latest version of a model.
 
         Args:
             name: Model name
@@ -264,8 +256,7 @@ class ModelRegistry:
     def promote_to_production(
         self, name: str, version: str, backup_existing: bool = True
     ) -> Path:
-        """
-        Promote a checkpoint model to production.
+        """Promote a checkpoint model to production.
 
         Args:
             name: Model name
@@ -301,8 +292,7 @@ class ModelRegistry:
         return production_path
 
     def compare_models(self, name: str, version1: str, version2: str) -> dict[str, Any]:
-        """
-        Compare two model versions.
+        """Compare two model versions.
 
         Args:
             name: Model name
@@ -356,8 +346,7 @@ class ModelRegistry:
         return comparison
 
     def delete_model(self, name: str, version: str, confirm: bool = False):
-        """
-        Delete a model version (use with caution).
+        """Delete a model version (use with caution).
 
         Args:
             name: Model name
