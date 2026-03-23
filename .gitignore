@@ -5,6 +5,9 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 
+# uv
+.uv-cache/
+
 # Package locks (keep pnpm-lock.yaml for consistency)
 # yarn.lock
 

@@ -17,6 +17,7 @@ from pathlib import Path
 from datetime import datetime, timedelta
 
 from app.reporting.web_reports import (
+    PLOTLY_AVAILABLE,
     WebReportGenerator,
     ReportData,
     ChartConfig,
@@ -194,7 +195,8 @@ def test_generate_executive_report(report_generator, sample_scan_results):
     assert "total_scans" in report.summary
     assert report.summary["total_scans"] == 3
     assert report.summary["total_threats_found"] == 4
-    assert len(report.charts) > 0  # Should have charts
+    if PLOTLY_AVAILABLE:
+        assert len(report.charts) > 0  # Should have charts
 
 
 def test_generate_threat_analysis_report(report_generator, sample_threats):
@@ -207,7 +209,8 @@ def test_generate_threat_analysis_report(report_generator, sample_threats):
     assert report.title == "Threat Analysis Report"
     assert report.summary["total_threats"] == 3
     assert report.summary["unique_threat_types"] == 2  # Malware and Trojan
-    assert len(report.charts) > 0
+    if PLOTLY_AVAILABLE:
+        assert len(report.charts) > 0
 
 
 def test_generate_performance_report(report_generator, sample_performance_data):
@@ -220,7 +223,8 @@ def test_generate_performance_report(report_generator, sample_performance_data):
     assert report.title == "Performance Analysis Report"
     assert "avg_cpu_percent" in report.summary
     assert "avg_memory_mb" in report.summary
-    assert len(report.charts) > 0
+    if PLOTLY_AVAILABLE:
+        assert len(report.charts) > 0
 
 
 def test_generate_compliance_report(report_generator, sample_compliance_data):
@@ -234,7 +238,8 @@ def test_generate_compliance_report(report_generator, sample_compliance_data):
     assert report.summary["compliance_score"] == 75.0
     assert report.summary["total_controls"] == 100
     assert report.summary["passed_controls"] == 75
-    assert len(report.charts) > 0
+    if PLOTLY_AVAILABLE:
+        assert len(report.charts) > 0
 
 
 # ========================================

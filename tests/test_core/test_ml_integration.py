@@ -7,6 +7,8 @@ from unittest.mock import MagicMock, Mock, patch
 
 import pytest
 
+pefile = pytest.importorskip("pefile", reason="pefile required for ML integration tests")
+
 from app.core.ml_scanner_integration import MLScanResult, MLThreatDetector
 
 

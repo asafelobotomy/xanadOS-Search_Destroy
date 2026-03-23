@@ -78,7 +78,7 @@ malware-analysis = [
     # SECURITY: Pinned versions to avoid known CVEs (Phase 2 - HIGH severity)
     "pefile==2024.8.26",   # PE file analysis (pinned - CVE-2024-xxxxx mitigation)
     "pyelftools==0.31",    # ELF file analysis (pinned - latest stable)
-    "lief==0.15.1",        # Cross-platform binary parsing (pinned)
+    "lief>=0.15.1",        # Cross-platform binary parsing
     "oletools>=0.60.2",    # Office document analysis
     "pyclamd>=0.4.0",      # ClamAV interface (corrected version)
     "scikit-learn>=1.3.0", # ML for malware detection models

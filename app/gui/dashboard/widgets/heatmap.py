@@ -19,6 +19,7 @@ try:
 except ImportError:
     DEPENDENCIES_AVAILABLE = False
     QWidget = object  # type: ignore[assignment,misc]
+    pyqtSignal = lambda *a, **kw: None  # type: ignore[assignment]  # noqa: E731
 
 
 @dataclass
