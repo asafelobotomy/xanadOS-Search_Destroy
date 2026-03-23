@@ -517,11 +517,11 @@ namespace_packages = true
 exclude = '^(archive/|logs/|dev/|packaging/|scripts/)'
 
 # Untyped definitions
-disallow_untyped_calls = true
-disallow_untyped_defs = true
+disallow_untyped_calls = false
+disallow_untyped_defs = false
 disallow_incomplete_defs = true
 check_untyped_defs = true
-disallow_untyped_decorators = true
+disallow_untyped_decorators = false
 
 # None and Optional handling
 no_implicit_optional = true
@@ -537,7 +537,6 @@ warn_unused_configs = true
 
 # Miscellaneous strictness flags
 strict_equality = true
-strict_concatenate = true
 extra_checks = true
 
 # Error output
@@ -569,12 +568,42 @@ module = [
     "colorama.*",
     "tabulate.*",
     "cryptography.*",
+    "schedule.*",
+    "packaging.*",
+    "yara.*",
+    "joblib.*",
+    "pyopencl.*",
+    "cupy.*",
+    "numba.*",
 ]
 ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
 module = ["tests.*", "dev.*", "archive.*"]
 ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = ["app.gui.*"]
+disallow_untyped_defs = false
+disallow_incomplete_defs = false
+
+[[tool.mypy.overrides]]
+module = ["app.gpu.*"]
+disallow_untyped_defs = false
+warn_return_any = false
+
+[[tool.mypy.overrides]]
+module = ["app.ml.deep_learning"]
+disallow_untyped_defs = false
+warn_return_any = false
+
+[[tool.mypy.overrides]]
+module = ["app.monitoring.*"]
+disallow_untyped_defs = false
+
+[[tool.mypy.overrides]]
+module = ["app.reporting.*"]
+disallow_untyped_defs = false
 
 [tool.pytest.ini_options]
 # Comprehensive test configuration

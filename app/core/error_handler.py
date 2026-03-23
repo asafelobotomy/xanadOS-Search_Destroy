@@ -97,15 +97,15 @@ class ConfigurationError(Exception):
 class ErrorHandler:
     """Centralized error handling and recovery system."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.logger = logging.getLogger(__name__)
         self.error_history: list[ErrorInfo] = []
         self.max_history = 1000
-        self.error_counts = {}
-        self.recovery_strategies = {}
+        self.error_counts: dict[str, int] = {}
+        self.recovery_strategies: dict[type[Exception], CallableABC[..., bool]] = {}
         self._setup_recovery_strategies()
 
-    def _setup_recovery_strategies(self):
+    def _setup_recovery_strategies(self) -> None:
         """Setup default recovery strategies for different error types."""
         self.recovery_strategies = {
             # Memory errors
@@ -178,8 +178,9 @@ class ErrorHandler:
 
     def _determine_severity(self, exception: Exception) -> ErrorSeverity:
         """Determine error severity based on exception type."""
-        if hasattr(exception, "severity"):
-            return exception.severity
+        severity = getattr(exception, "severity", None)
+        if isinstance(severity, ErrorSeverity):
+            return severity
 
         if isinstance(exception, (SecurityError, MemoryError, SystemError)):
             return ErrorSeverity.CRITICAL
@@ -194,8 +195,9 @@ class ErrorHandler:
 
     def _determine_category(self, exception: Exception) -> ErrorCategory:
         """Determine error category based on exception type."""
-        if hasattr(exception, "category"):
-            return exception.category
+        category = getattr(exception, "category", None)
+        if isinstance(category, ErrorCategory):
+            return category
 
         if isinstance(exception, PermissionError):
             return ErrorCategory.AUTHORIZATION
@@ -212,7 +214,7 @@ class ErrorHandler:
         else:
             return ErrorCategory.UNKNOWN
 
-    def _log_error(self, error_info: ErrorInfo):
+    def _log_error(self, error_info: ErrorInfo) -> None:
         """Log error with appropriate level based on severity."""
         log_message = (
             f"[{error_info.component}.{error_info.function}] "
@@ -361,9 +363,9 @@ class ErrorHandler:
             e for e in self.error_history if time.time() - e.timestamp < 3600
         ]  # Last hour
 
-        severity_counts = {}
-        category_counts = {}
-        component_counts = {}
+        severity_counts: dict[str, int] = {}
+        category_counts: dict[str, int] = {}
+        component_counts: dict[str, int] = {}
 
         for error in recent_errors:
             severity_counts[error.severity.value] = (
@@ -404,12 +406,12 @@ def handle_exceptions(
     component: str,
     severity: ErrorSeverity = ErrorSeverity.MEDIUM,
     category: ErrorCategory | None = None,
-):
+) -> CallableABC[[CallableABC[..., Any]], CallableABC[..., Any]]:
     """Decorator for automatic exception handling."""
 
-    def decorator(func: CallableABC) -> CallableABC:
+    def decorator(func: CallableABC[..., Any]) -> CallableABC[..., Any]:
         @functools.wraps(func)
-        def wrapper(*args, **kwargs):
+        def wrapper(*args: Any, **kwargs: Any) -> Any:
             try:
                 return func(*args, **kwargs)
             except Exception as e:

@@ -385,19 +385,10 @@ class UnifiedComponentValidator:
             from app.core.file_scanner import FileScanner as _FileScanner
 
             # Test conditional imports work
-            if UNIFIED_SECURITY_AVAILABLE:
-                from app.core import ProtectionMode as _ProtectionMode
-                from app.core import ThreatLevel as _ThreatLevel
-                from app.core import UnifiedSecurityEngine as _UnifiedSecurityEngine
-            else:
+            if not UNIFIED_SECURITY_AVAILABLE:
                 warnings.append("Unified Security Engine not available")
 
-            if UNIFIED_PERFORMANCE_AVAILABLE:
-                from app.core import PerformanceMode as _PerformanceMode
-                from app.core import (
-                    UnifiedPerformanceOptimizer as _UnifiedPerformanceOptimizer,
-                )
-            else:
+            if not UNIFIED_PERFORMANCE_AVAILABLE:
                 warnings.append("Unified Performance Optimizer not available")
 
             # No-op references to satisfy import checks without unused warnings
@@ -408,9 +399,9 @@ class UnifiedComponentValidator:
                 UNIFIED_PERFORMANCE_AVAILABLE,
             )
             if UNIFIED_SECURITY_AVAILABLE:
-                _ = (_ProtectionMode, _ThreatLevel, _UnifiedSecurityEngine)
+                _ = (ProtectionMode, ThreatLevel, UnifiedSecurityEngine)
             if UNIFIED_PERFORMANCE_AVAILABLE:
-                _ = (_PerformanceMode, _UnifiedPerformanceOptimizer)
+                _ = (PerformanceMode, UnifiedPerformanceOptimizer)
 
             # Test component import compatibility
             details = "Import compatibility validation passed"
@@ -469,7 +460,7 @@ class UnifiedComponentValidator:
                     )
                 )
                 failed_tests += 1
-            else:
+            elif isinstance(validation, ValidationResult):
                 results.append(validation)
                 if validation.passed:
                     passed_tests += 1
@@ -480,6 +471,20 @@ class UnifiedComponentValidator:
                 # Collect performance metrics
                 if validation.performance_metrics:
                     overall_performance[validation.component] = validation.performance_metrics
+            else:
+                results.append(
+                    ValidationResult(
+                        component="UnknownComponent",
+                        passed=False,
+                        errors=[
+                            f"Unexpected validation result type: {type(validation).__name__}"
+                        ],
+                        warnings=[],
+                        performance_metrics={},
+                        details="Validator returned an unsupported result type.",
+                    )
+                )
+                failed_tests += 1
 
             total_tests += 1
 

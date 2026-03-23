@@ -12,6 +12,7 @@ import tempfile
 import time
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
+from typing import Any, cast
 
 # Import centralized version
 from app import __version__
@@ -27,7 +28,7 @@ DATA_DIR = Path(XDG_DATA_HOME) / APP_NAME
 CACHE_DIR = Path(XDG_CACHE_HOME) / APP_NAME
 
 
-def _ensure_secure_dir(path: Path):
+def _ensure_secure_dir(path: Path) -> None:
     """Create directory if missing and enforce 700 permissions (best-effort).
 
     This limits exposure of potentially sensitive security application data
@@ -70,13 +71,13 @@ if os.name == "posix":  # Unix-like systems
 LOG_DIR.mkdir(exist_ok=True)
 
 
-def setup_logging():
+def setup_logging() -> logging.Logger:
     """Setup application logging with rotation."""
     logger = logging.getLogger(APP_NAME)
     if not logger.handlers:
 
         class _RateLimitFilter(logging.Filter):
-            def __init__(self, interval=5):
+            def __init__(self, interval: int = 5) -> None:
                 super().__init__()
                 self.interval = interval
                 self._last: dict[tuple[str, int], float] = {}
@@ -143,7 +144,7 @@ def setup_logging():
     return logger
 
 
-def load_config(file_path=None):
+def load_config(file_path: str | os.PathLike[str] | None = None) -> dict[str, Any]:
     """Load configuration from file. Return as-is without merging."""
     config_path = Path(file_path) if file_path else CONFIG_FILE
 
@@ -157,7 +158,7 @@ def load_config(file_path=None):
         with open(config_path, encoding="utf-8") as config_file:
             config = json.load(config_file)
             # Return config exactly as saved - no modifications
-            return config
+            return cast(dict[str, Any], config)
     except json.JSONDecodeError as e:
         logging.getLogger(APP_NAME).error("Invalid JSON in config file: %s", e)
         # Backup corrupted config and create new one
@@ -167,7 +168,7 @@ def load_config(file_path=None):
         return initial_config
 
 
-def _atomic_write_json(config_path: Path, config_data):
+def _atomic_write_json(config_path: Path, config_data: dict[str, Any]) -> None:
     """Internal helper split out for testability (atomic write + chmod)."""
     tmp_fd = None
     tmp_path = None
@@ -194,7 +195,9 @@ def _atomic_write_json(config_path: Path, config_data):
                 pass
 
 
-def save_config(config_data, file_path=None):
+def save_config(
+    config_data: dict[str, Any], file_path: str | os.PathLike[str] | None = None
+) -> None:
     """Atomically save configuration to file with restrictive permissions.
 
     Writes to a temporary file in the same directory and then uses os.replace
@@ -208,7 +211,13 @@ def save_config(config_data, file_path=None):
         logging.getLogger(APP_NAME).error("Failed to save config atomically: %s", e)
 
 
-def update_config_setting(config_dict, section, key, value, file_path=None):
+def update_config_setting(
+    config_dict: dict[str, Any],
+    section: str,
+    key: str,
+    value: Any,
+    file_path: str | os.PathLike[str] | None = None,
+) -> bool:
     """Update a specific setting in config and save to file immediately.
 
     Args:
@@ -240,7 +249,11 @@ def update_config_setting(config_dict, section, key, value, file_path=None):
         return False
 
 
-def update_multiple_settings(config_dict, updates, file_path=None):
+def update_multiple_settings(
+    config_dict: dict[str, Any],
+    updates: dict[str, dict[str, Any]],
+    file_path: str | os.PathLike[str] | None = None,
+) -> bool:
     """Update multiple settings at once and save to file.
 
     Args:
@@ -275,7 +288,12 @@ def update_multiple_settings(config_dict, updates, file_path=None):
         return False
 
 
-def get_config_setting(config_dict, section, key, default=None):
+def get_config_setting(
+    config_dict: dict[str, Any],
+    section: str,
+    key: str,
+    default: Any = None,
+) -> Any:
     """Get a specific setting from config with optional default.
 
     Args:
@@ -290,7 +308,7 @@ def get_config_setting(config_dict, section, key, default=None):
     return config_dict.get(section, {}).get(key, default)
 
 
-def create_initial_config():
+def create_initial_config() -> dict[str, Any]:
     """Create initial configuration with settings that auto-save."""
     return {
         "scan_settings": {
@@ -410,7 +428,7 @@ def create_initial_config():
     }
 
 
-def get_factory_defaults():
+def get_factory_defaults() -> dict[str, Any]:
     """Get factory default settings - ONLY used when 'Default Settings' button is pressed."""
     return {
         "scan_settings": {
@@ -490,7 +508,7 @@ def get_factory_defaults():
     }
 
 
-def get_config(file_path=None):
+def get_config(file_path: str | os.PathLike[str] | None = None) -> dict[str, Any]:
     """Compatibility function - alias for load_config.
 
     This function maintains backward compatibility with components
@@ -499,7 +517,7 @@ def get_config(file_path=None):
     return load_config(file_path)
 
 
-def get_api_security_config():
+def get_api_security_config() -> dict[str, Any]:
     """Get API security configuration with secure defaults.
 
     Returns:
@@ -674,10 +692,10 @@ def get_api_security_config():
     # Save updated configuration
     save_config(config)
 
-    return api_config
+    return cast(dict[str, Any], api_config)
 
 
-def get_secure_database_url():
+def get_secure_database_url() -> str:
     """Get secure database URL with proper configuration.
 
     Returns:
@@ -703,17 +721,17 @@ def get_secure_database_url():
         raise ValueError(f"Unsupported database type: {db_config['type']}")
 
 
-def get_redis_config():
+def get_redis_config() -> dict[str, Any]:
     """Get Redis configuration.
 
     Returns:
         dict: Redis connection configuration
     """
     api_config = get_api_security_config()
-    return api_config["redis"]
+    return cast(dict[str, Any], api_config["redis"])
 
 
-def backup_database():
+def backup_database() -> bool:
     """Create a backup of the database if backup is enabled.
 
     Returns:
@@ -751,12 +769,14 @@ def backup_database():
             logging.getLogger(APP_NAME).info(f"Database backup created: {backup_path}")
             return True
 
+        return True
+
     except Exception as e:
         logging.getLogger(APP_NAME).error(f"Database backup failed: {e}")
         return False
 
 
-def cleanup_old_backups(backup_dir: Path, retention_days: int):
+def cleanup_old_backups(backup_dir: Path, retention_days: int) -> None:
     """Clean up old database backups.
 
     Args:

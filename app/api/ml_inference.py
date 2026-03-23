@@ -6,9 +6,12 @@ Provides REST API endpoints for ML-based malware detection.
 
 import hashlib
 import logging
+import tempfile
 import time
 from pathlib import Path
+from typing import Any
 
+import uvicorn
 from fastapi import (
     Depends,
     FastAPI,
@@ -20,7 +23,7 @@ from fastapi import (
     status,
 )
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, Response
 from pydantic import BaseModel, Field
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
@@ -55,11 +58,40 @@ app.add_middleware(
 # Configure rate limiting
 limiter = Limiter(key_func=get_remote_address)
 app.state.limiter = limiter
-app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
-# Global ML detector instance
-ml_detector: MLThreatDetector | None = None
+
+def rate_limit_exceeded_handler(request: Request, exc: Exception) -> Response:
+    """Adapt SlowAPI's handler to Starlette's broader exception signature."""
+    if not isinstance(exc, RateLimitExceeded):
+        return JSONResponse(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            content={"error": "Internal server error", "detail": str(exc)},
+        )
+    return _rate_limit_exceeded_handler(request, exc)
+
+
+app.add_exception_handler(RateLimitExceeded, rate_limit_exceeded_handler)
+
 model_registry = ModelRegistry()
+UPLOAD_FILE = File(..., description="File to scan for malware")
+
+
+def _get_detector() -> MLThreatDetector | None:
+    """Return the active detector stored on FastAPI application state."""
+    detector = getattr(app.state, "ml_detector", None)
+    return detector if isinstance(detector, MLThreatDetector) else None
+
+
+def _set_detector(detector: MLThreatDetector | None) -> None:
+    """Store the active detector on FastAPI application state."""
+    app.state.ml_detector = detector
+
+
+def _model_version(detector: MLThreatDetector | None) -> str | None:
+    """Return the active model version when metadata is available."""
+    if detector is None or detector.metadata is None:
+        return None
+    return detector.metadata.version
 
 
 # ==================== Pydantic Models ====================
@@ -167,26 +199,23 @@ async def verify_api_key(x_api_key: str | None = Header(None)) -> bool:
 
 
 @app.on_event("startup")
-async def startup_event():
+async def startup_event() -> None:
     """Initialize ML detector on startup."""
-    global ml_detector
-
     logger.info("Starting ML inference API...")
 
     try:
         # Load production model
-        ml_detector = MLThreatDetector()
-        logger.info(
-            f"ML detector initialized with model v{ml_detector.metadata.version}"
-        )
+        detector = MLThreatDetector()
+        _set_detector(detector)
+        logger.info("ML detector initialized with model v%s", _model_version(detector))
     except Exception as e:
         logger.error(f"Failed to initialize ML detector: {e}")
-        ml_detector = None
+        _set_detector(None)
         logger.warning("ML inference API running without ML detector")
 
 
 @app.on_event("shutdown")
-async def shutdown_event():
+async def shutdown_event() -> None:
     """Cleanup on shutdown."""
     logger.info("Shutting down ML inference API...")
 
@@ -196,15 +225,16 @@ async def shutdown_event():
 
 @app.get("/api/ml/health", response_model=HealthResponse, tags=["Health"])
 @limiter.limit("30/minute")
-async def health_check(request: Request):
+async def health_check(request: Request) -> HealthResponse:
     """Health check endpoint.
 
     Returns service status and ML detector availability.
     """
+    detector = _get_detector()
     return HealthResponse(
-        status="healthy" if ml_detector else "degraded",
-        ml_enabled=ml_detector is not None,
-        model_version=ml_detector.metadata.version if ml_detector else None,
+        status="healthy" if detector else "degraded",
+        ml_enabled=detector is not None,
+        model_version=_model_version(detector),
         uptime_seconds=time.process_time(),
     )
 
@@ -222,9 +252,9 @@ async def health_check(request: Request):
 @limiter.limit("10/minute")
 async def predict_file(
     request: Request,
-    file: UploadFile = File(..., description="File to scan for malware"),
+    file: UploadFile = UPLOAD_FILE,
     authenticated: bool = Depends(verify_api_key),
-):
+) -> PredictionResponse:
     """Scan uploaded file for malware using ML model.
 
     **Rate Limit:** 10 requests per minute per IP
@@ -241,7 +271,8 @@ async def predict_file(
     - model_version: Model version used
     - scan_time_ms: Scan duration in milliseconds
     """
-    if not ml_detector:
+    detector = _get_detector()
+    if not detector:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="ML detector not available",
@@ -263,8 +294,6 @@ async def predict_file(
         file_hash = hashlib.sha256(content).hexdigest()
 
         # Save to temporary file for scanning
-        import tempfile
-
         with tempfile.NamedTemporaryFile(
             delete=False, suffix=f"_{file.filename}"
         ) as tmp:
@@ -273,7 +302,7 @@ async def predict_file(
 
         try:
             # Scan file
-            result: MLScanResult = ml_detector.scan_file(tmp_path)
+            result: MLScanResult = detector.scan_file(tmp_path)
 
             # Return prediction
             return PredictionResponse(
@@ -296,12 +325,14 @@ async def predict_file(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Prediction failed: {e!s}",
-        )
+        ) from e
 
 
 @app.get("/api/ml/models", response_model=ModelsListResponse, tags=["Models"])
 @limiter.limit("30/minute")
-async def list_models(request: Request, authenticated: bool = Depends(verify_api_key)):
+async def list_models(
+    request: Request, authenticated: bool = Depends(verify_api_key)
+) -> ModelsListResponse:
     """List all available ML models.
 
     Returns information about all registered models including
@@ -340,20 +371,18 @@ async def list_models(request: Request, authenticated: bool = Depends(verify_api
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to retrieve models: {e!s}",
-        )
+        ) from e
 
 
 @app.post("/api/ml/models/{version}/reload", response_model=dict, tags=["Models"])
 @limiter.limit("5/minute")
 async def reload_model(
     version: str, request: Request, authenticated: bool = Depends(verify_api_key)
-):
+) -> dict[str, Any]:
     """Reload ML detector with specified model version.
 
     Useful for switching between models or reloading after updates.
     """
-    global ml_detector
-
     try:
         # Create new detector with specified version
         new_detector = MLThreatDetector(
@@ -361,14 +390,14 @@ async def reload_model(
         )
 
         # Replace global detector
-        ml_detector = new_detector
+        _set_detector(new_detector)
 
         logger.info(f"Reloaded ML detector with model v{version}")
 
         return {
             "status": "success",
             "message": f"Model v{version} loaded successfully",
-            "model_info": ml_detector.get_model_info(),
+            "model_info": new_detector.get_model_info(),
         }
 
     except Exception as e:
@@ -376,14 +405,14 @@ async def reload_model(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to reload model: {e!s}",
-        )
+        ) from e
 
 
 # ==================== Error Handlers ====================
 
 
 @app.exception_handler(Exception)
-async def global_exception_handler(request, exc):
+async def global_exception_handler(request: Request, exc: Exception) -> JSONResponse:
     """Global exception handler."""
     logger.error(f"Unhandled exception: {exc}")
     return JSONResponse(
@@ -395,6 +424,4 @@ async def global_exception_handler(request, exc):
 # ==================== Main Entry Point ====================
 
 if __name__ == "__main__":
-    import uvicorn
-
-    uvicorn.run(app, host="0.0.0.0", port=8000, log_level="info")
+    uvicorn.run(app, host="0.0.0.0", port=8000, log_level="info")  # noqa: S104
