@@ -116,7 +116,9 @@ class UnifiedComponentValidator:
         binary_file.write_bytes(b"\x00\x01\x02\x03" * 1000)
         test_files.append(binary_file)
 
-        self.logger.info(f"Created {len(test_files)} test files in {self.test_data_dir}")
+        self.logger.info(
+            f"Created {len(test_files)} test files in {self.test_data_dir}"
+        )
         return self.test_data_dir
 
     async def validate_unified_security_engine(self) -> ValidationResult:
@@ -191,9 +193,7 @@ class UnifiedComponentValidator:
             elif hasattr(security_engine, "shutdown"):
                 await security_engine.shutdown()
 
-            details = (
-                f"Security Engine validation completed. Init: {init_time:.3f}s, Start: {start_time_duration:.3f}s"
-            )
+            details = f"Security Engine validation completed. Init: {init_time:.3f}s, Start: {start_time_duration:.3f}s"
 
         except Exception as e:
             errors.append(f"Security Engine validation failed: {e!s}")
@@ -301,7 +301,9 @@ class UnifiedComponentValidator:
 
         try:
             if not (UNIFIED_SECURITY_AVAILABLE and UNIFIED_PERFORMANCE_AVAILABLE):
-                warnings.append("Not all unified components available for integration testing")
+                warnings.append(
+                    "Not all unified components available for integration testing"
+                )
                 return ValidationResult(
                     component="ComponentIntegration",
                     passed=True,
@@ -353,13 +355,13 @@ class UnifiedComponentValidator:
             if stop_tasks:
                 await asyncio.gather(*stop_tasks)
 
-            details = (
-                f"Integration validation completed. Concurrent start: {concurrent_start_time:.3f}s"
-            )
+            details = f"Integration validation completed. Concurrent start: {concurrent_start_time:.3f}s"
 
         except Exception as e:
             errors.append(f"Integration validation failed: {e!s}")
-            details = f"Exception during integration validation: {traceback.format_exc()}"
+            details = (
+                f"Exception during integration validation: {traceback.format_exc()}"
+            )
 
         return ValidationResult(
             component="ComponentIntegration",
@@ -470,7 +472,9 @@ class UnifiedComponentValidator:
 
                 # Collect performance metrics
                 if validation.performance_metrics:
-                    overall_performance[validation.component] = validation.performance_metrics
+                    overall_performance[validation.component] = (
+                        validation.performance_metrics
+                    )
             else:
                 results.append(
                     ValidationResult(
@@ -504,7 +508,9 @@ class UnifiedComponentValidator:
         # Cleanup test data
         self._cleanup_test_data()
 
-        self.logger.info(f"Validation completed: {passed_tests}/{total_tests} tests passed")
+        self.logger.info(
+            f"Validation completed: {passed_tests}/{total_tests} tests passed"
+        )
         return validation_suite
 
     def _generate_recommendations(self, results: list[ValidationResult]) -> list[str]:
@@ -522,17 +528,25 @@ class UnifiedComponentValidator:
         for result in results:
             if result.performance_metrics:
                 for metric, value in result.performance_metrics.items():
-                    if "time" in metric and isinstance(value, (int, float)) and value > 5.0:
+                    if (
+                        "time" in metric
+                        and isinstance(value, (int, float))
+                        and value > 5.0
+                    ):
                         recommendations.append(
                             f"Consider optimizing {metric} for {result.component} (current: {value:.3f}s)"
                         )
 
         # General recommendations
         if any(not r.passed for r in results):
-            recommendations.append("Review failed validations and fix underlying issues")
+            recommendations.append(
+                "Review failed validations and fix underlying issues"
+            )
 
         if any(r.warnings for r in results):
-            recommendations.append("Address validation warnings for optimal performance")
+            recommendations.append(
+                "Address validation warnings for optimal performance"
+            )
 
         return recommendations
 
